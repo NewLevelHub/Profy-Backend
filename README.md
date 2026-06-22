@@ -25,6 +25,8 @@ Profy-Backend/
 │   ├── services/        # Бизнес-логика
 │   └── prompts/         # LLM-промпты
 ├── alembic/             # Миграции (async SQLAlchemy)
+├── scripts/
+│   └── seed_questions.py  # Наполнение БД вопросами
 ├── docker-compose.yml
 ├── Dockerfile
 ├── nginx.conf
@@ -75,6 +77,38 @@ API пока без эндпоинтов — роутеры подключают
 | `SECRET_KEY` | Секрет для JWT (сменить в production) |
 | `LLM_API_KEY` | Ключ LLM-провайдера (опционально) |
 
+## Seed-данные (вопросы для тестирования)
+
+После применения миграций нужно наполнить БД вопросами:
+
+```bash
+docker compose exec api python scripts/seed_questions.py
+```
+
+Скрипт добавит **120 вопросов**, покрывающих все 8 блоков опросника (`interests`, `thinking`, `personality`, `motivation`, `academic`, `directions`, `goal_clarification`, `university`) и три возрастные группы (`junior`, `middle`, `senior`). Блок `university` — только для `senior`.
+
+Скрипт **идемпотентен**: повторный запуск не создаёт дубликаты — вопросы, уже существующие в БД (по совпадению блока, возрастной группы и текста), будут пропущены.
+
+```
+Done. Inserted: 120, skipped (already exist): 0
+# При повторном запуске:
+Done. Inserted: 0, skipped (already exist): 120
+```
+
+Структура вопроса в БД:
+
+```json
+{
+  "text": "Что тебе больше всего нравится на уроках?",
+  "options": [
+    { "text": "Считать и решать задачки", "weights": { "science": 2, "technology": 1 } },
+    { "text": "Рисовать и мастерить",     "weights": { "art": 2, "creative": 2 } }
+  ]
+}
+```
+
+Поле `weights` используется алгоритмом рекомендаций и **не возвращается** на фронтенд через API.
+
 ## Полезные команды
 
 ```bash
@@ -92,6 +126,9 @@ docker compose down -v
 
 # Миграции (внутри контейнера api)
 docker compose exec api alembic upgrade head
+
+# Наполнение вопросами (после миграций)
+docker compose exec api python scripts/seed_questions.py
 ```
 
 ## Проверка
