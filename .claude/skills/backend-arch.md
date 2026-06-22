@@ -101,3 +101,31 @@ project/
 
 ## Dependencies
 FastAPI, Pydantic v2, asyncpg/aiomysql, SQLAlchemy 2.0, pydantic-settings, alembic
+
+## Docker Workflow
+
+All commands run inside Docker — never locally. The app code is **baked into the image** (no bind-mount), so after any file change the image must be rebuilt before running commands.
+
+### Common commands
+
+```bash
+# Start all services (rebuild api image on code changes)
+docker-compose up --build -d
+
+# Apply Alembic migrations
+docker-compose exec api alembic upgrade head
+
+# Check current migration revision
+docker-compose exec api alembic current
+
+# Run a one-off command without a running container
+docker-compose run --rm api <command>
+
+# View api logs
+docker-compose logs -f api
+```
+
+### Rules
+- Never run `alembic`, `python`, or `pip` commands directly on the host machine
+- After creating or modifying any file, always rebuild: `docker-compose up --build -d api`
+- The DATABASE_URL uses `db` as the host (Docker internal network) — `localhost` only works inside the container
