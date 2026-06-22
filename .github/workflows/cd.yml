@@ -92,6 +92,9 @@ jobs:
           script: |
             set -e
 
+            # GitHub secrets sometimes include a trailing newline when pasted.
+            DEPLOY_PATH="$(printf '%s' "$DEPLOY_PATH" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+
             echo "$DOCKER_PASSWORD" | docker login "$DOCKER_REGISTRY" -u "$DOCKER_USERNAME" --password-stdin
             unset DOCKER_PASSWORD
             cd "$DEPLOY_PATH"
