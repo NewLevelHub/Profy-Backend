@@ -1,4 +1,5 @@
 from app.database import Base
+from app.models.profile import Profile  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.user import User  # noqa: F401 — keep model imported so Alembic discovers it
 
-__all__ = ["Base", "User"]
+__all__ = ["Base", "Profile", "User"]
