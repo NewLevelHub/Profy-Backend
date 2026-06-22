@@ -126,6 +126,23 @@ jobs:
 
             docker rm -f profi_api_prod profi_nginx_prod 2>/dev/null || true
 
+            # Ensure db/redis are running (first deploy); do not force-recreate to keep data volumes.
+            docker compose --env-file .env.production -f docker-compose.prod.yml up -d db redis
+
+            echo "Waiting for PostgreSQL to become healthy..."
+            for i in $(seq 1 60); do
+              if docker compose --env-file .env.production -f docker-compose.prod.yml exec -T db pg_isready -U "$(grep '^POSTGRES_USER=' .env.production | cut -d= -f2-)" -d "$(grep '^POSTGRES_DB=' .env.production | cut -d= -f2-)" >/dev/null 2>&1; then
+                echo "PostgreSQL is ready after ${i}s"
+                break
+              fi
+              if [ "$i" -eq 60 ]; then
+                echo "ERROR: PostgreSQL did not become ready within 60s"
+                docker compose --env-file .env.production -f docker-compose.prod.yml logs db | tail -40
+                exit 1
+              fi
+              sleep 1
+            done
+
             docker compose --env-file .env.production -f docker-compose.prod.yml up -d --force-recreate --remove-orphans api nginx
 
             echo "Waiting for API container to finish migrations + uvicorn startup..."
