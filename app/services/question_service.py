@@ -8,13 +8,20 @@ from app.models.assessment import Assessment, AssessmentGoal
 from app.models.profile import AgeGroup, Profile
 from app.models.question import Question, QuestionBlock
 from app.schemas.question import QuestionOption, QuestionResponse
+from app.services.scoring_service import LIKERT_LABELS, is_likert_question
 
 
 def _to_response(question: Question) -> QuestionResponse:
-    options = [
-        QuestionOption(text=opt["text"], index=i)
-        for i, opt in enumerate(question.options)
-    ]
+    if is_likert_question(question.options):
+        options = [
+            QuestionOption(text=label, index=i)
+            for i, label in enumerate(LIKERT_LABELS)
+        ]
+    else:
+        options = [
+            QuestionOption(text=opt["text"], index=i)
+            for i, opt in enumerate(question.options)
+        ]
     return QuestionResponse(
         id=question.id,
         block=question.block,
