@@ -1,0 +1,61 @@
+import uuid
+
+from fastapi import HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.assessment import Assessment, AssessmentGoal
+from app.models.profile import AgeGroup, Profile
+from app.models.question import Question, QuestionBlock
+from app.schemas.question import QuestionOption, QuestionResponse
+
+
+def _to_response(question: Question) -> QuestionResponse:
+    options = [
+        QuestionOption(text=opt["text"], index=i)
+        for i, opt in enumerate(question.options)
+    ]
+    return QuestionResponse(
+        id=question.id,
+        block=question.block,
+        text=question.text,
+        options=options,
+    )
+
+
+async def get_questions_for_block(
+    assessment_id: uuid.UUID,
+    block: QuestionBlock,
+    current_profile_id: uuid.UUID,
+    db: AsyncSession,
+) -> list[QuestionResponse]:
+    assessment_result = await db.execute(
+        select(Assessment).where(Assessment.id == assessment_id)
+    )
+    assessment = assessment_result.scalar_one_or_none()
+    if assessment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+
+    if assessment.profile_id != current_profile_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    profile_result = await db.execute(
+        select(Profile).where(Profile.id == assessment.profile_id)
+    )
+    profile = profile_result.scalar_one_or_none()
+    if profile is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+
+    if block == QuestionBlock.university:
+        if profile.age_group != AgeGroup.senior or assessment.goal != AssessmentGoal.university:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Block 'university' is only available for senior age group with goal=university",
+            )
+
+    result = await db.execute(
+        select(Question)
+        .where(Question.block == block, Question.age_group == profile.age_group)
+        .order_by(Question.order)
+    )
+    return [_to_response(q) for q in result.scalars().all()]
