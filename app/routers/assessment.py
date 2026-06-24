@@ -13,7 +13,7 @@ from app.schemas.response import SaveAnswersRequest, SaveAnswersResponse
 from app.services import assessment_service
 from app.services import scoring_service
 from app.services.profile_service import get_profile
-from app.services.report_service import build_strengths
+from app.services.ai_service import build_strengths
 
 router = APIRouter(tags=["assessment"])
 
