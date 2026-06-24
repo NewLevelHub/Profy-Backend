@@ -36,7 +36,8 @@ async def create_assessment(
     )
     existing = existing_result.scalar_one_or_none()
     if existing is not None:
-        return existing
+        existing.status = AssessmentStatus.completed
+        await db.commit()
 
     assessment = Assessment(
         profile_id=profile_id,
