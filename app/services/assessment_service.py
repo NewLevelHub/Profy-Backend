@@ -106,6 +106,26 @@ async def complete_block(
     )
     questions_map = {q.id: q for q in questions_result.scalars().all()}
 
+    for item in answers:
+        question = questions_map.get(item.question_id)
+        if question is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Question {item.question_id} not found",
+            )
+        if scoring_service.is_likert_question(question.options):
+            if item.selected_option_index < 0 or item.selected_option_index > 4:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"selected_option_index out of range for question {item.question_id}",
+                )
+        elif isinstance(question.options, list):
+            if item.selected_option_index < 0 or item.selected_option_index >= len(question.options):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"selected_option_index out of range for question {item.question_id}",
+                )
+
     block_raw_scores = scoring_service.calculate_scores(questions_map, answers)
 
     records = [
