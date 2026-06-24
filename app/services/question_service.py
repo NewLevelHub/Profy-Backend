@@ -36,22 +36,18 @@ async def get_questions_for_block(
     current_profile_id: uuid.UUID,
     db: AsyncSession,
 ) -> list[QuestionResponse]:
-    assessment_result = await db.execute(
-        select(Assessment).where(Assessment.id == assessment_id)
+    row_result = await db.execute(
+        select(Assessment, Profile)
+        .join(Profile, Assessment.profile_id == Profile.id)
+        .where(Assessment.id == assessment_id)
     )
-    assessment = assessment_result.scalar_one_or_none()
-    if assessment is None:
+    row = row_result.one_or_none()
+    if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
 
+    assessment, profile = row
     if assessment.profile_id != current_profile_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-
-    profile_result = await db.execute(
-        select(Profile).where(Profile.id == assessment.profile_id)
-    )
-    profile = profile_result.scalar_one_or_none()
-    if profile is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
 
     if block == QuestionBlock.university:
         if profile.age_group != AgeGroup.senior or assessment.goal != AssessmentGoal.university:
