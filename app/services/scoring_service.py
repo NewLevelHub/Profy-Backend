@@ -167,6 +167,24 @@ def normalize_scores(raw_scores: dict[str, Any]) -> dict[str, float]:
     return {k: round((v / max_score) * 100, 1) for k, v in scoring_scores.items()}
 
 
+def get_answer_scores(question: Question, selected_option_index: int) -> dict[str, Any]:
+    """Return the score contribution of a single answer."""
+    scores: dict[str, Any] = {}
+    apply_answer(scores, question, selected_option_index)
+    return scores
+
+
+def calculate_scores(
+    questions_map: dict[Any, Question],
+    answers: list[Any],
+) -> dict[str, Any]:
+    """Sum weights across all answers; answers items must have question_id and selected_option_index."""
+    return calculate_raw_scores(
+        questions_map,
+        [(item.question_id, item.selected_option_index) for item in answers],
+    )
+
+
 def extract_preferences(raw_scores: dict[str, Any]) -> dict[str, str]:
     """Extract university-block preference values from accumulated answer weights."""
     preferences: dict[str, str] = {}
