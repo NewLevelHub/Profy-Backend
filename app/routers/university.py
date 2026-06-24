@@ -9,7 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models.assessment import Assessment
+from app.models.analysis_result import AnalysisResult
+from app.models.assessment import Assessment, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
 from app.schemas.gap import GapAnalysisResponse
@@ -87,6 +88,29 @@ async def get_gap_analysis(
     assessment = assessment_result.scalar_one_or_none()
     if assessment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+
+    if assessment.status != AssessmentStatus.completed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Assessment is not completed yet",
+        )
+
+    analysis_result = await db.execute(
+        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+    )
+    analysis = analysis_result.scalar_one_or_none()
+    if analysis is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Generate a report for this assessment before running gap analysis",
+        )
+
+    matched_slugs = {d["slug"] for d in analysis.directions if isinstance(d, dict) and "slug" in d}
+    if program.direction_slug not in matched_slugs:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This program's direction does not match your assessment results",
+        )
 
     artifacts = await get_artifacts(profile.id, db)
     scores = await assessment_service.get_total_scores(assessment_id, db)
