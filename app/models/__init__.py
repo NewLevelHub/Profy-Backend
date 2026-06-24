@@ -5,7 +5,12 @@ from app.models.artifact import Artifact  # noqa: F401 — keep model imported s
 from app.models.assessment import Assessment  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.direction import Direction  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.profile import Profile  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.program import Program  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.university import University  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.user import User  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.user_response import UserResponse  # noqa: F401 — keep model imported so Alembic discovers it
 
-__all__ = ["Base", "AnalysisResult", "Answer", "Artifact", "Assessment", "Direction", "Profile", "User", "UserResponse"]
+__all__ = [
+    "Base", "AnalysisResult", "Answer", "Artifact", "Assessment",
+    "Direction", "Profile", "Program", "University", "User", "UserResponse",
+]
