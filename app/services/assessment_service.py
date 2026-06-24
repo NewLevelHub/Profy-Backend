@@ -127,16 +127,22 @@ async def complete_block(
         .join(UserResponse, UserResponse.question_id == Question.id)
         .where(UserResponse.assessment_id == assessment_id)
     )
-    submitted_count = submitted_blocks_result.scalar_one() or 0
+    submitted_blocks = submitted_blocks_result.scalar_one() or 0
 
-    expected_blocks_result = await db.execute(
-        select(func.count(func.distinct(Question.block)))
+    submitted_questions_result = await db.execute(
+        select(func.count(UserResponse.id))
+        .where(UserResponse.assessment_id == assessment_id)
+    )
+    submitted_questions = submitted_questions_result.scalar_one() or 0
+
+    expected_questions_result = await db.execute(
+        select(func.count(Question.id))
         .where(Question.age_group == age_group)
     )
-    expected_count = expected_blocks_result.scalar_one() or 0
+    expected_questions = expected_questions_result.scalar_one() or 0
 
-    assessment.current_block = submitted_count
-    if expected_count > 0 and submitted_count >= expected_count:
+    assessment.current_block = submitted_blocks
+    if expected_questions > 0 and submitted_questions >= expected_questions:
         assessment.status = AssessmentStatus.completed
         assessment.completed_at = datetime.now(timezone.utc)
 
