@@ -16,68 +16,6 @@ PREFERENCE_KEYS = frozenset({
     "specialty",
 })
 
-DIRECTIONS_MATRIX: dict[str, dict[str, dict[str, int]]] = {
-    "IT и разработка": {
-        "required": {"technology": 55, "logical": 45},
-        "bonus": {"investigative": 15, "mathematical": 10},
-    },
-    "Искусственный интеллект": {
-        "required": {"technology": 60, "mathematical": 55},
-        "bonus": {"investigative": 15, "logical": 10},
-    },
-    "Data Science": {
-        "required": {"mathematical": 55, "numbers": 50},
-        "bonus": {"technology": 15, "investigative": 10},
-    },
-    "Дизайн / цифровое искусство": {
-        "required": {"artistic": 60, "creative_think": 50},
-        "bonus": {"technology": 15},
-    },
-    "Медицина / биология": {
-        "required": {"science": 60, "helping_motiv": 45},
-        "bonus": {"investigative": 15, "social": 10},
-    },
-    "Наука и исследования": {
-        "required": {"science": 60, "investigative": 55},
-        "bonus": {"logical": 15, "mathematical": 10},
-    },
-    "Психология / педагогика": {
-        "required": {"social": 60, "helping_motiv": 50},
-        "bonus": {"verbal": 15},
-    },
-    "Бизнес / предпринимательство": {
-        "required": {"enterprising": 55, "leadership": 45},
-        "bonus": {"strategic": 15, "business": 10},
-    },
-    "Финансы / экономика": {
-        "required": {"numbers": 55, "conventional": 45},
-        "bonus": {"mathematical": 15, "enterprising": 10},
-    },
-    "Право / госуправление": {
-        "required": {"verbal": 55, "social": 45},
-        "bonus": {"conventional": 10, "strategic": 10},
-    },
-    "Медиа / журналистика": {
-        "required": {"verbal": 55, "artistic": 45},
-        "bonus": {"social": 15, "media": 10},
-    },
-    "Инженерия / архитектура": {
-        "required": {"spatial": 55, "realistic": 45},
-        "bonus": {"systematic": 15, "science": 10},
-    },
-    "Маркетинг / реклама": {
-        "required": {"enterprising": 50, "creative_think": 50},
-        "bonus": {"media": 15, "social": 10},
-    },
-    "Экология / природа": {
-        "required": {"nature": 60, "science": 45},
-        "bonus": {"investigative": 10, "realistic": 10},
-    },
-    "Управление проектами": {
-        "required": {"strategic": 55, "conscientiousness": 45},
-        "bonus": {"leadership": 15, "systematic": 10},
-    },
-}
 
 LIKERT_LABELS = [
     "Совсем не про меня",
@@ -193,23 +131,3 @@ def extract_preferences(raw_scores: dict[str, Any]) -> dict[str, str]:
         if isinstance(value, str):
             preferences[key] = value
     return preferences
-
-
-def match_directions(normalized_scores: dict[str, float]) -> list[dict[str, Any]]:
-    results: list[dict[str, Any]] = []
-    for direction, params in DIRECTIONS_MATRIX.items():
-        req_scores = [
-            min(normalized_scores.get(cat, 0) / threshold, 1.2)
-            for cat, threshold in params["required"].items()
-        ]
-        base = sum(req_scores) / len(req_scores)
-
-        bonus = sum(
-            (normalized_scores.get(cat, 0) / 100) * weight
-            for cat, weight in params["bonus"].items()
-        )
-
-        match_score = min(round(base * 75 + bonus), 99)
-        results.append({"direction": direction, "score": match_score})
-
-    return sorted(results, key=lambda x: x["score"], reverse=True)[:5]
