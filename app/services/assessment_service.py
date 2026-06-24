@@ -36,7 +36,8 @@ async def create_assessment(
     )
     existing = existing_result.scalar_one_or_none()
     if existing is not None:
-        return existing
+        existing.status = AssessmentStatus.completed
+        await db.commit()
 
     assessment = Assessment(
         profile_id=profile_id,
@@ -83,7 +84,7 @@ async def complete_block(
 
     if assessment.status == AssessmentStatus.completed:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail="Assessment already completed",
         )
 
@@ -95,7 +96,7 @@ async def complete_block(
     )
     if existing_result.scalar_one_or_none() is not None:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail="Answers for this block were already submitted",
         )
 
@@ -104,6 +105,26 @@ async def complete_block(
         select(Question).where(Question.id.in_(question_ids))
     )
     questions_map = {q.id: q for q in questions_result.scalars().all()}
+
+    for item in answers:
+        question = questions_map.get(item.question_id)
+        if question is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Question {item.question_id} not found",
+            )
+        if scoring_service.is_likert_question(question.options):
+            if item.selected_option_index < 0 or item.selected_option_index > 4:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"selected_option_index out of range for question {item.question_id}",
+                )
+        elif isinstance(question.options, list):
+            if item.selected_option_index < 0 or item.selected_option_index >= len(question.options):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"selected_option_index out of range for question {item.question_id}",
+                )
 
     block_raw_scores = scoring_service.calculate_scores(questions_map, answers)
 
@@ -126,16 +147,22 @@ async def complete_block(
         .join(UserResponse, UserResponse.question_id == Question.id)
         .where(UserResponse.assessment_id == assessment_id)
     )
-    submitted_count = submitted_blocks_result.scalar_one() or 0
+    submitted_blocks = submitted_blocks_result.scalar_one() or 0
 
-    expected_blocks_result = await db.execute(
-        select(func.count(func.distinct(Question.block)))
+    submitted_questions_result = await db.execute(
+        select(func.count(UserResponse.id))
+        .where(UserResponse.assessment_id == assessment_id)
+    )
+    submitted_questions = submitted_questions_result.scalar_one() or 0
+
+    expected_questions_result = await db.execute(
+        select(func.count(Question.id))
         .where(Question.age_group == age_group)
     )
-    expected_count = expected_blocks_result.scalar_one() or 0
+    expected_questions = expected_questions_result.scalar_one() or 0
 
-    assessment.current_block = submitted_count
-    if expected_count > 0 and submitted_count >= expected_count:
+    assessment.current_block = submitted_blocks
+    if expected_questions > 0 and submitted_questions >= expected_questions:
         assessment.status = AssessmentStatus.completed
         assessment.completed_at = datetime.now(timezone.utc)
 
