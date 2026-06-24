@@ -84,7 +84,7 @@ async def complete_block(
 
     if assessment.status == AssessmentStatus.completed:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail="Assessment already completed",
         )
 
@@ -96,7 +96,7 @@ async def complete_block(
     )
     if existing_result.scalar_one_or_none() is not None:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail="Answers for this block were already submitted",
         )
 

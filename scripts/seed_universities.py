@@ -21,230 +21,230 @@ from app.models.university import University
 # ---------------------------------------------------------------------------
 
 UNIVERSITIES: list[dict] = [
-    # --- Kazakhstan ---
+    # --- Казахстан ---
     {
         "name": "Nazarbayev University",
-        "country": "Kazakhstan",
-        "city": "Astana",
+        "country": "Казахстан",
+        "city": "Астана",
         "website": "https://nu.edu.kz",
         "ranking": 301,
         "description": (
-            "Leading research university in Kazakhstan, offering English-language programs "
-            "in partnership with top global universities."
+            "Ведущий исследовательский университет Казахстана, предлагающий программы "
+            "на английском языке в партнёрстве с ведущими мировыми университетами."
         ),
     },
     {
         "name": "KIMEP University",
-        "country": "Kazakhstan",
-        "city": "Almaty",
+        "country": "Казахстан",
+        "city": "Алматы",
         "website": "https://kimep.kz",
         "ranking": None,
         "description": (
-            "Kazakhstan's premier business and social sciences university, "
-            "fully accredited by AACSB and AMBA."
+            "Ведущий казахстанский университет в области бизнеса и социальных наук, "
+            "полностью аккредитованный AACSB и AMBA."
         ),
     },
     {
         "name": "Al-Farabi Kazakh National University",
-        "country": "Kazakhstan",
-        "city": "Almaty",
+        "country": "Казахстан",
+        "city": "Алматы",
         "website": "https://kaznu.kz",
         "ranking": 181,
         "description": (
-            "The largest classical university in Kazakhstan, offering a broad range "
-            "of programs in natural sciences, engineering, and humanities."
+            "Крупнейший классический университет Казахстана, предлагающий широкий спектр "
+            "программ в области естественных наук, инженерии и гуманитарных дисциплин."
         ),
     },
-    # --- USA ---
+    # --- США ---
     {
         "name": "Massachusetts Institute of Technology",
-        "country": "USA",
-        "city": "Cambridge",
+        "country": "США",
+        "city": "Кембридж",
         "website": "https://mit.edu",
         "ranking": 1,
         "description": (
-            "World-renowned research university consistently ranked #1 globally, "
-            "known for engineering, computing, and science."
+            "Всемирно известный исследовательский университет, стабильно занимающий 1-е место в мире, "
+            "известный в области инженерии, вычислительных технологий и науки."
         ),
     },
     {
         "name": "Stanford University",
-        "country": "USA",
-        "city": "Stanford",
+        "country": "США",
+        "city": "Стэнфорд",
         "website": "https://stanford.edu",
         "ranking": 3,
         "description": (
-            "Elite private research university in Silicon Valley, a hub for "
-            "entrepreneurship, technology, and innovation."
+            "Элитный частный исследовательский университет в Кремниевой долине — "
+            "центр предпринимательства, технологий и инноваций."
         ),
     },
     {
         "name": "University of California, Berkeley",
-        "country": "USA",
-        "city": "Berkeley",
+        "country": "США",
+        "city": "Беркли",
         "website": "https://berkeley.edu",
         "ranking": 10,
         "description": (
-            "Top public research university in the USA, with outstanding programs "
-            "in computer science, engineering, and data science."
+            "Ведущий государственный исследовательский университет США с выдающимися программами "
+            "в области информатики, инженерии и науки о данных."
         ),
     },
     {
         "name": "New York University",
-        "country": "USA",
-        "city": "New York",
+        "country": "США",
+        "city": "Нью-Йорк",
         "website": "https://nyu.edu",
         "ranking": 55,
         "description": (
-            "Global private university in the heart of New York City, "
-            "offering world-class programs in technology, business, and arts."
+            "Глобальный частный университет в сердце Нью-Йорка, предлагающий "
+            "программы мирового класса в области технологий, бизнеса и искусства."
         ),
     },
-    # --- UK ---
+    # --- Великобритания ---
     {
         "name": "University College London",
-        "country": "UK",
-        "city": "London",
+        "country": "Великобритания",
+        "city": "Лондон",
         "website": "https://ucl.ac.uk",
         "ranking": 9,
         "description": (
-            "London's leading multidisciplinary university, ranked among the top 10 "
-            "globally, with strengths in science, engineering, and social sciences."
+            "Ведущий многопрофильный университет Лондона, входящий в мировую топ-10, "
+            "с сильными направлениями в науке, инженерии и социальных науках."
         ),
     },
     {
         "name": "University of Edinburgh",
-        "country": "UK",
-        "city": "Edinburgh",
+        "country": "Великобритания",
+        "city": "Эдинбург",
         "website": "https://ed.ac.uk",
         "ranking": 22,
         "description": (
-            "One of the world's top universities, founded in 1583, with particularly "
-            "strong programs in informatics and AI."
+            "Один из ведущих мировых университетов, основанный в 1583 году, "
+            "с особенно сильными программами в области информатики и ИИ."
         ),
     },
     {
         "name": "University of Manchester",
-        "country": "UK",
-        "city": "Manchester",
+        "country": "Великобритания",
+        "city": "Манчестер",
         "website": "https://manchester.ac.uk",
         "ranking": 32,
         "description": (
-            "Russell Group research university with a strong track record in "
-            "computer science, data science, and engineering."
+            "Исследовательский университет группы Russell с сильными традициями "
+            "в области информатики, науки о данных и инженерии."
         ),
     },
-    # --- Europe ---
+    # --- Европа ---
     {
         "name": "Delft University of Technology",
-        "country": "Netherlands",
-        "city": "Delft",
+        "country": "Нидерланды",
+        "city": "Делфт",
         "website": "https://tudelft.nl",
         "ranking": 57,
         "description": (
-            "Top technical university in the Netherlands and Europe, renowned for "
-            "engineering, design, and applied sciences."
+            "Ведущий технический университет Нидерландов и Европы, "
+            "известный в области инженерии, дизайна и прикладных наук."
         ),
     },
     {
         "name": "Ludwig Maximilian University of Munich",
-        "country": "Germany",
-        "city": "Munich",
+        "country": "Германия",
+        "city": "Мюнхен",
         "website": "https://lmu.de",
         "ranking": 38,
         "description": (
-            "One of Germany's oldest and most prestigious universities, "
-            "offering tuition-free programs in computer science and informatics."
+            "Один из старейших и наиболее престижных университетов Германии, "
+            "предлагающий бесплатное обучение по программам информатики."
         ),
     },
     {
         "name": "ETH Zurich",
-        "country": "Switzerland",
-        "city": "Zurich",
+        "country": "Швейцария",
+        "city": "Цюрих",
         "website": "https://ethz.ch",
         "ranking": 7,
         "description": (
-            "Switzerland's leading science and technology university, consistently "
-            "ranked in the global top 10 for engineering and computing."
+            "Ведущий швейцарский университет науки и технологий, стабильно "
+            "входящий в мировую топ-10 в области инженерии и вычислений."
         ),
     },
     {
         "name": "EPFL",
-        "country": "Switzerland",
-        "city": "Lausanne",
+        "country": "Швейцария",
+        "city": "Лозанна",
         "website": "https://epfl.ch",
         "ranking": 19,
         "description": (
-            "École Polytechnique Fédérale de Lausanne — one of Europe's most innovative "
-            "technical universities, known for computer science and data science."
+            "École Polytechnique Fédérale de Lausanne — один из наиболее инновационных "
+            "технических университетов Европы, известный в области информатики и науки о данных."
         ),
     },
-    # --- Canada ---
+    # --- Канада ---
     {
         "name": "University of Toronto",
-        "country": "Canada",
-        "city": "Toronto",
+        "country": "Канада",
+        "city": "Торонто",
         "website": "https://utoronto.ca",
         "ranking": 21,
         "description": (
-            "Canada's top-ranked university with a world-class computer science "
-            "department that pioneered deep learning research."
+            "Лучший университет Канады с отделением информатики мирового уровня, "
+            "ставшим пионером в исследованиях глубокого обучения."
         ),
     },
     {
         "name": "University of British Columbia",
-        "country": "Canada",
-        "city": "Vancouver",
+        "country": "Канада",
+        "city": "Ванкувер",
         "website": "https://ubc.ca",
         "ranking": 34,
         "description": (
-            "Leading Canadian research university with strong programs in "
-            "computer science, data science, and engineering."
+            "Ведущий канадский исследовательский университет с сильными программами "
+            "в области информатики, науки о данных и инженерии."
         ),
     },
-    # --- Asia ---
+    # --- Азия ---
     {
         "name": "National University of Singapore",
-        "country": "Singapore",
-        "city": "Singapore",
+        "country": "Сингапур",
+        "city": "Сингапур",
         "website": "https://nus.edu.sg",
         "ranking": 8,
         "description": (
-            "Asia's top university, consistently ranked among the global top 10, "
-            "with world-class computing and business programs."
+            "Лучший университет Азии, стабильно входящий в мировую топ-10, "
+            "с выдающимися программами в области вычислений и бизнеса."
         ),
     },
     {
         "name": "KAIST",
-        "country": "South Korea",
-        "city": "Daejeon",
+        "country": "Южная Корея",
+        "city": "Тэджон",
         "website": "https://kaist.ac.kr",
         "ranking": 42,
         "description": (
-            "Korea Advanced Institute of Science and Technology — leading STEM "
-            "university in Asia, offering fully English-taught graduate programs."
+            "Корейский передовой институт науки и технологий — ведущий STEM-университет "
+            "Азии, предлагающий программы полностью на английском языке."
         ),
     },
     {
         "name": "Imperial College London",
-        "country": "UK",
-        "city": "London",
+        "country": "Великобритания",
+        "city": "Лондон",
         "website": "https://imperial.ac.uk",
         "ranking": 6,
         "description": (
-            "World-leading science, engineering, medicine, and business university "
-            "in central London, ranked top 10 globally."
+            "Университет мирового уровня в области науки, инженерии, медицины и бизнеса "
+            "в центре Лондона, входящий в мировую топ-10."
         ),
     },
     {
         "name": "Seoul National University",
-        "country": "South Korea",
-        "city": "Seoul",
+        "country": "Южная Корея",
+        "city": "Сеул",
         "website": "https://snu.ac.kr",
         "ranking": 31,
         "description": (
-            "South Korea's most prestigious university, offering strong programs "
-            "in engineering, computing, and natural sciences."
+            "Самый престижный университет Южной Кореи с сильными программами "
+            "в области инженерии, вычислений и естественных наук."
         ),
     },
 ]
@@ -253,32 +253,32 @@ UNIVERSITIES: list[dict] = [
 PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Nazarbayev University": [
         {
-            "name": "Computer Science (BSc)",
+            "name": "Компьютерные науки (бакалавр)",
             "direction_slug": "it-development",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 3000,
             "description": (
-                "Four-year undergraduate program covering algorithms, systems programming, "
-                "software engineering, and AI, delivered entirely in English."
+                "Четырёхлетняя программа бакалавриата, охватывающая алгоритмы, системное "
+                "программирование, разработку ПО и ИИ, полностью на английском языке."
             ),
             "who_its_for": (
-                "High-achieving school graduates passionate about software development "
-                "and research, aiming for careers in tech or graduate study abroad."
+                "Высокоуспевающие выпускники школ, увлечённые разработкой ПО и исследованиями, "
+                "стремящиеся к карьере в IT или продолжению учёбы за рубежом."
             ),
             "career_options": [
-                "Software Engineer", "Backend Developer", "Research Engineer",
-                "System Architect", "Tech Lead",
+                "Инженер-программист", "Бэкенд-разработчик", "Инженер-исследователь",
+                "Системный архитектор", "Технический лидер",
             ],
             "requirements": {
                 "min_gpa": 3.5,
-                "exams": ["SAT", "IELTS", "UNT"],
+                "exams": ["SAT", "IELTS", "ЕНТ"],
                 "min_ielts": 6.5,
                 "min_sat": 1200,
                 "needs_portfolio": False,
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["Olympiads in math/informatics", "Programming competitions"],
+                "extracurriculars": ["Олимпиады по математике/информатике", "Соревнования по программированию"],
             },
             "deadlines": {
                 "application_open": "2025-11-01",
@@ -288,44 +288,44 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "Presidential Scholarship",
-                    "amount": "Full tuition + stipend",
-                    "conditions": "Top UNT score, competitive selection",
+                    "name": "Президентская стипендия",
+                    "amount": "Полная оплата обучения + стипендия",
+                    "conditions": "Высокий балл ЕНТ, конкурсный отбор",
                 },
                 {
-                    "name": "NU Merit Award",
-                    "amount": "50% tuition",
-                    "conditions": "SAT 1350+ or equivalent",
+                    "name": "Премия NU за заслуги",
+                    "amount": "50% оплаты обучения",
+                    "conditions": "SAT 1350+ или эквивалент",
                 },
             ],
         },
         {
-            "name": "Data Science (BSc)",
+            "name": "Наука о данных (бакалавр)",
             "direction_slug": "data-science",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 3000,
             "description": (
-                "Interdisciplinary program combining statistics, machine learning, "
-                "and data engineering to prepare graduates for the data-driven economy."
+                "Междисциплинарная программа, сочетающая статистику, машинное обучение "
+                "и инженерию данных для подготовки специалистов к работе в экономике данных."
             ),
             "who_its_for": (
-                "Students strong in mathematics and statistics who want to build "
-                "predictive models and extract insights from large datasets."
+                "Студенты с сильной подготовкой по математике и статистике, желающие строить "
+                "прогностические модели и извлекать знания из больших массивов данных."
             ),
             "career_options": [
-                "Data Scientist", "ML Engineer", "Data Analyst",
-                "BI Developer", "Research Analyst",
+                "Специалист по данным", "ML-инженер", "Аналитик данных",
+                "BI-разработчик", "Аналитик-исследователь",
             ],
             "requirements": {
                 "min_gpa": 3.5,
-                "exams": ["SAT", "IELTS", "UNT"],
+                "exams": ["SAT", "IELTS", "ЕНТ"],
                 "min_ielts": 6.5,
                 "min_sat": 1200,
                 "needs_portfolio": False,
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["Math olympiads", "Statistics or programming projects"],
+                "extracurriculars": ["Математические олимпиады", "Проекты по статистике или программированию"],
             },
             "deadlines": {
                 "application_open": "2025-11-01",
@@ -335,41 +335,41 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "Presidential Scholarship",
-                    "amount": "Full tuition + stipend",
-                    "conditions": "Top UNT score, competitive selection",
+                    "name": "Президентская стипендия",
+                    "amount": "Полная оплата обучения + стипендия",
+                    "conditions": "Высокий балл ЕНТ, конкурсный отбор",
                 },
             ],
         },
     ],
     "KIMEP University": [
         {
-            "name": "Business Administration (BBA)",
+            "name": "Управление бизнесом (BBA)",
             "direction_slug": "business-entrepreneurship",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 4500,
             "description": (
-                "AACSB-accredited four-year BBA covering management, marketing, finance, "
-                "and entrepreneurship with a strong practical focus."
+                "Четырёхлетняя программа BBA с аккредитацией AACSB, охватывающая менеджмент, "
+                "маркетинг, финансы и предпринимательство с сильным практическим уклоном."
             ),
             "who_its_for": (
-                "Ambitious students who want to launch their own business or build a career "
-                "in management, consulting, or corporate leadership."
+                "Амбициозные студенты, желающие открыть собственное дело или построить карьеру "
+                "в менеджменте, консалтинге или корпоративном руководстве."
             ),
             "career_options": [
-                "Business Analyst", "Product Manager", "Entrepreneur",
-                "Management Consultant", "Operations Manager",
+                "Бизнес-аналитик", "Продакт-менеджер", "Предприниматель",
+                "Консультант по управлению", "Операционный менеджер",
             ],
             "requirements": {
                 "min_gpa": 3.0,
-                "exams": ["IELTS", "TOEFL", "UNT"],
+                "exams": ["IELTS", "TOEFL", "ЕНТ"],
                 "min_ielts": 6.0,
                 "min_sat": None,
                 "needs_portfolio": False,
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": True,
-                "extracurriculars": ["Student government", "Business case competitions"],
+                "extracurriculars": ["Студенческое самоуправление", "Соревнования по бизнес-кейсам"],
             },
             "deadlines": {
                 "application_open": "2025-10-01",
@@ -379,39 +379,39 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "KIMEP Excellence Scholarship",
-                    "amount": "Up to 100% tuition",
-                    "conditions": "High UNT score + interview",
+                    "name": "Стипендия KIMEP за отличие",
+                    "amount": "До 100% оплаты обучения",
+                    "conditions": "Высокий балл ЕНТ + собеседование",
                 },
             ],
         },
         {
-            "name": "Finance (BSc)",
+            "name": "Финансы (бакалавр)",
             "direction_slug": "finance-economics",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 4500,
             "description": (
-                "Rigorous finance program covering corporate finance, investment analysis, "
-                "financial modelling, and capital markets."
+                "Строгая программа по финансам, охватывающая корпоративные финансы, "
+                "инвестиционный анализ, финансовое моделирование и рынки капитала."
             ),
             "who_its_for": (
-                "Students passionate about financial markets, investment banking, "
-                "or building a career in fintech and corporate finance."
+                "Студенты, увлечённые финансовыми рынками, инвестиционным банкингом "
+                "или карьерой в финтехе и корпоративных финансах."
             ),
             "career_options": [
-                "Financial Analyst", "Investment Banker", "Risk Manager",
-                "Auditor", "Fintech Specialist",
+                "Финансовый аналитик", "Инвестиционный банкир", "Риск-менеджер",
+                "Аудитор", "Финтех-специалист",
             ],
             "requirements": {
                 "min_gpa": 3.2,
-                "exams": ["IELTS", "TOEFL", "UNT"],
+                "exams": ["IELTS", "TOEFL", "ЕНТ"],
                 "min_ielts": 6.0,
                 "min_sat": None,
                 "needs_portfolio": False,
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["Economics olympiads", "Finance clubs"],
+                "extracurriculars": ["Олимпиады по экономике", "Финансовые клубы"],
             },
             "deadlines": {
                 "application_open": "2025-10-01",
@@ -421,41 +421,41 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "KIMEP Merit Scholarship",
-                    "amount": "25–75% tuition",
-                    "conditions": "GPA 3.5+ and IELTS 7.0+",
+                    "name": "Стипендия KIMEP за заслуги",
+                    "amount": "25–75% оплаты обучения",
+                    "conditions": "GPA 3.5+ и IELTS 7.0+",
                 },
             ],
         },
     ],
     "Al-Farabi Kazakh National University": [
         {
-            "name": "Software Engineering (BSc)",
+            "name": "Разработка программного обеспечения (бакалавр)",
             "direction_slug": "it-development",
-            "language": "Kazakh / Russian",
+            "language": "Казахский / Русский",
             "cost_per_year": 900,
             "description": (
-                "Five-year engineering degree covering software design, algorithms, "
-                "databases, and systems programming. State grant places available."
+                "Пятилетняя инженерная степень, охватывающая проектирование ПО, алгоритмы, "
+                "базы данных и системное программирование. Есть места по государственному гранту."
             ),
             "who_its_for": (
-                "Graduates seeking an affordable, high-quality engineering degree "
-                "in Kazakhstan's largest classical university."
+                "Выпускники, стремящиеся получить доступную и качественную инженерную степень "
+                "в крупнейшем классическом университете Казахстана."
             ),
             "career_options": [
-                "Software Developer", "Systems Analyst", "Database Administrator",
-                "QA Engineer", "IT Consultant",
+                "Разработчик ПО", "Системный аналитик", "Администратор баз данных",
+                "QA-инженер", "IT-консультант",
             ],
             "requirements": {
                 "min_gpa": 3.0,
-                "exams": ["UNT"],
+                "exams": ["ЕНТ"],
                 "min_ielts": None,
                 "min_sat": None,
                 "needs_portfolio": False,
                 "needs_essay": False,
                 "needs_recommendations": False,
                 "needs_interview": False,
-                "extracurriculars": ["Programming competitions", "Science fairs"],
+                "extracurriculars": ["Соревнования по программированию", "Научные ярмарки"],
             },
             "deadlines": {
                 "application_open": "2026-06-01",
@@ -465,39 +465,39 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "State Educational Grant",
-                    "amount": "Full tuition",
-                    "conditions": "Top UNT score, competitive by major",
+                    "name": "Государственный образовательный грант",
+                    "amount": "Полная оплата обучения",
+                    "conditions": "Высокий балл ЕНТ, конкурсный отбор по специальности",
                 },
             ],
         },
         {
-            "name": "Biology (BSc)",
+            "name": "Биология (бакалавр)",
             "direction_slug": "medicine-biology",
-            "language": "Kazakh / Russian",
+            "language": "Казахский / Русский",
             "cost_per_year": 800,
             "description": (
-                "Classical biology program covering cell biology, genetics, ecology, "
-                "and biochemistry, with laboratory practice."
+                "Классическая программа по биологии, охватывающая клеточную биологию, генетику, "
+                "экологию и биохимию с лабораторной практикой."
             ),
             "who_its_for": (
-                "Students passionate about living organisms, ecology, "
-                "or pursuing a career in biotech, medicine, or research."
+                "Студенты, увлечённые живыми организмами и экологией, стремящиеся к карьере "
+                "в биотехнологиях, медицине или науке."
             ),
             "career_options": [
-                "Biologist", "Biochemist", "Lab Researcher",
-                "Ecologist", "Medical Scientist",
+                "Биолог", "Биохимик", "Научный сотрудник лаборатории",
+                "Эколог", "Медицинский учёный",
             ],
             "requirements": {
                 "min_gpa": 3.0,
-                "exams": ["UNT"],
+                "exams": ["ЕНТ"],
                 "min_ielts": None,
                 "min_sat": None,
                 "needs_portfolio": False,
                 "needs_essay": False,
                 "needs_recommendations": False,
                 "needs_interview": False,
-                "extracurriculars": ["Biology olympiads", "Environmental volunteering"],
+                "extracurriculars": ["Олимпиады по биологии", "Волонтёрство в сфере экологии"],
             },
             "deadlines": {
                 "application_open": "2026-06-01",
@@ -507,30 +507,30 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "State Educational Grant",
-                    "amount": "Full tuition",
-                    "conditions": "Top UNT score in chemistry/biology",
+                    "name": "Государственный образовательный грант",
+                    "amount": "Полная оплата обучения",
+                    "conditions": "Высокий балл ЕНТ по химии/биологии",
                 },
             ],
         },
     ],
     "Massachusetts Institute of Technology": [
         {
-            "name": "Computer Science and Engineering (BSc)",
+            "name": "Информатика и инженерия (бакалавр)",
             "direction_slug": "it-development",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 59750,
             "description": (
-                "MIT's flagship undergraduate program in Course 6, covering algorithms, "
-                "systems, AI, and software engineering with world-leading faculty."
+                "Флагманская программа бакалавриата MIT (Курс 6), охватывающая алгоритмы, "
+                "системы, ИИ и разработку ПО под руководством ведущих мировых преподавателей."
             ),
             "who_its_for": (
-                "Exceptionally talented students with demonstrated passion for "
-                "engineering and problem solving who want to shape the future of technology."
+                "Исключительно талантливые студенты с доказанной страстью к инженерии "
+                "и решению задач, стремящиеся формировать будущее технологий."
             ),
             "career_options": [
-                "Software Engineer", "Research Scientist", "Entrepreneur",
-                "Systems Architect", "AI/ML Engineer",
+                "Инженер-программист", "Учёный-исследователь", "Предприниматель",
+                "Системный архитектор", "Инженер по ИИ/МО",
             ],
             "requirements": {
                 "min_gpa": 3.9,
@@ -542,9 +542,9 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_recommendations": True,
                 "needs_interview": False,
                 "extracurriculars": [
-                    "USACO / international programming olympiad",
-                    "Research projects or publications",
-                    "Science Olympiad / math competitions",
+                    "USACO / международная олимпиада по программированию",
+                    "Исследовательские проекты или публикации",
+                    "Олимпиада по науке / математические соревнования",
                 ],
             },
             "deadlines": {
@@ -555,28 +555,28 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "MIT Need-Based Financial Aid",
-                    "amount": "Up to full cost of attendance",
-                    "conditions": "Based on family income; families earning <$140k pay nothing",
+                    "name": "Финансовая помощь MIT на основе нуждаемости",
+                    "amount": "До полной стоимости обучения",
+                    "conditions": "На основе дохода семьи; семьи с доходом менее $140 тыс. не платят ничего",
                 },
             ],
         },
         {
-            "name": "Electrical Engineering and Computer Science (MEng)",
+            "name": "Электроинженерия и информатика (магистр инженерии)",
             "direction_slug": "it-development",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 62000,
             "description": (
-                "MIT's combined BS/MEng program allowing undergrads to earn a master's "
-                "degree in 5 years, covering advanced computing and electrical systems."
+                "Совмещённая программа BS/MEng MIT, позволяющая бакалаврам получить "
+                "степень магистра за 5 лет, охватывая передовые вычисления и электросистемы."
             ),
             "who_its_for": (
-                "MIT undergraduates seeking advanced technical depth in hardware, "
-                "software, and systems before entering industry or doctoral programs."
+                "Студенты MIT, стремящиеся к углублённой технической подготовке в области "
+                "аппаратного обеспечения, ПО и систем перед выходом на рынок или поступлением в докторантуру."
             ),
             "career_options": [
-                "Hardware Engineer", "Chip Designer", "Systems Engineer",
-                "Research Scientist", "CTO",
+                "Инженер по аппаратному обеспечению", "Разработчик микросхем", "Системный инженер",
+                "Учёный-исследователь", "Технический директор",
             ],
             "requirements": {
                 "min_gpa": 4.0,
@@ -587,7 +587,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["MIT undergraduate research (UROP)", "Published work"],
+                "extracurriculars": ["Исследовательская программа MIT (UROP)", "Опубликованные работы"],
             },
             "deadlines": {
                 "application_open": "2025-09-01",
@@ -597,30 +597,30 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "MIT Teaching / Research Assistantship",
-                    "amount": "Tuition + stipend ~$40k/year",
-                    "conditions": "Competitive; awarded by department",
+                    "name": "Ассистентство MIT (преподавание/исследования)",
+                    "amount": "Оплата обучения + стипендия ~$40 тыс./год",
+                    "conditions": "Конкурсный отбор; присуждается кафедрой",
                 },
             ],
         },
     ],
     "Stanford University": [
         {
-            "name": "Computer Science (BSc)",
+            "name": "Компьютерные науки (бакалавр)",
             "direction_slug": "it-development",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 62484,
             "description": (
-                "Stanford's CS program offers unparalleled access to Silicon Valley "
-                "industry and cutting-edge research in systems, AI, and HCI."
+                "Программа CS Стэнфорда даёт уникальный доступ к индустрии Кремниевой долины "
+                "и передовым исследованиям в области систем, ИИ и HCI."
             ),
             "who_its_for": (
-                "Top students with strong academics and entrepreneurial drive who want "
-                "to build products or conduct research at the forefront of computing."
+                "Лучшие студенты с сильной академической подготовкой и предпринимательским духом, "
+                "желающие создавать продукты или проводить исследования на переднем крае вычислений."
             ),
             "career_options": [
-                "Software Engineer", "Product Manager", "Founder",
-                "AI Researcher", "Tech Lead",
+                "Инженер-программист", "Продакт-менеджер", "Основатель стартапа",
+                "Исследователь ИИ", "Технический лидер",
             ],
             "requirements": {
                 "min_gpa": 3.9,
@@ -632,9 +632,9 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_recommendations": True,
                 "needs_interview": False,
                 "extracurriculars": [
-                    "Competitive programming (ICPC, IOI)",
-                    "Side projects or startups",
-                    "Research internships",
+                    "Соревновательное программирование (ICPC, IOI)",
+                    "Побочные проекты или стартапы",
+                    "Исследовательские стажировки",
                 ],
             },
             "deadlines": {
@@ -645,28 +645,28 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "Stanford Need-Based Aid",
-                    "amount": "Up to full cost of attendance",
-                    "conditions": "Families earning <$150k pay nothing",
+                    "name": "Финансовая помощь Stanford на основе нуждаемости",
+                    "amount": "До полной стоимости обучения",
+                    "conditions": "Семьи с доходом менее $150 тыс. не платят ничего",
                 },
             ],
         },
         {
-            "name": "Artificial Intelligence (MSc)",
+            "name": "Искусственный интеллект (магистр)",
             "direction_slug": "artificial-intelligence",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 63450,
             "description": (
-                "Stanford's graduate AI program covers machine learning, deep learning, "
-                "NLP, computer vision, and robotics with access to world-class labs."
+                "Магистерская программа по ИИ Стэнфорда охватывает машинное обучение, глубокое "
+                "обучение, NLP, компьютерное зрение и робототехнику с доступом к лабораториям мирового класса."
             ),
             "who_its_for": (
-                "CS graduates who want to deepen expertise in AI research or "
-                "enter the AI industry at companies like Google, OpenAI, or top startups."
+                "Выпускники по CS, желающие углубить экспертизу в исследованиях ИИ или "
+                "войти в ИИ-индустрию в компаниях Google, OpenAI или ведущих стартапах."
             ),
             "career_options": [
-                "ML Engineer", "AI Researcher", "NLP Engineer",
-                "Computer Vision Engineer", "AI Product Manager",
+                "ML-инженер", "Исследователь ИИ", "NLP-инженер",
+                "Инженер по компьютерному зрению", "ИИ-продакт-менеджер",
             ],
             "requirements": {
                 "min_gpa": 3.7,
@@ -678,9 +678,9 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_recommendations": True,
                 "needs_interview": False,
                 "extracurriculars": [
-                    "ML research publications or preprints",
-                    "Kaggle top rankings",
-                    "Open-source AI contributions",
+                    "Публикации или препринты по исследованиям МО",
+                    "Высокие позиции на Kaggle",
+                    "Вклад в открытый ИИ",
                 ],
             },
             "deadlines": {
@@ -691,30 +691,30 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "Stanford Fellowship",
-                    "amount": "Full tuition + $45k stipend",
-                    "conditions": "Competitive; top applicants receive funding",
+                    "name": "Стипендия Stanford",
+                    "amount": "Полная оплата обучения + стипендия $45 тыс.",
+                    "conditions": "Конкурсный отбор; лучшие соискатели получают финансирование",
                 },
             ],
         },
     ],
     "University of California, Berkeley": [
         {
-            "name": "Computer Science (BSc)",
+            "name": "Компьютерные науки (бакалавр)",
             "direction_slug": "it-development",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 44066,
             "description": (
-                "UC Berkeley's EECS/CS program is among the world's best, providing "
-                "rigorous theory and strong ties to Bay Area industry."
+                "Программа EECS/CS Беркли — одна из лучших в мире, обеспечивающая "
+                "строгую теоретическую подготовку и тесные связи с индустрией Залива."
             ),
             "who_its_for": (
-                "Driven students seeking a world-class CS education at a public "
-                "research university with close connections to Silicon Valley companies."
+                "Целеустремлённые студенты, ищущие образование CS мирового класса в государственном "
+                "исследовательском университете с близкими связями с компаниями Кремниевой долины."
             ),
             "career_options": [
-                "Software Engineer", "Full-Stack Developer", "Systems Engineer",
-                "Product Manager", "Research Engineer",
+                "Инженер-программист", "Full-stack разработчик", "Системный инженер",
+                "Продакт-менеджер", "Инженер-исследователь",
             ],
             "requirements": {
                 "min_gpa": 3.8,
@@ -726,9 +726,9 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_recommendations": False,
                 "needs_interview": False,
                 "extracurriculars": [
-                    "USACO or competitive programming",
-                    "Open-source contributions",
-                    "Hackathon wins",
+                    "USACO или соревновательное программирование",
+                    "Вклад в open-source",
+                    "Победы на хакатонах",
                 ],
             },
             "deadlines": {
@@ -739,33 +739,33 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "Cal Grant",
-                    "amount": "Up to $15,000/year",
-                    "conditions": "California residents based on financial need",
+                    "name": "Грант Cal",
+                    "amount": "До $15 000/год",
+                    "conditions": "Для жителей Калифорнии по финансовой нуждаемости",
                 },
                 {
-                    "name": "Berkeley Global Award",
-                    "amount": "$10,000/year",
-                    "conditions": "International applicants with outstanding academics",
+                    "name": "Глобальная премия Berkeley",
+                    "amount": "$10 000/год",
+                    "conditions": "Иностранные абитуриенты с выдающейся успеваемостью",
                 },
             ],
         },
         {
-            "name": "Data Science (BSc)",
+            "name": "Наука о данных (бакалавр)",
             "direction_slug": "data-science",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 44066,
             "description": (
-                "Berkeley's interdisciplinary Data Science program blends statistics, "
-                "computing, and domain knowledge to prepare data scientists."
+                "Междисциплинарная программа Data Science Беркли сочетает статистику, "
+                "вычисления и предметные знания для подготовки специалистов по данным."
             ),
             "who_its_for": (
-                "Students who love working with data, statistics, and programming "
-                "and want to solve real-world problems across industries."
+                "Студенты, которые любят работать с данными, статистикой и программированием "
+                "и хотят решать реальные задачи в различных отраслях."
             ),
             "career_options": [
-                "Data Scientist", "Data Analyst", "ML Engineer",
-                "Research Analyst", "Data Engineer",
+                "Специалист по данным", "Аналитик данных", "ML-инженер",
+                "Аналитик-исследователь", "Инженер данных",
             ],
             "requirements": {
                 "min_gpa": 3.7,
@@ -776,7 +776,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": False,
                 "needs_interview": False,
-                "extracurriculars": ["Kaggle competitions", "Statistics projects", "Data hackathons"],
+                "extracurriculars": ["Соревнования на Kaggle", "Статистические проекты", "Дата-хакатоны"],
             },
             "deadlines": {
                 "application_open": "2025-08-01",
@@ -786,30 +786,30 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "Cal Grant",
-                    "amount": "Up to $15,000/year",
-                    "conditions": "California residents based on financial need",
+                    "name": "Грант Cal",
+                    "amount": "До $15 000/год",
+                    "conditions": "Для жителей Калифорнии по финансовой нуждаемости",
                 },
             ],
         },
     ],
     "New York University": [
         {
-            "name": "Computer Science (BSc)",
+            "name": "Компьютерные науки (бакалавр)",
             "direction_slug": "it-development",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 58168,
             "description": (
-                "NYU Tandon's CS program in the heart of New York City, "
-                "offering strong industry connections and research opportunities."
+                "Программа CS NYU Tandon в сердце Нью-Йорка с сильными связями "
+                "с индустрией и возможностями для исследований."
             ),
             "who_its_for": (
-                "Students who want to study CS in a global city with access to "
-                "NYC's thriving tech scene, startups, and finance industry."
+                "Студенты, желающие изучать CS в глобальном городе с доступом "
+                "к процветающей технологической сцене, стартапам и финансовой индустрии NYC."
             ),
             "career_options": [
-                "Software Developer", "Full-Stack Engineer", "DevOps Engineer",
-                "Data Engineer", "Cybersecurity Analyst",
+                "Разработчик ПО", "Full-stack инженер", "DevOps-инженер",
+                "Инженер данных", "Аналитик по кибербезопасности",
             ],
             "requirements": {
                 "min_gpa": 3.5,
@@ -820,7 +820,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["Hackathons", "Coding clubs", "Research projects"],
+                "extracurriculars": ["Хакатоны", "Программистские клубы", "Исследовательские проекты"],
             },
             "deadlines": {
                 "application_open": "2025-08-01",
@@ -830,28 +830,28 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "NYU Scholarship",
-                    "amount": "Up to $25,000/year",
-                    "conditions": "Merit-based, competitive",
+                    "name": "Стипендия NYU",
+                    "amount": "До $25 000/год",
+                    "conditions": "По заслугам, конкурсный отбор",
                 },
             ],
         },
         {
-            "name": "Business (BBA — Stern School)",
+            "name": "Бизнес (BBA — Школа Стерна)",
             "direction_slug": "business-entrepreneurship",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 58168,
             "description": (
-                "NYU Stern's undergraduate business program, one of the most prestigious "
-                "in the world, located in NYC's Financial District."
+                "Программа бакалавриата по бизнесу NYU Stern — одна из наиболее престижных "
+                "в мире, расположенная в финансовом квартале Нью-Йорка."
             ),
             "who_its_for": (
-                "Aspiring business leaders, entrepreneurs, and finance professionals "
-                "who want access to Wall Street and global business networks."
+                "Будущие бизнес-лидеры, предприниматели и финансовые специалисты, "
+                "стремящиеся к доступу к Уолл-стрит и глобальным деловым сетям."
             ),
             "career_options": [
-                "Investment Banker", "Management Consultant", "Entrepreneur",
-                "Product Manager", "Marketing Director",
+                "Инвестиционный банкир", "Консультант по управлению", "Предприниматель",
+                "Продакт-менеджер", "Директор по маркетингу",
             ],
             "requirements": {
                 "min_gpa": 3.7,
@@ -863,9 +863,9 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_recommendations": True,
                 "needs_interview": False,
                 "extracurriculars": [
-                    "Business case competitions",
-                    "Entrepreneurship clubs",
-                    "Investment clubs",
+                    "Соревнования по бизнес-кейсам",
+                    "Предпринимательские клубы",
+                    "Инвестиционные клубы",
                 ],
             },
             "deadlines": {
@@ -876,30 +876,30 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "Stern Leadership Scholarship",
-                    "amount": "$20,000/year",
-                    "conditions": "Top applicants, merit and leadership",
+                    "name": "Стипендия Stern за лидерство",
+                    "amount": "$20 000/год",
+                    "conditions": "Лучшие абитуриенты, заслуги и лидерство",
                 },
             ],
         },
     ],
     "University College London": [
         {
-            "name": "Computer Science (BSc)",
+            "name": "Компьютерные науки (бакалавр)",
             "direction_slug": "it-development",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 35000,
             "description": (
-                "UCL's Computer Science program in central London covers algorithms, "
-                "software engineering, AI, and security with strong industry links."
+                "Программа CS UCL в центре Лондона охватывает алгоритмы, разработку ПО, "
+                "ИИ и безопасность с сильными связями с индустрией."
             ),
             "who_its_for": (
-                "International students who want a top London university experience "
-                "combined with deep technical training and global career prospects."
+                "Иностранные студенты, желающие получить опыт в ведущем лондонском университете "
+                "в сочетании с глубокой технической подготовкой и глобальными карьерными перспективами."
             ),
             "career_options": [
-                "Software Engineer", "AI Engineer", "Cybersecurity Analyst",
-                "Backend Developer", "Research Scientist",
+                "Инженер-программист", "ИИ-инженер", "Аналитик по кибербезопасности",
+                "Бэкенд-разработчик", "Учёный-исследователь",
             ],
             "requirements": {
                 "min_gpa": 3.7,
@@ -910,7 +910,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["Maths/CS competitions", "Personal projects"],
+                "extracurriculars": ["Олимпиады по математике/информатике", "Личные проекты"],
             },
             "deadlines": {
                 "application_open": "2025-09-01",
@@ -920,28 +920,28 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "UCL Global Undergraduate Scholarship",
-                    "amount": "£5,000/year",
-                    "conditions": "International students with outstanding academics",
+                    "name": "Глобальная стипендия UCL для бакалавров",
+                    "amount": "£5 000/год",
+                    "conditions": "Иностранные студенты с выдающейся успеваемостью",
                 },
             ],
         },
         {
-            "name": "Neuroscience (BSc)",
+            "name": "Нейронауки (бакалавр)",
             "direction_slug": "medicine-biology",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 35000,
             "description": (
-                "UCL is one of the world's top neuroscience destinations; this program "
-                "covers brain function, cognitive science, and neural disorders."
+                "UCL — один из ведущих мировых центров нейронаук; программа охватывает "
+                "функции мозга, когнитивные науки и нейрологические расстройства."
             ),
             "who_its_for": (
-                "Students fascinated by the brain and mind who want to pursue "
-                "research, medicine, or careers in clinical neuroscience."
+                "Студенты, увлечённые мозгом и сознанием, желающие заниматься "
+                "исследованиями, медициной или карьерой в клинической нейронауке."
             ),
             "career_options": [
-                "Neuroscientist", "Clinical Researcher", "Psychiatrist",
-                "Cognitive Scientist", "Biotech Specialist",
+                "Нейроучёный", "Клинический исследователь", "Психиатр",
+                "Когнитивный учёный", "Биотех-специалист",
             ],
             "requirements": {
                 "min_gpa": 3.8,
@@ -952,7 +952,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": True,
-                "extracurriculars": ["Biology/chemistry olympiads", "Lab volunteering"],
+                "extracurriculars": ["Олимпиады по биологии/химии", "Волонтёрство в лабораториях"],
             },
             "deadlines": {
                 "application_open": "2025-09-01",
@@ -962,30 +962,30 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "UCL Global Undergraduate Scholarship",
-                    "amount": "£5,000/year",
-                    "conditions": "International students with outstanding academics",
+                    "name": "Глобальная стипендия UCL для бакалавров",
+                    "amount": "£5 000/год",
+                    "conditions": "Иностранные студенты с выдающейся успеваемостью",
                 },
             ],
         },
     ],
     "University of Edinburgh": [
         {
-            "name": "Informatics (BSc / BEng)",
+            "name": "Информатика (бакалавр / бакалавр инженерии)",
             "direction_slug": "it-development",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 26500,
             "description": (
-                "Edinburgh's School of Informatics is Europe's largest informatics "
-                "department, offering world-class programs in CS, AI, and cognitive science."
+                "Школа информатики Эдинбурга — крупнейший факультет информатики Европы, "
+                "предлагающий программы мирового класса в области CS, ИИ и когнитивных наук."
             ),
             "who_its_for": (
-                "Students who want breadth across computing, AI, and cognitive science "
-                "from one of the UK's most innovative universities."
+                "Студенты, желающие получить широкую подготовку в области вычислений, ИИ "
+                "и когнитивных наук в одном из наиболее инновационных университетов Великобритании."
             ),
             "career_options": [
-                "Software Engineer", "AI Engineer", "Data Scientist",
-                "UX Researcher", "Research Scientist",
+                "Инженер-программист", "ИИ-инженер", "Специалист по данным",
+                "UX-исследователь", "Учёный-исследователь",
             ],
             "requirements": {
                 "min_gpa": 3.6,
@@ -996,7 +996,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["Maths/CS Olympiads", "Coding competitions"],
+                "extracurriculars": ["Олимпиады по математике/информатике", "Соревнования по программированию"],
             },
             "deadlines": {
                 "application_open": "2025-09-01",
@@ -1006,28 +1006,28 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "Edinburgh Global Research Scholarship",
-                    "amount": "£10,000 (one-off)",
-                    "conditions": "Outstanding academic record for international students",
+                    "name": "Глобальная исследовательская стипендия Edinburgh",
+                    "amount": "£10 000 (единовременно)",
+                    "conditions": "Выдающаяся успеваемость для иностранных студентов",
                 },
             ],
         },
         {
-            "name": "Artificial Intelligence (MSc)",
+            "name": "Искусственный интеллект (магистр)",
             "direction_slug": "artificial-intelligence",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 28500,
             "description": (
-                "Edinburgh's 1-year MSc in AI covers machine learning, NLP, "
-                "computer vision, and AI planning, offered by a world-leading AI school."
+                "Годичная магистерская программа по ИИ в Эдинбурге охватывает машинное обучение, "
+                "NLP, компьютерное зрение и планирование ИИ от ведущей мировой школы ИИ."
             ),
             "who_its_for": (
-                "CS or engineering graduates who want to specialise in AI "
-                "and enter the rapidly growing AI industry or pursue a PhD."
+                "Выпускники CS или инженерных специальностей, желающие специализироваться в ИИ "
+                "и войти в быстрорастущую ИИ-индустрию или продолжить учёбу в докторантуре."
             ),
             "career_options": [
-                "ML Engineer", "AI Researcher", "NLP Scientist",
-                "Computer Vision Engineer", "AI Consultant",
+                "ML-инженер", "Исследователь ИИ", "NLP-учёный",
+                "Инженер по компьютерному зрению", "ИИ-консультант",
             ],
             "requirements": {
                 "min_gpa": 3.5,
@@ -1038,7 +1038,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["ML projects on GitHub", "Kaggle competitions", "Research papers"],
+                "extracurriculars": ["ML-проекты на GitHub", "Соревнования на Kaggle", "Научные статьи"],
             },
             "deadlines": {
                 "application_open": "2025-10-01",
@@ -1048,30 +1048,30 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "School of Informatics Scholarship",
-                    "amount": "£5,000",
-                    "conditions": "Academic merit, limited places",
+                    "name": "Стипендия факультета информатики",
+                    "amount": "£5 000",
+                    "conditions": "Академические заслуги, ограниченное число мест",
                 },
             ],
         },
     ],
     "University of Manchester": [
         {
-            "name": "Computer Science (BSc)",
+            "name": "Компьютерные науки (бакалавр)",
             "direction_slug": "it-development",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 26500,
             "description": (
-                "Manchester's CS program covers software engineering, algorithms, "
-                "networks, and AI with strong industrial placement opportunities."
+                "Программа CS Манчестера охватывает разработку ПО, алгоритмы, сети "
+                "и ИИ с отличными возможностями промышленного трудоустройства."
             ),
             "who_its_for": (
-                "Students who want a well-rounded CS education in a major UK city "
-                "with excellent graduate employment outcomes."
+                "Студенты, желающие получить разностороннее образование в области CS "
+                "в крупном городе Великобритании с отличными результатами трудоустройства."
             ),
             "career_options": [
-                "Software Developer", "Systems Analyst", "DevOps Engineer",
-                "AI Engineer", "IT Consultant",
+                "Разработчик ПО", "Системный аналитик", "DevOps-инженер",
+                "ИИ-инженер", "IT-консультант",
             ],
             "requirements": {
                 "min_gpa": 3.5,
@@ -1082,7 +1082,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["Programming projects", "Hackathons"],
+                "extracurriculars": ["Проекты по программированию", "Хакатоны"],
             },
             "deadlines": {
                 "application_open": "2025-09-01",
@@ -1092,28 +1092,28 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "Manchester Global Excellence Award",
-                    "amount": "£2,000–£5,000",
-                    "conditions": "International students, academic merit",
+                    "name": "Премия Manchester за глобальное превосходство",
+                    "amount": "£2 000–£5 000",
+                    "conditions": "Иностранные студенты, академические заслуги",
                 },
             ],
         },
         {
-            "name": "Data Science (MSc)",
+            "name": "Наука о данных (магистр)",
             "direction_slug": "data-science",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 27500,
             "description": (
-                "1-year MSc covering machine learning, big data analytics, data "
-                "engineering, and statistical modelling with industry project."
+                "Годичная магистерская программа, охватывающая машинное обучение, аналитику больших данных, "
+                "инженерию данных и статистическое моделирование с отраслевым проектом."
             ),
             "who_its_for": (
-                "Graduates from STEM disciplines who want to transition into "
-                "data science roles in industry or research."
+                "Выпускники STEM-специальностей, желающие перейти "
+                "на должности специалистов по данным в индустрии или науке."
             ),
             "career_options": [
-                "Data Scientist", "ML Engineer", "Data Analyst",
-                "Business Intelligence Analyst", "Data Engineer",
+                "Специалист по данным", "ML-инженер", "Аналитик данных",
+                "BI-аналитик", "Инженер данных",
             ],
             "requirements": {
                 "min_gpa": 3.3,
@@ -1124,7 +1124,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["Data projects", "Kaggle", "Python/R experience"],
+                "extracurriculars": ["Проекты с данными", "Kaggle", "Опыт работы с Python/R"],
             },
             "deadlines": {
                 "application_open": "2025-10-01",
@@ -1134,30 +1134,30 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "Manchester Postgraduate Scholarship",
-                    "amount": "£3,000",
-                    "conditions": "Merit-based",
+                    "name": "Стипендия Manchester для аспирантов",
+                    "amount": "£3 000",
+                    "conditions": "По заслугам",
                 },
             ],
         },
     ],
     "Delft University of Technology": [
         {
-            "name": "Computer Science and Engineering (BSc)",
+            "name": "Информатика и инженерия (бакалавр)",
             "direction_slug": "it-development",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 11170,
             "description": (
-                "TU Delft's CS&E program in the Netherlands combines deep software "
-                "engineering fundamentals with practical design and research."
+                "Программа CS&E TU Delft в Нидерландах сочетает глубокие основы "
+                "разработки ПО с практическим проектированием и исследованиями."
             ),
             "who_its_for": (
-                "Students who want a top European technical education at "
-                "affordable fees, with strong links to Dutch and global tech industry."
+                "Студенты, желающие получить ведущее европейское техническое образование "
+                "по доступной цене с сильными связями с нидерландской и мировой IT-индустрией."
             ),
             "career_options": [
-                "Software Engineer", "Systems Developer", "Research Engineer",
-                "Product Engineer", "Data Engineer",
+                "Инженер-программист", "Системный разработчик", "Инженер-исследователь",
+                "Продуктовый инженер", "Инженер данных",
             ],
             "requirements": {
                 "min_gpa": 3.5,
@@ -1168,7 +1168,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": False,
                 "needs_interview": False,
-                "extracurriculars": ["Maths/CS competitions", "Programming projects"],
+                "extracurriculars": ["Олимпиады по математике/информатике", "Проекты по программированию"],
             },
             "deadlines": {
                 "application_open": "2025-10-01",
@@ -1178,33 +1178,33 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "Holland Scholarship",
-                    "amount": "€5,000 (one-off)",
-                    "conditions": "Non-EU students with outstanding academics",
+                    "name": "Стипендия Holland",
+                    "amount": "€5 000 (единовременно)",
+                    "conditions": "Студенты не из ЕС с выдающейся успеваемостью",
                 },
                 {
-                    "name": "TU Delft Excellence Scholarship",
-                    "amount": "Full tuition + €12,000/year living",
-                    "conditions": "Top 5% applicants internationally",
+                    "name": "Стипендия TU Delft за превосходство",
+                    "amount": "Полная оплата обучения + €12 000/год на проживание",
+                    "conditions": "Топ 5% абитуриентов в мире",
                 },
             ],
         },
         {
-            "name": "Computer Engineering (MSc)",
+            "name": "Компьютерная инженерия (магистр)",
             "direction_slug": "engineering-architecture",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 18750,
             "description": (
-                "TU Delft's MSc in Computer Engineering covers embedded systems, "
-                "computer architecture, and hardware-software co-design."
+                "Магистерская программа TU Delft по компьютерной инженерии охватывает "
+                "встроенные системы, архитектуру компьютеров и совместное проектирование аппаратного и программного обеспечения."
             ),
             "who_its_for": (
-                "Engineering graduates interested in low-level systems, "
-                "embedded computing, and hardware design."
+                "Выпускники инженерных специальностей, интересующиеся низкоуровневыми системами, "
+                "встроенными вычислениями и проектированием аппаратного обеспечения."
             ),
             "career_options": [
-                "Embedded Systems Engineer", "Hardware Engineer", "Systems Architect",
-                "FPGA Developer", "IoT Engineer",
+                "Инженер встроенных систем", "Инженер по аппаратному обеспечению", "Системный архитектор",
+                "FPGA-разработчик", "IoT-инженер",
             ],
             "requirements": {
                 "min_gpa": 3.5,
@@ -1215,7 +1215,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["Electronics projects", "Robotics clubs"],
+                "extracurriculars": ["Проекты по электронике", "Робототехнические клубы"],
             },
             "deadlines": {
                 "application_open": "2025-10-01",
@@ -1225,30 +1225,30 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "Holland Scholarship",
-                    "amount": "€5,000 (one-off)",
-                    "conditions": "Non-EU students",
+                    "name": "Стипендия Holland",
+                    "amount": "€5 000 (единовременно)",
+                    "conditions": "Студенты не из ЕС",
                 },
             ],
         },
     ],
     "Ludwig Maximilian University of Munich": [
         {
-            "name": "Computer Science (BSc)",
+            "name": "Компьютерные науки (бакалавр)",
             "direction_slug": "it-development",
-            "language": "German / English",
+            "language": "Немецкий / Английский",
             "cost_per_year": 258,
             "description": (
-                "LMU Munich's CS program is tuition-free (semester fees only), "
-                "offering strong theoretical foundations and research opportunities."
+                "Программа CS LMU Мюнхен практически бесплатна (только семестровые взносы), "
+                "предлагая сильную теоретическую подготовку и возможности для исследований."
             ),
             "who_its_for": (
-                "Students who want a world-class CS education at near-zero cost "
-                "and are willing to learn German or study in English-track courses."
+                "Студенты, желающие получить образование CS мирового класса почти бесплатно "
+                "и готовые учить немецкий язык или обучаться на английском треке."
             ),
             "career_options": [
-                "Software Engineer", "Research Scientist", "Backend Developer",
-                "Systems Programmer", "Algorithm Engineer",
+                "Инженер-программист", "Учёный-исследователь", "Бэкенд-разработчик",
+                "Системный программист", "Инженер по алгоритмам",
             ],
             "requirements": {
                 "min_gpa": 3.5,
@@ -1259,7 +1259,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": False,
                 "needs_recommendations": False,
                 "needs_interview": False,
-                "extracurriculars": ["Maths olympiads", "Programming projects"],
+                "extracurriculars": ["Математические олимпиады", "Проекты по программированию"],
             },
             "deadlines": {
                 "application_open": "2026-05-01",
@@ -1269,28 +1269,28 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "DAAD Scholarship",
-                    "amount": "€850/month + travel allowance",
-                    "conditions": "International students, competitive academic record",
+                    "name": "Стипендия DAAD",
+                    "amount": "€850/мес + дорожные расходы",
+                    "conditions": "Иностранные студенты, конкурсная успеваемость",
                 },
             ],
         },
         {
-            "name": "Informatics (MSc)",
+            "name": "Информатика (магистр)",
             "direction_slug": "it-development",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 258,
             "description": (
-                "LMU + TU Munich joint MSc in Informatics — one of Germany's most "
-                "prestigious graduate CS programs, practically tuition-free."
+                "Совместная магистерская программа LMU + TU Мюнхен по информатике — "
+                "одна из наиболее престижных аспирантских CS-программ Германии, практически бесплатная."
             ),
             "who_its_for": (
-                "International graduates seeking a research-oriented MSc in Europe "
-                "without tuition costs, with pathways to leading German tech companies."
+                "Иностранные выпускники, стремящиеся к исследовательской магистратуре в Европе "
+                "без оплаты за обучение, с возможностями в ведущих немецких IT-компаниях."
             ),
             "career_options": [
-                "Research Engineer", "ML Engineer", "Software Architect",
-                "PhD Candidate", "AI Scientist",
+                "Инженер-исследователь", "ML-инженер", "Архитектор ПО",
+                "Аспирант", "ИИ-учёный",
             ],
             "requirements": {
                 "min_gpa": 3.5,
@@ -1301,7 +1301,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["Research projects", "GitHub portfolio", "Publications"],
+                "extracurriculars": ["Исследовательские проекты", "Портфолио на GitHub", "Публикации"],
             },
             "deadlines": {
                 "application_open": "2025-11-15",
@@ -1311,30 +1311,30 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "DAAD Scholarship",
-                    "amount": "€850/month",
-                    "conditions": "International graduates, merit-based",
+                    "name": "Стипендия DAAD",
+                    "amount": "€850/мес",
+                    "conditions": "Иностранные выпускники, по заслугам",
                 },
             ],
         },
     ],
     "ETH Zurich": [
         {
-            "name": "Computer Science (BSc)",
+            "name": "Компьютерные науки (бакалавр)",
             "direction_slug": "it-development",
-            "language": "German",
+            "language": "Немецкий",
             "cost_per_year": 730,
             "description": (
-                "ETH Zurich's CS program is one of the world's best, offering "
-                "rigorous training in algorithms, systems, and AI at near-zero cost."
+                "Программа CS ETH Zurich — одна из лучших в мире, предлагающая "
+                "строгую подготовку в области алгоритмов, систем и ИИ практически бесплатно."
             ),
             "who_its_for": (
-                "Top students with exceptional mathematical ability who want "
-                "a world-class education in one of Europe's safest and most liveable cities."
+                "Лучшие студенты с исключительными математическими способностями, желающие "
+                "получить образование мирового класса в одном из самых безопасных городов Европы."
             ),
             "career_options": [
-                "Software Engineer", "Algorithm Engineer", "Research Scientist",
-                "Systems Architect", "Quant Developer",
+                "Инженер-программист", "Инженер по алгоритмам", "Учёный-исследователь",
+                "Системный архитектор", "Квант-разработчик",
             ],
             "requirements": {
                 "min_gpa": 3.8,
@@ -1345,7 +1345,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": False,
                 "needs_recommendations": False,
                 "needs_interview": True,
-                "extracurriculars": ["Maths/CS olympiads", "Strong academic record"],
+                "extracurriculars": ["Олимпиады по математике/информатике", "Высокая успеваемость"],
             },
             "deadlines": {
                 "application_open": "2025-11-01",
@@ -1355,28 +1355,28 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "ETH Excellence Scholarship",
-                    "amount": "CHF 12,000/year + tuition waiver",
-                    "conditions": "Top MSc applicants, competitive",
+                    "name": "Стипендия ETH за превосходство",
+                    "amount": "CHF 12 000/год + освобождение от платы за обучение",
+                    "conditions": "Лучшие соискатели MSc, конкурсный отбор",
                 },
             ],
         },
         {
-            "name": "Data Science (MSc)",
+            "name": "Наука о данных (магистр)",
             "direction_slug": "data-science",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 730,
             "description": (
-                "ETH's MSc in Data Science covers ML, statistics, big data systems, "
-                "and interdisciplinary data applications. Taught entirely in English."
+                "Магистерская программа ETH по науке о данных охватывает МО, статистику, "
+                "системы больших данных и междисциплинарные приложения. Преподавание полностью на английском."
             ),
             "who_its_for": (
-                "STEM graduates who want a top-tier data science education in Europe "
-                "at minimal tuition cost with excellent career prospects."
+                "Выпускники STEM, желающие получить ведущее образование в области науки о данных "
+                "в Европе при минимальной стоимости обучения с отличными карьерными перспективами."
             ),
             "career_options": [
-                "Data Scientist", "ML Researcher", "Quantitative Analyst",
-                "AI Engineer", "Data Engineer",
+                "Специалист по данным", "ML-исследователь", "Количественный аналитик",
+                "ИИ-инженер", "Инженер данных",
             ],
             "requirements": {
                 "min_gpa": 3.7,
@@ -1387,7 +1387,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["ML research projects", "Publications", "Kaggle top rankings"],
+                "extracurriculars": ["ML-исследовательские проекты", "Публикации", "Высокие позиции на Kaggle"],
             },
             "deadlines": {
                 "application_open": "2025-11-01",
@@ -1397,30 +1397,30 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "ETH Excellence Scholarship",
-                    "amount": "CHF 12,000/year + tuition waiver",
-                    "conditions": "Top MSc applicants, competitive",
+                    "name": "Стипендия ETH за превосходство",
+                    "amount": "CHF 12 000/год + освобождение от платы за обучение",
+                    "conditions": "Лучшие соискатели MSc, конкурсный отбор",
                 },
             ],
         },
     ],
     "EPFL": [
         {
-            "name": "Computer Science (BSc)",
+            "name": "Компьютерные науки (бакалавр)",
             "direction_slug": "it-development",
-            "language": "French / English",
+            "language": "Французский / Английский",
             "cost_per_year": 730,
             "description": (
-                "EPFL's CS program is one of Europe's finest, known for its rigour "
-                "in algorithms, programming theory, and interdisciplinary projects."
+                "Программа CS EPFL — одна из лучших в Европе, известная строгостью "
+                "в области алгоритмов, теории программирования и междисциплинарных проектов."
             ),
             "who_its_for": (
-                "Highly motivated students who thrive in a rigorous, challenging "
-                "environment and want a world-class Swiss engineering education."
+                "Высокомотивированные студенты, стремящиеся к строгой и сложной среде обучения "
+                "и желающие получить швейцарское инженерное образование мирового класса."
             ),
             "career_options": [
-                "Software Engineer", "Research Engineer", "Blockchain Developer",
-                "Systems Programmer", "Product Engineer",
+                "Инженер-программист", "Инженер-исследователь", "Блокчейн-разработчик",
+                "Системный программист", "Продуктовый инженер",
             ],
             "requirements": {
                 "min_gpa": 3.7,
@@ -1431,7 +1431,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": False,
                 "needs_recommendations": False,
                 "needs_interview": False,
-                "extracurriculars": ["Maths/CS olympiads", "Robotics projects"],
+                "extracurriculars": ["Олимпиады по математике/информатике", "Робототехнические проекты"],
             },
             "deadlines": {
                 "application_open": "2026-01-15",
@@ -1441,28 +1441,28 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "EPFL Excellence Fellowship",
-                    "amount": "CHF 20,000/year",
-                    "conditions": "Top MSc applicants from any country",
+                    "name": "Стипендия EPFL за превосходство",
+                    "amount": "CHF 20 000/год",
+                    "conditions": "Лучшие соискатели MSc из любой страны",
                 },
             ],
         },
         {
-            "name": "Data Science (MSc)",
+            "name": "Наука о данных (магистр)",
             "direction_slug": "data-science",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 730,
             "description": (
-                "EPFL's MSc in Data Science is a 2-year program combining machine "
-                "learning, applied mathematics, and large-scale data systems."
+                "Двухлетняя магистерская программа EPFL по науке о данных, сочетающая "
+                "машинное обучение, прикладную математику и крупномасштабные системы данных."
             ),
             "who_its_for": (
-                "Strong quantitative graduates who want to solve complex data problems "
-                "and access EPFL's world-class research ecosystem."
+                "Сильные количественные выпускники, желающие решать сложные задачи с данными "
+                "и получить доступ к исследовательской экосистеме мирового класса EPFL."
             ),
             "career_options": [
-                "Data Scientist", "ML Engineer", "Applied Researcher",
-                "Quantitative Developer", "AI Product Manager",
+                "Специалист по данным", "ML-инженер", "Прикладной исследователь",
+                "Квант-разработчик", "ИИ-продакт-менеджер",
             ],
             "requirements": {
                 "min_gpa": 3.7,
@@ -1473,7 +1473,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["Kaggle competitions", "Research internships", "Open-source ML"],
+                "extracurriculars": ["Соревнования на Kaggle", "Исследовательские стажировки", "Open-source ML"],
             },
             "deadlines": {
                 "application_open": "2025-10-15",
@@ -1483,30 +1483,30 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "EPFL Excellence Fellowship",
-                    "amount": "CHF 20,000/year",
-                    "conditions": "Top MSc applicants from any country",
+                    "name": "Стипендия EPFL за превосходство",
+                    "amount": "CHF 20 000/год",
+                    "conditions": "Лучшие соискатели MSc из любой страны",
                 },
             ],
         },
     ],
     "University of Toronto": [
         {
-            "name": "Computer Science (BSc)",
+            "name": "Компьютерные науки (бакалавр)",
             "direction_slug": "it-development",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 47260,
             "description": (
-                "UofT's CS program — home of deep learning pioneers Hinton, LeCun, and Bengio — "
-                "offers world-leading AI, systems, and theory research opportunities."
+                "Программа CS UofT — родина пионеров глубокого обучения Хинтона, ЛеКуна и Бенжио — "
+                "предлагает исследовательские возможности мирового уровня в области ИИ, систем и теории."
             ),
             "who_its_for": (
-                "Students who want to study CS where deep learning was invented, "
-                "with access to top research labs and Toronto's growing tech hub."
+                "Студенты, желающие изучать CS там, где было изобретено глубокое обучение, "
+                "с доступом к ведущим исследовательским лабораториям и технологическому хабу Торонто."
             ),
             "career_options": [
-                "Software Engineer", "ML Researcher", "AI Engineer",
-                "Research Scientist", "Tech Entrepreneur",
+                "Инженер-программист", "ML-исследователь", "ИИ-инженер",
+                "Учёный-исследователь", "Технологический предприниматель",
             ],
             "requirements": {
                 "min_gpa": 3.7,
@@ -1517,7 +1517,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": False,
                 "needs_interview": False,
-                "extracurriculars": ["CS competitions", "Research projects", "Hackathons"],
+                "extracurriculars": ["Соревнования по информатике", "Исследовательские проекты", "Хакатоны"],
             },
             "deadlines": {
                 "application_open": "2025-09-01",
@@ -1527,33 +1527,33 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "Lester B. Pearson International Scholarship",
-                    "amount": "Full tuition + living expenses",
-                    "conditions": "Top international students, exceptional academic and leadership",
+                    "name": "Международная стипендия Lester B. Pearson",
+                    "amount": "Полная оплата обучения + расходы на проживание",
+                    "conditions": "Лучшие иностранные студенты, исключительная академическая успеваемость и лидерство",
                 },
                 {
-                    "name": "University of Toronto Scholars Program",
-                    "amount": "$7,500/year",
-                    "conditions": "Top incoming students",
+                    "name": "Программа стипендиатов Университета Торонто",
+                    "amount": "$7 500/год",
+                    "conditions": "Лучшие поступающие студенты",
                 },
             ],
         },
         {
-            "name": "Artificial Intelligence (MSc)",
+            "name": "Искусственный интеллект (магистр)",
             "direction_slug": "artificial-intelligence",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 21890,
             "description": (
-                "UofT's MSc in Applied Computing with AI specialisation — "
-                "a 1-year industry-focused program at the birthplace of modern deep learning."
+                "Магистерская программа UofT по прикладным вычислениям со специализацией в ИИ — "
+                "годичная отраслевая программа в родине современного глубокого обучения."
             ),
             "who_its_for": (
-                "CS graduates who want to build AI systems for industry "
-                "and benefit from UofT's unmatched deep learning research ecosystem."
+                "Выпускники CS, желающие создавать ИИ-системы для индустрии "
+                "и воспользоваться непревзойдённой экосистемой исследований глубокого обучения UofT."
             ),
             "career_options": [
-                "ML Engineer", "AI Researcher", "Deep Learning Engineer",
-                "NLP Engineer", "Applied Scientist",
+                "ML-инженер", "Исследователь ИИ", "Инженер глубокого обучения",
+                "NLP-инженер", "Прикладной учёный",
             ],
             "requirements": {
                 "min_gpa": 3.5,
@@ -1564,7 +1564,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["ML projects", "Kaggle", "AI research internships"],
+                "extracurriculars": ["ML-проекты", "Kaggle", "Стажировки в области ИИ"],
             },
             "deadlines": {
                 "application_open": "2025-10-01",
@@ -1574,30 +1574,30 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "Ontario Graduate Scholarship",
-                    "amount": "CAD $15,000",
-                    "conditions": "Academic merit",
+                    "name": "Стипендия для аспирантов Онтарио",
+                    "amount": "CAD $15 000",
+                    "conditions": "Академические заслуги",
                 },
             ],
         },
     ],
     "University of British Columbia": [
         {
-            "name": "Computer Science (BSc)",
+            "name": "Компьютерные науки (бакалавр)",
             "direction_slug": "it-development",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 40310,
             "description": (
-                "UBC's CS program in beautiful Vancouver offers strong fundamentals, "
-                "AI specialisations, and excellent co-op work experience options."
+                "Программа CS UBC в живописном Ванкувере предлагает сильную базовую подготовку, "
+                "специализации в ИИ и отличные возможности кооперативной работы."
             ),
             "who_its_for": (
-                "Students who want a top Canadian CS degree with access to "
-                "co-op placements at major tech companies and Vancouver's tech scene."
+                "Студенты, желающие получить лучшую канадскую степень CS с доступом "
+                "к стажировкам в крупных IT-компаниях и технологической сцене Ванкувера."
             ),
             "career_options": [
-                "Software Developer", "Data Engineer", "AI Engineer",
-                "Full-Stack Developer", "Product Manager",
+                "Разработчик ПО", "Инженер данных", "ИИ-инженер",
+                "Full-stack разработчик", "Продакт-менеджер",
             ],
             "requirements": {
                 "min_gpa": 3.6,
@@ -1608,7 +1608,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": False,
                 "needs_interview": False,
-                "extracurriculars": ["Programming clubs", "Hackathons", "Science fairs"],
+                "extracurriculars": ["Программистские клубы", "Хакатоны", "Научные ярмарки"],
             },
             "deadlines": {
                 "application_open": "2025-09-01",
@@ -1618,28 +1618,28 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "International Major Entrance Scholarship",
-                    "amount": "$10,000–$40,000",
-                    "conditions": "Top international students by academic standing",
+                    "name": "Международная вступительная стипендия",
+                    "amount": "$10 000–$40 000",
+                    "conditions": "Лучшие иностранные студенты по академической успеваемости",
                 },
             ],
         },
         {
-            "name": "Data Science (MSc)",
+            "name": "Наука о данных (магистр)",
             "direction_slug": "data-science",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 9690,
             "description": (
-                "UBC's Master of Data Science is a 10-month intensive program "
-                "covering statistical learning, ML, and data visualisation."
+                "Интенсивная 10-месячная магистерская программа UBC по науке о данных, "
+                "охватывающая статистическое обучение, МО и визуализацию данных."
             ),
             "who_its_for": (
-                "Quantitative graduates who want to quickly transition into "
-                "data science careers in Canada's thriving tech ecosystem."
+                "Количественные выпускники, желающие быстро перейти "
+                "на должности специалистов по данным в процветающей технологической экосистеме Канады."
             ),
             "career_options": [
-                "Data Scientist", "ML Engineer", "Data Analyst",
-                "Research Analyst", "Business Intelligence Analyst",
+                "Специалист по данным", "ML-инженер", "Аналитик данных",
+                "Аналитик-исследователь", "BI-аналитик",
             ],
             "requirements": {
                 "min_gpa": 3.3,
@@ -1650,7 +1650,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["Data projects", "Python/R experience", "Statistics coursework"],
+                "extracurriculars": ["Проекты с данными", "Опыт работы с Python/R", "Курсы по статистике"],
             },
             "deadlines": {
                 "application_open": "2025-10-01",
@@ -1660,30 +1660,30 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "UBC Graduate Award",
-                    "amount": "CAD $6,000",
-                    "conditions": "Academic merit",
+                    "name": "Аспирантская премия UBC",
+                    "amount": "CAD $6 000",
+                    "conditions": "Академические заслуги",
                 },
             ],
         },
     ],
     "National University of Singapore": [
         {
-            "name": "Computer Science (BSc)",
+            "name": "Компьютерные науки (бакалавр)",
             "direction_slug": "it-development",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 17550,
             "description": (
-                "NUS CS is Asia's top-ranked program, offering specialisations in "
-                "AI, software engineering, security, and multimedia at world-class facilities."
+                "CS NUS — программа с наивысшим рейтингом в Азии, предлагающая специализации "
+                "в ИИ, разработке ПО, безопасности и мультимедиа в учреждении мирового класса."
             ),
             "who_its_for": (
-                "Students from across Asia and the world who want an elite CS "
-                "education with access to Singapore's thriving tech industry."
+                "Студенты из Азии и всего мира, желающие получить элитное образование в CS "
+                "с доступом к процветающей IT-индустрии Сингапура."
             ),
             "career_options": [
-                "Software Engineer", "AI Engineer", "Cybersecurity Analyst",
-                "Full-Stack Developer", "Research Scientist",
+                "Инженер-программист", "ИИ-инженер", "Аналитик по кибербезопасности",
+                "Full-stack разработчик", "Учёный-исследователь",
             ],
             "requirements": {
                 "min_gpa": 3.7,
@@ -1694,7 +1694,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["Programming olympiads", "Research projects", "Hackathons"],
+                "extracurriculars": ["Олимпиады по программированию", "Исследовательские проекты", "Хакатоны"],
             },
             "deadlines": {
                 "application_open": "2025-10-01",
@@ -1704,33 +1704,33 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "ASEAN Undergraduate Scholarship",
-                    "amount": "Full tuition + living allowance",
-                    "conditions": "ASEAN nationals with outstanding academics",
+                    "name": "Стипендия ASEAN для бакалавров",
+                    "amount": "Полная оплата обучения + надбавка на проживание",
+                    "conditions": "Граждане стран ASEAN с выдающейся успеваемостью",
                 },
                 {
-                    "name": "NUS Study Award",
-                    "amount": "SGD $5,000",
-                    "conditions": "International students with financial need",
+                    "name": "Учебная премия NUS",
+                    "amount": "SGD $5 000",
+                    "conditions": "Иностранные студенты с финансовой нуждаемостью",
                 },
             ],
         },
         {
-            "name": "Business Analytics (MSc)",
+            "name": "Бизнес-аналитика (магистр)",
             "direction_slug": "data-science",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 37000,
             "description": (
-                "NUS's 1-year MSc in Business Analytics combines data science, "
-                "analytics, and business strategy to develop industry-ready analysts."
+                "Годичная магистерская программа NUS по бизнес-аналитике сочетает науку о данных, "
+                "аналитику и бизнес-стратегию для подготовки аналитиков, готовых к работе в индустрии."
             ),
             "who_its_for": (
-                "Graduates from any discipline who want to combine data skills "
-                "with business acumen and work in analytics-driven organisations."
+                "Выпускники любой специальности, желающие сочетать навыки работы с данными "
+                "с деловой хваткой и работать в организациях, управляемых аналитикой."
             ),
             "career_options": [
-                "Business Analyst", "Data Analyst", "Analytics Consultant",
-                "BI Manager", "Strategy Analyst",
+                "Бизнес-аналитик", "Аналитик данных", "Аналитический консультант",
+                "Менеджер BI", "Стратегический аналитик",
             ],
             "requirements": {
                 "min_gpa": 3.3,
@@ -1741,7 +1741,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": True,
-                "extracurriculars": ["Business projects", "Analytics internships"],
+                "extracurriculars": ["Бизнес-проекты", "Стажировки в области аналитики"],
             },
             "deadlines": {
                 "application_open": "2025-09-01",
@@ -1751,30 +1751,30 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "NUS Business School Scholarship",
-                    "amount": "Partial tuition",
-                    "conditions": "Academic and professional merit",
+                    "name": "Стипендия бизнес-школы NUS",
+                    "amount": "Частичная оплата обучения",
+                    "conditions": "Академические и профессиональные заслуги",
                 },
             ],
         },
     ],
     "KAIST": [
         {
-            "name": "Computer Science (BSc)",
+            "name": "Компьютерные науки (бакалавр)",
             "direction_slug": "it-development",
-            "language": "English / Korean",
+            "language": "Английский / Корейский",
             "cost_per_year": 4400,
             "description": (
-                "KAIST's CS program is South Korea's best, offering research-intensive "
-                "training in AI, systems, and algorithms with English-track options."
+                "Программа CS KAIST — лучшая в Южной Корее, предлагающая интенсивную "
+                "исследовательскую подготовку в области ИИ, систем и алгоритмов с возможностью обучения на английском."
             ),
             "who_its_for": (
-                "High-achieving students interested in science and technology "
-                "who want a research university experience in Asia at low cost."
+                "Высокоуспевающие студенты, интересующиеся наукой и технологиями, "
+                "желающие получить опыт исследовательского университета в Азии по низкой цене."
             ),
             "career_options": [
-                "Software Engineer", "ML Researcher", "Systems Engineer",
-                "AI Engineer", "Research Scientist",
+                "Инженер-программист", "ML-исследователь", "Системный инженер",
+                "ИИ-инженер", "Учёный-исследователь",
             ],
             "requirements": {
                 "min_gpa": 3.7,
@@ -1785,7 +1785,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": True,
-                "extracurriculars": ["Math/CS olympiads", "Research projects"],
+                "extracurriculars": ["Олимпиады по математике/информатике", "Исследовательские проекты"],
             },
             "deadlines": {
                 "application_open": "2025-09-01",
@@ -1795,28 +1795,28 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "KAIST International Scholarship",
-                    "amount": "Full tuition + monthly stipend",
-                    "conditions": "Outstanding international students",
+                    "name": "Международная стипендия KAIST",
+                    "amount": "Полная оплата обучения + ежемесячная стипендия",
+                    "conditions": "Выдающиеся иностранные студенты",
                 },
             ],
         },
         {
-            "name": "Electrical Engineering (BSc)",
+            "name": "Электроинженерия (бакалавр)",
             "direction_slug": "engineering-architecture",
-            "language": "English / Korean",
+            "language": "Английский / Корейский",
             "cost_per_year": 4400,
             "description": (
-                "KAIST's EE program covers circuits, signal processing, semiconductors, "
-                "and communications — foundational for hardware and chip design careers."
+                "Программа EE KAIST охватывает схемотехнику, обработку сигналов, полупроводники "
+                "и средства связи — основа для карьеры в области аппаратного обеспечения и проектирования микросхем."
             ),
             "who_its_for": (
-                "Students passionate about electronics, hardware systems, "
-                "and semiconductor technology in the world's top chip-producing nation."
+                "Студенты, увлечённые электроникой, аппаратными системами "
+                "и полупроводниковыми технологиями в ведущей стране-производителе микросхем."
             ),
             "career_options": [
-                "Hardware Engineer", "Chip Designer", "Signal Processing Engineer",
-                "Embedded Systems Engineer", "RF Engineer",
+                "Инженер по аппаратному обеспечению", "Разработчик микросхем", "Инженер по обработке сигналов",
+                "Инженер встроенных систем", "РЧ-инженер",
             ],
             "requirements": {
                 "min_gpa": 3.7,
@@ -1827,7 +1827,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": True,
-                "extracurriculars": ["Physics/maths olympiads", "Electronics projects"],
+                "extracurriculars": ["Олимпиады по физике/математике", "Проекты по электронике"],
             },
             "deadlines": {
                 "application_open": "2025-09-01",
@@ -1837,30 +1837,30 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "KAIST International Scholarship",
-                    "amount": "Full tuition + monthly stipend",
-                    "conditions": "Outstanding international students",
+                    "name": "Международная стипендия KAIST",
+                    "amount": "Полная оплата обучения + ежемесячная стипендия",
+                    "conditions": "Выдающиеся иностранные студенты",
                 },
             ],
         },
     ],
     "Imperial College London": [
         {
-            "name": "Computing (MEng)",
+            "name": "Вычислительная техника (магистр инженерии)",
             "direction_slug": "it-development",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 37900,
             "description": (
-                "Imperial's 4-year MEng in Computing is one of the UK's most rigorous "
-                "CS programs, covering AI, systems, graphics, and software engineering."
+                "Четырёхлетняя программа MEng Imperial по вычислительной технике — одна из наиболее "
+                "строгих CS-программ Великобритании, охватывающая ИИ, системы, графику и разработку ПО."
             ),
             "who_its_for": (
-                "Top students who want an integrated master's degree from a "
-                "global top-10 university in the heart of London."
+                "Лучшие студенты, желающие получить интегрированную степень магистра "
+                "от университета из мировой топ-10 в центре Лондона."
             ),
             "career_options": [
-                "Software Engineer", "AI Researcher", "Systems Architect",
-                "Quant Developer", "Technology Consultant",
+                "Инженер-программист", "Исследователь ИИ", "Системный архитектор",
+                "Квант-разработчик", "Технологический консультант",
             ],
             "requirements": {
                 "min_gpa": 3.9,
@@ -1871,7 +1871,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["Maths/CS olympiads", "Research or open-source projects"],
+                "extracurriculars": ["Олимпиады по математике/информатике", "Исследовательские или open-source проекты"],
             },
             "deadlines": {
                 "application_open": "2025-09-01",
@@ -1881,28 +1881,28 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "Imperial President's Scholarship",
-                    "amount": "Full tuition + £5,000/year",
-                    "conditions": "Top PhD applicants; partial funding available for UG",
+                    "name": "Президентская стипендия Imperial",
+                    "amount": "Полная оплата обучения + £5 000/год",
+                    "conditions": "Лучшие соискатели PhD; частичное финансирование доступно для бакалавров",
                 },
             ],
         },
         {
-            "name": "Biomedical Engineering (MEng)",
+            "name": "Биомедицинская инженерия (магистр инженерии)",
             "direction_slug": "medicine-biology",
-            "language": "English",
+            "language": "Английский",
             "cost_per_year": 37900,
             "description": (
-                "Imperial's MEng in Biomedical Engineering combines engineering "
-                "principles with medical applications, from devices to biosensors."
+                "Программа MEng Imperial по биомедицинской инженерии сочетает инженерные принципы "
+                "с медицинскими приложениями: от устройств до биосенсоров."
             ),
             "who_its_for": (
-                "Students at the intersection of engineering and medicine who "
-                "want to design devices, develop diagnostics, or pursue clinical engineering."
+                "Студенты на стыке инженерии и медицины, желающие проектировать устройства, "
+                "разрабатывать диагностику или заниматься клинической инженерией."
             ),
             "career_options": [
-                "Biomedical Engineer", "Medical Device Designer", "Clinical Engineer",
-                "Biosensor Developer", "Healthcare Tech Entrepreneur",
+                "Биомедицинский инженер", "Разработчик медицинских устройств", "Клинический инженер",
+                "Разработчик биосенсоров", "Предприниматель в сфере медтеха",
             ],
             "requirements": {
                 "min_gpa": 3.8,
@@ -1913,7 +1913,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["Biology/chemistry lab experience", "Engineering projects"],
+                "extracurriculars": ["Опыт работы в лаборатории по биологии/химии", "Инженерные проекты"],
             },
             "deadlines": {
                 "application_open": "2025-09-01",
@@ -1923,30 +1923,30 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "Imperial College Trust Scholarship",
-                    "amount": "£10,000",
-                    "conditions": "International students with exceptional academics",
+                    "name": "Стипендия Imperial College Trust",
+                    "amount": "£10 000",
+                    "conditions": "Иностранные студенты с исключительной успеваемостью",
                 },
             ],
         },
     ],
     "Seoul National University": [
         {
-            "name": "Computer Science and Engineering (BSc)",
+            "name": "Информатика и инженерия (бакалавр)",
             "direction_slug": "it-development",
-            "language": "Korean / English",
+            "language": "Корейский / Английский",
             "cost_per_year": 5500,
             "description": (
-                "SNU's CSE program is South Korea's most prestigious, combining "
-                "strong theoretical foundations with major research and industry connections."
+                "Программа CSE SNU — наиболее престижная в Южной Корее, сочетающая "
+                "сильную теоретическую подготовку с крупными исследовательскими и промышленными связями."
             ),
             "who_its_for": (
-                "High-achieving students interested in software, AI, or systems "
-                "who want South Korea's top university at accessible cost."
+                "Высокоуспевающие студенты, интересующиеся разработкой ПО, ИИ или системами, "
+                "желающие учиться в лучшем университете Южной Кореи по доступной цене."
             ),
             "career_options": [
-                "Software Engineer", "AI Engineer", "Systems Developer",
-                "Research Scientist", "Tech Entrepreneur",
+                "Инженер-программист", "ИИ-инженер", "Системный разработчик",
+                "Учёный-исследователь", "Технологический предприниматель",
             ],
             "requirements": {
                 "min_gpa": 3.8,
@@ -1957,7 +1957,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": True,
-                "extracurriculars": ["CS / maths olympiads", "Research internships"],
+                "extracurriculars": ["Олимпиады по информатике/математике", "Исследовательские стажировки"],
             },
             "deadlines": {
                 "application_open": "2025-09-01",
@@ -1967,28 +1967,28 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "SNU Global Scholarship",
-                    "amount": "Full tuition",
-                    "conditions": "Outstanding international students",
+                    "name": "Глобальная стипендия SNU",
+                    "amount": "Полная оплата обучения",
+                    "conditions": "Выдающиеся иностранные студенты",
                 },
             ],
         },
         {
-            "name": "Industrial Engineering (BSc)",
+            "name": "Промышленная инженерия (бакалавр)",
             "direction_slug": "engineering-architecture",
-            "language": "Korean / English",
+            "language": "Корейский / Английский",
             "cost_per_year": 5500,
             "description": (
-                "SNU's Industrial Engineering program covers operations research, "
-                "supply chain, systems engineering, and management science."
+                "Программа SNU по промышленной инженерии охватывает исследование операций, "
+                "цепочки поставок, системную инженерию и науку об управлении."
             ),
             "who_its_for": (
-                "Students interested in optimising complex systems — from logistics "
-                "to manufacturing — using quantitative and engineering methods."
+                "Студенты, интересующиеся оптимизацией сложных систем — от логистики "
+                "до производства — с использованием количественных и инженерных методов."
             ),
             "career_options": [
-                "Operations Research Analyst", "Supply Chain Manager", "Systems Engineer",
-                "Management Consultant", "Project Manager",
+                "Аналитик операционных исследований", "Менеджер по цепочке поставок", "Системный инженер",
+                "Консультант по управлению", "Менеджер проектов",
             ],
             "requirements": {
                 "min_gpa": 3.7,
@@ -1999,7 +1999,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                 "needs_essay": True,
                 "needs_recommendations": True,
                 "needs_interview": False,
-                "extracurriculars": ["Maths olympiads", "Robotics / engineering clubs"],
+                "extracurriculars": ["Математические олимпиады", "Робототехнические/инженерные клубы"],
             },
             "deadlines": {
                 "application_open": "2025-09-01",
@@ -2009,9 +2009,9 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
             },
             "grants": [
                 {
-                    "name": "SNU Global Scholarship",
-                    "amount": "Full tuition",
-                    "conditions": "Outstanding international students",
+                    "name": "Глобальная стипендия SNU",
+                    "amount": "Полная оплата обучения",
+                    "conditions": "Выдающиеся иностранные студенты",
                 },
             ],
         },

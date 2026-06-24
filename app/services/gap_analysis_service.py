@@ -15,8 +15,11 @@ _LANGUAGE_ARTIFACT_TERMS = {
     "chinese", "японский", "английский", "немецкий", "французский", "язык",
     "language", "cefr",
 }
+_LANGUAGE_CERTIFICATE_TERMS = {"ielts", "toefl", "duolingo", "cefr", "a2", "b1", "b2", "c1", "c2"}
+_EXAM_ARTIFACT_TERMS = {"sat", "act", "ent", "ege", "егэ", "олимпиада", "olympiad"}
 
 _PORTFOLIO_TYPES = {ArtifactType.achievement, ArtifactType.profession}
+_PORTFOLIO_STARTER_TYPES = {ArtifactType.hobby, ArtifactType.club, ArtifactType.sport}
 
 
 def _classify_key(key: str) -> str:
@@ -32,6 +35,14 @@ def _classify_key(key: str) -> str:
     return "generic"
 
 
+def _has_language_certificate(artifacts: list[Artifact]) -> bool:
+    return any(
+        a.type == ArtifactType.achievement
+        and any(term in a.value.lower() for term in _LANGUAGE_CERTIFICATE_TERMS)
+        for a in artifacts
+    )
+
+
 def _has_language_artifacts(artifacts: list[Artifact]) -> bool:
     return any(
         any(term in artifact.value.lower() for term in _LANGUAGE_ARTIFACT_TERMS)
@@ -41,6 +52,17 @@ def _has_language_artifacts(artifacts: list[Artifact]) -> bool:
 
 def _has_portfolio_artifacts(artifacts: list[Artifact]) -> bool:
     return any(a.type in _PORTFOLIO_TYPES for a in artifacts)
+
+
+def _has_portfolio_starters(artifacts: list[Artifact]) -> bool:
+    return any(a.type in _PORTFOLIO_STARTER_TYPES for a in artifacts)
+
+
+def _has_exam_artifact(artifacts: list[Artifact]) -> bool:
+    return any(
+        any(term in a.value.lower() for term in _EXAM_ARTIFACT_TERMS)
+        for a in artifacts
+    )
 
 
 @dataclass
@@ -64,6 +86,10 @@ def analyze_gap(
 
     items: list[GapItem] = []
 
+    has_language_cert = _has_language_certificate(artifacts)
+    has_exam = _has_exam_artifact(artifacts)
+    has_portfolio_starters = _has_portfolio_starters(artifacts)
+
     for req_key, req_value in requirements.items():
         category = _classify_key(req_key)
 
@@ -75,7 +101,13 @@ def analyze_gap(
             ))
 
         elif category == "language":
-            if has_language:
+            if has_language_cert:
+                items.append(GapItem(
+                    requirement=req_key,
+                    status=GapStatus.met,
+                    comment="Языковой сертификат обнаружен в достижениях",
+                ))
+            elif has_language:
                 items.append(GapItem(
                     requirement=req_key,
                     status=GapStatus.in_progress,
@@ -89,7 +121,13 @@ def analyze_gap(
                 ))
 
         elif category == "exam":
-            if profile.grade < 10:
+            if has_exam:
+                items.append(GapItem(
+                    requirement=req_key,
+                    status=GapStatus.met,
+                    comment="Результат экзамена обнаружен в профиле",
+                ))
+            elif profile.grade < 10:
                 items.append(GapItem(
                     requirement=req_key,
                     status=GapStatus.in_progress,
@@ -106,8 +144,14 @@ def analyze_gap(
             if has_portfolio:
                 items.append(GapItem(
                     requirement=req_key,
+                    status=GapStatus.met,
+                    comment="Есть достижения или профессиональный опыт — портфолио готово",
+                ))
+            elif has_portfolio_starters:
+                items.append(GapItem(
+                    requirement=req_key,
                     status=GapStatus.in_progress,
-                    comment="Есть достижения или профессиональный опыт — основа для портфолио",
+                    comment="Есть хобби, клубы или спорт — можно оформить в портфолио",
                 ))
             else:
                 items.append(GapItem(
