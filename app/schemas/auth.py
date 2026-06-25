@@ -19,6 +19,21 @@ class TokenResponse(BaseModel):
     user_id: uuid.UUID
 
 
+class RegisterResponse(BaseModel):
+    user_id: uuid.UUID
+    email: str
+    message: str
+
+
+class VerifyEmailRequest(BaseModel):
+    email: EmailStr
+    code: str
+
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
+
 class UserResponse(BaseModel):
     id: uuid.UUID
     email: str
