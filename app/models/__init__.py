@@ -4,6 +4,7 @@ from app.models.email_verification import EmailVerificationToken  # noqa: F401 �
 from app.models.artifact import Artifact  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.assessment import Assessment  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.direction import Direction  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.password_reset import PasswordResetToken  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.profile import Profile  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.program import Program  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.university import University  # noqa: F401 — keep model imported so Alembic discovers it
@@ -12,5 +13,5 @@ from app.models.user_response import UserResponse  # noqa: F401 — keep model i
 
 __all__ = [
     "Base", "AnalysisResult", "Artifact", "Assessment",
-    "Direction", "EmailVerificationToken", "Profile", "Program", "University", "User", "UserResponse",
+    "Direction", "EmailVerificationToken", "PasswordResetToken", "Profile", "Program", "University", "User", "UserResponse",
 ]

@@ -32,3 +32,14 @@ async def send_verification_email(to: str, code: str) -> None:
         return
 
     await asyncio.to_thread(_send_smtp, to, subject, body)
+
+
+async def send_password_reset_email(to: str, code: str) -> None:
+    subject = "Код подтверждения"
+    body = f"Ваш код для сброса пароля: {code}\n\nКод действителен 15 минут.\n\nЕсли вы не запрашивали сброс пароля — проигнорируйте это письмо."
+
+    if not settings.SMTP_HOST:
+        logger.warning("SMTP not configured — password reset code for %s: %s", to, code)
+        return
+
+    await asyncio.to_thread(_send_smtp, to, subject, body)

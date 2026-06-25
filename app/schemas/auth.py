@@ -40,3 +40,18 @@ class UserResponse(BaseModel):
     is_active: bool
 
     model_config = {"from_attributes": True}
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class VerifyResetCodeRequest(BaseModel):
+    email: EmailStr
+    code: str
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    code: str
+    new_password: str
