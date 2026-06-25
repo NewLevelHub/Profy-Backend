@@ -19,9 +19,39 @@ class TokenResponse(BaseModel):
     user_id: uuid.UUID
 
 
+class RegisterResponse(BaseModel):
+    user_id: uuid.UUID
+    email: str
+    message: str
+
+
+class VerifyEmailRequest(BaseModel):
+    email: EmailStr
+    code: str
+
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
+
 class UserResponse(BaseModel):
     id: uuid.UUID
     email: str
     is_active: bool
 
     model_config = {"from_attributes": True}
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class VerifyResetCodeRequest(BaseModel):
+    email: EmailStr
+    code: str
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    code: str
+    new_password: str
