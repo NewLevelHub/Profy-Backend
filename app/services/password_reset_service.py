@@ -38,7 +38,7 @@ async def _get_active_token(user_id: uuid.UUID, db: AsyncSession) -> PasswordRes
 async def initiate_reset(email: str, db: AsyncSession) -> None:
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
-    if not user:
+    if not user or user.hashed_password is None:
         return
 
     await _invalidate_reset_tokens(user.id, db)

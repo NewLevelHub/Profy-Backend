@@ -1,5 +1,6 @@
 import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -7,7 +8,9 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.auth import (
+    AuthResponse,
     ForgotPasswordRequest,
+    GoogleAuthRequest,
     LoginRequest,
     RegisterRequest,
     RegisterResponse,
@@ -19,6 +22,7 @@ from app.schemas.auth import (
     VerifyResetCodeRequest,
 )
 from app.services import auth_service, password_reset_service
+from app.services.google_auth_service import verify_google_token
 
 router = APIRouter(tags=["auth"])
 
@@ -145,3 +149,50 @@ async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(
     except ValueError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired code")
     return {"message": "Password has been reset successfully."}
+
+
+@router.post("/google", response_model=AuthResponse)
+async def google_auth(body: GoogleAuthRequest, db: AsyncSession = Depends(get_db)):
+    try:
+        google_user = verify_google_token(body.id_token)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+    result = await db.execute(select(User).where(User.google_id == google_user.google_id))
+    user = result.scalar_one_or_none()
+    if user:
+        return AuthResponse(
+            access_token=auth_service.create_jwt_token(user.id),
+            user_id=user.id,
+            is_new_user=False,
+        )
+
+    result = await db.execute(select(User).where(User.email == google_user.email))
+    user = result.scalar_one_or_none()
+    if user:
+        user.google_id = google_user.google_id
+        if google_user.avatar_url and not user.avatar_url:
+            user.avatar_url = google_user.avatar_url
+        await db.commit()
+        return AuthResponse(
+            access_token=auth_service.create_jwt_token(user.id),
+            user_id=user.id,
+            is_new_user=False,
+        )
+
+    user = User(
+        email=google_user.email,
+        hashed_password=None,
+        google_id=google_user.google_id,
+        avatar_url=google_user.avatar_url,
+        is_active=True,
+        is_verified=True,
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return AuthResponse(
+        access_token=auth_service.create_jwt_token(user.id),
+        user_id=user.id,
+        is_new_user=True,
+    )

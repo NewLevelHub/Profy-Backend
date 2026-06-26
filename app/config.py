@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     EMAIL_FROM: str = ""
+    GOOGLE_CLIENT_ID: str = ""
 
     @model_validator(mode="after")
     def build_database_url(self) -> Self:

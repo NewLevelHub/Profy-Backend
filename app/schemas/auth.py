@@ -55,3 +55,14 @@ class ResetPasswordRequest(BaseModel):
     email: EmailStr
     code: str
     new_password: str = Field(min_length=6)
+
+
+class GoogleAuthRequest(BaseModel):
+    id_token: str
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user_id: uuid.UUID
+    is_new_user: bool
