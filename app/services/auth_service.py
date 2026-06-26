@@ -1,5 +1,3 @@
-import hashlib
-import random
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -13,6 +11,7 @@ from app.models.email_verification import EmailVerificationToken
 from app.models.user import User
 from app.schemas.auth import RegisterResponse
 from app.services import email_service
+from app.services.token_utils import generate_code, hash_code
 
 _pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
@@ -31,14 +30,6 @@ def create_jwt_token(user_id: uuid.UUID) -> str:
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-def _generate_code() -> str:
-    return f"{random.randint(0, 999999):06d}"
-
-
-def _hash_code(code: str) -> str:
-    return hashlib.sha256(code.encode()).hexdigest()
-
-
 async def _invalidate_tokens(user_id: uuid.UUID, db: AsyncSession) -> None:
     await db.execute(
         update(EmailVerificationToken)
@@ -52,10 +43,10 @@ async def _invalidate_tokens(user_id: uuid.UUID, db: AsyncSession) -> None:
 
 async def _create_verification_token(user_id: uuid.UUID, db: AsyncSession) -> str:
     await _invalidate_tokens(user_id, db)
-    code = _generate_code()
+    code = generate_code()
     token = EmailVerificationToken(
         user_id=user_id,
-        code_hash=_hash_code(code),
+        code_hash=hash_code(code),
         expires_at=datetime.now(timezone.utc) + timedelta(minutes=15),
     )
     db.add(token)
@@ -121,7 +112,7 @@ async def verify_email(email: str, code: str, db: AsyncSession) -> tuple[User, s
     if now > expires:
         raise ValueError("Verification code expired")
 
-    if token.code_hash != _hash_code(code):
+    if token.code_hash != hash_code(code):
         raise ValueError("Invalid verification code")
 
     token.used_at = now

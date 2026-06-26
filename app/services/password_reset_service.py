@@ -1,5 +1,3 @@
-import hashlib
-import random
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -10,14 +8,7 @@ from app.models.password_reset import PasswordResetToken
 from app.models.user import User
 from app.services import email_service
 from app.services.auth_service import hash_password
-
-
-def _generate_code() -> str:
-    return f"{random.randint(0, 999999):06d}"
-
-
-def _hash_code(code: str) -> str:
-    return hashlib.sha256(code.encode()).hexdigest()
+from app.services.token_utils import generate_code, hash_code
 
 
 async def _invalidate_reset_tokens(user_id: uuid.UUID, db: AsyncSession) -> None:
@@ -52,10 +43,10 @@ async def initiate_reset(email: str, db: AsyncSession) -> None:
 
     await _invalidate_reset_tokens(user.id, db)
 
-    code = _generate_code()
+    code = generate_code()
     token = PasswordResetToken(
         user_id=user.id,
-        code_hash=_hash_code(code),
+        code_hash=hash_code(code),
         expires_at=datetime.now(timezone.utc) + timedelta(minutes=15),
     )
     db.add(token)
@@ -79,7 +70,7 @@ async def verify_code(email: str, code: str, db: AsyncSession) -> None:
     if now > expires:
         raise ValueError("Code expired")
 
-    if token.code_hash != _hash_code(code):
+    if token.code_hash != hash_code(code):
         raise ValueError("Invalid code")
 
 
@@ -98,10 +89,9 @@ async def reset_password(email: str, code: str, new_password: str, db: AsyncSess
     if now > expires:
         raise ValueError("Code expired")
 
-    if token.code_hash != _hash_code(code):
+    if token.code_hash != hash_code(code):
         raise ValueError("Invalid code")
 
     user.hashed_password = hash_password(new_password)
     await _invalidate_reset_tokens(user.id, db)
-    token.used_at = now
     await db.commit()
