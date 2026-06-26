@@ -2,16 +2,28 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+import redis.asyncio as aioredis
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
+from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
 from app.models.question import Question, QuestionBlock
 from app.models.user_response import UserResponse
 from app.schemas.response import AnswerItem
 from app.services import scoring_service
+
+_redis: aioredis.Redis | None = None
+
+
+def _get_redis() -> aioredis.Redis:
+    global _redis
+    if _redis is None:
+        _redis = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
+    return _redis
 
 
 async def create_assessment(
@@ -82,23 +94,28 @@ async def complete_block(
     if assessment.profile_id != current_profile_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    if assessment.status == AssessmentStatus.completed:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Assessment already completed",
-        )
-
-    existing_result = await db.execute(
+    existing_ids_result = await db.execute(
         select(UserResponse.id)
         .join(Question, UserResponse.question_id == Question.id)
         .where(UserResponse.assessment_id == assessment_id, Question.block == block)
-        .limit(1)
     )
-    if existing_result.scalar_one_or_none() is not None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Answers for this block were already submitted",
+    existing_ids = existing_ids_result.scalars().all()
+    if existing_ids:
+        await db.execute(
+            UserResponse.__table__.delete().where(UserResponse.id.in_(existing_ids))
         )
+        assessment.status = AssessmentStatus.in_progress
+        assessment.completed_at = None
+
+        # Invalidate cached report so retake affects the final result
+        old_result = await db.execute(
+            select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        )
+        old_analysis = old_result.scalar_one_or_none()
+        if old_analysis is not None:
+            await db.delete(old_analysis)
+        redis = _get_redis()
+        await redis.delete(f"report:{assessment_id}")
 
     question_ids = [item.question_id for item in answers]
     questions_result = await db.execute(

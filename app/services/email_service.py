@@ -26,11 +26,18 @@ def _send_smtp(to: str, subject: str, plain: str, html: str) -> None:
     msg.attach(MIMEText(plain, "plain", "utf-8"))
     msg.attach(MIMEText(html, "html", "utf-8"))
 
-    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=_SMTP_TIMEOUT) as server:
-        server.ehlo()
-        server.starttls()
-        server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-        server.sendmail(settings.EMAIL_FROM, to, msg.as_string())
+    use_ssl = settings.SMTP_PORT == 465
+    if use_ssl:
+        with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, timeout=_SMTP_TIMEOUT) as server:
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            server.sendmail(settings.EMAIL_FROM, to, msg.as_string())
+    else:
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=_SMTP_TIMEOUT) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()  # re-identify after TLS handshake
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            server.sendmail(settings.EMAIL_FROM, to, msg.as_string())
 
 
 async def send_verification_email(to: str, code: str) -> None:
@@ -42,7 +49,11 @@ async def send_verification_email(to: str, code: str) -> None:
         logger.warning("SMTP not configured — verification code for %s: %s", to, code)
         return
 
-    await asyncio.to_thread(_send_smtp, to, subject, plain, html)
+    try:
+        await asyncio.to_thread(_send_smtp, to, subject, plain, html)
+    except Exception:
+        logger.exception("Failed to send verification email to %s", to)
+        raise
 
 
 async def send_password_reset_email(to: str, code: str) -> None:
@@ -58,4 +69,8 @@ async def send_password_reset_email(to: str, code: str) -> None:
         logger.warning("SMTP not configured — password reset code for %s: %s", to, code)
         return
 
-    await asyncio.to_thread(_send_smtp, to, subject, plain, html)
+    try:
+        await asyncio.to_thread(_send_smtp, to, subject, plain, html)
+    except Exception:
+        logger.exception("Failed to send password reset email to %s", to)
+        raise

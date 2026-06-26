@@ -1,4 +1,10 @@
 .env
+.env.local
+.env.production
+docker-compose.local.yml
+docker-compose.prod.yml
+nginx.conf
+nginx.local.conf
 nginx/ssl/*.pem
 __pycache__/
 *.py[cod]
