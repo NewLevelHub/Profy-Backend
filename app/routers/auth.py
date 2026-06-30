@@ -74,7 +74,7 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
             detail={"detail": "email_not_verified", "email": email},
         )
 
-    return TokenResponse(access_token=token, user_id=user.id)
+    return TokenResponse(access_token=token, user=user)
 
 
 @router.post("/verify-email", response_model=TokenResponse)
@@ -87,7 +87,7 @@ async def verify_email(body: VerifyEmailRequest, db: AsyncSession = Depends(get_
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
-    return TokenResponse(access_token=token, user_id=user.id)
+    return TokenResponse(access_token=token, user=user)
 
 
 @router.post("/resend-verification", status_code=status.HTTP_204_NO_CONTENT)

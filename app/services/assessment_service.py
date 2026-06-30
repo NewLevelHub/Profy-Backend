@@ -64,11 +64,26 @@ async def create_assessment(
 
 
 async def get_current_assessment(profile_id: uuid.UUID, db: AsyncSession) -> Assessment | None:
+    # Prefer in-progress; fall back to most recent completed so the frontend
+    # can restore state after logout without losing the completed assessment.
     result = await db.execute(
         select(Assessment).where(
             Assessment.profile_id == profile_id,
             Assessment.status == AssessmentStatus.in_progress,
         )
+    )
+    assessment = result.scalar_one_or_none()
+    if assessment is not None:
+        return assessment
+
+    result = await db.execute(
+        select(Assessment)
+        .where(
+            Assessment.profile_id == profile_id,
+            Assessment.status == AssessmentStatus.completed,
+        )
+        .order_by(Assessment.created_at.desc())
+        .limit(1)
     )
     return result.scalar_one_or_none()
 
@@ -166,20 +181,15 @@ async def complete_block(
     )
     submitted_blocks = submitted_blocks_result.scalar_one() or 0
 
-    submitted_questions_result = await db.execute(
-        select(func.count(UserResponse.id))
-        .where(UserResponse.assessment_id == assessment_id)
-    )
-    submitted_questions = submitted_questions_result.scalar_one() or 0
-
-    expected_questions_result = await db.execute(
-        select(func.count(Question.id))
-        .where(Question.age_group == age_group)
-    )
-    expected_questions = expected_questions_result.scalar_one() or 0
+    # Expected block count depends on goal, not just age group.
+    # goal=university (senior only) → 8 blocks; all other goals → 7 blocks.
+    if assessment.goal == AssessmentGoal.university and age_group == AgeGroup.senior:
+        expected_block_count = 8
+    else:
+        expected_block_count = 7
 
     assessment.current_block = submitted_blocks
-    if expected_questions > 0 and submitted_questions >= expected_questions:
+    if submitted_blocks >= expected_block_count:
         assessment.status = AssessmentStatus.completed
         assessment.completed_at = datetime.now(timezone.utc)
 

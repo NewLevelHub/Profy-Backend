@@ -13,10 +13,17 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class UserInfo(BaseModel):
+    id: uuid.UUID
+    email: str
+
+    model_config = {"from_attributes": True}
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
-    user_id: uuid.UUID
+    user: UserInfo
 
 
 class RegisterResponse(BaseModel):
