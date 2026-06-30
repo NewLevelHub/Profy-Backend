@@ -4,6 +4,7 @@ import uuid
 import redis.asyncio as aioredis
 from fastapi import HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -121,8 +122,15 @@ async def build_report(
         directions=draft.directions,
     )
     db.add(analysis)
-    await db.commit()
-    await db.refresh(analysis)
+    try:
+        await db.commit()
+        await db.refresh(analysis)
+    except IntegrityError:
+        await db.rollback()
+        existing_result = await db.execute(
+            select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        )
+        analysis = existing_result.scalar_one()
 
     response = AnalysisResultResponse.model_validate(analysis)
     await redis.setex(cache_key, CACHE_TTL, response.model_dump_json())
