@@ -181,9 +181,12 @@ async def complete_block(
     )
     submitted_blocks = submitted_blocks_result.scalar_one() or 0
 
-    # Expected block count depends on goal, not just age group.
-    # goal=university (senior only) → 8 blocks; all other goals → 7 blocks.
-    if assessment.goal == AssessmentGoal.university and age_group == AgeGroup.senior:
+    # junior skips academic + directions → 5 blocks
+    # senior + university goal → 8 blocks
+    # all others (middle or senior non-university) → 7 blocks
+    if age_group == AgeGroup.junior:
+        expected_block_count = 5
+    elif assessment.goal == AssessmentGoal.university and age_group == AgeGroup.senior:
         expected_block_count = 8
     else:
         expected_block_count = 7

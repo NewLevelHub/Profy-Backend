@@ -1,5 +1,6 @@
 import json
 import uuid
+from datetime import datetime, timezone
 
 import redis.asyncio as aioredis
 from fastapi import HTTPException, status
@@ -10,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
-from app.models.assessment import Assessment
+from app.models.assessment import Assessment, AssessmentStatus
 from app.models.direction import Direction
 from app.models.profile import Profile
 from app.schemas.result import AnalysisResultResponse
@@ -97,6 +98,11 @@ async def build_report(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found"
         )
+
+    if assessment.status != AssessmentStatus.completed:
+        assessment.status = AssessmentStatus.completed
+        assessment.completed_at = datetime.now(timezone.utc)
+        await db.commit()
 
     profile_result = await db.execute(
         select(Profile).where(Profile.id == assessment.profile_id)
