@@ -1,11 +1,25 @@
+import re
 import uuid
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
+
+
+def _validate_password_complexity(v: str) -> str:
+    if not re.search(r"[A-Za-z]", v):
+        raise ValueError("Password must contain at least one letter")
+    if not re.search(r"\d", v):
+        raise ValueError("Password must contain at least one digit")
+    return v
 
 
 class RegisterRequest(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=6)
+    password: str = Field(min_length=8)
+
+    @field_validator("password")
+    @classmethod
+    def password_complexity(cls, v: str) -> str:
+        return _validate_password_complexity(v)
 
 
 class LoginRequest(BaseModel):
@@ -61,4 +75,9 @@ class VerifyResetCodeRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     email: EmailStr
     code: str
-    new_password: str = Field(min_length=6)
+    new_password: str = Field(min_length=8)
+
+    @field_validator("new_password")
+    @classmethod
+    def new_password_complexity(cls, v: str) -> str:
+        return _validate_password_complexity(v)
