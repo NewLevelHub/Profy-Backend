@@ -341,21 +341,52 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.interests, J, 3), 0),   # Помогать и делиться               → social+helping_motiv
         ((B.interests, J, 4), 1),   # Космос, техника                   → investigative+tech
         ((B.interests, J, 5), 3),   # Придумать и нарисовать свой мир   → artistic+creative_think
+        ((B.interests, J, 6), 0),   # Собрать робота                    → technology+investigative
+        ((B.interests, J, 7), 0),   # Почему идёт снег                  → investigative+science
+        ((B.interests, J, 8), 3),   # Придумать новый способ расставить → creative_think+enterprising
+        ((B.interests, J, 9), 3),   # Изучаю насекомых и растения       → nature+investigative
+        ((B.interests, J, 10), 0),  # Провести опыт                     → science+investigative
+        ((B.interests, J, 11), 1),  # Слова и истории                   → verbal+artistic
+        ((B.interests, J, 12), 0),  # Компьютерная про роботов          → technology+investigative
         # thinking
         ((B.thinking, J, 1), 0),    # Собирать пазлы                    → spatial+logical
         ((B.thinking, J, 2), 1),    # Придумать как играть по-другому   → creative_think
         ((B.thinking, J, 3), 2),    # Сочинить сказку                   → creative_think+verbal
         ((B.thinking, J, 4), 2),    # Стихи и истории                   → verbal
+        ((B.thinking, J, 5), 1),    # Начну с красивой части пазла      → creative_think
+        ((B.thinking, J, 6), 3),    # Придумаю неожиданный ход          → creative_think
+        ((B.thinking, J, 7), 2),    # Покажу как играть на примере      → practical
+        ((B.thinking, J, 8), 1),    # Разложу шоколадки руками          → practical
+        ((B.thinking, J, 9), 3),    # Придумаю историю кто оставил лужу → creative_think+verbal
+        ((B.thinking, J, 10), 0),   # Представлю карту в голове         → spatial
+        ((B.thinking, J, 11), 2),   # Придумаю считалку                 → creative_think+verbal
+        ((B.thinking, J, 12), 0),   # Коробка → домик для игрушек       → creative_think
         # personality
-        ((B.personality, J, 1), 4),
-        ((B.personality, J, 2), 3),
-        ((B.personality, J, 3), 3),
-        ((B.personality, J, 4), 4),
+        ((B.personality, J, 1), 4),   # Нравится пробовать новое          → openness:5
+        ((B.personality, J, 2), 3),   # Убираю игрушки, заканчиваю        → conscientiousness:4
+        ((B.personality, J, 3), 3),   # Весело с другими детьми           → extraversion+agreeableness:4
+        ((B.personality, J, 4), 4),   # Не расстраиваюсь если не вышло    → emotional_stability:5
+        ((B.personality, J, 5), 0),   # Конечно попробую новое            → openness:2
+        ((B.personality, J, 6), 0),   # Сначала закончу открытку          → conscientiousness:2
+        ((B.personality, J, 7), 0),   # Сам подхожу к незнакомым ребятам  → extraversion:2
+        ((B.personality, J, 8), 1),   # Найдём игру для обоих             → agreeableness+teamwork
+        ((B.personality, J, 9), 0),   # Начну строить заново              → emotional_stability+conscientiousness
+        ((B.personality, J, 10), 0),  # Договориться кто что рисует       → teamwork+agreeableness
+        ((B.personality, J, 11), 0),  # С удовольствием буду ведущим      → leadership+extraversion
+        ((B.personality, J, 12), 1),  # Сначала сам, потом спрошу         → independence+conscientiousness
         # motivation
         ((B.motivation, J, 1), 2),  # Придумал что-то сам               → creative_think
         ((B.motivation, J, 2), 1),  # С друзьями вместе                 → teamwork
-        ((B.motivation, J, 3), 0),  # Сложное и интересное
+        ((B.motivation, J, 3), 0),  # Сложное и интересное              → challenge+interest
         ((B.motivation, J, 4), 0),  # Помогать и делиться               → helping_motiv
+        ((B.motivation, J, 5), 0),  # Когда нравится и интересно        → interest:2
+        ((B.motivation, J, 6), 0),  # Справился со сложным              → challenge:2
+        ((B.motivation, J, 7), 0),  # Делать по-своему                  → freedom:2
+        ((B.motivation, J, 8), 1),  # Научился чему-то новому           → interest:2
+        ((B.motivation, J, 9), 3),  # Интересно именно мне              → interest:2
+        ((B.motivation, J, 10), 0), # Сложное — надо думать             → challenge:2
+        ((B.motivation, J, 11), 0), # Нравится придумывать              → creative_think+interest
+        ((B.motivation, J, 12), 0), # Вместе веселее                    → teamwork:2
         # goal
         ((B.goal_clarification, J, 1), 0),
         ((B.goal_clarification, J, 2), 0),
