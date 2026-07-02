@@ -25,6 +25,7 @@ class AnalysisResult(Base):
     thinking_style: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     motivation: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     directions: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    wellbeing_zones: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

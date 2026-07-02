@@ -24,6 +24,8 @@ Non-scoring — explicitly excluded from normalization:
   interest, money, freedom, challenge, recognition, stability  (raw motivation prefs)
   pref_country, pref_lang, pref_priority, exam_readiness,
   portfolio, pref_format, timeline, specialty  (university block)
+  wb_energy, wb_mood, wb_calm, wb_interest, wb_resilience,
+  wb_growth, wb_rested  (wellbeing block — zones of attention only, not used in matching)
 
 Synonym resolution (old → canonical):
   helping       → helping_motiv
@@ -702,4 +704,53 @@ QUESTIONS = [
        ("Да, уже выбрал", {"specialty": "chosen"}),
        ("Знаю область, не специальность", {"specialty": "area"}),
        ("Пока не знаю", {"specialty": "unknown"})),
+
+    # ===================================================================
+    # BLOCK 9: wellbeing (optional, non-scoring — zones of attention only)
+    # WHO-5 / growth mindset inspired. No diagnoses; soft phrasing only.
+    # wb_ keys are excluded from normalize_scores and direction matching.
+    # Threshold: raw score ≤ 2 (out of 5) flags a zone of attention.
+    # ===================================================================
+
+    # junior Q1–Q5
+    _l(B.wellbeing, J, 1, "Чаще всего я чувствую себя бодрым и полным сил",
+       {"wb_energy": 1}),
+    _l(B.wellbeing, J, 2, "У меня обычно хорошее настроение",
+       {"wb_mood": 1}),
+    _l(B.wellbeing, J, 3, "Мне интересно узнавать новое в школе или на кружках",
+       {"wb_interest": 1}),
+    _l(B.wellbeing, J, 4, "Когда что-то не получается, я пробую ещё раз",
+       {"wb_resilience": 1}),
+    _l(B.wellbeing, J, 5, "Я думаю, что смогу стать лучше, если постараюсь",
+       {"wb_growth": 1}),
+
+    # middle Q1–Q6
+    _l(B.wellbeing, M, 1, "У меня обычно достаточно сил и энергии для учёбы и любимых дел",
+       {"wb_energy": 1}),
+    _l(B.wellbeing, M, 2, "В целом моё настроение чаще хорошее, чем плохое",
+       {"wb_mood": 1}),
+    _l(B.wellbeing, M, 3, "Я обычно справляюсь с переживаниями, не теряя равновесия",
+       {"wb_calm": 1}),
+    _l(B.wellbeing, M, 4, "Мне интересно то, чем я занимаюсь в школе или вне её",
+       {"wb_interest": 1}),
+    _l(B.wellbeing, M, 5, "Когда что-то идёт не так, я достаточно быстро прихожу в себя",
+       {"wb_resilience": 1}),
+    _l(B.wellbeing, M, 6, "Я верю, что мои способности растут, если много практиковаться",
+       {"wb_growth": 1}),
+
+    # senior Q1–Q7
+    _l(B.wellbeing, S, 1, "У меня обычно хватает жизненных сил на то, что важно",
+       {"wb_energy": 1}),
+    _l(B.wellbeing, S, 2, "В целом моё эмоциональное состояние можно назвать хорошим",
+       {"wb_mood": 1}),
+    _l(B.wellbeing, S, 3, "Я справляюсь со стрессом, не теряя равновесия",
+       {"wb_calm": 1}),
+    _l(B.wellbeing, S, 4, "Мне интересно то, чем я занимаюсь или хочу заниматься в будущем",
+       {"wb_interest": 1}),
+    _l(B.wellbeing, S, 5, "Когда я сталкиваюсь с трудностями, обычно нахожу способ справиться",
+       {"wb_resilience": 1}),
+    _l(B.wellbeing, S, 6, "Я уверен, что мои способности развиваются через усилие и практику",
+       {"wb_growth": 1}),
+    _l(B.wellbeing, S, 7, "Я чувствую себя достаточно отдохнувшим и восстановленным",
+       {"wb_rested": 1}),
 ]

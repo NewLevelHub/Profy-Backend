@@ -177,7 +177,10 @@ async def complete_block(
     submitted_blocks_result = await db.execute(
         select(func.count(func.distinct(Question.block)))
         .join(UserResponse, UserResponse.question_id == Question.id)
-        .where(UserResponse.assessment_id == assessment_id)
+        .where(
+            UserResponse.assessment_id == assessment_id,
+            Question.block != QuestionBlock.wellbeing,
+        )
     )
     submitted_blocks = submitted_blocks_result.scalar_one() or 0
 
@@ -218,3 +221,20 @@ async def get_total_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[s
                 combined[k] = v
 
     return scoring_service.normalize_scores(combined)
+
+
+async def get_wellbeing_raw_scores(
+    assessment_id: uuid.UUID, db: AsyncSession
+) -> dict[str, float]:
+    """Return summed raw scores for wellbeing questions (wb_* keys only)."""
+    result = await db.execute(
+        select(UserResponse.scores).where(UserResponse.assessment_id == assessment_id)
+    )
+    combined: dict[str, float] = {}
+    for scores in result.scalars().all():
+        if not scores:
+            continue
+        for k, v in scores.items():
+            if k.startswith("wb_") and isinstance(v, (int, float)):
+                combined[k] = combined.get(k, 0) + v
+    return combined

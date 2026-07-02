@@ -111,6 +111,7 @@ def normalize_scores(raw_scores: dict[str, Any]) -> dict[str, float]:
         if k not in PREFERENCE_KEYS
         and k not in MOTIVATION_PREF_KEYS
         and not k.startswith("goal_")
+        and not k.startswith("wb_")
     }
     if not scoring_scores:
         return {}

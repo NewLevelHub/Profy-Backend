@@ -93,6 +93,22 @@ MOTIVATION_CATEGORIES = frozenset({
     "openness", "strategic", "practical", "investigative", "artistic", "social",
 })
 
+# Soft zone-of-attention messages keyed by wb_ dimension.
+# Triggered when a dimension's raw score is low (≤ 2 on a 1-5 scale).
+# No medical or evaluative language — framed as areas worth attention.
+WELLBEING_ZONES_MAP: dict[str, str] = {
+    "wb_energy": "Возможно, стоит обратить внимание на режим дня и восстановление сил",
+    "wb_mood": "Стоит уделить время занятиям, которые приносят радость и хорошее настроение",
+    "wb_calm": "Может быть полезно освоить простые способы справляться со стрессом",
+    "wb_interest": "Возможно, стоит поискать темы и занятия, которые по-настоящему увлекают",
+    "wb_resilience": "Умение справляться с трудностями — навык, который развивается с опытом",
+    "wb_growth": "Стоит помнить: способности растут через усилие и практику, не только через талант",
+    "wb_rested": "Полноценный отдых важен для продуктивности и хорошего самочувствия",
+}
+
+# Score ≤ this value (on a 1-5 Likert) flags the dimension as a zone of attention.
+_WB_LOW_THRESHOLD = 2
+
 
 @dataclass
 class MatchedDirection:
@@ -115,6 +131,17 @@ class ReportDraft:
     thinking_style: dict[str, float]
     motivation: list[str]
     directions: list[dict]
+    wellbeing_zones: list[str]
+
+
+def build_wellbeing_zones(wb_raw_scores: dict[str, float]) -> list[str]:
+    """Return soft attention-zone messages for any wb_ dimension with a low score."""
+    zones: list[str] = []
+    for key, message in WELLBEING_ZONES_MAP.items():
+        score = wb_raw_scores.get(key)
+        if score is not None and score <= _WB_LOW_THRESHOLD:
+            zones.append(message)
+    return zones
 
 
 def build_strengths(normalized_scores: dict[str, float], limit: int = 7) -> list[str]:
@@ -183,6 +210,7 @@ def generate_report(
     artifacts: list,
     total_scores: dict[str, float],
     matched_directions: list[MatchedDirection],
+    wb_raw_scores: dict[str, float] | None = None,
 ) -> ReportDraft:
     summary = _build_summary(total_scores)
     strengths = build_strengths(total_scores, limit=7)
@@ -190,6 +218,7 @@ def generate_report(
     interests_map = _filter_scores(total_scores, INTERESTS_CATEGORIES)
     thinking_style = _filter_scores(total_scores, THINKING_CATEGORIES)
     motivation = _build_motivation_list(total_scores)
+    wellbeing_zones = build_wellbeing_zones(wb_raw_scores or {})
 
     directions = [
         {
@@ -213,4 +242,5 @@ def generate_report(
         thinking_style=thinking_style,
         motivation=motivation,
         directions=directions,
+        wellbeing_zones=wellbeing_zones,
     )
