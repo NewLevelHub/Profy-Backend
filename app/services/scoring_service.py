@@ -16,6 +16,19 @@ PREFERENCE_KEYS = frozenset({
     "specialty",
 })
 
+# Raw motivational-preference signals collected in Block 4.
+# They capture what the child values (money, freedom, challenge…) but have
+# no counterpart in direction required/bonus_scores or report maps, so they
+# are excluded from normalization to avoid diluting scored categories.
+MOTIVATION_PREF_KEYS = frozenset({
+    "interest",
+    "money",
+    "freedom",
+    "challenge",
+    "recognition",
+    "stability",
+})
+
 
 LIKERT_LABELS = [
     "Совсем не про меня",
@@ -95,7 +108,9 @@ def normalize_scores(raw_scores: dict[str, Any]) -> dict[str, float]:
         return {}
     scoring_scores = {
         k: v for k, v in raw_scores.items()
-        if k not in PREFERENCE_KEYS and not k.startswith("goal_")
+        if k not in PREFERENCE_KEYS
+        and k not in MOTIVATION_PREF_KEYS
+        and not k.startswith("goal_")
     }
     if not scoring_scores:
         return {}

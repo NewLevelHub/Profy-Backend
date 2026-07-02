@@ -224,7 +224,7 @@ DIRECTIONS: list[dict] = [
             "и монетизация идей. От стартапов до корпоративного менеджмента."
         ),
         "required_scores": {"enterprising": 55, "leadership": 45},
-        "bonus_scores": {"strategic": 15, "business": 10},
+        "bonus_scores": {"strategic": 15},
         "professions": [
             "Предприниматель",
             "Менеджер по развитию бизнеса",
