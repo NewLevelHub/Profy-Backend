@@ -14,6 +14,8 @@ PREFERENCE_KEYS = frozenset({
     "pref_format",
     "timeline",
     "specialty",
+    "pref_budget",
+    "pref_env",
 })
 
 # Raw motivational-preference signals collected in Block 4.

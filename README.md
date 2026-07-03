@@ -85,14 +85,14 @@ API пока без эндпоинтов — роутеры подключают
 docker compose exec api python scripts/seed_questions.py
 ```
 
-Скрипт добавит **120 вопросов**, покрывающих все 8 блоков опросника (`interests`, `thinking`, `personality`, `motivation`, `academic`, `directions`, `goal_clarification`, `university`) и три возрастные группы (`junior`, `middle`, `senior`). Блок `university` — только для `senior`.
+Скрипт добавит **213 вопросов**, покрывающих все 9 блоков опросника (`interests`, `thinking`, `personality`, `motivation`, `academic`, `directions`, `goal_clarification`, `university`, `wellbeing`) и три возрастные группы (`junior`, `middle`, `senior`). Блок `university` — только для `senior`.
 
-Скрипт **идемпотентен**: повторный запуск не создаёт дубликаты — вопросы, уже существующие в БД (по совпадению блока, возрастной группы и текста), будут пропущены.
+Скрипт **идемпотентен**: upsert по ключу (блок, возрастная группа, порядковый номер) — повторный запуск не создаёт дубликаты; изменённые текст/варианты обновляются, неизменённые вопросы пропускаются.
 
 ```
-Done. Inserted: 120, skipped (already exist): 0
+Done. Inserted: 213, updated: 0, skipped (unchanged): 0
 # При повторном запуске:
-Done. Inserted: 0, skipped (already exist): 120
+Done. Inserted: 0, updated: 0, skipped (unchanged): 213
 ```
 
 Структура вопроса в БД:

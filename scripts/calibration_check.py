@@ -144,6 +144,10 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.interests, S, 6), 0),   # Курс по программированию          → tech+investigative
         ((B.interests, S, 7), 0),   # Числа, статистика                 → conventional+numbers
         ((B.interests, S, 8), 0),   # За компьютером, анализирую        → investigative+tech
+        ((B.interests, S, 9), 0),   # Технообзоры и туториалы           → tech+media
+        ((B.interests, S, 10), 0),  # Сервис ремонта техники            → realistic+tech
+        ((B.interests, S, 11), 0),  # Механизмы и инженерные экспонаты  → tech+realistic+investigative
+        ((B.interests, S, 12), 2),  # Климат и природные явления        → science+nature
         # thinking
         ((B.thinking, S, 1), 0),    # Закономерность в данных           → logical+mathematical
         ((B.thinking, S, 2), 0),    # Разбиваю на части                 → logical+systematic
@@ -151,6 +155,12 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.thinking, S, 4), 0),    # Логика и математика               → logical+mathematical
         ((B.thinking, S, 5), 0),    # Точные ответы                     → logical+mathematical
         ((B.thinking, S, 6), 3),    # По шагам, цепочкой                → logical
+        ((B.thinking, S, 7), 0),    # План по темам и дням              → systematic+strategic
+        ((B.thinking, S, 8), 0),    # Разберу где сломалось             → logical+systematic
+        ((B.thinking, S, 9), 1),    # Пошаговый алгоритм                → systematic+logical
+        ((B.thinking, S, 10), 0),   # Судоку, числовые                  → mathematical+logical
+        ((B.thinking, S, 11), 1),   # Бюджет и расчёты                  → mathematical+numbers
+        ((B.thinking, S, 12), 0),   # Плюсы и минусы списком            → logical+systematic
         # personality (Likert 0=1pt … 4=5pt)
         ((B.personality, S, 1), 4), # Пробую новое                      → openness:5
         ((B.personality, S, 2), 4), # Довожу до конца                   → conscientiousness:5
@@ -159,6 +169,11 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.personality, S, 5), 4), # Спокойно к ошибкам               → emotional_stability:5
         ((B.personality, S, 6), 2), # Брать ответственность             → leadership:3
         ((B.personality, S, 7), 4), # Разобраться сам                   → independence:5
+        ((B.personality, S, 8), 1), # Трудно сохранять спокойствие (rev) → emotional_stability:4
+        ((B.personality, S, 9), 2), # Легко начинаю разговор            → extraversion:3
+        ((B.personality, S, 10), 1),# Качественно делать свою часть     → conscientiousness+independence
+        ((B.personality, S, 11), 0),# Разберу ошибки, составлю план     → conscientiousness+emotional_stability
+        ((B.personality, S, 12), 1),# Свой проект или хобби             → independence+openness
         # motivation (interest/challenge/etc. are non-scoring)
         ((B.motivation, S, 1), 0),  # Чтобы было интересно
         ((B.motivation, S, 2), 0),  # Решаю сложную задачу
@@ -166,6 +181,12 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.motivation, S, 4), 0),  # «Оригинально и креативно»         → creative_think
         ((B.motivation, S, 5), 1),  # Трудный и интересный
         ((B.motivation, S, 6), 0),  # Скучные задачи расстроили бы
+        ((B.motivation, S, 7), 0),  # Сам предмет интересен
+        ((B.motivation, S, 8), 1),  # Стабильная позиция
+        ((B.motivation, S, 9), 0),  # Процесс создания нового           → creative_think
+        ((B.motivation, S, 10), 0), # Азарт нерешённой задачи
+        ((B.motivation, S, 11), 1), # Амбициозные цели
+        ((B.motivation, S, 12), 3), # Признанный эксперт
         # academic
         ((B.academic, S, 1), 0),    # Математика/информатика            → mathematical+tech+numbers
         ((B.academic, S, 2), 0),    # ИИ и data science                 → tech+mathematical+investigative
@@ -173,12 +194,17 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.academic, S, 4), 2),    # Хакатоны и техпроекты             → tech+creative_think
         ((B.academic, S, 5), 0),    # Точные предметы                   → mathematical+numbers
         ((B.academic, S, 6), 3),    # IT/инженерный класс               → tech+spatial
+        ((B.academic, S, 7), 0),    # Докопаться до сути самому         → investigative+logical
+        ((B.academic, S, 8), 0),    # Анализ данных и программирование  → tech+numbers
         # directions
         ((B.directions, S, 1), 0),  # Технологии и разработка           → tech+investigative
         ((B.directions, S, 2), 0),  # Технологии умнее                  → tech
         ((B.directions, S, 3), 0),  # Инженер-новатор                   → tech+investigative+creative_think
         ((B.directions, S, 4), 0),  # Код, приложение, сайт             → tech+creative_think
         ((B.directions, S, 5), 0),  # Tech-команда / стартап            → tech+enterprising
+        ((B.directions, S, 6), 0),  # Стажировка в IT-компании          → tech+investigative
+        ((B.directions, S, 7), 0),  # Приложение или бот                → tech+creative_think
+        ((B.directions, S, 8), 0),  # «Как устроены нейросети»          → tech+investigative
         # goal (non-scoring)
         ((B.goal_clarification, S, 1), 2),
         ((B.goal_clarification, S, 2), 1),
@@ -196,6 +222,10 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.interests, S, 6), 2),   # Творческая мастерская             → artistic+creative_think
         ((B.interests, S, 7), 1),   # Работать с текстами / идеями      → verbal
         ((B.interests, S, 8), 1),   # В студии, создаю                  → artistic+creative_think
+        ((B.interests, S, 9), 1),   # Влоги, эстетика, креатив          → media+artistic
+        ((B.interests, S, 10), 3),  # Контент для соцсетей              → media+artistic
+        ((B.interests, S, 11), 2),  # Интерактивное цифровое искусство  → artistic+creative_think
+        ((B.interests, S, 12), 3),  # Тренды культуры и дизайна         → artistic+media
         # thinking
         ((B.thinking, S, 1), 1),    # Придумать оригинальную историю    → creative_think+verbal
         ((B.thinking, S, 2), 1),    # Неожиданный подход                → creative_think
@@ -203,6 +233,12 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.thinking, S, 4), 3),    # Творческое задание без ответа     → creative_think
         ((B.thinking, S, 5), 1),    # Открытые задачи                   → creative_think
         ((B.thinking, S, 6), 1),    # Словами, точные формулировки      → verbal
+        ((B.thinking, S, 7), 2),    # Схемы и интеллект-карты           → spatial
+        ((B.thinking, S, 8), 1),    # Обходное решение                  → practical
+        ((B.thinking, S, 9), 3),    # Метафора или аналогия             → creative_think+verbal
+        ((B.thinking, S, 10), 3),   # 20 применений предмету            → creative_think
+        ((B.thinking, S, 11), 3),   # Решать вопросы по ситуации        → practical
+        ((B.thinking, S, 12), 3),   # Пробую малый шаг и корректирую    → practical+creative_think
         # personality
         ((B.personality, S, 1), 4),
         ((B.personality, S, 2), 3),
@@ -211,6 +247,11 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.personality, S, 5), 3),
         ((B.personality, S, 6), 1),
         ((B.personality, S, 7), 3),
+        ((B.personality, S, 8), 2),  # (reversed)                       → emotional_stability:3
+        ((B.personality, S, 9), 3),  # Легко начинаю разговор           → extraversion:4
+        ((B.personality, S, 10), 3), # Неожиданные идеи                 → openness
+        ((B.personality, S, 11), 2), # Обсужу с друзьями                → extraversion+agreeableness
+        ((B.personality, S, 12), 1), # Свой проект или хобби            → independence+openness
         # motivation
         ((B.motivation, S, 1), 2),  # Чтобы создавать своё              → creative_think
         ((B.motivation, S, 2), 2),  # Когда создаю новое                → creative_think
@@ -218,6 +259,12 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.motivation, S, 4), 0),  # «Оригинально и креативно»         → creative_think
         ((B.motivation, S, 5), 0),  # Делать по-своему
         ((B.motivation, S, 6), 1),  # Нельзя ничего менять
+        ((B.motivation, S, 7), 0),  # Сам предмет интересен
+        ((B.motivation, S, 8), 2),  # Творческая работа с признанием    → creative_think
+        ((B.motivation, S, 9), 0),  # Процесс создания нового           → creative_think
+        ((B.motivation, S, 10), 2), # Чтобы результат впечатлил
+        ((B.motivation, S, 11), 0), # Свобода и доверие
+        ((B.motivation, S, 12), 0), # Создал чего не было               → creative_think
         # academic
         ((B.academic, S, 1), 3),    # Языки/литература/журналистика     → verbal
         ((B.academic, S, 2), 1),    # Дизайн и цифровое искусство       → artistic+tech
@@ -225,12 +272,17 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.academic, S, 4), 3),    # Творческие конкурсы/выставки      → artistic
         ((B.academic, S, 5), 1),    # Гуманитарные с текстами           → verbal
         ((B.academic, S, 6), 2),    # Социально-гуманитарный            → verbal+social
+        ((B.academic, S, 7), 3),    # Применять на практике             → realistic+practical
+        ((B.academic, S, 8), 2),    # Медиа и сторителлинг              → media+verbal
         # directions
         ((B.directions, S, 1), 1),  # Творчество и дизайн               → artistic+creative_think
         ((B.directions, S, 2), 4),  # Новое искусство и культура        → artistic+creative_think
         ((B.directions, S, 3), 1),  # Художник или режиссёр             → artistic
         ((B.directions, S, 4), 1),  # Творческие работы / дизайн        → artistic
         ((B.directions, S, 5), 1),  # Студия, агентство, креатив        → artistic
+        ((B.directions, S, 6), 1),  # Креативное агентство              → artistic+media
+        ((B.directions, S, 7), 1),  # Медиапроект — канал, подкаст      → media+artistic
+        ((B.directions, S, 8), 1),  # «Как снимают большое кино»        → artistic+media
         # goal
         ((B.goal_clarification, S, 1), 2),
         ((B.goal_clarification, S, 2), 1),
@@ -248,6 +300,10 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.interests, S, 6), 3),   # Дебатный клуб                     → enterprising+verbal
         ((B.interests, S, 7), 2),   # Работать с людьми / интервью      → social+verbal
         ((B.interests, S, 8), 2),   # Встречи, переговоры, презентации  → enterprising+social+extraversion
+        ((B.interests, S, 9), 2),   # Разборы книг и идей               → verbal+investigative
+        ((B.interests, S, 10), 1),  # Вожатый или наставник             → social+helping_motiv
+        ((B.interests, S, 11), 1),  # Зал про мозг и эксперименты       → science+investigative
+        ((B.interests, S, 12), 1),  # Почему люди ведут себя так        → investigative+social
         # thinking
         ((B.thinking, S, 1), 2),    # Почему возник конфликт            → social_think
         ((B.thinking, S, 2), 2),    # Пробую руками / проб и ошибок     → practical
@@ -255,6 +311,12 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.thinking, S, 4), 1),    # Эссе и аргументация               → verbal
         ((B.thinking, S, 5), 2),    # Задачи про людей                  → social_think
         ((B.thinking, S, 6), 2),    # Примеры и аналогии из жизни       → creative_think+social_think
+        ((B.thinking, S, 7), 3),    # Готовиться вдвоём, объяснять      → social_think+verbal
+        ((B.thinking, S, 8), 3),    # Поговорю с командой               → social_think
+        ((B.thinking, S, 9), 2),    # Разбор на реальном примере        → practical
+        ((B.thinking, S, 10), 2),   # Детективная история               → logical+social_think
+        ((B.thinking, S, 11), 2),   # Договориться со всеми             → social_think+verbal
+        ((B.thinking, S, 12), 1),   # Советуюсь с людьми                → social_think
         # personality
         ((B.personality, S, 1), 3),
         ((B.personality, S, 2), 3),
@@ -263,6 +325,11 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.personality, S, 5), 3),
         ((B.personality, S, 6), 4), # Брать ответственность             → leadership:5
         ((B.personality, S, 7), 1), # Предпочитаю разбираться сам — нет → independence:2
+        ((B.personality, S, 8), 2),  # (reversed)                       → emotional_stability:3
+        ((B.personality, S, 9), 4),  # Легко начинаю разговор           → extraversion:5
+        ((B.personality, S, 10), 2), # Поддерживать и помогать          → agreeableness+teamwork
+        ((B.personality, S, 11), 2), # Обсужу с друзьями/наставником    → extraversion+agreeableness
+        ((B.personality, S, 12), 3), # Помочь родным или другу          → agreeableness
         # motivation
         ((B.motivation, S, 1), 2),  # Чтобы помогать людям              → helping_motiv
         ((B.motivation, S, 2), 1),  # Вижу что кому-то помог            → helping_motiv
@@ -270,6 +337,12 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.motivation, S, 4), 1),  # «Ты реально помог нам»            → helping_motiv
         ((B.motivation, S, 5), 3),  # Польза другим                     → helping_motiv
         ((B.motivation, S, 6), 3),  # Работаешь один — расстроит        → teamwork
+        ((B.motivation, S, 7), 2),  # Шаг к надёжному будущему
+        ((B.motivation, S, 8), 3),  # Работа меняет жизни людей         → helping_motiv
+        ((B.motivation, S, 9), 3),  # Польза проекта людям              → helping_motiv
+        ((B.motivation, S, 10), 3), # Помогаю тому кто рассчитывает     → helping_motiv
+        ((B.motivation, S, 11), 3), # Ясность и стабильность
+        ((B.motivation, S, 12), 1), # Помог многим людям                → helping_motiv
         # academic
         ((B.academic, S, 1), 4),    # Обществознание/право/экономика    → social+enterprising+numbers
         ((B.academic, S, 2), 2),    # Психология и педагогика           → social+helping_motiv
@@ -277,19 +350,102 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.academic, S, 4), 1),    # Дебаты, модель ООН                → verbal+enterprising
         ((B.academic, S, 5), 1),    # Гуманитарные предметы             → verbal
         ((B.academic, S, 6), 2),    # Социально-гуманитарный класс      → verbal+social
+        ((B.academic, S, 7), 2),    # Обсуждать и разбирать вслух       → social+verbal
+        ((B.academic, S, 8), 3),    # Психология общения                → social+social_think
         # directions
         ((B.directions, S, 1), 2),  # Помощь людям и общество           → social+helping_motiv
         ((B.directions, S, 2), 3),  # Образование и общество лучше      → social+helping_motiv
         ((B.directions, S, 3), 2),  # Врач или учёный                   → science+helping_motiv
         ((B.directions, S, 4), 3),  # Запущенный проект/инициатива      → enterprising+leadership
         ((B.directions, S, 5), 3),  # Помогающая профессия              → social+helping_motiv
+        ((B.directions, S, 6), 2),  # Клиника или лаборатория           → science+helping_motiv
+        ((B.directions, S, 7), 3),  # Социальная инициатива             → social+helping_motiv
+        ((B.directions, S, 8), 4),  # «Как право меняет общество»       → verbal+social
         # goal
         ((B.goal_clarification, S, 1), 2),
         ((B.goal_clarification, S, 2), 1),
         ((B.goal_clarification, S, 3), 1),
     ],
 
-    # ── 4. Middle — Technology ───────────────────────────────────────────────
+    # ── 4. Senior — Business / Entrepreneur ─────────────────────────────────
+    "Senior — Business / Entrepreneur": [
+        # interests
+        ((B.interests, S, 1), 3),   # Идея для проекта или бизнеса      → enterprising+creative_think
+        ((B.interests, S, 2), 3),   # Организовать команду              → enterprising+leadership
+        ((B.interests, S, 3), 3),   # Стартапы, предприниматели         → enterprising:3
+        ((B.interests, S, 4), 3),   # Выступил и услышали               → enterprising+extraversion
+        ((B.interests, S, 5), 3),   # Координатор                       → enterprising+conventional+leadership
+        ((B.interests, S, 6), 3),   # Бизнес-интенсив / дебаты          → enterprising+verbal
+        ((B.interests, S, 7), 0),   # Числа, статистика, расчёты        → conventional+numbers+math
+        ((B.interests, S, 8), 2),   # Встречи, переговоры               → enterprising+social+extraversion
+        ((B.interests, S, 9), 3),   # Аналитика и рейтинги              → numbers+conventional
+        ((B.interests, S, 10), 2),  # Промоутер или продавец            → enterprising+extraversion
+        ((B.interests, S, 11), 0),  # Механизмы и инженерное            → tech+realistic+investigative
+        ((B.interests, S, 12), 0),  # Статистика финансов               → numbers+conventional
+        # thinking
+        ((B.thinking, S, 1), 4),    # Стратегия на шаги вперёд          → strategic
+        ((B.thinking, S, 2), 3),    # Картина целиком, планирую         → strategic+systematic
+        ((B.thinking, S, 3), 2),    # Настроение и мотивы людей         → social_think
+        ((B.thinking, S, 4), 2),    # Инженерный кейс                   → spatial+systematic+strategic
+        ((B.thinking, S, 5), 3),    # Системы и процессы                → systematic+strategic
+        ((B.thinking, S, 6), 1),    # Словами, формулировки             → verbal
+        ((B.thinking, S, 7), 0),    # План по темам и дням              → systematic+strategic
+        ((B.thinking, S, 8), 2),    # Влияние на цель, переиграю план   → strategic
+        ((B.thinking, S, 9), 0),    # График или диаграмма              → spatial+numbers
+        ((B.thinking, S, 10), 2),   # Детективная история               → logical+social_think
+        ((B.thinking, S, 11), 0),   # Маршрут и логистика               → strategic+systematic
+        ((B.thinking, S, 12), 2),   # Сценарии на годы вперёд           → strategic
+        # personality
+        ((B.personality, S, 1), 3),
+        ((B.personality, S, 2), 3),
+        ((B.personality, S, 3), 4), # Комфортно выступать               → extraversion:5
+        ((B.personality, S, 4), 3),
+        ((B.personality, S, 5), 3),
+        ((B.personality, S, 6), 4), # Вести за собой                    → leadership:5
+        ((B.personality, S, 7), 2),
+        ((B.personality, S, 8), 1),  # (reversed)                       → emotional_stability:4
+        ((B.personality, S, 9), 4),  # Легко начинаю разговор           → extraversion:5
+        ((B.personality, S, 10), 0), # Координировать и распределять    → leadership:2
+        ((B.personality, S, 11), 1), # Быстро переключусь               → emotional_stability
+        ((B.personality, S, 12), 0), # Встретиться с компанией          → extraversion
+        # motivation
+        ((B.motivation, S, 1), 1),  # Хорошо зарабатывать
+        ((B.motivation, S, 2), 3),  # Признают и ценят
+        ((B.motivation, S, 3), 2),  # Хорошее вознаграждение
+        ((B.motivation, S, 4), 2),  # «Ты лучший в этом»
+        ((B.motivation, S, 5), 2),  # Результат увидят многие
+        ((B.motivation, S, 6), 1),  # Нельзя ничего менять
+        ((B.motivation, S, 7), 3),  # Зависит будущий доход
+        ((B.motivation, S, 8), 0),  # Своё дело                         → enterprising
+        ((B.motivation, S, 9), 1),  # Заработать на идее                → enterprising
+        ((B.motivation, S, 10), 2), # Впечатлить результатом
+        ((B.motivation, S, 11), 0), # Свобода и доверие
+        ((B.motivation, S, 12), 2), # Успешное прибыльное дело          → enterprising
+        # academic
+        ((B.academic, S, 1), 4),    # Обществознание/право/экономика    → social+enterprising+numbers
+        ((B.academic, S, 2), 3),    # Бизнес и менеджмент               → enterprising:3
+        ((B.academic, S, 3), 1),    # Аргументированное эссе            → verbal
+        ((B.academic, S, 4), 1),    # Дебаты, модель ООН                → verbal+enterprising
+        ((B.academic, S, 5), 0),    # Точные предметы с формулами       → mathematical+numbers
+        ((B.academic, S, 6), 2),    # Социально-гуманитарный            → verbal+social
+        ((B.academic, S, 7), 2),    # Обсуждать и разбирать вслух       → social+verbal
+        ((B.academic, S, 8), 4),    # Предпринимательство и финансы     → enterprising+numbers
+        # directions
+        ((B.directions, S, 1), 3),  # Бизнес и предпринимательство      → enterprising:3
+        ((B.directions, S, 2), 3),  # Образование и общество            → social+helping_motiv
+        ((B.directions, S, 3), 3),  # Основатель компании               → enterprising:3
+        ((B.directions, S, 4), 3),  # Запущенный проект/инициатива      → enterprising+leadership
+        ((B.directions, S, 5), 0),  # Tech-команда / стартап            → tech+enterprising
+        ((B.directions, S, 6), 3),  # Бизнес-инкубатор                  → enterprising+leadership
+        ((B.directions, S, 7), 4),  # Бизнес с реальными продажами      → enterprising:3
+        ((B.directions, S, 8), 3),  # «Компания с нуля»                 → enterprising:3
+        # goal
+        ((B.goal_clarification, S, 1), 2),
+        ((B.goal_clarification, S, 2), 1),
+        ((B.goal_clarification, S, 3), 2),
+    ],
+
+    # ── 5. Middle — Technology ───────────────────────────────────────────────
     "Middle — Technology": [
         # interests
         ((B.interests, M, 1), 0),   # Конструктор / собрать что-то      → realistic
@@ -298,42 +454,232 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.interests, M, 4), 0),   # Техника и музыка                  → realistic+tech
         ((B.interests, M, 5), 2),   # Делать опыты и наблюдать          → science+investigative
         ((B.interests, M, 6), 0),   # Клуб изобретателей                → tech+investigative+creative_think
+        ((B.interests, M, 7), 0),   # Действующая модель                → realistic+tech
+        ((B.interests, M, 8), 0),   # Головоломки и квесты              → investigative+logical
+        ((B.interests, M, 9), 2),   # Найти и проверить факты           → investigative
+        ((B.interests, M, 10), 1),  # Программы и настройки             → tech+investigative
+        ((B.interests, M, 11), 0),  # Музей техники                     → tech+realistic+investigative
+        ((B.interests, M, 12), 2),  # Чинить и настраивать вещи         → realistic+tech
         # thinking
         ((B.thinking, M, 1), 0),    # Найти закономерность              → logical
         ((B.thinking, M, 2), 0),    # Считать в уме                     → mathematical
         ((B.thinking, M, 3), 0),    # Шаг за шагом                      → logical+systematic
         ((B.thinking, M, 4), 0),    # Математический ребус              → mathematical+logical
         ((B.thinking, M, 5), 0),    # Один правильный ответ             → logical
+        ((B.thinking, M, 6), 1),    # Слежу за ходами соперника         → logical+social_think
+        ((B.thinking, M, 7), 0),    # Инструкция по шагам               → systematic
+        ((B.thinking, M, 8), 0),    # Понять почему случилось           → social_think
+        ((B.thinking, M, 9), 0),    # Числа и даты                      → mathematical
+        ((B.thinking, M, 10), 0),   # Разбиваю на части                 → logical+systematic
+        ((B.thinking, M, 11), 0),   # Нарисую план с поворотами         → spatial
+        ((B.thinking, M, 12), 3),   # Измерю что поместится             → mathematical+spatial
         # personality
         ((B.personality, M, 1), 4),
         ((B.personality, M, 2), 4),
         ((B.personality, M, 3), 2),
         ((B.personality, M, 4), 2),
         ((B.personality, M, 5), 4),
+        ((B.personality, M, 6), 2),  # Вести за собой ребят             → leadership:3
+        ((B.personality, M, 7), 4),  # Сначала пробую сам               → independence:5
+        ((B.personality, M, 8), 1),  # Аккуратно свою часть             → conscientiousness+independence
+        ((B.personality, M, 9), 3),  # Позанимаюсь сам                  → independence+conscientiousness
+        ((B.personality, M, 10), 3), # Помогу если попросит             → agreeableness:1
+        ((B.personality, M, 11), 0), # Один — сам продумаю              → independence:2
+        ((B.personality, M, 12), 0), # Спокойно переделаю               → emotional_stability+conscientiousness
         # motivation
         ((B.motivation, M, 1), 0),  # Чтобы было интересно
         ((B.motivation, M, 2), 0),  # Справился со сложным
         ((B.motivation, M, 3), 2),  # Решать трудные задачки
         ((B.motivation, M, 4), 0),  # Весело и интересно
         ((B.motivation, M, 5), 0),  # Трудное, но интересное
+        ((B.motivation, M, 6), 0),  # Интересно узнавать новое
+        ((B.motivation, M, 7), 0),  # «Как оригинально!»                → creative_think
+        ((B.motivation, M, 8), 0),  # Хочу справиться сам
+        ((B.motivation, M, 9), 0),  # Накоплю на цель
+        ((B.motivation, M, 10), 1), # Сложные уровни
+        ((B.motivation, M, 11), 3), # Спокойно почитаю
+        ((B.motivation, M, 12), 0), # Интересная работа
         # academic
         ((B.academic, M, 1), 0),    # Математика                        → mathematical+numbers
         ((B.academic, M, 2), 0),    # Решать примеры и задачи           → mathematical
         ((B.academic, M, 3), 0),    # Счёт и логика                     → mathematical+logical
         ((B.academic, M, 4), 3),    # Компьютерный / робот              → tech
         ((B.academic, M, 5), 0),    # Программировать                   → tech+logical
+        ((B.academic, M, 6), 1),    # Задачи на смекалку                → mathematical+logical
+        ((B.academic, M, 7), 0),    # Формулы и правила счёта           → mathematical
+        ((B.academic, M, 8), 0),    # Программирование и роботы         → tech+logical
         # directions
         ((B.directions, M, 1), 0),  # Игры и программы                  → tech+creative_think
         ((B.directions, M, 2), 0),  # Изобретать новое                  → investigative+creative_think+tech
         ((B.directions, M, 3), 0),  # Делать роботов и программы        → tech
         ((B.directions, M, 4), 0),  # Робототехнический турнир          → tech
+        ((B.directions, M, 5), 0),  # Фильм про изобретателя            → tech+investigative+creative_think
+        ((B.directions, M, 6), 0),  # Приложение для жителей            → tech+creative_think
+        ((B.directions, M, 7), 0),  # Научить робота трюку              → tech+logical
+        ((B.directions, M, 8), 0),  # Создаю программы и игры           → tech
         # goal
         ((B.goal_clarification, M, 1), 1),
         ((B.goal_clarification, M, 2), 0),
         ((B.goal_clarification, M, 3), 0),
     ],
 
-    # ── 5. Junior — Explorer (wide interests) ───────────────────────────────
+    # ── 6. Middle — Creative / Artistic ──────────────────────────────────────
+    "Middle — Creative / Artistic": [
+        # interests
+        ((B.interests, M, 1), 2),   # Порисовать / придумать историю    → artistic+creative_think
+        ((B.interests, M, 2), 1),   # Рисование, музыка, театр          → artistic
+        ((B.interests, M, 3), 1),   # Видео про творчество              → artistic
+        ((B.interests, M, 4), 1),   # Оформлять и делать декорации      → artistic+creative_think
+        ((B.interests, M, 5), 1),   # Читать и писать сочинения         → verbal
+        ((B.interests, M, 6), 1),   # Художественная студия             → artistic
+        ((B.interests, M, 7), 2),   # Картина, поделка, номер           → artistic+creative_think
+        ((B.interests, M, 8), 1),   # Строить свои миры                 → creative_think+tech+artistic
+        ((B.interests, M, 9), 1),   # Оформить и нарисовать             → artistic
+        ((B.interests, M, 10), 0),  # Монтировать видео/анимации        → media+artistic
+        ((B.interests, M, 11), 2),  # Выставка или театр                → artistic
+        ((B.interests, M, 12), 3),  # Ролики для своего канала          → media+enterprising
+        # thinking
+        ((B.thinking, M, 1), 1),    # Придумать концовку истории        → creative_think+verbal
+        ((B.thinking, M, 2), 1),    # Сочинять и рассказывать           → verbal+creative_think
+        ((B.thinking, M, 3), 1),    # Хитрый способ                     → creative_think
+        ((B.thinking, M, 4), 1),    # Написать рассказ                  → verbal
+        ((B.thinking, M, 5), 1),    # Придумать что угодно              → creative_think
+        ((B.thinking, M, 6), 3),    # Неожиданный ход                   → creative_think
+        ((B.thinking, M, 7), 3),    # Своё, не как на коробке           → creative_think
+        ((B.thinking, M, 8), 1),    # Подберу правильные слова          → verbal+social_think
+        ((B.thinking, M, 9), 1),    # Истории и стихи                   → verbal
+        ((B.thinking, M, 10), 1),   # Свой способ решения               → creative_think
+        ((B.thinking, M, 11), 3),   # Фото ориентиров                   → spatial+creative_think
+        ((B.thinking, M, 12), 0),   # Крепость или костюм               → creative_think
+        # personality
+        ((B.personality, M, 1), 4),  # Свои идеи                        → openness:5
+        ((B.personality, M, 2), 2),
+        ((B.personality, M, 3), 3),
+        ((B.personality, M, 4), 2),
+        ((B.personality, M, 5), 2),
+        ((B.personality, M, 6), 1),
+        ((B.personality, M, 7), 3),  # Сначала пробую сам               → independence:4
+        ((B.personality, M, 8), 3),  # Придумывать идеи                 → openness:2
+        ((B.personality, M, 9), 1),  # Возьму себя в руки               → emotional_stability:2
+        ((B.personality, M, 10), 1), # Позову в компанию                → agreeableness+extraversion
+        ((B.personality, M, 11), 1), # В паре с другом                  → teamwork+agreeableness
+        ((B.personality, M, 12), 1), # Обыграю недостаток               → openness:2
+        # motivation
+        ((B.motivation, M, 1), 2),  # Придумать что-то своё             → creative_think
+        ((B.motivation, M, 2), 2),  # Создал что-то новое               → creative_think
+        ((B.motivation, M, 3), 0),  # Делать по-своему
+        ((B.motivation, M, 4), 0),  # Весело и интересно
+        ((B.motivation, M, 5), 2),  # Творческое, фантазировать         → creative_think
+        ((B.motivation, M, 6), 0),  # Интересно узнавать новое
+        ((B.motivation, M, 7), 0),  # «Как оригинально!»                → creative_think
+        ((B.motivation, M, 8), 3),  # Обходной способ                   → creative_think+freedom
+        ((B.motivation, M, 9), 1),  # Материалы, ещё больше товаров     → enterprising
+        ((B.motivation, M, 10), 0), # Свои правила и ходы
+        ((B.motivation, M, 11), 2), # Придумаю игру или сценку          → creative_think
+        ((B.motivation, M, 12), 0), # Интересная работа
+        # academic
+        ((B.academic, M, 1), 4),    # ИЗО / музыка                      → artistic
+        ((B.academic, M, 2), 3),    # Поделка или проект                → realistic+artistic
+        ((B.academic, M, 3), 2),    # Хвалят в творчестве               → artistic
+        ((B.academic, M, 4), 1),    # Литературный / театральный        → verbal+artistic
+        ((B.academic, M, 5), 1),    # Красиво рисовать                  → artistic
+        ((B.academic, M, 6), 2),    # Сочиняем свой рассказ             → verbal
+        ((B.academic, M, 7), 1),    # Стихи и определения               → verbal
+        ((B.academic, M, 8), 1),    # Театр и актёрское мастерство      → artistic+extraversion
+        # directions
+        ((B.directions, M, 1), 1),  # Художник, музыкант, блогер        → artistic+media
+        ((B.directions, M, 2), 1),  # Творить красивое                  → artistic
+        ((B.directions, M, 3), 1),  # Рисовать мультфильмы или игры     → artistic+media
+        ((B.directions, M, 4), 1),  # Конкурс рисунка или песни         → artistic
+        ((B.directions, M, 5), 1),  # Фильм про художника               → artistic
+        ((B.directions, M, 6), 1),  # Яркие муралы                      → artistic
+        ((B.directions, M, 7), 2),  # Организовать праздник             → enterprising+leadership
+        ((B.directions, M, 8), 1),  # Рисую, снимаю, выступаю           → artistic+media
+        # goal
+        ((B.goal_clarification, M, 1), 1),
+        ((B.goal_clarification, M, 2), 0),
+        ((B.goal_clarification, M, 3), 0),
+    ],
+
+    # ── 7. Middle — Social / Helper ──────────────────────────────────────────
+    "Middle — Social / Helper": [
+        # interests
+        ((B.interests, M, 1), 3),   # Поболтать и поиграть с друзьями   → social+extraversion
+        ((B.interests, M, 2), 4),   # Дебаты или школьный актив         → enterprising+verbal+social
+        ((B.interests, M, 3), 3),   # Игры, блоги, свой канал           → media+enterprising
+        ((B.interests, M, 4), 2),   # Встречать гостей и помогать       → social+helping_motiv
+        ((B.interests, M, 5), 1),   # Читать и писать сочинения         → verbal
+        ((B.interests, M, 6), 2),   # Клуб помощи и волонтёрства        → social+helping_motiv
+        ((B.interests, M, 7), 3),   # Стенд про животных                → nature
+        ((B.interests, M, 8), 2),   # Командные игры с друзьями         → social+extraversion
+        ((B.interests, M, 9), 3),   # Раздать газету, рассказать всем   → social+extraversion+enterprising
+        ((B.interests, M, 10), 3),  # Фильмы про природу                → nature
+        ((B.interests, M, 11), 2),  # Выставка или театр                → artistic
+        ((B.interests, M, 12), 0),  # Ухаживать за животными            → nature
+        # thinking
+        ((B.thinking, M, 1), 2),    # Почему герой поступил так         → social_think
+        ((B.thinking, M, 2), 2),    # Понимать что чувствуют            → social_think
+        ((B.thinking, M, 3), 2),    # Прошу помощи, советуюсь           → social_think
+        ((B.thinking, M, 4), 1),    # Написать рассказ                  → verbal
+        ((B.thinking, M, 5), 2),    # Задача про дружбу и людей         → social_think
+        ((B.thinking, M, 6), 1),    # Слежу за ходами соперника         → logical+social_think
+        ((B.thinking, M, 7), 2),    # Сразу пробую собирать             → practical
+        ((B.thinking, M, 8), 1),    # Поговорю с каждым                 → verbal+social_think
+        ((B.thinking, M, 9), 1),    # Истории и стихи                   → verbal
+        ((B.thinking, M, 10), 2),   # Обсуждаю с кем-нибудь             → social_think
+        ((B.thinking, M, 11), 2),   # Встречу и проведу сам             → practical
+        ((B.thinking, M, 12), 1),   # Приспособлю для дела              → practical
+        # personality
+        ((B.personality, M, 1), 2),
+        ((B.personality, M, 2), 2),
+        ((B.personality, M, 3), 3),  # В центре внимания                → extraversion:4
+        ((B.personality, M, 4), 4),  # Работать вместе                  → agreeableness+teamwork:5
+        ((B.personality, M, 5), 3),
+        ((B.personality, M, 6), 3),  # Вести за собой ребят             → leadership:4
+        ((B.personality, M, 7), 1),  # Сначала сам — не про меня        → independence:2
+        ((B.personality, M, 8), 2),  # Помогать тем у кого не выходит   → agreeableness:2
+        ((B.personality, M, 9), 2),  # Попрошу объяснить                → agreeableness:1
+        ((B.personality, M, 10), 1), # Позову в нашу компанию           → agreeableness+extraversion
+        ((B.personality, M, 11), 2), # В большой команде                → teamwork+extraversion
+        ((B.personality, M, 12), 2), # Попрошу помочь доделать          → agreeableness:1
+        # motivation
+        ((B.motivation, M, 1), 1),  # Помочь кому-то                    → helping_motiv
+        ((B.motivation, M, 2), 1),  # Полезное для других               → helping_motiv
+        ((B.motivation, M, 3), 1),  # Работать с друзьями               → teamwork
+        ((B.motivation, M, 4), 1),  # Помогать людям                    → helping_motiv
+        ((B.motivation, M, 5), 1),  # Простое и спокойное
+        ((B.motivation, M, 6), 3),  # Полезное для других               → helping_motiv
+        ((B.motivation, M, 7), 1),  # «Ты очень помог!»                 → helping_motiv
+        ((B.motivation, M, 8), 1),  # Позову друга — вместе             → teamwork
+        ((B.motivation, M, 9), 2),  # Подарок близким                   → helping_motiv
+        ((B.motivation, M, 10), 2), # Играть с командой                 → teamwork
+        ((B.motivation, M, 11), 0), # Помогу учителю или младшим        → helping_motiv
+        ((B.motivation, M, 12), 2), # Полезной для людей                → helping_motiv
+        # academic
+        ((B.academic, M, 1), 1),    # Русский / литература              → verbal
+        ((B.academic, M, 2), 1),    # Читать и писать                   → verbal
+        ((B.academic, M, 3), 1),    # Сочинения и пересказы             → verbal
+        ((B.academic, M, 4), 1),    # Литературный / театральный        → verbal+artistic
+        ((B.academic, M, 5), 3),    # Выступать и говорить              → verbal+extraversion
+        ((B.academic, M, 6), 2),    # Сочиняем свой рассказ             → verbal
+        ((B.academic, M, 7), 1),    # Стихи и определения               → verbal
+        ((B.academic, M, 8), 1),    # Театр и актёрское мастерство      → artistic+extraversion
+        # directions
+        ((B.directions, M, 1), 2),  # Врач, учитель, помогает           → social+helping_motiv
+        ((B.directions, M, 2), 2),  # Помогать и заботиться             → social+helping_motiv
+        ((B.directions, M, 3), 2),  # Лечить людей или животных         → science+helping_motiv+nature
+        ((B.directions, M, 4), 1),  # Конкурс рисунка или песни         → artistic
+        ((B.directions, M, 5), 2),  # Врач который спасает              → science+helping_motiv+social
+        ((B.directions, M, 6), 2),  # Приют для животных                → nature+helping_motiv+social
+        ((B.directions, M, 7), 1),  # Помирить поссорившихся            → social+social_think
+        ((B.directions, M, 8), 2),  # Помогаю людям и забочусь          → social+helping_motiv
+        # goal
+        ((B.goal_clarification, M, 1), 0),
+        ((B.goal_clarification, M, 2), 0),
+        ((B.goal_clarification, M, 3), 0),
+    ],
+
+    # ── 8. Junior — Explorer (wide interests) ───────────────────────────────
     "Junior — Explorer (wide interests)": [
         # interests
         ((B.interests, J, 1), 3),   # Разбираться как работают игрушки  → investigative
@@ -393,7 +739,7 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.goal_clarification, J, 3), 0),
     ],
 
-    # ── 6. Junior — Technology / Science ────────────────────────────────────
+    # ── 9. Junior — Technology / Science ────────────────────────────────────
     # Child who loves how things work, puzzles, robots, experiments, numbers.
     # Expected top directions: IT/Science/AI (category signals: investigative,
     # logical, mathematical, technology, systematic).
@@ -456,7 +802,7 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.goal_clarification, J, 3), 1),  # Иногда думаю
     ],
 
-    # ── 7. Junior — Creative / Artistic ─────────────────────────────────────
+    # ── 10. Junior — Creative / Artistic ─────────────────────────────────────
     # Child who loves drawing, stories, making things, role play, and art.
     # Expected top directions: Design/Art, Media/Journalism (signals: artistic,
     # creative_think, verbal).
@@ -519,7 +865,7 @@ PROFILES: dict[str, list[tuple]] = {
         ((B.goal_clarification, J, 3), 0),  # Ещё рано, не думал
     ],
 
-    # ── 8. Junior — Social / Helper ─────────────────────────────────────────
+    # ── 11. Junior — Social / Helper ─────────────────────────────────────────
     # Child who loves playing with friends, helping others, organizing games.
     # Expected top directions: Psychology/Pedagogy, Law/Society (signals:
     # social, helping_motiv, verbal, social_think).
@@ -620,6 +966,45 @@ PROFILES: dict[str, list[tuple]] = {
 #    "Управление проектами" into #4-5 slot (required: strategic:55,
 #    conscientiousness:45).  This is acceptable — the gap vs. the correct
 #    direction is always ≥30 percentage points, so the recommendation stays clear.
+#
+# ---------------------------------------------------------------------------
+# Calibration findings (post-middle/senior expansion, 2026-07)
+# ---------------------------------------------------------------------------
+#
+# Middle and senior blocks were brought to the same per-block target as junior
+# (interests/thinking/personality/motivation → 12 each; academic/directions → 8;
+# senior university → 10 preference questions).  Personality blocks are now a
+# mix of Likert items (incl. one reversed item for senior) and situational
+# choice questions.  Findings:
+#
+# 1. NO DEGENERATION — max-based normalization plus the min(ratio, 1.2) cap
+#    keeps scores stable at the larger question volume.  Junior profiles are
+#    unchanged vs. the previous run (no regression).
+#
+# 2. MEANINGFUL DIFFERENTIATION — top-1 is correct with a clear margin:
+#    Senior Tech     → IT(99%) / AI(87%) / Data Science(62%)
+#    Senior Creative → Design(90%) / Media(80%) / Marketing(50%)
+#    Senior Social   → Psychology(99%) / Law(90%) / Medicine(70%)
+#    Senior Business → Business(71%) / Marketing(48%) / Finance(35%)
+#    Middle Tech     → IT(99%) / AI(90%) / Data Science(56%)
+#    Middle Creative → Design(90%) / Media(72%) / Marketing(55%)
+#    Middle Social   → Psychology(99%) / Law(90%) / Media(79%)
+#
+# 3. LIKERT EXPANSION IS SAFE — new Likert items (leadership/independence for
+#    middle, reversed emotional_stability + extraversion for senior) add at most
+#    5 raw points per trait; domain categories from 12 interests + 8 academic +
+#    8 directions questions still dominate the normalization denominator, and
+#    personality traits appear in required_scores only for Business (leadership)
+#    and Project Management (conscientiousness).
+#
+# 4. KNOWN BEHAVIOR: Senior Business tops out at ~71% because its required
+#    leadership:45 is normalized against a dominant enterprising signal
+#    (leadership ≈ 26% of max).  Top-1 is still Business with a ≥20 pp gap —
+#    acceptable; no threshold changes made.
+#
+# 5. Law/госуправление reaches 90% for strongly verbal social profiles
+#    (verbal 75-92%, social 83-100%): both of its requirements are genuinely
+#    satisfied.  Psychology stays ahead at 99%, so the ranking is stable.
 #
 # ---------------------------------------------------------------------------
 # Entry point
