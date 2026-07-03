@@ -25,6 +25,7 @@ class AnalysisResultResponse(BaseModel):
     thinking_style: dict[str, float]
     motivation: list[str]
     directions: list[DirectionResult]
+    wellbeing_zones: list[str] = []
     created_at: datetime
 
     model_config = {"from_attributes": True}

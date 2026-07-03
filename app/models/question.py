@@ -19,6 +19,7 @@ class QuestionBlock(str, enum.Enum):
     directions = "directions"
     goal_clarification = "goal_clarification"
     university = "university"
+    wellbeing = "wellbeing"
 
 
 class Question(Base):
