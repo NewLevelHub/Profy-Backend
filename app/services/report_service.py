@@ -115,9 +115,8 @@ async def build_report(
     artifacts = list(artifacts_result.scalars().all())
 
     total_scores = await assessment_service.get_total_scores(assessment_id, db)
-    wb_raw = await assessment_service.get_wellbeing_raw_scores(assessment_id, db)
     matched = await _match_directions_full(total_scores, db)
-    draft = generate_report(profile, artifacts, total_scores, matched, wb_raw_scores=wb_raw)
+    draft = generate_report(profile, artifacts, total_scores, matched)
 
     analysis = AnalysisResult(
         assessment_id=assessment_id,
@@ -127,7 +126,6 @@ async def build_report(
         thinking_style=draft.thinking_style,
         motivation=draft.motivation,
         directions=draft.directions,
-        wellbeing_zones=draft.wellbeing_zones,
     )
     db.add(analysis)
     try:
