@@ -204,7 +204,12 @@ async def complete_block(
     return scoring_service.normalize_scores(block_raw_scores)
 
 
-async def get_total_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, float]:
+async def get_raw_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, Any]:
+    """Combined, un-normalized scores across all answers.
+
+    Numeric keys are summed; string keys (preferences) keep their last value.
+    Includes signals that normalize_scores drops (pref_*, wb_*, goal_*,
+    motivation preferences) so callers can surface them."""
     result = await db.execute(
         select(UserResponse.scores).where(UserResponse.assessment_id == assessment_id)
     )
@@ -219,7 +224,11 @@ async def get_total_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[s
                 combined[k] = combined.get(k, 0) + v
             elif isinstance(v, str):
                 combined[k] = v
+    return combined
 
+
+async def get_total_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, float]:
+    combined = await get_raw_scores(assessment_id, db)
     return scoring_service.normalize_scores(combined)
 
 
