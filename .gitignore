@@ -1,4 +1,5 @@
 server.sh
+start.sh
 .env
 .env.local
 .env.production
