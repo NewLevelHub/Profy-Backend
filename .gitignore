@@ -1,3 +1,4 @@
+server.sh
 .env
 .env.local
 .env.production
