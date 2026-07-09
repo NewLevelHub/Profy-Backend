@@ -29,7 +29,8 @@ Profy-Backend/
 │   └── seed_questions.py  # Наполнение БД вопросами
 ├── docker-compose.yml
 ├── Dockerfile
-├── nginx.conf
+├── nginx/
+│   └── local.conf       # локальный reverse proxy (production: nginx.conf на сервере)
 ├── requirements.txt
 └── .env.example
 ```
@@ -39,14 +40,10 @@ Profy-Backend/
 ```bash
 cp .env.example .env
 
-# SSL-сертификаты для nginx :443 (один раз)
-mkdir -p nginx/ssl && openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout nginx/ssl/key.pem -out nginx/ssl/cert.pem -subj "/CN=localhost"
-
 docker compose up -d --build
 ```
 
-Первый билд может занять несколько минут — pip скачивает зависимости внутри Docker.
+Локальный nginx проксирует API на `http://localhost/docs` и фронтенд с `localhost:3000` (если запущен `Profy-Frontend`).
 
 ## Сервисы
 

@@ -30,6 +30,7 @@ class LoginRequest(BaseModel):
 class UserInfo(BaseModel):
     id: uuid.UUID
     email: str
+    is_admin: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -59,6 +60,8 @@ class UserResponse(BaseModel):
     id: uuid.UUID
     email: str
     is_active: bool
+    is_verified: bool
+    is_admin: bool
 
     model_config = {"from_attributes": True}
 
