@@ -1,4 +1,5 @@
 import json
+import logging
 import uuid
 from datetime import datetime, timezone
 
@@ -13,9 +14,12 @@ from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
+from app.prompts import report_summary
 from app.schemas.result import AnalysisResultResponse
-from app.services import assessment_service, direction_service
-from app.services.ai_service import MatchedDirection, generate_report
+from app.services import assessment_service, direction_service, llm_client
+from app.services.ai_service import MatchedDirection, ReportDraft, generate_report
+
+logger = logging.getLogger(__name__)
 
 CACHE_TTL = 60 * 60 * 24  # 24 hours
 
@@ -51,6 +55,26 @@ async def _match_directions_full(
         )
         for d, score in top
     ]
+
+
+async def _generate_ai_summary(
+    profile: Profile | None, goal: str, draft: ReportDraft, artifacts: list
+) -> str | None:
+    """AI-personalized result summary. Returns None (→ template) if disabled or fails."""
+    if profile is None or not llm_client.is_enabled():
+        return None
+    try:
+        messages = report_summary.build_messages(profile, goal, draft, artifacts)
+        raw = await llm_client.complete_json(
+            messages, report_summary.SUMMARY_SCHEMA, "report_summary"
+        )
+    except (llm_client.LLMError, TypeError):
+        logger.warning("AI summary failed, using template summary")
+        return None
+    summary = raw.get("summary")
+    if isinstance(summary, str) and summary.strip():
+        return summary.strip()
+    return None
 
 
 async def build_report(
@@ -101,10 +125,11 @@ async def build_report(
     age_group = profile.age_group if profile else None
     matched = await _match_directions_full(total_scores, db, age_group)
     draft = generate_report(profile, artifacts, total_scores, matched, wb_raw_scores=wb_raw)
+    summary = await _generate_ai_summary(profile, assessment.goal.value, draft, artifacts) or draft.summary
 
     analysis = AnalysisResult(
         assessment_id=assessment_id,
-        summary=draft.summary,
+        summary=summary,
         strengths=draft.strengths,
         interests_map=draft.interests_map,
         thinking_style=draft.thinking_style,
