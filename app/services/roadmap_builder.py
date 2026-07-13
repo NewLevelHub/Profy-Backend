@@ -16,13 +16,30 @@ from app.config import settings
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentGoal
-from app.models.profile import Profile
+from app.models.direction_roadmap import DirectionRoadmap
+from app.models.profile import AgeGroup, Profile
 from app.models.program import Program
 from app.models.roadmap import Roadmap
+from app.prompts import direction_roadmap as direction_prompt
 from app.prompts import roadmap as roadmap_prompt
-from app.schemas.roadmap import RoadmapMilestone, RoadmapResponse, RoadmapTask
+from app.schemas.roadmap import (
+    DIRECTION_HORIZONS,
+    DirectionRoadmapResponse,
+    DirectionStage,
+    GrowthFocus,
+    RoadmapMilestone,
+    RoadmapResponse,
+    RoadmapTarget,
+    RoadmapTask,
+    UniversityTrack,
+)
 from app.schemas.student_context import StudentContext
-from app.services import assessment_service, llm_client
+from app.services import (
+    assessment_service,
+    direction_inquiry_service,
+    direction_service,
+    llm_client,
+)
 from app.services.gap_analysis_service import GapAnalysisResult, analyze_gap
 from app.services.student_context import build_student_context
 
@@ -403,5 +420,237 @@ async def get_roadmap(
         return None
 
     response = RoadmapResponse.model_validate(roadmap)
+    await redis.setex(key, CACHE_TTL, response.model_dump_json())
+    return response
+
+
+# ─── Direction roadmap (AI-only, no template fallback) ──────────────────────────
+
+_AI_UNAVAILABLE = HTTPException(
+    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+    detail="ИИ временно недоступен, попробуй ещё раз",
+)
+
+
+@dataclass
+class _DirectionPlan:
+    """The LLM's plan, validated — everything the roadmap row needs."""
+
+    target: RoadmapTarget
+    growth_focus: GrowthFocus
+    stages: list[DirectionStage]
+    skills_to_build: list[str]
+    subjects_to_focus: list[str]
+    university_track: UniversityTrack
+
+
+def direction_cache_key(assessment_id: uuid.UUID, slug: str) -> str:
+    return f"droadmap:{assessment_id}:{slug}"
+
+
+_MIN_STEPS_PER_STAGE = 3
+
+
+def _valid_stages(stages: list[DirectionStage]) -> bool:
+    """Structure guard: all 4 horizons exactly once, every stage has enough steps,
+    and no stage drops either kind of work — that would defeat the point of the plan.
+
+    An `integration` step counts as both: it is, by definition, work that needs the
+    profile skill and the growth area at the same time. Demanding a separate
+    `profile` step on top of it would reject perfectly good months_9 stages."""
+    if len(stages) != len(DIRECTION_HORIZONS):
+        return False
+    if {s.horizon for s in stages} != set(DIRECTION_HORIZONS):
+        return False
+    for stage in stages:
+        if len(stage.steps) < _MIN_STEPS_PER_STAGE:
+            return False
+        tracks = {step.track for step in stage.steps}
+        if not tracks & {"profile", "integration"}:
+            return False
+        if not tracks & {"growth", "integration"}:
+            return False
+    return True
+
+
+async def _require_direction_roadmap_access(
+    assessment_id: uuid.UUID, slug: str, db: AsyncSession
+) -> tuple[Assessment, object]:
+    """Enforce the feature's preconditions: not junior, not the university goal,
+    and the student has actually gone through the AI inquiry for this direction."""
+    assessment = (
+        await db.execute(select(Assessment).where(Assessment.id == assessment_id))
+    ).scalar_one_or_none()
+    if assessment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+
+    profile = (
+        await db.execute(select(Profile).where(Profile.id == assessment.profile_id))
+    ).scalar_one_or_none()
+    if profile is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+
+    if profile.age_group == AgeGroup.junior:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Эта возможность доступна с 10 лет",
+        )
+    if assessment.goal == AssessmentGoal.university:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Для цели «поступление» используется план по программе университета",
+        )
+
+    inquiry = await direction_inquiry_service.get_inquiry(assessment_id, slug, db)
+    if inquiry is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Сначала пройди опрос по этому направлению",
+        )
+
+    direction = await direction_service.get_direction_by_slug(slug, db)
+    if direction is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Direction not found")
+
+    return assessment, direction
+
+
+_MAX_PLAN_ATTEMPTS = 2  # 1 initial + 1 corrective retry
+
+
+async def _generate_plan(context: StudentContext, direction) -> _DirectionPlan | None:
+    """Ask the LLM for a plan, retrying once if it breaks the structural rules.
+
+    The model is inconsistent about "every stage needs a growth step", so one
+    corrective pass beats failing the whole request on the first slip."""
+    messages = direction_prompt.build_messages(context, direction)
+
+    for attempt in range(1, _MAX_PLAN_ATTEMPTS + 1):
+        try:
+            raw = await llm_client.complete_json(
+                messages,
+                direction_prompt.DIRECTION_ROADMAP_SCHEMA,
+                "direction_roadmap",
+                timeout=settings.LLM_ROADMAP_TIMEOUT,
+                max_tokens=settings.LLM_ROADMAP_MAX_TOKENS,
+            )
+            plan = _DirectionPlan(
+                target=RoadmapTarget.model_validate(raw.get("target", {})),
+                growth_focus=GrowthFocus.model_validate(raw.get("growth_focus", {})),
+                stages=[DirectionStage.model_validate(s) for s in raw.get("stages", [])],
+                skills_to_build=list(raw.get("skills_to_build", [])),
+                subjects_to_focus=list(raw.get("subjects_to_focus", [])),
+                university_track=UniversityTrack.model_validate(
+                    raw.get("university_track", {})
+                ),
+            )
+        except (llm_client.LLMError, ValidationError, TypeError) as exc:
+            logger.warning("Direction roadmap generation failed: %s", exc)
+            return None
+
+        if _valid_stages(plan.stages):
+            return plan
+
+        logger.warning(
+            "Direction roadmap failed invariant check (attempt %s/%s)",
+            attempt, _MAX_PLAN_ATTEMPTS,
+        )
+        messages = [*messages, direction_prompt.RETRY_HINT]
+
+    return None
+
+
+async def generate_direction_roadmap(
+    assessment_id: uuid.UUID, slug: str, db: AsyncSession
+) -> DirectionRoadmapResponse:
+    """Build the in-direction development plan. Confirming a direction happens here:
+    generating its roadmap is what marks it as the student's chosen path."""
+    if not llm_client.is_enabled():
+        raise _AI_UNAVAILABLE
+
+    redis = _get_redis()
+    key = direction_cache_key(assessment_id, slug)
+    cached = await redis.get(key)
+    if cached:
+        return DirectionRoadmapResponse.model_validate_json(cached)
+
+    assessment, direction = await _require_direction_roadmap_access(assessment_id, slug, db)
+
+    context = await build_student_context(assessment_id, db, inquiry_slug=slug)
+    if context is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+
+    plan = await _generate_plan(context, direction)
+    if plan is None:
+        raise _AI_UNAVAILABLE
+
+    roadmap = await _upsert_direction_roadmap(assessment_id, slug, direction.name, plan, db)
+    assessment.selected_direction_slug = slug
+    await db.commit()
+    await db.refresh(roadmap)
+
+    response = DirectionRoadmapResponse.model_validate(roadmap)
+    await redis.setex(key, CACHE_TTL, response.model_dump_json())
+    return response
+
+
+async def _upsert_direction_roadmap(
+    assessment_id: uuid.UUID,
+    slug: str,
+    direction_name: str,
+    plan: "_DirectionPlan",
+    db: AsyncSession,
+) -> DirectionRoadmap:
+    existing = (
+        await db.execute(
+            select(DirectionRoadmap).where(
+                DirectionRoadmap.assessment_id == assessment_id,
+                DirectionRoadmap.direction_slug == slug,
+            )
+        )
+    ).scalar_one_or_none()
+
+    if existing is None:
+        roadmap = DirectionRoadmap(
+            assessment_id=assessment_id,
+            direction_slug=slug,
+            direction_name=direction_name,
+        )
+        db.add(roadmap)
+    else:
+        roadmap = existing
+
+    roadmap.direction_name = direction_name
+    roadmap.target = plan.target.model_dump()
+    roadmap.growth_focus = plan.growth_focus.model_dump()
+    roadmap.stages = [s.model_dump() for s in plan.stages]
+    roadmap.skills_to_build = plan.skills_to_build
+    roadmap.subjects_to_focus = plan.subjects_to_focus
+    roadmap.university_track = plan.university_track.model_dump()
+    return roadmap
+
+
+async def get_direction_roadmap(
+    assessment_id: uuid.UUID, slug: str, db: AsyncSession
+) -> DirectionRoadmapResponse | None:
+    redis = _get_redis()
+    key = direction_cache_key(assessment_id, slug)
+
+    cached = await redis.get(key)
+    if cached:
+        return DirectionRoadmapResponse.model_validate_json(cached)
+
+    roadmap = (
+        await db.execute(
+            select(DirectionRoadmap).where(
+                DirectionRoadmap.assessment_id == assessment_id,
+                DirectionRoadmap.direction_slug == slug,
+            )
+        )
+    ).scalar_one_or_none()
+    if roadmap is None:
+        return None
+
+    response = DirectionRoadmapResponse.model_validate(roadmap)
     await redis.setex(key, CACHE_TTL, response.model_dump_json())
     return response

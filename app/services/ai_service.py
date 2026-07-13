@@ -109,6 +109,23 @@ WELLBEING_ZONES_MAP: dict[str, str] = {
 # Score ≤ this value (on a 1-5 Likert) flags the dimension as a zone of attention.
 _WB_LOW_THRESHOLD = 2
 
+# Normalized score (0-100, relative to the student's own top category) at or below
+# which a category counts as a growth area rather than a strength.
+_GROWTH_THRESHOLD = 40.0
+
+# Only these categories mean a real deficit when they score low. Interest
+# categories (media, nature, artistic…) are deliberately excluded: a low interest
+# in media is not a weakness, it just isn't the student's thing — and feeding it
+# to the LLM as a "growth area" produced advice nobody asked for.
+GROWTH_CANDIDATE_CATEGORIES = frozenset({
+    # soft skills / personality
+    "extraversion", "agreeableness", "teamwork", "independence",
+    "conscientiousness", "emotional_stability", "openness", "leadership",
+    "social_think", "helping_motiv",
+    # thinking styles that hold you back when missing
+    "logical", "mathematical", "verbal", "systematic", "strategic",
+})
+
 
 @dataclass
 class MatchedDirection:
@@ -157,6 +174,31 @@ def build_strengths(normalized_scores: dict[str, float], limit: int = 7) -> list
         if len(strengths) >= limit:
             break
     return strengths
+
+
+def build_growth_areas(
+    normalized_scores: dict[str, float], limit: int = 3
+) -> dict[str, float]:
+    """The student's weakest categories *where being weak actually costs them*.
+
+    Mirror image of `build_strengths`, but restricted to GROWTH_CANDIDATE_CATEGORIES:
+    a low score on an interest category says "not my thing", not "my weak spot"."""
+    labeled = [
+        (CATEGORY_LABELS[cat], score)
+        for cat, score in normalized_scores.items()
+        if cat in GROWTH_CANDIDATE_CATEGORIES
+        and cat in CATEGORY_LABELS
+        and score <= _GROWTH_THRESHOLD
+    ]
+    labeled.sort(key=lambda item: item[1])
+    areas: dict[str, float] = {}
+    for label, score in labeled:
+        if label in areas:  # several categories share a label (realistic/practical)
+            continue
+        areas[label] = score
+        if len(areas) >= limit:
+            break
+    return areas
 
 
 def _build_summary(total_scores: dict[str, float]) -> str:

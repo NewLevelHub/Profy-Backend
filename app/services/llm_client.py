@@ -62,8 +62,15 @@ async def complete_json(
     messages: list[dict[str, str]],
     schema: dict[str, Any],
     schema_name: str,
+    *,
+    timeout: float | None = None,
+    max_tokens: int | None = None,
 ) -> dict[str, Any]:
-    """Return the model's JSON object, constrained to `schema`. Raises LLMError on failure."""
+    """Return the model's JSON object, constrained to `schema`. Raises LLMError on failure.
+
+    `timeout` and `max_tokens` default to the global settings; long generations
+    (the direction roadmap) override them — the defaults are sized for short
+    completions and a big plan simply cannot finish inside them."""
     if not is_enabled():
         raise LLMError("LLM disabled or API key missing")
 
@@ -71,7 +78,7 @@ async def complete_json(
         "model": settings.LLM_MODEL,
         "messages": messages,
         "temperature": settings.LLM_TEMPERATURE,
-        "max_tokens": settings.LLM_MAX_TOKENS,
+        "max_tokens": max_tokens or settings.LLM_MAX_TOKENS,
         "response_format": {
             "type": "json_schema",
             "json_schema": {"name": schema_name, "strict": True, "schema": schema},
@@ -84,12 +91,13 @@ async def complete_json(
     url = f"{settings.LLM_BASE_URL}/chat/completions"
 
     last_error: LLMError | None = None
-    async with httpx.AsyncClient(timeout=settings.LLM_TIMEOUT) as client:
+    async with httpx.AsyncClient(timeout=timeout or settings.LLM_TIMEOUT) as client:
         for attempt in range(_MAX_ATTEMPTS):
             try:
                 response = await client.post(url, json=payload, headers=headers)
             except httpx.HTTPError as exc:
-                last_error = LLMError(f"request failed: {exc}")
+                # str(exc) is empty for timeouts — keep the class name or the log says nothing.
+                last_error = LLMError(f"request failed: {type(exc).__name__}: {exc}")
                 continue  # transient — retry
             # 5xx is transient (retry); other non-200 is terminal (don't spend again).
             if response.status_code >= 500:

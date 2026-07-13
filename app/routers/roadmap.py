@@ -10,7 +10,11 @@ from app.dependencies import get_current_user
 from app.models.assessment import Assessment
 from app.models.profile import Profile
 from app.models.user import User
-from app.schemas.roadmap import RoadmapResponse
+from app.schemas.roadmap import (
+    DirectionRoadmapResponse,
+    GenerateDirectionRoadmapRequest,
+    RoadmapResponse,
+)
 from app.services import roadmap_builder
 
 router = APIRouter(tags=["roadmap"])
@@ -47,6 +51,33 @@ async def generate_roadmap(
 ) -> RoadmapResponse:
     await _require_assessment_access(data.assessment_id, current_user, db)
     return await roadmap_builder.generate_roadmap(data.assessment_id, data.program_id, db)
+
+
+@router.post("/direction", response_model=DirectionRoadmapResponse)
+async def generate_direction_roadmap(
+    data: GenerateDirectionRoadmapRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> DirectionRoadmapResponse:
+    """Confirm a direction after the AI inquiry and build the in-direction plan."""
+    await _require_assessment_access(data.assessment_id, current_user, db)
+    return await roadmap_builder.generate_direction_roadmap(
+        data.assessment_id, data.direction_slug, db
+    )
+
+
+@router.get("/{assessment_id}/directions/{slug}", response_model=DirectionRoadmapResponse)
+async def get_direction_roadmap(
+    assessment_id: uuid.UUID,
+    slug: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> DirectionRoadmapResponse:
+    await _require_assessment_access(assessment_id, current_user, db)
+    result = await roadmap_builder.get_direction_roadmap(assessment_id, slug, db)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Roadmap not found")
+    return result
 
 
 @router.get("/{assessment_id}", response_model=RoadmapResponse)
