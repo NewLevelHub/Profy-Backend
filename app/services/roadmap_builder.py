@@ -448,13 +448,29 @@ def direction_cache_key(assessment_id: uuid.UUID, slug: str) -> str:
     return f"droadmap:{assessment_id}:{slug}"
 
 
+_MIN_STEPS_PER_STAGE = 3
+
+
 def _valid_stages(stages: list[DirectionStage]) -> bool:
-    """Structure guard: all 4 horizons exactly once, both tracks populated."""
-    if {s.horizon for s in stages} != set(DIRECTION_HORIZONS):
-        return False
+    """Structure guard: all 4 horizons exactly once, every stage has enough steps,
+    and no stage drops either kind of work — that would defeat the point of the plan.
+
+    An `integration` step counts as both: it is, by definition, work that needs the
+    profile skill and the growth area at the same time. Demanding a separate
+    `profile` step on top of it would reject perfectly good months_9 stages."""
     if len(stages) != len(DIRECTION_HORIZONS):
         return False
-    return all(s.profile_track.tasks and s.growth_track.tasks for s in stages)
+    if {s.horizon for s in stages} != set(DIRECTION_HORIZONS):
+        return False
+    for stage in stages:
+        if len(stage.steps) < _MIN_STEPS_PER_STAGE:
+            return False
+        tracks = {step.track for step in stage.steps}
+        if not tracks & {"profile", "integration"}:
+            return False
+        if not tracks & {"growth", "integration"}:
+            return False
+    return True
 
 
 async def _require_direction_roadmap_access(
@@ -499,6 +515,51 @@ async def _require_direction_roadmap_access(
     return assessment, direction
 
 
+_MAX_PLAN_ATTEMPTS = 2  # 1 initial + 1 corrective retry
+
+
+async def _generate_plan(context: StudentContext, direction) -> _DirectionPlan | None:
+    """Ask the LLM for a plan, retrying once if it breaks the structural rules.
+
+    The model is inconsistent about "every stage needs a growth step", so one
+    corrective pass beats failing the whole request on the first slip."""
+    messages = direction_prompt.build_messages(context, direction)
+
+    for attempt in range(1, _MAX_PLAN_ATTEMPTS + 1):
+        try:
+            raw = await llm_client.complete_json(
+                messages,
+                direction_prompt.DIRECTION_ROADMAP_SCHEMA,
+                "direction_roadmap",
+                timeout=settings.LLM_ROADMAP_TIMEOUT,
+                max_tokens=settings.LLM_ROADMAP_MAX_TOKENS,
+            )
+            plan = _DirectionPlan(
+                target=RoadmapTarget.model_validate(raw.get("target", {})),
+                growth_focus=GrowthFocus.model_validate(raw.get("growth_focus", {})),
+                stages=[DirectionStage.model_validate(s) for s in raw.get("stages", [])],
+                skills_to_build=list(raw.get("skills_to_build", [])),
+                subjects_to_focus=list(raw.get("subjects_to_focus", [])),
+                university_track=UniversityTrack.model_validate(
+                    raw.get("university_track", {})
+                ),
+            )
+        except (llm_client.LLMError, ValidationError, TypeError) as exc:
+            logger.warning("Direction roadmap generation failed: %s", exc)
+            return None
+
+        if _valid_stages(plan.stages):
+            return plan
+
+        logger.warning(
+            "Direction roadmap failed invariant check (attempt %s/%s)",
+            attempt, _MAX_PLAN_ATTEMPTS,
+        )
+        messages = [*messages, direction_prompt.RETRY_HINT]
+
+    return None
+
+
 async def generate_direction_roadmap(
     assessment_id: uuid.UUID, slug: str, db: AsyncSession
 ) -> DirectionRoadmapResponse:
@@ -519,29 +580,8 @@ async def generate_direction_roadmap(
     if context is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
 
-    messages = direction_prompt.build_messages(context, direction)
-    try:
-        raw = await llm_client.complete_json(
-            messages,
-            direction_prompt.DIRECTION_ROADMAP_SCHEMA,
-            "direction_roadmap",
-            timeout=settings.LLM_ROADMAP_TIMEOUT,
-            max_tokens=settings.LLM_ROADMAP_MAX_TOKENS,
-        )
-        plan = _DirectionPlan(
-            target=RoadmapTarget.model_validate(raw.get("target", {})),
-            growth_focus=GrowthFocus.model_validate(raw.get("growth_focus", {})),
-            stages=[DirectionStage.model_validate(s) for s in raw.get("stages", [])],
-            skills_to_build=list(raw.get("skills_to_build", [])),
-            subjects_to_focus=list(raw.get("subjects_to_focus", [])),
-            university_track=UniversityTrack.model_validate(raw.get("university_track", {})),
-        )
-    except (llm_client.LLMError, ValidationError, TypeError) as exc:
-        logger.warning("Direction roadmap generation failed: %s", exc)
-        raise _AI_UNAVAILABLE
-
-    if not _valid_stages(plan.stages):
-        logger.warning("Direction roadmap failed invariant check for %s", slug)
+    plan = await _generate_plan(context, direction)
+    if plan is None:
         raise _AI_UNAVAILABLE
 
     roadmap = await _upsert_direction_roadmap(assessment_id, slug, direction.name, plan, db)

@@ -1,18 +1,19 @@
 """Direction roadmap prompt + strict output schema.
 
-The plan runs two tracks in parallel through every stage: `profile_track` deepens
-the direction's core skill, `growth_track` attacks the student's weakest spot —
-the one that would actually hold them back in this direction. From months_9 the
-two converge into a single project.
+Each stage is a flat, ordered list of steps rather than a fixed pair of tracks:
+every step is tagged `profile` (deepen the direction's core skill), `growth`
+(attack the weak spot that would hold the student back) or `integration` (work
+that needs both). The model decides how many of each a given stage needs — but
+every stage must carry at least one `growth` step, or the feature loses its point.
 
 Structured Outputs (strict mode) forbids minItems/maxItems, so "exactly 4 stages,
-2-3 tasks per track" is asked for in the prompt and enforced by post-validation
-in the caller (`_valid_stages`).
+3-5 steps each" is asked for in the prompt and enforced by post-validation in the
+caller (`_valid_stages`).
 """
 import json
 
 from app.models.direction import Direction
-from app.schemas.roadmap import DIRECTION_HORIZONS
+from app.schemas.roadmap import DIRECTION_HORIZONS, STEP_TRACKS
 from app.schemas.student_context import StudentContext
 
 CATEGORIES = [
@@ -20,55 +21,28 @@ CATEGORIES = [
     "soft_skill", "subject", "community", "exam", "university",
 ]
 
+_STEP_SCHEMA: dict = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["text", "description", "track", "category", "priority"],
+    "properties": {
+        "text": {"type": "string"},
+        "description": {"type": "string"},
+        "track": {"type": "string", "enum": STEP_TRACKS},
+        "category": {"type": "string", "enum": CATEGORIES},
+        "priority": {"type": "integer"},
+    },
+}
+
 _STAGE_SCHEMA: dict = {
     "type": "object",
     "additionalProperties": False,
-    "required": ["horizon", "title", "profile_track", "growth_track", "integration_project"],
+    "required": ["horizon", "title", "outcome", "steps", "integration_project"],
     "properties": {
         "horizon": {"type": "string", "enum": DIRECTION_HORIZONS},
         "title": {"type": "string"},
-        "profile_track": {
-            "type": "object",
-            "additionalProperties": False,
-            "required": ["focus", "tasks"],
-            "properties": {
-                "focus": {"type": "string"},
-                "tasks": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "additionalProperties": False,
-                        "required": ["text", "category", "priority"],
-                        "properties": {
-                            "text": {"type": "string"},
-                            "category": {"type": "string", "enum": CATEGORIES},
-                            "priority": {"type": "integer"},
-                        },
-                    },
-                },
-            },
-        },
-        "growth_track": {
-            "type": "object",
-            "additionalProperties": False,
-            "required": ["focus", "tasks"],
-            "properties": {
-                "focus": {"type": "string"},
-                "tasks": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "additionalProperties": False,
-                        "required": ["text", "category", "priority"],
-                        "properties": {
-                            "text": {"type": "string"},
-                            "category": {"type": "string", "enum": CATEGORIES},
-                            "priority": {"type": "integer"},
-                        },
-                    },
-                },
-            },
-        },
+        "outcome": {"type": "string"},
+        "steps": {"type": "array", "items": _STEP_SCHEMA},
         "integration_project": {"type": ["string", "null"]},
     },
 }
@@ -94,10 +68,11 @@ DIRECTION_ROADMAP_SCHEMA: dict = {
         "growth_focus": {
             "type": "object",
             "additionalProperties": False,
-            "required": ["weakness", "why_it_matters"],
+            "required": ["weakness", "why_it_matters", "evidence"],
             "properties": {
                 "weakness": {"type": "string"},
                 "why_it_matters": {"type": "string"},
+                "evidence": {"type": "string"},
             },
         },
         "stages": {"type": "array", "items": _STAGE_SCHEMA},
@@ -130,27 +105,82 @@ _SYSTEM_PROMPT = """\
 why объясни, почему именно эта роль ему подходит, ссылаясь на его данные. \
 horizon_years — за сколько лет он реально может к ней прийти от своего возраста.
 
-ТОЧКА РОСТА (growth_focus). Найди ОДНУ слабую сторону, которая будет реально мешать \
-ему в этом направлении. Бери её из growth_areas (низкие баллы), subjects_hard, \
-wellbeing_zones и особенно из inquiry.low_signals — утверждений, с которыми он не \
-согласился. Пример: будущий журналист-интроверт — слабое место «общение с незнакомыми \
-людьми». Будущий разработчик со слабой математикой — «алгебра». В why_it_matters \
-объясни мягко и по делу, почему без этого он упрётся в потолок. Без осуждения.
+ТОЧКА РОСТА (growth_focus) — САМОЕ ОТВЕТСТВЕННОЕ МЕСТО. Здесь запрещено \
+догадываться и «дорисовывать» правдоподобную слабость. Работает только то, что \
+ПОДТВЕРЖДЕНО данными ученика.
 
-ЭТАПЫ (stages) — ровно 4: months_3, months_6, months_9, months_12. В каждом два \
-трека, которые идут ПАРАЛЛЕЛЬНО, по 2-3 задачи в каждом:
-- profile_track — углубление в профильный навык направления;
-- growth_track — прицельная работа над той самой точкой роста.
+Допустимые источники — ТОЛЬКО эти четыре:
+1) inquiry.low_signals — утверждения, с которыми ученик НЕ согласился (самый сильный \
+сигнал);
+2) growth_areas — категории с низкими баллами (это уже отфильтрованные навыки и \
+черты, где низкий балл действительно мешает);
+3) subjects_hard / subjects_disliked — но только если предмет реально нужен в этом \
+направлении (химия не нужна backend-разработчику — не бери её);
+4) wellbeing_zones.
+
+В поле evidence ОБЯЗАН указать конкретный сигнал, из которого сделал вывод: \
+процитируй утверждение из low_signals, или назови категорию из growth_areas с её \
+баллом, или назови предмет. Если подставить в evidence нечего — значит, ты выдумал \
+слабость. Так делать нельзя.
+
+ЕСЛИ ВЫРАЖЕННОЙ СЛАБОСТИ НЕТ (low_signals пуст, growth_areas пусты или не мешают \
+этому направлению) — НЕ ИЗОБРЕТАЙ ЕЁ. Не пиши про публичные выступления, общение или \
+прокрастинацию, если в данных этого нет. В этом случае возьми из growth_areas самую \
+низкую релевантную направлению категорию и сформулируй её как ЗОНУ УСИЛЕНИЯ, а не как \
+недостаток: в weakness — что усилить, в why_it_matters — честно скажи, что явных \
+слабых мест нет и это скорее следующий уровень мастерства, в evidence — что именно \
+низкое.
+
+Точка роста НЕ может быть профильным навыком направления (не «программирование» для \
+IT, не «владение Figma» для дизайна) — этому он и так учится в profile-шагах.
+В why_it_matters объясни мягко и по делу, без осуждения.
+Все growth-шаги в этапах должны бить именно в эту точку роста.
+
+ЭТАПЫ (stages) — ровно 4: months_3, months_6, months_9, months_12. В каждом этапе \
+3-5 ШАГОВ (steps) — это единый упорядоченный список, а не две колонки. У каждого \
+шага есть тег track:
+- profile — углубление в профильный навык направления;
+- growth — прицельная работа над точкой роста (слабым местом);
+- integration — работа, где нужны СРАЗУ и профильный навык, и подтянутая слабая \
+сторона.
+Сколько каких шагов нужно в конкретном месяце — решаешь ТЫ, исходя из логики \
+развития. Не надо искусственно делить поровну. Жёсткое правило одно: ни один этап не \
+теряет ни профильную работу, ни работу над точкой роста. Шаг integration \
+засчитывается за обе сразу (в нём есть и профиль, и рост), поэтому этап вида \
+[integration, integration, growth] — валиден. priority задаёт порядок шагов внутри \
+этапа (1 — первый).
+
+ОПИСАНИЕ ШАГА (description) — САМОЕ ВАЖНОЕ. Ученик — подросток, он НЕ должен \
+ничего догугливать, чтобы понять шаг. text — короткое название шага. \
+description — 3-5 предложений, где ты РАЗЖЁВЫВАЕШЬ:
+1) что именно делать и с чего начать (конкретные темы, понятия, шаги — по порядку);
+2) зачем это нужно и как это связано с конечной целью (target.role);
+3) как понять, что задача выполнена — измеримый признак («сможешь сам написать…», \
+«решаешь такие задачи без подсказки», «у тебя есть готовый…»).
+Плохо: «Изучи основы алгоритмов». Хорошо: «Начни с самого базового: что такое \
+сложность алгоритма (нотация O-большое), массивы и списки, сортировка пузырьком и \
+бинарный поиск. Разбирай по одной теме в неделю и сразу пиши код руками, не \
+подглядывая. Именно это отличает того, кто "умеет писать код", от разработчика: на \
+собеседованиях и олимпиадах спрашивают ровно это. Готово, когда сможешь без \
+подсказки объяснить, почему бинарный поиск быстрее перебора, и написать оба.»
+Не используй жаргон без расшифровки: если пишешь термин — тут же поясняй его \
+простыми словами.
+
+ИТОГ ЭТАПА (outcome) — 1-2 предложения: что у ученика БУДЕТ на руках к концу этапа \
+(навык, проект, результат) и как это приближает его к target.role. Ученик должен \
+видеть, к чему всё ведёт, а не просто список дел.
+
 Логика этапов:
-- months_3 — база и теория: профиль осваивает основы; рост закрывает пробел \
-(курс, учебник, разбор темы). integration_project = null.
-- months_6 — практика и выход из зоны комфорта: профиль делает первые \
-практические задания; рост идёт туда, где слабый навык НУЖЕН вживую (кружок, \
-секция, клуб, школьное сообщество). integration_project = null.
-- months_9 — интеграция: оба трека ведут к ОДНОМУ проекту, где нужны сразу и \
-профильный навык, и подтянутая слабая сторона. Опиши его в integration_project. \
-Пример: взять интервью у трёх незнакомых людей — это и журналистика, и преодоление \
-страха общения.
+- months_3 — база и теория: profile-шаги осваивают основы; growth-шаг закрывает \
+пробел (курс, учебник, разбор конкретных тем). Шагов track=integration здесь нет, \
+integration_project = null.
+- months_6 — практика и выход из зоны комфорта: profile-шаги дают первую реальную \
+практику; growth-шаг ведёт туда, где слабый навык НУЖЕН вживую (кружок, секция, \
+клуб, школьное сообщество). integration_project = null.
+- months_9 — интеграция: добавь шаг(и) track=integration — ОДИН проект, где нужны \
+сразу и профильный навык, и подтянутая слабая сторона. Опиши его в \
+integration_project. Пример: взять интервью у трёх незнакомых людей — это и \
+журналистика, и преодоление страха общения.
 - months_12 — готовность к профильному пути: собрать результаты, честно оценить, \
 насколько слабая сторона перестала мешать, выйти на профильные классы, олимпиады \
 или конкурсы. Заполни integration_project, если проект уместен, иначе null.
@@ -177,6 +207,21 @@ specialties (направления обучения) и prepare (что гот�
 
 priority: 1 — самое важное в треке, дальше по возрастанию.\
 """
+
+
+# Appended when a generated plan breaks the structural rules — the model is
+# inconsistent about them, and one corrective pass is cheaper than a 503.
+RETRY_HINT: dict[str, str] = {
+    "role": "user",
+    "content": (
+        "Твой предыдущий ответ нарушил структуру. Исправь строго:\n"
+        "- ровно 4 этапа: months_3, months_6, months_9, months_12;\n"
+        "- в КАЖДОМ этапе минимум 3 шага;\n"
+        "- в КАЖДОМ этапе есть профильная работа (track=profile или integration) "
+        "И работа над точкой роста (track=growth или integration).\n"
+        "Верни полный план заново по схеме."
+    ),
+}
 
 
 def _direction_brief(direction: Direction) -> dict:

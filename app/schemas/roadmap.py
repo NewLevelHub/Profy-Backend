@@ -20,6 +20,10 @@ class RoadmapResource(BaseModel):
 
 class RoadmapTask(BaseModel):
     text: str
+    # What to actually do, where to start, and how to know it's done. The student
+    # must not have to google the task to understand it. Optional: the legacy goal
+    # roadmap does not produce it.
+    description: str | None = None
     category: str
     priority: int
     resources: list[RoadmapResource] = []
@@ -42,20 +46,28 @@ class RoadmapResponse(BaseModel):
 
 # ─── Direction roadmap ─────────────────────────────────────────────────────────
 
+# What a step works on. Steps are tagged rather than grouped into fixed tracks,
+# so the model decides how much of each a given stage actually needs.
+STEP_TRACKS = ["profile", "growth", "integration"]
 
-class RoadmapTrack(BaseModel):
-    """One of the two parallel tracks inside a stage."""
 
-    focus: str
-    tasks: list[RoadmapTask]
+class RoadmapStep(BaseModel):
+    text: str                       # short name of the step
+    description: str                # what to do, where to start, how to know it's done
+    track: str                      # profile | growth | integration
+    category: str
+    priority: int                   # 1 = do first
+    resources: list[RoadmapResource] = []
 
 
 class DirectionStage(BaseModel):
     horizon: str
     title: str
-    profile_track: RoadmapTrack     # deepens the direction's core skill
-    growth_track: RoadmapTrack      # targets the student's weak spot
-    # Set from months_9 on, where the two tracks converge into one project.
+    # What the student will have by the end of the stage, and how it moves them
+    # towards the target role. Makes the plan explain itself.
+    outcome: str = ""
+    steps: list[RoadmapStep] = []
+    # Set from months_9 on, where the profile and growth work converge.
     integration_project: str | None = None
 
 
@@ -66,8 +78,12 @@ class RoadmapTarget(BaseModel):
 
 
 class GrowthFocus(BaseModel):
-    weakness: str                   # the weak spot the growth track attacks
+    weakness: str                   # the weak spot the growth steps attack
     why_it_matters: str             # why it would hold them back in this direction
+    # Which signal in the student's own data this was derived from. Forces the
+    # model to ground the claim instead of inventing a plausible-sounding flaw,
+    # and is shown in the UI so the student can see why we said it.
+    evidence: str = ""
 
 
 class UniversityTrack(BaseModel):
