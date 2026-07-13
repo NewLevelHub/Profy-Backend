@@ -9,9 +9,11 @@ import uuid
 import redis.asyncio as aioredis
 from fastapi import HTTPException, status
 from pydantic import ValidationError
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.models.direction_inquiry import DirectionInquiry
 from app.prompts import direction_inquiry as prompt
 from app.schemas.direction_inquiry import (
     DirectionQuestion,
@@ -135,7 +137,7 @@ async def build_verdict(
         raise _AI_UNAVAILABLE
 
     try:
-        return DirectionVerdictResponse(
+        verdict = DirectionVerdictResponse(
             direction_slug=slug,
             readiness=raw["readiness"],
             fit_summary=raw["fit_summary"],
@@ -143,3 +145,61 @@ async def build_verdict(
         )
     except (KeyError, ValidationError):
         raise _AI_UNAVAILABLE
+
+    await _save_inquiry(assessment_id, slug, questions, answers, verdict, db)
+    return verdict
+
+
+async def _save_inquiry(
+    assessment_id: uuid.UUID,
+    slug: str,
+    questions: list[DirectionQuestion],
+    answers: list[int],
+    verdict: DirectionVerdictResponse,
+    db: AsyncSession,
+) -> None:
+    """Persist the inquiry so the direction roadmap can build on it.
+
+    Re-taking the inquiry for the same direction overwrites the previous run."""
+    existing = (
+        await db.execute(
+            select(DirectionInquiry).where(
+                DirectionInquiry.assessment_id == assessment_id,
+                DirectionInquiry.direction_slug == slug,
+            )
+        )
+    ).scalar_one_or_none()
+
+    questions_data = [q.model_dump() for q in questions]
+    if existing is None:
+        db.add(
+            DirectionInquiry(
+                assessment_id=assessment_id,
+                direction_slug=slug,
+                questions=questions_data,
+                answers=answers,
+                readiness=verdict.readiness,
+                fit_summary=verdict.fit_summary,
+                note=verdict.note,
+            )
+        )
+    else:
+        existing.questions = questions_data
+        existing.answers = answers
+        existing.readiness = verdict.readiness
+        existing.fit_summary = verdict.fit_summary
+        existing.note = verdict.note
+    await db.commit()
+
+
+async def get_inquiry(
+    assessment_id: uuid.UUID, slug: str, db: AsyncSession
+) -> DirectionInquiry | None:
+    return (
+        await db.execute(
+            select(DirectionInquiry).where(
+                DirectionInquiry.assessment_id == assessment_id,
+                DirectionInquiry.direction_slug == slug,
+            )
+        )
+    ).scalar_one_or_none()

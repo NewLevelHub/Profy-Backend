@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     LLM_BASE_URL: str = "https://api.openai.com/v1"
     LLM_TIMEOUT: float = 20.0
     LLM_MAX_TOKENS: int = 2000
+    # The direction roadmap is a much larger generation (4 stages x 2 tracks,
+    # plus target and university track) and does not fit the defaults above.
+    LLM_ROADMAP_TIMEOUT: float = 90.0
+    LLM_ROADMAP_MAX_TOKENS: int = 4000
     LLM_TEMPERATURE: float = 0.3
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours

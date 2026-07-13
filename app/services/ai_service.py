@@ -109,6 +109,10 @@ WELLBEING_ZONES_MAP: dict[str, str] = {
 # Score ≤ this value (on a 1-5 Likert) flags the dimension as a zone of attention.
 _WB_LOW_THRESHOLD = 2
 
+# Normalized score (0-100, relative to the student's own top category) at or below
+# which a category counts as a growth area rather than a strength.
+_GROWTH_THRESHOLD = 40.0
+
 
 @dataclass
 class MatchedDirection:
@@ -157,6 +161,30 @@ def build_strengths(normalized_scores: dict[str, float], limit: int = 7) -> list
         if len(strengths) >= limit:
             break
     return strengths
+
+
+def build_growth_areas(
+    normalized_scores: dict[str, float], limit: int = 3
+) -> dict[str, float]:
+    """The student's weakest scored categories, as Russian label → score.
+
+    Mirror image of `build_strengths`: the direction roadmap's growth track aims
+    at these. Only categories we have a label for are considered, so raw signal
+    keys never leak into the prompt."""
+    labeled = [
+        (CATEGORY_LABELS[cat], score)
+        for cat, score in normalized_scores.items()
+        if cat in CATEGORY_LABELS and score <= _GROWTH_THRESHOLD
+    ]
+    labeled.sort(key=lambda item: item[1])
+    areas: dict[str, float] = {}
+    for label, score in labeled:
+        if label in areas:  # several categories share a label (realistic/practical)
+            continue
+        areas[label] = score
+        if len(areas) >= limit:
+            break
+    return areas
 
 
 def _build_summary(total_scores: dict[str, float]) -> str:

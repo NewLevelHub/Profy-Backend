@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
+from app.models.direction_inquiry import DirectionInquiry
+from app.models.direction_roadmap import DirectionRoadmap
 from app.models.profile import AgeGroup, Profile
 from app.models.question import Question, QuestionBlock
 from app.models.user_response import UserResponse
@@ -24,6 +26,34 @@ def _get_redis() -> aioredis.Redis:
     if _redis is None:
         _redis = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
     return _redis
+
+
+async def _invalidate_direction_flow(
+    assessment: Assessment, db: AsyncSession, redis: aioredis.Redis
+) -> None:
+    """Drop everything derived from the direction flow for this assessment."""
+    assessment_id = assessment.id
+    slugs_result = await db.execute(
+        select(DirectionInquiry.direction_slug).where(
+            DirectionInquiry.assessment_id == assessment_id
+        )
+    )
+    slugs = slugs_result.scalars().all()
+
+    await db.execute(
+        DirectionRoadmap.__table__.delete().where(
+            DirectionRoadmap.assessment_id == assessment_id
+        )
+    )
+    await db.execute(
+        DirectionInquiry.__table__.delete().where(
+            DirectionInquiry.assessment_id == assessment_id
+        )
+    )
+    assessment.selected_direction_slug = None
+
+    for slug in slugs:
+        await redis.delete(f"droadmap:{assessment_id}:{slug}", f"dq:{assessment_id}:{slug}")
 
 
 async def create_assessment(
@@ -131,6 +161,10 @@ async def complete_block(
             await db.delete(old_analysis)
         redis = _get_redis()
         await redis.delete(f"report:{assessment_id}")
+
+        # The direction inquiry and its roadmap were derived from the answers that
+        # are being replaced — drop them too, and un-confirm the direction.
+        await _invalidate_direction_flow(assessment, db, redis)
 
     question_ids = [item.question_id for item in answers]
     questions_result = await db.execute(
