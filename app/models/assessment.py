@@ -13,6 +13,7 @@ class AssessmentGoal(str, enum.Enum):
     explore = "explore"
     profession = "profession"
     university = "university"
+    unsure = "unsure"  # "Пока не знаю" — behaves like explore
 
 
 class AssessmentStatus(str, enum.Enum):

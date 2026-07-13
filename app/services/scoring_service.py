@@ -149,3 +149,24 @@ def extract_preferences(raw_scores: dict[str, Any]) -> dict[str, str]:
         if isinstance(value, str):
             preferences[key] = value
     return preferences
+
+
+def extract_values(raw_scores: dict[str, Any]) -> dict[str, float]:
+    """Extract what the child values (money, freedom, stability…) from Block 4.
+
+    These are excluded from direction scoring but describe motivation, so they
+    are surfaced separately for the report/roadmap context."""
+    return {
+        key: float(raw_scores[key])
+        for key in MOTIVATION_PREF_KEYS
+        if isinstance(raw_scores.get(key), (int, float))
+    }
+
+
+def extract_goal_signals(raw_scores: dict[str, Any]) -> dict[str, float]:
+    """Extract goal-clarification signals (goal_* keys) accumulated in that block."""
+    return {
+        k: float(v)
+        for k, v in raw_scores.items()
+        if k.startswith("goal_") and isinstance(v, (int, float))
+    }

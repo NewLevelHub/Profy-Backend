@@ -450,6 +450,181 @@ DIRECTIONS: list[dict] = [
     },
 ]
 
+# The 15 professional directions above use adult concepts (ML, DevOps, BI…) that
+# are inappropriate for younger children. Offer them to seniors only.
+for _direction in DIRECTIONS:
+    _direction.setdefault("age_groups", ["senior"])
+
+
+# Broad, jargon-free "interest families" for junior/middle. No profession jargon
+# (no ML/AI/DevOps): concrete, encouraging activities a child can actually try.
+FAMILY_DIRECTIONS: list[dict] = [
+    {
+        "name": "Технологии и роботы",
+        "slug": "explore-tech",
+        "age_groups": ["junior", "middle"],
+        "description": (
+            "Тебе интересно, как устроены компьютеры, игры и роботы, "
+            "и нравится собирать и придумывать что-то новое с техникой."
+        ),
+        "required_scores": {"technology": 35},
+        "bonus_scores": {"logical": 12, "spatial": 8, "investigative": 6},
+        "professions": [
+            "Создатель компьютерных игр",
+            "Инженер роботов",
+            "Программист",
+        ],
+        "skills_needed": [
+            "Любознательность к технике",
+            "Умение доводить дело до конца",
+            "Логика и внимательность",
+        ],
+        "subjects_to_develop": ["Математика", "Информатика"],
+        "first_steps": [
+            "Собери простую модель или конструктор (например, LEGO с механизмами)",
+            "Попробуй визуальное программирование в Scratch",
+            "Придумай и нарисуй свою игру или робота",
+        ],
+    },
+    {
+        "name": "Творчество и искусство",
+        "slug": "explore-creative",
+        "age_groups": ["junior", "middle"],
+        "description": (
+            "Ты любишь рисовать, придумывать истории, мастерить и создавать "
+            "что-то красивое своими руками."
+        ),
+        "required_scores": {"artistic": 35},
+        "bonus_scores": {"creative_think": 12, "media": 6},
+        "professions": [
+            "Художник",
+            "Мультипликатор",
+            "Дизайнер",
+        ],
+        "skills_needed": [
+            "Фантазия и воображение",
+            "Аккуратность",
+            "Желание пробовать новое",
+        ],
+        "subjects_to_develop": ["Изобразительное искусство", "Технология"],
+        "first_steps": [
+            "Заведи альбом и рисуй то, что придумываешь",
+            "Попробуй слепить или смастерить поделку",
+            "Сделай комикс или короткую историю в картинках",
+        ],
+    },
+    {
+        "name": "Общение и помощь людям",
+        "slug": "explore-people",
+        "age_groups": ["junior", "middle"],
+        "description": (
+            "Тебе нравится общаться, помогать друзьям и заботиться о других — "
+            "ты хорошо чувствуешь настроение людей."
+        ),
+        "required_scores": {"social": 35},
+        "bonus_scores": {"helping_motiv": 12, "social_think": 8, "verbal": 6},
+        "professions": [
+            "Учитель",
+            "Врач",
+            "Тренер",
+        ],
+        "skills_needed": [
+            "Умение слушать",
+            "Доброжелательность",
+            "Работа в команде",
+        ],
+        "subjects_to_develop": ["Литература", "Окружающий мир"],
+        "first_steps": [
+            "Помоги однокласснику разобраться в трудной теме",
+            "Запишись в кружок, где нужно работать в команде",
+            "Придумай и организуй маленькое доброе дело",
+        ],
+    },
+    {
+        "name": "Природа и наука",
+        "slug": "explore-nature-science",
+        "age_groups": ["junior", "middle"],
+        "description": (
+            "Тебе интересно, как устроен мир вокруг: животные, растения, "
+            "космос и опыты. Ты любишь наблюдать и узнавать новое."
+        ),
+        "required_scores": {"science": 30, "nature": 25},
+        "bonus_scores": {"investigative": 10},
+        "professions": [
+            "Учёный",
+            "Биолог",
+            "Эколог",
+        ],
+        "skills_needed": [
+            "Любопытство",
+            "Наблюдательность",
+            "Терпение",
+        ],
+        "subjects_to_develop": ["Окружающий мир", "Биология"],
+        "first_steps": [
+            "Проведи простой безопасный опыт дома",
+            "Заведи дневник наблюдений за природой",
+            "Посмотри познавательные фильмы о животных и космосе",
+        ],
+    },
+    {
+        "name": "Числа и головоломки",
+        "slug": "explore-numbers",
+        "age_groups": ["junior", "middle"],
+        "description": (
+            "Тебе нравится решать задачки, разгадывать головоломки "
+            "и находить закономерности."
+        ),
+        "required_scores": {"mathematical": 35, "logical": 25},
+        "bonus_scores": {"numbers": 8},
+        "professions": [
+            "Математик",
+            "Инженер",
+            "Аналитик",
+        ],
+        "skills_needed": [
+            "Логическое мышление",
+            "Внимательность",
+            "Усидчивость",
+        ],
+        "subjects_to_develop": ["Математика", "Информатика"],
+        "first_steps": [
+            "Решай логические головоломки и судоку",
+            "Играй в шахматы или похожие игры на стратегию",
+            "Попробуй математический кружок или олимпиаду для своего возраста",
+        ],
+    },
+    {
+        "name": "Слова, языки и истории",
+        "slug": "explore-words",
+        "age_groups": ["junior", "middle"],
+        "description": (
+            "Ты любишь читать, сочинять, рассказывать истории "
+            "и легко находишь нужные слова."
+        ),
+        "required_scores": {"verbal": 35},
+        "bonus_scores": {"media": 8, "creative_think": 6},
+        "professions": [
+            "Писатель",
+            "Журналист",
+            "Ведущий",
+        ],
+        "skills_needed": [
+            "Богатая речь",
+            "Воображение",
+            "Любовь к чтению",
+        ],
+        "subjects_to_develop": ["Русский язык", "Литература", "Иностранный язык"],
+        "first_steps": [
+            "Сочини короткий рассказ или сказку",
+            "Веди личный дневник или блог",
+            "Попробуй выступить с рассказом перед классом",
+        ],
+    },
+]
+
+DIRECTIONS = DIRECTIONS + FAMILY_DIRECTIONS
+
 
 async def main() -> None:
     async with async_session() as db:
@@ -466,7 +641,7 @@ async def main() -> None:
             if existing is not None:
                 changed = False
                 for field in (
-                    "name", "description", "required_scores", "bonus_scores",
+                    "name", "description", "age_groups", "required_scores", "bonus_scores",
                     "professions", "skills_needed", "subjects_to_develop", "first_steps",
                 ):
                     if getattr(existing, field) != data[field]:

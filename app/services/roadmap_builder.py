@@ -2,11 +2,13 @@
 
 import hashlib
 import json
+import logging
 import uuid
 from dataclasses import dataclass
 
 import redis.asyncio as aioredis
 from fastapi import HTTPException, status
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,9 +19,14 @@ from app.models.assessment import Assessment, AssessmentGoal
 from app.models.profile import Profile
 from app.models.program import Program
 from app.models.roadmap import Roadmap
+from app.prompts import roadmap as roadmap_prompt
 from app.schemas.roadmap import RoadmapMilestone, RoadmapResponse, RoadmapTask
-from app.services import assessment_service
+from app.schemas.student_context import StudentContext
+from app.services import assessment_service, llm_client
 from app.services.gap_analysis_service import GapAnalysisResult, analyze_gap
+from app.services.student_context import build_student_context
+
+logger = logging.getLogger(__name__)
 
 CACHE_TTL = 60 * 60 * 24  # 24 hours
 
@@ -258,13 +265,47 @@ def build_roadmap(
     gap_analysis: GapAnalysisResult | None = None,
     program: Program | None = None,
 ) -> list[RoadmapMilestone]:
-    """Build roadmap milestones. Swap this body for an LLM call without changing the signature."""
-    if goal == AssessmentGoal.explore:
-        return _build_explore(matched_directions)
+    """Deterministic template roadmap — the fallback when the LLM is off or fails.
+
+    The AI path lives in `_build_roadmap_ai`; `generate_roadmap` tries it first."""
+    if goal == AssessmentGoal.university:
+        return _build_university(matched_directions, gap_analysis)
     if goal == AssessmentGoal.profession:
         return _build_profession(matched_directions)
-    # university
-    return _build_university(matched_directions, gap_analysis)
+    # explore and unsure ("Пока не знаю") share the exploratory roadmap
+    return _build_explore(matched_directions)
+
+
+def _valid_milestones(milestones: list[RoadmapMilestone]) -> bool:
+    """Structure guard: all 5 horizons present exactly once, each with tasks."""
+    if len(milestones) != len(HORIZONS):
+        return False
+    if {m.horizon for m in milestones} != set(HORIZONS):
+        return False
+    return all(m.tasks for m in milestones)
+
+
+async def _build_roadmap_ai(
+    context: StudentContext | None,
+) -> list[RoadmapMilestone] | None:
+    """LLM roadmap. Returns None (→ template fallback) if disabled or anything fails."""
+    if context is None or not llm_client.is_enabled():
+        return None
+    try:
+        messages = roadmap_prompt.build_messages(context)
+        raw = await llm_client.complete_json(
+            messages, roadmap_prompt.ROADMAP_JSON_SCHEMA, "roadmap"
+        )
+        milestones = [
+            RoadmapMilestone.model_validate(m) for m in raw.get("milestones", [])
+        ]
+    except (llm_client.LLMError, ValidationError, TypeError) as exc:
+        logger.warning("AI roadmap failed, using template: %s", exc)
+        return None
+    if not _valid_milestones(milestones):
+        logger.warning("AI roadmap failed invariant check, using template")
+        return None
+    return milestones
 
 
 # ─── Service layer (DB + cache) ─────────────────────────────────────────────────
@@ -313,7 +354,13 @@ async def generate_roadmap(
             scores = await assessment_service.get_total_scores(assessment_id, db)
             gap = analyze_gap(profile, artifacts, scores, program)
 
-    milestones = build_roadmap(profile, assessment.goal, directions, gap, program)
+    # Full context bundle (profile + analysis + surfaced signals) for the LLM.
+    context = await build_student_context(assessment_id, db)
+
+    # Try the LLM first; fall back to deterministic templates on any failure.
+    milestones = await _build_roadmap_ai(context)
+    if milestones is None:
+        milestones = build_roadmap(profile, assessment.goal, directions, gap, program)
     milestones_data = [m.model_dump() for m in milestones]
 
     # Upsert roadmap in DB

@@ -1,4 +1,5 @@
 import json
+import logging
 import uuid
 from datetime import datetime, timezone
 
@@ -12,11 +13,13 @@ from app.config import settings
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
-from app.models.direction import Direction
-from app.models.profile import Profile
+from app.models.profile import AgeGroup, Profile
+from app.prompts import report_summary
 from app.schemas.result import AnalysisResultResponse
-from app.services import assessment_service
-from app.services.ai_service import MatchedDirection, generate_report
+from app.services import assessment_service, direction_service, llm_client
+from app.services.ai_service import MatchedDirection, ReportDraft, generate_report
+
+logger = logging.getLogger(__name__)
 
 CACHE_TTL = 60 * 60 * 24  # 24 hours
 
@@ -31,30 +34,13 @@ def _get_redis() -> aioredis.Redis:
 
 
 async def _match_directions_full(
-    total_scores: dict[str, float], db: AsyncSession
+    total_scores: dict[str, float],
+    db: AsyncSession,
+    age_group: AgeGroup | None = None,
 ) -> list[MatchedDirection]:
-    result = await db.execute(select(Direction).order_by(Direction.name))
-    directions = list(result.scalars().all())
-
-    scored: list[tuple[Direction, int]] = []
-    for direction in directions:
-        required: dict[str, float] = direction.required_scores or {}
-        bonus: dict[str, float] = direction.bonus_scores or {}
-        if not required:
-            continue
-        req_scores = [
-            min(total_scores.get(cat, 0) / threshold, 1.2)
-            for cat, threshold in required.items()
-        ]
-        base = sum(req_scores) / len(req_scores)
-        bonus_total = sum(
-            (total_scores.get(cat, 0) / 100) * weight
-            for cat, weight in bonus.items()
-        )
-        match_score = min(round(base * 75 + bonus_total), 99)
-        scored.append((direction, match_score))
-
-    scored.sort(key=lambda x: x[1], reverse=True)
+    top = await direction_service.scored_directions(
+        total_scores, db, age_group=age_group
+    )
     return [
         MatchedDirection(
             slug=d.slug,
@@ -67,8 +53,28 @@ async def _match_directions_full(
             first_steps=list(d.first_steps or []),
             required_scores=dict(d.required_scores or {}),
         )
-        for d, score in scored[:5]
+        for d, score in top
     ]
+
+
+async def _generate_ai_summary(
+    profile: Profile | None, goal: str, draft: ReportDraft, artifacts: list
+) -> str | None:
+    """AI-personalized result summary. Returns None (→ template) if disabled or fails."""
+    if profile is None or not llm_client.is_enabled():
+        return None
+    try:
+        messages = report_summary.build_messages(profile, goal, draft, artifacts)
+        raw = await llm_client.complete_json(
+            messages, report_summary.SUMMARY_SCHEMA, "report_summary"
+        )
+    except (llm_client.LLMError, TypeError):
+        logger.warning("AI summary failed, using template summary")
+        return None
+    summary = raw.get("summary")
+    if isinstance(summary, str) and summary.strip():
+        return summary.strip()
+    return None
 
 
 async def build_report(
@@ -116,12 +122,14 @@ async def build_report(
 
     total_scores = await assessment_service.get_total_scores(assessment_id, db)
     wb_raw = await assessment_service.get_wellbeing_raw_scores(assessment_id, db)
-    matched = await _match_directions_full(total_scores, db)
+    age_group = profile.age_group if profile else None
+    matched = await _match_directions_full(total_scores, db, age_group)
     draft = generate_report(profile, artifacts, total_scores, matched, wb_raw_scores=wb_raw)
+    summary = await _generate_ai_summary(profile, assessment.goal.value, draft, artifacts) or draft.summary
 
     analysis = AnalysisResult(
         assessment_id=assessment_id,
-        summary=draft.summary,
+        summary=summary,
         strengths=draft.strengths,
         interests_map=draft.interests_map,
         thinking_style=draft.thinking_style,
