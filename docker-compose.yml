@@ -31,10 +31,11 @@ services:
       DATABASE_URL: postgresql+asyncpg://profi_user:profi_password@db:5432/profi_db
       REDIS_URL: redis://redis:6379/0
     volumes:
-      # Output-only mount for scripts/generate_taxonomy.py so review files
-      # survive `docker-compose run --rm` and land on the host. Not a code
-      # bind-mount — app code still ships baked into the image.
+      # Output-only mounts so generated review files survive `docker-compose
+      # run --rm` and land on the host. Not code bind-mounts — app code still
+      # ships baked into the image.
       - ./scripts/taxonomy_proposals:/app/scripts/taxonomy_proposals
+      - ./scripts/question_proposals:/app/scripts/question_proposals
     depends_on:
       db:
         condition: service_healthy
