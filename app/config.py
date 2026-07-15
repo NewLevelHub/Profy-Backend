@@ -1,8 +1,8 @@
 from typing import Self
-from urllib.parse import quote_plus
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine.url import URL
 
 
 class Settings(BaseSettings):
@@ -47,12 +47,16 @@ class Settings(BaseSettings):
             return self
         if not self.POSTGRES_USER or not self.POSTGRES_DB:
             raise ValueError("Set DATABASE_URL or POSTGRES_USER/POSTGRES_DB")
-        user = quote_plus(self.POSTGRES_USER)
-        password = quote_plus(self.POSTGRES_PASSWORD)
-        self.DATABASE_URL = (
-            f"postgresql+asyncpg://{user}:{password}"
-            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
-        )
+        # URL.create encodes special chars in password (@, !, etc.) correctly —
+        # raw f-strings break asyncpg auth when password contains '@'.
+        self.DATABASE_URL = URL.create(
+            drivername="postgresql+asyncpg",
+            username=self.POSTGRES_USER,
+            password=self.POSTGRES_PASSWORD,
+            host=self.POSTGRES_HOST,
+            port=self.POSTGRES_PORT,
+            database=self.POSTGRES_DB,
+        ).render_as_string(hide_password=False)
         return self
 
 

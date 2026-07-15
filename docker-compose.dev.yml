@@ -4,13 +4,13 @@ services:
     container_name: profi_db_dev
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    # Pass credentials via env_file (literal) — do NOT re-interpolate
+    # POSTGRES_PASSWORD with ${...}: special chars like @ ! break it.
+    env_file:
+      - .env.development
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -38,11 +38,9 @@ services:
     env_file:
       - .env.development
     environment:
+      # Only override host wiring — DB user/password come from env_file as-is
       POSTGRES_HOST: db
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PORT: "5432"
       REDIS_URL: redis://redis:6379/0
     depends_on:
       db:
@@ -52,7 +50,6 @@ services:
     expose:
       - "8000"
     restart: always
-    # Join prod edge network so profi_nginx_prod can route Host:dev.profy...
     networks:
       - profi_network_dev
       - profi_edge
