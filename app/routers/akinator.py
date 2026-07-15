@@ -66,11 +66,19 @@ async def _reveal_response(
     report = akinator_report_service.build_reveal_report(decision, belief, rejected_leaves)
 
     all_slugs = [*report.leaves, *report.backups]
-    result = await db.execute(select(Direction).where(Direction.slug.in_(all_slugs)))
+    result = await db.execute(
+        select(Direction).where(
+            Direction.slug.in_(all_slugs),
+            Direction.is_leaf.is_(True)
+        )
+    )
     names_by_slug = {d.slug: d.name for d in result.scalars().all()}
 
     def to_leaves(slugs: list[str]) -> list[RevealLeaf]:
-        return [RevealLeaf(slug=slug, name=names_by_slug.get(slug, slug)) for slug in slugs]
+        return [
+            RevealLeaf(slug=slug, name=names_by_slug[slug])
+            for slug in slugs if slug in names_by_slug
+        ]
 
     reveal_status: Literal["single", "cluster"] = (
         "single" if decision.status == "reveal_single" else "cluster"

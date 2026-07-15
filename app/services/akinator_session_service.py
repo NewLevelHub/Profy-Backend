@@ -13,6 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.akinator_question import AkinatorQuestion
+from app.models.assessment import Assessment
 from app.models.assessment_session import AssessmentSession, SessionStatus
 from app.models.direction import Direction
 from app.models.profile import AgeGroup
@@ -196,6 +197,13 @@ async def submit_feedback(
         raise ValueError(f"no akinator session found for assessment {assessment_id}")
     if session.status == SessionStatus.in_progress:
         raise ValueError("feedback can only be submitted after a reveal")
+
+    if liked and session.belief:
+        best_slug = max(session.belief, key=session.belief.get)
+        assessment = await db.get(Assessment, assessment_id)
+        if assessment:
+            assessment.selected_direction_slug = best_slug
+            db.add(assessment)
 
     return await assessment_session_service.save_feedback(session, db, liked=liked, note=note)
 

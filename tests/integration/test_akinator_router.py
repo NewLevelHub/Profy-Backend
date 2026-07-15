@@ -11,6 +11,7 @@ from app.database import get_db
 from app.main import app
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.assessment_session import AssessmentSession
+from app.models.direction import Direction
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
 from app.services import assessment_session_service
@@ -331,3 +332,61 @@ async def test_rejecting_a_leaf_lowers_belief_and_never_shows_it_again(
     all_slugs = {leaf["slug"] for leaf in [*body["leaves"], *body["backups"]]}
     assert rejected_slug not in all_slugs
     assert body["message"]
+
+
+async def test_feedback_sets_selected_direction_slug_and_roadmap_works(
+    client: AsyncClient, db_session: AsyncSession
+):
+    """Setting feedback to liked=True sets selected_direction_slug and allows roadmap generation."""
+    await _ensure_seeded(db_session)
+    user, assessment = await _make_user_and_assessment(db_session)
+    headers = _auth_headers(user.id)
+
+    reveal_body, _submitted = await _run_to_reveal(client, assessment.id, headers)
+    assert reveal_body["type"] == "reveal"
+    winner_slug = reveal_body["leaves"][0]["slug"]
+
+    # Submit positive feedback (liked=True)
+    feedback_resp = await client.post(
+        f"/api/v1/assessment/{assessment.id}/akinator/feedback",
+        headers=headers,
+        json={"liked": True, "note": "perfect fit"},
+    )
+    assert feedback_resp.status_code == 200
+
+    # Ensure selected_direction_slug is set on assessment in DB
+    await db_session.refresh(assessment)
+    assert assessment.selected_direction_slug == winner_slug
+
+    # Generate direction roadmap (this requires access, and should succeed without any DirectionInquiry in DB)
+    roadmap_resp = await client.post(
+        "/api/v1/roadmap/direction",
+        headers=headers,
+        json={"assessment_id": str(assessment.id), "direction_slug": winner_slug},
+    )
+    assert roadmap_resp.status_code == 200
+    roadmap_body = roadmap_resp.json()
+    assert roadmap_body["direction_slug"] == winner_slug
+    assert len(roadmap_body["stages"]) == 4
+
+
+async def test_reveal_excludes_branch_nodes(
+    client: AsyncClient, db_session: AsyncSession
+):
+    """Ensure that branch-nodes (is_leaf=False) are never returned in reveal response."""
+    await _ensure_seeded(db_session)
+    user, assessment = await _make_user_and_assessment(db_session)
+    headers = _auth_headers(user.id)
+
+    reveal_body, _submitted = await _run_to_reveal(client, assessment.id, headers)
+    assert reveal_body["type"] == "reveal"
+
+    # Check that none of the returned leaves or backups have is_leaf=False
+    returned_slugs = [leaf["slug"] for leaf in [*reveal_body["leaves"], *reveal_body["backups"]]]
+    assert returned_slugs
+
+    result = await db_session.execute(
+        select(Direction).where(Direction.slug.in_(returned_slugs))
+    )
+    directions = result.scalars().all()
+    assert all(d.is_leaf is True for d in directions)

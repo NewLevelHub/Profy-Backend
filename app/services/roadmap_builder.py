@@ -501,11 +501,16 @@ async def _require_direction_roadmap_access(
             detail="Для цели «поступление» используется план по программе университета",
         )
 
-    inquiry = await direction_inquiry_service.get_inquiry(assessment_id, slug, db)
-    if inquiry is None:
+    has_access = (assessment.selected_direction_slug == slug)
+    if not has_access:
+        inquiry = await direction_inquiry_service.get_inquiry(assessment_id, slug, db)
+        if inquiry is not None:
+            has_access = True
+
+    if not has_access:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Сначала пройди опрос по этому направлению",
+            detail="Сначала выбери это направление или пройди опрос по нему",
         )
 
     direction = await direction_service.get_direction_by_slug(slug, db)
