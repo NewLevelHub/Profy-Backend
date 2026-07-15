@@ -1,9 +1,11 @@
 import uuid
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.akinator_answer_log import AkinatorAnswerLog
 from app.models.assessment_session import AssessmentSession, SessionStatus
 
 # belief is a softmax output over leaf directions; floating-point drift across
@@ -56,6 +58,51 @@ async def save_session(
         session.step = step
     if status is not None:
         session.status = status
+
+    db.add(session)
+    await db.commit()
+    await db.refresh(session)
+    return session
+
+
+def log_answer(
+    session: AssessmentSession,
+    db: AsyncSession,
+    *,
+    step: int,
+    question_id: uuid.UUID,
+    selected_option_index: int | None,
+    belief_after: dict[str, float],
+) -> None:
+    """Queue one append-only history row for this answer. Not committed here —
+    the caller's later save_session call commits it alongside the belief
+    update it's part of (see akinator_session_service.submit_answer), so both
+    land in one transaction."""
+    db.add(AkinatorAnswerLog(
+        session_id=session.id,
+        step=step,
+        question_id=question_id,
+        selected_option_index=selected_option_index,
+        belief_after=belief_after,
+    ))
+
+
+async def get_answer_log(session_id: uuid.UUID, db: AsyncSession) -> list[AkinatorAnswerLog]:
+    """Full question -> option -> belief chain for a session, in answer order."""
+    result = await db.execute(
+        select(AkinatorAnswerLog)
+        .where(AkinatorAnswerLog.session_id == session_id)
+        .order_by(AkinatorAnswerLog.step)
+    )
+    return list(result.scalars().all())
+
+
+async def save_feedback(
+    session: AssessmentSession, db: AsyncSession, *, liked: bool, note: str | None
+) -> AssessmentSession:
+    session.liked = liked
+    session.feedback_note = note
+    session.feedback_at = datetime.now(timezone.utc)
 
     db.add(session)
     await db.commit()

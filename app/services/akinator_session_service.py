@@ -163,11 +163,38 @@ async def submit_answer(
     touched_families = {family.value for family in akinator_engine.question_axis_families(question)}
     new_asked_families = sorted({*session.asked_axis_families, *touched_families})
     new_asked_ids = [*session.asked_question_ids, str(question_id)]
+    new_step = session.step + 1
+
+    assessment_session_service.log_answer(
+        session, db,
+        step=new_step,
+        question_id=question_id,
+        selected_option_index=option_index,
+        belief_after=new_belief,
+    )
 
     return await _advance(
         session, db, age_group,
         belief=new_belief,
-        step=session.step + 1,
+        step=new_step,
         asked_question_ids=new_asked_ids,
         asked_axis_families=new_asked_families,
     )
+
+
+async def submit_feedback(
+    assessment_id: uuid.UUID, liked: bool, note: str | None, db: AsyncSession
+) -> AssessmentSession:
+    """Record liked/note for a session — only once it has reached a reveal,
+    since feedback judges a *result*, and a session still picking questions
+    has no result yet to judge."""
+    result = await db.execute(
+        select(AssessmentSession).where(AssessmentSession.assessment_id == assessment_id)
+    )
+    session = result.scalar_one_or_none()
+    if session is None:
+        raise ValueError(f"no akinator session found for assessment {assessment_id}")
+    if session.status == SessionStatus.in_progress:
+        raise ValueError("feedback can only be submitted after a reveal")
+
+    return await assessment_session_service.save_feedback(session, db, liked=liked, note=note)

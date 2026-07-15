@@ -3,14 +3,17 @@ import uuid
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
 from app.main import app
 from app.models.assessment import Assessment, AssessmentGoal
+from app.models.assessment_session import AssessmentSession
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
+from app.services import assessment_session_service
 from app.services.auth_service import create_jwt_token
 from scripts.seed_akinator_content import seed_professions, seed_questions, seed_sections
 
@@ -148,3 +151,99 @@ async def test_unknown_assessment_is_not_found(client: AsyncClient, db_session: 
     )
 
     assert response.status_code == 404
+
+
+async def _run_to_reveal(
+    client: AsyncClient, assessment_id: uuid.UUID, headers: dict[str, str]
+) -> tuple[dict, list[tuple[uuid.UUID, int]]]:
+    """Drive a session to reveal always picking option 0; returns the reveal
+    body plus the (question_id, option_index) pairs submitted along the way."""
+    response = await client.post(f"/api/v1/assessment/{assessment_id}/akinator/start", headers=headers)
+    body = response.json()
+
+    submitted: list[tuple[uuid.UUID, int]] = []
+    max_turns = settings.AKINATOR_CEILING_SENIOR + 1
+    while body["type"] == "next_question":
+        question_id = uuid.UUID(body["question_id"])
+        option_index = body["options"][0]["index"]
+        submitted.append((question_id, option_index))
+        response = await client.post(
+            f"/api/v1/assessment/{assessment_id}/akinator/answer",
+            headers=headers,
+            json={"question_id": str(question_id), "selected_option_index": option_index},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert len(submitted) <= max_turns, "never reached a reveal within the age ceiling"
+
+    return body, submitted
+
+
+async def test_full_run_history_is_reconstructable(client: AsyncClient, db_session: AsyncSession):
+    """AC1: after a full run, the question -> option -> belief chain can be
+    rebuilt from the append-only answer log, in the order it was walked."""
+    await _ensure_seeded(db_session)
+    user, assessment = await _make_user_and_assessment(db_session)
+    headers = _auth_headers(user.id)
+
+    _reveal_body, submitted = await _run_to_reveal(client, assessment.id, headers)
+    assert submitted, "expected at least one answered question before reveal"
+
+    result = await db_session.execute(
+        select(AssessmentSession).where(AssessmentSession.assessment_id == assessment.id)
+    )
+    session = result.scalar_one()
+
+    log = await assessment_session_service.get_answer_log(session.id, db_session)
+
+    assert [row.step for row in log] == list(range(1, len(submitted) + 1))
+    assert [(row.question_id, row.selected_option_index) for row in log] == submitted
+    for row in log:
+        assert abs(sum(row.belief_after.values()) - 1.0) < 0.01
+    # belief strictly narrows: last logged snapshot matches the session's
+    # own final belief (both are written in the same transaction).
+    assert log[-1].belief_after == session.belief
+
+
+async def test_feedback_is_rejected_before_reveal(client: AsyncClient, db_session: AsyncSession):
+    """AC2: feedback on a session still asking questions is rejected."""
+    await _ensure_seeded(db_session)
+    user, assessment = await _make_user_and_assessment(db_session)
+    headers = _auth_headers(user.id)
+
+    await client.post(f"/api/v1/assessment/{assessment.id}/akinator/start", headers=headers)
+
+    response = await client.post(
+        f"/api/v1/assessment/{assessment.id}/akinator/feedback",
+        headers=headers,
+        json={"liked": True, "note": "too early"},
+    )
+
+    assert response.status_code == 400
+
+
+async def test_feedback_is_saved_after_reveal(client: AsyncClient, db_session: AsyncSession):
+    """AC2: feedback after a reveal is accepted and persisted."""
+    await _ensure_seeded(db_session)
+    user, assessment = await _make_user_and_assessment(db_session)
+    headers = _auth_headers(user.id)
+
+    reveal_body, _submitted = await _run_to_reveal(client, assessment.id, headers)
+    assert reveal_body["type"] == "reveal"
+
+    response = await client.post(
+        f"/api/v1/assessment/{assessment.id}/akinator/feedback",
+        headers=headers,
+        json={"liked": True, "note": "spot on"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "recorded"}
+
+    result = await db_session.execute(
+        select(AssessmentSession).where(AssessmentSession.assessment_id == assessment.id)
+    )
+    session = result.scalar_one()
+    assert session.liked is True
+    assert session.feedback_note == "spot on"
+    assert session.feedback_at is not None

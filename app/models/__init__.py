@@ -1,4 +1,5 @@
 from app.database import Base
+from app.models.akinator_answer_log import AkinatorAnswerLog  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.akinator_question import AkinatorQuestion  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.analysis_result import AnalysisResult  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.email_verification import EmailVerificationToken  # noqa: F401 — keep model imported so Alembic discovers it
@@ -16,7 +17,7 @@ from app.models.user import User  # noqa: F401 — keep model imported so Alembi
 from app.models.user_response import UserResponse  # noqa: F401 — keep model imported so Alembic discovers it
 
 __all__ = [
-    "Base", "AkinatorQuestion", "AnalysisResult", "Artifact", "Assessment", "AssessmentSession",
+    "Base", "AkinatorAnswerLog", "AkinatorQuestion", "AnalysisResult", "Artifact", "Assessment", "AssessmentSession",
     "Direction", "DirectionInquiry", "DirectionRoadmap",
     "EmailVerificationToken", "PasswordResetToken", "Profile", "Program", "University", "User", "UserResponse",
 ]

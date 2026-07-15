@@ -14,6 +14,8 @@ from app.models.profile import AgeGroup, Profile
 from app.models.user import User
 from app.schemas.akinator_session import (
     AkinatorAnswerRequest,
+    AkinatorFeedbackRequest,
+    AkinatorFeedbackResponse,
     AkinatorOption,
     AkinatorTurnResponse,
     NextQuestionResponse,
@@ -114,3 +116,18 @@ async def answer_akinator(
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return await _turn_response(turn, age_group, db)
+
+
+@router.post("/{assessment_id}/akinator/feedback", response_model=AkinatorFeedbackResponse)
+async def submit_akinator_feedback(
+    assessment_id: uuid.UUID,
+    data: AkinatorFeedbackRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> AkinatorFeedbackResponse:
+    await _require_owned_assessment(assessment_id, current_user, db)
+    try:
+        await akinator_session_service.submit_feedback(assessment_id, data.liked, data.note, db)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return AkinatorFeedbackResponse()

@@ -35,3 +35,12 @@ class RevealResponse(BaseModel):
 AkinatorTurnResponse = Annotated[
     NextQuestionResponse | RevealResponse, Field(discriminator="type")
 ]
+
+
+class AkinatorFeedbackRequest(BaseModel):
+    liked: bool
+    note: str | None = None
+
+
+class AkinatorFeedbackResponse(BaseModel):
+    status: Literal["recorded"] = "recorded"
