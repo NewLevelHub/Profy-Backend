@@ -18,3 +18,7 @@ venv/
 htmlcov/
 .coverage
 *.log
+
+# Generated review files from scripts/generate_taxonomy.py — human reviews
+# and seeds them by hand, they don't belong in source control.
+scripts/taxonomy_proposals/*.json

@@ -30,6 +30,11 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://profi_user:profi_password@db:5432/profi_db
       REDIS_URL: redis://redis:6379/0
+    volumes:
+      # Output-only mount for scripts/generate_taxonomy.py so review files
+      # survive `docker-compose run --rm` and land on the host. Not a code
+      # bind-mount — app code still ships baked into the image.
+      - ./scripts/taxonomy_proposals:/app/scripts/taxonomy_proposals
     depends_on:
       db:
         condition: service_healthy
