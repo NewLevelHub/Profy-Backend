@@ -128,6 +128,18 @@ docker compose exec api alembic upgrade head
 docker compose exec api python scripts/seed_questions.py
 ```
 
+## Тесты
+
+```bash
+# Все тесты
+docker-compose run --rm api pytest
+
+# Конкретный файл/тест, подробный вывод
+docker-compose run --rm api pytest tests/unit/test_axes.py -v
+```
+
+`tests/unit/` — чистые юнит-тесты без БД. `tests/integration/` — используют реальный Postgres из `db`; каждый тест изолирован через `db_session` из `tests/conftest.py` (откат в конце теста, даже если код внутри вызывает `commit()`).
+
 ## Проверка
 
 После `docker compose up -d`:
