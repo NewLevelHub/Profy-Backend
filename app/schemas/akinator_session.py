@@ -30,6 +30,8 @@ class RevealResponse(BaseModel):
     type: Literal["reveal"] = "reveal"
     status: Literal["single", "cluster"]
     leaves: list[RevealLeaf]
+    backups: list[RevealLeaf] = Field(default_factory=list)
+    message: str
 
 
 AkinatorTurnResponse = Annotated[

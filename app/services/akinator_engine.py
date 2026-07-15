@@ -61,6 +61,25 @@ def update_belief(
     return _softmax(log_belief)
 
 
+def reject_leaf(belief: dict[str, float], leaf_slug: str) -> dict[str, float]:
+    """Condition belief on "not leaf_slug": drop it entirely and renormalize
+    the rest proportionally, so it can never resurface in this session (a
+    stronger, permanent version of update_belief's usual nudge — see
+    akinator_session_service.reject_leaf for the "ребёнок отверг" flow,
+    distinct from the engine's own uncertainty in check_stop's cluster case).
+    """
+    if leaf_slug not in belief:
+        raise ValueError(f"leaf {leaf_slug!r} is not a candidate in this belief")
+
+    remaining_mass = 1.0 - belief[leaf_slug]
+    if remaining_mass <= 1e-9:
+        raise ValueError("no remaining candidates after rejecting this leaf")
+
+    return {
+        leaf: prob / remaining_mass for leaf, prob in belief.items() if leaf != leaf_slug
+    }
+
+
 def question_axis_families(question: AkinatorQuestion) -> set[AxisFamily]:
     """Every axis family touched by any of the question's answer options.
 

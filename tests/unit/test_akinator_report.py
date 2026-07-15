@@ -1,0 +1,70 @@
+from app.services.akinator_engine import StopDecision
+from app.services.akinator_report_service import REPORT_MESSAGES, build_reveal_report
+
+# AC3 copy checklist: no absolutist verdicts ("твоя профессия — X", "ты
+# будешь X", "точно"/"стопроцентно") — every reveal message must read as a
+# suggestion, not a decree.
+BANNED_PHRASES = [
+    "твоя профессия",
+    "ты будешь",
+    "ты — ",
+    "стопроцентно",
+    "точно подходит",
+    "однозначно",
+]
+
+
+def test_cluster_decision_is_uncertain_not_rejection():
+    """AC1: the engine's own low confidence (cluster, no rejection involved)
+    branches to "uncertain" — this is "движок не уверен", not "ребёнок отверг"."""
+    decision = StopDecision(status="reveal_cluster", leaves=["a", "b"], reason="confidence")
+    belief = {"a": 0.4, "b": 0.35, "c": 0.25}
+
+    report = build_reveal_report(decision, belief, rejected_leaves=[])
+
+    assert report.kind == "uncertain"
+    assert report.followed_rejection is False
+    assert report.backups == []
+
+
+def test_single_decision_after_rejection_is_flagged_distinctly():
+    """AC1: a confident single winner reached right after a rejection is
+    still "confident" (the engine did converge), but flagged
+    followed_rejection=True so it reads as "here's another idea", not a
+    fresh, out-of-the-blue verdict — the "ребёнок отверг" branch."""
+    decision = StopDecision(status="reveal_single", leaves=["b"], reason="confidence")
+    belief = {"b": 0.7, "c": 0.3}
+
+    fresh = build_reveal_report(decision, belief, rejected_leaves=[])
+    after_rejection = build_reveal_report(decision, belief, rejected_leaves=["a"])
+
+    assert fresh.kind == after_rejection.kind == "confident"
+    assert fresh.followed_rejection is False
+    assert after_rejection.followed_rejection is True
+    assert fresh.message != after_rejection.message
+
+
+def test_confident_reveal_carries_backup_alternates():
+    decision = StopDecision(status="reveal_single", leaves=["b"], reason="confidence")
+    belief = {"b": 0.7, "c": 0.2, "d": 0.1}
+
+    report = build_reveal_report(decision, belief, rejected_leaves=[])
+
+    assert report.backups == ["c", "d"]
+
+
+def test_uncertain_reveal_has_no_backups():
+    decision = StopDecision(status="reveal_cluster", leaves=["a", "b"], reason="confidence")
+    belief = {"a": 0.4, "b": 0.35, "c": 0.25}
+
+    report = build_reveal_report(decision, belief, rejected_leaves=[])
+
+    assert report.backups == []
+
+
+def test_report_messages_avoid_categorical_verdicts():
+    """AC3: copy checklist, enforced — no absolutist phrasing in any template."""
+    for key, text in REPORT_MESSAGES.items():
+        lowered = text.lower()
+        for banned in BANNED_PHRASES:
+            assert banned not in lowered, f"{key!r} contains a verdict-like phrase: {banned!r}"

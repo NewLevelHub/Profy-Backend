@@ -41,6 +41,9 @@ class AssessmentSession(Base):
     belief: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     asked_question_ids: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     asked_axis_families: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    # Leaf slugs explicitly rejected via POST .../akinator/reject/{leaf_slug} —
+    # deleted from `belief` (not just demoted), so they can never resurface.
+    rejected_leaves: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     step: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     status: Mapped[SessionStatus] = mapped_column(
         Enum(SessionStatus, name="assessment_session_status_enum"),

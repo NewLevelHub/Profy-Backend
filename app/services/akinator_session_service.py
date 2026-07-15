@@ -198,3 +198,35 @@ async def submit_feedback(
         raise ValueError("feedback can only be submitted after a reveal")
 
     return await assessment_session_service.save_feedback(session, db, liked=liked, note=note)
+
+
+async def reject_leaf(
+    assessment_id: uuid.UUID, leaf_slug: str, age_group: AgeGroup, db: AsyncSession
+) -> SessionTurn:
+    """Handle an explicit "this doesn't fit" from the user — distinct from
+    the engine's own uncertainty (StopDecision.status == "reveal_cluster" in
+    check_stop). Strongly demotes leaf_slug (removed from belief entirely,
+    not just discounted — see akinator_engine.reject_leaf) and re-derives the
+    turn, so the same leaf can never resurface in this session. Only valid
+    once a reveal has actually happened — nothing to reject before then."""
+    result = await db.execute(
+        select(AssessmentSession).where(AssessmentSession.assessment_id == assessment_id)
+    )
+    session = result.scalar_one_or_none()
+    if session is None or not session.belief:
+        raise ValueError(f"no akinator session in progress for assessment {assessment_id}")
+    if session.status == SessionStatus.in_progress:
+        raise ValueError("a leaf can only be rejected after a reveal")
+
+    new_belief = akinator_engine.reject_leaf(session.belief, leaf_slug)
+    new_rejected = [*session.rejected_leaves, leaf_slug]
+
+    # Reopen the session so _advance's finalize-once guard re-fires for the
+    # new decision, instead of treating it as already converged.
+    session = await assessment_session_service.save_session(
+        session, db,
+        belief=new_belief,
+        rejected_leaves=new_rejected,
+        status=SessionStatus.in_progress,
+    )
+    return await _advance(session, db, age_group)

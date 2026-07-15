@@ -247,3 +247,87 @@ async def test_feedback_is_saved_after_reveal(client: AsyncClient, db_session: A
     assert session.liked is True
     assert session.feedback_note == "spot on"
     assert session.feedback_at is not None
+
+
+async def test_reject_before_reveal_is_rejected(client: AsyncClient, db_session: AsyncSession):
+    """Rejecting a leaf makes no sense before anything has been revealed."""
+    await _ensure_seeded(db_session)
+    user, assessment = await _make_user_and_assessment(db_session)
+    headers = _auth_headers(user.id)
+
+    await client.post(f"/api/v1/assessment/{assessment.id}/akinator/start", headers=headers)
+
+    response = await client.post(
+        f"/api/v1/assessment/{assessment.id}/akinator/reject/some-slug", headers=headers
+    )
+
+    assert response.status_code == 400
+
+
+async def test_reject_unknown_leaf_is_rejected(client: AsyncClient, db_session: AsyncSession):
+    await _ensure_seeded(db_session)
+    user, assessment = await _make_user_and_assessment(db_session)
+    headers = _auth_headers(user.id)
+
+    reveal_body, _submitted = await _run_to_reveal(client, assessment.id, headers)
+    assert reveal_body["type"] == "reveal"
+
+    response = await client.post(
+        f"/api/v1/assessment/{assessment.id}/akinator/reject/not-a-real-slug", headers=headers
+    )
+
+    assert response.status_code == 400
+
+
+async def test_rejecting_a_leaf_lowers_belief_and_never_shows_it_again(
+    client: AsyncClient, db_session: AsyncSession
+):
+    """AC2: rejection lowers belief for that leaf and it never resurfaces —
+    neither in a follow-up next_question turn nor in any later reveal."""
+    await _ensure_seeded(db_session)
+    user, assessment = await _make_user_and_assessment(db_session)
+    headers = _auth_headers(user.id)
+
+    reveal_body, _submitted = await _run_to_reveal(client, assessment.id, headers)
+    assert reveal_body["type"] == "reveal"
+    rejected_slug = reveal_body["leaves"][0]["slug"]
+
+    result = await db_session.execute(
+        select(AssessmentSession).where(AssessmentSession.assessment_id == assessment.id)
+    )
+    session = result.scalar_one()
+    belief_before = session.belief[rejected_slug]
+
+    response = await client.post(
+        f"/api/v1/assessment/{assessment.id}/akinator/reject/{rejected_slug}", headers=headers
+    )
+    assert response.status_code == 200
+    body = response.json()
+
+    await db_session.refresh(session)
+    assert rejected_slug not in session.belief
+    assert rejected_slug in session.rejected_leaves
+    assert belief_before > 0  # sanity: it really had non-trivial belief before rejection
+
+    # Keep answering (if the engine wants more info) until a new reveal, then
+    # confirm the rejected leaf is gone for good — not in the primary result,
+    # not tucked away as a backup either.
+    max_turns = settings.AKINATOR_CEILING_SENIOR + 1
+    turns = 0
+    while body["type"] == "next_question":
+        payload = {
+            "question_id": body["question_id"],
+            "selected_option_index": body["options"][0]["index"],
+        }
+        response = await client.post(
+            f"/api/v1/assessment/{assessment.id}/akinator/answer", headers=headers, json=payload
+        )
+        assert response.status_code == 200
+        body = response.json()
+        turns += 1
+        assert turns <= max_turns
+
+    assert body["type"] == "reveal"
+    all_slugs = {leaf["slug"] for leaf in [*body["leaves"], *body["backups"]]}
+    assert rejected_slug not in all_slugs
+    assert body["message"]

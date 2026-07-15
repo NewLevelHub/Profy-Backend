@@ -1,6 +1,8 @@
 import math
 
-from app.services.akinator_engine import match_score, update_belief
+import pytest
+
+from app.services.akinator_engine import match_score, reject_leaf, update_belief
 
 
 def test_match_score_sums_products_over_answer_axes():
@@ -65,3 +67,27 @@ def test_convergence_on_toy_catalog_of_5_leaves():
 
     assert belief["programmer"] > 0.9
     assert max(belief, key=belief.get) == "programmer"
+
+
+def test_reject_leaf_removes_it_and_renormalizes():
+    """AC2 (reject ticket): rejecting a leaf drops it entirely and rescales
+    the rest back to Σ=1, so it can never resurface via belief lookups."""
+    belief = {"a": 0.6, "b": 0.25, "c": 0.15}
+
+    result = reject_leaf(belief, "a")
+
+    assert "a" not in result
+    assert math.isclose(sum(result.values()), 1.0, abs_tol=1e-9)
+    # relative proportions between the untouched leaves are preserved
+    assert math.isclose(result["b"] / result["c"], 0.25 / 0.15, rel_tol=1e-9)
+
+
+def test_reject_leaf_unknown_slug_raises():
+    with pytest.raises(ValueError):
+        reject_leaf({"a": 0.6, "b": 0.4}, "does-not-exist")
+
+
+def test_reject_leaf_last_candidate_raises():
+    """Rejecting the only remaining leaf leaves nothing to redistribute to."""
+    with pytest.raises(ValueError):
+        reject_leaf({"a": 1.0}, "a")
