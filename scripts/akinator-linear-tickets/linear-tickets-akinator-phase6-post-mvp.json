@@ -1,0 +1,66 @@
+[
+  {
+    "identifier": "PRO-86",
+    "title": "AKN-018 — Симуляция-подтверждение (Realistic Job Preview)",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 6 · Post-MVP\n\n**Контекст.** Ролевой мини-тест «на месте профессии», включая непарадную часть. Контент лениво по спросу. Отказ — сильнейший сигнал через тот же `update_belief`.",
+    "block": "Акинатор — Фаза 6: Post-MVP",
+    "labels": [
+      "backend",
+      "post-mvp",
+      "akinator"
+    ],
+    "area": "profession_simulation, prompts, routers",
+    "parallel": false,
+    "dependsOn": [
+      "PRO-78",
+      "PRO-83"
+    ],
+    "backend": {
+      "tasks": [
+        "Модель profession_simulation: leaf_slug, шаги сценария",
+        "Офлайн-генерация (черновик+ревью), старт с 3–5 частых листьев по логу",
+        "Эндпоинты симуляции; при отказе — update_belief с сильным отрицательным вкладом; логирование исхода"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "Контент минимум для 3 листьев",
+      "Отказ после симуляции понижает belief через тот же update_belief (без отдельного пути)",
+      "Исход симуляции логируется"
+    ]
+  },
+  {
+    "identifier": "PRO-87",
+    "title": "AKN-019 — Разрешатель кластера",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 6 · Post-MVP\n\n**Контекст.** Выбор между финалистами кластера на вопросах-разделителях (resolves_pair). Только по явному желанию ребёнка. Не «дотестировать до победного» — если после бюджета всё ещё вплотную, кластер остаётся кластером.",
+    "block": "Акинатор — Фаза 6: Post-MVP",
+    "labels": [
+      "backend",
+      "post-mvp",
+      "akinator"
+    ],
+    "area": "cluster_resolver_service, routers",
+    "parallel": false,
+    "dependsOn": [
+      "PRO-77",
+      "PRO-78",
+      "PRO-84"
+    ],
+    "backend": {
+      "tasks": [
+        "Переиспользовать AkinatorQuestion с resolves_pair (из AKN-009)",
+        "cluster_resolver_service + endpoint /akinator/resolve",
+        "Жёсткий бюджет (~3 вопроса); при недостатке разрыва — «кластер остаётся кластером»"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "Юнит-тест: никогда не объявляет победителя ниже порога после бюджета",
+      "Ручная проверка на паре (психолог vs логопед, q20)"
+    ]
+  }
+]

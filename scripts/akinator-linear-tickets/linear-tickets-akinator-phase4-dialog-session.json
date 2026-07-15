@@ -1,0 +1,99 @@
+[
+  {
+    "identifier": "PRO-81",
+    "title": "AKN-013 — Сервис оркестрации диалоговой сессии",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 4 · MVP\n\n**Контекст.** Связывает состояние, математику и контент в сценарий «следующий вопрос или reveal». `goal` больше не выбирает блоки вопросов — движок одинаков; goal только для роадмапа.",
+    "block": "Акинатор — Фаза 4: Диалог и сессия",
+    "labels": [
+      "backend",
+      "mvp",
+      "akinator"
+    ],
+    "area": "app/services/akinator_session_service.py",
+    "parallel": false,
+    "dependsOn": [
+      "PRO-72",
+      "PRO-77",
+      "PRO-78",
+      "PRO-79",
+      "PRO-80"
+    ],
+    "backend": {
+      "tasks": [
+        "`start_session` — создаёт AssessmentSession, равномерная belief по листьям по возрасту, первый широкий вопрос",
+        "`submit_answer` — update_belief → check_stop → select_next_question или reveal",
+        "Guard clauses: вопрос не найден / не этой сессии / уже отвечен — явные ошибки"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "Интеграционный тест: полная сессия на сидированном контенте до reveal в ожидаемом диапазоне вопросов",
+      "Повторный submit_answer на уже отвеченный вопрос отклоняется, не задваивает belief"
+    ]
+  },
+  {
+    "identifier": "PRO-82",
+    "title": "AKN-014 — Роутер /akinator/start и /akinator/answer",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 4 · MVP\n\n**Контекст.** HTTP-контракт для диалога «один вопрос — один ответ». Старые эндпоинты не удаляются до dual-run и [GATE].",
+    "block": "Акинатор — Фаза 4: Диалог и сессия",
+    "labels": [
+      "backend",
+      "mvp",
+      "api",
+      "akinator"
+    ],
+    "area": "app/routers/akinator.py, schemas, main.py",
+    "parallel": false,
+    "dependsOn": [
+      "PRO-81"
+    ],
+    "backend": {
+      "tasks": [
+        "`POST /assessment/{id}/akinator/start`, `POST .../akinator/answer` (question_id, selected_option_index | null для «не знаю»)",
+        "Схемы: дискриминированный `NextQuestionResponse | RevealResponse`",
+        "Подключить роутер; авторизация + проверка владения по образцу assessment.py"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "POST .../start отдаёт вопрос depth 0–1, direct",
+      "Последовательные answer до схождения отдают валидный reveal",
+      "Доступ к чужому assessment → 403"
+    ]
+  },
+  {
+    "identifier": "PRO-83",
+    "title": "AKN-015 — Логирование сессий для калибровки",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 4 · MVP\n\n**Контекст.** С первого дня логировать цепочку ответов → сошедшийся лист → liked/не liked. AssessmentSession хранит текущее состояние — нужна восстановимая история + точка feedback.",
+    "block": "Акинатор — Фаза 4: Диалог и сессия",
+    "labels": [
+      "backend",
+      "mvp",
+      "akinator"
+    ],
+    "area": "assessment_session / akinator router",
+    "parallel": false,
+    "dependsOn": [
+      "PRO-72",
+      "PRO-81"
+    ],
+    "backend": {
+      "tasks": [
+        "Решить: достаточно asked_question_ids+belief или нужен append-only лог событий",
+        "`POST .../akinator/feedback` — liked: bool, note: str|None",
+        "Отклонять feedback для сессии без reveal"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "После полного прогона цепочка «вопрос → вариант → belief» восстановима",
+      "feedback сохраняется и отклоняется до reveal"
+    ]
+  }
+]

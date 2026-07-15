@@ -1,0 +1,97 @@
+[
+  {
+    "identifier": "PRO-90",
+    "title": "AKN-022 — Диалоговый экран прохождения теста",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фронтенд · MVP\n\n**Контекст.** Сейчас блок вопросов целиком. Новый движок — один вопрос за раз с неизвестной длиной. Другая модель взаимодействия.",
+    "block": "Акинатор — Фронтенд",
+    "labels": [
+      "frontend",
+      "mvp",
+      "akinator"
+    ],
+    "area": "Profy-Frontend/src/pages/assessment/",
+    "parallel": false,
+    "dependsOn": [
+      "PRO-82",
+      "PRO-88"
+    ],
+    "backend": {
+      "tasks": []
+    },
+    "frontend": {
+      "tasks": [
+        "Хук useAkinatorAssessment: start/answer по одному; прогресс — сходящийся индикатор (длина неизвестна)",
+        "Переиспользовать OptionCard, ConfettiBlast, PraisePage где подходит",
+        "Включение по признаку AKN-020 (поле в AssessmentResponse) — legacy без регрессий"
+      ]
+    },
+    "acceptanceCriteria": [
+      "Ручной прогон: вопросы по одному, «не знаю», завершение reveal",
+      "Legacy-assessment'ы рендерятся как сейчас"
+    ]
+  },
+  {
+    "identifier": "PRO-91",
+    "title": "AKN-023 — Экран результата (одна профессия / кластер)",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фронтенд · MVP\n\n**Контекст.** Новый reveal: одна профессия крупно с запасными ИЛИ 2–3 финалиста рядом. Два «не подошло» визуально различаются.",
+    "block": "Акинатор — Фронтенд",
+    "labels": [
+      "frontend",
+      "mvp",
+      "akinator"
+    ],
+    "area": "Profy-Frontend/src/pages/results/",
+    "parallel": false,
+    "dependsOn": [
+      "PRO-84",
+      "PRO-90"
+    ],
+    "backend": {
+      "tasks": []
+    },
+    "frontend": {
+      "tasks": [
+        "Экран ветвления по форме reveal (одна профессия vs кластер)",
+        "Копирайт без «твоя профессия — X»",
+        "«не моё» → reject; «нравится»/пропуск → feedback"
+      ]
+    },
+    "acceptanceCriteria": [
+      "Ручной прогон обеих веток — визуально различный UI",
+      "«не моё» доходит до бэка, тот же топ повторно не всплывает"
+    ]
+  },
+  {
+    "identifier": "PRO-92",
+    "title": "AKN-024 — Экраны симуляции и разрешателя кластера",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фронтенд · Post-MVP\n\n**Контекст.** Два разных входа (RJP-симуляция и разрешатель) — нельзя сливать в один «доп-квиз». Разрешатель только по явному действию ребёнка.",
+    "block": "Акинатор — Фронтенд",
+    "labels": [
+      "frontend",
+      "post-mvp",
+      "akinator"
+    ],
+    "area": "Profy-Frontend assessment/simulation/results",
+    "parallel": false,
+    "dependsOn": [
+      "PRO-86",
+      "PRO-87",
+      "PRO-91"
+    ],
+    "backend": {
+      "tasks": []
+    },
+    "frontend": {
+      "tasks": [
+        "Экран симуляции: шаги сценария, accept/reject",
+        "Экран разрешателя (компоненты из AKN-022), только явным действием с экрана кластера",
+        "Отказ от симуляции → результаты с отражённым отказом"
+      ]
+    },
+    "acceptanceCriteria": [
+      "Ручной прогон обоих потоков на засеянном контенте",
+      "Разрешатель никогда не показывается автоматически",
+      "Отказ от симуляции корректно возвращает на результаты"
+    ]
+  }
+]

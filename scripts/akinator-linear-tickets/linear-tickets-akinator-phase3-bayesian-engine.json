@@ -1,0 +1,97 @@
+[
+  {
+    "identifier": "PRO-78",
+    "title": "AKN-010 — Апдейт веры (match + softmax)",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 3 · MVP\n\n**Контекст.** Сердце движка — чистая математика без ИИ и БД: `match(A,L)=Σ A[ось]·L[ось]`, `log belief += β·match`, softmax. «Не знаю» — нулевой вклад.",
+    "block": "Акинатор — Фаза 3: Байесовский движок",
+    "labels": [
+      "backend",
+      "mvp",
+      "akinator"
+    ],
+    "area": "app/services/akinator_engine.py",
+    "parallel": true,
+    "dependsOn": [
+      "PRO-69"
+    ],
+    "backend": {
+      "tasks": [
+        "`match_score(answer_weights, leaf_profile) -> float`",
+        "`update_belief(...)` — лог-апдейт + softmax; «не знаю» (пустой answer_weights) — identity",
+        "`settings.AKINATOR_BETA: float = 0.7` (не магическое число в коде)"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "Юнит-тест: после апдейта сумма belief ≈ 1.0",
+      "Юнит-тест: «не знаю» не меняет belief",
+      "Юнит-тест монотонности: сильное совпадение поднимает belief листа",
+      "Юнит-тест сходимости на игрушечном каталоге 3–5 листьев"
+    ]
+  },
+  {
+    "identifier": "PRO-79",
+    "title": "AKN-011 — Выбор следующего вопроса + антижадный старт",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 3 · MVP\n\n**Контекст.** Баг симуляций: движок «залипал» на первом ответе. Правило старта: первые ~3 вопроса — широкие прямые, каждый по новой оси/семейству; дальше — минимизация ожидаемой энтропии.",
+    "block": "Акинатор — Фаза 3: Байесовский движок",
+    "labels": [
+      "backend",
+      "mvp",
+      "akinator"
+    ],
+    "area": "app/services/akinator_engine.py",
+    "parallel": false,
+    "dependsOn": [
+      "PRO-72",
+      "PRO-78"
+    ],
+    "backend": {
+      "tasks": [
+        "`select_next_question(session, candidate_questions) -> AkinatorQuestion`",
+        "Для step < 3: depth ≤ 1, kind=direct, семейство ещё не в asked_axis_families",
+        "Для step ≥ 3: argmin ожидаемой постериорной энтропии; исключить заданные; учесть age_variant"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "Юнит-тест: на шагах 0/1/2 — depth≤1, direct, без повторов семейств",
+      "Юнит-тест: на шаге ≥3 — минимальная ожидаемая энтропия (brute-force на игрушечном сценарии)"
+    ]
+  },
+  {
+    "identifier": "PRO-80",
+    "title": "AKN-012 — Критерий остановки (уверенность + возрастной потолок)",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 3 · MVP\n\n**Контекст.** Две точки остановки: уверенность (top-1 > T И top-1 ≥ M×top-2 → одна профессия; иначе кластер top-k ≤3, ~70%) и возрастной потолок. Упор в потолок без схождения — валидный исход (группа), не ошибка.",
+    "block": "Акинатор — Фаза 3: Байесовский движок",
+    "labels": [
+      "backend",
+      "mvp",
+      "akinator"
+    ],
+    "area": "app/services/akinator_engine.py, app/config.py",
+    "parallel": true,
+    "dependsOn": [
+      "PRO-78"
+    ],
+    "backend": {
+      "tasks": [
+        "`check_stop(belief, step, age_group) -> StopDecision` (continue / reveal_single / reveal_cluster)",
+        "Пороги T≈0.45, M≈1.5, k≤3 и возрастные потолки — именованные настройки",
+        "Достижение потолка без схождения → reveal_cluster, не исключение"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "Юнит-тест: явный лидер → reveal_single",
+      "Юнит-тест: два близких лидера → reveal_cluster (k≤3, ~70%)",
+      "Юнит-тест: потолок при размазанном belief → reveal_cluster без ошибки",
+      "Юнит-тест: потолок junior < потолка senior (из настроек)"
+    ]
+  }
+]

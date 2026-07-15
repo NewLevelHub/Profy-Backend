@@ -1,0 +1,65 @@
+[
+  {
+    "identifier": "PRO-84",
+    "title": "AKN-016 — Развести «движок не уверен» и «ребёнок отверг»",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 5 · MVP\n\n**Контекст.** Два сценария «не подошло»: движок не уверен (кластер) vs ребёнок отверг (понижение belief, не показывать то же). Язык результата — предлагающий, не вердикт.",
+    "block": "Акинатор — Фаза 5: Отчёт",
+    "labels": [
+      "backend",
+      "mvp",
+      "akinator"
+    ],
+    "area": "report_service / akinator router",
+    "parallel": false,
+    "dependsOn": [
+      "PRO-78",
+      "PRO-80"
+    ],
+    "backend": {
+      "tasks": [
+        "Ветка отчёта по наличию AssessmentSession: reveal_single (+ запасные) / reveal_cluster (2–3 без победителя)",
+        "`POST .../akinator/reject/{leaf_slug}` — сильный отрицательный вклад + check_stop",
+        "Ревью текстовых шаблонов: без «твоя профессия — X»"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "Юнит-тест ветвления «не уверен» vs «отверг»",
+      "Отказ понижает belief и не показывает тот же результат повторно",
+      "Чек-лист копирайта в PR: нет категоричных формулировок"
+    ]
+  },
+  {
+    "identifier": "PRO-85",
+    "title": "AKN-017 — Интеграция с роадмапом без изменения контракта",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 5 · MVP\n\n**Контекст.** Сошедшийся лист → `Assessment.selected_direction_slug` «как есть». Роадмап не должен знать, откуда slug. Branch-узлы (is_leaf=false) не должны попадать как финальный выбор.",
+    "block": "Акинатор — Фаза 5: Отчёт",
+    "labels": [
+      "backend",
+      "mvp",
+      "akinator"
+    ],
+    "area": "direction_inquiry_service, roadmap_builder, student_context",
+    "parallel": false,
+    "dependsOn": [
+      "PRO-70",
+      "PRO-84"
+    ],
+    "backend": {
+      "tasks": [
+        "При подтверждении результата проставлять selected_direction_slug",
+        "Проверить _require_direction_roadmap_access и build_student_context на скрытые допущения",
+        "Явно исключить branch-узлы из финального выбора в акинатор-потоке"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "Роадмап по направлению работает E2E от подтверждённого листа без лишних изменений контракта",
+      "Регрессия: узлы-ветки нигде не возвращаются как финальный результат"
+    ]
+  }
+]

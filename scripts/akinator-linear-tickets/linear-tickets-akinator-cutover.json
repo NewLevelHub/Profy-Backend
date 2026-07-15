@@ -1,0 +1,87 @@
+[
+  {
+    "identifier": "PRO-88",
+    "title": "AKN-020 — Параллельный запуск (dual-run) за флагом",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Cutover · MVP-инфра\n\n**Контекст.** Старый блочный и новый диалоговый потоки сосуществуют. Переключатель `AKINATOR_ENABLED` (как LLM_ENABLED): наличие AssessmentSession — дискриминатор потока.",
+    "block": "Акинатор — Cutover",
+    "labels": [
+      "backend",
+      "mvp",
+      "infra",
+      "akinator"
+    ],
+    "area": "app/config.py, assessment_service",
+    "parallel": false,
+    "dependsOn": [
+      "PRO-72",
+      "PRO-81",
+      "PRO-82"
+    ],
+    "backend": {
+      "tasks": [
+        "`settings.AKINATOR_ENABLED: bool = False`",
+        "Ветвление при старте assessment по флагу",
+        "Старые эндпоинты работают для assessment без сессии; новые отклоняют assessment без сессии (400/404)"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "При выключенном флаге поведение идентично текущему",
+      "При включённом — новые assessment по акинатору; уже стартовавшие старые продолжают на старых эндпоинтах"
+    ]
+  },
+  {
+    "identifier": "PRO-89",
+    "title": "AKN-021 — [GATE] Удаление старого банка вопросов и порогового скоринга",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Cutover · **[GATE]**\n\n⚠️ **Стоп-кран:** не начинать без явного «да» от продукта непосредственно перед выполнением. Старый код не удалять, пока AKN-001–020 не живут в проде и не покрыты тестами.\n\n**Контекст.** Удаление QuestionBlock-вопросов, порогового скоринга, старых эндпоинтов `/questions/{block}` и `/answers`.",
+    "block": "Акинатор — Cutover",
+    "labels": [
+      "backend",
+      "gate",
+      "cleanup",
+      "akinator"
+    ],
+    "area": "широкий — весь legacy-путь",
+    "parallel": false,
+    "dependsOn": [
+      "PRO-69",
+      "PRO-70",
+      "PRO-71",
+      "PRO-72",
+      "PRO-73",
+      "PRO-74",
+      "PRO-75",
+      "PRO-76",
+      "PRO-77",
+      "PRO-78",
+      "PRO-79",
+      "PRO-80",
+      "PRO-81",
+      "PRO-82",
+      "PRO-83",
+      "PRO-84",
+      "PRO-85",
+      "PRO-86",
+      "PRO-87",
+      "PRO-88"
+    ],
+    "backend": {
+      "tasks": [
+        "Удалить использование QuestionBlock-вопросов, get_raw_scores, normalize_scores, score_direction, direction_inquiry (если полностью замещена), старые /questions/{block} и /answers",
+        "Миграция обратимая где возможно; перед дропом — экспорт/снэпшот legacy-данных",
+        "Не удалять required_scores/bonus_scores пакетом — решение по каждому полю отдельно"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "К PR — письменное подтверждение продукта/эксперта непосредственно перед мёржем",
+      "Есть экспорт/снэпшот legacy-таблиц до дропа",
+      "Полный набор тестов зелёный после удаления",
+      "Нет ссылок на удалённые функции/роутеры (grep)"
+    ]
+  }
+]

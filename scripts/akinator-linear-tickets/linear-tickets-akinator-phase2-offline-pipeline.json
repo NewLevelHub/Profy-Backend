@@ -1,0 +1,134 @@
+[
+  {
+    "identifier": "PRO-74",
+    "title": "AKN-006 — Офлайн-генерация таксономии профессий",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 2 · MVP-инструмент\n\n**Контекст.** ИИ офлайн (не в рантайме) предлагает дерево профессий, человек ревьюит. Повторяемый JSON-процесс для расширения каталога за пределы стартовых 67 профессий.",
+    "block": "Акинатор — Фаза 2: Офлайн-пайплайн",
+    "labels": [
+      "backend",
+      "mvp",
+      "tooling",
+      "akinator"
+    ],
+    "area": "app/prompts/, scripts/",
+    "parallel": true,
+    "dependsOn": [
+      "PRO-69"
+    ],
+    "backend": {
+      "tasks": [
+        "`app/prompts/akinator_taxonomy.py`: `build_messages()` + строгая JSON-схема (slug, name, parent_slug, is_leaf)",
+        "Скрипт `scripts/generate_taxonomy.py` через `llm_client.complete_json`, сохраняет файл для ревью — **не пишет в БД**",
+        "Переиспользовать существующий `llm_client` — новый HTTP-клиент не создавать"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "Прогон на тестовом промпте даёт валидный JSON по схеме",
+      "Результат — файл для ревью, а не запись в БД",
+      "В docstring/--help явно: только офлайн, вызов из request-пути запрещён"
+    ]
+  },
+  {
+    "identifier": "PRO-75",
+    "title": "AKN-007 — Офлайн-генерация профиля листа («паспорт профессии»)",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 2 · MVP-инструмент\n\n**Контекст.** Для каждого листа нужен вектор по 24 осям (−2…+2). ИИ набрасывает батчем, человек ревьюит (здесь часто «слипания» — 39 проблемных пар в каталоге).",
+    "block": "Акинатор — Фаза 2: Офлайн-пайплайн",
+    "labels": [
+      "backend",
+      "mvp",
+      "tooling",
+      "akinator"
+    ],
+    "area": "app/prompts/, scripts/",
+    "parallel": false,
+    "dependsOn": [
+      "PRO-69",
+      "PRO-74"
+    ],
+    "backend": {
+      "tasks": [
+        "`app/prompts/akinator_profile.py` со схемой, ограниченной `AXIS_CODES` (только ненулевые оси)",
+        "Скрипт `scripts/generate_profession_profiles.py`: файл таксономии → файл профилей для ревью",
+        "Валидация кодов осей против `AXIS_CODES` — на неизвестном переспрашивать модель (ретрай llm_client)"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "Один профиль на лист, значения в диапазоне −2…+2",
+      "Неизвестные коды осей не попадают в итоговый файл ревью",
+      "В выводе явно: черновик, требует подписи человека перед AKN-009"
+    ]
+  },
+  {
+    "identifier": "PRO-76",
+    "title": "AKN-008 — Офлайн-генерация вопросов под возраст",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 2 · MVP-инструмент\n\n**Контекст.** ИИ офлайн набрасывает формулировки вопросов под правило формата и возрастной вариант. Для ленивого дописывания банка по логу; стартовый MVP-банк уже вручную готов (AKN-009).",
+    "block": "Акинатор — Фаза 2: Офлайн-пайплайн",
+    "labels": [
+      "backend",
+      "mvp",
+      "tooling",
+      "akinator"
+    ],
+    "area": "app/prompts/, scripts/",
+    "parallel": true,
+    "dependsOn": [
+      "PRO-69",
+      "PRO-71"
+    ],
+    "backend": {
+      "tasks": [
+        "`app/prompts/akinator_question_gen.py` со схемой формы `AkinatorQuestion`",
+        "Скрипт `scripts/generate_questions.py` (ось/глубина/kind на входе) → файл для ревью",
+        "Скрипт проверяет соответствие `kind` правилу `format_for_axis` и помечает несоответствия"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "Сгенерированные вопросы проходят валидацию по схеме и `AXIS_CODES`",
+      "Несоответствия правилу формат=f(семейство, глубина) явно помечены",
+      "Вывод — файл для ревью, не прямая запись в БД"
+    ]
+  },
+  {
+    "identifier": "PRO-77",
+    "title": "AKN-009 — Импорт стартового контента (сидинг MVP-банка)",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 2 · MVP\n\n**Контекст.** `profi_full_catalog.md` (67 профессий) и банки `profi_questions_mvp.md` + `profi_questions_full_addon.md` (q01–q41) — вручную вычитанный черновик. Перенести из markdown в БД через модели AKN-002/003, не генерировать заново через AKN-006–008.",
+    "block": "Акинатор — Фаза 2: Офлайн-пайплайн",
+    "labels": [
+      "backend",
+      "mvp",
+      "content",
+      "akinator"
+    ],
+    "area": "scripts/seed_akinator_content.py",
+    "parallel": false,
+    "dependsOn": [
+      "PRO-70",
+      "PRO-71"
+    ],
+    "backend": {
+      "tasks": [
+        "Перенести 67 профессий в `Direction`: секции → ветки (is_leaf=false), профессии → листья с profile",
+        "Перенести q01–q41 в `AkinatorQuestion`; пометки «разводит: X vs Y» → resolves_pair",
+        "Идемпотентный скрипт `scripts/seed_akinator_content.py` (не Alembic data-миграция)",
+        "Ручная сверка перенесённых весов с markdown (выборочно) — отметить в PR"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "После прогона: 67 Direction (ветки+листья) с profile у листьев и 41 AkinatorQuestion с валидными axis_weights",
+      "Повторный прогон не создаёт дублей",
+      "В PR зафиксирована ручная сверка части весов с markdown"
+    ]
+  }
+]

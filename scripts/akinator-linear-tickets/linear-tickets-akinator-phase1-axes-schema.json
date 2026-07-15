@@ -1,0 +1,163 @@
+[
+  {
+    "identifier": "PRO-69",
+    "title": "AKN-001 — Единый каталог осей (стоп-ворота фазы)",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 1 · MVP\n\n**Контекст.** Сейчас скоринг держится на произвольных строковых ключах (`logical`, `helping_motiv`, `pref_country`, …), разбросанных по `ai_service.STRENGTHS_MAP`, `scoring_service.PREFERENCE_KEYS`, `MOTIVATION_PREF_KEYS` — единого списка нет. Новая логика требует одного зафиксированного каталога из **24 осей в 5 семействах** (A-Ориентация, B-Модальность, C-Канал, D-Темперамент, E-Практика), потому что на нём держится всё: веса вариантов ответа, «паспорт» листа-профессии, формат вопроса и правило старта.\n\n**Важно (вопрос к продукту, не додумывать):** в исходниках нестыковка нейминга — `profi_axes_phase1.md` с префиксом семьи (`A_people`, …) vs `profi_full_catalog.md` / банки вопросов с короткими именами (`People`, `Care`, …). Рекомендация: канонизировать короткие имена. Нужно явное подтверждение перед миграциями.",
+    "block": "Акинатор — Фаза 1: Оси и схема",
+    "labels": [
+      "backend",
+      "mvp",
+      "foundation",
+      "akinator"
+    ],
+    "area": "app/core/",
+    "parallel": false,
+    "dependsOn": [],
+    "backend": {
+      "tasks": [
+        "Создать `app/core/axes.py` с `AXIS_CATALOG` — 24 записи (`code`, `family`, `min_depth`, `label_ru`) и `AxisFamily` enum (A/B/C/D/E)",
+        "Зафиксировать выбранный нейминг (короткие коды) как канонический; сослаться на префиксные имена из `profi_axes_phase1.md` в docstring",
+        "Добавить `format_for_axis(axis_code, depth) -> Literal[\"direct\", \"situational\"]`, `is_valid_axis(code)`, `AXIS_CODES: frozenset[str]`",
+        "Юнит-тест на целостность каталога: 24 оси, 5 семейств, нет дублей кодов",
+        "Согласовать список и выбор нейминга с человеком до опоры AKN-002/003/004/010"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "`app/core/axes.py` существует и экспортирует 24 оси в 5 семействах, покрыт тестом на отсутствие дублей и валидность семейств",
+      "Выбор нейминга явно задокументирован и подтверждён продуктом/экспертом (зафиксировано в описании PR)",
+      "Ни один из следующих тикетов (AKN-002, 003, 004, 010) не хардкодит строковые ключи осей мимо этого модуля"
+    ]
+  },
+  {
+    "identifier": "PRO-70",
+    "title": "AKN-002 — Direction → дерево профессий (расширение, не замена)",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 1 · MVP\n\n**Контекст.** Смысл акинатора — дерево-таксономия профессий (от общего к частному). Каталог `Direction` уже почти в нужной форме — это **переразметка** (`required_scores` → `profile` + `parent_id`), а не стройка с нуля. Расширяем таблицу аддитивно: старые `required_scores`/`bonus_scores` не трогаем — старый скоринг работает до [GATE] AKN-021.",
+    "block": "Акинатор — Фаза 1: Оси и схема",
+    "labels": [
+      "backend",
+      "mvp",
+      "akinator"
+    ],
+    "area": "app/models/direction.py, alembic/",
+    "parallel": false,
+    "dependsOn": [
+      "PRO-69"
+    ],
+    "backend": {
+      "tasks": [
+        "Alembic-миграция (обратимая) на `directions`: `parent_id` (self-FK, nullable), `profile` (JSONB, default `{}`, −2…+2), `label_junior`, `label_senior`, `age_min`, `is_leaf` (default true)",
+        "Обновить `app/models/direction.py`: новые колонки + self-referential relationship к дочерним узлам",
+        "Существующие строки остаются валидными: `is_leaf=true`, `profile={}` — не ломает `direction_service.score_direction`",
+        "Не менять `app/schemas/direction.py` в этом тикете — выдача наружу в AKN-017"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "`docker-compose exec api alembic upgrade head` и `alembic downgrade -1` проходят без ошибок",
+      "Существующие направления и старый роутер `directions.py` продолжают работать без изменений",
+      "Новые колонки nullable/со значением по умолчанию — бэкфилл не обязателен на этапе миграции"
+    ]
+  },
+  {
+    "identifier": "PRO-71",
+    "title": "AKN-003 — Новая модель AkinatorQuestion",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 1 · MVP\n\n**Контекст.** Текущая `Question` привязана к `QuestionBlock` и одному `age_group`; веса — плоский словарь на произвольные ключи. Новому движку нужны: `kind`, `depth`, возрастной вариант формулировки, веса по осям из AKN-001. Чище — новая таблица рядом со старой: `questions` остаются нетронутыми до [GATE] AKN-021.",
+    "block": "Акинатор — Фаза 1: Оси и схема",
+    "labels": [
+      "backend",
+      "mvp",
+      "akinator"
+    ],
+    "area": "app/models/akinator_question.py, schemas, alembic/",
+    "parallel": true,
+    "dependsOn": [
+      "PRO-69"
+    ],
+    "backend": {
+      "tasks": [
+        "`app/models/akinator_question.py`: `QuestionKind` (direct/situational); поля id, kind, depth, age_variant (both/junior/senior), text, text_junior, options JSONB, resolves_pair, is_active, order",
+        "Alembic-миграция (новая таблица, чисто аддитивная)",
+        "`app/schemas/akinator_question.py`, зеркалящая модель",
+        "Валидатор: каждый ключ `axis_weights` обязан входить в `AXIS_CODES` из AKN-001"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "Миграция обратима; таблица `akinator_questions` не пересекается по семантике со старой `questions`",
+      "Тестовая строка с валидными `axis_weights` проходит; с опечаткой в коде оси — отклоняется",
+      "Старый роутер `questions.py` и `question_service.py` не изменены"
+    ]
+  },
+  {
+    "identifier": "PRO-72",
+    "title": "AKN-004 — Модель AssessmentSession (состояние диалога)",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 1 · MVP\n\n**Контекст.** Движок детерминированный, но стейтфул: вера по листьям, заданные вопросы, шаг. У `Assessment` уже есть `current_block`/`status` под блочный поток. Отдельная таблица 1:1 с `assessments`: **наличие строки `AssessmentSession` — признак «этот assessment на новом движке»** (dual-run AKN-020).",
+    "block": "Акинатор — Фаза 1: Оси и схема",
+    "labels": [
+      "backend",
+      "mvp",
+      "akinator"
+    ],
+    "area": "app/models/assessment_session.py, alembic/",
+    "parallel": false,
+    "dependsOn": [
+      "PRO-70",
+      "PRO-71"
+    ],
+    "backend": {
+      "tasks": [
+        "`app/models/assessment_session.py`: assessment_id (unique FK CASCADE), belief JSONB, asked_question_ids, asked_axis_families, step, status enum (in_progress/converged_single/converged_cluster/exhausted_ceiling), timestamps",
+        "Alembic-миграция (новая таблица, аддитивная)",
+        "Тонкий слой персистентности (`get_or_create_session`, `save_session`) — только чтение/запись",
+        "Инвариант «belief суммируется в ~1.0» проверяется при записи"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "Уникальный constraint: не более одной сессии на assessment",
+      "Round-trip тест: создать → изменить belief → перечитать → совпадает",
+      "Попытка сохранить belief, не суммирующийся в ~1.0, отклоняется"
+    ]
+  },
+  {
+    "identifier": "PRO-73",
+    "title": "AKN-005 — Тестовая инфраструктура для движка",
+    "description": "**Источник:** akinatorLogic/TICKETS.md · Фаза 1 · MVP\n\n**Контекст.** В репозитории нет папки `tests/`. Промпт требует детерминированный тестируемый движок. Без харнеса каждый следующий тикет (AKN-010…013) будет городить его заново.",
+    "block": "Акинатор — Фаза 1: Оси и схема",
+    "labels": [
+      "backend",
+      "mvp",
+      "testing",
+      "akinator"
+    ],
+    "area": "tests/, pyproject.toml",
+    "parallel": true,
+    "dependsOn": [],
+    "backend": {
+      "tasks": [
+        "Добавить pytest, pytest-asyncio, httpx в dev-зависимости pyproject.toml",
+        "`tests/conftest.py`: async SQLAlchemy-сессия на тестовую БД с откатом между тестами",
+        "Структура `tests/unit/` и `tests/integration/`",
+        "Smoke-тест (импорт app.main:app + health) как доказательство харнеса в Docker",
+        "Задокументировать: `docker-compose run --rm api pytest`"
+      ]
+    },
+    "frontend": {
+      "tasks": []
+    },
+    "acceptanceCriteria": [
+      "`docker-compose run --rm api pytest` проходит зелёным минимум на smoke-тесте",
+      "`conftest.py` даёт переиспользуемую async db-фикстуру",
+      "Инструкция по запуску тестов зафиксирована"
+    ]
+  }
+]

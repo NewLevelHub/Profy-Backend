@@ -71,7 +71,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          source: "docker-compose.prod.yml,nginx.conf"
+          source: "docker-compose.prod.yml,nginx.prod.conf"
           target: ${{ secrets.DEPLOY_PATH }}
 
       - name: Deploy via SSH
@@ -98,6 +98,11 @@ jobs:
             echo "$DOCKER_PASSWORD" | docker login "$DOCKER_REGISTRY" -u "$DOCKER_USERNAME" --password-stdin
             unset DOCKER_PASSWORD
             cd "$DEPLOY_PATH"
+
+            # Tracked template → runtime filename expected by docker-compose.prod.yml
+            if [ -f nginx.prod.conf ]; then
+              cp nginx.prod.conf nginx.conf
+            fi
 
             IMAGE_PATH="$DOCKER_REPOSITORY"
             if [[ "$IMAGE_PATH" != */* ]]; then

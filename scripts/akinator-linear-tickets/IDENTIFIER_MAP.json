@@ -1,0 +1,122 @@
+[
+  {
+    "akn": "AKN-001",
+    "identifier": "PRO-69",
+    "title": "AKN-001 — Единый каталог осей (стоп-ворота фазы)"
+  },
+  {
+    "akn": "AKN-002",
+    "identifier": "PRO-70",
+    "title": "AKN-002 — Direction → дерево профессий (расширение, не замена)"
+  },
+  {
+    "akn": "AKN-003",
+    "identifier": "PRO-71",
+    "title": "AKN-003 — Новая модель AkinatorQuestion"
+  },
+  {
+    "akn": "AKN-004",
+    "identifier": "PRO-72",
+    "title": "AKN-004 — Модель AssessmentSession (состояние диалога)"
+  },
+  {
+    "akn": "AKN-005",
+    "identifier": "PRO-73",
+    "title": "AKN-005 — Тестовая инфраструктура для движка"
+  },
+  {
+    "akn": "AKN-006",
+    "identifier": "PRO-74",
+    "title": "AKN-006 — Офлайн-генерация таксономии профессий"
+  },
+  {
+    "akn": "AKN-007",
+    "identifier": "PRO-75",
+    "title": "AKN-007 — Офлайн-генерация профиля листа («паспорт профессии»)"
+  },
+  {
+    "akn": "AKN-008",
+    "identifier": "PRO-76",
+    "title": "AKN-008 — Офлайн-генерация вопросов под возраст"
+  },
+  {
+    "akn": "AKN-009",
+    "identifier": "PRO-77",
+    "title": "AKN-009 — Импорт стартового контента (сидинг MVP-банка)"
+  },
+  {
+    "akn": "AKN-010",
+    "identifier": "PRO-78",
+    "title": "AKN-010 — Апдейт веры (match + softmax)"
+  },
+  {
+    "akn": "AKN-011",
+    "identifier": "PRO-79",
+    "title": "AKN-011 — Выбор следующего вопроса + антижадный старт"
+  },
+  {
+    "akn": "AKN-012",
+    "identifier": "PRO-80",
+    "title": "AKN-012 — Критерий остановки (уверенность + возрастной потолок)"
+  },
+  {
+    "akn": "AKN-013",
+    "identifier": "PRO-81",
+    "title": "AKN-013 — Сервис оркестрации диалоговой сессии"
+  },
+  {
+    "akn": "AKN-014",
+    "identifier": "PRO-82",
+    "title": "AKN-014 — Роутер /akinator/start и /akinator/answer"
+  },
+  {
+    "akn": "AKN-015",
+    "identifier": "PRO-83",
+    "title": "AKN-015 — Логирование сессий для калибровки"
+  },
+  {
+    "akn": "AKN-016",
+    "identifier": "PRO-84",
+    "title": "AKN-016 — Развести «движок не уверен» и «ребёнок отверг»"
+  },
+  {
+    "akn": "AKN-017",
+    "identifier": "PRO-85",
+    "title": "AKN-017 — Интеграция с роадмапом без изменения контракта"
+  },
+  {
+    "akn": "AKN-018",
+    "identifier": "PRO-86",
+    "title": "AKN-018 — Симуляция-подтверждение (Realistic Job Preview)"
+  },
+  {
+    "akn": "AKN-019",
+    "identifier": "PRO-87",
+    "title": "AKN-019 — Разрешатель кластера"
+  },
+  {
+    "akn": "AKN-020",
+    "identifier": "PRO-88",
+    "title": "AKN-020 — Параллельный запуск (dual-run) за флагом"
+  },
+  {
+    "akn": "AKN-021",
+    "identifier": "PRO-89",
+    "title": "AKN-021 — [GATE] Удаление старого банка вопросов и порогового скоринга"
+  },
+  {
+    "akn": "AKN-022",
+    "identifier": "PRO-90",
+    "title": "AKN-022 — Диалоговый экран прохождения теста"
+  },
+  {
+    "akn": "AKN-023",
+    "identifier": "PRO-91",
+    "title": "AKN-023 — Экран результата (одна профессия / кластер)"
+  },
+  {
+    "akn": "AKN-024",
+    "identifier": "PRO-92",
+    "title": "AKN-024 — Экраны симуляции и разрешателя кластера"
+  }
+]
