@@ -15,9 +15,12 @@ from app.models.program import Program  # noqa: F401 — keep model imported so 
 from app.models.university import University  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.user import User  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.user_response import UserResponse  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.profession_simulation import ProfessionSimulation  # noqa: F401
+from app.models.profession_simulation_log import ProfessionSimulationLog  # noqa: F401
 
 __all__ = [
     "Base", "AkinatorAnswerLog", "AkinatorQuestion", "AnalysisResult", "Artifact", "Assessment", "AssessmentSession",
     "Direction", "DirectionInquiry", "DirectionRoadmap",
     "EmailVerificationToken", "PasswordResetToken", "Profile", "Program", "University", "User", "UserResponse",
+    "ProfessionSimulation", "ProfessionSimulationLog",
 ]

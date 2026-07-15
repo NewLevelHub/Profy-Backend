@@ -6,6 +6,7 @@ one turn: next question, or reveal. `goal` (Assessment.goal) plays no role
 here — the engine is the same regardless of goal; goal only shapes the
 roadmap built later from the revealed direction(s).
 """
+import logging
 import uuid
 from dataclasses import dataclass
 
@@ -17,7 +18,10 @@ from app.models.assessment import Assessment
 from app.models.assessment_session import AssessmentSession, SessionStatus
 from app.models.direction import Direction
 from app.models.profile import AgeGroup
+from app.models.profession_simulation_log import ProfessionSimulationLog
 from app.services import akinator_engine, assessment_session_service
+
+logger = logging.getLogger(__name__)
 
 # Guarantees check_stop falls past the age ceiling and returns a reveal
 # instead of "continue" when the active question bank has run dry — reuses
@@ -70,16 +74,18 @@ async def _advance(
     step: int | None = None,
     asked_question_ids: list | None = None,
     asked_axis_families: list | None = None,
+    rejected_leaves: list | None = None,
 ) -> SessionTurn:
     """Persist any given state change, then decide continue-vs-reveal and
     either pick the next question or persist the reveal status. Shared by
     start_session (after the initial belief is set) and submit_answer (after
     an answer is scored)."""
-    if any(v is not None for v in (belief, step, asked_question_ids, asked_axis_families)):
+    if any(v is not None for v in (belief, step, asked_question_ids, asked_axis_families, rejected_leaves)):
         session = await assessment_session_service.save_session(
             session, db,
             belief=belief, step=step,
             asked_question_ids=asked_question_ids, asked_axis_families=asked_axis_families,
+            rejected_leaves=rejected_leaves,
         )
 
     decision = akinator_engine.check_stop(session.belief, session.step, age_group.value)
@@ -238,3 +244,74 @@ async def reject_leaf(
         status=SessionStatus.in_progress,
     )
     return await _advance(session, db, age_group)
+
+
+async def submit_simulation_outcome(
+    assessment_id: uuid.UUID,
+    leaf_slug: str,
+    accepted: bool,
+    answers: list[int],
+    age_group: AgeGroup,
+    db: AsyncSession,
+) -> SessionTurn | None:
+    # 1. Log simulation outcome in DB
+    log = ProfessionSimulationLog(
+        assessment_id=assessment_id,
+        leaf_slug=leaf_slug,
+        accepted=accepted,
+        answers=answers,
+    )
+    db.add(log)
+
+    # 2. Log simulation outcome via standard logger
+    logger.info(
+        "Simulation outcome logged: assessment_id=%s, leaf_slug=%s, accepted=%s, answers=%s",
+        assessment_id,
+        leaf_slug,
+        accepted,
+        answers,
+    )
+
+    if accepted:
+        await db.commit()
+        return None
+
+    # Rejection: update belief with virtual axis
+    result = await db.execute(
+        select(AssessmentSession).where(AssessmentSession.assessment_id == assessment_id)
+    )
+    session = result.scalar_one_or_none()
+    if session is None or not session.belief:
+        raise ValueError(f"no akinator session in progress for assessment {assessment_id}")
+
+    leaf_profiles = await _leaf_profiles_for(db, session.belief)
+
+    # Construct virtual leaf profiles with a virtual axis
+    virtual_axis = "__rejection_axis__"
+    virtual_profiles = {}
+    for slug, prof in leaf_profiles.items():
+        v_prof = dict(prof)
+        v_prof[virtual_axis] = 1 if slug == leaf_slug else 0
+        virtual_profiles[slug] = v_prof
+
+    answer_weights = {virtual_axis: -100}
+    new_belief = akinator_engine.update_belief(session.belief, answer_weights, virtual_profiles)
+    new_step = session.step + 1
+
+    # Save session and advance
+    new_rejected = sorted({*session.rejected_leaves, leaf_slug})
+    session.belief = new_belief
+    session.step = new_step
+    session.rejected_leaves = new_rejected
+    
+    # Re-open session if it was converged
+    session.status = SessionStatus.in_progress
+    db.add(session)
+    await db.flush()
+
+    return await _advance(
+        session, db, age_group,
+        belief=new_belief,
+        step=new_step,
+        rejected_leaves=new_rejected,
+    )
