@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.routers.admin import router as admin_router
+from app.routers.akinator import router as akinator_router
 from app.routers.artifacts import router as artifacts_router
 from app.routers.assessment import router as assessment_router
 from app.routers.auth import router as auth_router
@@ -19,6 +20,7 @@ api_router.include_router(profile_router, prefix="/api/v1/profile")
 api_router.include_router(artifacts_router, prefix="/api/v1/profile/artifacts")
 api_router.include_router(assessment_router, prefix="/api/v1/assessment")
 api_router.include_router(questions_router, prefix="/api/v1/assessment")
+api_router.include_router(akinator_router, prefix="/api/v1/assessment")
 api_router.include_router(directions_router, prefix="/api/v1/directions")
 api_router.include_router(direction_inquiry_router, prefix="/api/v1/inquiry")
 api_router.include_router(result_router, prefix="/api/v1/result")

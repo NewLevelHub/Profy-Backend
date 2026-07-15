@@ -1,0 +1,37 @@
+import uuid
+from typing import Annotated, Literal
+
+from pydantic import BaseModel, Field
+
+
+class AkinatorAnswerRequest(BaseModel):
+    question_id: uuid.UUID
+    selected_option_index: int | None = Field(default=None, ge=0)  # null = "не знаю"
+
+
+class AkinatorOption(BaseModel):
+    index: int
+    text: str
+
+
+class NextQuestionResponse(BaseModel):
+    type: Literal["next_question"] = "next_question"
+    question_id: uuid.UUID
+    text: str
+    options: list[AkinatorOption]
+
+
+class RevealLeaf(BaseModel):
+    slug: str
+    name: str
+
+
+class RevealResponse(BaseModel):
+    type: Literal["reveal"] = "reveal"
+    status: Literal["single", "cluster"]
+    leaves: list[RevealLeaf]
+
+
+AkinatorTurnResponse = Annotated[
+    NextQuestionResponse | RevealResponse, Field(discriminator="type")
+]

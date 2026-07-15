@@ -124,14 +124,15 @@ async def start_session(
 async def submit_answer(
     assessment_id: uuid.UUID,
     question_id: uuid.UUID,
-    option_index: int,
+    option_index: int | None,
     age_group: AgeGroup,
     db: AsyncSession,
 ) -> SessionTurn:
-    """Score one answer and advance the session. Guard clauses (explicit
-    errors, no silent fallback): session not started, question not found,
-    question not valid for this session's age, question already answered,
-    option_index out of range."""
+    """Score one answer and advance the session. `option_index=None` is
+    "не знаю" — a real, recorded answer with zero axis contribution (identity
+    update), not a skip. Guard clauses (explicit errors, no silent fallback):
+    session not started, question not found, question not valid for this
+    session's age, question already answered, option_index out of range."""
     result = await db.execute(
         select(AssessmentSession).where(AssessmentSession.assessment_id == assessment_id)
     )
@@ -150,10 +151,12 @@ async def submit_answer(
     if str(question_id) in already_asked:
         raise ValueError(f"question {question_id} was already answered in this session")
 
-    if not (0 <= option_index < len(question.options)):
+    if option_index is not None and not (0 <= option_index < len(question.options)):
         raise ValueError(f"option_index {option_index} out of range for question {question_id}")
 
-    answer_weights = question.options[option_index].get("axis_weights", {})
+    answer_weights = (
+        question.options[option_index].get("axis_weights", {}) if option_index is not None else {}
+    )
     leaf_profiles = await _leaf_profiles_for(db, session.belief)
     new_belief = akinator_engine.update_belief(session.belief, answer_weights, leaf_profiles)
 
