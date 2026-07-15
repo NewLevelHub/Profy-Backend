@@ -4,8 +4,7 @@ services:
     container_name: profi_db_dev
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
-    # Pass credentials via env_file (literal) — do NOT re-interpolate
-    # POSTGRES_PASSWORD with ${...}: special chars like @ ! break it.
+    # Pass credentials via env_file (literal) — avoid ${} interpolation of passwords
     env_file:
       - .env.development
     restart: always
@@ -29,7 +28,9 @@ services:
     networks:
       - profi_network_dev
 
-  api:
+  # Service name api_dev (not "api") so joining the prod edge network
+  # does not steal DNS name "api" / "db" from production.
+  api_dev:
     image: ${API_IMAGE}
     container_name: profi_api_dev
     command: >
@@ -38,10 +39,10 @@ services:
     env_file:
       - .env.development
     environment:
-      # Only override host wiring — DB user/password come from env_file as-is
-      POSTGRES_HOST: db
+      # Unique container DNS names — NEVER "db"/"redis" (those resolve to PROD on edge net)
+      POSTGRES_HOST: profi_db_dev
       POSTGRES_PORT: "5432"
-      REDIS_URL: redis://redis:6379/0
+      REDIS_URL: redis://profi_redis_dev:6379/0
     depends_on:
       db:
         condition: service_healthy

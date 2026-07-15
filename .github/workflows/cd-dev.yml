@@ -165,26 +165,26 @@ jobs:
               sleep 1
             done
 
-            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev up -d --force-recreate --remove-orphans api
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev up -d --force-recreate --remove-orphans api_dev
 
             echo "Waiting for API container to finish migrations + uvicorn startup..."
             for i in $(seq 1 60); do
-              if docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api python -c "import socket; s=socket.socket(); s.settimeout(1); s.connect(('127.0.0.1', 8000)); s.close()" >/dev/null 2>&1; then
+              if docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python -c "import socket; s=socket.socket(); s.settimeout(1); s.connect(('127.0.0.1', 8000)); s.close()" >/dev/null 2>&1; then
                 echo "API is ready after ${i}s"
                 break
               fi
               if [ "$i" -eq 60 ]; then
                 echo "ERROR: API did not become ready within 60s"
-                docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev logs api | tail -40
+                docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev logs api_dev | tail -40
                 exit 1
               fi
               sleep 1
             done
 
             echo "Running seed scripts..."
-            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api python scripts/seed_questions.py
-            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api python scripts/seed_universities.py
-            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api python scripts/seed_directions.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_questions.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_universities.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_directions.py
 
             # Reload edge nginx (prod path) so Host:dev.profy... is routed
             if [ -n "$EDGE_DEPLOY_PATH" ] && [ -f "$EDGE_DEPLOY_PATH/docker-compose.prod.yml" ]; then
