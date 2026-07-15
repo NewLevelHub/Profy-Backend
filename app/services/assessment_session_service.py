@@ -46,6 +46,7 @@ async def save_session(
     asked_axis_families: list[Any] | None = None,
     rejected_leaves: list[Any] | None = None,
     step: int | None = None,
+    resolve_step: int | None = None,
     status: SessionStatus | None = None,
 ) -> AssessmentSession:
     if belief is not None:
@@ -59,6 +60,8 @@ async def save_session(
         session.rejected_leaves = rejected_leaves
     if step is not None:
         session.step = step
+    if resolve_step is not None:
+        session.resolve_step = resolve_step
     if status is not None:
         session.status = status
 

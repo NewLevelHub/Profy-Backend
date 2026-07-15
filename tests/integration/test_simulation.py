@@ -49,6 +49,10 @@ async def _make_user_and_assessment(db: AsyncSession) -> tuple[User, Assessment]
     assessment = Assessment(profile_id=profile.id, goal=AssessmentGoal.explore)
     db.add(assessment)
     await db.flush()
+
+    session = AssessmentSession(assessment_id=assessment.id)
+    db.add(session)
+    await db.flush()
     return user, assessment
 
 

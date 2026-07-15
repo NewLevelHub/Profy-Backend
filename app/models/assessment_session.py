@@ -45,6 +45,7 @@ class AssessmentSession(Base):
     # deleted from `belief` (not just demoted), so they can never resurface.
     rejected_leaves: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     step: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    resolve_step: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     status: Mapped[SessionStatus] = mapped_column(
         Enum(SessionStatus, name="assessment_session_status_enum"),
         nullable=False,

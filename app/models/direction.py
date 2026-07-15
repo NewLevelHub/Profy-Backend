@@ -20,8 +20,7 @@ class Direction(Base):
     # (AI, Data Science, …) out of junior/middle results, and keeps the broad
     # kid-friendly "family" directions out of senior results.
     age_groups: Mapped[list] = mapped_column(JSONB, nullable=False, default=lambda: ["senior"])
-    required_scores: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    bonus_scores: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    required_scores: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     professions: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     skills_needed: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     subjects_to_develop: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)

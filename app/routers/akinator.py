@@ -10,6 +10,7 @@ from app.dependencies import get_current_user
 from app.models.akinator_question import AkinatorQuestion
 from app.models.assessment import Assessment
 from app.models.direction import Direction
+from app.models.assessment_session import AssessmentSession
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
 from app.schemas.akinator_session import (
@@ -18,11 +19,12 @@ from app.schemas.akinator_session import (
     AkinatorFeedbackResponse,
     AkinatorOption,
     AkinatorTurnResponse,
+    AkinatorResolveRequest,
     NextQuestionResponse,
     RevealLeaf,
     RevealResponse,
 )
-from app.services import akinator_report_service, akinator_session_service
+from app.services import akinator_report_service, akinator_session_service, cluster_resolver_service
 from app.services.akinator_engine import StopDecision
 from app.services.akinator_session_service import SessionTurn
 from app.services.profile_service import get_profile
@@ -50,6 +52,15 @@ async def _require_owned_assessment(
     assessment, age_group = row
     if assessment.profile_id != profile.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    session_result = await db.execute(
+        select(AssessmentSession).where(AssessmentSession.assessment_id == assessment_id)
+    )
+    if session_result.scalar_one_or_none() is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Этот тест не использует диалоговый поток акинатора",
+        )
 
     return age_group
 
@@ -164,6 +175,27 @@ async def reject_akinator_leaf(
     age_group = await _require_owned_assessment(assessment_id, current_user, db)
     try:
         turn = await akinator_session_service.reject_leaf(assessment_id, leaf_slug, age_group, db)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return await _turn_response(turn, age_group, db)
+
+
+@router.post("/{assessment_id}/akinator/resolve", response_model=AkinatorTurnResponse)
+async def resolve_cluster(
+    assessment_id: uuid.UUID,
+    data: AkinatorResolveRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> NextQuestionResponse | RevealResponse:
+    age_group = await _require_owned_assessment(assessment_id, current_user, db)
+    try:
+        turn = await cluster_resolver_service.resolve_cluster_turn(
+            assessment_id,
+            data.question_id,
+            data.selected_option_index,
+            age_group,
+            db,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return await _turn_response(turn, age_group, db)

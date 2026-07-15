@@ -9,13 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
 from app.schemas.gap import GapAnalysisResponse
 from app.schemas.university import ProgramBrief, ProgramDetail
-from app.services import assessment_service
 from app.services.artifact_service import get_artifacts
 from app.services.gap_analysis_service import analyze_gap, to_response
 from app.services.university_service import get_program_by_id, search_programs
@@ -89,33 +87,14 @@ async def get_gap_analysis(
     if assessment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
 
-    if assessment.status != AssessmentStatus.completed:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Assessment is not completed yet",
-        )
-
-    analysis_result = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
-    )
-    analysis = analysis_result.scalar_one_or_none()
-    if analysis is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Generate a report for this assessment before running gap analysis",
-        )
-
-    matched_slugs = {d["slug"] for d in analysis.directions if isinstance(d, dict) and "slug" in d}
-    if program.direction_slug not in matched_slugs:
+    if assessment.selected_direction_slug != program.direction_slug:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This program's direction does not match your assessment results",
         )
 
     artifacts = await get_artifacts(profile.id, db)
-    scores = await assessment_service.get_total_scores(assessment_id, db)
-
-    result = analyze_gap(profile, artifacts, scores, program)
+    result = analyze_gap(profile, artifacts, {}, program)
     response = to_response(program_id, result)
 
     await redis.set(cache_key, response.model_dump_json(), ex=GAP_CACHE_TTL)

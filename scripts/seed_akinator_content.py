@@ -497,7 +497,6 @@ async def seed_sections(db: AsyncSession) -> tuple[dict[str, uuid.UUID], int, in
                 "(перенесено из akinatorLogic/profi_full_catalog.md, черновик Фазы 2)."
             ),
             required_scores={},
-            bonus_scores={},
             is_leaf=False,
             profile={},
         )
@@ -546,7 +545,6 @@ async def seed_professions(
                 "(перенесено из akinatorLogic/profi_full_catalog.md, черновик Фазы 2)."
             ),
             required_scores={},
-            bonus_scores={},
             parent_id=parent_id,
             is_leaf=True,
             profile=prof["profile"],

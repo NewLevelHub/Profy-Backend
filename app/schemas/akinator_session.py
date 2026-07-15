@@ -46,3 +46,8 @@ class AkinatorFeedbackRequest(BaseModel):
 
 class AkinatorFeedbackResponse(BaseModel):
     status: Literal["recorded"] = "recorded"
+
+
+class AkinatorResolveRequest(BaseModel):
+    question_id: uuid.UUID | None = None
+    selected_option_index: int | None = Field(default=None, ge=0)
