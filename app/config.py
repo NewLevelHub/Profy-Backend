@@ -40,6 +40,23 @@ class Settings(BaseSettings):
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     EMAIL_FROM: str = ""
+    # Belief update step size (see akinatorLogic/profi_axes_phase1.md "Формула
+    # апдейта"): log belief(L) += AKINATOR_BETA * match(A, L). Start ≈0.7, tune by log.
+    AKINATOR_BETA: float = 0.7
+    # Stopping criterion (see akinatorLogic/profi_axes_phase1.md "Критерий
+    # остановки"): single leaf if top1 > T and top1 >= M * top2; otherwise a
+    # cluster of up to K leaves once their cumulative belief reaches the
+    # threshold. All starting values, calibrate by log like AKINATOR_BETA.
+    AKINATOR_STOP_T: float = 0.45
+    AKINATOR_STOP_M: float = 1.5
+    AKINATOR_STOP_CLUSTER_K: int = 3
+    AKINATOR_STOP_CLUSTER_THRESHOLD: float = 0.70
+    # Age-based question ceilings (safety net) — junior gets a softer "направление"
+    # sooner, senior can go deeper before we force a cluster reveal. Placeholder
+    # starting points, no calibration data yet.
+    AKINATOR_CEILING_JUNIOR: int = 8
+    AKINATOR_CEILING_MIDDLE: int = 12
+    AKINATOR_CEILING_SENIOR: int = 18
 
     @model_validator(mode="after")
     def build_database_url(self) -> Self:
