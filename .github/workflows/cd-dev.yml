@@ -186,27 +186,42 @@ jobs:
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_universities.py
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_directions.py
 
-            # Reload edge nginx (prod path) so Host:dev.profy... is routed
+            # Reload edge nginx (prod path) so Host:dev.profy.newlevelhub.kz is routed.
+            # Certs under /etc/letsencrypt need root - write via docker volume mount.
+            # Do not fail the whole deploy if edge nginx reload cannot run.
             if [ -n "$EDGE_DEPLOY_PATH" ] && [ -f "$EDGE_DEPLOY_PATH/docker-compose.prod.yml" ]; then
               echo "Reloading edge nginx from $EDGE_DEPLOY_PATH ..."
               DEV_CERT_DIR="/etc/letsencrypt/live/dev.profy.newlevelhub.kz"
               if [ ! -f "$DEV_CERT_DIR/fullchain.pem" ]; then
-                echo "Creating temporary self-signed cert for dev.profy.newlevelhub.kz ..."
-                mkdir -p "$DEV_CERT_DIR"
-                openssl req -x509 -nodes -newkey rsa:2048 -days 30 \
-                  -keyout "$DEV_CERT_DIR/privkey.pem" \
-                  -out "$DEV_CERT_DIR/fullchain.pem" \
-                  -subj "/CN=dev.profy.newlevelhub.kz"
-                echo "Replace with Let's Encrypt later:"
-                echo "  certbot certonly --webroot -w $EDGE_DEPLOY_PATH/certbot/www -d dev.profy.newlevelhub.kz"
+                echo "Creating temporary self-signed cert via docker..."
+                if docker run --rm -v /etc/letsencrypt:/etc/letsencrypt alpine:3.20 sh -c '
+                  apk add --no-cache openssl >/dev/null
+                  mkdir -p /etc/letsencrypt/live/dev.profy.newlevelhub.kz
+                  openssl req -x509 -nodes -newkey rsa:2048 -days 30 \
+                    -keyout /etc/letsencrypt/live/dev.profy.newlevelhub.kz/privkey.pem \
+                    -out /etc/letsencrypt/live/dev.profy.newlevelhub.kz/fullchain.pem \
+                    -subj /CN=dev.profy.newlevelhub.kz
+                  chmod 755 /etc/letsencrypt /etc/letsencrypt/live /etc/letsencrypt/live/dev.profy.newlevelhub.kz || true
+                  chmod 644 /etc/letsencrypt/live/dev.profy.newlevelhub.kz/fullchain.pem || true
+                  chmod 600 /etc/letsencrypt/live/dev.profy.newlevelhub.kz/privkey.pem || true
+                '; then
+                  echo "Self-signed cert created. Replace later with:"
+                  echo "  certbot certonly --webroot -w $EDGE_DEPLOY_PATH/certbot/www -d dev.profy.newlevelhub.kz"
+                else
+                  echo "WARN: could not create cert - skipping nginx reload"
+                fi
               fi
-              cd "$EDGE_DEPLOY_PATH"
-              if [ -f nginx.prod.conf ]; then
-                cp nginx.prod.conf nginx.conf
+              if [ -f "$DEV_CERT_DIR/fullchain.pem" ]; then
+                cd "$EDGE_DEPLOY_PATH"
+                if [ -f nginx.prod.conf ]; then
+                  cp nginx.prod.conf nginx.conf
+                fi
+                docker compose --env-file .env.production -f docker-compose.prod.yml up -d --force-recreate nginx
+              else
+                echo "WARN: no cert at $DEV_CERT_DIR - edge nginx not reloaded"
               fi
-              docker compose --env-file .env.production -f docker-compose.prod.yml up -d --force-recreate nginx
             else
-              echo "WARN: EDGE_DEPLOY_PATH not set or compose missing — skip edge nginx reload"
+              echo "WARN: EDGE_DEPLOY_PATH not set or compose missing - skip edge nginx reload"
             fi
 
             echo "=== Development deploy complete ==="
