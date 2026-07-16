@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.schemas.direction import DirectionBase, DirectionDetail
+from app.schemas.direction import DirectionBase, DirectionDetail, DirectionTreeNode
 from app.services import direction_service
 
 router = APIRouter(tags=["directions"])
@@ -12,6 +12,14 @@ router = APIRouter(tags=["directions"])
 async def list_directions(db: AsyncSession = Depends(get_db)) -> list[DirectionBase]:
     directions = await direction_service.get_all_directions(db)
     return [DirectionBase.model_validate(d) for d in directions]
+
+
+@router.get("/tree", response_model=list[DirectionTreeNode])
+async def list_direction_tree(
+    db: AsyncSession = Depends(get_db),
+) -> list[DirectionTreeNode]:
+    """Spheres (sections) with nested leaf professions — for known-profession picker."""
+    return await direction_service.get_direction_tree(db)
 
 
 @router.get("/{slug}", response_model=DirectionDetail)
