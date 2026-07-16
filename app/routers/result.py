@@ -9,13 +9,10 @@ from app.dependencies import get_current_user
 from app.models.assessment import Assessment
 from app.models.profile import Profile
 from app.models.user import User
-from app.schemas.roadmap import (
-    DirectionRoadmapResponse,
-    GenerateDirectionRoadmapRequest,
-)
-from app.services import roadmap_builder
+from app.schemas.result import AkinatorResultResponse
+from app.services import result_service
 
-router = APIRouter(tags=["roadmap"])
+router = APIRouter(tags=["result"])
 
 
 async def _require_assessment_access(
@@ -36,28 +33,14 @@ async def _require_assessment_access(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
 
-@router.post("/direction", response_model=DirectionRoadmapResponse)
-async def generate_direction_roadmap(
-    data: GenerateDirectionRoadmapRequest,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-) -> DirectionRoadmapResponse:
-    """Generate (or regenerate) the plan for the direction the test matched the student to."""
-    await _require_assessment_access(data.assessment_id, current_user, db)
-    return await roadmap_builder.generate_direction_roadmap(
-        data.assessment_id, data.direction_slug, db
-    )
-
-
-@router.get("/{assessment_id}/directions/{slug}", response_model=DirectionRoadmapResponse)
-async def get_direction_roadmap(
+@router.get("/{assessment_id}", response_model=AkinatorResultResponse)
+async def get_result(
     assessment_id: uuid.UUID,
-    slug: str,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> DirectionRoadmapResponse:
+) -> AkinatorResultResponse:
+    """The final result of a completed akinator assessment — the confirmed
+    direction plus why it matched. No generation step: the akinator's own
+    reveal + feedback already produced everything this needs."""
     await _require_assessment_access(assessment_id, current_user, db)
-    result = await roadmap_builder.get_direction_roadmap(assessment_id, slug, db)
-    if result is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Roadmap not found")
-    return result
+    return await result_service.get_result(assessment_id, db)

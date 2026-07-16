@@ -37,6 +37,44 @@ def test_ceiling_with_flat_belief_reveals_cluster_not_an_error():
     assert len(decision.leaves) <= 3
 
 
+def test_confident_belief_is_blocked_until_all_axis_families_are_covered():
+    """Calibration-pass fix: a leaf could previously win reveal_single purely
+    on family A/B/C/D answers, without a single question ever probing family
+    E (Math/Living/PhysSt/Acad) — e.g. "does this surgeon candidate actually
+    like biology/math". asked_families gates both confidence branches."""
+    belief = {"a": 0.6, "b": 0.2, "c": 0.2}  # would reveal_single without the gate
+
+    incomplete = check_stop(belief, step=5, age_group="senior", asked_families={"A", "B"})
+    assert incomplete.status == "continue"
+
+    complete = check_stop(belief, step=5, age_group="senior", asked_families={"A", "B", "C", "D", "E"})
+    assert complete.status == "reveal_single"
+    assert complete.leaves == ["a"]
+
+
+def test_ceiling_overrides_incomplete_family_coverage():
+    """The age ceiling is a safety net: it must still force a reveal even if
+    the question bank never managed to cover every axis family."""
+    belief = {"a": 0.2, "b": 0.2, "c": 0.2, "d": 0.2, "e": 0.2}
+
+    decision = check_stop(
+        belief, step=settings.AKINATOR_CEILING_SENIOR, age_group="senior", asked_families={"A"}
+    )
+
+    assert decision.status == "reveal_cluster"
+    assert decision.reason == "ceiling"
+
+
+def test_asked_families_none_disables_the_gate():
+    """Backward-compatible default: omitting asked_families (None) behaves
+    exactly like before the calibration pass — no family-coverage gating."""
+    belief = {"a": 0.6, "b": 0.2, "c": 0.2}
+
+    decision = check_stop(belief, step=5, age_group="senior")
+
+    assert decision.status == "reveal_single"
+
+
 def test_junior_ceiling_is_lower_than_senior_ceiling():
     """AC4: the same flat belief and step count stops earlier for junior
     than for senior, per the settings-defined ceilings."""

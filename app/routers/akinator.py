@@ -72,7 +72,11 @@ def _question_text(question: AkinatorQuestion, age_group: AgeGroup) -> str:
 
 
 async def _reveal_response(
-    decision: StopDecision, belief: dict[str, float], rejected_leaves: list[str], db: AsyncSession
+    decision: StopDecision,
+    belief: dict[str, float],
+    rejected_leaves: list[str],
+    age_group: AgeGroup,
+    db: AsyncSession,
 ) -> RevealResponse:
     report = akinator_report_service.build_reveal_report(decision, belief, rejected_leaves)
 
@@ -83,13 +87,29 @@ async def _reveal_response(
             Direction.is_leaf.is_(True)
         )
     )
-    names_by_slug = {d.slug: d.name for d in result.scalars().all()}
+    leaves_by_slug = {d.slug: d for d in result.scalars().all()}
 
+    section_ids = {d.parent_id for d in leaves_by_slug.values() if d.parent_id is not None}
+    sections_result = await db.execute(select(Direction).where(Direction.id.in_(section_ids)))
+    section_name_by_id = {s.id: s.name for s in sections_result.scalars().all()}
+
+    # junior gets the friendlier label_junior where set (e.g. "Хирург" -> "Врач")
+    # instead of the technical profession name — same fallback pattern as
+    # _question_text's text_junior.
     def to_leaves(slugs: list[str]) -> list[RevealLeaf]:
-        return [
-            RevealLeaf(slug=slug, name=names_by_slug[slug])
-            for slug in slugs if slug in names_by_slug
-        ]
+        leaves = []
+        for slug in slugs:
+            direction = leaves_by_slug.get(slug)
+            if direction is None:
+                continue
+            name = (
+                direction.label_junior
+                if age_group == AgeGroup.junior and direction.label_junior
+                else direction.name
+            )
+            section_name = section_name_by_id.get(direction.parent_id, "")
+            leaves.append(RevealLeaf(slug=slug, name=name, direction=section_name))
+        return leaves
 
     reveal_status: Literal["single", "cluster"] = (
         "single" if decision.status == "reveal_single" else "cluster"
@@ -115,7 +135,7 @@ async def _turn_response(
             question_id=question.id, text=_question_text(question, age_group), options=options
         )
     return await _reveal_response(
-        turn.decision, turn.session.belief, turn.session.rejected_leaves, db
+        turn.decision, turn.session.belief, turn.session.rejected_leaves, age_group, db
     )
 
 
@@ -159,7 +179,9 @@ async def submit_akinator_feedback(
 ) -> AkinatorFeedbackResponse:
     await _require_owned_assessment(assessment_id, current_user, db)
     try:
-        await akinator_session_service.submit_feedback(assessment_id, data.liked, data.note, db)
+        await akinator_session_service.submit_feedback(
+            assessment_id, data.liked, data.note, db, direction_slug=data.direction_slug
+        )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return AkinatorFeedbackResponse()

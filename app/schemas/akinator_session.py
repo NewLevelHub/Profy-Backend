@@ -24,6 +24,10 @@ class NextQuestionResponse(BaseModel):
 class RevealLeaf(BaseModel):
     slug: str
     name: str
+    # Parent section/category name (e.g. "Медицина и здоровье") — gives the
+    # user a broader "направление" to anchor on alongside the specific
+    # profession, instead of just a bare, possibly unfamiliar job title.
+    direction: str
 
 
 class RevealResponse(BaseModel):
@@ -42,6 +46,11 @@ AkinatorTurnResponse = Annotated[
 class AkinatorFeedbackRequest(BaseModel):
     liked: bool
     note: str | None = None
+    # Which leaf the user actually accepted — set when feedback follows a
+    # per-leaf simulation accept (see submit_simulation_outcome on the
+    # frontend side). Falls back to the engine's own top belief when absent,
+    # so older callers keep working.
+    direction_slug: str | None = None
 
 
 class AkinatorFeedbackResponse(BaseModel):

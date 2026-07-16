@@ -94,14 +94,35 @@ def question_axis_families(question: AkinatorQuestion) -> set[AxisFamily]:
 
 def age_variant_matches(question: AkinatorQuestion, age_group: str) -> bool:
     """Public: also used by akinator_session_service to validate that a
-    submitted answer's question actually belongs to this session's age group."""
-    return question.age_variant == "both" or question.age_variant == age_group
+    submitted answer's question actually belongs to this session's age group.
+
+    "middle" also gets "senior"-tagged questions (calibration pass): with
+    only the ~31 age_variant="both" questions, middle sessions never had
+    enough signal to reach a confident single answer within their ceiling —
+    always bottomed out at "reveal_cluster via ceiling", same as junior.
+    junior staying cluster-only there is intentional (softer outcome for
+    younger ages); middle was meant to behave like senior, so it now shares
+    senior's full question pool instead of getting new middle-specific
+    content."""
+    if question.age_variant == "both" or question.age_variant == age_group:
+        return True
+    return age_group == "middle" and question.age_variant == "senior"
 
 
 def _is_wide_start_candidate(question: AkinatorQuestion, asked_families: set[str]) -> bool:
+    """Eligible if it introduces at least one axis family not yet asked about.
+
+    Was `isdisjoint` (every touched family had to be brand new) — but real
+    depth<=1 direct questions almost always straddle multiple families (e.g.
+    People+Focus+Data in one question), so requiring full disjointness left
+    only the very first wide-start question eligible: everything after it
+    touched family A (already asked) and got rejected outright, collapsing
+    the "first 3 steps are wide" rule down to just 1 real wide step. `issubset`
+    only rejects a question that brings zero new information (every family it
+    touches has already been covered)."""
     if question.depth > 1 or question.kind != "direct":
         return False
-    return question_axis_families(question).isdisjoint(asked_families)
+    return not question_axis_families(question).issubset(asked_families)
 
 
 def _entropy(belief: dict[str, float]) -> float:
@@ -233,6 +254,9 @@ def _top_cluster(
     return cluster, cumulative
 
 
+ALL_AXIS_FAMILIES: frozenset[str] = frozenset(family.value for family in AxisFamily)
+
+
 def check_stop(
     belief: dict[str, float],
     step: int,
@@ -242,6 +266,7 @@ def check_stop(
     m: float | None = None,
     cluster_k: int | None = None,
     cluster_threshold: float | None = None,
+    asked_families: set[str] | frozenset[str] | None = None,
 ) -> StopDecision:
     """Decide whether to stop and what to reveal, per profi_axes_phase1.md
     "Критерий остановки":
@@ -251,6 +276,16 @@ def check_stop(
       - else continue — unless the age-based question ceiling is reached, in
         which case a cluster is forced regardless of how flat belief still is
         (a valid outcome, never an error).
+
+    `asked_families` (optional, backward-compatible default None disables
+    this check) blocks a *confidence*-based reveal until all 5 axis families
+    have been touched at least once — otherwise a leaf like "surgeon" could
+    win purely on family A/B/C/D answers, without a single question ever
+    probing family E (Math/Living/PhysSt/Acad — "do you actually like
+    biology/math", "are you willing to study for years"). The ceiling
+    override still fires regardless of coverage: a valid fallback outcome
+    beats stalling forever if the active question bank can't cover every
+    family for this session.
     """
     t = settings.AKINATOR_STOP_T if t is None else t
     m = settings.AKINATOR_STOP_M if m is None else m
@@ -258,16 +293,17 @@ def check_stop(
     cluster_threshold = (
         settings.AKINATOR_STOP_CLUSTER_THRESHOLD if cluster_threshold is None else cluster_threshold
     )
+    families_covered = asked_families is None or ALL_AXIS_FAMILIES.issubset(asked_families)
 
     sorted_leaves = sorted(belief.items(), key=lambda item: item[1], reverse=True)
     top1_leaf, top1_prob = sorted_leaves[0]
     top2_prob = sorted_leaves[1][1] if len(sorted_leaves) > 1 else 0.0
 
-    if top1_prob > t and top1_prob >= m * top2_prob:
+    if families_covered and top1_prob > t and top1_prob >= m * top2_prob:
         return StopDecision(status="reveal_single", leaves=[top1_leaf], reason="confidence")
 
     cluster, cluster_prob = _top_cluster(sorted_leaves, cluster_k, cluster_threshold)
-    if cluster_prob >= cluster_threshold:
+    if families_covered and cluster_prob >= cluster_threshold:
         return StopDecision(status="reveal_cluster", leaves=cluster, reason="confidence")
 
     if step >= _age_ceiling(age_group):

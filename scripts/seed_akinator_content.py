@@ -8,8 +8,14 @@ LLM draft generators):
   - akinatorLogic/profi_questions_mvp.md + profi_questions_full_addon.md -> q01-q41
 
 Idempotent: Direction rows are upserted by `slug`. AkinatorQuestion rows are
-upserted by `order` — this script owns orders 0-40 (the q01..q41 sequence);
-don't reuse that range for other seeded/generated question batches.
+upserted by `order` — this script owns orders 0-44 (q01..q41 plus 4 added in
+the calibration pass, see below); don't reuse that range for other
+seeded/generated question batches.
+
+Calibration pass (2026-07): orders 41-44 add resolves_pair disambiguators for
+profession pairs found to have high profile-similarity but zero coverage in
+the original q01-q41 set (dentist, psychiatrist/psychologist, nurse/paramedic,
+electrician/auto-mechanic) — see the AKN calibration ticket.
 
 Run inside Docker:
     docker-compose exec api python scripts/seed_akinator_content.py
@@ -53,40 +59,44 @@ SECTIONS: list[dict] = [
 
 PROFESSIONS: list[dict] = [
     # Медицина и здоровье
-    {"slug": "surgeon", "name": "Хирург", "section": "akinator-medicine", "profile": {"People": 1, "Living": 2, "Phys": 2, "Care": 2, "Dev": -1, "Motor": 2, "Exp": 2, "Focus": 2, "Risk": 1, "Struct": 2, "Pace": 1, "Acad": 2, "PhysSt": 1}},
-    {"slug": "physician", "name": "Терапевт", "section": "akinator-medicine", "profile": {"People": 2, "Living": 2, "Care": 2, "Exp": 2, "Emp": 1, "Focus": 1, "Struct": 1, "Predict": 1, "Acad": 2}},
-    {"slug": "psychiatrist", "name": "Психиатр", "section": "akinator-medicine", "profile": {"People": 2, "Living": 1, "Care": 2, "Exp": 2, "Emp": 2, "Focus": 2, "Struct": 1, "Acad": 2, "Data": -1}},
+    {"slug": "surgeon", "name": "Хирург", "label_junior": "Врач", "section": "akinator-medicine", "profile": {"People": 1, "Living": 2, "Phys": 2, "Care": 2, "Dev": -1, "Motor": 2, "Exp": 2, "Focus": 2, "Risk": 1, "Struct": 2, "Pace": 1, "Acad": 2, "PhysSt": 1}},
+    {"slug": "physician", "name": "Терапевт", "label_junior": "Врач", "section": "akinator-medicine", "profile": {"People": 2, "Living": 2, "Care": 2, "Exp": 2, "Emp": 1, "Focus": 1, "Struct": 1, "Predict": 1, "Acad": 2}},
+    {"slug": "psychiatrist", "name": "Психиатр", "label_junior": "Врач", "section": "akinator-medicine", "profile": {"People": 2, "Living": 1, "Care": 2, "Exp": 2, "Emp": 2, "Focus": 2, "Struct": 1, "Acad": 2, "Data": -1}},
     {"slug": "nurse", "name": "Медсестра", "section": "akinator-medicine", "profile": {"People": 2, "Living": 2, "Care": 2, "Emp": 1, "Motor": 1, "Focus": -1, "Struct": 1, "Pace": 1, "PhysSt": 1}},
-    {"slug": "paramedic", "name": "Парамедик", "section": "akinator-medicine", "profile": {"People": 2, "Living": 2, "Phys": 1, "Care": 2, "Motor": 1, "Focus": -2, "Risk": 1, "Struct": 1, "Pace": 2, "Predict": 2, "PhysSt": 1}},
-    {"slug": "dentist", "name": "Стоматолог", "section": "akinator-medicine", "profile": {"People": 1, "Living": 2, "Phys": 1, "Care": 2, "Motor": 2, "Exp": 2, "Focus": 2, "Struct": 1, "Acad": 2}},
-    {"slug": "pharmacist", "name": "Фармацевт", "section": "akinator-medicine", "profile": {"People": 1, "Living": 1, "Data": 1, "Care": 1, "Exp": 2, "Focus": 1, "Struct": 2, "Predict": -1, "Acad": 1, "Math": 1}},
+    {"slug": "paramedic", "name": "Парамедик", "label_junior": "Врач скорой помощи", "section": "akinator-medicine", "profile": {"People": 2, "Living": 2, "Phys": 1, "Care": 2, "Motor": 1, "Focus": -2, "Risk": 1, "Struct": 1, "Pace": 2, "Predict": 2, "PhysSt": 1}},
+    {"slug": "dentist", "name": "Стоматолог", "label_junior": "Зубной врач", "section": "akinator-medicine", "profile": {"People": 1, "Living": 2, "Phys": 1, "Care": 2, "Motor": 2, "Exp": 2, "Focus": 2, "Struct": 1, "Acad": 2}},
+    {"slug": "pharmacist", "name": "Фармацевт", "label_junior": "Аптекарь", "section": "akinator-medicine", "profile": {"People": 1, "Living": 1, "Data": 1, "Care": 1, "Exp": 2, "Focus": 1, "Struct": 2, "Predict": -1, "Acad": 1, "Math": 1}},
 
     # Помощь и психология
     {"slug": "psychologist", "name": "Психолог", "section": "akinator-psychology-help", "profile": {"People": 2, "Care": 2, "Emp": 2, "Exp": 2, "Focus": 2, "Motiv": -1, "Auto": 1, "Acad": 2, "Data": -1, "Ideas": 1}},
-    {"slug": "coach", "name": "Коуч", "section": "akinator-psychology-help", "profile": {"People": 2, "Dev": 2, "Emp": 2, "Vis": 1, "Motiv": 1, "Risk": 1, "Auto": 1, "Predict": 1}},
+    {"slug": "coach", "name": "Коуч", "label_junior": "Наставник", "section": "akinator-psychology-help", "profile": {"People": 2, "Dev": 2, "Emp": 2, "Vis": 1, "Motiv": 1, "Risk": 1, "Auto": 1, "Predict": 1}},
     {"slug": "social-worker", "name": "Социальный работник", "section": "akinator-psychology-help", "profile": {"People": 2, "Care": 2, "Emp": 2, "Struct": 1, "Motiv": -1, "Pace": 1, "Predict": 1, "Acad": 1}},
     {"slug": "speech-therapist", "name": "Логопед", "section": "akinator-psychology-help", "profile": {"People": 2, "Care": 1, "Dev": 2, "Emp": 1, "Exp": 2, "Focus": 1, "Struct": 1, "Acad": 1}},
 
     # Животные и природа
     {"slug": "veterinarian", "name": "Ветеринар", "section": "akinator-animals-nature", "profile": {"People": 1, "Living": 2, "Phys": 1, "Care": 2, "Motor": 1, "Exp": 2, "Focus": 1, "Acad": 2, "PhysSt": 1, "Ideas": -1}},
-    {"slug": "zoologist", "name": "Зоолог", "section": "akinator-animals-nature", "profile": {"Living": 2, "Data": 1, "Obj": -2, "Exp": 2, "Focus": 2, "Auto": 1, "Predict": 1, "Acad": 2, "People": -1, "PhysSt": 1}},
-    {"slug": "agronomist", "name": "Агроном", "section": "akinator-animals-nature", "profile": {"Living": 2, "Phys": 1, "Data": 1, "Exp": 1, "Struct": 1, "Predict": -1, "PhysSt": 1}},
-    {"slug": "cynologist", "name": "Кинолог", "section": "akinator-animals-nature", "profile": {"People": 1, "Living": 2, "Phys": 1, "Dev": 1, "Motor": 1, "Struct": 1, "PhysSt": 1, "Acad": -1}},
+    {"slug": "zoologist", "name": "Зоолог", "label_junior": "Учёный по животным", "section": "akinator-animals-nature", "profile": {"Living": 2, "Data": 1, "Obj": -2, "Exp": 2, "Focus": 2, "Auto": 1, "Predict": 1, "Acad": 2, "People": -1, "PhysSt": 1}},
+    {"slug": "agronomist", "name": "Агроном", "label_junior": "Специалист по растениям", "section": "akinator-animals-nature", "profile": {"Living": 2, "Phys": 1, "Data": 1, "Exp": 1, "Struct": 1, "Predict": -1, "PhysSt": 1}},
+    {"slug": "cynologist", "name": "Кинолог", "label_junior": "Специалист по собакам", "section": "akinator-animals-nature", "profile": {"People": 1, "Living": 2, "Phys": 1, "Dev": 1, "Motor": 1, "Struct": 1, "PhysSt": 1, "Acad": -1}},
     {"slug": "ecologist", "name": "Эколог", "section": "akinator-animals-nature", "profile": {"Living": 2, "Data": 1, "Ideas": 1, "Obj": -2, "Exp": 1, "Auto": 1, "Predict": 1, "Acad": 1}},
 
     # IT и данные
     {"slug": "programmer", "name": "Программист", "section": "akinator-it-data", "profile": {"People": -1, "Living": -2, "Data": 2, "Ideas": 1, "Inv": 1, "Obj": 2, "Care": -2, "Dev": -2, "Exp": 2, "Focus": 2, "Motiv": 1, "Auto": 1, "Struct": 1, "Acad": 1, "PhysSt": -2, "Math": 2}},
-    {"slug": "data-analyst", "name": "Аналитик данных", "section": "akinator-it-data", "profile": {"People": -1, "Living": -2, "Data": 2, "Obj": -2, "Care": -2, "Dev": -2, "Exp": 1, "Focus": 2, "Auto": 1, "Struct": 1, "Predict": -1, "Acad": 1, "PhysSt": -2, "Math": 2}},
-    {"slug": "qa-tester", "name": "QA-тестировщик", "section": "akinator-it-data", "profile": {"Data": 2, "Obj": -1, "Exp": 1, "Focus": 1, "Struct": 2, "Predict": -1, "Motiv": -1, "PhysSt": -2, "Math": 1, "People": -1}},
-    {"slug": "ux-designer", "name": "UX-дизайнер", "section": "akinator-it-data", "profile": {"People": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Emp": 1, "Exp": 1, "PhysSt": -1}},
-    {"slug": "sysadmin", "name": "Сисадмин", "section": "akinator-it-data", "profile": {"Phys": 1, "Data": 2, "Obj": 1, "Exp": 2, "Focus": -1, "Auto": 1, "Struct": 1, "Pace": 1, "Predict": 1, "PhysSt": -1, "Math": 1, "People": -1}},
+    {"slug": "data-analyst", "name": "Аналитик данных", "label_junior": "Аналитик", "section": "akinator-it-data", "profile": {"People": -1, "Living": -2, "Data": 2, "Obj": -2, "Care": -2, "Dev": -2, "Exp": 1, "Focus": 2, "Auto": 1, "Struct": 1, "Predict": -1, "Acad": 1, "PhysSt": -2, "Math": 2}},
+    {"slug": "qa-tester", "name": "QA-тестировщик", "label_junior": "Тестировщик программ", "section": "akinator-it-data", "profile": {"Data": 2, "Obj": -1, "Exp": 1, "Focus": 1, "Struct": 2, "Predict": -1, "Motiv": -1, "PhysSt": -2, "Math": 1, "People": -1}},
+    {"slug": "ux-designer", "name": "UX-дизайнер", "label_junior": "Дизайнер приложений", "section": "akinator-it-data", "profile": {"People": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Emp": 1, "Exp": 1, "PhysSt": -1}},
+    {"slug": "sysadmin", "name": "Сисадмин", "label_junior": "Компьютерный мастер", "section": "akinator-it-data", "profile": {"Phys": 1, "Data": 2, "Obj": 1, "Exp": 2, "Focus": -1, "Auto": 1, "Struct": 1, "Pace": 1, "Predict": 1, "PhysSt": -1, "Math": 1, "People": -1}},
 
     # Инженерия и техника
-    {"slug": "mechanical-engineer", "name": "Инженер-механик", "section": "akinator-engineering-tech", "profile": {"Phys": 2, "Data": 1, "Ideas": 1, "Inv": 1, "Obj": 2, "Exp": 2, "Focus": 1, "Struct": 1, "Acad": 2, "Math": 2, "People": -1}},
+    {"slug": "mechanical-engineer", "name": "Инженер-механик", "label_junior": "Инженер", "section": "akinator-engineering-tech", "profile": {"Phys": 2, "Data": 1, "Ideas": 1, "Inv": 1, "Obj": 2, "Exp": 2, "Focus": 1, "Struct": 1, "Acad": 2, "Math": 2, "People": -1}},
     {"slug": "civil-engineer", "name": "Инженер-строитель", "section": "akinator-engineering-tech", "profile": {"Phys": 2, "Data": 1, "Obj": 2, "Lead": 1, "Exp": 2, "Focus": 1, "Struct": 2, "Risk": -1, "Acad": 2, "Math": 2}},
     {"slug": "electrician", "name": "Электрик", "section": "akinator-engineering-tech", "profile": {"Phys": 2, "Obj": 1, "Motor": 2, "Exp": 1, "Struct": 2, "Risk": 1, "Auto": 1, "PhysSt": 1, "Acad": -1}},
     {"slug": "auto-mechanic", "name": "Автомеханик", "section": "akinator-engineering-tech", "profile": {"Phys": 2, "Obj": 1, "Motor": 2, "Exp": 1, "Focus": 1, "Struct": 1, "PhysSt": 1, "Acad": -1, "People": -1}},
-    {"slug": "pilot", "name": "Пилот", "section": "akinator-engineering-tech", "profile": {"Phys": 1, "Data": 1, "Lead": 1, "Exp": 2, "Focus": 2, "Risk": 1, "Struct": 2, "Pace": 1, "Acad": 1, "Math": 1}},
+    # Motor:1 added (calibration pass): piloting is a hands-on motor/instrument-
+    # coordination skill, missing entirely before — the profile was otherwise
+    # near-indistinguishable from lawyer (cosine similarity 0.80) purely on
+    # shared Data/Lead/Exp/Focus/Struct/Acad "serious professional" traits.
+    {"slug": "pilot", "name": "Пилот", "section": "akinator-engineering-tech", "profile": {"Phys": 1, "Data": 1, "Lead": 1, "Motor": 1, "Exp": 2, "Focus": 2, "Risk": 1, "Struct": 2, "Pace": 1, "Acad": 1, "Math": 1}},
 
     # Строительство и руками
     {"slug": "carpenter", "name": "Столяр", "section": "akinator-construction-manual", "profile": {"Phys": 2, "Ideas": 1, "Inv": 1, "Motor": 2, "Exp": 1, "Focus": 1, "Auto": 1, "PhysSt": 2, "Acad": -2, "People": -1}},
@@ -95,8 +105,8 @@ PROFESSIONS: list[dict] = [
     {"slug": "construction-worker", "name": "Строитель", "section": "akinator-construction-manual", "profile": {"Phys": 2, "Motor": 1, "Lead": -1, "Struct": 1, "PhysSt": 2, "Pace": 1, "Acad": -2, "Auto": -1}},
 
     # Творчество и дизайн
-    {"slug": "graphic-designer", "name": "Графический дизайнер", "section": "akinator-creative-design", "profile": {"Ideas": 2, "Inv": 2, "Obj": 1, "Exp": 1, "Auto": 1, "Struct": -1, "Math": -1, "PhysSt": -1}},
-    {"slug": "illustrator", "name": "Иллюстратор", "section": "akinator-creative-design", "profile": {"Ideas": 2, "Inv": 2, "Motor": 1, "Auto": 2, "Struct": -2, "Vis": -1, "Math": -1, "PhysSt": -1, "People": -1, "Exp": 1}},
+    {"slug": "graphic-designer", "name": "Графический дизайнер", "label_junior": "Дизайнер", "section": "akinator-creative-design", "profile": {"Ideas": 2, "Inv": 2, "Obj": 1, "Exp": 1, "Auto": 1, "Struct": -1, "Math": -1, "PhysSt": -1}},
+    {"slug": "illustrator", "name": "Иллюстратор", "label_junior": "Художник", "section": "akinator-creative-design", "profile": {"Ideas": 2, "Inv": 2, "Motor": 1, "Auto": 2, "Struct": -2, "Vis": -1, "Math": -1, "PhysSt": -1, "People": -1, "Exp": 1}},
     {"slug": "architect", "name": "Архитектор", "section": "akinator-creative-design", "profile": {"People": 1, "Phys": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Auto": 1, "Acad": 2, "Math": 1, "PhysSt": -1}},
     {"slug": "photographer", "name": "Фотограф", "section": "akinator-creative-design", "profile": {"People": 1, "Ideas": 2, "Inv": 1, "Motor": 1, "Vis": 1, "Auto": 2, "Struct": -1, "Risk": 1, "Predict": 1}},
     {"slug": "fashion-designer", "name": "Модельер", "section": "akinator-creative-design", "profile": {"Ideas": 2, "Inv": 2, "Phys": 1, "Motor": 1, "Vis": 1, "Exp": 1, "Auto": 1, "Struct": -1, "Risk": 1}},
@@ -109,7 +119,7 @@ PROFESSIONS: list[dict] = [
 
     # Слово и коммуникация
     {"slug": "journalist", "name": "Журналист", "section": "akinator-words-communication", "profile": {"People": 1, "Ideas": 1, "Obj": -2, "Vis": 1, "Exp": 1, "Emp": 1, "Risk": 1, "Pace": 2, "Predict": 2, "Acad": 1, "Struct": -1}},
-    {"slug": "copywriter", "name": "Копирайтер", "section": "akinator-words-communication", "profile": {"Ideas": 2, "Obj": -1, "Inv": 1, "Exp": 1, "Focus": 1, "Auto": 1, "People": -1}},
+    {"slug": "copywriter", "name": "Копирайтер", "label_junior": "Писатель текстов", "section": "akinator-words-communication", "profile": {"Ideas": 2, "Obj": -1, "Inv": 1, "Exp": 1, "Focus": 1, "Auto": 1, "People": -1}},
     {"slug": "translator", "name": "Переводчик", "section": "akinator-words-communication", "profile": {"Ideas": 1, "Obj": -1, "Exp": 2, "Focus": 2, "Auto": 2, "Struct": 1, "Predict": -1, "Acad": 1, "People": -1}},
     {"slug": "lawyer", "name": "Юрист", "section": "akinator-words-communication", "profile": {"People": 1, "Data": 1, "Obj": -1, "Lead": 1, "Vis": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Acad": 2}},
 
@@ -121,7 +131,7 @@ PROFESSIONS: list[dict] = [
     # Спорт и тело
     {"slug": "sports-coach", "name": "Спортивный тренер", "section": "akinator-sports-body", "profile": {"People": 1, "Living": 1, "Dev": 2, "Care": 1, "Lead": 1, "Motor": 1, "Emp": 1, "Motiv": 2, "Pace": 1, "PhysSt": 1, "Exp": 1}},
     {"slug": "fitness-instructor", "name": "Фитнес-инструктор", "section": "akinator-sports-body", "profile": {"People": 2, "Living": 1, "Dev": 1, "Vis": 1, "Motor": 1, "Emp": 1, "Pace": 1, "PhysSt": 2, "Predict": 1, "Acad": -1}},
-    {"slug": "rehabilitation-therapist", "name": "Реабилитолог", "section": "akinator-sports-body", "profile": {"People": 1, "Living": 2, "Care": 2, "Dev": 1, "Motor": 1, "Exp": 2, "Emp": 1, "Focus": 1, "Struct": 1, "Acad": 1, "PhysSt": 1}},
+    {"slug": "rehabilitation-therapist", "name": "Реабилитолог", "label_junior": "Врач по восстановлению", "section": "akinator-sports-body", "profile": {"People": 1, "Living": 2, "Care": 2, "Dev": 1, "Motor": 1, "Exp": 2, "Emp": 1, "Focus": 1, "Struct": 1, "Acad": 1, "PhysSt": 1}},
     {"slug": "athlete", "name": "Спортсмен", "section": "akinator-sports-body", "profile": {"Living": 1, "Vis": 1, "Motor": 2, "Focus": 2, "Motiv": 2, "Risk": 1, "Struct": 1, "PhysSt": 2, "Acad": -2}},
 
     # Еда и гостеприимство
@@ -131,14 +141,14 @@ PROFESSIONS: list[dict] = [
     {"slug": "waiter", "name": "Официант", "section": "akinator-food-hospitality", "profile": {"People": 2, "Motor": 1, "Emp": 1, "Focus": -1, "Pace": 2, "Predict": 1, "PhysSt": 1, "Acad": -2}},
 
     # Бизнес и продажи
-    {"slug": "sales-manager", "name": "Менеджер по продажам", "section": "akinator-business-sales", "profile": {"People": 2, "Emp": 2, "Vis": 1, "Motiv": 2, "Risk": 1, "Auto": 1, "Predict": 2, "Pace": 1, "Struct": -1}},
-    {"slug": "entrepreneur", "name": "Предприниматель", "section": "akinator-business-sales", "profile": {"People": 1, "Ideas": 1, "Inv": 2, "Lead": 2, "Vis": 1, "Motiv": 2, "Risk": 2, "Auto": 2, "Struct": -2, "Predict": 2}},
-    {"slug": "marketer", "name": "Маркетолог", "section": "akinator-business-sales", "profile": {"People": 1, "Data": 1, "Ideas": 1, "Inv": 1, "Obj": -1, "Vis": 1, "Emp": 1, "Motiv": 1, "Predict": 1, "Acad": 1}},
+    {"slug": "sales-manager", "name": "Менеджер по продажам", "label_junior": "Специалист по продажам", "section": "akinator-business-sales", "profile": {"People": 2, "Emp": 2, "Vis": 1, "Motiv": 2, "Risk": 1, "Auto": 1, "Predict": 2, "Pace": 1, "Struct": -1}},
+    {"slug": "entrepreneur", "name": "Предприниматель", "label_junior": "Бизнесмен", "section": "akinator-business-sales", "profile": {"People": 1, "Ideas": 1, "Inv": 2, "Lead": 2, "Vis": 1, "Motiv": 2, "Risk": 2, "Auto": 2, "Struct": -2, "Predict": 2}},
+    {"slug": "marketer", "name": "Маркетолог", "label_junior": "Специалист по рекламе", "section": "akinator-business-sales", "profile": {"People": 1, "Data": 1, "Ideas": 1, "Inv": 1, "Obj": -1, "Vis": 1, "Emp": 1, "Motiv": 1, "Predict": 1, "Acad": 1}},
     {"slug": "accountant", "name": "Бухгалтер", "section": "akinator-business-sales", "profile": {"Data": 2, "Obj": -1, "Exp": 2, "Focus": 2, "Struct": 2, "Motiv": -1, "Auto": 1, "Predict": -2, "Pace": -1, "Acad": 1, "Math": 2, "People": -1}},
 
     # Красота и услуги
     {"slug": "hairdresser", "name": "Парикмахер", "section": "akinator-beauty-services", "profile": {"People": 2, "Phys": 1, "Ideas": 1, "Motor": 2, "Vis": 1, "Emp": 1, "Inv": 1, "Auto": 1, "Pace": 1, "PhysSt": 1, "Acad": -2}},
-    {"slug": "makeup-artist", "name": "Визажист", "section": "akinator-beauty-services", "profile": {"People": 1, "Ideas": 2, "Motor": 2, "Vis": 1, "Inv": 2, "Emp": 1, "Auto": 1, "Risk": 1, "Acad": -1}},
+    {"slug": "makeup-artist", "name": "Визажист", "label_junior": "Мастер по макияжу", "section": "akinator-beauty-services", "profile": {"People": 1, "Ideas": 2, "Motor": 2, "Vis": 1, "Inv": 2, "Emp": 1, "Auto": 1, "Risk": 1, "Acad": -1}},
 
     # Безопасность и спасение
     {"slug": "firefighter", "name": "Пожарный", "section": "akinator-safety-rescue", "profile": {"People": 1, "Phys": 1, "Care": 1, "Motor": 1, "Focus": -2, "Risk": 2, "Auto": -1, "Struct": 1, "Pace": 2, "Predict": 1, "PhysSt": 2, "Acad": -1}},
@@ -149,7 +159,7 @@ PROFESSIONS: list[dict] = [
     {"slug": "taxi-driver", "name": "Таксист", "section": "akinator-logistics-service", "profile": {"People": 1, "Phys": 1, "Motor": 1, "Auto": 2, "Focus": -1, "Predict": -1, "Acad": -2, "Exp": -2}},
     {"slug": "courier", "name": "Курьер", "section": "akinator-logistics-service", "profile": {"Phys": 1, "Motor": 1, "Auto": 1, "Pace": 2, "Struct": -1, "PhysSt": 2, "Acad": -2, "Exp": -2}},
     {"slug": "warehouse-worker", "name": "Складской работник", "section": "akinator-logistics-service", "profile": {"Phys": 2, "Motor": 1, "Auto": -2, "Struct": 2, "Pace": 1, "Predict": -2, "PhysSt": 2, "Acad": -2, "People": -1, "Exp": -2}},
-    {"slug": "sales-consultant", "name": "Продавец-консультант", "section": "akinator-logistics-service", "profile": {"People": 2, "Emp": 1, "Motiv": 1, "Pace": 1, "Predict": 1, "PhysSt": 1, "Acad": -1, "Exp": -1}},
+    {"slug": "sales-consultant", "name": "Продавец-консультант", "label_junior": "Продавец", "section": "akinator-logistics-service", "profile": {"People": 2, "Emp": 1, "Motiv": 1, "Pace": 1, "Predict": 1, "PhysSt": 1, "Acad": -1, "Exp": -1}},
 ]
 
 assert len(SECTIONS) == 16, f"expected 16 sections, got {len(SECTIONS)}"
@@ -445,7 +455,7 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "готов рисковать, спасать, действовать быстро", "axis_weights": {"Risk": 2, "Pace": 2, "PhysSt": 2, "Care": 1}},
          {"text": "лучше держать порядок, следить, предотвращать", "axis_weights": {"Struct": 2, "Focus": 1}},
-     ], "resolves_pair": ["firefighter", "rescuer", "police-officer"]},
+     ], "resolves_pair": ["firefighter", "rescuer", "police-officer", "paramedic"]},
     {"order": 39, "kind": "direct", "depth": 2, "age_variant": "both",
      "text": "Делать людей красивее, работать над образом — тебе как?",
      "text_junior": "Тебе нравится придумывать причёски, образы, делать красиво?",
@@ -460,9 +470,52 @@ QUESTIONS: list[dict] = [
          {"text": "на одном месте, по чёткому порядку", "axis_weights": {"Struct": 2, "Auto": -2, "Predict": -2}},
          {"text": "общаться с покупателями, помогать выбрать", "axis_weights": {"People": 2, "Emp": 1}},
      ], "resolves_pair": ["taxi-driver", "courier", "warehouse-worker", "sales-consultant"]},
+    # --- Calibration pass additions (orders 41-44): resolves_pair gaps found
+    # by auditing profile cosine-similarity — see module docstring.
+    {"order": 41, "kind": "situational", "depth": 2, "age_variant": "senior",
+     "text": "Если бы ты работал(а) в медицине каждый день, что подошло бы больше?",
+     "text_junior": None,
+     "options": [
+         {"text": "точная, спокойная, повторяющаяся работа руками с одним и тем же типом процедур",
+          "axis_weights": {"Motor": 2, "Struct": 2, "Risk": -1, "Pace": -1}},
+         {"text": "непредсказуемые сложные случаи и высокие ставки",
+          "axis_weights": {"Risk": 2, "Pace": 1, "PhysSt": 1}},
+         {"text": "долгие беседы и наблюдение за развитием болезни у разных пациентов",
+          "axis_weights": {"Focus": 1, "Predict": 1, "Emp": 1}},
+         {"text": "лечить животных, а не только людей",
+          "axis_weights": {"Living": 2, "Ideas": -1}},
+         {"text": "постепенно восстанавливать подвижность и функции после травмы или болезни",
+          "axis_weights": {"Dev": 2, "Motor": 1, "Acad": -1}},
+     ], "resolves_pair": ["dentist", "surgeon", "physician", "veterinarian", "rehabilitation-therapist"]},
+    {"order": 42, "kind": "direct", "depth": 2, "age_variant": "senior",
+     "text": "Работать с психикой человека тебе ближе как?", "text_junior": None,
+     "options": [
+         {"text": "изучать биологию, работать как врач, при необходимости — лечить лекарствами",
+          "axis_weights": {"Living": 2, "Care": 1}},
+         {"text": "разговаривать, слушать и помогать разобраться в себе без медицинских препаратов",
+          "axis_weights": {"Emp": 2, "Auto": 1}},
+     ], "resolves_pair": ["psychiatrist", "psychologist"]},
+    {"order": 43, "kind": "situational", "depth": 2, "age_variant": "both",
+     "text": "Уход за пациентами тебе ближе как?",
+     "text_junior": "Помогать людям со здоровьем интереснее спокойно и постоянно, или в срочных случаях?",
+     "options": [
+         {"text": "стабильно, в одном отделении, длительно наблюдать за одними и теми же пациентами",
+          "axis_weights": {"Struct": 1, "Predict": -1}},
+         {"text": "экстренные вызовы, непредсказуемая обстановка, скорая помощь",
+          "axis_weights": {"Predict": 2, "Pace": 2, "Risk": 1}},
+     ], "resolves_pair": ["nurse", "paramedic"]},
+    {"order": 44, "kind": "direct", "depth": 2, "age_variant": "both",
+     "text": "Руки просят работы — с чем ближе всего?",
+     "text_junior": "Чинить что-нибудь руками интереснее — электронику и провода, или машины?",
+     "options": [
+         {"text": "с электропроводкой, электроприборами, электроникой",
+          "axis_weights": {"Risk": 1, "Struct": 2}},
+         {"text": "с машинами, двигателями, механизмами",
+          "axis_weights": {"Focus": 1, "People": -1}},
+     ], "resolves_pair": ["electrician", "auto-mechanic"]},
 ]
 
-assert len(QUESTIONS) == 41, f"expected 41 questions, got {len(QUESTIONS)}"
+assert len(QUESTIONS) == 45, f"expected 45 questions, got {len(QUESTIONS)}"
 
 
 # ---------------------------------------------------------------------------
@@ -508,6 +561,17 @@ async def seed_sections(db: AsyncSession) -> tuple[dict[str, uuid.UUID], int, in
     return ids, inserted, updated, skipped
 
 
+
+# Calibration pass: all 67 professions are opened to every age group. Their
+# raw `name` (Хирург, Стоматолог, ...) stays as-is for junior/middle too —
+# `label_junior` (set per-profession above where the real name is too
+# technical/unfamiliar for a young teen, e.g. surgeon -> "Врач") gives the
+# router something friendlier to display instead when age_group=junior. Only
+# ~6 old placeholder "explore-*" Directions used to be junior/middle-eligible
+# before this, with empty profiles — belief could never move for those ages.
+PROFESSION_AGE_GROUPS = ["junior", "middle", "senior"]
+
+
 async def seed_professions(
     db: AsyncSession, section_ids: dict[str, uuid.UUID]
 ) -> tuple[int, int, int]:
@@ -516,6 +580,7 @@ async def seed_professions(
 
     for prof in PROFESSIONS:
         parent_id = section_ids[prof["section"]]
+        label_junior = prof.get("label_junior")
         result = await db.execute(select(Direction).where(Direction.slug == prof["slug"]))
         existing = result.scalar_one_or_none()
 
@@ -533,6 +598,12 @@ async def seed_professions(
             if existing.is_leaf is not True:
                 existing.is_leaf = True
                 changed = True
+            if existing.age_groups != PROFESSION_AGE_GROUPS:
+                existing.age_groups = PROFESSION_AGE_GROUPS
+                changed = True
+            if existing.label_junior != label_junior:
+                existing.label_junior = label_junior
+                changed = True
             updated += 1 if changed else 0
             skipped += 0 if changed else 1
             continue
@@ -548,6 +619,8 @@ async def seed_professions(
             parent_id=parent_id,
             is_leaf=True,
             profile=prof["profile"],
+            age_groups=PROFESSION_AGE_GROUPS,
+            label_junior=label_junior,
         )
         db.add(direction)
         inserted += 1
@@ -556,7 +629,7 @@ async def seed_professions(
 
 
 async def seed_questions(db: AsyncSession) -> tuple[int, int, int]:
-    """Upsert the 41 AkinatorQuestion rows by `order` (this script owns 0-40).
+    """Upsert the 45 AkinatorQuestion rows by `order` (this script owns 0-44).
     Returns (inserted, updated, skipped)."""
     inserted = updated = skipped = 0
 
