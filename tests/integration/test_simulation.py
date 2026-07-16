@@ -229,6 +229,10 @@ async def test_submit_simulation_rejected_updates_belief_negatively(
     assert log is not None
     assert log.accepted is False
 
-    # Verify belief for programmer dropped to near zero
+    # Verify belief for programmer dropped to near zero. Threshold relaxed
+    # from 1e-10 (calibration pass 3): match_score is now normalized by the
+    # leaf's own profile norm, which also divides down this virtual -100
+    # rejection weight — still negligible (was ~1.7e-10), just not quite as
+    # extreme as the old un-normalized score.
     await db_session.refresh(sess)
-    assert sess.belief["programmer"] < 1e-10
+    assert sess.belief["programmer"] < 1e-6

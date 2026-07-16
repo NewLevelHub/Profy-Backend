@@ -48,12 +48,31 @@ class Settings(BaseSettings):
     # softmax). 0.3 was picked by simulating ~150 randomized-answer sessions
     # and sweeping beta/T/M/cluster_threshold until the average settled
     # around 7-8 questions with a healthy single/cluster mix.
-    AKINATOR_BETA: float = 0.3
+    # Retuned again (calibration pass 3, 2026-07): match_score is now
+    # normalized by the leaf's profile norm (see akinator_engine.match_score
+    # docstring — fixes "loud profile always wins" regardless of fit), which
+    # shrank typical per-answer scores roughly 5-8x (old raw dot products
+    # ranged ~0-12, normalized scores range ~-2 to +3).
+    #
+    # 2.0 (restoring the old ~8-question average) was tried first, but a
+    # "textbook persona per real profession" census (scripts/calibration_simulate.py
+    # --census) showed it made *targeting accuracy* worse, not better: 55%
+    # of professions failed to land in the top-3 by final belief, vs 31% at
+    # the old (too-slow) beta=0.3. Reason: converging fast leaves no time for
+    # a profession's real signal to outweigh incidental overlap with
+    # unrelated leaves on shared axes. 1.2 is the middle point chosen instead
+    # — slower (~15-16 questions for senior) but 43% census failure, a real
+    # improvement traded for a longer test. Product decision, not a pure
+    # technical one: short test vs. better-matched results.
+    AKINATOR_BETA: float = 1.2
     # Stopping criterion (see akinatorLogic/profi_axes_phase1.md "Критерий
     # остановки"): single leaf if top1 > T and top1 >= M * top2; otherwise a
     # cluster of up to K leaves once their cumulative belief reaches the
     # threshold. Retuned alongside AKINATOR_BETA (see note above) — old
-    # T=0.45/M=1.5/threshold=0.70 were crossed within 2-3 answers.
+    # T=0.45/M=1.5/threshold=0.70 were crossed within 2-3 answers. T/M/
+    # threshold themselves didn't need to change again in pass 3 (only beta
+    # did) — they compare belief *proportions*, which the score normalization
+    # doesn't change the scale of, only how fast beliefs move per answer.
     AKINATOR_STOP_T: float = 0.58
     AKINATOR_STOP_M: float = 2.0
     AKINATOR_STOP_CLUSTER_K: int = 3
@@ -66,14 +85,18 @@ class Settings(BaseSettings):
     # age_variant="both" questions (senior-only ones are the sharpest
     # disambiguators) — 8/12 left almost no room for confidence to build
     # after covering all 5 families, so those ages always bottomed out at the
-    # ceiling. 10/14 leaves more runway; they may still often land on
-    # "cluster via ceiling" rather than a single confident pick given the
-    # smaller question pool — a gentler outcome for younger ages, not a bug,
-    # but the lack of junior/middle-specific disambiguator questions is worth
-    # a content follow-up.
-    AKINATOR_CEILING_JUNIOR: int = 10
-    AKINATOR_CEILING_MIDDLE: int = 14
-    AKINATOR_CEILING_SENIOR: int = 18
+    # ceiling. Bumped again in calibration pass 3 (10/14/18 -> 18/20/22):
+    # beta dropped to 1.2 (see AKINATOR_BETA) to trade test length for
+    # accuracy, so every age needs more runway to reach the same confidence
+    # bar. Junior still lands on "cluster via ceiling" more often than not
+    # even at 18 (~64% of the time) — it only draws from the ~31
+    # age_variant="both" questions, the smaller/blunter half of the bank; a
+    # gentler, less-decisive outcome for younger ages, not a bug, but still
+    # worth a junior/middle-specific disambiguator-question follow-up if that
+    # ratio needs to improve.
+    AKINATOR_CEILING_JUNIOR: int = 18
+    AKINATOR_CEILING_MIDDLE: int = 20
+    AKINATOR_CEILING_SENIOR: int = 22
     # Question-selection temperature (calibration pass 2, 2026-07): past
     # WIDE_START_STEPS, the engine used to always pick the single question
     # with strictly minimum expected posterior entropy — real session logs

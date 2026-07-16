@@ -2,7 +2,9 @@
 
 Pure math — no AI, no DB. See akinatorLogic/profi_axes_phase1.md ("Формула
 апдейта", "Правило старта"):
-    match(A, L) = Σ_ось A[ось] · L[ось]
+    match(A, L) = Σ_ось A[ось] · L[ось], normalized by ||L|| (calibration pass
+    3 — see match_score's docstring: un-normalized, leaves with many strong
+    axes always won regardless of fit)
     log belief(L) += β · match(A, L), затем softmax-нормировка (Σ belief = 1)
     Первые ~3 вопроса — широкие прямые по разным семействам (анти-жадность);
     дальше — минимизация ожидаемой постериорной энтропии, той же match-функцией.
@@ -25,9 +27,22 @@ _AXIS_FAMILY: dict[str, AxisFamily] = {axis.code: axis.family for axis in AXIS_C
 
 
 def match_score(answer_weights: dict[str, int], leaf_profile: dict[str, int]) -> float:
-    """Σ over the answer's axes of weight * leaf's value on that axis (0 if the
-    leaf doesn't carry that axis). Both dicts are sparse — only non-zero axes."""
-    return float(sum(weight * leaf_profile.get(axis, 0) for axis, weight in answer_weights.items()))
+    """Alignment between an answer and a leaf's profile: raw dot product
+    (Σ weight * leaf's value per axis, 0 if the leaf doesn't carry that axis),
+    scaled down by the leaf's own profile norm.
+
+    Without that scaling (calibration pass 3), leaves with many strong
+    (magnitude-2) axes systematically won regardless of whether they were
+    the right answer — a census of one "textbook" persona per real
+    profession found 41/67 losing to the same ~10 "loud" profiles (paramedic,
+    surgeon, programmer, accountant, architect, ...) more often than not.
+    Dividing by ||leaf_profile|| makes the score reflect how much of *that
+    leaf's own* signature the answer explains, not the leaf's raw volume —
+    a quiet, narrow profile (coach, barista) can now compete on equal footing
+    with a loud, broad one for an answer that genuinely fits it best."""
+    raw = sum(weight * leaf_profile.get(axis, 0) for axis, weight in answer_weights.items())
+    norm = math.sqrt(sum(value * value for value in leaf_profile.values()))
+    return float(raw) / norm if norm else 0.0
 
 
 def _log(prob: float) -> float:
