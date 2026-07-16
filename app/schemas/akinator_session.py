@@ -24,6 +24,10 @@ class NextQuestionResponse(BaseModel):
 class RevealLeaf(BaseModel):
     slug: str
     name: str
+    # Parent section/category name (e.g. "Медицина и здоровье") — gives the
+    # user a broader "направление" to anchor on alongside the specific
+    # profession, instead of just a bare, possibly unfamiliar job title.
+    direction: str
 
 
 class RevealResponse(BaseModel):

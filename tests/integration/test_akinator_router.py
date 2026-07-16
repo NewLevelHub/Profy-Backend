@@ -112,7 +112,8 @@ async def test_sequential_answers_reach_a_valid_reveal(client: AsyncClient, db_s
     assert body["type"] == "reveal"
     assert body["status"] in ("single", "cluster")
     assert len(body["leaves"]) >= 1
-    assert all({"slug", "name"} <= set(leaf) for leaf in body["leaves"])
+    assert all({"slug", "name", "direction"} <= set(leaf) for leaf in body["leaves"])
+    assert all(leaf["direction"] for leaf in body["leaves"])  # never blank
 
 
 async def test_dont_know_answer_is_accepted(client: AsyncClient, db_session: AsyncSession):
@@ -271,6 +272,23 @@ async def test_reveal_uses_label_junior_for_junior_and_real_name_for_senior(
 
     assert junior_response.leaves[0].name == "Врач"
     assert senior_response.leaves[0].name == "Хирург"
+
+
+async def test_reveal_leaf_carries_its_parent_direction_name(db_session: AsyncSession):
+    """Feature request: show a broader "направление" (section) alongside the
+    specific profession, e.g. "Медицина и здоровье" for surgeon — not just
+    the bare profession name."""
+    await _ensure_seeded(db_session)
+    decision = StopDecision(
+        status="reveal_cluster", leaves=["surgeon", "programmer"], reason="confidence"
+    )
+    belief = {"surgeon": 0.5, "programmer": 0.5}
+
+    response = await _reveal_response(decision, belief, [], AgeGroup.senior, db_session)
+
+    by_slug = {leaf.slug: leaf.direction for leaf in response.leaves}
+    assert by_slug["surgeon"] == "Медицина и здоровье"
+    assert by_slug["programmer"] == "IT и данные"
 
 
 async def test_reject_before_reveal_is_rejected(client: AsyncClient, db_session: AsyncSession):

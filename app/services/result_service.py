@@ -60,9 +60,20 @@ async def _backups_for(session: AssessmentSession, exclude_slug: str, db: AsyncS
         return []
 
     result = await db.execute(select(Direction).where(Direction.slug.in_(slugs)))
-    names_by_slug = {d.slug: d.name for d in result.scalars().all()}
+    directions_by_slug = {d.slug: d for d in result.scalars().all()}
+
+    section_ids = {d.parent_id for d in directions_by_slug.values() if d.parent_id is not None}
+    sections_result = await db.execute(select(Direction).where(Direction.id.in_(section_ids)))
+    section_name_by_id = {s.id: s.name for s in sections_result.scalars().all()}
+
     return [
-        RevealLeaf(slug=slug, name=names_by_slug[slug]) for slug in slugs if slug in names_by_slug
+        RevealLeaf(
+            slug=slug,
+            name=direction.name,
+            direction=section_name_by_id.get(direction.parent_id, ""),
+        )
+        for slug in slugs
+        if (direction := directions_by_slug.get(slug)) is not None
     ]
 
 
