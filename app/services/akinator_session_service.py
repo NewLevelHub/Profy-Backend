@@ -88,7 +88,10 @@ async def _advance(
             rejected_leaves=rejected_leaves,
         )
 
-    decision = akinator_engine.check_stop(session.belief, session.step, age_group.value)
+    asked_families = set(session.asked_axis_families or [])
+    decision = akinator_engine.check_stop(
+        session.belief, session.step, age_group.value, asked_families=asked_families
+    )
 
     if decision.status == "continue":
         leaf_profiles = await _leaf_profiles_for(db, session.belief)
@@ -100,7 +103,9 @@ async def _advance(
             return SessionTurn(session=session, decision=decision, next_question=next_question)
         # Content exhausted before either stopping rule fired — force a
         # cluster reveal rather than stalling forever (a valid outcome).
-        decision = akinator_engine.check_stop(session.belief, _FORCE_CEILING_STEP, age_group.value)
+        decision = akinator_engine.check_stop(
+            session.belief, _FORCE_CEILING_STEP, age_group.value, asked_families=asked_families
+        )
 
     if session.status == SessionStatus.in_progress:
         session = await assessment_session_service.save_session(
@@ -190,11 +195,22 @@ async def submit_answer(
 
 
 async def submit_feedback(
-    assessment_id: uuid.UUID, liked: bool, note: str | None, db: AsyncSession
+    assessment_id: uuid.UUID,
+    liked: bool,
+    note: str | None,
+    db: AsyncSession,
+    direction_slug: str | None = None,
 ) -> AssessmentSession:
     """Record liked/note for a session — only once it has reached a reveal,
     since feedback judges a *result*, and a session still picking questions
-    has no result yet to judge."""
+    has no result yet to judge.
+
+    `direction_slug` names which leaf the user actually accepted (e.g. after
+    a per-leaf simulation) — a backup or a non-top cluster finalist, not
+    necessarily the engine's own favorite. It wins whenever it names a real
+    candidate; only falls back to the top-belief leaf when absent or stale
+    (a leaf can't be rejected then re-accepted under the same slug), so a
+    once-valid choice never silently gets overridden by the argmax."""
     result = await db.execute(
         select(AssessmentSession).where(AssessmentSession.assessment_id == assessment_id)
     )
@@ -207,7 +223,10 @@ async def submit_feedback(
     assessment = await db.get(Assessment, assessment_id)
     if assessment:
         if liked and session.belief:
-            best_slug = max(session.belief, key=session.belief.get)
+            if direction_slug is not None and direction_slug in session.belief:
+                best_slug = direction_slug
+            else:
+                best_slug = max(session.belief, key=session.belief.get)
             assessment.selected_direction_slug = best_slug
         assessment.status = AssessmentStatus.completed
         assessment.completed_at = func.now()

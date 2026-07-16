@@ -176,7 +176,7 @@ async def generate_direction_roadmap(
 
     assessment, direction = await _require_direction_roadmap_access(assessment_id, slug, db)
 
-    context = await build_student_context(assessment_id, db, inquiry_slug=slug)
+    context = await build_student_context(assessment_id, db, direction_slug=slug)
     if context is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
 

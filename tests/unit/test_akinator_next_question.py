@@ -70,6 +70,34 @@ def test_early_steps_pick_direct_shallow_new_family_and_never_repeat_a_family():
     assert len(chosen_families) == 3  # each step introduced a brand-new family
 
 
+def test_wide_start_accepts_a_question_that_also_touches_an_already_asked_family():
+    """Calibration-pass fix: real depth<=1 direct questions almost always
+    straddle multiple families (e.g. People+Care in one question) — the old
+    `isdisjoint` rule rejected any candidate touching *any* already-asked
+    family, even if it also introduced a brand-new one, collapsing the
+    3-step wide start down to just 1 real step. A candidate should now be
+    picked as long as it introduces >=1 new family, overlap allowed.
+
+    q_mixed (order=1, families A+B — A already asked) has a lower order than
+    q_pure_new (order=2, family C only, fully new). Under the old strict
+    `isdisjoint` rule q_mixed would be rejected outright, leaving q_pure_new
+    as the only wide candidate. Under the relaxed rule both qualify and
+    q_mixed wins on order — proving the relaxation actually changed which
+    question gets picked, not just that *a* question got picked."""
+    q_mixed = _question(  # family A (already asked) + family B (new) in one question
+        depth=1, kind="direct", axis="People", order=1,
+        options=[{"text": "opt", "axis_weights": {"People": 1, "Care": 2}}],
+    )
+    q_pure_new = _question(depth=0, kind="direct", axis="Motor", order=2)  # family C, fully new
+
+    session = _session(step=1, asked_question_ids=[uuid.uuid4()], asked_axis_families=["A"])
+    selected = select_next_question(
+        session, [q_mixed, q_pure_new], leaf_profiles={}, age_group="senior"
+    )
+
+    assert selected is q_mixed  # old isdisjoint rule would have picked q_pure_new instead
+
+
 def test_step_3_or_later_picks_minimum_expected_posterior_entropy():
     """AC2: brute-force check that the chosen question minimizes expected
     posterior entropy on a toy 2-leaf scenario."""

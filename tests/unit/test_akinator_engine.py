@@ -1,8 +1,18 @@
 import math
+import uuid
 
 import pytest
 
-from app.services.akinator_engine import match_score, reject_leaf, update_belief
+from app.models.akinator_question import AkinatorQuestion
+from app.services.akinator_engine import age_variant_matches, match_score, reject_leaf, update_belief
+
+
+def _question(age_variant: str) -> AkinatorQuestion:
+    return AkinatorQuestion(
+        id=uuid.uuid4(), kind="direct", depth=0, age_variant=age_variant,
+        text="q", text_junior=None, options=[{"text": "opt", "axis_weights": {}}],
+        resolves_pair=None, is_active=True, order=0,
+    )
 
 
 def test_match_score_sums_products_over_answer_axes():
@@ -91,3 +101,23 @@ def test_reject_leaf_last_candidate_raises():
     """Rejecting the only remaining leaf leaves nothing to redistribute to."""
     with pytest.raises(ValueError):
         reject_leaf({"a": 1.0}, "a")
+
+
+def test_middle_also_sees_senior_only_questions():
+    """Calibration-pass fix: middle was meant to converge like senior, but
+    with only age_variant="both" questions it never had enough signal to
+    beat its ceiling — always fell back to a forced cluster. Sharing
+    senior's question pool fixes this without new middle-specific content.
+    junior deliberately keeps the smaller, softer pool."""
+    both_q = _question("both")
+    senior_q = _question("senior")
+    junior_q = _question("junior")
+
+    assert age_variant_matches(both_q, "middle") is True
+    assert age_variant_matches(senior_q, "middle") is True
+    assert age_variant_matches(junior_q, "middle") is False
+
+
+def test_junior_does_not_gain_senior_only_questions():
+    senior_q = _question("senior")
+    assert age_variant_matches(senior_q, "junior") is False

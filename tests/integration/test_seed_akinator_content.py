@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.akinator_question import AkinatorQuestion
 from app.models.direction import Direction
 from scripts.seed_akinator_content import (
+    PROFESSION_AGE_GROUPS,
     PROFESSIONS,
     QUESTIONS,
     SECTIONS,
@@ -42,10 +43,15 @@ async def test_seed_creates_expected_rows(db_session: AsyncSession):
         matching = next(p for p in PROFESSIONS if p["slug"] == direction.slug)
         assert direction.parent_id == section_ids_by_slug[matching["section"]]
         assert direction.profile == matching["profile"]
+        # Calibration pass: all 67 professions are open to every age group
+        # (previously defaulted to senior-only — junior/middle had no real
+        # profiled professions to choose among at all).
+        assert direction.age_groups == PROFESSION_AGE_GROUPS
+        assert direction.label_junior == matching.get("label_junior")
 
-    result = await db_session.execute(select(AkinatorQuestion).where(AkinatorQuestion.order.in_(range(41))))
+    result = await db_session.execute(select(AkinatorQuestion).where(AkinatorQuestion.order.in_(range(len(QUESTIONS)))))
     questions = result.scalars().all()
-    assert len(questions) == 41
+    assert len(questions) == len(QUESTIONS)
 
 
 async def test_rerun_creates_no_duplicates(db_session: AsyncSession):
@@ -57,11 +63,11 @@ async def test_rerun_creates_no_duplicates(db_session: AsyncSession):
     assert prof_inserted == 0
     assert q_inserted == 0
     assert prof_updated + prof_skipped == 67
-    assert q_updated + q_skipped == 41
+    assert q_updated + q_skipped == len(QUESTIONS)
 
     profession_slugs = [p["slug"] for p in PROFESSIONS]
     result = await db_session.execute(select(Direction).where(Direction.slug.in_(profession_slugs)))
     assert len(result.scalars().all()) == 67
 
-    result = await db_session.execute(select(AkinatorQuestion).where(AkinatorQuestion.order.in_(range(41))))
-    assert len(result.scalars().all()) == 41
+    result = await db_session.execute(select(AkinatorQuestion).where(AkinatorQuestion.order.in_(range(len(QUESTIONS)))))
+    assert len(result.scalars().all()) == len(QUESTIONS)

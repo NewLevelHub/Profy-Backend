@@ -14,7 +14,9 @@ from app.models.assessment_session import AssessmentSession
 from app.models.direction import Direction
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
+from app.routers.akinator import _reveal_response
 from app.services import assessment_session_service
+from app.services.akinator_engine import StopDecision
 from app.services.auth_service import create_jwt_token
 from scripts.seed_akinator_content import seed_professions, seed_questions, seed_sections
 
@@ -254,6 +256,23 @@ async def test_feedback_is_saved_after_reveal(client: AsyncClient, db_session: A
     assert session.feedback_at is not None
 
 
+async def test_reveal_uses_label_junior_for_junior_and_real_name_for_senior(
+    db_session: AsyncSession,
+):
+    """Calibration pass: junior sees the friendly label_junior ("Врач")
+    instead of the technical profession name ("Хирург") when one is set;
+    senior still sees the real name."""
+    await _ensure_seeded(db_session)
+    decision = StopDecision(status="reveal_single", leaves=["surgeon"], reason="confidence")
+    belief = {"surgeon": 1.0}
+
+    junior_response = await _reveal_response(decision, belief, [], AgeGroup.junior, db_session)
+    senior_response = await _reveal_response(decision, belief, [], AgeGroup.senior, db_session)
+
+    assert junior_response.leaves[0].name == "Врач"
+    assert senior_response.leaves[0].name == "Хирург"
+
+
 async def test_reject_before_reveal_is_rejected(client: AsyncClient, db_session: AsyncSession):
     """Rejecting a leaf makes no sense before anything has been revealed."""
     await _ensure_seeded(db_session)
@@ -372,6 +391,63 @@ async def test_feedback_sets_selected_direction_slug_and_roadmap_works(
     roadmap_body = roadmap_resp.json()
     assert roadmap_body["direction_slug"] == winner_slug
     assert len(roadmap_body["stages"]) == 4
+
+
+async def test_feedback_direction_slug_overrides_top_belief(
+    client: AsyncClient, db_session: AsyncSession
+):
+    """A user can accept a non-top leaf (e.g. a backup, or a cluster peer that
+    isn't the engine's own favorite) and have THAT one finalized, instead of
+    silently ending up with whatever has the highest belief."""
+    await _ensure_seeded(db_session)
+    user, assessment = await _make_user_and_assessment(db_session)
+    headers = _auth_headers(user.id)
+
+    reveal_body, _submitted = await _run_to_reveal(client, assessment.id, headers)
+    assert reveal_body["type"] == "reveal"
+
+    result = await db_session.execute(
+        select(AssessmentSession).where(AssessmentSession.assessment_id == assessment.id)
+    )
+    session = result.scalar_one()
+    ranked = sorted(session.belief, key=session.belief.get, reverse=True)
+    assert len(ranked) >= 2, "need at least two candidates in belief to prove the override"
+    top_slug, chosen_slug = ranked[0], ranked[1]
+
+    feedback_resp = await client.post(
+        f"/api/v1/assessment/{assessment.id}/akinator/feedback",
+        headers=headers,
+        json={"liked": True, "note": "this one, not the top pick", "direction_slug": chosen_slug},
+    )
+    assert feedback_resp.status_code == 200
+
+    await db_session.refresh(assessment)
+    assert assessment.selected_direction_slug == chosen_slug
+    assert assessment.selected_direction_slug != top_slug
+
+
+async def test_feedback_falls_back_to_top_belief_when_direction_slug_is_invalid(
+    client: AsyncClient, db_session: AsyncSession
+):
+    """An unknown/stale direction_slug doesn't win outright — falls back to
+    the engine's top belief instead of persisting a bogus selection."""
+    await _ensure_seeded(db_session)
+    user, assessment = await _make_user_and_assessment(db_session)
+    headers = _auth_headers(user.id)
+
+    reveal_body, _submitted = await _run_to_reveal(client, assessment.id, headers)
+    assert reveal_body["type"] == "reveal"
+    winner_slug = reveal_body["leaves"][0]["slug"]
+
+    feedback_resp = await client.post(
+        f"/api/v1/assessment/{assessment.id}/akinator/feedback",
+        headers=headers,
+        json={"liked": True, "note": None, "direction_slug": "not-a-real-slug"},
+    )
+    assert feedback_resp.status_code == 200
+
+    await db_session.refresh(assessment)
+    assert assessment.selected_direction_slug == winner_slug
 
 
 async def test_reveal_excludes_branch_nodes(

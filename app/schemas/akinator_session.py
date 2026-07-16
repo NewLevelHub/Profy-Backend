@@ -42,6 +42,11 @@ AkinatorTurnResponse = Annotated[
 class AkinatorFeedbackRequest(BaseModel):
     liked: bool
     note: str | None = None
+    # Which leaf the user actually accepted — set when feedback follows a
+    # per-leaf simulation accept (see submit_simulation_outcome on the
+    # frontend side). Falls back to the engine's own top belief when absent,
+    # so older callers keep working.
+    direction_slug: str | None = None
 
 
 class AkinatorFeedbackResponse(BaseModel):

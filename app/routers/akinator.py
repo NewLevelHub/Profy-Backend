@@ -72,7 +72,11 @@ def _question_text(question: AkinatorQuestion, age_group: AgeGroup) -> str:
 
 
 async def _reveal_response(
-    decision: StopDecision, belief: dict[str, float], rejected_leaves: list[str], db: AsyncSession
+    decision: StopDecision,
+    belief: dict[str, float],
+    rejected_leaves: list[str],
+    age_group: AgeGroup,
+    db: AsyncSession,
 ) -> RevealResponse:
     report = akinator_report_service.build_reveal_report(decision, belief, rejected_leaves)
 
@@ -83,7 +87,13 @@ async def _reveal_response(
             Direction.is_leaf.is_(True)
         )
     )
-    names_by_slug = {d.slug: d.name for d in result.scalars().all()}
+    # junior gets the friendlier label_junior where set (e.g. "Хирург" -> "Врач")
+    # instead of the technical profession name — same fallback pattern as
+    # _question_text's text_junior.
+    names_by_slug = {
+        d.slug: (d.label_junior if age_group == AgeGroup.junior and d.label_junior else d.name)
+        for d in result.scalars().all()
+    }
 
     def to_leaves(slugs: list[str]) -> list[RevealLeaf]:
         return [
@@ -115,7 +125,7 @@ async def _turn_response(
             question_id=question.id, text=_question_text(question, age_group), options=options
         )
     return await _reveal_response(
-        turn.decision, turn.session.belief, turn.session.rejected_leaves, db
+        turn.decision, turn.session.belief, turn.session.rejected_leaves, age_group, db
     )
 
 
@@ -159,7 +169,9 @@ async def submit_akinator_feedback(
 ) -> AkinatorFeedbackResponse:
     await _require_owned_assessment(assessment_id, current_user, db)
     try:
-        await akinator_session_service.submit_feedback(assessment_id, data.liked, data.note, db)
+        await akinator_session_service.submit_feedback(
+            assessment_id, data.liked, data.note, db, direction_slug=data.direction_slug
+        )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return AkinatorFeedbackResponse()
