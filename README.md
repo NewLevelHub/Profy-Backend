@@ -106,6 +106,16 @@ Done. Inserted: 0, updated: 0, skipped (unchanged): 213
 
 Поле `weights` используется алгоритмом рекомендаций и **не возвращается** на фронтенд через API.
 
+## Каталог осей акинатора (офлайн-предложения)
+
+`scripts/generate_taxonomy.py` — офлайн-инструмент для расширения дерева профессий за пределы стартового каталога. Вызывает LLM и сохраняет предложенные узлы (`slug`, `name`, `parent_slug`, `is_leaf`) в JSON-файл для ревью человеком — **в БД ничего не пишет**. Не вызывать из request-пути (нет авторизации/кэша/лимитов, секунды на вызов).
+
+```bash
+docker-compose exec api python scripts/generate_taxonomy.py --focus-area "медицина" --count 8
+```
+
+Файл появится в `scripts/taxonomy_proposals/<timestamp>.json` на хосте (примонтирован в `docker-compose.yml`, только для этой директории — код по-прежнему запечён в образ). Проверенные узлы добавляются в каталог вручную (по аналогии с `scripts/seed_directions.py`).
+
 ## Полезные команды
 
 ```bash
@@ -127,6 +137,18 @@ docker compose exec api alembic upgrade head
 # Наполнение вопросами (после миграций)
 docker compose exec api python scripts/seed_questions.py
 ```
+
+## Тесты
+
+```bash
+# Все тесты
+docker-compose run --rm api pytest
+
+# Конкретный файл/тест, подробный вывод
+docker-compose run --rm api pytest tests/unit/test_axes.py -v
+```
+
+`tests/unit/` — чистые юнит-тесты без БД. `tests/integration/` — используют реальный Postgres из `db`; каждый тест изолирован через `db_session` из `tests/conftest.py` (откат в конце теста, даже если код внутри вызывает `commit()`).
 
 ## Проверка
 

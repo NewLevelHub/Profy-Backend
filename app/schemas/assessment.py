@@ -16,5 +16,6 @@ class AssessmentResponse(BaseModel):
     status: AssessmentStatus
     current_block: int
     created_at: datetime
+    is_akinator: bool = False
 
     model_config = {"from_attributes": True}
