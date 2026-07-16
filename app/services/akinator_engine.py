@@ -8,6 +8,7 @@ Pure math — no AI, no DB. See akinatorLogic/profi_axes_phase1.md ("Форму�
     дальше — минимизация ожидаемой постериорной энтропии, той же match-функцией.
 """
 import math
+import random
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -169,21 +170,50 @@ def _expected_posterior_entropy(
     return expected
 
 
+def _sample_by_entropy(
+    candidates: list[AkinatorQuestion],
+    entropies: list[float],
+    temperature: float,
+    rng: random.Random,
+) -> AkinatorQuestion:
+    """Weighted-random pick over candidates, favoring lower expected posterior
+    entropy (more informative) without always picking the single minimum.
+
+    Same softmax shape as update_belief/_option_choice_probs, but over
+    -entropy/temperature instead of beta*match_score: low temperature ~=
+    strict argmin (deterministic), high temperature ~= uniform random. Fixes
+    a real UX bug (see AKINATOR_QUESTION_TEMPERATURE in config.py) — strict
+    argmin made a handful of sharply-worded resolves_pair questions "the
+    best" for nearly every session regardless of the user's own answers,
+    leaving roughly half the question bank never selected in practice.
+    """
+    min_entropy = min(entropies)
+    scores = [-(e - min_entropy) / temperature for e in entropies]
+    max_score = max(scores)
+    weights = [math.exp(s - max_score) for s in scores]
+    return rng.choices(candidates, weights=weights, k=1)[0]
+
+
 def select_next_question(
     session: AssessmentSession,
     candidate_questions: list[AkinatorQuestion],
     leaf_profiles: dict[str, dict[str, int]],
     age_group: str,
     beta: float | None = None,
+    temperature: float | None = None,
+    rng: random.Random | None = None,
 ) -> AkinatorQuestion | None:
     """Pick the next question for this session.
 
     step < WIDE_START_STEPS (anti-greedy start): depth ≤ 1, kind="direct",
     covering only axis families not yet in session.asked_axis_families — ties
-    broken by `order` (the curated "Широкий старт" sequence).
+    broken by `order` (the curated "Широкий старт" sequence, deterministic
+    by design — every session starts the same way on purpose).
 
-    step >= WIDE_START_STEPS: argmin expected posterior entropy over the
-    candidates, using the same match/softmax machinery as update_belief.
+    step >= WIDE_START_STEPS: weighted-random pick favoring minimum expected
+    posterior entropy (see _sample_by_entropy), using the same match/softmax
+    machinery as update_belief. Not a strict argmin — see
+    AKINATOR_QUESTION_TEMPERATURE.
 
     Deviates from the ticket's one-line signature by taking `leaf_profiles`
     and `age_group` explicitly: neither entropy nor age eligibility can be
@@ -193,6 +223,8 @@ def select_next_question(
     all qualifies (the bank has genuinely run dry for this session).
     """
     beta = settings.AKINATOR_BETA if beta is None else beta
+    temperature = settings.AKINATOR_QUESTION_TEMPERATURE if temperature is None else temperature
+    rng = random.Random() if rng is None else rng
     # asked_question_ids round-trips through JSONB as plain strings (UUID
     # objects aren't JSON-serializable) — compare both sides as strings.
     asked_ids = {str(qid) for qid in (session.asked_question_ids or [])}
@@ -214,10 +246,10 @@ def select_next_question(
         # is normal, not a sign the whole bank is exhausted. Fall through to
         # entropy-based selection over the general candidate pool instead.
 
-    return min(
-        candidates,
-        key=lambda q: _expected_posterior_entropy(q, session.belief, leaf_profiles, beta),
-    )
+    entropies = [
+        _expected_posterior_entropy(q, session.belief, leaf_profiles, beta) for q in candidates
+    ]
+    return _sample_by_entropy(candidates, entropies, temperature, rng)
 
 
 _AGE_CEILINGS: dict[str, str] = {

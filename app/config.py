@@ -74,6 +74,20 @@ class Settings(BaseSettings):
     AKINATOR_CEILING_JUNIOR: int = 10
     AKINATOR_CEILING_MIDDLE: int = 14
     AKINATOR_CEILING_SENIOR: int = 18
+    # Question-selection temperature (calibration pass 2, 2026-07): past
+    # WIDE_START_STEPS, the engine used to always pick the single question
+    # with strictly minimum expected posterior entropy — real session logs
+    # showed this made a handful of sharply-worded resolves_pair questions
+    # "the best" for nearly every session regardless of the user's own
+    # answers (out of 45 questions, ~10 got picked 700-1700+ times across
+    # ~3000 sessions while others got picked under 15 times). Now a weighted
+    # random pick favoring low entropy, not a strict argmin — low value ~=
+    # near-deterministic (old behavior), high value ~= uniform random. 0.2
+    # picked by sweeping 0.1-0.5 against simulated sessions: every question
+    # in the bank gets used, and average length stays ~9-10 questions
+    # (vs. 12+ at higher temperatures, where too much randomness hurts
+    # information efficiency and pushes sessions toward their age ceiling).
+    AKINATOR_QUESTION_TEMPERATURE: float = 0.2
 
     @model_validator(mode="after")
     def build_database_url(self) -> Self:
