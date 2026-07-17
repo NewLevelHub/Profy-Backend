@@ -13,6 +13,7 @@ from app.models.profile import AgeGroup, Profile
 from app.models.user import User
 from app.services.auth_service import create_jwt_token
 from scripts.seed_akinator_content import seed_professions, seed_questions, seed_sections
+from scripts.seed_astana_universities import main as seed_astana_universities
 
 
 async def _ensure_seeded(db: AsyncSession) -> None:
@@ -20,6 +21,7 @@ async def _ensure_seeded(db: AsyncSession) -> None:
     await seed_professions(db, section_ids)
     await seed_questions(db)
     await db.flush()
+    await seed_astana_universities()
 
 
 async def _make_user_and_assessment(db: AsyncSession) -> tuple[User, Assessment]:
@@ -106,7 +108,7 @@ async def test_result_is_404_before_the_test_is_completed(client: AsyncClient, d
 
 
 async def test_result_is_available_after_a_liked_reveal(client: AsyncClient, db_session: AsyncSession):
-    """AC1: 200 with the confirmed direction, a message, and matched axes."""
+    """AC1: 200 with the confirmed direction, matched axes, and university suggestions."""
     await _ensure_seeded(db_session)
     user, assessment = await _make_user_and_assessment(db_session)
     headers = _auth_headers(user.id)
@@ -123,10 +125,16 @@ async def test_result_is_available_after_a_liked_reveal(client: AsyncClient, db_
     assert body["message"]
     assert isinstance(body["matched_axes"], list)
     assert len(body["matched_axes"]) >= 1
+    assert isinstance(body["recommended_programs"], list)
+    assert len(body["recommended_programs"]) >= 1
     for axis in body["matched_axes"]:
         assert {"code", "label_ru", "direction_value"} <= set(axis)
         assert -2 <= axis["direction_value"] <= 2
         assert axis["direction_value"] != 0
+    for program in body["recommended_programs"]:
+        assert {"id", "name", "language", "direction_slug", "university"} <= set(program)
+        assert {"name", "country", "city"} <= set(program["university"])
+        assert program["university"]["city"] == "Астана"
 
 
 async def test_result_of_another_users_assessment_is_forbidden(
