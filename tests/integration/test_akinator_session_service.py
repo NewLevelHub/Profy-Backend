@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.models.akinator_question import AkinatorQuestion
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.assessment_session import SessionStatus
 from app.models.direction import Direction
@@ -169,3 +170,117 @@ async def test_reject_leaves_exhausting_candidates_falls_back_to_inconclusive(
     assert turn.decision.reason == "ceiling"
     assert turn.decision.leaves == []
     assert turn.session.status == SessionStatus.exhausted_ceiling
+
+
+async def test_go_back_reverts_to_the_same_question_and_prior_state(db_session: AsyncSession):
+    """Going back undoes the last answer and re-serves that exact question —
+    not a freshly-picked one — so the user can literally change that answer."""
+    await _ensure_seeded(db_session)
+    assessment = await _make_assessment(db_session)
+
+    turn = await akinator_session_service.start_session(assessment.id, AgeGroup.senior, db_session)
+    question = turn.next_question
+    assert question is not None
+    original_belief = dict(turn.session.belief)
+
+    turn = await akinator_session_service.submit_answer(
+        assessment.id, question.id, 0, AgeGroup.senior, db_session
+    )
+    assert turn.session.step == 1
+
+    turn = await akinator_session_service.go_back(assessment.id, AgeGroup.senior, db_session)
+
+    assert turn.next_question is not None
+    assert turn.next_question.id == question.id
+    assert turn.session.step == 0
+    assert turn.session.asked_question_ids == []
+    assert turn.session.belief == original_belief
+
+
+async def test_go_back_repeatedly_restores_the_original_belief(db_session: AsyncSession):
+    """Rewinding all the way to the start reconstructs the original uniform
+    prior, not just an approximation of it."""
+    await _ensure_seeded(db_session)
+    assessment = await _make_assessment(db_session)
+
+    turn = await akinator_session_service.start_session(assessment.id, AgeGroup.senior, db_session)
+    original_belief = dict(turn.session.belief)
+
+    answered = 0
+    for _ in range(3):
+        question = turn.next_question
+        assert question is not None
+        turn = await akinator_session_service.submit_answer(
+            assessment.id, question.id, 0, AgeGroup.senior, db_session
+        )
+        answered += 1
+        if turn.next_question is None:
+            break  # converged early — nothing further to rewind past
+
+    for _ in range(answered):
+        turn = await akinator_session_service.go_back(assessment.id, AgeGroup.senior, db_session)
+
+    assert turn.session.belief == original_belief
+    assert turn.session.step == 0
+    assert turn.session.asked_question_ids == []
+
+
+async def test_go_back_past_a_rejection_still_excludes_the_rejected_leaf(db_session: AsyncSession):
+    """Rewinding Q&A history must never resurrect a leaf the user explicitly
+    rejected — reject_leaf/reject_leaves never write to the answer log, so
+    their effect has to survive independently of how far back this rewinds."""
+    await _ensure_seeded(db_session)
+    assessment = await _make_assessment(db_session)
+
+    question_result = await db_session.execute(
+        select(AkinatorQuestion).where(AkinatorQuestion.is_active.is_(True)).limit(1)
+    )
+    question = question_result.scalar_one()
+
+    leaves = await akinator_session_service._leaf_directions_for_age(db_session, AgeGroup.senior)
+    initial_belief = {leaf.slug: 1 / len(leaves) for leaf in leaves}
+    rejected_slug = leaves[0].slug
+
+    session = await assessment_session_service.get_or_create_session(assessment.id, db_session)
+    session = await assessment_session_service.save_session(
+        session, db_session, belief=initial_belief, status=SessionStatus.in_progress,
+    )
+    assessment_session_service.log_answer(
+        session, db_session, step=1, question_id=question.id,
+        selected_option_index=0, belief_after=initial_belief,
+    )
+    session = await assessment_session_service.save_session(
+        session, db_session,
+        step=1, asked_question_ids=[str(question.id)], rejected_leaves=[rejected_slug],
+    )
+
+    turn = await akinator_session_service.go_back(assessment.id, AgeGroup.senior, db_session)
+
+    assert turn.next_question is not None
+    assert turn.next_question.id == question.id
+    assert rejected_slug not in turn.session.belief
+
+
+async def test_go_back_with_no_answers_raises(db_session: AsyncSession):
+    await _ensure_seeded(db_session)
+    assessment = await _make_assessment(db_session)
+    await akinator_session_service.start_session(assessment.id, AgeGroup.senior, db_session)
+
+    with pytest.raises(ValueError):
+        await akinator_session_service.go_back(assessment.id, AgeGroup.senior, db_session)
+
+
+async def test_go_back_after_a_reveal_raises(db_session: AsyncSession):
+    """Out of scope for now: the reveal screen has its own way forward
+    (reject/feedback), so going back is only available while a question is
+    currently being shown."""
+    await _ensure_seeded(db_session)
+    assessment = await _make_assessment(db_session)
+
+    session = await assessment_session_service.get_or_create_session(assessment.id, db_session)
+    await assessment_session_service.save_session(
+        session, db_session, belief={"a": 1.0}, status=SessionStatus.converged_single,
+    )
+
+    with pytest.raises(ValueError):
+        await akinator_session_service.go_back(assessment.id, AgeGroup.senior, db_session)
