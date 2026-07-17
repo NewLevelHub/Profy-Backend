@@ -11,24 +11,22 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.axes import AXIS_CATALOG
+from app.models.akinator_answer_log import AkinatorAnswerLog
+from app.models.akinator_question import AkinatorQuestion
 from app.models.assessment import Assessment, AssessmentStatus
-from app.models.assessment_session import AssessmentSession, SessionStatus
+from app.models.assessment_session import AssessmentSession
 from app.models.direction import Direction
 from app.schemas.akinator_session import RevealLeaf
-from app.schemas.result import AkinatorResultResponse, ResultAxisHighlight
+from app.schemas.result import AkinatorResultResponse, ChildAxisSignal, ResultAxisHighlight
 from app.services.akinator_report_service import BACKUP_COUNT, REPORT_MESSAGES
 
 _TOP_AXES_COUNT = 6
+# How many of the child's own strongest/weakest axes to surface — separate
+# from _TOP_AXES_COUNT, which caps the profession's own axis profile.
+_STRENGTHS_COUNT = 3
+_GROWTH_COUNT = 3
 
 _AXIS_LABELS: dict[str, str] = {axis.code: axis.label_ru for axis in AXIS_CATALOG}
-
-# Mirrors akinator_report_service.build_reveal_report's kind selection, keyed
-# off the persisted session status instead of a live StopDecision.
-_MESSAGE_KEY_BY_STATUS: dict[SessionStatus, str] = {
-    SessionStatus.converged_single: "confident",
-    SessionStatus.converged_cluster: "uncertain",
-    SessionStatus.exhausted_ceiling: "uncertain",
-}
 
 
 def matched_axes_for(profile: dict[str, int]) -> list[ResultAxisHighlight]:
@@ -46,10 +44,72 @@ def matched_axes_for(profile: dict[str, int]) -> list[ResultAxisHighlight]:
     ]
 
 
+def _child_strengths_and_growth(
+    totals: dict[str, float],
+) -> tuple[list[ChildAxisSignal], list[ChildAxisSignal]]:
+    """Split the child's own summed axis scores (see _child_axis_totals) into
+    strengths (positive, strongest first) and growth areas (negative,
+    weakest first) — pure function, same shape as matched_axes_for but over
+    a different signal: what the child actually answered, not what the
+    profession itself needs."""
+    strengths = sorted(
+        (item for item in totals.items() if item[1] > 0),
+        key=lambda item: item[1],
+        reverse=True,
+    )[:_STRENGTHS_COUNT]
+    growth = sorted(
+        (item for item in totals.items() if item[1] < 0),
+        key=lambda item: item[1],
+    )[:_GROWTH_COUNT]
+
+    return (
+        [ChildAxisSignal(code=code, label_ru=_AXIS_LABELS.get(code, code), score=score) for code, score in strengths],
+        [ChildAxisSignal(code=code, label_ru=_AXIS_LABELS.get(code, code), score=score) for code, score in growth],
+    )
+
+
+async def _child_axis_totals(session_id: uuid.UUID, db: AsyncSession) -> dict[str, float]:
+    """Sum the axis_weights of every option the child actually selected
+    across the whole session, straight from the answer log — the most
+    direct signal of what the child answered, independent of which
+    profession the answers happened to lead to."""
+    result = await db.execute(
+        select(AkinatorAnswerLog).where(
+            AkinatorAnswerLog.session_id == session_id,
+            AkinatorAnswerLog.selected_option_index.is_not(None),
+        )
+    )
+    logs = result.scalars().all()
+    if not logs:
+        return {}
+
+    question_ids = {log.question_id for log in logs}
+    questions_result = await db.execute(
+        select(AkinatorQuestion).where(AkinatorQuestion.id.in_(question_ids))
+    )
+    questions_by_id = {q.id: q for q in questions_result.scalars().all()}
+
+    totals: dict[str, float] = {}
+    for log in logs:
+        question = questions_by_id.get(log.question_id)
+        if question is None:
+            continue
+        weights = question.options[log.selected_option_index].get("axis_weights", {})
+        for axis_code, weight in weights.items():
+            totals[axis_code] = totals.get(axis_code, 0) + weight
+    return totals
+
+
 def _message_for(session: AssessmentSession) -> str:
-    key = _MESSAGE_KEY_BY_STATUS.get(session.status, "uncertain")
-    if session.rejected_leaves:
-        key += "_after_rejection"
+    """The Results page always shows a direction the user explicitly
+    confirmed (assessment.selected_direction_slug is only ever set by a
+    "liked" feedback — see akinator_session_service.submit_feedback), no
+    matter whether the akinator engine itself converged on a single winner,
+    landed on a cluster, or hit the question ceiling. So the message here is
+    always the "confident" framing — the engine's own convergence status
+    (session.status) reflects uncertainty from *before* the child chose,
+    which no longer applies once they've picked and confirmed one."""
+    key = "confident_after_rejection" if session.rejected_leaves else "confident"
     return REPORT_MESSAGES[key]
 
 
@@ -105,6 +165,8 @@ async def get_result(assessment_id: uuid.UUID, db: AsyncSession) -> AkinatorResu
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Result not ready yet")
 
     backups = await _backups_for(session, assessment.selected_direction_slug, db)
+    child_totals = await _child_axis_totals(session.id, db)
+    strengths, growth_areas = _child_strengths_and_growth(child_totals)
 
     return AkinatorResultResponse(
         assessment_id=assessment.id,
@@ -113,6 +175,8 @@ async def get_result(assessment_id: uuid.UUID, db: AsyncSession) -> AkinatorResu
         direction_description=direction.description,
         message=_message_for(session),
         matched_axes=matched_axes_for(direction.profile or {}),
+        strengths=strengths,
+        growth_areas=growth_areas,
         backups=backups,
         created_at=assessment.created_at,
     )

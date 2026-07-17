@@ -79,70 +79,129 @@ from app.models.direction import Direction
 # ---------------------------------------------------------------------------
 
 SECTIONS: list[dict] = [
-    {"slug": "akinator-medicine", "name": "Медицина и здоровье"},
-    {"slug": "akinator-psychology-help", "name": "Помощь и психология"},
-    {"slug": "akinator-animals-nature", "name": "Животные и природа"},
-    {"slug": "akinator-it-data", "name": "IT и данные"},
-    {"slug": "akinator-engineering-tech", "name": "Инженерия и техника"},
-    {"slug": "akinator-creative-design", "name": "Творчество и дизайн"},
-    {"slug": "akinator-stage-media", "name": "Сцена и медиа"},
-    {"slug": "akinator-words-communication", "name": "Слово и коммуникация"},
-    {"slug": "akinator-education", "name": "Образование"},
-    {"slug": "akinator-sports-body", "name": "Спорт и тело"},
-    {"slug": "akinator-food-hospitality", "name": "Еда и гостеприимство"},
-    {"slug": "akinator-business-sales", "name": "Бизнес и продажи"},
-    {"slug": "akinator-safety-rescue", "name": "Безопасность и спасение"},
+    {"slug": "akinator-medicine", "name": "Медицина и здоровье",
+     "description": "Профессии, которые лечат и заботятся о здоровье людей: от постановки диагноза до операций и восстановления после болезни."},
+    {"slug": "akinator-psychology-help", "name": "Помощь и психология",
+     "description": "Профессии, которые поддерживают людей в трудных ситуациях: помогают разобраться в себе, отношениях и жизненных сложностях."},
+    {"slug": "akinator-animals-nature", "name": "Животные и природа",
+     "description": "Профессии, связанные с животными, растениями и живой природой — от лечения питомцев до заботы об экосистемах."},
+    {"slug": "akinator-it-data", "name": "IT и данные",
+     "description": "Профессии, которые создают программы, анализируют данные и поддерживают работу компьютеров и сервисов."},
+    {"slug": "akinator-engineering-tech", "name": "Инженерия и техника",
+     "description": "Профессии, которые проектируют и строят технику, здания и инженерные системы."},
+    {"slug": "akinator-creative-design", "name": "Творчество и дизайн",
+     "description": "Профессии, которые создают визуальные образы, вещи и пространства — от иллюстраций до архитектуры."},
+    {"slug": "akinator-stage-media", "name": "Сцена и медиа",
+     "description": "Профессии, связанные с актёрским мастерством, музыкой, кино и публичными выступлениями."},
+    {"slug": "akinator-words-communication", "name": "Слово и коммуникация",
+     "description": "Профессии, которые работают с текстом, языком и убеждением: от журналистики до юриспруденции."},
+    {"slug": "akinator-education", "name": "Образование",
+     "description": "Профессии, которые учат и растят детей и подростков."},
+    {"slug": "akinator-sports-body", "name": "Спорт и тело",
+     "description": "Профессии, связанные с физической активностью, тренировками и восстановлением тела."},
+    {"slug": "akinator-food-hospitality", "name": "Еда и гостеприимство",
+     "description": "Профессии на кухне и в сфере гостеприимства — от приготовления блюд до управления рестораном."},
+    {"slug": "akinator-business-sales", "name": "Бизнес и продажи",
+     "description": "Профессии, связанные с продажами, управлением и предпринимательством."},
+    {"slug": "akinator-safety-rescue", "name": "Безопасность и спасение",
+     "description": "Профессии, которые обеспечивают безопасность людей и реагируют в чрезвычайных ситуациях."},
 ]
 
 PROFESSIONS: list[dict] = [
     # Медицина и здоровье
-    {"slug": "surgeon", "name": "Хирург", "label_junior": "Врач", "section": "akinator-medicine", "profile": {"People": 1, "Living": 2, "Phys": 2, "Care": 2, "Dev": -1, "Motor": 2, "Exp": 2, "Focus": 2, "Risk": 1, "Struct": 2, "Pace": 1, "Acad": 2, "PhysSt": 1}},
-    {"slug": "physician", "name": "Терапевт", "label_junior": "Врач", "section": "akinator-medicine", "profile": {"People": 2, "Living": 2, "Care": 2, "Exp": 2, "Emp": 1, "Focus": 1, "Struct": 1, "Predict": 1, "Acad": 2}},
-    {"slug": "psychiatrist", "name": "Психиатр", "label_junior": "Врач", "section": "akinator-medicine", "profile": {"People": 2, "Living": 1, "Care": 2, "Exp": 2, "Emp": 2, "Focus": 2, "Struct": 1, "Acad": 2, "Data": -1}},
+    {"slug": "surgeon", "name": "Хирург", "label_junior": "Врач", "section": "akinator-medicine",
+     "description": "Хирург лечит с помощью операций — устраняет повреждения, удаляет опухоли и восстанавливает работу органов. Нужны точные движения руками, стрессоустойчивость и готовность долго учиться.",
+     "profile": {"People": 1, "Living": 2, "Phys": 2, "Care": 2, "Dev": -1, "Motor": 2, "Exp": 2, "Focus": 2, "Risk": 1, "Struct": 2, "Pace": 1, "Acad": 2, "PhysSt": 1}},
+    {"slug": "physician", "name": "Терапевт", "label_junior": "Врач", "section": "akinator-medicine",
+     "description": "Терапевт — первый врач, к которому обращаются с любой проблемой: ставит диагноз, назначает лечение и наблюдает за здоровьем пациента в целом.",
+     "profile": {"People": 2, "Living": 2, "Care": 2, "Exp": 2, "Emp": 1, "Focus": 1, "Struct": 1, "Predict": 1, "Acad": 2}},
+    {"slug": "psychiatrist", "name": "Психиатр", "label_junior": "Врач", "section": "akinator-medicine",
+     "description": "Психиатр диагностирует и лечит психические расстройства — сочетает медицинские знания с глубоким вниманием к внутреннему состоянию человека.",
+     "profile": {"People": 2, "Living": 1, "Care": 2, "Exp": 2, "Emp": 2, "Focus": 2, "Struct": 1, "Acad": 2, "Data": -1}},
     # University pass: `paramedic` was a calque — the RU equivalent (фельдшер) is
     # СПО. Its university-level growth is emergency medicine (Лечебное дело +
     # ординатура «Скорая медицинская помощь»), which had no leaf, so the leaf is
     # replaced rather than dropped. Acad -> +2 (med school), Risk -> +2.
-    {"slug": "emergency-physician", "name": "Врач скорой помощи", "section": "akinator-medicine", "profile": {"People": 2, "Living": 2, "Phys": 1, "Care": 2, "Motor": 1, "Exp": 2, "Focus": -2, "Risk": 2, "Struct": 1, "Pace": 2, "Predict": 2, "PhysSt": 1, "Acad": 2}},
-    {"slug": "dentist", "name": "Стоматолог", "label_junior": "Зубной врач", "section": "akinator-medicine", "profile": {"People": 1, "Living": 2, "Phys": 1, "Care": 2, "Motor": 2, "Exp": 2, "Focus": 2, "Struct": 1, "Acad": 2}},
-    {"slug": "pharmacist", "name": "Фармацевт", "label_junior": "Аптекарь", "section": "akinator-medicine", "profile": {"People": 1, "Living": 1, "Data": 1, "Care": 1, "Exp": 2, "Focus": 1, "Struct": 2, "Predict": -1, "Acad": 1, "Math": 1}},
+    {"slug": "emergency-physician", "name": "Врач скорой помощи", "section": "akinator-medicine",
+     "description": "Врач скорой помощи оказывает экстренную медицинскую помощь прямо на месте происшествия — работа быстрая, непредсказуемая и требует хладнокровия.",
+     "profile": {"People": 2, "Living": 2, "Phys": 1, "Care": 2, "Motor": 1, "Exp": 2, "Focus": -2, "Risk": 2, "Struct": 1, "Pace": 2, "Predict": 2, "PhysSt": 1, "Acad": 2}},
+    {"slug": "dentist", "name": "Стоматолог", "label_junior": "Зубной врач", "section": "akinator-medicine",
+     "description": "Стоматолог лечит зубы и полость рта — точная, кропотливая работа руками, требующая аккуратности и внимания к деталям.",
+     "profile": {"People": 1, "Living": 2, "Phys": 1, "Care": 2, "Motor": 2, "Exp": 2, "Focus": 2, "Struct": 1, "Acad": 2}},
+    {"slug": "pharmacist", "name": "Фармацевт", "label_junior": "Аптекарь", "section": "akinator-medicine",
+     "description": "Фармацевт разбирается в лекарствах — помогает подобрать нужный препарат и объясняет, как его правильно принимать.",
+     "profile": {"People": 1, "Living": 1, "Data": 1, "Care": 1, "Exp": 2, "Focus": 1, "Struct": 2, "Predict": -1, "Acad": 1, "Math": 1}},
 
     # Помощь и психология
-    {"slug": "psychologist", "name": "Психолог", "section": "akinator-psychology-help", "profile": {"People": 2, "Care": 2, "Emp": 2, "Exp": 2, "Focus": 2, "Motiv": -1, "Auto": 1, "Acad": 2, "Data": -1, "Ideas": 1}},
-    {"slug": "speech-therapist", "name": "Логопед", "section": "akinator-psychology-help", "profile": {"People": 2, "Care": 1, "Dev": 2, "Emp": 1, "Exp": 2, "Focus": 1, "Struct": 1, "Acad": 1}},
+    {"slug": "psychologist", "name": "Психолог", "section": "akinator-psychology-help",
+     "description": "Психолог помогает разобраться в мыслях, чувствах и отношениях — работает через разговор, глубоко вникая в историю каждого человека.",
+     "profile": {"People": 2, "Care": 2, "Emp": 2, "Exp": 2, "Focus": 2, "Motiv": -1, "Auto": 1, "Acad": 2, "Data": -1, "Ideas": 1}},
+    {"slug": "speech-therapist", "name": "Логопед", "section": "akinator-psychology-help",
+     "description": "Логопед помогает детям и взрослым научиться правильно говорить — исправляет речевые нарушения через регулярные занятия.",
+     "profile": {"People": 2, "Care": 1, "Dev": 2, "Emp": 1, "Exp": 2, "Focus": 1, "Struct": 1, "Acad": 1}},
     # Restored (replacement pass): cut together with `coach`, but Социальная
     # работа is a real bachelor programme. Separated from psychologist by
     # Exp/Focus (practical case-work vs deep individual study) — see order 47.
-    {"slug": "social-worker", "name": "Социальный работник", "section": "akinator-psychology-help", "profile": {"People": 2, "Care": 2, "Emp": 2, "Lead": 1, "Struct": 1, "Motiv": -1, "Pace": 1, "Predict": 1, "Acad": 1}},
+    {"slug": "social-worker", "name": "Социальный работник", "section": "akinator-psychology-help",
+     "description": "Социальный работник помогает семьям и людям в трудной жизненной ситуации — организует поддержку и решает практические проблемы.",
+     "profile": {"People": 2, "Care": 2, "Emp": 2, "Lead": 1, "Struct": 1, "Motiv": -1, "Pace": 1, "Predict": 1, "Acad": 1}},
 
     # Животные и природа
-    {"slug": "veterinarian", "name": "Ветеринар", "section": "akinator-animals-nature", "profile": {"People": 1, "Living": 2, "Phys": 1, "Care": 2, "Motor": 1, "Exp": 2, "Focus": 1, "Acad": 2, "PhysSt": 1, "Ideas": -1}},
-    {"slug": "zoologist", "name": "Зоолог", "label_junior": "Учёный по животным", "section": "akinator-animals-nature", "profile": {"Living": 2, "Data": 1, "Obj": -2, "Exp": 2, "Focus": 2, "Auto": 1, "Predict": 1, "Acad": 2, "People": -1, "PhysSt": 1}},
-    {"slug": "agronomist", "name": "Агроном", "label_junior": "Специалист по растениям", "section": "akinator-animals-nature", "profile": {"Living": 2, "Phys": 1, "Data": 1, "Exp": 1, "Struct": 1, "Predict": -1, "PhysSt": 1}},
+    {"slug": "veterinarian", "name": "Ветеринар", "section": "akinator-animals-nature",
+     "description": "Ветеринар лечит животных — от домашних питомцев до крупного скота, — совмещая медицинские знания с любовью к живой природе.",
+     "profile": {"People": 1, "Living": 2, "Phys": 1, "Care": 2, "Motor": 1, "Exp": 2, "Focus": 1, "Acad": 2, "PhysSt": 1, "Ideas": -1}},
+    {"slug": "zoologist", "name": "Зоолог", "label_junior": "Учёный по животным", "section": "akinator-animals-nature",
+     "description": "Зоолог изучает животных и их поведение — наблюдает, исследует и описывает жизнь дикой природы.",
+     "profile": {"Living": 2, "Data": 1, "Obj": -2, "Exp": 2, "Focus": 2, "Auto": 1, "Predict": 1, "Acad": 2, "People": -1, "PhysSt": 1}},
+    {"slug": "agronomist", "name": "Агроном", "label_junior": "Специалист по растениям", "section": "akinator-animals-nature",
+     "description": "Агроном занимается выращиванием растений — подбирает условия, удобрения и уход, чтобы урожай был здоровым и обильным.",
+     "profile": {"Living": 2, "Phys": 1, "Data": 1, "Exp": 1, "Struct": 1, "Predict": -1, "PhysSt": 1}},
     # University pass: kept — 36.03.02 «Зоотехния», профиль «Кинология» (плюс
     # ведомственные вузы, служебная кинология). Acad -1 -> +1 accordingly.
-    {"slug": "cynologist", "name": "Кинолог", "label_junior": "Специалист по собакам", "section": "akinator-animals-nature", "profile": {"People": 1, "Living": 2, "Phys": 1, "Dev": 2, "Care": 1, "Motor": 1, "Exp": 1, "Struct": 1, "PhysSt": 1, "Acad": 1}},
-    {"slug": "ecologist", "name": "Эколог", "section": "akinator-animals-nature", "profile": {"Living": 2, "Data": 1, "Ideas": 1, "Obj": -2, "Exp": 1, "Auto": 1, "Predict": 1, "Acad": 1}},
+    {"slug": "cynologist", "name": "Кинолог", "label_junior": "Специалист по собакам", "section": "akinator-animals-nature",
+     "description": "Кинолог занимается дрессировкой и уходом за собаками — от домашних питомцев до служебных собак.",
+     "profile": {"People": 1, "Living": 2, "Phys": 1, "Dev": 2, "Care": 1, "Motor": 1, "Exp": 1, "Struct": 1, "PhysSt": 1, "Acad": 1}},
+    {"slug": "ecologist", "name": "Эколог", "section": "akinator-animals-nature",
+     "description": "Эколог изучает, как человек влияет на природу, и ищет способы защитить экосистемы и снизить вред окружающей среде.",
+     "profile": {"Living": 2, "Data": 1, "Ideas": 1, "Obj": -2, "Exp": 1, "Auto": 1, "Predict": 1, "Acad": 1}},
 
     # IT и данные
-    {"slug": "programmer", "name": "Программист", "section": "akinator-it-data", "profile": {"People": -1, "Living": -2, "Data": 2, "Ideas": 1, "Inv": 1, "Obj": 2, "Care": -2, "Dev": -2, "Exp": 2, "Focus": 2, "Motiv": 1, "Auto": 1, "Struct": 1, "Acad": 1, "PhysSt": -2, "Math": 2}},
-    {"slug": "data-analyst", "name": "Аналитик данных", "label_junior": "Аналитик", "section": "akinator-it-data", "profile": {"People": -1, "Living": -2, "Data": 2, "Obj": -2, "Care": -2, "Dev": -2, "Exp": 1, "Focus": 2, "Auto": 1, "Struct": 1, "Predict": -1, "Acad": 1, "PhysSt": -2, "Math": 2}},
-    {"slug": "qa-tester", "name": "QA-тестировщик", "label_junior": "Тестировщик программ", "section": "akinator-it-data", "profile": {"Data": 2, "Obj": -1, "Exp": 1, "Focus": 1, "Struct": 2, "Predict": -1, "Motiv": -1, "PhysSt": -2, "Math": 1, "People": -1}},
-    {"slug": "ux-designer", "name": "UX-дизайнер", "label_junior": "Дизайнер приложений", "section": "akinator-it-data", "profile": {"People": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Emp": 1, "Exp": 1, "PhysSt": -1}},
-    {"slug": "sysadmin", "name": "Сисадмин", "label_junior": "Компьютерный мастер", "section": "akinator-it-data", "profile": {"Phys": 1, "Data": 2, "Obj": 1, "Exp": 2, "Focus": -1, "Auto": 1, "Struct": 1, "Pace": 1, "Predict": 1, "PhysSt": -1, "Math": 1, "People": -1}},
+    {"slug": "programmer", "name": "Программист", "section": "akinator-it-data",
+     "description": "Программист пишет код, который превращается в сайты, приложения и программы — работа требует логики, усидчивости и любви к решению задач.",
+     "profile": {"People": -1, "Living": -2, "Data": 2, "Ideas": 1, "Inv": 1, "Obj": 2, "Care": -2, "Dev": -2, "Exp": 2, "Focus": 2, "Motiv": 1, "Auto": 1, "Struct": 1, "Acad": 1, "PhysSt": -2, "Math": 2}},
+    {"slug": "data-analyst", "name": "Аналитик данных", "label_junior": "Аналитик", "section": "akinator-it-data",
+     "description": "Аналитик данных находит закономерности в больших массивах цифр и помогает бизнесу принимать решения на основе данных.",
+     "profile": {"People": -1, "Living": -2, "Data": 2, "Obj": -2, "Care": -2, "Dev": -2, "Exp": 1, "Focus": 2, "Auto": 1, "Struct": 1, "Predict": -1, "Acad": 1, "PhysSt": -2, "Math": 2}},
+    {"slug": "qa-tester", "name": "QA-тестировщик", "label_junior": "Тестировщик программ", "section": "akinator-it-data",
+     "description": "QA-тестировщик ищет ошибки в программах до того, как их найдут пользователи — внимательность и системность здесь ключевые качества.",
+     "profile": {"Data": 2, "Obj": -1, "Exp": 1, "Focus": 1, "Struct": 2, "Predict": -1, "Motiv": -1, "PhysSt": -2, "Math": 1, "People": -1}},
+    {"slug": "ux-designer", "name": "UX-дизайнер", "label_junior": "Дизайнер приложений", "section": "akinator-it-data",
+     "description": "UX-дизайнер продумывает, как сделать приложения и сайты удобными и понятными для людей — соединяет дизайн с логикой пользователя.",
+     "profile": {"People": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Emp": 1, "Exp": 1, "PhysSt": -1}},
+    {"slug": "sysadmin", "name": "Сисадмин", "label_junior": "Компьютерный мастер", "section": "akinator-it-data",
+     "description": "Сисадмин следит, чтобы компьютеры, сети и серверы компании работали без сбоев.",
+     "profile": {"Phys": 1, "Data": 2, "Obj": 1, "Exp": 2, "Focus": -1, "Auto": 1, "Struct": 1, "Pace": 1, "Predict": 1, "PhysSt": -1, "Math": 1, "People": -1}},
 
     # Инженерия и техника
-    {"slug": "mechanical-engineer", "name": "Инженер-механик", "label_junior": "Инженер", "section": "akinator-engineering-tech", "profile": {"Phys": 2, "Data": 1, "Ideas": 1, "Inv": 1, "Obj": 2, "Exp": 2, "Focus": 1, "Struct": 1, "Acad": 2, "Math": 2, "People": -1}},
-    {"slug": "civil-engineer", "name": "Инженер-строитель", "section": "akinator-engineering-tech", "profile": {"Phys": 2, "Data": 1, "Obj": 2, "Lead": 1, "Exp": 2, "Focus": 1, "Struct": 2, "Risk": -1, "Acad": 2, "Math": 2}},
+    {"slug": "mechanical-engineer", "name": "Инженер-механик", "label_junior": "Инженер", "section": "akinator-engineering-tech",
+     "description": "Инженер-механик проектирует машины и механизмы — от отдельных деталей до целых устройств, — рассчитывая, как они будут работать.",
+     "profile": {"Phys": 2, "Data": 1, "Ideas": 1, "Inv": 1, "Obj": 2, "Exp": 2, "Focus": 1, "Struct": 1, "Acad": 2, "Math": 2, "People": -1}},
+    {"slug": "civil-engineer", "name": "Инженер-строитель", "section": "akinator-engineering-tech",
+     "description": "Инженер-строитель проектирует здания и сооружения, рассчитывая их прочность и надёжность.",
+     "profile": {"Phys": 2, "Data": 1, "Obj": 2, "Lead": 1, "Exp": 2, "Focus": 1, "Struct": 2, "Risk": -1, "Acad": 2, "Math": 2}},
     # Replacement for `plumber` (replacement pass). Water/HVAC systems design.
     # Separated from civil-engineer by Motor/Predict/Lead (hands-on
     # commissioning, routine networks, no crew leadership) — see order 28.
-    {"slug": "building-systems-engineer", "name": "Инженер инженерных систем", "label_junior": "Инженер", "section": "akinator-engineering-tech", "profile": {"Phys": 2, "Data": 1, "Obj": 2, "Motor": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Predict": -1, "Acad": 1, "Math": 2, "People": -1}},
+    {"slug": "building-systems-engineer", "name": "Инженер инженерных систем", "label_junior": "Инженер", "section": "akinator-engineering-tech",
+     "description": "Инженер инженерных систем проектирует и налаживает системы отопления, вентиляции и водоснабжения зданий.",
+     "profile": {"Phys": 2, "Data": 1, "Obj": 2, "Motor": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Predict": -1, "Acad": 1, "Math": 2, "People": -1}},
     # Motor:1 added (calibration pass): piloting is a hands-on motor/instrument-
     # coordination skill, missing entirely before — the profile was otherwise
     # near-indistinguishable from lawyer (cosine similarity 0.80) purely on
     # shared Data/Lead/Exp/Focus/Struct/Acad "serious professional" traits.
-    {"slug": "pilot", "name": "Пилот", "section": "akinator-engineering-tech", "profile": {"Phys": 1, "Data": 1, "Lead": 1, "Motor": 1, "Exp": 2, "Focus": 2, "Risk": 1, "Struct": 2, "Pace": 1, "Acad": 1, "Math": 1}},
+    {"slug": "pilot", "name": "Пилот", "section": "akinator-engineering-tech",
+     "description": "Пилот управляет самолётом — работа требует быстрой реакции, хладнокровия и точного следования процедурам.",
+     "profile": {"Phys": 1, "Data": 1, "Lead": 1, "Motor": 1, "Exp": 2, "Focus": 2, "Risk": 1, "Struct": 2, "Pace": 1, "Acad": 1, "Math": 1}},
 
     # Строительство и руками
     # NOTE for product review: welder/construction-worker carry Acad -2, i.e.
@@ -152,80 +211,136 @@ PROFESSIONS: list[dict] = [
     # product decision — see the "Открытый вопрос" note at the bottom of this file.
 
     # Творчество и дизайн
-    {"slug": "graphic-designer", "name": "Графический дизайнер", "label_junior": "Дизайнер", "section": "akinator-creative-design", "profile": {"Ideas": 2, "Inv": 2, "Obj": 1, "Exp": 1, "Auto": 1, "Struct": -1, "Math": -1, "PhysSt": -1}},
-    {"slug": "illustrator", "name": "Иллюстратор", "label_junior": "Художник", "section": "akinator-creative-design", "profile": {"Ideas": 2, "Inv": 2, "Motor": 1, "Auto": 2, "Struct": -2, "Vis": -1, "Math": -1, "PhysSt": -1, "People": -1, "Exp": 1}},
-    {"slug": "architect", "name": "Архитектор", "section": "akinator-creative-design", "profile": {"People": 1, "Phys": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Auto": 1, "Acad": 2, "Math": 1, "PhysSt": -1}},
-    {"slug": "fashion-designer", "name": "Модельер", "section": "akinator-creative-design", "profile": {"Ideas": 2, "Inv": 2, "Phys": 1, "Motor": 1, "Vis": 1, "Exp": 1, "Auto": 1, "Struct": -1, "Risk": 1}},
+    {"slug": "graphic-designer", "name": "Графический дизайнер", "label_junior": "Дизайнер", "section": "akinator-creative-design",
+     "description": "Графический дизайнер создаёт визуальные образы — логотипы, макеты, иллюстрации для сайтов и печати.",
+     "profile": {"Ideas": 2, "Inv": 2, "Obj": 1, "Exp": 1, "Auto": 1, "Struct": -1, "Math": -1, "PhysSt": -1}},
+    {"slug": "illustrator", "name": "Иллюстратор", "label_junior": "Художник", "section": "akinator-creative-design",
+     "description": "Иллюстратор рисует изображения для книг, игр и медиа — превращает идеи и истории в картинки.",
+     "profile": {"Ideas": 2, "Inv": 2, "Motor": 1, "Auto": 2, "Struct": -2, "Vis": -1, "Math": -1, "PhysSt": -1, "People": -1, "Exp": 1}},
+    {"slug": "architect", "name": "Архитектор", "section": "akinator-creative-design",
+     "description": "Архитектор проектирует здания и пространства, соединяя эстетику с инженерными расчётами.",
+     "profile": {"People": 1, "Phys": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Auto": 1, "Acad": 2, "Math": 1, "PhysSt": -1}},
+    {"slug": "fashion-designer", "name": "Модельер", "section": "akinator-creative-design",
+     "description": "Модельер придумывает и создаёт одежду — от эскиза до готовой вещи.",
+     "profile": {"Ideas": 2, "Inv": 2, "Phys": 1, "Motor": 1, "Vis": 1, "Exp": 1, "Auto": 1, "Struct": -1, "Risk": 1}},
     # Replacement for `carpenter` (replacement pass). Keeps the Ideas+Motor
     # "make a tangible beautiful thing" pull but on a university track.
     # Separated from graphic-designer by Phys+2 (tangible vs screen) and from
     # architect by Lead/Struct/Acad — see order 49.
-    {"slug": "furniture-designer", "name": "Дизайнер мебели", "label_junior": "Дизайнер вещей", "section": "akinator-creative-design", "profile": {"Phys": 2, "Ideas": 2, "Inv": 2, "Obj": 1, "Motor": 1, "Exp": 1, "Focus": 1, "Auto": 1, "Acad": 1, "Math": 1}},
+    {"slug": "furniture-designer", "name": "Дизайнер мебели", "label_junior": "Дизайнер вещей", "section": "akinator-creative-design",
+     "description": "Дизайнер мебели создаёт функциональные и красивые предметы интерьера — от идеи до чертежа.",
+     "profile": {"Phys": 2, "Ideas": 2, "Inv": 2, "Obj": 1, "Motor": 1, "Exp": 1, "Focus": 1, "Auto": 1, "Acad": 1, "Math": 1}},
 
     # Сцена и медиа
-    {"slug": "actor", "name": "Актёр", "section": "akinator-stage-media", "profile": {"People": 1, "Ideas": 2, "Vis": 2, "Emp": 1, "Motor": 1, "Risk": 1, "Struct": -1, "Auto": -1, "Predict": 1, "PhysSt": 1, "Math": -1, "Data": -1}},
-    {"slug": "musician", "name": "Музыкант", "section": "akinator-stage-media", "profile": {"Ideas": 2, "Vis": 1, "Motor": 2, "Exp": 2, "Focus": 2, "Auto": 1, "Risk": 1, "Struct": -1}},
-    {"slug": "film-director", "name": "Режиссёр", "section": "akinator-stage-media", "profile": {"People": 1, "Ideas": 2, "Inv": 2, "Lead": 2, "Exp": 1, "Focus": 1, "Risk": 1, "Auto": 1, "Struct": -1}},
+    {"slug": "actor", "name": "Актёр", "section": "akinator-stage-media",
+     "description": "Актёр воплощает роли на сцене, в кино и на телевидении — работа требует эмоциональной открытости и умения держаться перед публикой.",
+     "profile": {"People": 1, "Ideas": 2, "Vis": 2, "Emp": 1, "Motor": 1, "Risk": 1, "Struct": -1, "Auto": -1, "Predict": 1, "PhysSt": 1, "Math": -1, "Data": -1}},
+    {"slug": "musician", "name": "Музыкант", "section": "akinator-stage-media",
+     "description": "Музыкант сочиняет и исполняет музыку — на сцене, в студии или в составе оркестра.",
+     "profile": {"Ideas": 2, "Vis": 1, "Motor": 2, "Exp": 2, "Focus": 2, "Auto": 1, "Risk": 1, "Struct": -1}},
+    {"slug": "film-director", "name": "Режиссёр", "section": "akinator-stage-media",
+     "description": "Режиссёр придумывает, как будет выглядеть фильм или спектакль, и руководит всей творческой командой.",
+     "profile": {"People": 1, "Ideas": 2, "Inv": 2, "Lead": 2, "Exp": 1, "Focus": 1, "Risk": 1, "Auto": 1, "Struct": -1}},
     # Replacement for `photographer` (replacement pass). Separated from
     # film-director by Lead 0 vs +2, Motor +2 vs 0, Vis -1 vs 0 — see order 46.
-    {"slug": "cinematographer", "name": "Кинооператор", "label_junior": "Оператор кино", "section": "akinator-stage-media", "profile": {"Phys": 1, "Ideas": 2, "Inv": 1, "Vis": -1, "Motor": 2, "Exp": 2, "Focus": 2, "Auto": 1, "Acad": 1, "PhysSt": 1}},
+    {"slug": "cinematographer", "name": "Кинооператор", "label_junior": "Оператор кино", "section": "akinator-stage-media",
+     "description": "Кинооператор отвечает за то, как выглядит каждый кадр — свет, ракурс и движение камеры.",
+     "profile": {"Phys": 1, "Ideas": 2, "Inv": 1, "Vis": -1, "Motor": 2, "Exp": 2, "Focus": 2, "Auto": 1, "Acad": 1, "PhysSt": 1}},
     # Replacement for `hairdresser` + `makeup-artist` (replacement pass).
     # This is what revives question order 39 — without it that question's
     # weights pointed at no leaf at all. Separated from fashion-designer by
     # People +2 vs 0 (works on a human face, not on cloth) and Vis -1 vs +1.
-    {"slug": "makeup-artist-film", "name": "Художник-гримёр", "label_junior": "Гримёр", "section": "akinator-stage-media", "profile": {"People": 2, "Ideas": 2, "Inv": 2, "Motor": 2, "Emp": 1, "Exp": 1, "Vis": -1, "Auto": 1, "Acad": 1}},
+    {"slug": "makeup-artist-film", "name": "Художник-гримёр", "label_junior": "Гримёр", "section": "akinator-stage-media",
+     "description": "Художник-гримёр создаёт образы актёров с помощью грима и причёсок — для кино, театра и телевидения.",
+     "profile": {"People": 2, "Ideas": 2, "Inv": 2, "Motor": 2, "Emp": 1, "Exp": 1, "Vis": -1, "Auto": 1, "Acad": 1}},
 
     # Слово и коммуникация
-    {"slug": "journalist", "name": "Журналист", "section": "akinator-words-communication", "profile": {"People": 1, "Ideas": 1, "Obj": -2, "Vis": 1, "Exp": 1, "Emp": 1, "Risk": 1, "Pace": 2, "Predict": 2, "Acad": 1, "Struct": -1}},
-    {"slug": "translator", "name": "Переводчик", "section": "akinator-words-communication", "profile": {"Ideas": 1, "Obj": -1, "Exp": 2, "Focus": 2, "Auto": 2, "Struct": 1, "Predict": -1, "Acad": 1, "People": -1}},
-    {"slug": "lawyer", "name": "Юрист", "section": "akinator-words-communication", "profile": {"People": 1, "Data": 1, "Obj": -1, "Lead": 1, "Vis": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Acad": 2}},
+    {"slug": "journalist", "name": "Журналист", "section": "akinator-words-communication",
+     "description": "Журналист находит, проверяет и рассказывает истории — держит людей в курсе того, что происходит в мире.",
+     "profile": {"People": 1, "Ideas": 1, "Obj": -2, "Vis": 1, "Exp": 1, "Emp": 1, "Risk": 1, "Pace": 2, "Predict": 2, "Acad": 1, "Struct": -1}},
+    {"slug": "translator", "name": "Переводчик", "section": "akinator-words-communication",
+     "description": "Переводчик передаёт смысл текста или речи с одного языка на другой, сохраняя точность и стиль.",
+     "profile": {"Ideas": 1, "Obj": -1, "Exp": 2, "Focus": 2, "Auto": 2, "Struct": 1, "Predict": -1, "Acad": 1, "People": -1}},
+    {"slug": "lawyer", "name": "Юрист", "section": "akinator-words-communication",
+     "description": "Юрист разбирается в законах и защищает интересы людей и компаний — в судах, договорах и переговорах.",
+     "profile": {"People": 1, "Data": 1, "Obj": -1, "Lead": 1, "Vis": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Acad": 2}},
     # Replacement for `copywriter` (replacement pass). "Реклама и связи с
     # общественностью" is a real bachelor track. Separated from marketer by
     # Data -1 vs +1 and Math -1 vs 0 (message craft vs campaign analytics) —
     # see order 45.
-    {"slug": "pr-specialist", "name": "Специалист по рекламе и PR", "label_junior": "Специалист по рекламе", "section": "akinator-words-communication", "profile": {"People": 1, "Ideas": 2, "Inv": 2, "Vis": 1, "Emp": 1, "Exp": 1, "Focus": 1, "Auto": 1, "Struct": -1, "Data": -1, "Math": -1, "Acad": 1}},
+    {"slug": "pr-specialist", "name": "Специалист по рекламе и PR", "label_junior": "Специалист по рекламе", "section": "akinator-words-communication",
+     "description": "Специалист по рекламе и PR продумывает, как рассказать о компании или продукте так, чтобы это заметили и запомнили.",
+     "profile": {"People": 1, "Ideas": 2, "Inv": 2, "Vis": 1, "Emp": 1, "Exp": 1, "Focus": 1, "Auto": 1, "Struct": -1, "Data": -1, "Math": -1, "Acad": 1}},
 
     # Образование
-    {"slug": "school-teacher", "name": "Учитель", "section": "akinator-education", "profile": {"People": 2, "Dev": 2, "Care": 1, "Lead": 1, "Vis": 1, "Exp": 1, "Emp": 1, "Focus": -1, "Struct": 1, "Acad": 1}},
-    {"slug": "kindergarten-teacher", "name": "Воспитатель", "section": "akinator-education", "profile": {"People": 2, "Care": 2, "Dev": 1, "Emp": 2, "Focus": -1, "Struct": 1, "Pace": 1, "PhysSt": 1}},
+    {"slug": "school-teacher", "name": "Учитель", "section": "akinator-education",
+     "description": "Учитель объясняет школьный материал и помогает ученикам разобраться в предмете — работа требует терпения и умения находить подход к разным детям.",
+     "profile": {"People": 2, "Dev": 2, "Care": 1, "Lead": 1, "Vis": 1, "Exp": 1, "Emp": 1, "Focus": -1, "Struct": 1, "Acad": 1}},
+    {"slug": "kindergarten-teacher", "name": "Воспитатель", "section": "akinator-education",
+     "description": "Воспитатель заботится о детях дошкольного возраста — организует игры, занятия и распорядок дня.",
+     "profile": {"People": 2, "Care": 2, "Dev": 1, "Emp": 2, "Focus": -1, "Struct": 1, "Pace": 1, "PhysSt": 1}},
 
     # Спорт и тело
-    {"slug": "sports-coach", "name": "Спортивный тренер", "section": "akinator-sports-body", "profile": {"People": 1, "Living": 1, "Dev": 2, "Care": 1, "Lead": 1, "Motor": 1, "Emp": 1, "Motiv": 2, "Pace": 1, "PhysSt": 1, "Exp": 1}},
-    {"slug": "rehabilitation-therapist", "name": "Реабилитолог", "label_junior": "Врач по восстановлению", "section": "akinator-sports-body", "profile": {"People": 1, "Living": 2, "Care": 2, "Dev": 1, "Motor": 1, "Exp": 2, "Emp": 1, "Focus": 1, "Struct": 1, "Acad": 1, "PhysSt": 1}},
+    {"slug": "sports-coach", "name": "Спортивный тренер", "section": "akinator-sports-body",
+     "description": "Спортивный тренер обучает технике вида спорта и мотивирует спортсменов на результат.",
+     "profile": {"People": 1, "Living": 1, "Dev": 2, "Care": 1, "Lead": 1, "Motor": 1, "Emp": 1, "Motiv": 2, "Pace": 1, "PhysSt": 1, "Exp": 1}},
+    {"slug": "rehabilitation-therapist", "name": "Реабилитолог", "label_junior": "Врач по восстановлению", "section": "akinator-sports-body",
+     "description": "Реабилитолог помогает восстановить подвижность тела после травм и операций с помощью упражнений и процедур.",
+     "profile": {"People": 1, "Living": 2, "Care": 2, "Dev": 1, "Motor": 1, "Exp": 2, "Emp": 1, "Focus": 1, "Struct": 1, "Acad": 1, "PhysSt": 1}},
 
     # Еда и гостеприимство
     # University pass: `chef` (повар) is СПО. Growth = шеф-повар via 19.03.04
     # «Технология продукции и организация общественного питания» — no leaf existed,
     # so replaced. Keeps the Motor/Pace/Inv pull; Acad -1 -> +1, Data +1 (technology).
-    {"slug": "head-chef", "name": "Шеф-повар", "section": "akinator-food-hospitality", "profile": {"Phys": 1, "Data": 1, "Ideas": 1, "Inv": 2, "Obj": 1, "Motor": 2, "Lead": 1, "Focus": -1, "Struct": 1, "Pace": 2, "PhysSt": 1, "Acad": 1}},
+    {"slug": "head-chef", "name": "Шеф-повар", "section": "akinator-food-hospitality",
+     "description": "Шеф-повар придумывает блюда и руководит кухней ресторана — сочетает творчество с чёткой организацией процесса.",
+     "profile": {"Phys": 1, "Data": 1, "Ideas": 1, "Inv": 2, "Obj": 1, "Motor": 2, "Lead": 1, "Focus": -1, "Struct": 1, "Pace": 2, "PhysSt": 1, "Acad": 1}},
     # University pass: growth = 19.03.02 «Продукты питания из растительного сырья»,
     # профиль «Технология хлеба, кондитерских и макаронных изделий». Acad -1 -> +1.
-    {"slug": "confectionery-technologist", "name": "Кондитер-технолог", "label_junior": "Кондитер", "section": "akinator-food-hospitality", "profile": {"Phys": 1, "Data": 1, "Ideas": 2, "Inv": 1, "Motor": 2, "Exp": 2, "Focus": 2, "Struct": 2, "PhysSt": 1, "Acad": 1, "Predict": -1}},
+    {"slug": "confectionery-technologist", "name": "Кондитер-технолог", "label_junior": "Кондитер", "section": "akinator-food-hospitality",
+     "description": "Кондитер-технолог создаёт рецепты выпечки и сладостей и следит за технологией их приготовления.",
+     "profile": {"Phys": 1, "Data": 1, "Ideas": 2, "Inv": 1, "Motor": 2, "Exp": 2, "Focus": 2, "Struct": 2, "PhysSt": 1, "Acad": 1, "Predict": -1}},
     # Replacement for `barista` + `waiter` (replacement pass). This is what
     # revives option 2 of question order 34 ("общаться с гостями") — without it
     # that option's weights pointed at no leaf. Separated from chef by
     # People +2 vs 0, Lead +2 vs +1, Motor 0 vs +2, Acad +1 vs -1.
-    {"slug": "hospitality-manager", "name": "Менеджер ресторанного дела", "label_junior": "Управляющий кафе", "section": "akinator-food-hospitality", "profile": {"People": 2, "Data": 1, "Lead": 2, "Emp": 1, "Motiv": 1, "Risk": 1, "Struct": 1, "Pace": 2, "Predict": 1, "PhysSt": 1, "Acad": 1}},
+    {"slug": "hospitality-manager", "name": "Менеджер ресторанного дела", "label_junior": "Управляющий кафе", "section": "akinator-food-hospitality",
+     "description": "Менеджер ресторанного дела организует работу кафе или ресторана — от персонала до атмосферы для гостей.",
+     "profile": {"People": 2, "Data": 1, "Lead": 2, "Emp": 1, "Motiv": 1, "Risk": 1, "Struct": 1, "Pace": 2, "Predict": 1, "PhysSt": 1, "Acad": 1}},
 
     # Бизнес и продажи
-    {"slug": "sales-manager", "name": "Менеджер по продажам", "label_junior": "Специалист по продажам", "section": "akinator-business-sales", "profile": {"People": 2, "Emp": 2, "Vis": 1, "Motiv": 2, "Risk": 1, "Auto": 1, "Predict": 2, "Pace": 1, "Struct": -1}},
-    {"slug": "entrepreneur", "name": "Предприниматель", "label_junior": "Бизнесмен", "section": "akinator-business-sales", "profile": {"People": 1, "Ideas": 1, "Inv": 2, "Lead": 2, "Vis": 1, "Motiv": 2, "Risk": 2, "Auto": 2, "Struct": -2, "Predict": 2}},
-    {"slug": "marketer", "name": "Маркетолог", "label_junior": "Специалист по рекламе", "section": "akinator-business-sales", "profile": {"People": 1, "Data": 1, "Ideas": 1, "Inv": 1, "Obj": -1, "Vis": 1, "Emp": 1, "Motiv": 1, "Predict": 1, "Acad": 1}},
-    {"slug": "accountant", "name": "Бухгалтер", "section": "akinator-business-sales", "profile": {"Data": 2, "Obj": -1, "Exp": 2, "Focus": 2, "Struct": 2, "Motiv": -1, "Auto": 1, "Predict": -2, "Pace": -1, "Acad": 1, "Math": 2, "People": -1}},
+    {"slug": "sales-manager", "name": "Менеджер по продажам", "label_junior": "Специалист по продажам", "section": "akinator-business-sales",
+     "description": "Менеджер по продажам находит клиентов и убеждает их купить товар или услугу.",
+     "profile": {"People": 2, "Emp": 2, "Vis": 1, "Motiv": 2, "Risk": 1, "Auto": 1, "Predict": 2, "Pace": 1, "Struct": -1}},
+    {"slug": "entrepreneur", "name": "Предприниматель", "label_junior": "Бизнесмен", "section": "akinator-business-sales",
+     "description": "Предприниматель придумывает и запускает собственное дело, беря на себя риски ради результата.",
+     "profile": {"People": 1, "Ideas": 1, "Inv": 2, "Lead": 2, "Vis": 1, "Motiv": 2, "Risk": 2, "Auto": 2, "Struct": -2, "Predict": 2}},
+    {"slug": "marketer", "name": "Маркетолог", "label_junior": "Специалист по рекламе", "section": "akinator-business-sales",
+     "description": "Маркетолог продумывает, как рассказать о продукте так, чтобы его захотели купить — анализирует рынок и запускает рекламные кампании.",
+     "profile": {"People": 1, "Data": 1, "Ideas": 1, "Inv": 1, "Obj": -1, "Vis": 1, "Emp": 1, "Motiv": 1, "Predict": 1, "Acad": 1}},
+    {"slug": "accountant", "name": "Бухгалтер", "section": "akinator-business-sales",
+     "description": "Бухгалтер ведёт финансовый учёт компании — следит, чтобы деньги, налоги и отчётность были в порядке.",
+     "profile": {"Data": 2, "Obj": -1, "Exp": 2, "Focus": 2, "Struct": 2, "Motiv": -1, "Auto": 1, "Predict": -2, "Pace": -1, "Acad": 1, "Math": 2, "People": -1}},
     # Replacement for `taxi-driver` + `courier` + `warehouse-worker`
     # (replacement pass). Lives under business-sales rather than reviving the
     # one-leaf akinator-logistics-service section (a branch that forks nothing
     # is useless to the tree). Separated from accountant by Obj +1 vs -1,
     # Lead +1 vs 0, Pace +1 vs -1 — see order 48.
-    {"slug": "logistician", "name": "Логист", "section": "akinator-business-sales", "profile": {"Data": 2, "Obj": 1, "Lead": 1, "Exp": 1, "Focus": 1, "Struct": 2, "Pace": 1, "Predict": -1, "Acad": 1, "Math": 1}},
+    {"slug": "logistician", "name": "Логист", "section": "akinator-business-sales",
+     "description": "Логист организует доставку товаров — планирует маршруты, сроки и склады, чтобы всё приезжало вовремя.",
+     "profile": {"Data": 2, "Obj": 1, "Lead": 1, "Exp": 1, "Focus": 1, "Struct": 2, "Pace": 1, "Predict": -1, "Acad": 1, "Math": 1}},
 
     # Безопасность и спасение
     # University pass: рядовой пожарный/спасатель = СПО. Growth = Академия ГПС МЧС,
     # 20.03.01 «Техносферная безопасность» -> инженер пожарной безопасности. This
     # one leaf absorbs both retired `firefighter` and `rescuer` (they were a 0.94
     # cosine cluster anyway and share the same university track).
-    {"slug": "fire-safety-engineer", "name": "Инженер пожарной безопасности", "label_junior": "Пожарный", "section": "akinator-safety-rescue", "profile": {"People": 1, "Phys": 1, "Data": 1, "Care": 1, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 1, "Risk": 2, "Struct": 2, "Pace": 1, "Predict": 1, "PhysSt": 1, "Acad": 1, "Math": 1}},
-    {"slug": "police-officer", "name": "Полицейский", "section": "akinator-safety-rescue", "profile": {"People": 1, "Phys": 1, "Lead": 1, "Exp": 1, "Focus": -1, "Risk": 1, "Struct": 2, "Pace": 1, "Predict": 1, "PhysSt": 1}},
+    {"slug": "fire-safety-engineer", "name": "Инженер пожарной безопасности", "label_junior": "Пожарный", "section": "akinator-safety-rescue",
+     "description": "Инженер пожарной безопасности проектирует системы защиты от пожаров и обеспечивает безопасность зданий.",
+     "profile": {"People": 1, "Phys": 1, "Data": 1, "Care": 1, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 1, "Risk": 2, "Struct": 2, "Pace": 1, "Predict": 1, "PhysSt": 1, "Acad": 1, "Math": 1}},
+    {"slug": "police-officer", "name": "Полицейский", "section": "akinator-safety-rescue",
+     "description": "Полицейский следит за порядком и безопасностью людей, реагирует на происшествия и расследует правонарушения.",
+     "profile": {"People": 1, "Phys": 1, "Lead": 1, "Exp": 1, "Focus": -1, "Risk": 1, "Struct": 2, "Pace": 1, "Predict": 1, "PhysSt": 1}},
 ]
 
 assert len(SECTIONS) == 13, f"expected 14 sections, got {len(SECTIONS)}"
@@ -775,6 +890,9 @@ async def seed_sections(db: AsyncSession) -> tuple[dict[str, uuid.UUID], int, in
             if existing.name != section["name"]:
                 existing.name = section["name"]
                 changed = True
+            if existing.description != section["description"]:
+                existing.description = section["description"]
+                changed = True
             if existing.is_leaf is not False:
                 existing.is_leaf = False
                 changed = True
@@ -792,10 +910,7 @@ async def seed_sections(db: AsyncSession) -> tuple[dict[str, uuid.UUID], int, in
         direction = Direction(
             name=section["name"],
             slug=section["slug"],
-            description=(
-                f"Раздел каталога акинатора: {section['name']} "
-                "(перенесено из akinatorLogic/profi_full_catalog.md, черновик Фазы 2)."
-            ),
+            description=section["description"],
             required_scores={},
             is_leaf=False,
             profile=profile,
@@ -826,6 +941,9 @@ async def seed_professions(
             if existing.name != prof["name"]:
                 existing.name = prof["name"]
                 changed = True
+            if existing.description != prof["description"]:
+                existing.description = prof["description"]
+                changed = True
             if existing.profile != prof["profile"]:
                 existing.profile = prof["profile"]
                 changed = True
@@ -848,10 +966,7 @@ async def seed_professions(
         direction = Direction(
             name=prof["name"],
             slug=prof["slug"],
-            description=(
-                f"Профессия «{prof['name']}» "
-                "(перенесено из akinatorLogic/profi_full_catalog.md, черновик Фазы 2)."
-            ),
+            description=prof["description"],
             required_scores={},
             parent_id=parent_id,
             is_leaf=True,
