@@ -194,6 +194,81 @@ async def submit_answer(
     )
 
 
+async def go_back(
+    assessment_id: uuid.UUID, age_group: AgeGroup, db: AsyncSession
+) -> SessionTurn:
+    """Undo the most recent answer and re-serve that exact question, so the
+    user can pick a different option — not a freshly-selected one. Only
+    valid while a question is currently being shown (session.status ==
+    in_progress); the reveal screen has its own way forward (reject/feedback)
+    and is out of scope here.
+
+    Reconstructs prior state from AkinatorAnswerLog (assessment_session_service.
+    get_answer_log) rather than trying to invert the belief update in place —
+    the log already carries belief_after per step, and asked_axis_families is
+    a union across (possibly overlapping) questions, so it has to be
+    recomputed from the remaining questions rather than subtracted from."""
+    result = await db.execute(
+        select(AssessmentSession).where(AssessmentSession.assessment_id == assessment_id)
+    )
+    session = result.scalar_one_or_none()
+    if session is None or not session.belief:
+        raise ValueError(f"no akinator session in progress for assessment {assessment_id}")
+    if session.status != SessionStatus.in_progress:
+        raise ValueError("a previous question can only be revisited while the test is in progress")
+
+    log = await assessment_session_service.get_answer_log(session.id, db)
+    if not log:
+        raise ValueError("no answered question to go back to")
+
+    last, remaining = log[-1], log[:-1]
+
+    if remaining:
+        restored_belief = remaining[-1].belief_after
+    else:
+        # Undoing the very first answer — rebuild the uniform prior, but
+        # excluding anything already in rejected_leaves. reject_leaf/
+        # reject_leaves never write to the answer log, so their effect
+        # survives independently of how far back Q&A history is rewound —
+        # a rejected leaf must not resurface just because the user rewinds
+        # past it (see akinator_engine.reject_leaf's own invariant).
+        leaves = [
+            leaf for leaf in await _leaf_directions_for_age(db, age_group)
+            if leaf.slug not in session.rejected_leaves
+        ]
+        restored_belief = {leaf.slug: 1 / len(leaves) for leaf in leaves}
+
+    restored_ids = [str(entry.question_id) for entry in remaining]
+    restored_step = len(remaining)
+
+    restored_families: set[str] = set()
+    if remaining:
+        remaining_question_ids = {entry.question_id for entry in remaining}
+        questions_result = await db.execute(
+            select(AkinatorQuestion).where(AkinatorQuestion.id.in_(remaining_question_ids))
+        )
+        for q in questions_result.scalars().all():
+            restored_families.update(
+                family.value for family in akinator_engine.question_axis_families(q)
+            )
+
+    await db.delete(last)
+    session = await assessment_session_service.save_session(
+        session, db,
+        belief=restored_belief,
+        step=restored_step,
+        asked_question_ids=restored_ids,
+        asked_axis_families=sorted(restored_families),
+    )
+
+    question = await db.get(AkinatorQuestion, last.question_id)
+    return SessionTurn(
+        session=session,
+        decision=akinator_engine.StopDecision(status="continue"),
+        next_question=question,
+    )
+
+
 async def submit_feedback(
     assessment_id: uuid.UUID,
     liked: bool,
