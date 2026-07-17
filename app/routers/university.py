@@ -16,6 +16,7 @@ from app.schemas.gap import GapAnalysisResponse
 from app.schemas.university import ProgramBrief, ProgramDetail
 from app.services.artifact_service import get_artifacts
 from app.services.gap_analysis_service import analyze_gap, to_response
+from app.services.program_direction_resolver import program_direction_slugs_for
 from app.services.university_service import get_program_by_id, search_programs
 
 GAP_CACHE_TTL = 60 * 60  # 1 hour
@@ -35,12 +36,19 @@ router = APIRouter(tags=["universities"])
 
 @router.get("/programs", response_model=list[ProgramBrief])
 async def list_programs(
-    direction: str = Query(..., description="Direction slug, e.g. it-development"),
-    country: str | None = Query(None, description="ISO country code or name, e.g. us or Kazakhstan"),
+    direction: str = Query(..., description="Profession or section slug from test result"),
+    country: str | None = Query("Казахстан", description="Country filter, defaults to Kazakhstan"),
+    city: str | None = Query("Астана", description="City filter, defaults to Astana"),
     limit: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ) -> list[ProgramBrief]:
-    return await search_programs(db, direction_slug=direction, country=country, limit=limit)
+    return await search_programs(
+        db,
+        direction_slug=direction,
+        country=country,
+        city=city,
+        limit=limit,
+    )
 
 
 @router.get("/programs/{program_id}", response_model=ProgramDetail)
@@ -87,7 +95,8 @@ async def get_gap_analysis(
     if assessment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
 
-    if assessment.selected_direction_slug != program.direction_slug:
+    allowed_slugs = await program_direction_slugs_for(assessment.selected_direction_slug, db)
+    if program.direction_slug not in allowed_slugs:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This program's direction does not match your assessment results",

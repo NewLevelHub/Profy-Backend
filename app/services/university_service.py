@@ -7,22 +7,27 @@ from sqlalchemy.orm import selectinload
 
 from app.models.program import Program
 from app.models.university import University
+from app.services.program_direction_resolver import program_direction_slugs_for
 
 
 async def search_programs(
     db: AsyncSession,
     direction_slug: str,
     country: str | None = None,
+    city: str | None = None,
     limit: int = 10,
 ) -> list[Program]:
+    direction_slugs = await program_direction_slugs_for(direction_slug, db)
     query = (
         select(Program)
         .options(selectinload(Program.university))
         .join(Program.university)
-        .where(Program.direction_slug == direction_slug)
+        .where(Program.direction_slug.in_(direction_slugs))
     )
     if country is not None:
         query = query.where(University.country.ilike(country))
+    if city is not None:
+        query = query.where(University.city == city)
     query = query.limit(limit)
     result = await db.execute(query)
     return list(result.scalars().all())

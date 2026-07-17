@@ -2,7 +2,7 @@
 Seed script: populate universities and programs tables.
 Run inside Docker: docker-compose exec api python scripts/seed_universities.py
 Idempotent: upserts by university name; upserts programs by (university_id, name).
-Coverage: KZ, USA, UK, Europe, Canada, Asia — 29 universities, 50 programs.
+Coverage: KZ, USA, UK, Europe, Canada, Asia — 43 universities, 64 programs.
 KZ coverage: all 15 direction_slug values have at least one Kazakhstani program
 (see seed_directions.py for the canonical direction list).
 """
@@ -29,10 +29,11 @@ UNIVERSITIES: list[dict] = [
         "country": "Казахстан",
         "city": "Астана",
         "website": "https://nu.edu.kz",
-        "ranking": 301,
+        "ranking": 450,
         "description": (
-            "Ведущий исследовательский университет Казахстана, предлагающий программы "
-            "на английском языке в партнёрстве с ведущими мировыми университетами."
+            "Ведущий исследовательский университет Казахстана с полностью англоязычным "
+            "обучением, автономным статусом и программами, разработанными совместно "
+            "с топ-30 университетами мира."
         ),
     },
     {
@@ -103,10 +104,11 @@ UNIVERSITIES: list[dict] = [
         "country": "Казахстан",
         "city": "Астана",
         "website": "https://enu.kz",
-        "ranking": None,
+        "ranking": 317,
         "description": (
-            "Один из крупнейших классических университетов Казахстана в Астане с сильными "
-            "программами в области естественных наук, экологии и международных отношений."
+            "Крупнейший национальный исследовательский университет Казахстана в Астане "
+            "с сильными программами в IT, инженерии, естественных науках, праве и "
+            "международных отношениях."
         ),
     },
     {
@@ -162,6 +164,160 @@ UNIVERSITIES: list[dict] = [
         "description": (
             "Ведущий экономический университет Казахстана, готовящий специалистов "
             "в области менеджмента, финансов и бизнес-аналитики."
+        ),
+    },
+    {
+        "name": "S. Seifullin Kazakh Agrotechnical Research University",
+        "country": "Казахстан",
+        "city": "Астана",
+        "website": "https://kazatu.edu.kz",
+        "ranking": 1300,
+        "description": (
+            "Крупный агротехнический исследовательский университет Астаны с сильными "
+            "программами в инженерии, агротехнологиях и экологии."
+        ),
+    },
+    {
+        "name": "Astana Medical University",
+        "country": "Казахстан",
+        "city": "Астана",
+        "website": "https://amu.edu.kz",
+        "ranking": None,
+        "description": (
+            "Один из ведущих медицинских университетов Казахстана, готовящий врачей, "
+            "фармацевтов и специалистов общественного здравоохранения."
+        ),
+    },
+    {
+        "name": "Kazakh National University of Arts",
+        "country": "Казахстан",
+        "city": "Астана",
+        "website": "https://kaznui.edu.kz",
+        "ranking": None,
+        "description": (
+            "Крупнейший творческий вуз Астаны, известный как центр подготовки "
+            "музыкантов, режиссёров, дизайнеров и деятелей культуры."
+        ),
+    },
+    {
+        "name": "Kazakh National Academy of Choreography",
+        "country": "Казахстан",
+        "city": "Астана",
+        "website": "https://balletacademy.edu.kz",
+        "ranking": None,
+        "description": (
+            "Специализированная академия хореографии, объединяющая творческую, "
+            "педагогическую и арт-менеджерскую подготовку."
+        ),
+    },
+    {
+        "name": "Astana International University",
+        "country": "Казахстан",
+        "city": "Астана",
+        "website": "https://aiu.kz",
+        "ranking": 1450,
+        "description": (
+            "Частный многопрофильный университет Астаны с программами в IT, праве, "
+            "экономике, дизайне и педагогике, включая двудипломные треки."
+        ),
+    },
+    {
+        "name": "Qazaq AI Research University",
+        "country": "Казахстан",
+        "city": "Астана",
+        "website": "https://qairu.kz",
+        "ranking": None,
+        "description": (
+            "Новый AI-ориентированный исследовательский университет Астаны с фокусом "
+            "на машинном обучении, робототехнике и междисциплинарных AI-направлениях."
+        ),
+    },
+    {
+        "name": "Esil University",
+        "country": "Казахстан",
+        "city": "Астана",
+        "website": "https://esil.edu.kz",
+        "ranking": None,
+        "description": (
+            "Многопрофильный предпринимательский университет Астаны с сильными "
+            "направлениями в экономике, праве, IT и управлении."
+        ),
+    },
+    {
+        "name": "Turan-Astana University",
+        "country": "Казахстан",
+        "city": "Астана",
+        "website": "https://tau-edu.kz",
+        "ranking": None,
+        "description": (
+            "Частный университет Астаны с программами в праве, дизайне, IT, туризме "
+            "и бизнесе, ориентированный на практическую подготовку."
+        ),
+    },
+    {
+        "name": "K. Kulazhanov Kazakh University of Technology and Business",
+        "country": "Казахстан",
+        "city": "Астана",
+        "website": "https://www.kaztbu.edu.kz",
+        "ranking": None,
+        "description": (
+            "Отраслевой университет Астаны, развивающий подготовку в области "
+            "инжиниринга, пищевых технологий, IT и прикладного бизнеса."
+        ),
+    },
+    {
+        "name": "A.K. Kussayinov Eurasian Humanities Institute",
+        "country": "Казахстан",
+        "city": "Астана",
+        "website": "https://egi.edu.kz",
+        "ranking": None,
+        "description": (
+            "Гуманитарный вуз Астаны, специализирующийся на педагогике, психологии, "
+            "языках, переводе и праве."
+        ),
+    },
+    {
+        "name": "Financial Academy",
+        "country": "Казахстан",
+        "city": "Астана",
+        "website": "https://fin-academy.kz",
+        "ranking": None,
+        "description": (
+            "Специализированный вуз в сфере финансов, бухгалтерского учёта, экономики "
+            "и информационных систем."
+        ),
+    },
+    {
+        "name": "Astana University",
+        "country": "Казахстан",
+        "city": "Астана",
+        "website": "http://astanauniver.kz",
+        "ranking": None,
+        "description": (
+            "Многопрофильный частный университет в центре Астаны с программами "
+            "в дизайне, туризме, праве, IT и управлении."
+        ),
+    },
+    {
+        "name": "Lomonosov Moscow State University Kazakhstan Branch",
+        "country": "Казахстан",
+        "city": "Астана",
+        "website": "https://www.msu.kz",
+        "ranking": 105,
+        "description": (
+            "Казахстанский филиал МГУ с сильной фундаментальной подготовкой "
+            "в математике, прикладной информатике, экологии и экономике."
+        ),
+    },
+    {
+        "name": "Cardiff University Kazakhstan",
+        "country": "Казахстан",
+        "city": "Астана",
+        "website": "https://cardiff.edu.kz",
+        "ranking": 179,
+        "description": (
+            "Кампус Cardiff University в Астане с англоязычными программами "
+            "в компьютерных науках, бизнесе, инженерии и геологии."
         ),
     },
     # --- США ---
@@ -449,6 +605,30 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                     "conditions": "Высокий балл ЕНТ, конкурсный отбор",
                 },
             ],
+        },
+        {
+            "name": "Физика (бакалавр)",
+            "direction_slug": "science-research",
+            "language": "Английский",
+            "cost_per_year": 3000,
+            "description": (
+                "Фундаментальная программа School of Sciences and Humanities по физике "
+                "с сильной математической и исследовательской подготовкой."
+            ),
+            "who_its_for": (
+                "Абитуриенты, увлечённые фундаментальной наукой и готовые к интенсивной "
+                "академической подготовке на английском языке."
+            ),
+            "career_options": [
+                "Научный сотрудник", "Исследователь", "Преподаватель физики",
+                "Инженер-физик", "Аналитик в R&D",
+            ],
+            "requirements": {
+                "exams": ["NUET", "SAT", "ACT", "ЕНТ", "IELTS"],
+                "min_ielts": 6.5,
+            },
+            "deadlines": {"application_close": "2026-02-28"},
+            "grants": [{"name": "Президентская стипендия", "amount": "Полная оплата", "conditions": "Конкурсный отбор"}],
         },
     ],
     "KIMEP University": [
@@ -1123,6 +1303,328 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
                     "conditions": "Проходной балл по группе В044 «Менеджмент и управление» ~83/140, 56 грантов по РК в 2025 году (ориентировочно)",
                 },
             ],
+        },
+    ],
+    "S. Seifullin Kazakh Agrotechnical Research University": [
+        {
+            "name": "Агроинженерия и мехатроника (бакалавр)",
+            "direction_slug": "engineering-architecture",
+            "language": "Казахский / Русский",
+            "cost_per_year": 2200,
+            "description": (
+                "Инженерная программа КазАТИУ, ориентированная на агротехнику, автоматизацию "
+                "и эксплуатацию современных производственных систем."
+            ),
+            "who_its_for": (
+                "Абитуриенты, которым интересны техника, механика и прикладные инженерные "
+                "задачи в промышленности и агросекторе."
+            ),
+            "career_options": [
+                "Инженер-механик", "Инженер по автоматизации", "Производственный инженер",
+                "Инженер по сельхозтехнике", "Технический менеджер",
+            ],
+            "requirements": {"exams": ["ЕНТ"], "profile_subjects": ["Математика", "Физика"]},
+            "deadlines": {"application_close": "2026-08-25"},
+            "grants": [{"name": "Госгрант", "amount": "Полная оплата", "conditions": "Конкурс ЕНТ"}],
+        },
+    ],
+    "Astana Medical University": [
+        {
+            "name": "Общая медицина (бакалавриат/интегрированная программа)",
+            "direction_slug": "medicine-biology",
+            "language": "Казахский / Русский",
+            "cost_per_year": 3400,
+            "description": (
+                "Программа по общей медицине с сильной клинической базой и требованиями "
+                "по профильным предметам биология + химия."
+            ),
+            "who_its_for": (
+                "Абитуриенты, нацеленные на карьеру врача и готовые к интенсивной "
+                "естественнонаучной и клинической подготовке."
+            ),
+            "career_options": [
+                "Врач общей практики", "Клинический ординатор", "Медицинский исследователь",
+                "Специалист общественного здравоохранения", "Врач-стажёр",
+            ],
+            "requirements": {"exams": ["ЕНТ"], "profile_subjects": ["Биология", "Химия"]},
+            "deadlines": {"application_close": "2026-08-25"},
+            "grants": [{"name": "Госгрант", "amount": "Полная оплата", "conditions": "Конкурс ЕНТ"}],
+        },
+    ],
+    "Kazakh National University of Arts": [
+        {
+            "name": "Графический дизайн и визуальные коммуникации (бакалавр)",
+            "direction_slug": "design-digital-art",
+            "language": "Казахский / Русский",
+            "cost_per_year": 2100,
+            "description": (
+                "Творческая программа по графическому дизайну с акцентом на композицию, "
+                "визуальную культуру и практику в креативных индустриях."
+            ),
+            "who_its_for": (
+                "Абитуриенты с художественной подготовкой, которым интересны визуальные "
+                "коммуникации, брендинг и цифровой дизайн."
+            ),
+            "career_options": [
+                "Графический дизайнер", "Иллюстратор", "Арт-директор",
+                "Motion-дизайнер", "Бренд-дизайнер",
+            ],
+            "requirements": {"exams": ["ЕНТ", "Творческий экзамен"], "needs_portfolio": True},
+            "deadlines": {"application_close": "2026-07-20"},
+            "grants": [{"name": "Госгрант", "amount": "Полная оплата", "conditions": "Творческий конкурс"}],
+        },
+    ],
+    "Kazakh National Academy of Choreography": [
+        {
+            "name": "Арт-менеджмент в хореографии (бакалавр)",
+            "direction_slug": "project-management",
+            "language": "Казахский / Русский",
+            "cost_per_year": 2300,
+            "description": (
+                "Программа сочетает управление творческими проектами, организацию событий "
+                "и понимание культурной индустрии."
+            ),
+            "who_its_for": (
+                "Студенты, которым интересны креативные проекты, культурные события "
+                "и организационная работа в сфере искусства."
+            ),
+            "career_options": [
+                "Арт-менеджер", "Координатор проектов", "Продюсер мероприятий",
+                "Администратор театра", "Менеджер культурных программ",
+            ],
+            "requirements": {"exams": ["ЕНТ", "Собеседование/творческий отбор"]},
+            "deadlines": {"application_close": "2026-07-25"},
+            "grants": [{"name": "Госгрант", "amount": "Полная оплата", "conditions": "Конкурсный отбор"}],
+        },
+    ],
+    "Astana International University": [
+        {
+            "name": "Data Science (бакалавр)",
+            "direction_slug": "data-science",
+            "language": "Английский / Русский",
+            "cost_per_year": 3000,
+            "description": (
+                "Программа по анализу данных и прикладной статистике с фокусом на цифровые "
+                "инструменты и междисциплинарные проекты."
+            ),
+            "who_its_for": (
+                "Абитуриенты с интересом к математике, аналитике и программированию, "
+                "нацеленные на карьеру в data-driven командах."
+            ),
+            "career_options": [
+                "Аналитик данных", "BI-аналитик", "Data Scientist",
+                "Продуктовый аналитик", "Исследователь данных",
+            ],
+            "requirements": {"exams": ["ЕНТ"], "profile_subjects": ["Математика", "Информатика"]},
+            "deadlines": {"application_close": "2026-08-25"},
+            "grants": [{"name": "Госгрант", "amount": "Полная оплата", "conditions": "Конкурс ЕНТ"}],
+        },
+    ],
+    "Qazaq AI Research University": [
+        {
+            "name": "AI and Machine Learning (бакалавр)",
+            "direction_slug": "artificial-intelligence",
+            "language": "Английский",
+            "cost_per_year": 4700,
+            "description": (
+                "Флагманская программа QAIRU по искусственному интеллекту и машинному "
+                "обучению с внутренним диагностическим тестом QPT."
+            ),
+            "who_its_for": (
+                "Сильные абитуриенты с интересом к математике, ML и инженерной реализации "
+                "AI-систем в реальных продуктах."
+            ),
+            "career_options": [
+                "ML-инженер", "AI-разработчик", "Research Engineer",
+                "Data Scientist", "Инженер по робототехнике",
+            ],
+            "requirements": {"exams": ["ЕНТ", "QPT"], "min_ielts": 6.0},
+            "deadlines": {"application_close": "2026-08-25"},
+            "grants": [{"name": "Внутренний грант QAIRU", "amount": "До полной оплаты", "conditions": "По конкурсу"}],
+        },
+    ],
+    "Esil University": [
+        {
+            "name": "Финансы (бакалавр)",
+            "direction_slug": "finance-economics",
+            "language": "Казахский / Русский",
+            "cost_per_year": 1900,
+            "description": (
+                "Прикладная программа по финансам с подготовкой в корпоративных финансах, "
+                "бухучёте и финансовом анализе."
+            ),
+            "who_its_for": (
+                "Абитуриенты, которым интересны экономика, расчёты, банки и финансовое "
+                "управление в бизнесе."
+            ),
+            "career_options": [
+                "Финансовый аналитик", "Бухгалтер", "Кредитный аналитик",
+                "Казначей", "Специалист финконтроля",
+            ],
+            "requirements": {"exams": ["ЕНТ"], "profile_subjects": ["Математика", "География"]},
+            "deadlines": {"application_close": "2026-08-25"},
+            "grants": [{"name": "Госгрант", "amount": "Полная оплата", "conditions": "Конкурс ЕНТ"}],
+        },
+    ],
+    "Turan-Astana University": [
+        {
+            "name": "Digital-маркетинг (бакалавр)",
+            "direction_slug": "marketing-advertising",
+            "language": "Казахский / Русский",
+            "cost_per_year": 2100,
+            "description": (
+                "Программа по современному маркетингу с акцентом на digital-каналы, "
+                "брендинг, аналитику и продвижение."
+            ),
+            "who_its_for": (
+                "Креативные и коммуникабельные абитуриенты, которым интересны бренды, "
+                "контент и работа с аудиторией."
+            ),
+            "career_options": [
+                "Digital-маркетолог", "SMM-менеджер", "Бренд-менеджер",
+                "Контент-стратег", "PR-специалист",
+            ],
+            "requirements": {"exams": ["ЕНТ"]},
+            "deadlines": {"application_close": "2026-08-25"},
+            "grants": [{"name": "Госгрант", "amount": "Полная оплата", "conditions": "Конкурс ЕНТ"}],
+        },
+    ],
+    "K. Kulazhanov Kazakh University of Technology and Business": [
+        {
+            "name": "Искусственный интеллект (бакалавр)",
+            "direction_slug": "artificial-intelligence",
+            "language": "Казахский / Русский",
+            "cost_per_year": 2400,
+            "description": (
+                "Инженерная программа по AI с прикладным уклоном в автоматизацию, "
+                "цифровую энергетику и IT-системы."
+            ),
+            "who_its_for": (
+                "Абитуриенты, желающие изучать ИИ в прикладном техническом контексте "
+                "и работать на стыке производства и цифровых решений."
+            ),
+            "career_options": [
+                "AI-инженер", "Аналитик данных", "Инженер автоматизации",
+                "ML-разработчик", "Технический аналитик",
+            ],
+            "requirements": {"exams": ["ЕНТ"], "profile_subjects": ["Математика", "Физика"]},
+            "deadlines": {"application_close": "2026-08-25"},
+            "grants": [{"name": "Госгрант", "amount": "Полная оплата", "conditions": "Конкурс ЕНТ"}],
+        },
+    ],
+    "A.K. Kussayinov Eurasian Humanities Institute": [
+        {
+            "name": "Педагогика и психология (бакалавр)",
+            "direction_slug": "psychology-pedagogy",
+            "language": "Казахский / Русский",
+            "cost_per_year": 1700,
+            "description": (
+                "Гуманитарная программа по психологии и педагогике для подготовки "
+                "специалистов школ, образовательных центров и консультационной практики."
+            ),
+            "who_its_for": (
+                "Абитуриенты с выраженной эмпатией и интересом к развитию, обучению "
+                "и сопровождению детей и подростков."
+            ),
+            "career_options": [
+                "Педагог-психолог", "Школьный психолог", "Методист",
+                "Куратор образовательных программ", "HR-специалист",
+            ],
+            "requirements": {"exams": ["ЕНТ"]},
+            "deadlines": {"application_close": "2026-08-25"},
+            "grants": [{"name": "Госгрант", "amount": "Полная оплата", "conditions": "Конкурс ЕНТ"}],
+        },
+    ],
+    "Financial Academy": [
+        {
+            "name": "Экономика и финансовая аналитика (бакалавр)",
+            "direction_slug": "finance-economics",
+            "language": "Казахский / Русский",
+            "cost_per_year": 1800,
+            "description": (
+                "Программа по экономике и финансовой аналитике, ориентированная на подготовку "
+                "специалистов для банков, госструктур и бизнеса."
+            ),
+            "who_its_for": (
+                "Абитуриенты, которым интересны экономика, аналитика и работа с финансовыми "
+                "показателями организаций."
+            ),
+            "career_options": [
+                "Экономист", "Финансовый аналитик", "Бюджетный специалист",
+                "Бухгалтер-аналитик", "Кредитный менеджер",
+            ],
+            "requirements": {"exams": ["ЕНТ"], "profile_subjects": ["Математика", "География"]},
+            "deadlines": {"application_close": "2026-08-25"},
+            "grants": [{"name": "Госгрант", "amount": "Полная оплата", "conditions": "Конкурс ЕНТ"}],
+        },
+    ],
+    "Astana University": [
+        {
+            "name": "Туризм и сервисный менеджмент (бакалавр)",
+            "direction_slug": "project-management",
+            "language": "Казахский / Русский",
+            "cost_per_year": 1850,
+            "description": (
+                "Программа сочетает организацию сервисных процессов, управление проектами "
+                "и клиентский опыт в индустрии туризма и услуг."
+            ),
+            "who_its_for": (
+                "Абитуриенты, которым интересны организация, коммуникации и управление "
+                "сервисными командами и проектами."
+            ),
+            "career_options": [
+                "Менеджер проектов", "Менеджер по туризму", "Операционный координатор",
+                "Event-менеджер", "Менеджер клиентского сервиса",
+            ],
+            "requirements": {"exams": ["ЕНТ"]},
+            "deadlines": {"application_close": "2026-08-25"},
+            "grants": [{"name": "Госгрант", "amount": "Полная оплата", "conditions": "Конкурс ЕНТ"}],
+        },
+    ],
+    "Lomonosov Moscow State University Kazakhstan Branch": [
+        {
+            "name": "Прикладная математика и информатика (бакалавр)",
+            "direction_slug": "data-science",
+            "language": "Русский",
+            "cost_per_year": 0,
+            "description": (
+                "Фундаментальная программа филиала МГУ с сильной математической базой и "
+                "собственными вступительными экзаменами вместо ЕНТ."
+            ),
+            "who_its_for": (
+                "Очень сильные абитуриенты, которым интересны математика, моделирование "
+                "и прикладная информатика на академическом уровне."
+            ),
+            "career_options": [
+                "Аналитик данных", "Исследователь", "Прикладной математик",
+                "Алгоритмист", "ML-инженер",
+            ],
+            "requirements": {"exams": ["Внутренние вступительные экзамены МГУ-КФ"]},
+            "deadlines": {"application_close": "2026-07-25"},
+            "grants": [{"name": "Госзаказ РК", "amount": "Полная оплата", "conditions": "Обучение бесплатное по конкурсу"}],
+        },
+    ],
+    "Cardiff University Kazakhstan": [
+        {
+            "name": "Civil Engineering (бакалавр)",
+            "direction_slug": "engineering-architecture",
+            "language": "Английский",
+            "cost_per_year": 9000,
+            "description": (
+                "Англоязычная программа кампуса Cardiff в Астане по гражданскому "
+                "строительству с возможностью Foundation Year."
+            ),
+            "who_its_for": (
+                "Абитуриенты, ориентированные на международное инженерное образование "
+                "и карьеру в строительстве, инфраструктуре и проектировании."
+            ),
+            "career_options": [
+                "Civil engineer", "Проектировщик", "Site engineer",
+                "BIM-специалист", "Инженер-конструктор",
+            ],
+            "requirements": {"exams": ["Аттестат/ЕНТ", "IELTS"]},
+            "deadlines": {"application_close": "2026-08-20"},
+            "grants": [{"name": "Грант кампуса Cardiff KZ", "amount": "Частичная/полная оплата", "conditions": "По конкурсу"}],
         },
     ],
     "Massachusetts Institute of Technology": [

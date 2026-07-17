@@ -9,6 +9,7 @@ import uuid
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.axes import AXIS_CATALOG
 from app.models.akinator_answer_log import AkinatorAnswerLog
@@ -16,11 +17,15 @@ from app.models.akinator_question import AkinatorQuestion
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.assessment_session import AssessmentSession
 from app.models.direction import Direction
+from app.models.program import Program
+from app.models.university import University
 from app.schemas.akinator_session import RevealLeaf
 from app.schemas.result import AkinatorResultResponse, ChildAxisSignal, ResultAxisHighlight
 from app.services.akinator_report_service import BACKUP_COUNT, REPORT_MESSAGES
+from app.services.program_direction_resolver import program_direction_slugs_for
 
 _TOP_AXES_COUNT = 6
+_RECOMMENDED_PROGRAMS_LIMIT = 5
 # How many of the child's own strongest/weakest axes to surface — separate
 # from _TOP_AXES_COUNT, which caps the profession's own axis profile.
 _STRENGTHS_COUNT = 3
@@ -138,6 +143,23 @@ async def _backups_for(session: AssessmentSession, exclude_slug: str, db: AsyncS
     ]
 
 
+async def _recommended_programs_for(selected_slug: str, db: AsyncSession) -> list[Program]:
+    """Return Astana programs matching the test result profession or its section."""
+    direction_slugs = await program_direction_slugs_for(selected_slug, db)
+    result = await db.execute(
+        select(Program)
+        .options(selectinload(Program.university))
+        .join(Program.university)
+        .where(
+            Program.direction_slug.in_(direction_slugs),
+            University.country == "Казахстан",
+            University.city == "Астана",
+        )
+        .limit(_RECOMMENDED_PROGRAMS_LIMIT)
+    )
+    return list(result.scalars().all())
+
+
 async def get_result(assessment_id: uuid.UUID, db: AsyncSession) -> AkinatorResultResponse:
     assessment = await db.get(Assessment, assessment_id)
     if assessment is None:
@@ -165,6 +187,7 @@ async def get_result(assessment_id: uuid.UUID, db: AsyncSession) -> AkinatorResu
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Result not ready yet")
 
     backups = await _backups_for(session, assessment.selected_direction_slug, db)
+    recommended_programs = await _recommended_programs_for(assessment.selected_direction_slug, db)
     child_totals = await _child_axis_totals(session.id, db)
     strengths, growth_areas = _child_strengths_and_growth(child_totals)
 
@@ -178,5 +201,6 @@ async def get_result(assessment_id: uuid.UUID, db: AsyncSession) -> AkinatorResu
         strengths=strengths,
         growth_areas=growth_areas,
         backups=backups,
+        recommended_programs=recommended_programs,
         created_at=assessment.created_at,
     )

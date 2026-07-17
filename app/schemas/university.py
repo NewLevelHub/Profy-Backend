@@ -12,6 +12,7 @@ class UniversityBrief(BaseModel):
     city: str
     website: str | None
     ranking: int | None
+    description: str | None = None
 
     model_config = {"from_attributes": True}
 
