@@ -235,15 +235,21 @@ async def submit_feedback(
     return await assessment_session_service.save_feedback(session, db, liked=liked, note=note)
 
 
-async def reject_leaf(
-    assessment_id: uuid.UUID, leaf_slug: str, age_group: AgeGroup, db: AsyncSession
+async def _reject_and_advance(
+    assessment_id: uuid.UUID, slugs: list[str], age_group: AgeGroup, db: AsyncSession
 ) -> SessionTurn:
-    """Handle an explicit "this doesn't fit" from the user — distinct from
-    the engine's own uncertainty (StopDecision.status == "reveal_cluster" in
-    check_stop). Strongly demotes leaf_slug (removed from belief entirely,
-    not just discounted — see akinator_engine.reject_leaf) and re-derives the
-    turn, so the same leaf can never resurface in this session. Only valid
-    once a reveal has actually happened — nothing to reject before then."""
+    """Shared implementation for reject_leaf/reject_leaves — handle an
+    explicit "this doesn't fit" from the user — distinct from the engine's
+    own uncertainty (StopDecision.status == "reveal_cluster" in check_stop).
+    Strongly demotes every slug in `slugs` (removed from belief entirely, not
+    just discounted — see akinator_engine.reject_leaves) and re-derives the
+    turn, so none of them can ever resurface in this session. Only valid once
+    a reveal has actually happened — nothing to reject before then.
+
+    If rejecting this batch would empty the belief (akinator_engine raises
+    ValueError), that's "the user rejected everything left" — not an error to
+    surface, but the one true dead end: force an honest, no-confidence
+    reveal instead of a 400."""
     result = await db.execute(
         select(AssessmentSession).where(AssessmentSession.assessment_id == assessment_id)
     )
@@ -253,8 +259,16 @@ async def reject_leaf(
     if session.status == SessionStatus.in_progress:
         raise ValueError("a leaf can only be rejected after a reveal")
 
-    new_belief = akinator_engine.reject_leaf(session.belief, leaf_slug)
-    new_rejected = [*session.rejected_leaves, leaf_slug]
+    try:
+        new_belief = akinator_engine.reject_leaves(session.belief, slugs)
+    except akinator_engine.NoRemainingCandidatesError:
+        session = await assessment_session_service.save_session(
+            session, db, status=SessionStatus.exhausted_ceiling
+        )
+        exhausted = akinator_engine.StopDecision(status="reveal_cluster", leaves=[], reason="ceiling")
+        return SessionTurn(session=session, decision=exhausted, next_question=None)
+
+    new_rejected = [*session.rejected_leaves, *slugs]
 
     # Reopen the session so _advance's finalize-once guard re-fires for the
     # new decision, instead of treating it as already converged.
@@ -265,6 +279,21 @@ async def reject_leaf(
         status=SessionStatus.in_progress,
     )
     return await _advance(session, db, age_group)
+
+
+async def reject_leaf(
+    assessment_id: uuid.UUID, leaf_slug: str, age_group: AgeGroup, db: AsyncSession
+) -> SessionTurn:
+    """Reject a single leaf — see _reject_and_advance."""
+    return await _reject_and_advance(assessment_id, [leaf_slug], age_group, db)
+
+
+async def reject_leaves(
+    assessment_id: uuid.UUID, leaf_slugs: list[str], age_group: AgeGroup, db: AsyncSession
+) -> SessionTurn:
+    """Reject every leaf shown on the current reveal at once — the "none of
+    these fit" footer action. See _reject_and_advance."""
+    return await _reject_and_advance(assessment_id, leaf_slugs, age_group, db)
 
 
 async def submit_simulation_outcome(

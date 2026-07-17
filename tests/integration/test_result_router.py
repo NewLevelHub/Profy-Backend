@@ -136,6 +136,19 @@ async def test_result_is_available_after_a_liked_reveal(client: AsyncClient, db_
         assert {"name", "country", "city"} <= set(program["university"])
         assert program["university"]["city"] == "Астана"
 
+    # AC5: the child's own strengths/growth areas, from real answers given
+    # during the run (always option 0 — see _run_to_liked_result), not from
+    # the profession's own axis profile.
+    assert isinstance(body["strengths"], list)
+    assert isinstance(body["growth_areas"], list)
+    assert len(body["strengths"]) + len(body["growth_areas"]) >= 1
+    for signal in [*body["strengths"], *body["growth_areas"]]:
+        assert {"code", "label_ru", "score"} <= set(signal)
+    for signal in body["strengths"]:
+        assert signal["score"] > 0
+    for signal in body["growth_areas"]:
+        assert signal["score"] < 0
+
 
 async def test_result_of_another_users_assessment_is_forbidden(
     client: AsyncClient, db_session: AsyncSession

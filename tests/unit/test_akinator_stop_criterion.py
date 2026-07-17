@@ -25,6 +25,18 @@ def test_two_close_leaders_reveal_cluster():
     assert sum(belief[leaf] for leaf in decision.leaves) >= settings.AKINATOR_STOP_CLUSTER_THRESHOLD
 
 
+def test_cluster_always_shows_full_k_leaves_even_past_threshold():
+    """A cluster reveal always offers exactly cluster_k (3) professions, even
+    when cumulative probability already crosses the threshold with fewer —
+    previously this could stop at 2, understating the choice on offer."""
+    belief = {"a": 0.5, "b": 0.29, "c": 0.15, "d": 0.06}
+
+    decision = check_stop(belief, step=5, age_group="senior")
+
+    assert decision.status == "reveal_cluster"
+    assert decision.leaves == ["a", "b", "c"]
+
+
 def test_ceiling_with_flat_belief_reveals_cluster_not_an_error():
     """AC3: hitting the age ceiling with spread-out belief still reveals a
     cluster (valid outcome), never raises and never leaves "continue"."""
