@@ -1,5 +1,7 @@
 from app.services.akinator_engine import StopDecision
-from app.services.akinator_report_service import REPORT_MESSAGES, build_reveal_report
+from app.services.akinator_report_service import (
+    REPORT_MESSAGES, build_reveal_report, summarize_strengths,
+)
 
 # AC3 copy checklist: no absolutist verdicts ("твоя профессия — X", "ты
 # будешь X", "точно"/"стопроцентно") — every reveal message must read as a
@@ -60,6 +62,55 @@ def test_uncertain_reveal_has_no_backups():
     report = build_reveal_report(decision, belief, rejected_leaves=[])
 
     assert report.backups == []
+
+
+def test_ceiling_cluster_is_inconclusive_not_uncertain():
+    """A cluster forced by the question ceiling (reason="ceiling") is a real
+    engine failure to converge — distinct from a genuine close 2-3-way race
+    (reason="confidence", still "uncertain") — and must carry strengths."""
+    decision = StopDecision(status="reveal_cluster", leaves=["a", "b"], reason="ceiling")
+    belief = {"a": 0.4, "b": 0.35, "c": 0.25}
+    leaf_profiles = {
+        "a": {"People": 2, "Care": 1},
+        "b": {"People": 1, "Data": 2},
+        "c": {"Data": 1},
+    }
+
+    report = build_reveal_report(decision, belief, rejected_leaves=[], leaf_profiles=leaf_profiles)
+
+    assert report.kind == "inconclusive"
+    assert report.strengths
+    assert report.message == REPORT_MESSAGES["inconclusive"]
+
+
+def test_confidence_cluster_stays_uncertain_even_with_leaf_profiles_passed():
+    decision = StopDecision(status="reveal_cluster", leaves=["a", "b"], reason="confidence")
+    belief = {"a": 0.4, "b": 0.35, "c": 0.25}
+
+    report = build_reveal_report(decision, belief, rejected_leaves=[], leaf_profiles={})
+
+    assert report.kind == "uncertain"
+    assert report.strengths == []
+
+
+def test_summarize_strengths_picks_top_positive_axes():
+    belief = {"a": 0.6, "b": 0.4}
+    leaf_profiles = {
+        "a": {"People": 2, "Data": -1},
+        "b": {"People": 1, "Ideas": 2},
+    }
+
+    strengths = summarize_strengths(belief, leaf_profiles, top_n=2)
+
+    # People: 0.6*2 + 0.4*1 = 1.6 (top); Ideas: 0.4*2 = 0.8; Data is negative.
+    assert strengths[0] == "Ориентация на людей, общение"
+    assert len(strengths) == 2
+
+
+def test_summarize_strengths_ignores_nonpositive_axes():
+    belief = {"a": 1.0}
+    strengths = summarize_strengths(belief, {"a": {"Data": -2}})
+    assert strengths == []
 
 
 def test_report_messages_avoid_categorical_verdicts():

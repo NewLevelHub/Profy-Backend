@@ -28,14 +28,19 @@ class RevealLeaf(BaseModel):
     # user a broader "направление" to anchor on alongside the specific
     # profession, instead of just a bare, possibly unfamiliar job title.
     direction: str
+    description: str = ""
 
 
 class RevealResponse(BaseModel):
     type: Literal["reveal"] = "reveal"
-    status: Literal["single", "cluster"]
+    status: Literal["single", "cluster", "inconclusive"]
     leaves: list[RevealLeaf]
     backups: list[RevealLeaf] = Field(default_factory=list)
     message: str
+    # Only populated for status="inconclusive" — friendly axis-strength
+    # labels (see akinator_report_service.summarize_strengths), the honest
+    # fallback when the question ceiling was hit without a confident answer.
+    strengths: list[str] = Field(default_factory=list)
 
 
 AkinatorTurnResponse = Annotated[
@@ -60,3 +65,10 @@ class AkinatorFeedbackResponse(BaseModel):
 class AkinatorResolveRequest(BaseModel):
     question_id: uuid.UUID | None = None
     selected_option_index: int | None = Field(default=None, ge=0)
+
+
+class AkinatorRejectAllRequest(BaseModel):
+    """Batch reject — the "none of these fit" footer action, rejecting every
+    leaf currently shown on the reveal in one call. See
+    akinator_session_service.reject_leaves."""
+    leaf_slugs: list[str]
