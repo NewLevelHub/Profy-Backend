@@ -15,9 +15,20 @@ def _question(age_variant: str) -> AkinatorQuestion:
     )
 
 
-def test_match_score_sums_products_over_answer_axes():
-    assert match_score({"People": 2, "Data": 1}, {"People": 2, "Care": 1}) == 4.0
+def test_match_score_sums_products_over_answer_axes_normalized_by_leaf_norm():
+    """Calibration-pass-3 fix: raw dot product (People:2*2 + Data:1*0 = 4) is
+    scaled down by the leaf's own profile norm (||{People:2,Care:1}|| =
+    sqrt(5)) — see match_score's docstring for why (un-normalized, leaves
+    with many strong axes always won regardless of actual fit)."""
+    assert math.isclose(
+        match_score({"People": 2, "Data": 1}, {"People": 2, "Care": 1}), 4.0 / math.sqrt(5)
+    )
     assert match_score({}, {"People": 2}) == 0.0
+
+
+def test_match_score_is_zero_for_an_empty_leaf_profile():
+    """No profile to align with -> no signal, not a division-by-zero crash."""
+    assert match_score({"People": 2}, {}) == 0.0
 
 
 def test_update_belief_sums_to_one():
