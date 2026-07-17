@@ -71,6 +71,7 @@ async def _backups_for(session: AssessmentSession, exclude_slug: str, db: AsyncS
             slug=slug,
             name=direction.name,
             direction=section_name_by_id.get(direction.parent_id, ""),
+            description=direction.description,
         )
         for slug in slugs
         if (direction := directions_by_slug.get(slug)) is not None

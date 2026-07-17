@@ -77,6 +77,14 @@ def update_belief(
     return _softmax(log_belief)
 
 
+class NoRemainingCandidatesError(ValueError):
+    """Raised when rejecting a leaf (or a batch of them) would empty the
+    belief entirely — distinct from an unknown-slug ValueError: this is a
+    legitimate terminal state ("the user rejected everything left"), not a
+    client error, so callers should catch it separately (see
+    akinator_session_service._reject_and_advance)."""
+
+
 def reject_leaf(belief: dict[str, float], leaf_slug: str) -> dict[str, float]:
     """Condition belief on "not leaf_slug": drop it entirely and renormalize
     the rest proportionally, so it can never resurface in this session (a
@@ -89,11 +97,24 @@ def reject_leaf(belief: dict[str, float], leaf_slug: str) -> dict[str, float]:
 
     remaining_mass = 1.0 - belief[leaf_slug]
     if remaining_mass <= 1e-9:
-        raise ValueError("no remaining candidates after rejecting this leaf")
+        raise NoRemainingCandidatesError("no remaining candidates after rejecting this leaf")
 
     return {
         leaf: prob / remaining_mass for leaf, prob in belief.items() if leaf != leaf_slug
     }
+
+
+def reject_leaves(belief: dict[str, float], slugs: list[str]) -> dict[str, float]:
+    """Batch version of reject_leaf — drop several leaves at once (e.g. "none
+    of these fit" rejecting every card on the current reveal in one go).
+    Sequential single rejects-and-renormalizes are equivalent to dropping the
+    whole set and renormalizing once, so this just loops reject_leaf, reusing
+    its renormalization, its ValueError on an unknown slug, and its
+    "no remaining candidates" ValueError for the case where the batch would
+    empty the belief entirely."""
+    for slug in slugs:
+        belief = reject_leaf(belief, slug)
+    return belief
 
 
 def question_axis_families(question: AkinatorQuestion) -> set[AxisFamily]:
@@ -288,17 +309,15 @@ class StopDecision:
 def _top_cluster(
     sorted_leaves: list[tuple[str, float]], k: int, threshold: float
 ) -> tuple[list[str], float]:
-    """Greedily take leaves off the (belief-descending) list, stopping once
-    either the cumulative probability crosses `threshold` or `k` are taken —
-    whichever comes first."""
-    cluster: list[str] = []
-    cumulative = 0.0
-    for leaf, prob in sorted_leaves[:k]:
-        cluster.append(leaf)
-        cumulative += prob
-        if cumulative >= threshold:
-            break
-    return cluster, cumulative
+    """Always take the top `k` leaves (belief-descending) as the cluster —
+    never fewer, so a cluster reveal always offers exactly `min(k,
+    len(sorted_leaves))` professions to choose from, instead of stopping
+    early the moment cumulative probability crosses `threshold`. `threshold`
+    still gates *whether* this set is confident enough to reveal at all (see
+    check_stop), just not how many leaves are in it."""
+    cluster = sorted_leaves[:k]
+    cumulative = sum(prob for _, prob in cluster)
+    return [leaf for leaf, _ in cluster], cumulative
 
 
 ALL_AXIS_FAMILIES: frozenset[str] = frozenset(family.value for family in AxisFamily)

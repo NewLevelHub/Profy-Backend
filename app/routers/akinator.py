@@ -19,6 +19,7 @@ from app.schemas.akinator_session import (
     AkinatorFeedbackResponse,
     AkinatorOption,
     AkinatorTurnResponse,
+    AkinatorRejectAllRequest,
     AkinatorResolveRequest,
     NextQuestionResponse,
     RevealLeaf,
@@ -78,7 +79,15 @@ async def _reveal_response(
     age_group: AgeGroup,
     db: AsyncSession,
 ) -> RevealResponse:
-    report = akinator_report_service.build_reveal_report(decision, belief, rejected_leaves)
+    # Axis-profile weighting for the honest "couldn't narrow it down" summary
+    # is only needed on that path — skip the extra query otherwise.
+    leaf_profiles = None
+    if decision.status == "reveal_cluster" and decision.reason == "ceiling":
+        leaf_profiles = await akinator_session_service._leaf_profiles_for(db, belief)
+
+    report = akinator_report_service.build_reveal_report(
+        decision, belief, rejected_leaves, leaf_profiles=leaf_profiles
+    )
 
     all_slugs = [*report.leaves, *report.backups]
     result = await db.execute(
@@ -108,17 +117,22 @@ async def _reveal_response(
                 else direction.name
             )
             section_name = section_name_by_id.get(direction.parent_id, "")
-            leaves.append(RevealLeaf(slug=slug, name=name, direction=section_name))
+            leaves.append(RevealLeaf(
+                slug=slug, name=name, direction=section_name, description=direction.description,
+            ))
         return leaves
 
-    reveal_status: Literal["single", "cluster"] = (
-        "single" if decision.status == "reveal_single" else "cluster"
-    )
+    reveal_status: Literal["single", "cluster", "inconclusive"] = {
+        "confident": "single",
+        "uncertain": "cluster",
+        "inconclusive": "inconclusive",
+    }[report.kind]
     return RevealResponse(
         status=reveal_status,
         leaves=to_leaves(report.leaves),
         backups=to_leaves(report.backups),
         message=report.message,
+        strengths=report.strengths,
     )
 
 
@@ -197,6 +211,23 @@ async def reject_akinator_leaf(
     age_group = await _require_owned_assessment(assessment_id, current_user, db)
     try:
         turn = await akinator_session_service.reject_leaf(assessment_id, leaf_slug, age_group, db)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return await _turn_response(turn, age_group, db)
+
+
+@router.post("/{assessment_id}/akinator/reject-all", response_model=AkinatorTurnResponse)
+async def reject_akinator_leaves(
+    assessment_id: uuid.UUID,
+    data: AkinatorRejectAllRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> NextQuestionResponse | RevealResponse:
+    age_group = await _require_owned_assessment(assessment_id, current_user, db)
+    try:
+        turn = await akinator_session_service.reject_leaves(
+            assessment_id, data.leaf_slugs, age_group, db
+        )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return await _turn_response(turn, age_group, db)

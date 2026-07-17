@@ -10,7 +10,7 @@ from app.models.assessment_session import SessionStatus
 from app.models.direction import Direction
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
-from app.services import akinator_session_service
+from app.services import akinator_session_service, assessment_session_service
 from app.services.akinator_engine import match_score
 from scripts.seed_akinator_content import seed_professions, seed_questions, seed_sections
 
@@ -120,3 +120,52 @@ async def test_resubmitting_an_answered_question_is_rejected_and_belief_unchange
 
     assert turn.session.belief == belief_after_first_answer
     assert turn.session.step == step_after_first_answer
+
+
+async def test_reject_leaves_drops_every_shown_leaf_in_one_call(db_session: AsyncSession):
+    """The "none of these fit" footer action rejects every leaf on the
+    current reveal at once, then re-derives the turn same as a single reject."""
+    await _ensure_seeded(db_session)
+    assessment = await _make_assessment(db_session)
+
+    session = await assessment_session_service.get_or_create_session(
+        assessment.id, db_session
+    )
+    belief = {"a": 0.4, "b": 0.35, "c": 0.15, "d": 0.1}
+    session = await assessment_session_service.save_session(
+        session, db_session, belief=belief, status=SessionStatus.converged_cluster,
+    )
+
+    turn = await akinator_session_service.reject_leaves(
+        assessment.id, ["a", "b"], AgeGroup.senior, db_session
+    )
+
+    assert "a" not in turn.session.belief
+    assert "b" not in turn.session.belief
+    assert set(turn.session.rejected_leaves) == {"a", "b"}
+
+
+async def test_reject_leaves_exhausting_candidates_falls_back_to_inconclusive(
+    db_session: AsyncSession,
+):
+    """Rejecting every remaining candidate at once must not surface the
+    engine's raw ValueError — it's the one true dead end, handled by forcing
+    an honest, no-confidence reveal instead of a 400."""
+    await _ensure_seeded(db_session)
+    assessment = await _make_assessment(db_session)
+
+    session = await assessment_session_service.get_or_create_session(
+        assessment.id, db_session
+    )
+    session = await assessment_session_service.save_session(
+        session, db_session, belief={"a": 1.0}, status=SessionStatus.converged_single,
+    )
+
+    turn = await akinator_session_service.reject_leaves(
+        assessment.id, ["a"], AgeGroup.senior, db_session
+    )
+
+    assert turn.decision.status == "reveal_cluster"
+    assert turn.decision.reason == "ceiling"
+    assert turn.decision.leaves == []
+    assert turn.session.status == SessionStatus.exhausted_ceiling

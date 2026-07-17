@@ -4,7 +4,9 @@ import uuid
 import pytest
 
 from app.models.akinator_question import AkinatorQuestion
-from app.services.akinator_engine import age_variant_matches, match_score, reject_leaf, update_belief
+from app.services.akinator_engine import (
+    age_variant_matches, match_score, reject_leaf, reject_leaves, update_belief,
+)
 
 
 def _question(age_variant: str) -> AkinatorQuestion:
@@ -112,6 +114,33 @@ def test_reject_leaf_last_candidate_raises():
     """Rejecting the only remaining leaf leaves nothing to redistribute to."""
     with pytest.raises(ValueError):
         reject_leaf({"a": 1.0}, "a")
+
+
+def test_reject_leaves_drops_every_slug_and_renormalizes():
+    """Batch reject ("none of these fit") drops all given slugs in one go —
+    equivalent to rejecting them one at a time, just for the whole reveal."""
+    belief = {"a": 0.5, "b": 0.3, "c": 0.15, "d": 0.05}
+
+    result = reject_leaves(belief, ["a", "b"])
+
+    assert set(result) == {"c", "d"}
+    assert math.isclose(sum(result.values()), 1.0, abs_tol=1e-9)
+    assert math.isclose(result["c"] / result["d"], 0.15 / 0.05, rel_tol=1e-9)
+
+
+def test_reject_leaves_unknown_slug_raises():
+    """Same strictness as the single-leaf reject_leaf — an unknown slug in
+    the batch is a client error, not something to silently skip."""
+    with pytest.raises(ValueError):
+        reject_leaves({"a": 0.6, "b": 0.4}, ["a", "does-not-exist"])
+
+
+def test_reject_leaves_exhausting_all_candidates_raises():
+    """Rejecting every remaining leaf at once leaves nothing to redistribute
+    to — same "no remaining candidates" outcome as the single-leaf case, so
+    the session layer can catch it and fall back to an honest reveal."""
+    with pytest.raises(ValueError):
+        reject_leaves({"a": 0.6, "b": 0.4}, ["a", "b"])
 
 
 def test_middle_also_sees_senior_only_questions():
