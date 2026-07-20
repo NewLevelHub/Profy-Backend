@@ -3,6 +3,7 @@ import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formataddr, formatdate, make_msgid
 from pathlib import Path
 
 from app.config import settings
@@ -18,11 +19,22 @@ def _load_template(name: str, **kwargs: str) -> str:
     return path.read_text(encoding="utf-8").format(**kwargs)
 
 
+def _sender_domain() -> str:
+    _, _, domain = settings.EMAIL_FROM.rpartition("@")
+    return domain or "localhost"
+
+
 def _send_smtp(to: str, subject: str, plain: str, html: str) -> None:
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = settings.EMAIL_FROM
+    msg["From"] = formataddr((settings.EMAIL_FROM_NAME or "", settings.EMAIL_FROM))
     msg["To"] = to
+    # Date and a domain-scoped Message-ID are expected by receivers; missing
+    # them is a common reason transactional mail is flagged as spam.
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = make_msgid(domain=_sender_domain())
+    if settings.EMAIL_REPLY_TO:
+        msg["Reply-To"] = settings.EMAIL_REPLY_TO
     msg.attach(MIMEText(plain, "plain", "utf-8"))
     msg.attach(MIMEText(html, "html", "utf-8"))
 

@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     EMAIL_FROM: str = ""
+    # Human-readable sender name shown in inboxes, e.g. "Profy".
+    EMAIL_FROM_NAME: str = "Profy"
+    # Address users reach if they reply (leave blank to omit the header).
+    EMAIL_REPLY_TO: str = ""
 
     @model_validator(mode="after")
     def build_database_url(self) -> Self:
