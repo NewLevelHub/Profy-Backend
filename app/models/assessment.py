@@ -19,6 +19,12 @@ class AssessmentGoal(str, enum.Enum):
 class AssessmentStatus(str, enum.Enum):
     in_progress = "in_progress"
     completed = "completed"
+    # Superseded by a newer attempt (see assessment_service.create_assessment)
+    # before the user ever reached — or responded to — a reveal. Distinct from
+    # `completed`, which means the user actually finished and got a verdict
+    # (liked or not) — get_current_assessment relies on that distinction to
+    # never surface a dead attempt as "the" result.
+    abandoned = "abandoned"
 
 
 class Assessment(Base):
