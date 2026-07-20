@@ -13,7 +13,7 @@ from app.models.profile import AgeGroup, Profile
 from app.models.user import User
 from app.services import akinator_session_service, assessment_session_service
 from app.services.akinator_engine import match_score
-from scripts.seed_akinator_content import seed_professions, seed_questions, seed_sections
+from scripts.seed_akinator_content import seed_questions, seed_sections, seed_specialties
 
 
 async def _make_assessment(db: AsyncSession) -> Assessment:
@@ -39,7 +39,7 @@ async def _ensure_seeded(db: AsyncSession) -> None:
     """Idempotent — safe whether or not scripts/seed_akinator_content.py was
     already run for real against this DB."""
     section_ids, *_ = await seed_sections(db)
-    await seed_professions(db, section_ids)
+    await seed_specialties(db, section_ids)
     await seed_questions(db)
     await db.flush()
 
@@ -50,7 +50,7 @@ async def test_full_session_reveals_within_expected_question_range(db_session: A
     await _ensure_seeded(db_session)
     assessment = await _make_assessment(db_session)
 
-    result = await db_session.execute(select(Direction).where(Direction.slug == "surgeon"))
+    result = await db_session.execute(select(Direction).where(Direction.slug == "general-medicine"))
     target_profile = result.scalar_one().profile
 
     turn = await akinator_session_service.start_session(
@@ -78,10 +78,11 @@ async def test_full_session_reveals_within_expected_question_range(db_session: A
         questions_asked += 1
         assert questions_asked <= max_turns, "session never converged within the age ceiling"
 
-    # Doesn't assert *which* profession/cluster wins: the seeded profiles are
+    # Doesn't assert *which* specialty/cluster wins: the seeded profiles are
     # an explicitly uncalibrated draft (see profi_full_catalog.md), so a
-    # consistent "favor surgeon" answering strategy can still legitimately
-    # tip toward another leaf once questions stray outside medicine. AC1 is
+    # consistent "favor general-medicine" answering strategy can still
+    # legitimately tip toward another leaf once questions stray outside
+    # medicine. AC1 is
     # about the mechanism (state → math → content → reveal) terminating
     # correctly and promptly, not about calibration accuracy.
     assert turn.decision.status in ("reveal_single", "reveal_cluster")

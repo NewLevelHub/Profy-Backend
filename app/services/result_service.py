@@ -137,6 +137,7 @@ async def _backups_for(session: AssessmentSession, exclude_slug: str, db: AsyncS
             name=direction.name,
             direction=section_name_by_id.get(direction.parent_id, ""),
             description=direction.description,
+            professions=direction.professions or [],
         )
         for slug in slugs
         if (direction := directions_by_slug.get(slug)) is not None
@@ -196,6 +197,7 @@ async def get_result(assessment_id: uuid.UUID, db: AsyncSession) -> AkinatorResu
         direction_slug=direction.slug,
         direction_name=direction.name,
         direction_description=direction.description,
+        professions=direction.professions or [],
         message=_message_for(session),
         matched_axes=matched_axes_for(direction.profile or {}),
         strengths=strengths,

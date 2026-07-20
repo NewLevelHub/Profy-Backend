@@ -80,5 +80,5 @@ def test_message_for_after_rejection_regardless_of_session_status():
     for session_status in (
         SessionStatus.converged_single, SessionStatus.converged_cluster, SessionStatus.exhausted_ceiling,
     ):
-        session = SimpleNamespace(status=session_status, rejected_leaves=["surgeon"])
+        session = SimpleNamespace(status=session_status, rejected_leaves=["general-medicine"])
         assert "предыдущий вариант" in _message_for(session)

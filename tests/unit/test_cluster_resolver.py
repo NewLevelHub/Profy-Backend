@@ -9,7 +9,7 @@ from app.models.assessment_session import AssessmentSession, SessionStatus
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
 from app.services import cluster_resolver_service
-from scripts.seed_akinator_content import seed_professions, seed_sections
+from scripts.seed_akinator_content import seed_sections, seed_specialties
 
 
 @pytest.mark.asyncio
@@ -22,7 +22,7 @@ async def test_resolve_cluster_never_declares_winner_below_threshold_after_budge
     """
     # 1. Seed taxonomy so _leaf_profiles_for works
     section_ids, *_ = await seed_sections(db_session)
-    await seed_professions(db_session, section_ids)
+    await seed_specialties(db_session, section_ids)
 
     # 2. Create user, profile, assessment
     user = User(email=f"{uuid.uuid4()}@test.local", hashed_password="x")
