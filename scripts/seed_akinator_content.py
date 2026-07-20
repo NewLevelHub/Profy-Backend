@@ -552,7 +552,12 @@ QUESTIONS: list[dict] = [
      "text": "Что ближе в работе с продуктом?", "text_junior": None,
      "options": [
          {"text": "напрямую убеждать людей, продавать, добиваться сделки", "axis_weights": {"Emp": 2, "Motiv": 2}},
-         {"text": "придумывать, как о продукте узнают, кампании, идеи", "axis_weights": {"Inv": 2, "Ideas": 1}},
+         # Bumped Ideas 1->2 and added Vis:1 (calibration playtest pass, 2026-07):
+         # marketing's own profile (Emp:1,Motiv:1 alongside Ideas:1,Inv:1,Vis:1)
+         # scored HIGHER on the "sales" option than on this, its own option —
+         # the old {"Inv":2,"Ideas":1} was too thin to beat option 0's Emp+Motiv
+         # magnitude. See akinator_engine.match_score census notes.
+         {"text": "придумывать, как о продукте узнают, кампании, идеи", "axis_weights": {"Inv": 2, "Ideas": 2, "Vis": 1}},
      ], "resolves_pair": ["management-entrepreneurship", "marketing"]},
     {"order": 24, "kind": "situational", "depth": 2, "age_variant": "both",
      "text": "Когда рядом кому-то плохо и нужна помощь, ты…",
@@ -560,6 +565,14 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "действую сразу, быстро, на месте", "axis_weights": {"Pace": 2, "Focus": -2, "Risk": 1}},
          {"text": "хочу разобраться спокойно и точно поставить диагноз", "axis_weights": {"Focus": 2, "Exp": 1}},
+         # Neutral option added (calibration playtest pass, 2026-07): this
+         # question has no resolves_pair, so it isn't covered by the
+         # select_next_question relevance filter and keeps getting served to
+         # sessions with no real Pace/Risk/Focus signal either way — without
+         # an escape hatch they were forced into a non-answer that nudged
+         # belief toward whichever side had ANY overlap (e.g. dragging
+         # school-teacher/marketing personas toward hospitality-manager).
+         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": None},  # specialty pivot: emergency-physician/physician/surgeon all merged into general-medicine — no longer a specialty-level fork, kept as general belief-shaping signal
     {"order": 26, "kind": "direct", "depth": 2, "age_variant": "both",
      "text": "Про животных и природу — что ближе?",
@@ -567,7 +580,13 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "лечить и заботиться о конкретных животных", "axis_weights": {"Care": 2, "Living": 2}},
          {"text": "изучать их, наблюдать, понимать, как всё устроено", "axis_weights": {"Obj": -2, "Exp": 2, "Focus": 2}},
-         {"text": "работать на земле, выращивать", "axis_weights": {"Phys": 1, "PhysSt": 1}},
+         # Added Living:2 (calibration playtest pass, 2026-07): agronomist's own
+         # profile has no Care axis at all, so it used to score higher on the
+         # "care for animals" option than on this, its own — Living is exactly
+         # as much about plants/soil as about animals (see axes.py), this
+         # option just never carried any. Checked against the other 3 leaves
+         # in this resolver — none of their rankings flip.
+         {"text": "работать на земле, выращивать", "axis_weights": {"Phys": 1, "PhysSt": 1, "Living": 2}},
          {"text": "тренировать животных, работать с ними в паре", "axis_weights": {"Dev": 2, "Motor": 1, "People": 1}},
      ], "resolves_pair": ["veterinary-zootechnics", "zoologist", "ecologist", "agronomist"]},
     # Third option added (replacement pass) so building-systems-engineer, the
@@ -575,7 +594,13 @@ QUESTIONS: list[dict] = [
     {"order": 28, "kind": "direct", "depth": 3, "age_variant": "senior",
      "text": "Если проектировать — что ближе?", "text_junior": None,
      "options": [
-         {"text": "механизмы, машины, устройства", "axis_weights": {"Phys": 2}},
+         # Added Obj:1, Inv:1 (calibration playtest pass, 2026-07): this option
+         # only carried Phys:2, one axis, while the competing "buildings"
+         # option below carries three (Phys+Struct+Lead) — a textbook
+         # mechanical-engineer profile (which also has Obj:2, Inv:1) scored
+         # HIGHER on "buildings" than on its own option. Checked: civil-
+         # engineering still clearly prefers its own option after this change.
+         {"text": "механизмы, машины, устройства", "axis_weights": {"Phys": 2, "Obj": 1, "Inv": 1}},
          {"text": "здания, мосты, конструкции", "axis_weights": {"Phys": 2, "Struct": 2, "Lead": 1}},
          {"text": "инженерные системы зданий: вода, тепло, вентиляция", "axis_weights": {"Motor": 1, "Focus": 2, "Predict": -1}},
      ], "resolves_pair": ["mechanical-engineer", "civil-engineering"]},
@@ -585,6 +610,8 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "да, люблю физическую работу, на ногах, с материалами", "axis_weights": {"PhysSt": 2, "Motor": 1, "Phys": 2}},
          {"text": "лучше что-то поспокойнее, не тяжёлое физически", "axis_weights": {"PhysSt": -2}},
+         # Neutral option added (calibration playtest pass, 2026-07) — see order 24.
+         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": None},
     {"order": 30, "kind": "direct", "depth": 2, "age_variant": "both",
      "text": "В творчестве что тебя тянет?",
@@ -616,6 +643,8 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "рискну, придумаю своё дело, буду сам за всё отвечать", "axis_weights": {"Risk": 2, "Auto": 2, "Inv": 2, "Lead": 2}},
          {"text": "лучше в понятной роли с стабильностью", "axis_weights": {"Risk": -2, "Struct": 1}},
+         # Neutral option added (calibration playtest pass, 2026-07) — see order 24.
+         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": None},  # source says "предприниматель vs исполнительские роли" (generic) — flagged, see module docstring
     {"order": 37, "kind": "direct", "depth": 3, "age_variant": "senior",
      "text": "С числами и деньгами тебе как?", "text_junior": None,
@@ -639,7 +668,11 @@ QUESTIONS: list[dict] = [
      "text_junior": None,
      "options": [
          {"text": "да: лицо, грим, образ — превращать человека в персонажа", "axis_weights": {"People": 2, "Motor": 2, "Emp": 1}},
-         {"text": "ближе создавать вещи и одежду, а не работать с лицом", "axis_weights": {"Phys": 1, "Vis": 1}},
+         # Added Ideas:1 (calibration playtest pass, 2026-07): design's own
+         # profile (Ideas:2, Inv:2) scored higher on the "makeup" option than
+         # on this, its own — Phys+Vis alone was too thin. makeup-artist-film
+         # still wins its own option by a wide margin either way.
+         {"text": "ближе создавать вещи и одежду, а не работать с лицом", "axis_weights": {"Phys": 1, "Vis": 1, "Ideas": 1}},
      ], "resolves_pair": ["makeup-artist-film", "design"]},
     # --- Calibration pass additions (orders 41-44): resolves_pair gaps found
     # by auditing profile cosine-similarity — see module docstring.
@@ -674,8 +707,15 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "придумывать сообщение, тексты, образ бренда",
           "axis_weights": {"Ideas": 2, "Inv": 2, "Data": -1}},
+         # Added Predict:1 (calibration playtest pass, 2026-07): marketing's
+         # own profile tied exactly 0.95/0.95 between the two options here —
+         # both are shared "creative" axes with pr-specialist, so neither
+         # discriminated for marketing specifically. Predict:1 matches
+         # marketing's own profile without helping pr-specialist (which
+         # carries no Predict axis at all), breaking the tie in marketing's
+         # favor without weakening pr-specialist's already-clear win on option 0.
          {"text": "считать, какая кампания сработала, разбирать цифры и аудиторию",
-          "axis_weights": {"Data": 2, "Math": 1, "Obj": -1}},
+          "axis_weights": {"Data": 2, "Math": 1, "Obj": -1, "Predict": 1}},
      ], "resolves_pair": ["pr-specialist", "marketing"]},
     {"order": 46, "kind": "direct", "depth": 3, "age_variant": "senior",
      "text": "На съёмочной площадке тебе ближе…", "text_junior": None,
@@ -712,9 +752,24 @@ QUESTIONS: list[dict] = [
          {"text": "здания и пространства, где ходят люди",
           "axis_weights": {"Phys": 1, "Struct": 2, "Lead": 1, "Acad": 1}},
      ], "resolves_pair": ["design", "architect"]},
+    # Added (calibration playtest pass, 2026-07): the "Помощь и психология"
+    # section has 3 leaves (psychologist, speech-therapist, social-worker)
+    # but only orders 19 and 47 fork psychologist away from the other two —
+    # nothing ever separated speech-therapist from social-worker directly, so
+    # the pair relied entirely on generic cross-section signal. Verified
+    # against all 3 leaf profiles: speech-therapist and social-worker each
+    # clearly prefer their own option; psychologist scores low on both.
+    {"order": 50, "kind": "situational", "depth": 3, "age_variant": "senior",
+     "text": "Кому-то нужна регулярная помощь. Тебе ближе…", "text_junior": None,
+     "options": [
+         {"text": "долго и по чуть-чуть тренировать один конкретный навык на регулярных встречах",
+          "axis_weights": {"Dev": 2, "Focus": 1, "Struct": 1}},
+         {"text": "разобраться, что у человека не так в жизни, и организовать нужную помощь: жильё, документы, службы",
+          "axis_weights": {"Lead": 1, "Struct": 1, "Predict": 1, "Pace": 1}},
+     ], "resolves_pair": ["speech-therapist", "social-worker"]},
 ]
 
-assert len(QUESTIONS) == 40, f"expected 40 questions, got {len(QUESTIONS)}"
+assert len(QUESTIONS) == 41, f"expected 41 questions, got {len(QUESTIONS)}"
 assert len({q["order"] for q in QUESTIONS}) == len(QUESTIONS), "duplicate question order"
 
 # Every slug named in a resolves_pair must actually exist as a leaf — this is
@@ -958,7 +1013,7 @@ async def seed_specialties(
 
 
 async def seed_questions(db: AsyncSession) -> tuple[int, int, int]:
-    """Upsert the 40 AkinatorQuestion rows by `order` (this script owns 0-49,
+    """Upsert the 41 AkinatorQuestion rows by `order` (this script owns 0-50,
     minus the retired orders — see RETIRED_QUESTION_ORDERS).
     Returns (inserted, updated, skipped)."""
     inserted = updated = skipped = 0
