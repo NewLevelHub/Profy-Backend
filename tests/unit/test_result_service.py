@@ -1,64 +1,100 @@
 from types import SimpleNamespace
 
 from app.models.assessment_session import SessionStatus
-from app.services.result_service import _child_strengths_and_growth, _message_for, matched_axes_for
+from app.services.result_service import _axis_comparison_for, _message_for
 
 
-def test_matched_axes_for_ranks_by_absolute_value_strongest_first():
-    profile = {"People": 1, "Care": 2, "Focus": -2, "Struct": 1}
-    highlights = matched_axes_for(profile)
+def test_axis_comparison_splits_by_threshold_strongest_first():
+    profile = {"People": 2, "Data": 1, "Motor": 1, "Struct": 1}
+    child_scores = {"People": 0.8, "Data": 0.2, "Motor": -0.1, "Struct": -0.6}
 
-    assert [h.code for h in highlights] == ["Care", "Focus", "People", "Struct"]
-    assert highlights[0].direction_value == 2
-    assert highlights[1].direction_value == -2
+    matches, growth, is_direction_specific = _axis_comparison_for(profile, child_scores)
 
-
-def test_matched_axes_for_skips_zero_axes():
-    highlights = matched_axes_for({"People": 0, "Care": 1})
-    assert [h.code for h in highlights] == ["Care"]
-
-
-def test_matched_axes_for_caps_at_top_n():
-    profile = {"People": 2, "Living": 2, "Phys": 2, "Data": 2, "Ideas": 2, "Inv": 2, "Obj": 2}
-    highlights = matched_axes_for(profile)
-    assert len(highlights) == 6
-
-
-def test_matched_axes_for_looks_up_known_axis_labels():
-    highlights = matched_axes_for({"Care": 2})
-    assert highlights[0].label_ru.strip()
-    assert highlights[0].label_ru != "Care"
-
-
-def test_matched_axes_for_breaks_ties_deterministically():
-    highlights = matched_axes_for({"People": 2, "Care": 2})
-    assert [h.code for h in highlights] == ["Care", "People"]  # alphabetical tie-break
-
-
-def test_child_strengths_and_growth_splits_by_sign_strongest_first():
-    totals = {"People": 12.0, "Data": 4.0, "Motor": -1.0, "Struct": -6.0, "Ideas": 0.0}
-    strengths, growth = _child_strengths_and_growth(totals)
-
-    assert [s.code for s in strengths] == ["People", "Data"]
+    assert [m.code for m in matches] == ["People", "Data"]
     assert [g.code for g in growth] == ["Struct", "Motor"]
+    assert is_direction_specific is True
 
 
-def test_child_strengths_and_growth_caps_at_n():
-    totals = {f"axis{i}": float(i + 1) for i in range(5)}
-    strengths, _ = _child_strengths_and_growth(totals)
-    assert len(strengths) == 3
+def test_axis_comparison_ignores_axes_the_direction_does_not_need():
+    profile = {"People": -1, "Care": 0, "Data": 1}
+    child_scores = {"People": 0.9, "Care": 0.9, "Data": 0.9}
 
+    matches, growth, is_direction_specific = _axis_comparison_for(profile, child_scores)
 
-def test_child_strengths_and_growth_looks_up_known_axis_labels():
-    strengths, _ = _child_strengths_and_growth({"Care": 3.0})
-    assert strengths[0].label_ru.strip()
-    assert strengths[0].label_ru != "Care"
-
-
-def test_child_strengths_and_growth_empty_totals_is_empty():
-    strengths, growth = _child_strengths_and_growth({})
-    assert strengths == []
+    assert [m.code for m in matches] == ["Data"]
     assert growth == []
+    assert is_direction_specific is True
+
+
+def test_axis_comparison_ignores_axes_with_no_child_signal():
+    profile = {"People": 1, "Data": 1}
+    child_scores = {"People": 0.5}  # Data never touched by an answered question
+
+    matches, growth, is_direction_specific = _axis_comparison_for(profile, child_scores)
+
+    assert [m.code for m in matches] == ["People"]
+    assert growth == []
+    assert is_direction_specific is True
+
+
+def test_axis_comparison_caps_at_n_per_side():
+    profile = {f"axis{i}": 1 for i in range(6)}
+    child_scores = {f"axis{i}": float(i + 1) for i in range(6)}
+
+    matches, _, _ = _axis_comparison_for(profile, child_scores)
+    assert len(matches) == 4
+
+
+def test_axis_comparison_looks_up_known_axis_labels():
+    matches, _, _ = _axis_comparison_for({"Care": 1}, {"Care": 0.5})
+    assert matches[0].label_ru.strip()
+    assert matches[0].label_ru != "Care"
+
+
+def test_axis_comparison_growth_items_carry_a_static_explanation():
+    _, growth, _ = _axis_comparison_for({"Care": 1}, {"Care": -0.5})
+    assert growth[0].explanation is not None
+    assert growth[0].explanation.meaning.strip()
+    assert growth[0].explanation.suggestion.strip()
+
+
+def test_axis_comparison_match_items_carry_a_strength_phrase_not_explanation():
+    matches, _, _ = _axis_comparison_for({"Care": 1}, {"Care": 0.5})
+    assert matches[0].explanation is None
+    assert matches[0].strength_phrase
+    assert matches[0].strength_phrase != "Care"
+
+
+def test_axis_comparison_direction_specific_items_carry_the_profile_value():
+    matches, _, _ = _axis_comparison_for({"Care": 2}, {"Care": 0.5})
+    assert matches[0].profile_value == 2
+
+
+def test_axis_comparison_empty_inputs_is_empty_and_not_direction_specific():
+    matches, growth, is_direction_specific = _axis_comparison_for({}, {})
+    assert matches == []
+    assert growth == []
+    assert is_direction_specific is False
+
+
+def test_axis_comparison_falls_back_to_whole_session_when_no_direction_overlap():
+    """The session never touched any axis this direction needs (e.g. its
+    questions happened to land elsewhere) — rather than showing nothing,
+    fall back to the child's real signal across the whole session, and say
+    so via is_direction_specific=False."""
+    profile = {"Care": 1}  # direction needs Care, but the child never answered on it
+    child_scores = {"Data": 0.7, "Struct": -0.4}  # real signal, just on other axes
+
+    matches, growth, is_direction_specific = _axis_comparison_for(profile, child_scores)
+
+    assert is_direction_specific is False
+    assert [m.code for m in matches] == ["Data"]
+    assert [g.code for g in growth] == ["Struct"]
+
+
+def test_axis_comparison_fallback_items_carry_no_profile_value():
+    matches, _, _ = _axis_comparison_for({"Care": 1}, {"Data": 0.7})
+    assert matches[0].profile_value is None
 
 
 def test_message_for_is_always_confident_regardless_of_session_status():

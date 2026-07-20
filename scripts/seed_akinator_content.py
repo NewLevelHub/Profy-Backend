@@ -144,7 +144,16 @@ SPECIALTIES: list[dict] = [
     # Помощь и психология — три разных диплома, компрессии нет
     {"slug": "psychologist", "name": "Психология", "section": "akinator-psychology-help",
      "description": "Психология учит понимать мысли, чувства и отношения — работать с человеком через разговор, глубоко вникая в его историю.",
-     "profile": {"People": 2, "Care": 2, "Emp": 2, "Exp": 2, "Focus": 2, "Motiv": -1, "Auto": 1, "Acad": 2, "Data": -1, "Ideas": 1},
+     # Auto:1, Ideas:1 removed (calibration playtest pass, 2026-07, round 6):
+     # neither is central to being a psychologist, but both were incidental
+     # overlap with unrelated ±2-weighted resolver options ("рискну, придумаю
+     # своё дело" Auto:2; "создавать красивое" / "придумывать сообщение,
+     # тексты" Ideas:2) that kept dragging traced sessions toward
+     # film-director/makeup-artist-film/pr-specialist before this profile's
+     # own dedicated resolvers (order 19, 42, 47) got a fair chance. The
+     # profile's real signature (People/Care/Emp/Exp/Focus/Acad, all still
+     # at magnitude 2) is untouched.
+     "profile": {"People": 2, "Care": 2, "Emp": 2, "Exp": 2, "Focus": 2, "Motiv": -1, "Acad": 2, "Data": -1},
      "professions": ["Психолог", "Клинический психолог", "Коуч"]},
     {"slug": "speech-therapist", "name": "Логопедия и дефектология", "label_junior": "Логопед", "section": "akinator-psychology-help",
      "description": "Логопедия и дефектология учат помогать детям и взрослым с речевыми и развивающими нарушениями — через регулярные занятия и коррекционные методики.",
@@ -185,6 +194,12 @@ SPECIALTIES: list[dict] = [
      "professions": ["Backend-разработчик", "Frontend-разработчик", "Fullstack-разработчик", "Мобильный разработчик", "QA-инженер"]},
     {"slug": "data-science", "name": "Data Science", "label_junior": "Аналитик", "section": "akinator-it-data",
      "description": "Data Science находит закономерности в больших массивах данных и помогает бизнесу принимать решения — от аналитики до машинного обучения.",
+     # Struct:1 removal reverted (calibration playtest pass, 2026-07, round 6
+     # follow-up): tried removing it to cut overlap with finance-accounting,
+     # but census got WORSE (27%->13%) — match_score divides by the
+     # profile's own norm, so removing an axis SHRINKS the norm and makes
+     # every remaining axis (including the bad Focus/Math overlap with
+     # finance-accounting) score relatively *stronger*, not weaker. Restored.
      "profile": {"People": -1, "Living": -2, "Data": 2, "Obj": -2, "Care": -2, "Dev": -2, "Exp": 1, "Focus": 2, "Auto": 1, "Struct": 1, "Predict": -1, "Acad": 1, "PhysSt": -2, "Math": 2},
      "professions": ["Аналитик данных", "Data Scientist", "BI-аналитик", "ML-инженер"]},
     {"slug": "it-infrastructure-security", "name": "Кибербезопасность и IT-инфраструктура", "label_junior": "Компьютерный мастер", "section": "akinator-it-data",
@@ -205,7 +220,16 @@ SPECIALTIES: list[dict] = [
      "professions": ["Инженер-строитель", "Инженер инженерных систем", "Инженер-проектировщик"]},
     {"slug": "pilot", "name": "Лётная эксплуатация", "section": "akinator-engineering-tech",
      "description": "Лётная эксплуатация готовит пилотов и специалистов управления воздушным движением — работа требует быстрой реакции, хладнокровия и точного следования процедурам.",
-     "profile": {"Phys": 1, "Data": 1, "Lead": 1, "Motor": 1, "Exp": 2, "Focus": 2, "Risk": 1, "Struct": 2, "Pace": 1, "Acad": 1, "Math": 1},
+     # Inv:-1, Care:-1 added (calibration playtest pass, 2026-07, round 3):
+     # 11 axes, all non-negative, meant no answer could ever count AGAINST
+     # this profile — a census + traced-session pass found it winning far
+     # outside its own domain (mechanical-engineer, data-science, lawyer,
+     # speech-therapist, hospitality-manager sessions all ended up here).
+     # Both additions are grounded in the profile's own description:
+     # "точное следование процедурам" is the literal opposite of Inv
+     # (inventing from scratch), and the job has no individual-care
+     # component (Care) the way medicine/therapy professions do.
+     "profile": {"Phys": 1, "Data": 1, "Lead": 1, "Motor": 1, "Exp": 2, "Focus": 2, "Risk": 1, "Struct": 2, "Pace": 1, "Acad": 1, "Math": 1, "Inv": -1, "Care": -1},
      "professions": ["Пилот", "Штурман", "Диспетчер УВД"]},
 
     # Творчество и дизайн
@@ -215,11 +239,27 @@ SPECIALTIES: list[dict] = [
     # architect keeps its own accredited code, stays separate.
     {"slug": "design", "name": "Дизайн", "label_junior": "Дизайнер", "section": "akinator-creative-design",
      "description": "Дизайн создаёт визуальные образы, вещи и пространства — от логотипов и иллюстраций до одежды, мебели и цифровых интерфейсов.",
-     "profile": {"Ideas": 2, "Inv": 2, "Obj": 1, "Exp": 1, "Auto": 1, "Struct": -1, "PhysSt": -1, "Motor": 1, "Phys": 1},
+     # Vis:-1, People:-1 added (calibration playtest pass, 2026-07, round 5):
+     # after film-director was reined in (round 4), belief that used to land
+     # there started landing here instead — musician, actor, cinematographer,
+     # pr-specialist sessions all drifted to design via shared Ideas/Inv.
+     # Vis is the actual axis that separates "makes things" from "performs/
+     # is seen" (see axes.py "Быть на виду, выступать") and design never
+     # carried it either way; People:-1 reinforces that this profile works
+     # on objects/visuals, not people directly.
+     "profile": {"Ideas": 2, "Inv": 2, "Obj": 1, "Exp": 1, "Auto": 1, "Struct": -1, "PhysSt": -1, "Motor": 1, "Phys": 1, "Vis": -1, "People": -1},
      "professions": ["Графический дизайнер", "Иллюстратор", "UX/UI-дизайнер", "Модельер", "Дизайнер мебели"]},
     {"slug": "architect", "name": "Архитектура", "section": "akinator-creative-design",
      "description": "Архитектура проектирует здания и пространства, соединяя эстетику с инженерными расчётами.",
-     "profile": {"People": 1, "Phys": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Auto": 1, "Acad": 2, "Math": 1, "PhysSt": -1},
+     # Care:-1 added (calibration playtest pass, 2026-07, round 9): already
+     # the loudest profile in the catalog (6 axes at magnitude 2) with only
+     # one negative — a repeat rival for translator/speech-therapist/
+     # data-science in traced sessions via shared Focus/Struct/Exp/Acad.
+     # Architecture works on buildings/spaces, not directly caring for
+     # people — keeps it from picking up stray belief on generic
+     # "помогать людям" style questions the way its Focus/Struct/Exp
+     # overlap otherwise lets it.
+     "profile": {"People": 1, "Phys": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Auto": 1, "Acad": 2, "Math": 1, "PhysSt": -1, "Care": -1},
      "professions": ["Архитектор", "Ландшафтный архитектор", "Архитектор интерьеров"]},
 
     # Сцена и медиа — все аккредитованные программы творческих вузов различны,
@@ -234,7 +274,16 @@ SPECIALTIES: list[dict] = [
      "professions": ["Музыкант-исполнитель", "Композитор", "Звукорежиссёр"]},
     {"slug": "film-director", "name": "Режиссура", "section": "akinator-stage-media",
      "description": "Режиссура учит придумывать, как будет выглядеть фильм или спектакль, и руководить творческой командой.",
-     "profile": {"People": 1, "Ideas": 2, "Inv": 2, "Lead": 2, "Exp": 1, "Focus": 1, "Risk": 1, "Auto": 1, "Struct": -1},
+     # Data:-1, Motor:-1 added (calibration playtest pass, 2026-07, round 3):
+     # Ideas/Inv/Lead alone made this the default landing spot for almost any
+     # "creative or leadership" answer (design, marketing, journalist,
+     # architect, police-officer sessions all drifted here). Not about
+     # crunching numbers (Data — contrast finance-accounting/data-science),
+     # and directing the shot vs personally operating camera/light is
+     # exactly the split order=46 already draws against cinematographer
+     # (Motor:2 there) — this profile just never carried the negative side
+     # of that same fork.
+     "profile": {"People": 1, "Ideas": 2, "Inv": 2, "Lead": 2, "Exp": 1, "Focus": 1, "Risk": 1, "Auto": 1, "Struct": -1, "Data": -1, "Motor": -1},
      "professions": ["Режиссёр кино", "Режиссёр театра", "Режиссёр монтажа"]},
     {"slug": "cinematographer", "name": "Операторское искусство", "label_junior": "Оператор кино", "section": "akinator-stage-media",
      "description": "Операторское искусство отвечает за то, как выглядит каждый кадр — свет, ракурс и движение камеры.",
@@ -252,11 +301,38 @@ SPECIALTIES: list[dict] = [
      "professions": ["Журналист", "Репортёр", "Блогер-журналист"]},
     {"slug": "translator", "name": "Переводческое дело", "section": "akinator-words-communication",
      "description": "Переводческое дело учит передавать смысл текста или речи с одного языка на другой, сохраняя точность и стиль.",
-     "profile": {"Ideas": 1, "Obj": -1, "Exp": 2, "Focus": 2, "Auto": 2, "Struct": 1, "Predict": -1, "Acad": 1, "People": -1},
+     # Motor:-1 addition reverted (calibration playtest pass, 2026-07, round 7
+     # follow-up): the direct match_score math checked out (should have cut
+     # translator's score on cinematographer's own resolver option roughly in
+     # half), but the actual census got worse (37-43%->17%), while
+     # school-teacher — untouched this round — swung 60%->43% in the same
+     # run. That's within the sampling-noise band already measured (two
+     # identical-code reruns earlier landed 5-13pp apart on several
+     # professions), so this single run isn't reliable evidence the edit
+     # backfired; reverted pending a cleaner (multi-run) test rather than
+     # keep an unverified change.
+     #
+     # Math:-1 added (calibration playtest pass, 2026-07, round 9): unlike
+     # the reverted Motor edit, this targets translator's most fundamental
+     # divide from data-science (its main rival after round 8) — translation
+     # is not a numbers domain at all, while data-science's whole identity is
+     # Math:2. No existing question or resolver relied on translator scoring
+     # neutral (0) on Math, so this only ever pushes it further from
+     # data-science/finance-accounting/software-engineer, never against its
+     # own resolver (order 32, which doesn't touch Math).
+     "profile": {"Ideas": 1, "Obj": -1, "Exp": 2, "Focus": 2, "Auto": 2, "Struct": 1, "Predict": -1, "Acad": 1, "People": -1, "Math": -1},
      "professions": ["Переводчик", "Устный переводчик", "Локализатор"]},
     {"slug": "lawyer", "name": "Юриспруденция", "section": "akinator-words-communication",
      "description": "Юриспруденция учит разбираться в законах и защищать интересы людей и компаний — в судах, договорах и переговорах.",
-     "profile": {"People": 1, "Data": 1, "Obj": -1, "Lead": 1, "Vis": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Acad": 2},
+     # Math:-1, Inv:-1 added (calibration playtest pass, 2026-07, round 9):
+     # missed in the earlier zero-negative-axis audit (round 4) — 9 axes, all
+     # non-negative, a repeat rival for data-science and speech-therapist in
+     # traced sessions. Not about advanced math (distinguishes from
+     # data-science/finance-accounting/software-engineer) and not about
+     # inventing new frameworks from scratch — law is applying existing
+     # rules, not creating them (distinguishes from the design/IT cluster
+     # that shares Inv:2).
+     "profile": {"People": 1, "Data": 1, "Obj": -1, "Lead": 1, "Vis": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Acad": 2, "Math": -1, "Inv": -1},
      "professions": ["Юрист", "Адвокат", "Юрисконсульт"]},
     {"slug": "pr-specialist", "name": "Реклама и связи с общественностью", "label_junior": "Специалист по рекламе", "section": "akinator-words-communication",
      "description": "Реклама и связи с общественностью учат рассказывать о компании или продукте так, чтобы это заметили и запомнили.",
@@ -288,11 +364,32 @@ SPECIALTIES: list[dict] = [
     # accredited code — «Технология продукции общественного питания».
     {"slug": "food-production-tech", "name": "Технология продукции общественного питания", "label_junior": "Повар", "section": "akinator-food-hospitality",
      "description": "Технология продукции общественного питания учит придумывать блюда и десерты и управлять процессом их приготовления — от горячих блюд до выпечки.",
-     "profile": {"Phys": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Motor": 2, "Lead": 1, "Focus": 1, "Struct": 2, "Pace": 1, "PhysSt": 1, "Acad": 1, "Exp": 1, "Predict": -1},
+     # Math:-1, People:-1 added (calibration playtest pass, 2026-07, round 5):
+     # already the broadest profile in the catalog (14 axes, only 1
+     # negative) — after round 4 softened pilot/hospitality-manager/
+     # management-entrepreneurship/film-director, belief that used to land
+     # there started landing here instead (mechanical-engineer, actor,
+     # translator, it-infrastructure-security sessions all drifted to this
+     # profile via shared Ideas/Inv/Motor/Struct). Not about advanced math
+     # (Math — separates it from the mechanical-engineer/finance-accounting/
+     # data-science cluster it was absorbing), and the dish/product is the
+     # focus, not the guest directly (People — that's hospitality-manager's
+     # side of the existing order=34 fork, this profile just never carried
+     # the negative half of it).
+     "profile": {"Phys": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Motor": 2, "Lead": 1, "Focus": 1, "Struct": 2, "Pace": 1, "PhysSt": 1, "Acad": 1, "Exp": 1, "Predict": -1, "Math": -1, "People": -1},
      "professions": ["Шеф-повар", "Кондитер-технолог", "Технолог пищевого производства"]},
     {"slug": "hospitality-manager", "name": "Ресторанное и гостиничное дело", "label_junior": "Управляющий кафе", "section": "akinator-food-hospitality",
      "description": "Ресторанное и гостиничное дело организует работу кафе, ресторана или отеля — от персонала до атмосферы для гостей.",
-     "profile": {"People": 2, "Data": 1, "Lead": 2, "Emp": 1, "Motiv": 1, "Risk": 1, "Struct": 1, "Pace": 2, "Predict": 1, "PhysSt": 1, "Acad": 1},
+     # Exp:-1, Focus:-1 added (calibration playtest pass, 2026-07, round 3):
+     # 11 axes, all non-negative — a generalist coordinator profile that no
+     # answer could ever count against, and a repeat winner for unrelated
+     # sessions (school-teacher, fire-safety-engineer, police-officer,
+     # kindergarten-teacher all drifted here). Not a narrow deep specialist
+     # (Exp — the job is breadth across staff/guests/operations, not depth
+     # in one thing) and not built around long solo focus (Focus — it's
+     # event-paced, constantly interrupted by guests/staff, the opposite of
+     # e.g. finance-accounting's Focus:2).
+     "profile": {"People": 2, "Data": 1, "Lead": 2, "Emp": 1, "Motiv": 1, "Risk": 1, "Struct": 1, "Pace": 2, "Predict": 1, "PhysSt": 1, "Acad": 1, "Exp": -1, "Focus": -1},
      "professions": ["Менеджер ресторанного дела", "Менеджер отеля", "Ивент-менеджер"]},
 
     # Бизнес и продажи
@@ -301,15 +398,45 @@ SPECIALTIES: list[dict] = [
     # (Маркетинг / Учёт и аудит-Финансы are distinct codes).
     {"slug": "management-entrepreneurship", "name": "Менеджмент и предпринимательство", "label_junior": "Бизнесмен", "section": "akinator-business-sales",
      "description": "Менеджмент и предпринимательство готовят к управлению людьми, продажами, логистикой и собственным делом.",
-     "profile": {"People": 1, "Emp": 1, "Vis": 1, "Motiv": 1, "Risk": 1, "Auto": 1, "Predict": 1, "Pace": 1, "Inv": 1, "Lead": 1, "Data": 1},
+     # Exp:-1, Struct:-1 added (calibration playtest pass, 2026-07, round 3):
+     # 11 axes, all non-negative — another repeat winner outside its own
+     # domain (marketing, school-teacher, fire-safety-engineer, social-worker
+     # sessions all drifted here). Not a narrow deep specialist (Exp — this
+     # is breadth across a business, not depth in one field), and running
+     # your own thing means working in ambiguity, not rigid procedure
+     # (Struct — the literal opposite end from e.g. finance-accounting's
+     # Struct:2 or civil-engineering's Struct:2).
+     "profile": {"People": 1, "Emp": 1, "Vis": 1, "Motiv": 1, "Risk": 1, "Auto": 1, "Predict": 1, "Pace": 1, "Inv": 1, "Lead": 1, "Data": 1, "Exp": -1, "Struct": -1},
      "professions": ["Менеджер по продажам", "Предприниматель", "Логист", "Менеджер проектов"]},
     {"slug": "marketing", "name": "Маркетинг", "label_junior": "Специалист по рекламе", "section": "akinator-business-sales",
      "description": "Маркетинг учит продумывать, как рассказать о продукте так, чтобы его захотели купить — анализировать рынок и запускать рекламные кампании.",
-     "profile": {"People": 1, "Data": 1, "Ideas": 1, "Inv": 1, "Obj": -1, "Vis": 1, "Emp": 1, "Motiv": 1, "Predict": 1, "Acad": 1},
+     # Ideas 1->2, Vis 1->2 (calibration playtest pass, 2026-07, round 6): this
+     # was the only profile in the whole catalog with zero axes at magnitude
+     # 2 — every trait capped at ±1, so it could never win a contested
+     # question against ANY resolver written for a different pair (those
+     # always carry at least one ±2 weight). Ideas/Vis (creative promotion,
+     # being seen/heard) are marketing's actual core identity, not incidental
+     # — sharpening them to match the strength convention used everywhere
+     # else in the catalog.
+     "profile": {"People": 1, "Data": 1, "Ideas": 2, "Inv": 1, "Obj": -1, "Vis": 2, "Emp": 1, "Motiv": 1, "Predict": 1, "Acad": 1},
      "professions": ["Маркетолог", "Digital-маркетолог", "Бренд-менеджер"]},
     {"slug": "finance-accounting", "name": "Финансы и учёт", "section": "akinator-business-sales",
      "description": "Финансы и учёт готовят специалистов, которые ведут финансовый учёт компании — следят, чтобы деньги, налоги и отчётность были в порядке.",
-     "profile": {"Data": 2, "Obj": -1, "Exp": 2, "Focus": 2, "Struct": 2, "Motiv": -1, "Auto": 1, "Predict": -2, "Pace": -1, "Acad": 1, "Math": 2, "People": -1},
+     # Focus 2->1 (calibration playtest pass, 2026-07, round 8): traced 5
+     # data-science sessions — all 5 lost to finance-accounting, all 5 driven
+     # mainly by order=48 (finance's own, legitimate resolver), whose option
+     # matches finance's Math/Focus/Struct/Predict almost exactly — but
+     # data-science shares 3 of those same 4 axes, so it got dragged along
+     # every time. Order=51 (the dedicated data-science/software-engineer/
+     # finance-accounting/it-security resolver) already correctly favors
+     # data-science on its own turf and didn't need touching; boosting it
+     # further to out-score order=48 only created new ties with
+     # software-engineer/finance's own options on order=51 (checked
+     # numerically, rejected). Trimming finance's Focus is the minimal
+     # change: finance still wins order=48 outright on Math+Struct+Predict
+     # alone (score drops only 2.92->2.70), while data-science's accidental
+     # pull toward that option drops more meaningfully (1.95->1.62).
+     "profile": {"Data": 2, "Obj": -1, "Exp": 2, "Focus": 1, "Struct": 2, "Motiv": -1, "Auto": 1, "Predict": -2, "Pace": -1, "Acad": 1, "Math": 2, "People": -1},
      "professions": ["Бухгалтер", "Финансовый аналитик", "Аудитор"]},
 
     # Безопасность и спасение — уже на минимуме (2 листа), не сжимаем
@@ -649,7 +776,23 @@ QUESTIONS: list[dict] = [
     {"order": 37, "kind": "direct", "depth": 3, "age_variant": "senior",
      "text": "С числами и деньгами тебе как?", "text_junior": None,
      "options": [
-         {"text": "люблю точность, порядок, считать", "axis_weights": {"Data": 2, "Struct": 2, "Focus": 2, "Math": 2}},
+         # Halved 2->1 on every axis (calibration playtest pass, 2026-07,
+         # round 2): at full strength this option's weights were nearly an
+         # exact copy of finance-accounting's own profile
+         # (Data:2,Struct:2,Focus:2,Math:2) — every "precise, structured"
+         # answer (data-science, software-engineer, any STEM-leaning
+         # session included) read as strong accountant evidence even though
+         # resolves_pair=None means it was never covered by the resolver-
+         # weight audit or any pair-specific counterbalance. It doubled up
+         # with order=48 (the real finance-accounting resolver) and fired in
+         # 5/5 traced data-science sessions, usually before order=51 (the
+         # dedicated data-science/software-engineer/finance-accounting/
+         # it-infrastructure-security resolver) got a chance to counter it —
+         # by the time order=51 fired, finance-accounting's lead was already
+         # too big to close. Kept non-zero (still a useful generic
+         # precise-vs-people-and-ideas signal), just no longer resolver-
+         # strength for a question that isn't declared as one.
+         {"text": "люблю точность, порядок, считать", "axis_weights": {"Data": 1, "Struct": 1, "Focus": 1, "Math": 1}},
          {"text": "скучно, мне интереснее люди и идеи", "axis_weights": {"Data": -1, "People": 1}},
      ], "resolves_pair": None},  # source says "бухгалтер vs остальной бизнес" (generic) — flagged, see module docstring
     {"order": 38, "kind": "situational", "depth": 2, "age_variant": "both",
@@ -767,9 +910,63 @@ QUESTIONS: list[dict] = [
          {"text": "разобраться, что у человека не так в жизни, и организовать нужную помощь: жильё, документы, службы",
           "axis_weights": {"Lead": 1, "Struct": 1, "Predict": 1, "Pace": 1}},
      ], "resolves_pair": ["speech-therapist", "social-worker"]},
+    # Added (calibration playtest pass, 2026-07, round 2): the "IT и данные"
+    # section (data-science, software-engineer, it-infrastructure-security)
+    # plus finance-accounting had NO resolver at all separating them, despite
+    # sharing most of their axis vocabulary (Data/Focus/Struct/Math) — census
+    # showed data-science losing to finance-accounting 25-27/30 trials.
+    # order=37 ("С числами и деньгами тебе как?") drives much of that: it's
+    # an undeclared de-facto finance-accounting question (resolves_pair=None,
+    # so untouched by the earlier resolver-weight audit) whose weights read
+    # as "precise, structured, likes numbers" — true of data-science and
+    # software-engineer too, so it boosts finance-accounting on every session
+    # regardless of which of the four this really is. Verified against all
+    # four leaf profiles: each clearly prefers its own option (data-science
+    # 0.97 vs 0.49 next-best; software-engineer 0.86 vs 0.69; finance-
+    # accounting 1.10 vs 0.73; it-infrastructure-security 0.71 vs 0.47).
+    {"order": 51, "kind": "direct", "depth": 3, "age_variant": "senior",
+     "text": "Работа с числами и данными — что тебе конкретно нравится?", "text_junior": None,
+     "options": [
+         {"text": "искать закономерности и смысл в больших массивах данных",
+          "axis_weights": {"Obj": -2, "Data": 1, "Ideas": 1}},
+         {"text": "писать код, создавать программы и системы",
+          "axis_weights": {"Inv": 2, "Obj": 2, "Ideas": 1}},
+         {"text": "следить, чтобы цифры и документы точно сходились, без сюрпризов",
+          "axis_weights": {"Predict": -2, "Struct": 1}},
+         {"text": "следить, чтобы всё работало и было защищено, реагировать на нештатные ситуации",
+          "axis_weights": {"Predict": 1, "Pace": 1, "Focus": -1}},
+         # Neutral option added (calibration playtest pass, 2026-07, round 10):
+         # this question has no resolves_pair-relevance gate (that approach
+         # was tried and reverted, see akinator_engine.select_next_question),
+         # so it still gets served to sessions with no stake in any of the 4
+         # IT/finance options. Without an escape, a persona scoring exactly 0
+         # on all 4 (e.g. psychologist) got deterministically routed to
+         # option 1 ("писать код") every time, since pick_option / the
+         # engine's tie-break picks the first max-scoring option — traced
+         # psychologist sessions confirmed this dragging it toward
+         # software-engineer/pr-specialist/makeup-artist-film with zero
+         # genuine signal behind it.
+         {"text": "не знаю", "axis_weights": {}},
+     ], "resolves_pair": ["data-science", "software-engineer", "finance-accounting", "it-infrastructure-security"]},
+    # Added (calibration playtest pass, 2026-07, round 6): school-teacher and
+    # speech-therapist share both their top axes (People:2, Dev:2) and had no
+    # question anywhere separating them directly — order 19 forks
+    # speech-therapist away from psychologist, order 50 away from
+    # social-worker, but nothing forks it from school-teacher, so traced
+    # sessions kept landing in a cluster of the two. Verified against both
+    # profiles: school-teacher clearly prefers its own option (0.75 vs 0.25),
+    # speech-therapist clearly prefers its own (1.21 vs 0).
+    {"order": 52, "kind": "situational", "depth": 3, "age_variant": "senior",
+     "text": "Как ты хочешь помогать разбираться в чём-то?", "text_junior": None,
+     "options": [
+         {"text": "объяснять предмет целому классу, увлекать и держать внимание",
+          "axis_weights": {"Vis": 2, "Lead": 1}},
+         {"text": "работать один на один, регулярно, над конкретной проблемой человека",
+          "axis_weights": {"Exp": 2, "Focus": 1}},
+     ], "resolves_pair": ["school-teacher", "speech-therapist"]},
 ]
 
-assert len(QUESTIONS) == 41, f"expected 41 questions, got {len(QUESTIONS)}"
+assert len(QUESTIONS) == 43, f"expected 43 questions, got {len(QUESTIONS)}"
 assert len({q["order"] for q in QUESTIONS}) == len(QUESTIONS), "duplicate question order"
 
 # Every slug named in a resolves_pair must actually exist as a leaf — this is
