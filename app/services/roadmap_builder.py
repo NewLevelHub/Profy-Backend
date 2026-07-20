@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models.assessment import Assessment, AssessmentGoal
+from app.models.assessment import Assessment
 from app.models.direction_roadmap import DirectionRoadmap
 from app.models.profile import AgeGroup, Profile
 from app.prompts import direction_roadmap as direction_prompt
@@ -102,11 +102,12 @@ async def _require_direction_roadmap_access(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Эта возможность доступна с 10 лет",
         )
-    if assessment.goal == AssessmentGoal.university:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Для цели «поступление» используется plan по программе университета",
-        )
+    # Direction roadmap generation is goal-agnostic — `goal` already rides
+    # along inside StudentContext (see student_context.py) and shapes the
+    # LLM prompt, so a university-bound student gets a plan that reads that
+    # way, same underlying builder. There is no separate program-specific
+    # plan feature in this codebase to defer to instead — "Найти университеты"
+    # (a plain program search) is a different, already-independent action.
 
     if assessment.selected_direction_slug != slug:
         raise HTTPException(

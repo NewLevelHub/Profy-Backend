@@ -30,7 +30,13 @@ async def create_assessment(
     )
     existing = existing_result.scalar_one_or_none()
     if existing is not None:
-        existing.status = AssessmentStatus.completed
+        # Not `completed` — the user never reached (or responded to) a
+        # reveal, so there is no result to speak of. Marking it `completed`
+        # anyway used to make get_current_assessment hand this dead attempt
+        # back as "the" assessment, 400-ing every roadmap/result call behind
+        # a confusing "finish the test first" even after a later attempt
+        # legitimately succeeded.
+        existing.status = AssessmentStatus.abandoned
         await db.commit()
 
     assessment = Assessment(
@@ -63,11 +69,18 @@ async def get_current_assessment(profile_id: uuid.UUID, db: AsyncSession) -> Ass
     if assessment is not None:
         return assessment
 
+    # `completed` alone isn't enough — a completed attempt the user
+    # explicitly disliked (or one left over from before `abandoned` existed)
+    # carries no selected_direction_slug either. Surfacing that as "current"
+    # would 400 every roadmap/result call and hide an earlier attempt that
+    # DOES have a real result, so require one here and fall through to an
+    # older completed+selected attempt (or None) instead.
     result = await db.execute(
         select(Assessment)
         .where(
             Assessment.profile_id == profile_id,
             Assessment.status == AssessmentStatus.completed,
+            Assessment.selected_direction_slug.is_not(None),
         )
         .order_by(Assessment.created_at.desc())
         .limit(1)
