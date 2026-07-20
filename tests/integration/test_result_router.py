@@ -108,7 +108,7 @@ async def test_result_is_404_before_the_test_is_completed(client: AsyncClient, d
 
 
 async def test_result_is_available_after_a_liked_reveal(client: AsyncClient, db_session: AsyncSession):
-    """AC1: 200 with the confirmed direction, matched axes, and university suggestions."""
+    """AC1: 200 with the confirmed direction, axis comparison, and university suggestions."""
     await _ensure_seeded(db_session)
     user, assessment = await _make_user_and_assessment(db_session)
     headers = _auth_headers(user.id)
@@ -123,31 +123,39 @@ async def test_result_is_available_after_a_liked_reveal(client: AsyncClient, db_
     assert body["direction_slug"] == winner_slug
     assert body["direction_name"]
     assert body["message"]
-    assert isinstance(body["matched_axes"], list)
-    assert len(body["matched_axes"]) >= 1
     assert isinstance(body["recommended_programs"], list)
     assert len(body["recommended_programs"]) >= 1
-    for axis in body["matched_axes"]:
-        assert {"code", "label_ru", "direction_value"} <= set(axis)
-        assert -2 <= axis["direction_value"] <= 2
-        assert axis["direction_value"] != 0
     for program in body["recommended_programs"]:
         assert {"id", "name", "language", "direction_slug", "university"} <= set(program)
         assert {"name", "country", "city"} <= set(program["university"])
         assert program["university"]["city"] == "Астана"
 
-    # AC5: the child's own strengths/growth areas, from real answers given
-    # during the run (always option 0 — see _run_to_liked_result), not from
-    # the profession's own axis profile.
-    assert isinstance(body["strengths"], list)
+    # AC5: axes the direction actually needs (profile > 0), compared against
+    # the child's own normalized signal from real answers given during the
+    # run (always option 0 — see _run_to_liked_result). Falls back to a
+    # whole-session, non-direction-specific comparison if the run's answers
+    # never happened to touch an axis this direction needs — either way the
+    # response must say which mode produced the lists.
+    assert isinstance(body["matches"], list)
     assert isinstance(body["growth_areas"], list)
-    assert len(body["strengths"]) + len(body["growth_areas"]) >= 1
-    for signal in [*body["strengths"], *body["growth_areas"]]:
-        assert {"code", "label_ru", "score"} <= set(signal)
-    for signal in body["strengths"]:
-        assert signal["score"] > 0
-    for signal in body["growth_areas"]:
-        assert signal["score"] < 0
+    assert isinstance(body["is_direction_specific"], bool)
+    for item in [*body["matches"], *body["growth_areas"]]:
+        assert {"code", "label_ru", "child_score"} <= set(item)
+        if body["is_direction_specific"]:
+            assert item["profile_value"] is not None
+            assert 0 < item["profile_value"] <= 2
+        else:
+            assert item["profile_value"] is None
+    for item in body["matches"]:
+        assert item["child_score"] >= 0
+        assert item["explanation"] is None
+        assert item["strength_phrase"]
+    for item in body["growth_areas"]:
+        assert item["child_score"] < 0
+        assert item["strength_phrase"] is None
+        assert item["explanation"] is not None
+        assert item["explanation"]["meaning"]
+        assert item["explanation"]["suggestion"]
 
 
 async def test_result_of_another_users_assessment_is_forbidden(

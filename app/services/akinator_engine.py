@@ -251,6 +251,18 @@ def select_next_question(
     machinery as update_belief. Not a strict argmin — see
     AKINATOR_QUESTION_TEMPERATURE.
 
+    (A step >= WIDE_START_STEPS pre-filter that restricted resolves_pair
+    questions to sessions where a named leaf was already a top-N belief
+    candidate was tried and measured (calibration playtest pass, 2026-07):
+    against the same 38-profession census (n=30, seed=7), the resolves_pair
+    weight-balance fixes alone dropped failing professions 12->7, but adding
+    this filter on top made it *worse*, 12->10 (tried top_n=5 and top_n=10;
+    both underperformed no filter) — gating out resolvers for sessions that
+    hadn't yet differentiated locked them out of their best chance to ever
+    surface a quiet profession, more often than it prevented the
+    contamination it targeted. Reverted; only the underlying resolves_pair
+    weight-balance fixes were kept.)
+
     Deviates from the ticket's one-line signature by taking `leaf_profiles`
     and `age_group` explicitly: neither entropy nor age eligibility can be
     computed from `session`/`candidate_questions` alone. Excludes questions
