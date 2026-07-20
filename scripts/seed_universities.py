@@ -3,8 +3,15 @@ Seed script: populate universities and programs tables.
 Run inside Docker: docker-compose exec api python scripts/seed_universities.py
 Idempotent: upserts by university name; upserts programs by (university_id, name).
 Coverage: KZ, USA, UK, Europe, Canada, Asia — 43 universities, 64 programs.
-KZ coverage: all 15 direction_slug values have at least one Kazakhstani program
-(see seed_directions.py for the canonical direction list).
+
+Specialty pivot (2026-07): direction_slug used to reference 15 "orphaned"
+slugs (it-development, artificial-intelligence, etc.) that had no matching
+Direction row at all — program_direction_slugs_for never expanded them, so
+these 64 programs silently never appeared in a normal test-result flow. All
+15 are now replaced with real section/specialty slugs from
+seed_akinator_content.py (module-level assert below enforces this going
+forward). `data-science` needed no change — old slug and new specialty slug
+coincide.
 """
 import asyncio
 import os
@@ -17,6 +24,7 @@ from sqlalchemy import select
 from app.database import async_session
 from app.models.program import Program
 from app.models.university import University
+from scripts.seed_akinator_content import SECTIONS, SPECIALTIES
 
 # ---------------------------------------------------------------------------
 # Data
@@ -519,7 +527,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Nazarbayev University": [
         {
             "name": "Компьютерные науки (бакалавр)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Английский",
             "cost_per_year": 3000,
             "description": (
@@ -608,7 +616,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
         {
             "name": "Физика (бакалавр)",
-            "direction_slug": "science-research",
+            "direction_slug": "mechanical-engineer",
             "language": "Английский",
             "cost_per_year": 3000,
             "description": (
@@ -634,7 +642,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "KIMEP University": [
         {
             "name": "Управление бизнесом (BBA)",
-            "direction_slug": "business-entrepreneurship",
+            "direction_slug": "management-entrepreneurship",
             "language": "Английский",
             "cost_per_year": 4500,
             "description": (
@@ -676,7 +684,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
         {
             "name": "Финансы (бакалавр)",
-            "direction_slug": "finance-economics",
+            "direction_slug": "finance-accounting",
             "language": "Английский",
             "cost_per_year": 4500,
             "description": (
@@ -720,7 +728,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Al-Farabi Kazakh National University": [
         {
             "name": "Разработка программного обеспечения (бакалавр)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Казахский / Русский",
             "cost_per_year": 900,
             "description": (
@@ -762,7 +770,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
         {
             "name": "Биология (бакалавр)",
-            "direction_slug": "medicine-biology",
+            "direction_slug": "zoologist",
             "language": "Казахский / Русский",
             "cost_per_year": 800,
             "description": (
@@ -809,7 +817,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         # специальности на welcome.kaznu.kz не была доступна для парсинга).
         {
             "name": "Физика (бакалавр)",
-            "direction_slug": "science-research",
+            "direction_slug": "mechanical-engineer",
             "language": "Казахский / Русский",
             "cost_per_year": 2075,
             "description": (
@@ -861,7 +869,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         # ориентировочно: встречается конфликтующая оценка ($15 000) на агрегаторах.
         {
             "name": "Анализ больших данных (бакалавр)",
-            "direction_slug": "artificial-intelligence",
+            "direction_slug": "data-science",
             "language": "Казахский / Русский",
             "cost_per_year": 4717,
             "description": (
@@ -912,7 +920,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         # программам факультета ~1 000 000 тг/год).
         {
             "name": "Дизайн (бакалавр)",
-            "direction_slug": "design-digital-art",
+            "direction_slug": "design",
             "language": "Казахский / Русский",
             "cost_per_year": 1887,
             "description": (
@@ -961,7 +969,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         # satbayev.university (пороговые баллы по группам ОП бакалавриата 2025). Проверено: 2026-07-03.
         {
             "name": "Архитектура (бакалавр)",
-            "direction_slug": "engineering-architecture",
+            "direction_slug": "architect",
             "language": "Казахский / Русский",
             "cost_per_year": 2151,
             "description": (
@@ -1010,7 +1018,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         # Стоимость — ориентировочно (усреднена по диапазону цен ЕНУ на бакалавриат).
         {
             "name": "Экология и природопользование (бакалавр)",
-            "direction_slug": "ecology-nature",
+            "direction_slug": "ecologist",
             "language": "Казахский / Русский / Английский",
             "cost_per_year": 2547,
             "description": (
@@ -1060,7 +1068,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         # цена на 2025/2026 официально ещё не опубликована на момент проверки — ориентировочно.
         {
             "name": "Психология (бакалавр, практический психолог)",
-            "direction_slug": "psychology-pedagogy",
+            "direction_slug": "psychologist",
             "language": "Казахский / Русский",
             "cost_per_year": 1792,
             "description": (
@@ -1110,7 +1118,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         # оценка 2 500 000 тг/год.
         {
             "name": "Юриспруденция (бакалавр)",
-            "direction_slug": "law-public-administration",
+            "direction_slug": "lawyer",
             "language": "Казахский / Русский",
             "cost_per_year": 4717,
             "description": (
@@ -1160,7 +1168,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         # с ценами не был доступен для парсинга).
         {
             "name": "Журналистика (бакалавр)",
-            "direction_slug": "media-journalism",
+            "direction_slug": "journalist",
             "language": "Казахский / Русский / Английский",
             "cost_per_year": 1792,
             "description": (
@@ -1210,7 +1218,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         # альтернативная цифра 2 700 000 тг для смежного трека).
         {
             "name": "Маркетинг (бакалавр)",
-            "direction_slug": "marketing-advertising",
+            "direction_slug": "marketing",
             "language": "Казахский / Русский / Английский",
             "cost_per_year": 5472,
             "description": (
@@ -1261,7 +1269,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         # нагрузки; для трека BBA in Management использована более специфичная цифра 2 322 000 тг).
         {
             "name": "Менеджмент — трек «Управление проектами» (бакалавр, BBA)",
-            "direction_slug": "project-management",
+            "direction_slug": "management-entrepreneurship",
             "language": "Английский / Русский / Казахский",
             "cost_per_year": 4381,
             "description": (
@@ -1308,7 +1316,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "S. Seifullin Kazakh Agrotechnical Research University": [
         {
             "name": "Агроинженерия и мехатроника (бакалавр)",
-            "direction_slug": "engineering-architecture",
+            "direction_slug": "mechanical-engineer",
             "language": "Казахский / Русский",
             "cost_per_year": 2200,
             "description": (
@@ -1331,7 +1339,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Astana Medical University": [
         {
             "name": "Общая медицина (бакалавриат/интегрированная программа)",
-            "direction_slug": "medicine-biology",
+            "direction_slug": "general-medicine",
             "language": "Казахский / Русский",
             "cost_per_year": 3400,
             "description": (
@@ -1354,7 +1362,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Kazakh National University of Arts": [
         {
             "name": "Графический дизайн и визуальные коммуникации (бакалавр)",
-            "direction_slug": "design-digital-art",
+            "direction_slug": "design",
             "language": "Казахский / Русский",
             "cost_per_year": 2100,
             "description": (
@@ -1377,7 +1385,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Kazakh National Academy of Choreography": [
         {
             "name": "Арт-менеджмент в хореографии (бакалавр)",
-            "direction_slug": "project-management",
+            "direction_slug": "akinator-stage-media",
             "language": "Казахский / Русский",
             "cost_per_year": 2300,
             "description": (
@@ -1423,7 +1431,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Qazaq AI Research University": [
         {
             "name": "AI and Machine Learning (бакалавр)",
-            "direction_slug": "artificial-intelligence",
+            "direction_slug": "data-science",
             "language": "Английский",
             "cost_per_year": 4700,
             "description": (
@@ -1446,7 +1454,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Esil University": [
         {
             "name": "Финансы (бакалавр)",
-            "direction_slug": "finance-economics",
+            "direction_slug": "finance-accounting",
             "language": "Казахский / Русский",
             "cost_per_year": 1900,
             "description": (
@@ -1469,7 +1477,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Turan-Astana University": [
         {
             "name": "Digital-маркетинг (бакалавр)",
-            "direction_slug": "marketing-advertising",
+            "direction_slug": "marketing",
             "language": "Казахский / Русский",
             "cost_per_year": 2100,
             "description": (
@@ -1492,7 +1500,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "K. Kulazhanov Kazakh University of Technology and Business": [
         {
             "name": "Искусственный интеллект (бакалавр)",
-            "direction_slug": "artificial-intelligence",
+            "direction_slug": "data-science",
             "language": "Казахский / Русский",
             "cost_per_year": 2400,
             "description": (
@@ -1515,7 +1523,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "A.K. Kussayinov Eurasian Humanities Institute": [
         {
             "name": "Педагогика и психология (бакалавр)",
-            "direction_slug": "psychology-pedagogy",
+            "direction_slug": "akinator-education",
             "language": "Казахский / Русский",
             "cost_per_year": 1700,
             "description": (
@@ -1538,7 +1546,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Financial Academy": [
         {
             "name": "Экономика и финансовая аналитика (бакалавр)",
-            "direction_slug": "finance-economics",
+            "direction_slug": "finance-accounting",
             "language": "Казахский / Русский",
             "cost_per_year": 1800,
             "description": (
@@ -1561,7 +1569,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Astana University": [
         {
             "name": "Туризм и сервисный менеджмент (бакалавр)",
-            "direction_slug": "project-management",
+            "direction_slug": "hospitality-manager",
             "language": "Казахский / Русский",
             "cost_per_year": 1850,
             "description": (
@@ -1607,7 +1615,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Cardiff University Kazakhstan": [
         {
             "name": "Civil Engineering (бакалавр)",
-            "direction_slug": "engineering-architecture",
+            "direction_slug": "civil-engineering",
             "language": "Английский",
             "cost_per_year": 9000,
             "description": (
@@ -1630,7 +1638,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Massachusetts Institute of Technology": [
         {
             "name": "Информатика и инженерия (бакалавр)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Английский",
             "cost_per_year": 59750,
             "description": (
@@ -1676,7 +1684,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
         {
             "name": "Электроинженерия и информатика (магистр инженерии)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Английский",
             "cost_per_year": 62000,
             "description": (
@@ -1720,7 +1728,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Stanford University": [
         {
             "name": "Компьютерные науки (бакалавр)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Английский",
             "cost_per_year": 62484,
             "description": (
@@ -1766,7 +1774,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
         {
             "name": "Искусственный интеллект (магистр)",
-            "direction_slug": "artificial-intelligence",
+            "direction_slug": "data-science",
             "language": "Английский",
             "cost_per_year": 63450,
             "description": (
@@ -1814,7 +1822,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "University of California, Berkeley": [
         {
             "name": "Компьютерные науки (бакалавр)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Английский",
             "cost_per_year": 44066,
             "description": (
@@ -1909,7 +1917,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "New York University": [
         {
             "name": "Компьютерные науки (бакалавр)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Английский",
             "cost_per_year": 58168,
             "description": (
@@ -1951,7 +1959,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
         {
             "name": "Бизнес (BBA — Школа Стерна)",
-            "direction_slug": "business-entrepreneurship",
+            "direction_slug": "management-entrepreneurship",
             "language": "Английский",
             "cost_per_year": 58168,
             "description": (
@@ -1999,7 +2007,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "University College London": [
         {
             "name": "Компьютерные науки (бакалавр)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Английский",
             "cost_per_year": 35000,
             "description": (
@@ -2041,7 +2049,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
         {
             "name": "Нейронауки (бакалавр)",
-            "direction_slug": "medicine-biology",
+            "direction_slug": "general-medicine",
             "language": "Английский",
             "cost_per_year": 35000,
             "description": (
@@ -2085,7 +2093,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "University of Edinburgh": [
         {
             "name": "Информатика (бакалавр / бакалавр инженерии)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Английский",
             "cost_per_year": 26500,
             "description": (
@@ -2127,7 +2135,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
         {
             "name": "Искусственный интеллект (магистр)",
-            "direction_slug": "artificial-intelligence",
+            "direction_slug": "data-science",
             "language": "Английский",
             "cost_per_year": 28500,
             "description": (
@@ -2171,7 +2179,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "University of Manchester": [
         {
             "name": "Компьютерные науки (бакалавр)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Английский",
             "cost_per_year": 26500,
             "description": (
@@ -2257,7 +2265,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Delft University of Technology": [
         {
             "name": "Информатика и инженерия (бакалавр)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Английский",
             "cost_per_year": 11170,
             "description": (
@@ -2304,7 +2312,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
         {
             "name": "Компьютерная инженерия (магистр)",
-            "direction_slug": "engineering-architecture",
+            "direction_slug": "mechanical-engineer",
             "language": "Английский",
             "cost_per_year": 18750,
             "description": (
@@ -2348,7 +2356,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Ludwig Maximilian University of Munich": [
         {
             "name": "Компьютерные науки (бакалавр)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Немецкий / Английский",
             "cost_per_year": 258,
             "description": (
@@ -2390,7 +2398,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
         {
             "name": "Информатика (магистр)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Английский",
             "cost_per_year": 258,
             "description": (
@@ -2434,7 +2442,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "ETH Zurich": [
         {
             "name": "Компьютерные науки (бакалавр)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Немецкий",
             "cost_per_year": 730,
             "description": (
@@ -2520,7 +2528,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "EPFL": [
         {
             "name": "Компьютерные науки (бакалавр)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Французский / Английский",
             "cost_per_year": 730,
             "description": (
@@ -2606,7 +2614,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "University of Toronto": [
         {
             "name": "Компьютерные науки (бакалавр)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Английский",
             "cost_per_year": 47260,
             "description": (
@@ -2653,7 +2661,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
         {
             "name": "Искусственный интеллект (магистр)",
-            "direction_slug": "artificial-intelligence",
+            "direction_slug": "data-science",
             "language": "Английский",
             "cost_per_year": 21890,
             "description": (
@@ -2697,7 +2705,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "University of British Columbia": [
         {
             "name": "Компьютерные науки (бакалавр)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Английский",
             "cost_per_year": 40310,
             "description": (
@@ -2783,7 +2791,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "National University of Singapore": [
         {
             "name": "Компьютерные науки (бакалавр)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Английский",
             "cost_per_year": 17550,
             "description": (
@@ -2874,7 +2882,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "KAIST": [
         {
             "name": "Компьютерные науки (бакалавр)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Английский / Корейский",
             "cost_per_year": 4400,
             "description": (
@@ -2916,7 +2924,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
         {
             "name": "Электроинженерия (бакалавр)",
-            "direction_slug": "engineering-architecture",
+            "direction_slug": "mechanical-engineer",
             "language": "Английский / Корейский",
             "cost_per_year": 4400,
             "description": (
@@ -2960,7 +2968,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Imperial College London": [
         {
             "name": "Вычислительная техника (магистр инженерии)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Английский",
             "cost_per_year": 37900,
             "description": (
@@ -3002,7 +3010,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
         {
             "name": "Биомедицинская инженерия (магистр инженерии)",
-            "direction_slug": "medicine-biology",
+            "direction_slug": "mechanical-engineer",
             "language": "Английский",
             "cost_per_year": 37900,
             "description": (
@@ -3046,7 +3054,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Seoul National University": [
         {
             "name": "Информатика и инженерия (бакалавр)",
-            "direction_slug": "it-development",
+            "direction_slug": "software-engineer",
             "language": "Корейский / Английский",
             "cost_per_year": 5500,
             "description": (
@@ -3088,7 +3096,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
         {
             "name": "Промышленная инженерия (бакалавр)",
-            "direction_slug": "engineering-architecture",
+            "direction_slug": "management-entrepreneurship",
             "language": "Корейский / Английский",
             "cost_per_year": 5500,
             "description": (
@@ -3130,6 +3138,13 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
     ],
 }
+
+_KNOWN_DIRECTION_SLUGS = {s["slug"] for s in SECTIONS} | {s["slug"] for s in SPECIALTIES}
+for _uni_name, _programs in PROGRAMS_BY_UNIVERSITY.items():
+    for _prog in _programs:
+        assert _prog["direction_slug"] in _KNOWN_DIRECTION_SLUGS, (
+            f"{_uni_name}/{_prog['name']}: unknown direction_slug {_prog['direction_slug']!r}"
+        )
 
 
 # ---------------------------------------------------------------------------

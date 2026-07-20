@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.schemas.akinator_session import RevealLeaf
 from app.schemas.university import UniversityBrief
@@ -40,6 +40,7 @@ class AkinatorResultResponse(BaseModel):
     direction_slug: str
     direction_name: str
     direction_description: str
+    professions: list[str] = Field(default_factory=list)
     message: str
     matched_axes: list[ResultAxisHighlight]
     strengths: list[ChildAxisSignal]

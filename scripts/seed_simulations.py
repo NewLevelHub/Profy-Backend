@@ -10,8 +10,9 @@ from app.database import async_session
 from app.models.profession_simulation import ProfessionSimulation
 
 SIMULATIONS = [
+    # Specialty pivot (2026-07-17): programmer -> software-engineer.
     {
-        "leaf_slug": "programmer",
+        "leaf_slug": "software-engineer",
         "steps": [
             {
                 "text": "Ты сидишь над кодом уже 4 часа. Внезапно продакшен падает, пользователи пишут жалобы. Выясняется, что баг в коде, который написал твой коллега, который сейчас в отпуске. Что ты сделаешь?",
@@ -41,8 +42,9 @@ SIMULATIONS = [
             },
         ],
     },
+    # Specialty pivot (2026-07-17): surgeon -> general-medicine (merged specialty).
     {
-        "leaf_slug": "surgeon",
+        "leaf_slug": "general-medicine",
         "steps": [
             {
                 "text": "Ты на ногах уже 8 часов подряд во время сложной операции. Ноги затекли, спина болит, а до конца операции еще минимум 2 часа. Что ты чувствуешь и делаешь?",

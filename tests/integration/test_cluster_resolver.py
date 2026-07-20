@@ -15,12 +15,12 @@ from app.models.direction import Direction
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
 from app.services.auth_service import create_jwt_token
-from scripts.seed_akinator_content import seed_professions, seed_questions, seed_sections
+from scripts.seed_akinator_content import seed_questions, seed_sections, seed_specialties
 
 
 async def _ensure_seeded(db: AsyncSession) -> None:
     section_ids, *_ = await seed_sections(db)
-    await seed_professions(db, section_ids)
+    await seed_specialties(db, section_ids)
     await seed_questions(db)
     await db.flush()
 
