@@ -454,7 +454,21 @@ SPECIALTIES: list[dict] = [
     # Безопасность и спасение — уже на минимуме (2 листа), не сжимаем
     {"slug": "fire-safety-engineer", "name": "Техносферная безопасность", "label_junior": "Пожарный", "section": "akinator-safety-rescue",
      "description": "Техносферная безопасность проектирует системы защиты от пожаров и обеспечивает безопасность зданий и людей.",
-     "profile": {"People": 1, "Phys": 1, "Data": 1, "Care": 1, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 1, "Risk": 2, "Struct": 2, "Pace": 1, "Predict": 1, "PhysSt": 1, "Acad": 1, "Math": 1},
+     # Auto:-1, Inv:-1 added (calibration playtest pass, 2026-07, round 15):
+     # found in the round-9 zero-negative-axis audit but not fixed then
+     # (wasn't failing census at the time) — a real user's own playthrough
+     # confirmed it's still a live problem: heading clearly IT the whole
+     # session, still landed on this profession via order=38/47-style
+     # situational questions. 15 axes, all non-negative — shares Phys/Data/
+     # Obj/Exp/Struct/Pace/Predict/Math with it-infrastructure-security
+     # almost entirely (8 of 11 axes), so any generic "precise, structured"
+     # question fed both, and this one never had a counter-weight to lose
+     # ground on. Not autonomous, individual work — rescue/safety operations
+     # are protocol-driven and team-coordinated (opposes
+     # it-infrastructure-security's Auto:1 directly); not about inventing
+     # from scratch — applies established safety codes/standards, same
+     # reasoning already used for lawyer's Inv:-1 (round 9).
+     "profile": {"People": 1, "Phys": 1, "Data": 1, "Care": 1, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 1, "Risk": 2, "Struct": 2, "Pace": 1, "Predict": 1, "PhysSt": 1, "Acad": 1, "Math": 1, "Auto": -1, "Inv": -1},
      "professions": ["Инженер пожарной безопасности", "Специалист по охране труда", "Инспектор пожарной безопасности"]},
     {"slug": "police-officer", "name": "Правоохранительная деятельность", "section": "akinator-safety-rescue",
      "description": "Правоохранительная деятельность следит за порядком и безопасностью людей, реагирует на происшествия и расследует правонарушения.",
