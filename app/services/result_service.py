@@ -17,6 +17,7 @@ from app.models.akinator_question import AkinatorQuestion
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.assessment_session import AssessmentSession
 from app.models.direction import Direction
+from app.models.profile import Profile
 from app.models.program import Program
 from app.models.university import University
 from app.schemas.akinator_session import RevealLeaf
@@ -188,18 +189,29 @@ async def _backups_for(session: AssessmentSession, exclude_slug: str, db: AsyncS
     ]
 
 
-async def _recommended_programs_for(selected_slug: str, db: AsyncSession) -> list[Program]:
-    """Return Astana programs matching the test result profession or its section."""
+async def _recommended_programs_for(
+    selected_slug: str,
+    db: AsyncSession,
+    city: str | None = None,
+) -> list[Program]:
+    """Return programs matching the test result profession or its section.
+
+    If *city* is provided, results are filtered to that city only.
+    When *city* is None no city filter is applied (all cities are included).
+    The country filter (Kazakhstan) always remains active.
+    """
     direction_slugs = await program_direction_slugs_for(selected_slug, db)
+    conditions = [
+        Program.direction_slug.in_(direction_slugs),
+        University.country == "Казахстан",
+    ]
+    if city is not None:
+        conditions.append(University.city == city)
     result = await db.execute(
         select(Program)
         .options(selectinload(Program.university))
         .join(Program.university)
-        .where(
-            Program.direction_slug.in_(direction_slugs),
-            University.country == "Казахстан",
-            University.city == "Астана",
-        )
+        .where(*conditions)
         .limit(_RECOMMENDED_PROGRAMS_LIMIT)
     )
     return list(result.scalars().all())
@@ -231,10 +243,17 @@ async def get_result(assessment_id: uuid.UUID, db: AsyncSession) -> AkinatorResu
     if session is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Result not ready yet")
 
+    profile = await db.get(Profile, assessment.profile_id)
+    user_city: str | None = profile.city if profile is not None else None
+
     backups = await _backups_for(session, assessment.selected_direction_slug, db)
-    recommended_programs = await _recommended_programs_for(assessment.selected_direction_slug, db)
+    recommended_programs = await _recommended_programs_for(
+        assessment.selected_direction_slug, db, city=user_city
+    )
     child_scores = await _child_axis_scores(session.id, db)
-    matches, growth_areas, is_direction_specific = _axis_comparison_for(direction.profile or {}, child_scores)
+    matches, growth_areas, is_direction_specific = _axis_comparison_for(
+        direction.profile or {}, child_scores
+    )
 
     return AkinatorResultResponse(
         assessment_id=assessment.id,

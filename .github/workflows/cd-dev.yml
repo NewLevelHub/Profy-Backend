@@ -185,6 +185,8 @@ jobs:
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_questions.py
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_universities.py
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_directions.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_astana_universities.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_almaty_universities.py
 
             # Reload edge nginx (prod path) so Host:dev.profy.newlevelhub.kz is routed.
             # Certs under /etc/letsencrypt need root - write via docker volume mount.

@@ -168,6 +168,8 @@ jobs:
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_questions.py
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_universities.py
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_directions.py
+            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_astana_universities.py
+            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_almaty_universities.py
 
             echo "=== Production deploy complete ==="
             echo "Image: $API_IMAGE"
