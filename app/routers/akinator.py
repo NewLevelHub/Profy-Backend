@@ -79,10 +79,11 @@ async def _reveal_response(
     age_group: AgeGroup,
     db: AsyncSession,
 ) -> RevealResponse:
-    # Axis-profile weighting for the honest "couldn't narrow it down" summary
-    # is only needed on that path — skip the extra query otherwise.
+    # Axis-profile weighting for the "why these came up" strengths summary is
+    # only needed for cluster reveals (single has one clear pick, nothing to
+    # summarize) — skip the extra query otherwise.
     leaf_profiles = None
-    if decision.status == "reveal_cluster" and decision.reason == "ceiling":
+    if decision.status == "reveal_cluster":
         leaf_profiles = await akinator_session_service._leaf_profiles_for(db, belief)
 
     report = akinator_report_service.build_reveal_report(

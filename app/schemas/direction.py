@@ -11,13 +11,17 @@ class DirectionBase(BaseModel):
     is_leaf: bool = True
     parent_id: uuid.UUID | None = None
     label_junior: str | None = None
+    # Concrete job titles this specialty leads to (Direction.professions) —
+    # e.g. software-engineer -> ["Backend-разработчик", ...]. Empty for
+    # section nodes. Included here (not just on DirectionDetail) so the
+    # /directions/tree picker can search by job title, not only specialty name.
+    professions: list[str] = []
 
     model_config = {"from_attributes": True}
 
 
 class DirectionDetail(DirectionBase):
     required_scores: dict[str, float] | None = None
-    professions: list[str]
     skills_needed: list[str]
     subjects_to_develop: list[str]
     first_steps: list[str]

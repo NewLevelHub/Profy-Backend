@@ -114,7 +114,7 @@ Done. Inserted: 0, updated: 0, skipped (unchanged): 213
 docker-compose exec api python scripts/generate_taxonomy.py --focus-area "медицина" --count 8
 ```
 
-Файл появится в `scripts/taxonomy_proposals/<timestamp>.json` на хосте (примонтирован в `docker-compose.yml`, только для этой директории — код по-прежнему запечён в образ). Проверенные узлы добавляются в каталог вручную (по аналогии с `scripts/seed_directions.py`).
+Файл появится в `scripts/taxonomy_proposals/<timestamp>.json` на хосте (примонтирован в `docker-compose.yml`, только для этой директории — код по-прежнему запечён в образ). Проверенные узлы добавляются в каталог вручную (по аналогии с `scripts/seed_akinator_content.py`).
 
 ## Полезные команды
 

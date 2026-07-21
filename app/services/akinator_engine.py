@@ -251,17 +251,31 @@ def select_next_question(
     machinery as update_belief. Not a strict argmin — see
     AKINATOR_QUESTION_TEMPERATURE.
 
-    (A step >= WIDE_START_STEPS pre-filter that restricted resolves_pair
-    questions to sessions where a named leaf was already a top-N belief
-    candidate was tried and measured (calibration playtest pass, 2026-07):
-    against the same 38-profession census (n=30, seed=7), the resolves_pair
-    weight-balance fixes alone dropped failing professions 12->7, but adding
-    this filter on top made it *worse*, 12->10 (tried top_n=5 and top_n=10;
-    both underperformed no filter) — gating out resolvers for sessions that
-    hadn't yet differentiated locked them out of their best chance to ever
-    surface a quiet profession, more often than it prevented the
-    contamination it targeted. Reverted; only the underlying resolves_pair
-    weight-balance fixes were kept.)
+    (Two attempts at nudging this toward resolves_pair questions relevant to
+    the CURRENT top belief were tried and both reverted (calibration
+    playtest pass, 2026-07) — worth knowing before trying a third:
+      1. Hard filter — excluded irrelevant resolves_pair questions outright.
+         Measured worse (n=30, seed=7): weight-balance content fixes alone
+         dropped failing professions 12->7; the filter on top made it
+         12->10 (tried top_n=5 and 10) — excluding a resolver outright could
+         permanently lock a leaf out of its own best rescue chance if it
+         hadn't differentiated yet.
+      2. Soft nudge — discounted (not excluded) the expected entropy of
+         relevant resolvers, so every question stayed selectable. This DID
+         produce a real, reproducible net improvement (n=100, seed=7:
+         4->3 failing; data-science/marketing/speech-therapist each gained
+         6-11pp) — but at a traced, systematic cost to leaves *adjacent to*
+         a genuine rivalry without being part of it: actor lost 18pp because
+         its habitual neighbors (design, cinematographer, makeup-artist-film)
+         kept qualifying each other's resolvers as "relevant" (each was in
+         the other's top-5), so those resolvers — which say nothing about
+         actor — got selected more often at actor's expense. Reverted
+         because this failure mode was only found by tracing one profession;
+         its true prevalence across the other 37 is unknown, and unlike a
+         content edit this touches every single session's question order.
+         A future attempt should probably require the *querying* leaf itself
+         to score decently on at least one option, not just that a rival is
+         in its own top-N, before granting the bonus.)
 
     Deviates from the ticket's one-line signature by taking `leaf_profiles`
     and `age_group` explicitly: neither entropy nor age eligibility can be

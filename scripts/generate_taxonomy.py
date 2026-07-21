@@ -7,8 +7,8 @@ auth, caching or rate limiting, and takes seconds per call — never import or
 call this from a router/service, only run it manually from a terminal.
 
 It NEVER writes to the database: output is a plain JSON review file. A human
-must check it (and run scripts/seed_directions.py-style seeding by hand) before
-any of it reaches the catalog.
+must check it (and run scripts/seed_akinator_content.py-style seeding by hand)
+before any of it reaches the catalog.
 
 Usage (inside Docker):
     docker-compose exec api python scripts/generate_taxonomy.py --focus-area "медицина" --count 8

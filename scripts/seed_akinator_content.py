@@ -190,6 +190,18 @@ SPECIALTIES: list[dict] = [
     # within the same accredited "Программная инженерия" degree, not its own code.
     {"slug": "software-engineer", "name": "Software Engineer", "label_junior": "Разработчик программ", "section": "akinator-it-data",
      "description": "Software Engineer создаёт программы, сайты и приложения — от логики на сервере до интерфейса пользователя. Внутри специальности можно расти в разных направлениях: backend, frontend, мобильная разработка или тестирование.",
+     # Focus 2->1 tried and reverted (calibration playtest pass, 2026-07,
+     # round 11): same trim that helped finance-accounting made things worse
+     # here — census went 2/38->4/38, and software-engineer itself dropped
+     # from 90% to 48% (civil-engineering/pilot/architect took over the slot
+     # it vacated), while data-science barely moved (22%->26%). Confirms the
+     # "crowded STEM cluster" is not fixable by trimming rivals one at a
+     # time — whoever gets trimmed just hands the win to the next-closest
+     # rival in the same cluster (finance-accounting -> software-engineer ->
+     # civil-engineering/pilot/architect), without data-science itself ever
+     # gaining real ground. Left at the original strength; this needs a
+     # different kind of fix (a real differentiating trait, not more
+     # rival-weakening) to progress further.
      "profile": {"People": -1, "Living": -1, "Data": 2, "Ideas": 1, "Inv": 1, "Obj": 1, "Care": -1, "Dev": -1, "Exp": 2, "Focus": 2, "Auto": 1, "Struct": 2, "Acad": 1, "PhysSt": -2, "Math": 2, "Predict": -1},
      "professions": ["Backend-разработчик", "Frontend-разработчик", "Fullstack-разработчик", "Мобильный разработчик", "QA-инженер"]},
     {"slug": "data-science", "name": "Data Science", "label_junior": "Аналитик", "section": "akinator-it-data",
@@ -442,7 +454,21 @@ SPECIALTIES: list[dict] = [
     # Безопасность и спасение — уже на минимуме (2 листа), не сжимаем
     {"slug": "fire-safety-engineer", "name": "Техносферная безопасность", "label_junior": "Пожарный", "section": "akinator-safety-rescue",
      "description": "Техносферная безопасность проектирует системы защиты от пожаров и обеспечивает безопасность зданий и людей.",
-     "profile": {"People": 1, "Phys": 1, "Data": 1, "Care": 1, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 1, "Risk": 2, "Struct": 2, "Pace": 1, "Predict": 1, "PhysSt": 1, "Acad": 1, "Math": 1},
+     # Auto:-1, Inv:-1 added (calibration playtest pass, 2026-07, round 15):
+     # found in the round-9 zero-negative-axis audit but not fixed then
+     # (wasn't failing census at the time) — a real user's own playthrough
+     # confirmed it's still a live problem: heading clearly IT the whole
+     # session, still landed on this profession via order=38/47-style
+     # situational questions. 15 axes, all non-negative — shares Phys/Data/
+     # Obj/Exp/Struct/Pace/Predict/Math with it-infrastructure-security
+     # almost entirely (8 of 11 axes), so any generic "precise, structured"
+     # question fed both, and this one never had a counter-weight to lose
+     # ground on. Not autonomous, individual work — rescue/safety operations
+     # are protocol-driven and team-coordinated (opposes
+     # it-infrastructure-security's Auto:1 directly); not about inventing
+     # from scratch — applies established safety codes/standards, same
+     # reasoning already used for lawyer's Inv:-1 (round 9).
+     "profile": {"People": 1, "Phys": 1, "Data": 1, "Care": 1, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 1, "Risk": 2, "Struct": 2, "Pace": 1, "Predict": 1, "PhysSt": 1, "Acad": 1, "Math": 1, "Auto": -1, "Inv": -1},
      "professions": ["Инженер пожарной безопасности", "Специалист по охране труда", "Инспектор пожарной безопасности"]},
     {"slug": "police-officer", "name": "Правоохранительная деятельность", "section": "akinator-safety-rescue",
      "description": "Правоохранительная деятельность следит за порядком и безопасностью людей, реагирует на происшествия и расследует правонарушения.",
@@ -519,11 +545,26 @@ def compute_section_profiles() -> dict[str, dict[str, float]]:
 QUESTIONS: list[dict] = [
     {"order": 0, "kind": "direct", "depth": 0, "age_variant": "both",
      "text": "Что тебе интереснее всего?", "text_junior": None,
+     # 5th option added (calibration playtest pass, 2026-07, round 12): of
+     # family A's 5 axes (People/Living/Phys/Data/Ideas — see axes.py), only
+     # Data had no dedicated option here — it was merged into "техника"
+     # alongside Phys. This is the very first question of every single
+     # session, deterministically asked first, so it seeded every
+     # data-science/software-engineer/finance-accounting/it-infrastructure-
+     # security persona into the same "Phys" bucket as mechanical-engineer/
+     # civil-engineering/pilot from step 1 — the root of the "crowded STEM
+     # cluster" problem traced across rounds 6-11 (weakening individual
+     # rivals one at a time never fixed it because the mis-routing happened
+     # before any of that). Verified: data-science's own best pick flips
+     # from the old merged option (score 2) to this new one (score 4);
+     # mechanical-engineer's own "техника" preference is undiminished
+     # (Phys weight kept at 2, its score there unchanged/slightly higher).
      "options": [
          {"text": "быть среди людей, общаться, помогать", "axis_weights": {"People": 2}},
-         {"text": "разбираться, как устроены вещи и техника", "axis_weights": {"Phys": 1, "Data": 1}},
+         {"text": "разбираться, как устроены вещи, техника, механизмы", "axis_weights": {"Phys": 2}},
          {"text": "возиться с животными, растениями, природой", "axis_weights": {"Living": 2}},
          {"text": "придумывать, рисовать, создавать своё", "axis_weights": {"Ideas": 2}},
+         {"text": "работать с числами, данными, компьютером", "axis_weights": {"Data": 2}},
      ], "resolves_pair": None},
     {"order": 1, "kind": "direct", "depth": 0, "age_variant": "both",
      "text": "Что приятнее?", "text_junior": None,
