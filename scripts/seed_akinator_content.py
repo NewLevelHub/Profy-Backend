@@ -190,7 +190,15 @@ SPECIALTIES: list[dict] = [
     # within the same accredited "Программная инженерия" degree, not its own code.
     {"slug": "software-engineer", "name": "Software Engineer", "label_junior": "Разработчик программ", "section": "akinator-it-data",
      "description": "Software Engineer создаёт программы, сайты и приложения — от логики на сервере до интерфейса пользователя. Внутри специальности можно расти в разных направлениях: backend, frontend, мобильная разработка или тестирование.",
-     "profile": {"People": -1, "Living": -1, "Data": 2, "Ideas": 1, "Inv": 1, "Obj": 1, "Care": -1, "Dev": -1, "Exp": 2, "Focus": 2, "Auto": 1, "Struct": 2, "Acad": 1, "PhysSt": -2, "Math": 2, "Predict": -1},
+     # Focus 2->1 (calibration playtest pass, 2026-07, round 11): same fix
+     # already applied to finance-accounting — after that trim, traced
+     # data-science sessions showed software-engineer stepping into
+     # finance-accounting's old role as the #1 rival, via the exact same
+     # mechanism (order=48's Math/Focus/Struct option scores high for
+     # software-engineer too, even though that resolver isn't its pair).
+     # Its own resolver (order 51, Inv/Obj/Ideas) doesn't touch Focus, so
+     # this doesn't weaken its genuine identification there.
+     "profile": {"People": -1, "Living": -1, "Data": 2, "Ideas": 1, "Inv": 1, "Obj": 1, "Care": -1, "Dev": -1, "Exp": 2, "Focus": 1, "Auto": 1, "Struct": 2, "Acad": 1, "PhysSt": -2, "Math": 2, "Predict": -1},
      "professions": ["Backend-разработчик", "Frontend-разработчик", "Fullstack-разработчик", "Мобильный разработчик", "QA-инженер"]},
     {"slug": "data-science", "name": "Data Science", "label_junior": "Аналитик", "section": "akinator-it-data",
      "description": "Data Science находит закономерности в больших массивах данных и помогает бизнесу принимать решения — от аналитики до машинного обучения.",
