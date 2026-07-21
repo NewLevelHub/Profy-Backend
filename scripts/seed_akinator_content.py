@@ -190,15 +190,19 @@ SPECIALTIES: list[dict] = [
     # within the same accredited "Программная инженерия" degree, not its own code.
     {"slug": "software-engineer", "name": "Software Engineer", "label_junior": "Разработчик программ", "section": "akinator-it-data",
      "description": "Software Engineer создаёт программы, сайты и приложения — от логики на сервере до интерфейса пользователя. Внутри специальности можно расти в разных направлениях: backend, frontend, мобильная разработка или тестирование.",
-     # Focus 2->1 (calibration playtest pass, 2026-07, round 11): same fix
-     # already applied to finance-accounting — after that trim, traced
-     # data-science sessions showed software-engineer stepping into
-     # finance-accounting's old role as the #1 rival, via the exact same
-     # mechanism (order=48's Math/Focus/Struct option scores high for
-     # software-engineer too, even though that resolver isn't its pair).
-     # Its own resolver (order 51, Inv/Obj/Ideas) doesn't touch Focus, so
-     # this doesn't weaken its genuine identification there.
-     "profile": {"People": -1, "Living": -1, "Data": 2, "Ideas": 1, "Inv": 1, "Obj": 1, "Care": -1, "Dev": -1, "Exp": 2, "Focus": 1, "Auto": 1, "Struct": 2, "Acad": 1, "PhysSt": -2, "Math": 2, "Predict": -1},
+     # Focus 2->1 tried and reverted (calibration playtest pass, 2026-07,
+     # round 11): same trim that helped finance-accounting made things worse
+     # here — census went 2/38->4/38, and software-engineer itself dropped
+     # from 90% to 48% (civil-engineering/pilot/architect took over the slot
+     # it vacated), while data-science barely moved (22%->26%). Confirms the
+     # "crowded STEM cluster" is not fixable by trimming rivals one at a
+     # time — whoever gets trimmed just hands the win to the next-closest
+     # rival in the same cluster (finance-accounting -> software-engineer ->
+     # civil-engineering/pilot/architect), without data-science itself ever
+     # gaining real ground. Left at the original strength; this needs a
+     # different kind of fix (a real differentiating trait, not more
+     # rival-weakening) to progress further.
+     "profile": {"People": -1, "Living": -1, "Data": 2, "Ideas": 1, "Inv": 1, "Obj": 1, "Care": -1, "Dev": -1, "Exp": 2, "Focus": 2, "Auto": 1, "Struct": 2, "Acad": 1, "PhysSt": -2, "Math": 2, "Predict": -1},
      "professions": ["Backend-разработчик", "Frontend-разработчик", "Fullstack-разработчик", "Мобильный разработчик", "QA-инженер"]},
     {"slug": "data-science", "name": "Data Science", "label_junior": "Аналитик", "section": "akinator-it-data",
      "description": "Data Science находит закономерности в больших массивах данных и помогает бизнесу принимать решения — от аналитики до машинного обучения.",
@@ -527,11 +531,26 @@ def compute_section_profiles() -> dict[str, dict[str, float]]:
 QUESTIONS: list[dict] = [
     {"order": 0, "kind": "direct", "depth": 0, "age_variant": "both",
      "text": "Что тебе интереснее всего?", "text_junior": None,
+     # 5th option added (calibration playtest pass, 2026-07, round 12): of
+     # family A's 5 axes (People/Living/Phys/Data/Ideas — see axes.py), only
+     # Data had no dedicated option here — it was merged into "техника"
+     # alongside Phys. This is the very first question of every single
+     # session, deterministically asked first, so it seeded every
+     # data-science/software-engineer/finance-accounting/it-infrastructure-
+     # security persona into the same "Phys" bucket as mechanical-engineer/
+     # civil-engineering/pilot from step 1 — the root of the "crowded STEM
+     # cluster" problem traced across rounds 6-11 (weakening individual
+     # rivals one at a time never fixed it because the mis-routing happened
+     # before any of that). Verified: data-science's own best pick flips
+     # from the old merged option (score 2) to this new one (score 4);
+     # mechanical-engineer's own "техника" preference is undiminished
+     # (Phys weight kept at 2, its score there unchanged/slightly higher).
      "options": [
          {"text": "быть среди людей, общаться, помогать", "axis_weights": {"People": 2}},
-         {"text": "разбираться, как устроены вещи и техника", "axis_weights": {"Phys": 1, "Data": 1}},
+         {"text": "разбираться, как устроены вещи, техника, механизмы", "axis_weights": {"Phys": 2}},
          {"text": "возиться с животными, растениями, природой", "axis_weights": {"Living": 2}},
          {"text": "придумывать, рисовать, создавать своё", "axis_weights": {"Ideas": 2}},
+         {"text": "работать с числами, данными, компьютером", "axis_weights": {"Data": 2}},
      ], "resolves_pair": None},
     {"order": 1, "kind": "direct", "depth": 0, "age_variant": "both",
      "text": "Что приятнее?", "text_junior": None,

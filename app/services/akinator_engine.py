@@ -230,6 +230,31 @@ def _sample_by_entropy(
     return rng.choices(candidates, weights=weights, k=1)[0]
 
 
+# Soft, non-exclusive nudge toward resolves_pair questions whose named leaves
+# overlap the CURRENT top-N belief — see select_next_question's docstring for
+# why this replaces the earlier hard-filter attempt (measured worse: 12->10
+# failing vs 12->7 with no filter at all, because excluding a resolver
+# outright could permanently lock a leaf out of its own best rescue chance).
+# This only shifts the softmax odds in _sample_by_entropy; every candidate,
+# relevant or not, stays selectable.
+_RELEVANCE_BONUS = 0.15
+_RELEVANCE_ONSET_STEP = 6
+_RELEVANCE_TOP_N = 5
+
+
+def _relevance_bonus(question: AkinatorQuestion, belief: dict[str, float], top_n: int) -> float:
+    """Entropy discount applied to a resolves_pair question when at least one
+    of its named leaves is currently plausible (top `top_n` by belief) —
+    makes it more likely, not certain, to be picked over an equally-
+    informative but currently-irrelevant resolver. Non-resolver questions
+    (resolves_pair=None) get no bonus; they were never the problem."""
+    pair = question.resolves_pair
+    if not pair:
+        return 0.0
+    top_slugs = {slug for slug, _ in sorted(belief.items(), key=lambda kv: -kv[1])[:top_n]}
+    return _RELEVANCE_BONUS if any(slug in top_slugs for slug in pair) else 0.0
+
+
 def select_next_question(
     session: AssessmentSession,
     candidate_questions: list[AkinatorQuestion],
@@ -249,19 +274,21 @@ def select_next_question(
     step >= WIDE_START_STEPS: weighted-random pick favoring minimum expected
     posterior entropy (see _sample_by_entropy), using the same match/softmax
     machinery as update_belief. Not a strict argmin — see
-    AKINATOR_QUESTION_TEMPERATURE.
+    AKINATOR_QUESTION_TEMPERATURE. From step >= _RELEVANCE_ONSET_STEP, a
+    small entropy discount (_relevance_bonus) nudges the sampling toward
+    resolves_pair questions relevant to the current top _RELEVANCE_TOP_N
+    belief, without excluding anything else — see that function's docstring.
 
-    (A step >= WIDE_START_STEPS pre-filter that restricted resolves_pair
-    questions to sessions where a named leaf was already a top-N belief
-    candidate was tried and measured (calibration playtest pass, 2026-07):
-    against the same 38-profession census (n=30, seed=7), the resolves_pair
-    weight-balance fixes alone dropped failing professions 12->7, but adding
-    this filter on top made it *worse*, 12->10 (tried top_n=5 and top_n=10;
-    both underperformed no filter) — gating out resolvers for sessions that
-    hadn't yet differentiated locked them out of their best chance to ever
-    surface a quiet profession, more often than it prevented the
-    contamination it targeted. Reverted; only the underlying resolves_pair
-    weight-balance fixes were kept.)
+    (An earlier attempt at this same idea used a hard filter instead of a
+    soft nudge — excluded irrelevant resolves_pair questions outright rather
+    than just discounting their entropy. Measured worse (calibration
+    playtest pass, 2026-07): against the same 38-profession census (n=30,
+    seed=7), the resolves_pair weight-balance fixes alone dropped failing
+    professions 12->7, but the hard filter on top made it *worse*, 12->10
+    (tried top_n=5 and top_n=10; both underperformed no filter) — excluding
+    a resolver outright could permanently lock a leaf out of its own best
+    rescue chance if it hadn't differentiated yet. The soft version keeps
+    every question selectable and only shifts the odds.)
 
     Deviates from the ticket's one-line signature by taking `leaf_profiles`
     and `age_group` explicitly: neither entropy nor age eligibility can be
@@ -297,6 +324,11 @@ def select_next_question(
     entropies = [
         _expected_posterior_entropy(q, session.belief, leaf_profiles, beta) for q in candidates
     ]
+    if session.step >= _RELEVANCE_ONSET_STEP:
+        entropies = [
+            e - _relevance_bonus(q, session.belief, _RELEVANCE_TOP_N)
+            for q, e in zip(candidates, entropies)
+        ]
     return _sample_by_entropy(candidates, entropies, temperature, rng)
 
 
