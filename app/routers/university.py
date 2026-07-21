@@ -38,7 +38,7 @@ router = APIRouter(tags=["universities"])
 async def list_programs(
     direction: str = Query(..., description="Profession or section slug from test result"),
     country: str | None = Query("Казахстан", description="Country filter, defaults to Kazakhstan"),
-    city: str | None = Query("Астана", description="City filter, defaults to Astana"),
+    city: str | None = Query(None, description="City filter (optional; if omitted, all cities)"),
     limit: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ) -> list[ProgramBrief]:
