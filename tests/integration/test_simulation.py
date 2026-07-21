@@ -16,13 +16,13 @@ from app.models.profession_simulation import ProfessionSimulation
 from app.models.profession_simulation_log import ProfessionSimulationLog
 from app.models.user import User
 from app.services.auth_service import create_jwt_token
-from scripts.seed_akinator_content import seed_professions, seed_questions, seed_sections
+from scripts.seed_akinator_content import seed_questions, seed_sections, seed_specialties
 from scripts.seed_simulations import seed_simulations
 
 
 async def _ensure_seeded(db: AsyncSession) -> None:
     section_ids, *_ = await seed_sections(db)
-    await seed_professions(db, section_ids)
+    await seed_specialties(db, section_ids)
     await seed_questions(db)
     await seed_simulations()
     await db.flush()
@@ -103,12 +103,12 @@ async def test_get_simulation_success_and_errors(client: AsyncClient, db_session
 
     # 1. Success case
     resp = await client.get(
-        f"/api/v1/assessment/{assessment.id}/simulation/programmer",
+        f"/api/v1/assessment/{assessment.id}/simulation/software-engineer",
         headers=headers,
     )
     assert resp.status_code == 200
     body = resp.json()
-    assert body["leaf_slug"] == "programmer"
+    assert body["leaf_slug"] == "software-engineer"
     assert len(body["steps"]) == 2
     assert body["steps"][0]["text"]
 
@@ -123,7 +123,7 @@ async def test_get_simulation_success_and_errors(client: AsyncClient, db_session
     other_user, _ = await _make_user_and_assessment(db_session)
     other_headers = _auth_headers(other_user.id)
     resp = await client.get(
-        f"/api/v1/assessment/{assessment.id}/simulation/programmer",
+        f"/api/v1/assessment/{assessment.id}/simulation/software-engineer",
         headers=other_headers,
     )
     assert resp.status_code == 403
@@ -154,7 +154,7 @@ async def test_submit_simulation_accepted_saves_log_keeps_belief(
 
     # Submit accepted=True
     resp = await client.post(
-        f"/api/v1/assessment/{assessment.id}/simulation/programmer/submit",
+        f"/api/v1/assessment/{assessment.id}/simulation/software-engineer/submit",
         headers=headers,
         json={"accepted": True, "answers": [0, 1]},
     )
@@ -168,7 +168,7 @@ async def test_submit_simulation_accepted_saves_log_keeps_belief(
         await db_session.execute(
             select(ProfessionSimulationLog).where(
                 ProfessionSimulationLog.assessment_id == assessment.id,
-                ProfessionSimulationLog.leaf_slug == "programmer",
+                ProfessionSimulationLog.leaf_slug == "software-engineer",
             )
         )
     ).scalar_one_or_none()
@@ -194,7 +194,7 @@ async def test_submit_simulation_rejected_updates_belief_negatively(
     )
     assert start_resp.status_code == 200
 
-    # Ensure programmer is in belief
+    # Ensure software-engineer is in belief
     sess = (
         await db_session.execute(
             select(AssessmentSession).where(
@@ -202,13 +202,13 @@ async def test_submit_simulation_rejected_updates_belief_negatively(
             )
         )
     ).scalar_one()
-    assert "programmer" in sess.belief
-    programmer_belief_before = sess.belief["programmer"]
-    assert programmer_belief_before > 0.001
+    assert "software-engineer" in sess.belief
+    belief_before_rejection = sess.belief["software-engineer"]
+    assert belief_before_rejection > 0.001
 
     # Submit accepted=False (rejection)
     resp = await client.post(
-        f"/api/v1/assessment/{assessment.id}/simulation/programmer/submit",
+        f"/api/v1/assessment/{assessment.id}/simulation/software-engineer/submit",
         headers=headers,
         json={"accepted": False, "answers": [0, 1]},
     )
@@ -222,17 +222,17 @@ async def test_submit_simulation_rejected_updates_belief_negatively(
         await db_session.execute(
             select(ProfessionSimulationLog).where(
                 ProfessionSimulationLog.assessment_id == assessment.id,
-                ProfessionSimulationLog.leaf_slug == "programmer",
+                ProfessionSimulationLog.leaf_slug == "software-engineer",
             )
         )
     ).scalar_one_or_none()
     assert log is not None
     assert log.accepted is False
 
-    # Verify belief for programmer dropped to near zero. Threshold relaxed
+    # Verify belief for software-engineer dropped to near zero. Threshold relaxed
     # from 1e-10 (calibration pass 3): match_score is now normalized by the
     # leaf's own profile norm, which also divides down this virtual -100
     # rejection weight — still negligible (was ~1.7e-10), just not quite as
     # extreme as the old un-normalized score.
     await db_session.refresh(sess)
-    assert sess.belief["programmer"] < 1e-6
+    assert sess.belief["software-engineer"] < 1e-6

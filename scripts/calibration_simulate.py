@@ -42,7 +42,7 @@ from app.models.direction import Direction
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
 from app.services import akinator_engine, akinator_session_service
-from scripts.seed_akinator_content import PROFESSIONS, seed_professions, seed_questions, seed_sections
+from scripts.seed_akinator_content import SPECIALTIES, seed_questions, seed_sections, seed_specialties
 
 STRATEGIES = ["random", "consistent", "alternating", "target"]
 AGE_GROUPS = {"junior": AgeGroup.junior, "middle": AgeGroup.middle, "senior": AgeGroup.senior}
@@ -211,7 +211,7 @@ async def run_census(
     times each. Reports, per profession, how often it lands in the top `top_n`
     by final belief — the bar for "would a real user plausibly see this
     suggested" — and what beats it when it doesn't."""
-    real_slugs = [p["slug"] for p in PROFESSIONS if p["slug"] in leaf_profiles_by_slug]
+    real_slugs = [p["slug"] for p in SPECIALTIES if p["slug"] in leaf_profiles_by_slug]
     rows: list[tuple[str, int, int, Counter]] = []
 
     for slug in real_slugs:
@@ -258,7 +258,7 @@ async def main(
         db = AsyncSession(bind=conn, expire_on_commit=False, join_transaction_mode="create_savepoint")
         try:
             section_ids, *_ = await seed_sections(db)
-            await seed_professions(db, section_ids)
+            await seed_specialties(db, section_ids)
             await seed_questions(db)
             await db.commit()
 

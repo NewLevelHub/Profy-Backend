@@ -18,12 +18,12 @@ from app.routers.akinator import _reveal_response
 from app.services import assessment_session_service
 from app.services.akinator_engine import StopDecision
 from app.services.auth_service import create_jwt_token
-from scripts.seed_akinator_content import seed_professions, seed_questions, seed_sections
+from scripts.seed_akinator_content import seed_questions, seed_sections, seed_specialties
 
 
 async def _ensure_seeded(db: AsyncSession) -> None:
     section_ids, *_ = await seed_sections(db)
-    await seed_professions(db, section_ids)
+    await seed_specialties(db, section_ids)
     await seed_questions(db)
     await db.flush()
 
@@ -261,34 +261,34 @@ async def test_reveal_uses_label_junior_for_junior_and_real_name_for_senior(
     db_session: AsyncSession,
 ):
     """Calibration pass: junior sees the friendly label_junior ("Врач")
-    instead of the technical profession name ("Хирург") when one is set;
-    senior still sees the real name."""
+    instead of the technical specialty name ("Лечебное дело") when one is
+    set; senior still sees the real name."""
     await _ensure_seeded(db_session)
-    decision = StopDecision(status="reveal_single", leaves=["surgeon"], reason="confidence")
-    belief = {"surgeon": 1.0}
+    decision = StopDecision(status="reveal_single", leaves=["general-medicine"], reason="confidence")
+    belief = {"general-medicine": 1.0}
 
     junior_response = await _reveal_response(decision, belief, [], AgeGroup.junior, db_session)
     senior_response = await _reveal_response(decision, belief, [], AgeGroup.senior, db_session)
 
     assert junior_response.leaves[0].name == "Врач"
-    assert senior_response.leaves[0].name == "Хирург"
+    assert senior_response.leaves[0].name == "Лечебное дело"
 
 
 async def test_reveal_leaf_carries_its_parent_direction_name(db_session: AsyncSession):
     """Feature request: show a broader "направление" (section) alongside the
-    specific profession, e.g. "Медицина и здоровье" for surgeon — not just
-    the bare profession name."""
+    specific specialty, e.g. "Медицина и здоровье" for general-medicine — not
+    just the bare specialty name."""
     await _ensure_seeded(db_session)
     decision = StopDecision(
-        status="reveal_cluster", leaves=["surgeon", "programmer"], reason="confidence"
+        status="reveal_cluster", leaves=["general-medicine", "software-engineer"], reason="confidence"
     )
-    belief = {"surgeon": 0.5, "programmer": 0.5}
+    belief = {"general-medicine": 0.5, "software-engineer": 0.5}
 
     response = await _reveal_response(decision, belief, [], AgeGroup.senior, db_session)
 
     by_slug = {leaf.slug: leaf.direction for leaf in response.leaves}
-    assert by_slug["surgeon"] == "Медицина и здоровье"
-    assert by_slug["programmer"] == "IT и данные"
+    assert by_slug["general-medicine"] == "Медицина и здоровье"
+    assert by_slug["software-engineer"] == "IT и данные"
 
 
 async def test_reject_before_reveal_is_rejected(client: AsyncClient, db_session: AsyncSession):

@@ -119,6 +119,7 @@ async def _reveal_response(
             section_name = section_name_by_id.get(direction.parent_id, "")
             leaves.append(RevealLeaf(
                 slug=slug, name=name, direction=section_name, description=direction.description,
+                professions=direction.professions or [],
             ))
         return leaves
 

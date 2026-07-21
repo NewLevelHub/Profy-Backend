@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.axes import AXIS_CATALOG
+from app.core.axes import AXIS_CATALOG, AXIS_GROWTH_COPY, AXIS_STRENGTH_COPY
 from app.models.akinator_answer_log import AkinatorAnswerLog
 from app.models.akinator_question import AkinatorQuestion
 from app.models.assessment import Assessment, AssessmentStatus
@@ -21,64 +21,106 @@ from app.models.profile import Profile
 from app.models.program import Program
 from app.models.university import University
 from app.schemas.akinator_session import RevealLeaf
-from app.schemas.result import AkinatorResultResponse, ChildAxisSignal, ResultAxisHighlight
+from app.schemas.result import AkinatorResultResponse, AxisComparisonItem, AxisGrowthExplanation
 from app.services.akinator_report_service import BACKUP_COUNT, REPORT_MESSAGES
 from app.services.program_direction_resolver import program_direction_slugs_for
 
-_TOP_AXES_COUNT = 6
 _RECOMMENDED_PROGRAMS_LIMIT = 5
-# How many of the child's own strongest/weakest axes to surface — separate
-# from _TOP_AXES_COUNT, which caps the profession's own axis profile.
-_STRENGTHS_COUNT = 3
-_GROWTH_COUNT = 3
+# How many axes to surface per side of the comparison.
+_MATCH_COUNT = 4
+_GROWTH_COUNT = 4
+# child_score >= this counts as "meets the direction's need" (match), below
+# it counts as "growth". 0 is the simplest reasonable cut given child_score
+# is a signed average of axis_weights — revisit once real session data shows
+# whether a median-based cut per session tells a better story.
+_MATCH_THRESHOLD = 0.0
 
 _AXIS_LABELS: dict[str, str] = {axis.code: axis.label_ru for axis in AXIS_CATALOG}
 
 
-def matched_axes_for(profile: dict[str, int]) -> list[ResultAxisHighlight]:
-    """The direction's own standout axes, strongest first. Pure function, no
-    DB — there's no retained per-axis signal for the student to compare
-    against (belief only tracks likelihood per leaf, not per axis), so this
-    describes what defines the profession rather than "how well you scored"."""
-    ranked = sorted(
-        (item for item in profile.items() if item[1] != 0),
-        key=lambda item: (-abs(item[1]), item[0]),
-    )
-    return [
-        ResultAxisHighlight(code=code, label_ru=_AXIS_LABELS.get(code, code), direction_value=value)
-        for code, value in ranked[:_TOP_AXES_COUNT]
-    ]
-
-
-def _child_strengths_and_growth(
-    totals: dict[str, float],
-) -> tuple[list[ChildAxisSignal], list[ChildAxisSignal]]:
-    """Split the child's own summed axis scores (see _child_axis_totals) into
-    strengths (positive, strongest first) and growth areas (negative,
-    weakest first) — pure function, same shape as matched_axes_for but over
-    a different signal: what the child actually answered, not what the
-    profession itself needs."""
-    strengths = sorted(
-        (item for item in totals.items() if item[1] > 0),
-        key=lambda item: item[1],
+def _split_by_threshold(candidates: dict[str, float]) -> tuple[list[str], list[str]]:
+    """Split axis codes by _MATCH_THRESHOLD: >= it is a match (strongest
+    first), below it is growth (weakest/largest-gap first). Pure ranking —
+    doesn't know or care whether `candidates` came from the direction's own
+    needs or the whole-session fallback (see _axis_comparison_for)."""
+    match_codes = sorted(
+        (code for code, score in candidates.items() if score >= _MATCH_THRESHOLD),
+        key=lambda code: candidates[code],
         reverse=True,
-    )[:_STRENGTHS_COUNT]
-    growth = sorted(
-        (item for item in totals.items() if item[1] < 0),
-        key=lambda item: item[1],
+    )[:_MATCH_COUNT]
+    growth_codes = sorted(
+        (code for code, score in candidates.items() if score < _MATCH_THRESHOLD),
+        key=lambda code: candidates[code],
     )[:_GROWTH_COUNT]
-
-    return (
-        [ChildAxisSignal(code=code, label_ru=_AXIS_LABELS.get(code, code), score=score) for code, score in strengths],
-        [ChildAxisSignal(code=code, label_ru=_AXIS_LABELS.get(code, code), score=score) for code, score in growth],
-    )
+    return match_codes, growth_codes
 
 
-async def _child_axis_totals(session_id: uuid.UUID, db: AsyncSession) -> dict[str, float]:
-    """Sum the axis_weights of every option the child actually selected
-    across the whole session, straight from the answer log — the most
-    direct signal of what the child answered, independent of which
-    profession the answers happened to lead to."""
+def _axis_comparison_for(
+    profile: dict[str, int], child_scores: dict[str, float]
+) -> tuple[list[AxisComparisonItem], list[AxisComparisonItem], bool]:
+    """Compare the direction's own needs against the child's normalized
+    per-axis signal (see _child_axis_scores). Only axes the direction
+    actually leans into (profile > 0) are considered, and only where the
+    child's answers actually touched that axis — no axis is ever assigned a
+    fake neutral score just to have something to show.
+
+    If that overlap is empty (the session's questions never happened to
+    touch any axis this direction needs — rare, but real: which axes get
+    asked depends on the adaptive question path, not on the final
+    direction), there is nothing honest to say about *this* direction
+    specifically. Rather than showing nothing, fall back to the child's
+    strongest/weakest axes across the whole session, unfiltered by this
+    direction's profile — still entirely real signal, just not scoped to
+    this profession. The caller must label this case differently (see
+    AkinatorResultResponse.is_direction_specific); the returned bool here
+    says which mode was used."""
+    relevant = {
+        code: child_scores[code] for code, value in profile.items() if value > 0 and code in child_scores
+    }
+
+    is_direction_specific = bool(relevant)
+    candidates = relevant if is_direction_specific else child_scores
+    profile_values = profile if is_direction_specific else {}
+
+    match_codes, growth_codes = _split_by_threshold(candidates)
+
+    match_items = [
+        AxisComparisonItem(
+            code=code,
+            label_ru=_AXIS_LABELS.get(code, code),
+            profile_value=profile_values.get(code),
+            child_score=round(candidates[code], 2),
+            strength_phrase=AXIS_STRENGTH_COPY.get(code),
+        )
+        for code in match_codes
+    ]
+    growth_items = [
+        AxisComparisonItem(
+            code=code,
+            label_ru=_AXIS_LABELS.get(code, code),
+            profile_value=profile_values.get(code),
+            child_score=round(candidates[code], 2),
+            explanation=_growth_explanation_for(code),
+        )
+        for code in growth_codes
+    ]
+    return match_items, growth_items, is_direction_specific
+
+
+def _growth_explanation_for(code: str) -> AxisGrowthExplanation | None:
+    copy = AXIS_GROWTH_COPY.get(code)
+    if copy is None:
+        return None
+    return AxisGrowthExplanation(meaning=copy.meaning, suggestion=copy.suggestion)
+
+
+async def _child_axis_scores(session_id: uuid.UUID, db: AsyncSession) -> dict[str, float]:
+    """Average axis_weight per axis across every option the child actually
+    selected in the session, straight from the answer log. Averaging (rather
+    than summing, as this used to) keeps axes touched by many questions from
+    automatically outranking axes touched by few — otherwise the comparison
+    in _axis_comparison_for would be measuring "how often this axis came up"
+    more than "how the child actually leaned on it"."""
     result = await db.execute(
         select(AkinatorAnswerLog).where(
             AkinatorAnswerLog.session_id == session_id,
@@ -95,15 +137,17 @@ async def _child_axis_totals(session_id: uuid.UUID, db: AsyncSession) -> dict[st
     )
     questions_by_id = {q.id: q for q in questions_result.scalars().all()}
 
-    totals: dict[str, float] = {}
+    sums: dict[str, float] = {}
+    counts: dict[str, int] = {}
     for log in logs:
         question = questions_by_id.get(log.question_id)
         if question is None:
             continue
         weights = question.options[log.selected_option_index].get("axis_weights", {})
         for axis_code, weight in weights.items():
-            totals[axis_code] = totals.get(axis_code, 0) + weight
-    return totals
+            sums[axis_code] = sums.get(axis_code, 0) + weight
+            counts[axis_code] = counts.get(axis_code, 0) + 1
+    return {code: sums[code] / counts[code] for code in sums}
 
 
 def _message_for(session: AssessmentSession) -> str:
@@ -138,6 +182,7 @@ async def _backups_for(session: AssessmentSession, exclude_slug: str, db: AsyncS
             name=direction.name,
             direction=section_name_by_id.get(direction.parent_id, ""),
             description=direction.description,
+            professions=direction.professions or [],
         )
         for slug in slugs
         if (direction := directions_by_slug.get(slug)) is not None
@@ -205,18 +250,21 @@ async def get_result(assessment_id: uuid.UUID, db: AsyncSession) -> AkinatorResu
     recommended_programs = await _recommended_programs_for(
         assessment.selected_direction_slug, db, city=user_city
     )
-    child_totals = await _child_axis_totals(session.id, db)
-    strengths, growth_areas = _child_strengths_and_growth(child_totals)
+    child_scores = await _child_axis_scores(session.id, db)
+    matches, growth_areas, is_direction_specific = _axis_comparison_for(
+        direction.profile or {}, child_scores
+    )
 
     return AkinatorResultResponse(
         assessment_id=assessment.id,
         direction_slug=direction.slug,
         direction_name=direction.name,
         direction_description=direction.description,
+        professions=direction.professions or [],
         message=_message_for(session),
-        matched_axes=matched_axes_for(direction.profile or {}),
-        strengths=strengths,
+        matches=matches,
         growth_areas=growth_areas,
+        is_direction_specific=is_direction_specific,
         backups=backups,
         recommended_programs=recommended_programs,
         created_at=assessment.created_at,

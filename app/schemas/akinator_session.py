@@ -29,6 +29,7 @@ class RevealLeaf(BaseModel):
     # profession, instead of just a bare, possibly unfamiliar job title.
     direction: str
     description: str = ""
+    professions: list[str] = Field(default_factory=list)
 
 
 class RevealResponse(BaseModel):

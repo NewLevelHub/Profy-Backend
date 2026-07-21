@@ -4,10 +4,12 @@ generation.
 Built entirely from the axis-driven Akinator engine's persisted state — there
 is no separate scoring pass anymore, so every field here is either a real
 profile column or derived from AssessmentSession.belief / Direction.profile.
-There is no per-axis score retained for the student (belief only tracks
-likelihood per leaf direction, not per axis — see
-result_service.matched_axes_for for the same constraint), so "strengths" is
-read off the target direction's own profile rather than off the student.
+There is no per-axis score retained for the student here (belief only tracks
+likelihood per leaf direction, not per axis), so "strengths" is read off the
+target direction's own profile rather than off the student. (The /results
+page now does compare a per-axis student signal against the direction's
+profile — see result_service._axis_comparison_for — but that's a separate
+pipeline this roadmap-context builder doesn't consume.)
 """
 from pydantic import BaseModel
 

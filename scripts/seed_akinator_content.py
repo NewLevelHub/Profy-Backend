@@ -42,6 +42,21 @@ Sections akinator-beauty-services / akinator-logistics-service stay retired —
 their replacements live under stage-media / business-sales respectively, so a
 one-leaf branch (which forks nothing) is avoided.
 
+Specialty pivot (2026-07-17): the leaf level of the tree is no longer 51 narrow
+PROFESSIONS but ~38 SPECIALTIES matching real Kazakhstani bachelor's programs
+(e.g. "Software Engineer" instead of "Программист"). Professions that share one
+accredited program (e.g. surgeon+physician+emergency-physician+psychiatrist, all
+"Лечебное дело" — sub-specialization happens later, in ординатура) merge into one
+specialty; professions that are genuinely distinct accredited programs stay
+separate. Each specialty leaf now populates `Direction.professions` (already
+existed, previously only used inside the AI roadmap prompt) with the concrete
+job titles it leads to — this is what the client now shows under the matched
+specialty. `ux-designer` moves from akinator-it-data to akinator-creative-design
+(its axis profile is closer to design than to programming). No belief-walk
+engine changes were needed: it already operates generically over any
+`is_leaf=True` Direction row via `profile`, independent of what the leaf
+represents.
+
 Age-group pass (2026-07): professions are NO LONGER offered to `junior`.
 Product rule: junior converges to a broad DIRECTION (a section), middle/senior
 converge to a concrete PROFESSION (a leaf). Consequently sections now carry
@@ -54,7 +69,7 @@ NOTE for product review: `Profile.compute_age_group` maps junior<=9,
 middle 10-13, senior 14+. The product targets 10-17, so `junior` is nearly
 empty in practice and the "soft direction" audience is effectively `middle`.
 If directions (not professions) should go to 10-13 year olds, move "middle"
-from PROFESSION_AGE_GROUPS to SECTION_AGE_GROUPS — single-constant change.
+from SPECIALTY_AGE_GROUPS to SECTION_AGE_GROUPS — single-constant change.
 
 Run inside Docker:
     docker-compose exec api python scripts/seed_akinator_content.py
@@ -107,254 +122,346 @@ SECTIONS: list[dict] = [
      "description": "Профессии, которые обеспечивают безопасность людей и реагируют в чрезвычайных ситуациях."},
 ]
 
-PROFESSIONS: list[dict] = [
+SPECIALTIES: list[dict] = [
     # Медицина и здоровье
-    {"slug": "surgeon", "name": "Хирург", "label_junior": "Врач", "section": "akinator-medicine",
-     "description": "Хирург лечит с помощью операций — устраняет повреждения, удаляет опухоли и восстанавливает работу органов. Нужны точные движения руками, стрессоустойчивость и готовность долго учиться.",
-     "profile": {"People": 1, "Living": 2, "Phys": 2, "Care": 2, "Dev": -1, "Motor": 2, "Exp": 2, "Focus": 2, "Risk": 1, "Struct": 2, "Pace": 1, "Acad": 2, "PhysSt": 1}},
-    {"slug": "physician", "name": "Терапевт", "label_junior": "Врач", "section": "akinator-medicine",
-     "description": "Терапевт — первый врач, к которому обращаются с любой проблемой: ставит диагноз, назначает лечение и наблюдает за здоровьем пациента в целом.",
-     "profile": {"People": 2, "Living": 2, "Care": 2, "Exp": 2, "Emp": 1, "Focus": 1, "Struct": 1, "Predict": 1, "Acad": 2}},
-    {"slug": "psychiatrist", "name": "Психиатр", "label_junior": "Врач", "section": "akinator-medicine",
-     "description": "Психиатр диагностирует и лечит психические расстройства — сочетает медицинские знания с глубоким вниманием к внутреннему состоянию человека.",
-     "profile": {"People": 2, "Living": 1, "Care": 2, "Exp": 2, "Emp": 2, "Focus": 2, "Struct": 1, "Acad": 2, "Data": -1}},
-    # University pass: `paramedic` was a calque — the RU equivalent (фельдшер) is
-    # СПО. Its university-level growth is emergency medicine (Лечебное дело +
-    # ординатура «Скорая медицинская помощь»), which had no leaf, so the leaf is
-    # replaced rather than dropped. Acad -> +2 (med school), Risk -> +2.
-    {"slug": "emergency-physician", "name": "Врач скорой помощи", "section": "akinator-medicine",
-     "description": "Врач скорой помощи оказывает экстренную медицинскую помощь прямо на месте происшествия — работа быстрая, непредсказуемая и требует хладнокровия.",
-     "profile": {"People": 2, "Living": 2, "Phys": 1, "Care": 2, "Motor": 1, "Exp": 2, "Focus": -2, "Risk": 2, "Struct": 1, "Pace": 2, "Predict": 2, "PhysSt": 1, "Acad": 2}},
-    {"slug": "dentist", "name": "Стоматолог", "label_junior": "Зубной врач", "section": "akinator-medicine",
-     "description": "Стоматолог лечит зубы и полость рта — точная, кропотливая работа руками, требующая аккуратности и внимания к деталям.",
-     "profile": {"People": 1, "Living": 2, "Phys": 1, "Care": 2, "Motor": 2, "Exp": 2, "Focus": 2, "Struct": 1, "Acad": 2}},
-    {"slug": "pharmacist", "name": "Фармацевт", "label_junior": "Аптекарь", "section": "akinator-medicine",
-     "description": "Фармацевт разбирается в лекарствах — помогает подобрать нужный препарат и объясняет, как его правильно принимать.",
-     "profile": {"People": 1, "Living": 1, "Data": 1, "Care": 1, "Exp": 2, "Focus": 1, "Struct": 2, "Predict": -1, "Acad": 1, "Math": 1}},
+    # Merge (specialty pivot): surgeon+physician+emergency-physician+psychiatrist
+    # all grow from ONE accredited bachelor's — «Лечебное дело» / Общая медицина.
+    # Sub-specialization happens later, in ординатура, not at enrollment — so
+    # these no longer fork the akinator, they fork the residency choice.
+    {"slug": "general-medicine", "name": "Лечебное дело", "label_junior": "Врач", "section": "akinator-medicine",
+     "description": "Лечебное дело готовит врачей широкого профиля — терапевтов, хирургов, врачей скорой помощи и психиатров. Конкретная специализация выбирается позже, в ординатуре, а не при поступлении.",
+     "profile": {"People": 2, "Living": 2, "Phys": 1, "Care": 2, "Motor": 1, "Exp": 2, "Focus": 1, "Risk": 1, "Struct": 1, "Pace": 1, "Acad": 2, "PhysSt": 1, "Emp": 1, "Predict": 1},
+     "professions": ["Терапевт", "Хирург", "Врач скорой помощи", "Психиатр", "Кардиолог", "Педиатр"]},
+    {"slug": "dentist", "name": "Стоматология", "label_junior": "Зубной врач", "section": "akinator-medicine",
+     "description": "Стоматология лечит зубы и полость рта — точная, кропотливая работа руками, требующая аккуратности и внимания к деталям.",
+     "profile": {"People": 1, "Living": 2, "Phys": 1, "Care": 2, "Motor": 2, "Exp": 2, "Focus": 2, "Struct": 1, "Acad": 2},
+     "professions": ["Стоматолог-терапевт", "Стоматолог-хирург", "Ортодонт", "Детский стоматолог"]},
+    {"slug": "pharmacist", "name": "Фармация", "label_junior": "Аптекарь", "section": "akinator-medicine",
+     "description": "Фармация готовит специалистов, которые разбираются в лекарствах — помогают подобрать нужный препарат и объясняют, как его правильно принимать.",
+     "profile": {"People": 1, "Living": 1, "Data": 1, "Care": 1, "Exp": 2, "Focus": 1, "Struct": 2, "Predict": -1, "Acad": 1, "Math": 1},
+     "professions": ["Фармацевт", "Провизор", "Технолог фармацевтического производства"]},
 
-    # Помощь и психология
-    {"slug": "psychologist", "name": "Психолог", "section": "akinator-psychology-help",
-     "description": "Психолог помогает разобраться в мыслях, чувствах и отношениях — работает через разговор, глубоко вникая в историю каждого человека.",
-     "profile": {"People": 2, "Care": 2, "Emp": 2, "Exp": 2, "Focus": 2, "Motiv": -1, "Auto": 1, "Acad": 2, "Data": -1, "Ideas": 1}},
-    {"slug": "speech-therapist", "name": "Логопед", "section": "akinator-psychology-help",
-     "description": "Логопед помогает детям и взрослым научиться правильно говорить — исправляет речевые нарушения через регулярные занятия.",
-     "profile": {"People": 2, "Care": 1, "Dev": 2, "Emp": 1, "Exp": 2, "Focus": 1, "Struct": 1, "Acad": 1}},
-    # Restored (replacement pass): cut together with `coach`, but Социальная
-    # работа is a real bachelor programme. Separated from psychologist by
-    # Exp/Focus (practical case-work vs deep individual study) — see order 47.
-    {"slug": "social-worker", "name": "Социальный работник", "section": "akinator-psychology-help",
-     "description": "Социальный работник помогает семьям и людям в трудной жизненной ситуации — организует поддержку и решает практические проблемы.",
-     "profile": {"People": 2, "Care": 2, "Emp": 2, "Lead": 1, "Struct": 1, "Motiv": -1, "Pace": 1, "Predict": 1, "Acad": 1}},
+    # Помощь и психология — три разных диплома, компрессии нет
+    {"slug": "psychologist", "name": "Психология", "section": "akinator-psychology-help",
+     "description": "Психология учит понимать мысли, чувства и отношения — работать с человеком через разговор, глубоко вникая в его историю.",
+     # Auto:1, Ideas:1 removed (calibration playtest pass, 2026-07, round 6):
+     # neither is central to being a psychologist, but both were incidental
+     # overlap with unrelated ±2-weighted resolver options ("рискну, придумаю
+     # своё дело" Auto:2; "создавать красивое" / "придумывать сообщение,
+     # тексты" Ideas:2) that kept dragging traced sessions toward
+     # film-director/makeup-artist-film/pr-specialist before this profile's
+     # own dedicated resolvers (order 19, 42, 47) got a fair chance. The
+     # profile's real signature (People/Care/Emp/Exp/Focus/Acad, all still
+     # at magnitude 2) is untouched.
+     "profile": {"People": 2, "Care": 2, "Emp": 2, "Exp": 2, "Focus": 2, "Motiv": -1, "Acad": 2, "Data": -1},
+     "professions": ["Психолог", "Клинический психолог", "Коуч"]},
+    {"slug": "speech-therapist", "name": "Логопедия и дефектология", "label_junior": "Логопед", "section": "akinator-psychology-help",
+     "description": "Логопедия и дефектология учат помогать детям и взрослым с речевыми и развивающими нарушениями — через регулярные занятия и коррекционные методики.",
+     "profile": {"People": 2, "Care": 1, "Dev": 2, "Emp": 1, "Exp": 2, "Focus": 1, "Struct": 1, "Acad": 1},
+     "professions": ["Логопед", "Дефектолог", "Специалист по коррекционной педагогике"]},
+    {"slug": "social-worker", "name": "Социальная работа", "section": "akinator-psychology-help",
+     "description": "Социальная работа готовит специалистов, которые помогают семьям и людям в трудной жизненной ситуации — организуют поддержку и решают практические проблемы.",
+     "profile": {"People": 2, "Care": 2, "Emp": 2, "Lead": 1, "Struct": 1, "Motiv": -1, "Pace": 1, "Predict": 1, "Acad": 1},
+     "professions": ["Социальный работник", "Социальный педагог", "Специалист по соцзащите"]},
 
     # Животные и природа
-    {"slug": "veterinarian", "name": "Ветеринар", "section": "akinator-animals-nature",
-     "description": "Ветеринар лечит животных — от домашних питомцев до крупного скота, — совмещая медицинские знания с любовью к живой природе.",
-     "profile": {"People": 1, "Living": 2, "Phys": 1, "Care": 2, "Motor": 1, "Exp": 2, "Focus": 1, "Acad": 2, "PhysSt": 1, "Ideas": -1}},
-    {"slug": "zoologist", "name": "Зоолог", "label_junior": "Учёный по животным", "section": "akinator-animals-nature",
-     "description": "Зоолог изучает животных и их поведение — наблюдает, исследует и описывает жизнь дикой природы.",
-     "profile": {"Living": 2, "Data": 1, "Obj": -2, "Exp": 2, "Focus": 2, "Auto": 1, "Predict": 1, "Acad": 2, "People": -1, "PhysSt": 1}},
-    {"slug": "agronomist", "name": "Агроном", "label_junior": "Специалист по растениям", "section": "akinator-animals-nature",
-     "description": "Агроном занимается выращиванием растений — подбирает условия, удобрения и уход, чтобы урожай был здоровым и обильным.",
-     "profile": {"Living": 2, "Phys": 1, "Data": 1, "Exp": 1, "Struct": 1, "Predict": -1, "PhysSt": 1}},
-    # University pass: kept — 36.03.02 «Зоотехния», профиль «Кинология» (плюс
-    # ведомственные вузы, служебная кинология). Acad -1 -> +1 accordingly.
-    {"slug": "cynologist", "name": "Кинолог", "label_junior": "Специалист по собакам", "section": "akinator-animals-nature",
-     "description": "Кинолог занимается дрессировкой и уходом за собаками — от домашних питомцев до служебных собак.",
-     "profile": {"People": 1, "Living": 2, "Phys": 1, "Dev": 2, "Care": 1, "Motor": 1, "Exp": 1, "Struct": 1, "PhysSt": 1, "Acad": 1}},
-    {"slug": "ecologist", "name": "Эколог", "section": "akinator-animals-nature",
-     "description": "Эколог изучает, как человек влияет на природу, и ищет способы защитить экосистемы и снизить вред окружающей среде.",
-     "profile": {"Living": 2, "Data": 1, "Ideas": 1, "Obj": -2, "Exp": 1, "Auto": 1, "Predict": 1, "Acad": 1}},
+    # Merge (specialty pivot): veterinarian+cynologist — KazATU runs both under
+    # one faculty (ветеринарии и технологии животноводства).
+    {"slug": "veterinary-zootechnics", "name": "Ветеринария и зоотехния", "label_junior": "Специалист по животным", "section": "akinator-animals-nature",
+     "description": "Ветеринария и зоотехния объединяет лечение животных и уход за ними — от домашних питомцев до служебных собак и крупного скота.",
+     "profile": {"People": 1, "Living": 2, "Phys": 1, "Care": 2, "Motor": 1, "Dev": 1, "Exp": 2, "Focus": 1, "Struct": 1, "Acad": 2, "PhysSt": 1},
+     "professions": ["Ветеринар", "Зоотехник", "Кинолог"]},
+    {"slug": "agronomist", "name": "Агрономия", "label_junior": "Специалист по растениям", "section": "akinator-animals-nature",
+     "description": "Агрономия готовит специалистов по выращиванию растений — подбору условий, удобрений и ухода для здорового и обильного урожая.",
+     "profile": {"Living": 2, "Phys": 1, "Data": 1, "Exp": 1, "Struct": 1, "Predict": -1, "PhysSt": 1},
+     "professions": ["Агроном", "Агроинженер", "Специалист по растениеводству"]},
+    {"slug": "zoologist", "name": "Биология и зоология", "label_junior": "Учёный по животным", "section": "akinator-animals-nature",
+     "description": "Биология и зоология изучают животных и их поведение — наблюдение, исследование и описание жизни дикой природы.",
+     "profile": {"Living": 2, "Data": 1, "Obj": -2, "Exp": 2, "Focus": 2, "Auto": 1, "Predict": 1, "Acad": 2, "People": -1, "PhysSt": 1},
+     "professions": ["Зоолог", "Биолог-исследователь"]},
+    {"slug": "ecologist", "name": "Экология и природопользование", "section": "akinator-animals-nature",
+     "description": "Экология и природопользование изучают, как человек влияет на природу, и ищут способы защитить экосистемы и снизить вред окружающей среде.",
+     "profile": {"Living": 2, "Data": 1, "Ideas": 1, "Obj": -2, "Exp": 1, "Auto": 1, "Predict": 1, "Acad": 1},
+     "professions": ["Эколог", "Специалист по экомониторингу", "Специалист по устойчивому развитию"]},
 
-    # IT и данные
-    {"slug": "programmer", "name": "Программист", "section": "akinator-it-data",
-     "description": "Программист пишет код, который превращается в сайты, приложения и программы — работа требует логики, усидчивости и любви к решению задач.",
-     "profile": {"People": -1, "Living": -2, "Data": 2, "Ideas": 1, "Inv": 1, "Obj": 2, "Care": -2, "Dev": -2, "Exp": 2, "Focus": 2, "Motiv": 1, "Auto": 1, "Struct": 1, "Acad": 1, "PhysSt": -2, "Math": 2}},
-    {"slug": "data-analyst", "name": "Аналитик данных", "label_junior": "Аналитик", "section": "akinator-it-data",
-     "description": "Аналитик данных находит закономерности в больших массивах цифр и помогает бизнесу принимать решения на основе данных.",
-     "profile": {"People": -1, "Living": -2, "Data": 2, "Obj": -2, "Care": -2, "Dev": -2, "Exp": 1, "Focus": 2, "Auto": 1, "Struct": 1, "Predict": -1, "Acad": 1, "PhysSt": -2, "Math": 2}},
-    {"slug": "qa-tester", "name": "QA-тестировщик", "label_junior": "Тестировщик программ", "section": "akinator-it-data",
-     "description": "QA-тестировщик ищет ошибки в программах до того, как их найдут пользователи — внимательность и системность здесь ключевые качества.",
-     "profile": {"Data": 2, "Obj": -1, "Exp": 1, "Focus": 1, "Struct": 2, "Predict": -1, "Motiv": -1, "PhysSt": -2, "Math": 1, "People": -1}},
-    {"slug": "ux-designer", "name": "UX-дизайнер", "label_junior": "Дизайнер приложений", "section": "akinator-it-data",
-     "description": "UX-дизайнер продумывает, как сделать приложения и сайты удобными и понятными для людей — соединяет дизайн с логикой пользователя.",
-     "profile": {"People": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Emp": 1, "Exp": 1, "PhysSt": -1}},
-    {"slug": "sysadmin", "name": "Сисадмин", "label_junior": "Компьютерный мастер", "section": "akinator-it-data",
-     "description": "Сисадмин следит, чтобы компьютеры, сети и серверы компании работали без сбоев.",
-     "profile": {"Phys": 1, "Data": 2, "Obj": 1, "Exp": 2, "Focus": -1, "Auto": 1, "Struct": 1, "Pace": 1, "Predict": 1, "PhysSt": -1, "Math": 1, "People": -1}},
+    # IT и данные (ux-designer перенесён в «Творчество и дизайн» — по осям
+    # профиля Ideas/Inv он ближе к дизайну, чем к программированию/данным)
+    # Merge (specialty pivot): programmer+qa-tester — QA is a career track
+    # within the same accredited "Программная инженерия" degree, not its own code.
+    {"slug": "software-engineer", "name": "Software Engineer", "label_junior": "Разработчик программ", "section": "akinator-it-data",
+     "description": "Software Engineer создаёт программы, сайты и приложения — от логики на сервере до интерфейса пользователя. Внутри специальности можно расти в разных направлениях: backend, frontend, мобильная разработка или тестирование.",
+     "profile": {"People": -1, "Living": -1, "Data": 2, "Ideas": 1, "Inv": 1, "Obj": 1, "Care": -1, "Dev": -1, "Exp": 2, "Focus": 2, "Auto": 1, "Struct": 2, "Acad": 1, "PhysSt": -2, "Math": 2, "Predict": -1},
+     "professions": ["Backend-разработчик", "Frontend-разработчик", "Fullstack-разработчик", "Мобильный разработчик", "QA-инженер"]},
+    {"slug": "data-science", "name": "Data Science", "label_junior": "Аналитик", "section": "akinator-it-data",
+     "description": "Data Science находит закономерности в больших массивах данных и помогает бизнесу принимать решения — от аналитики до машинного обучения.",
+     # Struct:1 removal reverted (calibration playtest pass, 2026-07, round 6
+     # follow-up): tried removing it to cut overlap with finance-accounting,
+     # but census got WORSE (27%->13%) — match_score divides by the
+     # profile's own norm, so removing an axis SHRINKS the norm and makes
+     # every remaining axis (including the bad Focus/Math overlap with
+     # finance-accounting) score relatively *stronger*, not weaker. Restored.
+     "profile": {"People": -1, "Living": -2, "Data": 2, "Obj": -2, "Care": -2, "Dev": -2, "Exp": 1, "Focus": 2, "Auto": 1, "Struct": 1, "Predict": -1, "Acad": 1, "PhysSt": -2, "Math": 2},
+     "professions": ["Аналитик данных", "Data Scientist", "BI-аналитик", "ML-инженер"]},
+    {"slug": "it-infrastructure-security", "name": "Кибербезопасность и IT-инфраструктура", "label_junior": "Компьютерный мастер", "section": "akinator-it-data",
+     "description": "Кибербезопасность и IT-инфраструктура следят, чтобы компьютеры, сети и данные компании работали без сбоев и были защищены от угроз.",
+     "profile": {"Phys": 1, "Data": 2, "Obj": 1, "Exp": 2, "Focus": -1, "Auto": 1, "Struct": 1, "Pace": 1, "Predict": 1, "PhysSt": -1, "Math": 1, "People": -1},
+     "professions": ["Системный администратор", "Сетевой инженер", "Специалист по кибербезопасности"]},
 
     # Инженерия и техника
-    {"slug": "mechanical-engineer", "name": "Инженер-механик", "label_junior": "Инженер", "section": "akinator-engineering-tech",
-     "description": "Инженер-механик проектирует машины и механизмы — от отдельных деталей до целых устройств, — рассчитывая, как они будут работать.",
-     "profile": {"Phys": 2, "Data": 1, "Ideas": 1, "Inv": 1, "Obj": 2, "Exp": 2, "Focus": 1, "Struct": 1, "Acad": 2, "Math": 2, "People": -1}},
-    {"slug": "civil-engineer", "name": "Инженер-строитель", "section": "akinator-engineering-tech",
-     "description": "Инженер-строитель проектирует здания и сооружения, рассчитывая их прочность и надёжность.",
-     "profile": {"Phys": 2, "Data": 1, "Obj": 2, "Lead": 1, "Exp": 2, "Focus": 1, "Struct": 2, "Risk": -1, "Acad": 2, "Math": 2}},
-    # Replacement for `plumber` (replacement pass). Water/HVAC systems design.
-    # Separated from civil-engineer by Motor/Predict/Lead (hands-on
-    # commissioning, routine networks, no crew leadership) — see order 28.
-    {"slug": "building-systems-engineer", "name": "Инженер инженерных систем", "label_junior": "Инженер", "section": "akinator-engineering-tech",
-     "description": "Инженер инженерных систем проектирует и налаживает системы отопления, вентиляции и водоснабжения зданий.",
-     "profile": {"Phys": 2, "Data": 1, "Obj": 2, "Motor": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Predict": -1, "Acad": 1, "Math": 2, "People": -1}},
-    # Motor:1 added (calibration pass): piloting is a hands-on motor/instrument-
-    # coordination skill, missing entirely before — the profile was otherwise
-    # near-indistinguishable from lawyer (cosine similarity 0.80) purely on
-    # shared Data/Lead/Exp/Focus/Struct/Acad "serious professional" traits.
-    {"slug": "pilot", "name": "Пилот", "section": "akinator-engineering-tech",
-     "description": "Пилот управляет самолётом — работа требует быстрой реакции, хладнокровия и точного следования процедурам.",
-     "profile": {"Phys": 1, "Data": 1, "Lead": 1, "Motor": 1, "Exp": 2, "Focus": 2, "Risk": 1, "Struct": 2, "Pace": 1, "Acad": 1, "Math": 1}},
-
-    # Строительство и руками
-    # NOTE for product review: welder/construction-worker carry Acad -2, i.e.
-    # explicitly "no university". The product generates university-admission
-    # roadmaps, so these two are inconsistent with the retirement pass criterion
-    # (carpenter/plumber were cut for exactly this reason). Kept as-is pending a
-    # product decision — see the "Открытый вопрос" note at the bottom of this file.
+    {"slug": "mechanical-engineer", "name": "Машиностроение", "label_junior": "Инженер", "section": "akinator-engineering-tech",
+     "description": "Машиностроение проектирует машины и механизмы — от отдельных деталей до целых устройств, — рассчитывая, как они будут работать.",
+     "profile": {"Phys": 2, "Data": 1, "Ideas": 1, "Inv": 1, "Obj": 2, "Exp": 2, "Focus": 1, "Struct": 1, "Acad": 2, "Math": 2, "People": -1},
+     "professions": ["Инженер-механик", "Инженер-конструктор", "Инженер по автоматизации"]},
+    # Merge (specialty pivot): civil-engineer+building-systems-engineer — ТГВ
+    # is a профиль within «Строительство», not a separate accredited code.
+    {"slug": "civil-engineering", "name": "Строительство и инженерные системы", "label_junior": "Инженер", "section": "akinator-engineering-tech",
+     "description": "Строительство и инженерные системы проектируют здания, сооружения и их инженерные системы — отопление, вентиляцию и водоснабжение, — рассчитывая прочность и надёжность.",
+     "profile": {"Phys": 2, "Data": 1, "Obj": 2, "Lead": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Risk": -1, "Acad": 2, "Math": 2, "Motor": 1, "Predict": -1, "People": -1},
+     "professions": ["Инженер-строитель", "Инженер инженерных систем", "Инженер-проектировщик"]},
+    {"slug": "pilot", "name": "Лётная эксплуатация", "section": "akinator-engineering-tech",
+     "description": "Лётная эксплуатация готовит пилотов и специалистов управления воздушным движением — работа требует быстрой реакции, хладнокровия и точного следования процедурам.",
+     # Inv:-1, Care:-1 added (calibration playtest pass, 2026-07, round 3):
+     # 11 axes, all non-negative, meant no answer could ever count AGAINST
+     # this profile — a census + traced-session pass found it winning far
+     # outside its own domain (mechanical-engineer, data-science, lawyer,
+     # speech-therapist, hospitality-manager sessions all ended up here).
+     # Both additions are grounded in the profile's own description:
+     # "точное следование процедурам" is the literal opposite of Inv
+     # (inventing from scratch), and the job has no individual-care
+     # component (Care) the way medicine/therapy professions do.
+     "profile": {"Phys": 1, "Data": 1, "Lead": 1, "Motor": 1, "Exp": 2, "Focus": 2, "Risk": 1, "Struct": 2, "Pace": 1, "Acad": 1, "Math": 1, "Inv": -1, "Care": -1},
+     "professions": ["Пилот", "Штурман", "Диспетчер УВД"]},
 
     # Творчество и дизайн
-    {"slug": "graphic-designer", "name": "Графический дизайнер", "label_junior": "Дизайнер", "section": "akinator-creative-design",
-     "description": "Графический дизайнер создаёт визуальные образы — логотипы, макеты, иллюстрации для сайтов и печати.",
-     "profile": {"Ideas": 2, "Inv": 2, "Obj": 1, "Exp": 1, "Auto": 1, "Struct": -1, "Math": -1, "PhysSt": -1}},
-    {"slug": "illustrator", "name": "Иллюстратор", "label_junior": "Художник", "section": "akinator-creative-design",
-     "description": "Иллюстратор рисует изображения для книг, игр и медиа — превращает идеи и истории в картинки.",
-     "profile": {"Ideas": 2, "Inv": 2, "Motor": 1, "Auto": 2, "Struct": -2, "Vis": -1, "Math": -1, "PhysSt": -1, "People": -1, "Exp": 1}},
-    {"slug": "architect", "name": "Архитектор", "section": "akinator-creative-design",
-     "description": "Архитектор проектирует здания и пространства, соединяя эстетику с инженерными расчётами.",
-     "profile": {"People": 1, "Phys": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Auto": 1, "Acad": 2, "Math": 1, "PhysSt": -1}},
-    {"slug": "fashion-designer", "name": "Модельер", "section": "akinator-creative-design",
-     "description": "Модельер придумывает и создаёт одежду — от эскиза до готовой вещи.",
-     "profile": {"Ideas": 2, "Inv": 2, "Phys": 1, "Motor": 1, "Vis": 1, "Exp": 1, "Auto": 1, "Struct": -1, "Risk": 1}},
-    # Replacement for `carpenter` (replacement pass). Keeps the Ideas+Motor
-    # "make a tangible beautiful thing" pull but on a university track.
-    # Separated from graphic-designer by Phys+2 (tangible vs screen) and from
-    # architect by Lead/Struct/Acad — see order 49.
-    {"slug": "furniture-designer", "name": "Дизайнер мебели", "label_junior": "Дизайнер вещей", "section": "akinator-creative-design",
-     "description": "Дизайнер мебели создаёт функциональные и красивые предметы интерьера — от идеи до чертежа.",
-     "profile": {"Phys": 2, "Ideas": 2, "Inv": 2, "Obj": 1, "Motor": 1, "Exp": 1, "Focus": 1, "Auto": 1, "Acad": 1, "Math": 1}},
+    # Merge (specialty pivot): graphic-designer+illustrator+fashion-designer+
+    # furniture-designer+ux-designer — in KZ «Дизайн» is ONE accredited code
+    # with профили (графика/мода/интерьер/UX) chosen after enrollment.
+    # architect keeps its own accredited code, stays separate.
+    {"slug": "design", "name": "Дизайн", "label_junior": "Дизайнер", "section": "akinator-creative-design",
+     "description": "Дизайн создаёт визуальные образы, вещи и пространства — от логотипов и иллюстраций до одежды, мебели и цифровых интерфейсов.",
+     # Vis:-1, People:-1 added (calibration playtest pass, 2026-07, round 5):
+     # after film-director was reined in (round 4), belief that used to land
+     # there started landing here instead — musician, actor, cinematographer,
+     # pr-specialist sessions all drifted to design via shared Ideas/Inv.
+     # Vis is the actual axis that separates "makes things" from "performs/
+     # is seen" (see axes.py "Быть на виду, выступать") and design never
+     # carried it either way; People:-1 reinforces that this profile works
+     # on objects/visuals, not people directly.
+     "profile": {"Ideas": 2, "Inv": 2, "Obj": 1, "Exp": 1, "Auto": 1, "Struct": -1, "PhysSt": -1, "Motor": 1, "Phys": 1, "Vis": -1, "People": -1},
+     "professions": ["Графический дизайнер", "Иллюстратор", "UX/UI-дизайнер", "Модельер", "Дизайнер мебели"]},
+    {"slug": "architect", "name": "Архитектура", "section": "akinator-creative-design",
+     "description": "Архитектура проектирует здания и пространства, соединяя эстетику с инженерными расчётами.",
+     # Care:-1 added (calibration playtest pass, 2026-07, round 9): already
+     # the loudest profile in the catalog (6 axes at magnitude 2) with only
+     # one negative — a repeat rival for translator/speech-therapist/
+     # data-science in traced sessions via shared Focus/Struct/Exp/Acad.
+     # Architecture works on buildings/spaces, not directly caring for
+     # people — keeps it from picking up stray belief on generic
+     # "помогать людям" style questions the way its Focus/Struct/Exp
+     # overlap otherwise lets it.
+     "profile": {"People": 1, "Phys": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Auto": 1, "Acad": 2, "Math": 1, "PhysSt": -1, "Care": -1},
+     "professions": ["Архитектор", "Ландшафтный архитектор", "Архитектор интерьеров"]},
 
-    # Сцена и медиа
-    {"slug": "actor", "name": "Актёр", "section": "akinator-stage-media",
-     "description": "Актёр воплощает роли на сцене, в кино и на телевидении — работа требует эмоциональной открытости и умения держаться перед публикой.",
-     "profile": {"People": 1, "Ideas": 2, "Vis": 2, "Emp": 1, "Motor": 1, "Risk": 1, "Struct": -1, "Auto": -1, "Predict": 1, "PhysSt": 1, "Math": -1, "Data": -1}},
-    {"slug": "musician", "name": "Музыкант", "section": "akinator-stage-media",
-     "description": "Музыкант сочиняет и исполняет музыку — на сцене, в студии или в составе оркестра.",
-     "profile": {"Ideas": 2, "Vis": 1, "Motor": 2, "Exp": 2, "Focus": 2, "Auto": 1, "Risk": 1, "Struct": -1}},
-    {"slug": "film-director", "name": "Режиссёр", "section": "akinator-stage-media",
-     "description": "Режиссёр придумывает, как будет выглядеть фильм или спектакль, и руководит всей творческой командой.",
-     "profile": {"People": 1, "Ideas": 2, "Inv": 2, "Lead": 2, "Exp": 1, "Focus": 1, "Risk": 1, "Auto": 1, "Struct": -1}},
-    # Replacement for `photographer` (replacement pass). Separated from
-    # film-director by Lead 0 vs +2, Motor +2 vs 0, Vis -1 vs 0 — see order 46.
-    {"slug": "cinematographer", "name": "Кинооператор", "label_junior": "Оператор кино", "section": "akinator-stage-media",
-     "description": "Кинооператор отвечает за то, как выглядит каждый кадр — свет, ракурс и движение камеры.",
-     "profile": {"Phys": 1, "Ideas": 2, "Inv": 1, "Vis": -1, "Motor": 2, "Exp": 2, "Focus": 2, "Auto": 1, "Acad": 1, "PhysSt": 1}},
-    # Replacement for `hairdresser` + `makeup-artist` (replacement pass).
-    # This is what revives question order 39 — without it that question's
-    # weights pointed at no leaf at all. Separated from fashion-designer by
-    # People +2 vs 0 (works on a human face, not on cloth) and Vis -1 vs +1.
-    {"slug": "makeup-artist-film", "name": "Художник-гримёр", "label_junior": "Гримёр", "section": "akinator-stage-media",
-     "description": "Художник-гримёр создаёт образы актёров с помощью грима и причёсок — для кино, театра и телевидения.",
-     "profile": {"People": 2, "Ideas": 2, "Inv": 2, "Motor": 2, "Emp": 1, "Exp": 1, "Vis": -1, "Auto": 1, "Acad": 1}},
+    # Сцена и медиа — все аккредитованные программы творческих вузов различны,
+    # компрессии нет даже при агрессивной группировке
+    {"slug": "actor", "name": "Актёрское искусство", "section": "akinator-stage-media",
+     "description": "Актёрское искусство готовит к работе на сцене, в кино и на телевидении — воплощению ролей, требующему эмоциональной открытости и умения держаться перед публикой.",
+     "profile": {"People": 1, "Ideas": 2, "Vis": 2, "Emp": 1, "Motor": 1, "Risk": 1, "Struct": -1, "Auto": -1, "Predict": 1, "PhysSt": 1, "Math": -1, "Data": -1},
+     "professions": ["Актёр театра", "Актёр кино", "Актёр озвучивания"]},
+    {"slug": "musician", "name": "Музыкальное искусство", "section": "akinator-stage-media",
+     "description": "Музыкальное искусство учит сочинять и исполнять музыку — на сцене, в студии или в составе оркестра.",
+     "profile": {"Ideas": 2, "Vis": 1, "Motor": 2, "Exp": 2, "Focus": 2, "Auto": 1, "Risk": 1, "Struct": -1},
+     "professions": ["Музыкант-исполнитель", "Композитор", "Звукорежиссёр"]},
+    {"slug": "film-director", "name": "Режиссура", "section": "akinator-stage-media",
+     "description": "Режиссура учит придумывать, как будет выглядеть фильм или спектакль, и руководить творческой командой.",
+     # Data:-1, Motor:-1 added (calibration playtest pass, 2026-07, round 3):
+     # Ideas/Inv/Lead alone made this the default landing spot for almost any
+     # "creative or leadership" answer (design, marketing, journalist,
+     # architect, police-officer sessions all drifted here). Not about
+     # crunching numbers (Data — contrast finance-accounting/data-science),
+     # and directing the shot vs personally operating camera/light is
+     # exactly the split order=46 already draws against cinematographer
+     # (Motor:2 there) — this profile just never carried the negative side
+     # of that same fork.
+     "profile": {"People": 1, "Ideas": 2, "Inv": 2, "Lead": 2, "Exp": 1, "Focus": 1, "Risk": 1, "Auto": 1, "Struct": -1, "Data": -1, "Motor": -1},
+     "professions": ["Режиссёр кино", "Режиссёр театра", "Режиссёр монтажа"]},
+    {"slug": "cinematographer", "name": "Операторское искусство", "label_junior": "Оператор кино", "section": "akinator-stage-media",
+     "description": "Операторское искусство отвечает за то, как выглядит каждый кадр — свет, ракурс и движение камеры.",
+     "profile": {"Phys": 1, "Ideas": 2, "Inv": 1, "Vis": -1, "Motor": 2, "Exp": 2, "Focus": 2, "Auto": 1, "Acad": 1, "PhysSt": 1},
+     "professions": ["Кинооператор", "Фотограф", "Видеооператор"]},
+    {"slug": "makeup-artist-film", "name": "Грим и художественный образ", "label_junior": "Гримёр", "section": "akinator-stage-media",
+     "description": "Грим и художественный образ создают образы актёров с помощью грима, причёсок и костюмов — для кино, театра и телевидения.",
+     "profile": {"People": 2, "Ideas": 2, "Inv": 2, "Motor": 2, "Emp": 1, "Exp": 1, "Vis": -1, "Auto": 1, "Acad": 1},
+     "professions": ["Художник-гримёр", "Визажист кино и театра", "Художник по костюмам"]},
 
-    # Слово и коммуникация
-    {"slug": "journalist", "name": "Журналист", "section": "akinator-words-communication",
-     "description": "Журналист находит, проверяет и рассказывает истории — держит людей в курсе того, что происходит в мире.",
-     "profile": {"People": 1, "Ideas": 1, "Obj": -2, "Vis": 1, "Exp": 1, "Emp": 1, "Risk": 1, "Pace": 2, "Predict": 2, "Acad": 1, "Struct": -1}},
-    {"slug": "translator", "name": "Переводчик", "section": "akinator-words-communication",
-     "description": "Переводчик передаёт смысл текста или речи с одного языка на другой, сохраняя точность и стиль.",
-     "profile": {"Ideas": 1, "Obj": -1, "Exp": 2, "Focus": 2, "Auto": 2, "Struct": 1, "Predict": -1, "Acad": 1, "People": -1}},
-    {"slug": "lawyer", "name": "Юрист", "section": "akinator-words-communication",
-     "description": "Юрист разбирается в законах и защищает интересы людей и компаний — в судах, договорах и переговорах.",
-     "profile": {"People": 1, "Data": 1, "Obj": -1, "Lead": 1, "Vis": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Acad": 2}},
-    # Replacement for `copywriter` (replacement pass). "Реклама и связи с
-    # общественностью" is a real bachelor track. Separated from marketer by
-    # Data -1 vs +1 and Math -1 vs 0 (message craft vs campaign analytics) —
-    # see order 45.
-    {"slug": "pr-specialist", "name": "Специалист по рекламе и PR", "label_junior": "Специалист по рекламе", "section": "akinator-words-communication",
-     "description": "Специалист по рекламе и PR продумывает, как рассказать о компании или продукте так, чтобы это заметили и запомнили.",
-     "profile": {"People": 1, "Ideas": 2, "Inv": 2, "Vis": 1, "Emp": 1, "Exp": 1, "Focus": 1, "Auto": 1, "Struct": -1, "Data": -1, "Math": -1, "Acad": 1}},
+    # Слово и коммуникация — 4 разных аккредитованных программы, без изменений
+    {"slug": "journalist", "name": "Журналистика", "section": "akinator-words-communication",
+     "description": "Журналистика учит находить, проверять и рассказывать истории — держать людей в курсе того, что происходит в мире.",
+     "profile": {"People": 1, "Ideas": 1, "Obj": -2, "Vis": 1, "Exp": 1, "Emp": 1, "Risk": 1, "Pace": 2, "Predict": 2, "Acad": 1, "Struct": -1},
+     "professions": ["Журналист", "Репортёр", "Блогер-журналист"]},
+    {"slug": "translator", "name": "Переводческое дело", "section": "akinator-words-communication",
+     "description": "Переводческое дело учит передавать смысл текста или речи с одного языка на другой, сохраняя точность и стиль.",
+     # Motor:-1 addition reverted (calibration playtest pass, 2026-07, round 7
+     # follow-up): the direct match_score math checked out (should have cut
+     # translator's score on cinematographer's own resolver option roughly in
+     # half), but the actual census got worse (37-43%->17%), while
+     # school-teacher — untouched this round — swung 60%->43% in the same
+     # run. That's within the sampling-noise band already measured (two
+     # identical-code reruns earlier landed 5-13pp apart on several
+     # professions), so this single run isn't reliable evidence the edit
+     # backfired; reverted pending a cleaner (multi-run) test rather than
+     # keep an unverified change.
+     #
+     # Math:-1 added (calibration playtest pass, 2026-07, round 9): unlike
+     # the reverted Motor edit, this targets translator's most fundamental
+     # divide from data-science (its main rival after round 8) — translation
+     # is not a numbers domain at all, while data-science's whole identity is
+     # Math:2. No existing question or resolver relied on translator scoring
+     # neutral (0) on Math, so this only ever pushes it further from
+     # data-science/finance-accounting/software-engineer, never against its
+     # own resolver (order 32, which doesn't touch Math).
+     "profile": {"Ideas": 1, "Obj": -1, "Exp": 2, "Focus": 2, "Auto": 2, "Struct": 1, "Predict": -1, "Acad": 1, "People": -1, "Math": -1},
+     "professions": ["Переводчик", "Устный переводчик", "Локализатор"]},
+    {"slug": "lawyer", "name": "Юриспруденция", "section": "akinator-words-communication",
+     "description": "Юриспруденция учит разбираться в законах и защищать интересы людей и компаний — в судах, договорах и переговорах.",
+     # Math:-1, Inv:-1 added (calibration playtest pass, 2026-07, round 9):
+     # missed in the earlier zero-negative-axis audit (round 4) — 9 axes, all
+     # non-negative, a repeat rival for data-science and speech-therapist in
+     # traced sessions. Not about advanced math (distinguishes from
+     # data-science/finance-accounting/software-engineer) and not about
+     # inventing new frameworks from scratch — law is applying existing
+     # rules, not creating them (distinguishes from the design/IT cluster
+     # that shares Inv:2).
+     "profile": {"People": 1, "Data": 1, "Obj": -1, "Lead": 1, "Vis": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Acad": 2, "Math": -1, "Inv": -1},
+     "professions": ["Юрист", "Адвокат", "Юрисконсульт"]},
+    {"slug": "pr-specialist", "name": "Реклама и связи с общественностью", "label_junior": "Специалист по рекламе", "section": "akinator-words-communication",
+     "description": "Реклама и связи с общественностью учат рассказывать о компании или продукте так, чтобы это заметили и запомнили.",
+     "profile": {"People": 1, "Ideas": 2, "Inv": 2, "Vis": 1, "Emp": 1, "Exp": 1, "Focus": 1, "Auto": 1, "Struct": -1, "Data": -1, "Math": -1, "Acad": 1},
+     "professions": ["PR-специалист", "Копирайтер", "Бренд-менеджер"]},
 
-    # Образование
-    {"slug": "school-teacher", "name": "Учитель", "section": "akinator-education",
-     "description": "Учитель объясняет школьный материал и помогает ученикам разобраться в предмете — работа требует терпения и умения находить подход к разным детям.",
-     "profile": {"People": 2, "Dev": 2, "Care": 1, "Lead": 1, "Vis": 1, "Exp": 1, "Emp": 1, "Focus": -1, "Struct": 1, "Acad": 1}},
-    {"slug": "kindergarten-teacher", "name": "Воспитатель", "section": "akinator-education",
-     "description": "Воспитатель заботится о детях дошкольного возраста — организует игры, занятия и распорядок дня.",
-     "profile": {"People": 2, "Care": 2, "Dev": 1, "Emp": 2, "Focus": -1, "Struct": 1, "Pace": 1, "PhysSt": 1}},
+    # Образование — уже на минимуме (2 листа), не сжимаем
+    {"slug": "school-teacher", "name": "Педагогическое образование", "label_junior": "Учитель", "section": "akinator-education",
+     "description": "Педагогическое образование готовит учителей, которые объясняют школьный материал и помогают ученикам разобраться в предмете.",
+     "profile": {"People": 2, "Dev": 2, "Care": 1, "Lead": 1, "Vis": 1, "Exp": 1, "Emp": 1, "Focus": -1, "Struct": 1, "Acad": 1},
+     "professions": ["Учитель-предметник", "Классный руководитель", "Методист"]},
+    {"slug": "kindergarten-teacher", "name": "Дошкольное образование", "label_junior": "Воспитатель", "section": "akinator-education",
+     "description": "Дошкольное образование готовит воспитателей, которые заботятся о детях дошкольного возраста — организуют игры, занятия и распорядок дня.",
+     "profile": {"People": 2, "Care": 2, "Dev": 1, "Emp": 2, "Focus": -1, "Struct": 1, "Pace": 1, "PhysSt": 1},
+     "professions": ["Воспитатель", "Педагог дошкольного образования"]},
 
-    # Спорт и тело
-    {"slug": "sports-coach", "name": "Спортивный тренер", "section": "akinator-sports-body",
-     "description": "Спортивный тренер обучает технике вида спорта и мотивирует спортсменов на результат.",
-     "profile": {"People": 1, "Living": 1, "Dev": 2, "Care": 1, "Lead": 1, "Motor": 1, "Emp": 1, "Motiv": 2, "Pace": 1, "PhysSt": 1, "Exp": 1}},
-    {"slug": "rehabilitation-therapist", "name": "Реабилитолог", "label_junior": "Врач по восстановлению", "section": "akinator-sports-body",
-     "description": "Реабилитолог помогает восстановить подвижность тела после травм и операций с помощью упражнений и процедур.",
-     "profile": {"People": 1, "Living": 2, "Care": 2, "Dev": 1, "Motor": 1, "Exp": 2, "Emp": 1, "Focus": 1, "Struct": 1, "Acad": 1, "PhysSt": 1}},
+    # Спорт и тело — уже на минимуме (2 листа), не сжимаем
+    {"slug": "sports-coach", "name": "Физическая культура и спорт", "label_junior": "Тренер", "section": "akinator-sports-body",
+     "description": "Физическая культура и спорт учат технике вида спорта и мотивации спортсменов на результат.",
+     "profile": {"People": 1, "Living": 1, "Dev": 2, "Care": 1, "Lead": 1, "Motor": 1, "Emp": 1, "Motiv": 2, "Pace": 1, "PhysSt": 1, "Exp": 1},
+     "professions": ["Спортивный тренер", "Инструктор фитнеса", "Тренер-преподаватель"]},
+    {"slug": "rehabilitation-therapist", "name": "Реабилитология", "label_junior": "Врач по восстановлению", "section": "akinator-sports-body",
+     "description": "Реабилитология помогает восстанавливать подвижность тела после травм и операций с помощью упражнений и процедур.",
+     "profile": {"People": 1, "Living": 2, "Care": 2, "Dev": 1, "Motor": 1, "Exp": 2, "Emp": 1, "Focus": 1, "Struct": 1, "Acad": 1, "PhysSt": 1},
+     "professions": ["Реабилитолог", "Специалист по адаптивной физкультуре", "Врач ЛФК"]},
 
     # Еда и гостеприимство
-    # University pass: `chef` (повар) is СПО. Growth = шеф-повар via 19.03.04
-    # «Технология продукции и организация общественного питания» — no leaf existed,
-    # so replaced. Keeps the Motor/Pace/Inv pull; Acad -1 -> +1, Data +1 (technology).
-    {"slug": "head-chef", "name": "Шеф-повар", "section": "akinator-food-hospitality",
-     "description": "Шеф-повар придумывает блюда и руководит кухней ресторана — сочетает творчество с чёткой организацией процесса.",
-     "profile": {"Phys": 1, "Data": 1, "Ideas": 1, "Inv": 2, "Obj": 1, "Motor": 2, "Lead": 1, "Focus": -1, "Struct": 1, "Pace": 2, "PhysSt": 1, "Acad": 1}},
-    # University pass: growth = 19.03.02 «Продукты питания из растительного сырья»,
-    # профиль «Технология хлеба, кондитерских и макаронных изделий». Acad -1 -> +1.
-    {"slug": "confectionery-technologist", "name": "Кондитер-технолог", "label_junior": "Кондитер", "section": "akinator-food-hospitality",
-     "description": "Кондитер-технолог создаёт рецепты выпечки и сладостей и следит за технологией их приготовления.",
-     "profile": {"Phys": 1, "Data": 1, "Ideas": 2, "Inv": 1, "Motor": 2, "Exp": 2, "Focus": 2, "Struct": 2, "PhysSt": 1, "Acad": 1, "Predict": -1}},
-    # Replacement for `barista` + `waiter` (replacement pass). This is what
-    # revives option 2 of question order 34 ("общаться с гостями") — without it
-    # that option's weights pointed at no leaf. Separated from chef by
-    # People +2 vs 0, Lead +2 vs +1, Motor 0 vs +2, Acad +1 vs -1.
-    {"slug": "hospitality-manager", "name": "Менеджер ресторанного дела", "label_junior": "Управляющий кафе", "section": "akinator-food-hospitality",
-     "description": "Менеджер ресторанного дела организует работу кафе или ресторана — от персонала до атмосферы для гостей.",
-     "profile": {"People": 2, "Data": 1, "Lead": 2, "Emp": 1, "Motiv": 1, "Risk": 1, "Struct": 1, "Pace": 2, "Predict": 1, "PhysSt": 1, "Acad": 1}},
+    # Merge (specialty pivot): head-chef+confectionery-technologist share one
+    # accredited code — «Технология продукции общественного питания».
+    {"slug": "food-production-tech", "name": "Технология продукции общественного питания", "label_junior": "Повар", "section": "akinator-food-hospitality",
+     "description": "Технология продукции общественного питания учит придумывать блюда и десерты и управлять процессом их приготовления — от горячих блюд до выпечки.",
+     # Math:-1, People:-1 added (calibration playtest pass, 2026-07, round 5):
+     # already the broadest profile in the catalog (14 axes, only 1
+     # negative) — after round 4 softened pilot/hospitality-manager/
+     # management-entrepreneurship/film-director, belief that used to land
+     # there started landing here instead (mechanical-engineer, actor,
+     # translator, it-infrastructure-security sessions all drifted to this
+     # profile via shared Ideas/Inv/Motor/Struct). Not about advanced math
+     # (Math — separates it from the mechanical-engineer/finance-accounting/
+     # data-science cluster it was absorbing), and the dish/product is the
+     # focus, not the guest directly (People — that's hospitality-manager's
+     # side of the existing order=34 fork, this profile just never carried
+     # the negative half of it).
+     "profile": {"Phys": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Motor": 2, "Lead": 1, "Focus": 1, "Struct": 2, "Pace": 1, "PhysSt": 1, "Acad": 1, "Exp": 1, "Predict": -1, "Math": -1, "People": -1},
+     "professions": ["Шеф-повар", "Кондитер-технолог", "Технолог пищевого производства"]},
+    {"slug": "hospitality-manager", "name": "Ресторанное и гостиничное дело", "label_junior": "Управляющий кафе", "section": "akinator-food-hospitality",
+     "description": "Ресторанное и гостиничное дело организует работу кафе, ресторана или отеля — от персонала до атмосферы для гостей.",
+     # Exp:-1, Focus:-1 added (calibration playtest pass, 2026-07, round 3):
+     # 11 axes, all non-negative — a generalist coordinator profile that no
+     # answer could ever count against, and a repeat winner for unrelated
+     # sessions (school-teacher, fire-safety-engineer, police-officer,
+     # kindergarten-teacher all drifted here). Not a narrow deep specialist
+     # (Exp — the job is breadth across staff/guests/operations, not depth
+     # in one thing) and not built around long solo focus (Focus — it's
+     # event-paced, constantly interrupted by guests/staff, the opposite of
+     # e.g. finance-accounting's Focus:2).
+     "profile": {"People": 2, "Data": 1, "Lead": 2, "Emp": 1, "Motiv": 1, "Risk": 1, "Struct": 1, "Pace": 2, "Predict": 1, "PhysSt": 1, "Acad": 1, "Exp": -1, "Focus": -1},
+     "professions": ["Менеджер ресторанного дела", "Менеджер отеля", "Ивент-менеджер"]},
 
     # Бизнес и продажи
-    {"slug": "sales-manager", "name": "Менеджер по продажам", "label_junior": "Специалист по продажам", "section": "akinator-business-sales",
-     "description": "Менеджер по продажам находит клиентов и убеждает их купить товар или услугу.",
-     "profile": {"People": 2, "Emp": 2, "Vis": 1, "Motiv": 2, "Risk": 1, "Auto": 1, "Predict": 2, "Pace": 1, "Struct": -1}},
-    {"slug": "entrepreneur", "name": "Предприниматель", "label_junior": "Бизнесмен", "section": "akinator-business-sales",
-     "description": "Предприниматель придумывает и запускает собственное дело, беря на себя риски ради результата.",
-     "profile": {"People": 1, "Ideas": 1, "Inv": 2, "Lead": 2, "Vis": 1, "Motiv": 2, "Risk": 2, "Auto": 2, "Struct": -2, "Predict": 2}},
-    {"slug": "marketer", "name": "Маркетолог", "label_junior": "Специалист по рекламе", "section": "akinator-business-sales",
-     "description": "Маркетолог продумывает, как рассказать о продукте так, чтобы его захотели купить — анализирует рынок и запускает рекламные кампании.",
-     "profile": {"People": 1, "Data": 1, "Ideas": 1, "Inv": 1, "Obj": -1, "Vis": 1, "Emp": 1, "Motiv": 1, "Predict": 1, "Acad": 1}},
-    {"slug": "accountant", "name": "Бухгалтер", "section": "akinator-business-sales",
-     "description": "Бухгалтер ведёт финансовый учёт компании — следит, чтобы деньги, налоги и отчётность были в порядке.",
-     "profile": {"Data": 2, "Obj": -1, "Exp": 2, "Focus": 2, "Struct": 2, "Motiv": -1, "Auto": 1, "Predict": -2, "Pace": -1, "Acad": 1, "Math": 2, "People": -1}},
-    # Replacement for `taxi-driver` + `courier` + `warehouse-worker`
-    # (replacement pass). Lives under business-sales rather than reviving the
-    # one-leaf akinator-logistics-service section (a branch that forks nothing
-    # is useless to the tree). Separated from accountant by Obj +1 vs -1,
-    # Lead +1 vs 0, Pace +1 vs -1 — see order 48.
-    {"slug": "logistician", "name": "Логист", "section": "akinator-business-sales",
-     "description": "Логист организует доставку товаров — планирует маршруты, сроки и склады, чтобы всё приезжало вовремя.",
-     "profile": {"Data": 2, "Obj": 1, "Lead": 1, "Exp": 1, "Focus": 1, "Struct": 2, "Pace": 1, "Predict": -1, "Acad": 1, "Math": 1}},
+    # Merge (specialty pivot): sales-manager+entrepreneur+logistician share one
+    # broad accredited code — «Менеджмент». marketer/accountant stay separate
+    # (Маркетинг / Учёт и аудит-Финансы are distinct codes).
+    {"slug": "management-entrepreneurship", "name": "Менеджмент и предпринимательство", "label_junior": "Бизнесмен", "section": "akinator-business-sales",
+     "description": "Менеджмент и предпринимательство готовят к управлению людьми, продажами, логистикой и собственным делом.",
+     # Exp:-1, Struct:-1 added (calibration playtest pass, 2026-07, round 3):
+     # 11 axes, all non-negative — another repeat winner outside its own
+     # domain (marketing, school-teacher, fire-safety-engineer, social-worker
+     # sessions all drifted here). Not a narrow deep specialist (Exp — this
+     # is breadth across a business, not depth in one field), and running
+     # your own thing means working in ambiguity, not rigid procedure
+     # (Struct — the literal opposite end from e.g. finance-accounting's
+     # Struct:2 or civil-engineering's Struct:2).
+     "profile": {"People": 1, "Emp": 1, "Vis": 1, "Motiv": 1, "Risk": 1, "Auto": 1, "Predict": 1, "Pace": 1, "Inv": 1, "Lead": 1, "Data": 1, "Exp": -1, "Struct": -1},
+     "professions": ["Менеджер по продажам", "Предприниматель", "Логист", "Менеджер проектов"]},
+    {"slug": "marketing", "name": "Маркетинг", "label_junior": "Специалист по рекламе", "section": "akinator-business-sales",
+     "description": "Маркетинг учит продумывать, как рассказать о продукте так, чтобы его захотели купить — анализировать рынок и запускать рекламные кампании.",
+     # Ideas 1->2, Vis 1->2 (calibration playtest pass, 2026-07, round 6): this
+     # was the only profile in the whole catalog with zero axes at magnitude
+     # 2 — every trait capped at ±1, so it could never win a contested
+     # question against ANY resolver written for a different pair (those
+     # always carry at least one ±2 weight). Ideas/Vis (creative promotion,
+     # being seen/heard) are marketing's actual core identity, not incidental
+     # — sharpening them to match the strength convention used everywhere
+     # else in the catalog.
+     "profile": {"People": 1, "Data": 1, "Ideas": 2, "Inv": 1, "Obj": -1, "Vis": 2, "Emp": 1, "Motiv": 1, "Predict": 1, "Acad": 1},
+     "professions": ["Маркетолог", "Digital-маркетолог", "Бренд-менеджер"]},
+    {"slug": "finance-accounting", "name": "Финансы и учёт", "section": "akinator-business-sales",
+     "description": "Финансы и учёт готовят специалистов, которые ведут финансовый учёт компании — следят, чтобы деньги, налоги и отчётность были в порядке.",
+     # Focus 2->1 (calibration playtest pass, 2026-07, round 8): traced 5
+     # data-science sessions — all 5 lost to finance-accounting, all 5 driven
+     # mainly by order=48 (finance's own, legitimate resolver), whose option
+     # matches finance's Math/Focus/Struct/Predict almost exactly — but
+     # data-science shares 3 of those same 4 axes, so it got dragged along
+     # every time. Order=51 (the dedicated data-science/software-engineer/
+     # finance-accounting/it-security resolver) already correctly favors
+     # data-science on its own turf and didn't need touching; boosting it
+     # further to out-score order=48 only created new ties with
+     # software-engineer/finance's own options on order=51 (checked
+     # numerically, rejected). Trimming finance's Focus is the minimal
+     # change: finance still wins order=48 outright on Math+Struct+Predict
+     # alone (score drops only 2.92->2.70), while data-science's accidental
+     # pull toward that option drops more meaningfully (1.95->1.62).
+     "profile": {"Data": 2, "Obj": -1, "Exp": 2, "Focus": 1, "Struct": 2, "Motiv": -1, "Auto": 1, "Predict": -2, "Pace": -1, "Acad": 1, "Math": 2, "People": -1},
+     "professions": ["Бухгалтер", "Финансовый аналитик", "Аудитор"]},
 
-    # Безопасность и спасение
-    # University pass: рядовой пожарный/спасатель = СПО. Growth = Академия ГПС МЧС,
-    # 20.03.01 «Техносферная безопасность» -> инженер пожарной безопасности. This
-    # one leaf absorbs both retired `firefighter` and `rescuer` (they were a 0.94
-    # cosine cluster anyway and share the same university track).
-    {"slug": "fire-safety-engineer", "name": "Инженер пожарной безопасности", "label_junior": "Пожарный", "section": "akinator-safety-rescue",
-     "description": "Инженер пожарной безопасности проектирует системы защиты от пожаров и обеспечивает безопасность зданий.",
-     "profile": {"People": 1, "Phys": 1, "Data": 1, "Care": 1, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 1, "Risk": 2, "Struct": 2, "Pace": 1, "Predict": 1, "PhysSt": 1, "Acad": 1, "Math": 1}},
-    {"slug": "police-officer", "name": "Полицейский", "section": "akinator-safety-rescue",
-     "description": "Полицейский следит за порядком и безопасностью людей, реагирует на происшествия и расследует правонарушения.",
-     "profile": {"People": 1, "Phys": 1, "Lead": 1, "Exp": 1, "Focus": -1, "Risk": 1, "Struct": 2, "Pace": 1, "Predict": 1, "PhysSt": 1}},
+    # Безопасность и спасение — уже на минимуме (2 листа), не сжимаем
+    {"slug": "fire-safety-engineer", "name": "Техносферная безопасность", "label_junior": "Пожарный", "section": "akinator-safety-rescue",
+     "description": "Техносферная безопасность проектирует системы защиты от пожаров и обеспечивает безопасность зданий и людей.",
+     "profile": {"People": 1, "Phys": 1, "Data": 1, "Care": 1, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 1, "Risk": 2, "Struct": 2, "Pace": 1, "Predict": 1, "PhysSt": 1, "Acad": 1, "Math": 1},
+     "professions": ["Инженер пожарной безопасности", "Специалист по охране труда", "Инспектор пожарной безопасности"]},
+    {"slug": "police-officer", "name": "Правоохранительная деятельность", "section": "akinator-safety-rescue",
+     "description": "Правоохранительная деятельность следит за порядком и безопасностью людей, реагирует на происшествия и расследует правонарушения.",
+     "profile": {"People": 1, "Phys": 1, "Lead": 1, "Exp": 1, "Focus": -1, "Risk": 1, "Struct": 2, "Pace": 1, "Predict": 1, "PhysSt": 1},
+     "professions": ["Полицейский", "Следователь", "Инспектор"]},
 ]
 
-assert len(SECTIONS) == 13, f"expected 14 sections, got {len(SECTIONS)}"
-assert len(PROFESSIONS) == 51, f"expected 59 professions, got {len(PROFESSIONS)}"
+assert len(SECTIONS) == 13, f"expected 13 sections, got {len(SECTIONS)}"
+assert len(SPECIALTIES) == 38, f"expected 38 specialties, got {len(SPECIALTIES)}"
 
 _SECTION_SLUGS = {s["slug"] for s in SECTIONS}
-for _p in PROFESSIONS:
+for _p in SPECIALTIES:
     assert _p["section"] in _SECTION_SLUGS, f"{_p['slug']}: unknown section {_p['section']}"
-assert len({p["slug"] for p in PROFESSIONS}) == len(PROFESSIONS), "duplicate profession slug"
+assert len({p["slug"] for p in SPECIALTIES}) == len(SPECIALTIES), "duplicate specialty slug"
 
 # Every section must keep at least 2 leaves — a branch with one leaf forks
 # nothing and just wastes a tree level.
 _leaf_counts: dict[str, int] = {}
-for _p in PROFESSIONS:
+for _p in SPECIALTIES:
     _leaf_counts[_p["section"]] = _leaf_counts.get(_p["section"], 0) + 1
 for _s in SECTIONS:
     assert _leaf_counts.get(_s["slug"], 0) >= 2, f"{_s['slug']}: needs >=2 leaves, has {_leaf_counts.get(_s['slug'], 0)}"
@@ -370,7 +477,7 @@ for _s in SECTIONS:
 # ---------------------------------------------------------------------------
 
 SECTION_AGE_GROUPS = ["junior"]
-PROFESSION_AGE_GROUPS = ["middle", "senior"]
+SPECIALTY_AGE_GROUPS = ["middle", "senior"]
 
 
 def compute_section_profiles() -> dict[str, dict[str, float]]:
@@ -383,8 +490,8 @@ def compute_section_profiles() -> dict[str, dict[str, float]]:
     that the axis carries no branch-level signal.
     """
     by_section: dict[str, list[dict]] = {}
-    for prof in PROFESSIONS:
-        by_section.setdefault(prof["section"], []).append(prof["profile"])
+    for spec in SPECIALTIES:
+        by_section.setdefault(spec["section"], []).append(spec["profile"])
 
     profiles: dict[str, dict[str, float]] = {}
     for slug, leaf_profiles in by_section.items():
@@ -572,52 +679,66 @@ QUESTIONS: list[dict] = [
      "text": "Что ближе в работе с продуктом?", "text_junior": None,
      "options": [
          {"text": "напрямую убеждать людей, продавать, добиваться сделки", "axis_weights": {"Emp": 2, "Motiv": 2}},
-         {"text": "придумывать, как о продукте узнают, кампании, идеи", "axis_weights": {"Inv": 2, "Ideas": 1}},
-     ], "resolves_pair": ["sales-manager", "marketer"]},
-    {"order": 23, "kind": "direct", "depth": 3, "age_variant": "senior",
-     "text": "В рисовании и дизайне тебе ближе…", "text_junior": None,
-     "options": [
-         {"text": "рисовать от руки, свой стиль", "axis_weights": {"Motor": 1, "Struct": -2}},
-         {"text": "собирать аккуратно в программе, по сетке", "axis_weights": {"Struct": 1, "Obj": 1}},
-     ], "resolves_pair": ["illustrator", "graphic-designer"]},
+         # Bumped Ideas 1->2 and added Vis:1 (calibration playtest pass, 2026-07):
+         # marketing's own profile (Emp:1,Motiv:1 alongside Ideas:1,Inv:1,Vis:1)
+         # scored HIGHER on the "sales" option than on this, its own option —
+         # the old {"Inv":2,"Ideas":1} was too thin to beat option 0's Emp+Motiv
+         # magnitude. See akinator_engine.match_score census notes.
+         {"text": "придумывать, как о продукте узнают, кампании, идеи", "axis_weights": {"Inv": 2, "Ideas": 2, "Vis": 1}},
+     ], "resolves_pair": ["management-entrepreneurship", "marketing"]},
     {"order": 24, "kind": "situational", "depth": 2, "age_variant": "both",
      "text": "Когда рядом кому-то плохо и нужна помощь, ты…",
      "text_junior": "Когда друг поранился: бросаешься помогать сразу или сначала спокойно смотришь, что случилось?",
      "options": [
          {"text": "действую сразу, быстро, на месте", "axis_weights": {"Pace": 2, "Focus": -2, "Risk": 1}},
          {"text": "хочу разобраться спокойно и точно поставить диагноз", "axis_weights": {"Focus": 2, "Exp": 1}},
-     ], "resolves_pair": ["emergency-physician", "physician", "surgeon"]},
-    {"order": 25, "kind": "direct", "depth": 3, "age_variant": "senior",
-     "text": "В медицине тебе ближе…", "text_junior": None,
-     "options": [
-         {"text": "работать руками: операции, процедуры", "axis_weights": {"Motor": 2, "Phys": 1}},
-         {"text": "думать, разбирать сложные случаи, назначать лечение", "axis_weights": {"Focus": 2, "Data": 1}},
-         {"text": "поддерживать и разговаривать с человеком", "axis_weights": {"Emp": 2, "Care": 1}},
-     ], "resolves_pair": ["surgeon", "physician", "psychiatrist"]},
+         # Neutral option added (calibration playtest pass, 2026-07): this
+         # question has no resolves_pair, so it isn't covered by the
+         # select_next_question relevance filter and keeps getting served to
+         # sessions with no real Pace/Risk/Focus signal either way — without
+         # an escape hatch they were forced into a non-answer that nudged
+         # belief toward whichever side had ANY overlap (e.g. dragging
+         # school-teacher/marketing personas toward hospitality-manager).
+         {"text": "не знаю", "axis_weights": {}},
+     ], "resolves_pair": None},  # specialty pivot: emergency-physician/physician/surgeon all merged into general-medicine — no longer a specialty-level fork, kept as general belief-shaping signal
     {"order": 26, "kind": "direct", "depth": 2, "age_variant": "both",
      "text": "Про животных и природу — что ближе?",
      "text_junior": "С животными интереснее: лечить и заботиться, наблюдать и изучать, или ухаживать за растениями?",
      "options": [
          {"text": "лечить и заботиться о конкретных животных", "axis_weights": {"Care": 2, "Living": 2}},
          {"text": "изучать их, наблюдать, понимать, как всё устроено", "axis_weights": {"Obj": -2, "Exp": 2, "Focus": 2}},
-         {"text": "работать на земле, выращивать", "axis_weights": {"Phys": 1, "PhysSt": 1}},
+         # Added Living:2 (calibration playtest pass, 2026-07): agronomist's own
+         # profile has no Care axis at all, so it used to score higher on the
+         # "care for animals" option than on this, its own — Living is exactly
+         # as much about plants/soil as about animals (see axes.py), this
+         # option just never carried any. Checked against the other 3 leaves
+         # in this resolver — none of their rankings flip.
+         {"text": "работать на земле, выращивать", "axis_weights": {"Phys": 1, "PhysSt": 1, "Living": 2}},
          {"text": "тренировать животных, работать с ними в паре", "axis_weights": {"Dev": 2, "Motor": 1, "People": 1}},
-     ], "resolves_pair": ["veterinarian", "zoologist", "ecologist", "agronomist", "cynologist"]},
+     ], "resolves_pair": ["veterinary-zootechnics", "zoologist", "ecologist", "agronomist"]},
     # Third option added (replacement pass) so building-systems-engineer, the
     # plumber replacement, has a fork that reaches it.
     {"order": 28, "kind": "direct", "depth": 3, "age_variant": "senior",
      "text": "Если проектировать — что ближе?", "text_junior": None,
      "options": [
-         {"text": "механизмы, машины, устройства", "axis_weights": {"Phys": 2}},
+         # Added Obj:1, Inv:1 (calibration playtest pass, 2026-07): this option
+         # only carried Phys:2, one axis, while the competing "buildings"
+         # option below carries three (Phys+Struct+Lead) — a textbook
+         # mechanical-engineer profile (which also has Obj:2, Inv:1) scored
+         # HIGHER on "buildings" than on its own option. Checked: civil-
+         # engineering still clearly prefers its own option after this change.
+         {"text": "механизмы, машины, устройства", "axis_weights": {"Phys": 2, "Obj": 1, "Inv": 1}},
          {"text": "здания, мосты, конструкции", "axis_weights": {"Phys": 2, "Struct": 2, "Lead": 1}},
          {"text": "инженерные системы зданий: вода, тепло, вентиляция", "axis_weights": {"Motor": 1, "Focus": 2, "Predict": -1}},
-     ], "resolves_pair": ["mechanical-engineer", "civil-engineer", "building-systems-engineer"]},
+     ], "resolves_pair": ["mechanical-engineer", "civil-engineering"]},
     {"order": 29, "kind": "situational", "depth": 2, "age_variant": "both",
      "text": "Работа руками — тебе как?",
      "text_junior": "Тебе нравится активная работа руками, где надо двигаться, или спокойнее?",
      "options": [
          {"text": "да, люблю физическую работу, на ногах, с материалами", "axis_weights": {"PhysSt": 2, "Motor": 1, "Phys": 2}},
          {"text": "лучше что-то поспокойнее, не тяжёлое физически", "axis_weights": {"PhysSt": -2}},
+         # Neutral option added (calibration playtest pass, 2026-07) — see order 24.
+         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": None},
     {"order": 30, "kind": "direct", "depth": 2, "age_variant": "both",
      "text": "В творчестве что тебя тянет?",
@@ -642,24 +763,36 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "готовить, придумывать блюда, творить со вкусом", "axis_weights": {"Inv": 1, "Motor": 2, "Ideas": 1}},
          {"text": "общаться с гостями, вести зал, отвечать за всё заведение", "axis_weights": {"People": 2, "Lead": 2, "Emp": 1, "Pace": 2}},
-     ], "resolves_pair": ["head-chef", "confectionery-technologist", "hospitality-manager"]},
-    {"order": 35, "kind": "direct", "depth": 3, "age_variant": "senior",
-     "text": "Если готовить — что ближе?", "text_junior": None,
-     "options": [
-         {"text": "основные блюда, горячее, скорость кухни", "axis_weights": {"Pace": 2, "Lead": 1}},
-         {"text": "десерты, выпечка, точность и красота", "axis_weights": {"Focus": 2, "Struct": 2, "Ideas": 2}},
-     ], "resolves_pair": ["head-chef", "confectionery-technologist"]},
+     ], "resolves_pair": ["food-production-tech", "hospitality-manager"]},
     {"order": 36, "kind": "situational", "depth": 2, "age_variant": "both",
      "text": "Тебе дали цель и свободу. Ты…",
      "text_junior": "Тебе интереснее придумать своё дело и вести его самому или делать понятную работу спокойно?",
      "options": [
          {"text": "рискну, придумаю своё дело, буду сам за всё отвечать", "axis_weights": {"Risk": 2, "Auto": 2, "Inv": 2, "Lead": 2}},
          {"text": "лучше в понятной роли с стабильностью", "axis_weights": {"Risk": -2, "Struct": 1}},
+         # Neutral option added (calibration playtest pass, 2026-07) — see order 24.
+         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": None},  # source says "предприниматель vs исполнительские роли" (generic) — flagged, see module docstring
     {"order": 37, "kind": "direct", "depth": 3, "age_variant": "senior",
      "text": "С числами и деньгами тебе как?", "text_junior": None,
      "options": [
-         {"text": "люблю точность, порядок, считать", "axis_weights": {"Data": 2, "Struct": 2, "Focus": 2, "Math": 2}},
+         # Halved 2->1 on every axis (calibration playtest pass, 2026-07,
+         # round 2): at full strength this option's weights were nearly an
+         # exact copy of finance-accounting's own profile
+         # (Data:2,Struct:2,Focus:2,Math:2) — every "precise, structured"
+         # answer (data-science, software-engineer, any STEM-leaning
+         # session included) read as strong accountant evidence even though
+         # resolves_pair=None means it was never covered by the resolver-
+         # weight audit or any pair-specific counterbalance. It doubled up
+         # with order=48 (the real finance-accounting resolver) and fired in
+         # 5/5 traced data-science sessions, usually before order=51 (the
+         # dedicated data-science/software-engineer/finance-accounting/
+         # it-infrastructure-security resolver) got a chance to counter it —
+         # by the time order=51 fired, finance-accounting's lead was already
+         # too big to close. Kept non-zero (still a useful generic
+         # precise-vs-people-and-ideas signal), just no longer resolver-
+         # strength for a question that isn't declared as one.
+         {"text": "люблю точность, порядок, считать", "axis_weights": {"Data": 1, "Struct": 1, "Focus": 1, "Math": 1}},
          {"text": "скучно, мне интереснее люди и идеи", "axis_weights": {"Data": -1, "People": 1}},
      ], "resolves_pair": None},  # source says "бухгалтер vs остальной бизнес" (generic) — flagged, see module docstring
     {"order": 38, "kind": "situational", "depth": 2, "age_variant": "both",
@@ -668,7 +801,7 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "готов рисковать, спасать, действовать быстро", "axis_weights": {"Risk": 2, "Pace": 2, "PhysSt": 2, "Care": 1}},
          {"text": "лучше держать порядок, следить, предотвращать", "axis_weights": {"Struct": 2, "Focus": 1}},
-     ], "resolves_pair": ["fire-safety-engineer", "police-officer", "emergency-physician"]},
+     ], "resolves_pair": ["fire-safety-engineer", "police-officer", "general-medicine"]},
     # Revived (replacement pass): makeup-artist-film now exists, so this
     # question's weights reach a leaf again. Before the replacement it was a
     # dead question — hairdresser/makeup-artist had been retired and the
@@ -678,8 +811,12 @@ QUESTIONS: list[dict] = [
      "text_junior": None,
      "options": [
          {"text": "да: лицо, грим, образ — превращать человека в персонажа", "axis_weights": {"People": 2, "Motor": 2, "Emp": 1}},
-         {"text": "ближе создавать вещи и одежду, а не работать с лицом", "axis_weights": {"Phys": 1, "Vis": 1}},
-     ], "resolves_pair": ["makeup-artist-film", "fashion-designer"]},
+         # Added Ideas:1 (calibration playtest pass, 2026-07): design's own
+         # profile (Ideas:2, Inv:2) scored higher on the "makeup" option than
+         # on this, its own — Phys+Vis alone was too thin. makeup-artist-film
+         # still wins its own option by a wide margin either way.
+         {"text": "ближе создавать вещи и одежду, а не работать с лицом", "axis_weights": {"Phys": 1, "Vis": 1, "Ideas": 1}},
+     ], "resolves_pair": ["makeup-artist-film", "design"]},
     # --- Calibration pass additions (orders 41-44): resolves_pair gaps found
     # by auditing profile cosine-similarity — see module docstring.
     {"order": 41, "kind": "situational", "depth": 2, "age_variant": "senior",
@@ -696,7 +833,7 @@ QUESTIONS: list[dict] = [
           "axis_weights": {"Living": 2, "Ideas": -1}},
          {"text": "постепенно восстанавливать подвижность и функции после травмы или болезни",
           "axis_weights": {"Dev": 2, "Motor": 1, "Acad": -1}},
-     ], "resolves_pair": ["dentist", "surgeon", "physician", "veterinarian", "rehabilitation-therapist"]},
+     ], "resolves_pair": ["dentist", "general-medicine", "veterinary-zootechnics", "rehabilitation-therapist"]},
     {"order": 42, "kind": "direct", "depth": 2, "age_variant": "senior",
      "text": "Работать с психикой человека тебе ближе как?", "text_junior": None,
      "options": [
@@ -704,16 +841,7 @@ QUESTIONS: list[dict] = [
           "axis_weights": {"Living": 2, "Care": 1}},
          {"text": "разговаривать, слушать и помогать разобраться в себе без медицинских препаратов",
           "axis_weights": {"Emp": 2, "Auto": 1}},
-     ], "resolves_pair": ["psychiatrist", "psychologist"]},
-    {"order": 43, "kind": "situational", "depth": 2, "age_variant": "both",
-     "text": "Работа врача тебе ближе как?",
-     "text_junior": "Лечить людей интереснее спокойно и постоянно, или в срочных случаях?",
-     "options": [
-         {"text": "стабильно, в одном отделении, длительно наблюдать за одними и теми же пациентами",
-          "axis_weights": {"Struct": 1, "Predict": -1}},
-         {"text": "экстренные вызовы, непредсказуемая обстановка, скорая помощь",
-          "axis_weights": {"Predict": 2, "Pace": 2, "Risk": 1}},
-     ], "resolves_pair": ["physician", "emergency-physician"]},
+     ], "resolves_pair": ["general-medicine", "psychologist"]},
     # --- Replacement pass additions (orders 45-49): every new profession needs
     # at least one fork that separates it from its nearest neighbour, otherwise
     # it is unreachable (the belief can never single it out).
@@ -722,9 +850,16 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "придумывать сообщение, тексты, образ бренда",
           "axis_weights": {"Ideas": 2, "Inv": 2, "Data": -1}},
+         # Added Predict:1 (calibration playtest pass, 2026-07): marketing's
+         # own profile tied exactly 0.95/0.95 between the two options here —
+         # both are shared "creative" axes with pr-specialist, so neither
+         # discriminated for marketing specifically. Predict:1 matches
+         # marketing's own profile without helping pr-specialist (which
+         # carries no Predict axis at all), breaking the tie in marketing's
+         # favor without weakening pr-specialist's already-clear win on option 0.
          {"text": "считать, какая кампания сработала, разбирать цифры и аудиторию",
-          "axis_weights": {"Data": 2, "Math": 1, "Obj": -1}},
-     ], "resolves_pair": ["pr-specialist", "marketer"]},
+          "axis_weights": {"Data": 2, "Math": 1, "Obj": -1, "Predict": 1}},
+     ], "resolves_pair": ["pr-specialist", "marketing"]},
     {"order": 46, "kind": "direct", "depth": 3, "age_variant": "senior",
      "text": "На съёмочной площадке тебе ближе…", "text_junior": None,
      "options": [
@@ -749,7 +884,7 @@ QUESTIONS: list[dict] = [
           "axis_weights": {"Obj": 1, "Lead": 1, "Pace": 1}},
          {"text": "точный учёт, отчётность, документы, чтобы всё сходилось",
           "axis_weights": {"Focus": 2, "Struct": 2, "Predict": -2, "Math": 2}},
-     ], "resolves_pair": ["logistician", "accountant"]},
+     ], "resolves_pair": ["management-entrepreneurship", "finance-accounting"]},
     {"order": 49, "kind": "direct", "depth": 3, "age_variant": "senior",
      "text": "Что хочется создавать?", "text_junior": None,
      "options": [
@@ -759,18 +894,87 @@ QUESTIONS: list[dict] = [
           "axis_weights": {"Ideas": 2, "PhysSt": -1}},
          {"text": "здания и пространства, где ходят люди",
           "axis_weights": {"Phys": 1, "Struct": 2, "Lead": 1, "Acad": 1}},
-     ], "resolves_pair": ["furniture-designer", "graphic-designer", "architect"]},
+     ], "resolves_pair": ["design", "architect"]},
+    # Added (calibration playtest pass, 2026-07): the "Помощь и психология"
+    # section has 3 leaves (psychologist, speech-therapist, social-worker)
+    # but only orders 19 and 47 fork psychologist away from the other two —
+    # nothing ever separated speech-therapist from social-worker directly, so
+    # the pair relied entirely on generic cross-section signal. Verified
+    # against all 3 leaf profiles: speech-therapist and social-worker each
+    # clearly prefer their own option; psychologist scores low on both.
+    {"order": 50, "kind": "situational", "depth": 3, "age_variant": "senior",
+     "text": "Кому-то нужна регулярная помощь. Тебе ближе…", "text_junior": None,
+     "options": [
+         {"text": "долго и по чуть-чуть тренировать один конкретный навык на регулярных встречах",
+          "axis_weights": {"Dev": 2, "Focus": 1, "Struct": 1}},
+         {"text": "разобраться, что у человека не так в жизни, и организовать нужную помощь: жильё, документы, службы",
+          "axis_weights": {"Lead": 1, "Struct": 1, "Predict": 1, "Pace": 1}},
+     ], "resolves_pair": ["speech-therapist", "social-worker"]},
+    # Added (calibration playtest pass, 2026-07, round 2): the "IT и данные"
+    # section (data-science, software-engineer, it-infrastructure-security)
+    # plus finance-accounting had NO resolver at all separating them, despite
+    # sharing most of their axis vocabulary (Data/Focus/Struct/Math) — census
+    # showed data-science losing to finance-accounting 25-27/30 trials.
+    # order=37 ("С числами и деньгами тебе как?") drives much of that: it's
+    # an undeclared de-facto finance-accounting question (resolves_pair=None,
+    # so untouched by the earlier resolver-weight audit) whose weights read
+    # as "precise, structured, likes numbers" — true of data-science and
+    # software-engineer too, so it boosts finance-accounting on every session
+    # regardless of which of the four this really is. Verified against all
+    # four leaf profiles: each clearly prefers its own option (data-science
+    # 0.97 vs 0.49 next-best; software-engineer 0.86 vs 0.69; finance-
+    # accounting 1.10 vs 0.73; it-infrastructure-security 0.71 vs 0.47).
+    {"order": 51, "kind": "direct", "depth": 3, "age_variant": "senior",
+     "text": "Работа с числами и данными — что тебе конкретно нравится?", "text_junior": None,
+     "options": [
+         {"text": "искать закономерности и смысл в больших массивах данных",
+          "axis_weights": {"Obj": -2, "Data": 1, "Ideas": 1}},
+         {"text": "писать код, создавать программы и системы",
+          "axis_weights": {"Inv": 2, "Obj": 2, "Ideas": 1}},
+         {"text": "следить, чтобы цифры и документы точно сходились, без сюрпризов",
+          "axis_weights": {"Predict": -2, "Struct": 1}},
+         {"text": "следить, чтобы всё работало и было защищено, реагировать на нештатные ситуации",
+          "axis_weights": {"Predict": 1, "Pace": 1, "Focus": -1}},
+         # Neutral option added (calibration playtest pass, 2026-07, round 10):
+         # this question has no resolves_pair-relevance gate (that approach
+         # was tried and reverted, see akinator_engine.select_next_question),
+         # so it still gets served to sessions with no stake in any of the 4
+         # IT/finance options. Without an escape, a persona scoring exactly 0
+         # on all 4 (e.g. psychologist) got deterministically routed to
+         # option 1 ("писать код") every time, since pick_option / the
+         # engine's tie-break picks the first max-scoring option — traced
+         # psychologist sessions confirmed this dragging it toward
+         # software-engineer/pr-specialist/makeup-artist-film with zero
+         # genuine signal behind it.
+         {"text": "не знаю", "axis_weights": {}},
+     ], "resolves_pair": ["data-science", "software-engineer", "finance-accounting", "it-infrastructure-security"]},
+    # Added (calibration playtest pass, 2026-07, round 6): school-teacher and
+    # speech-therapist share both their top axes (People:2, Dev:2) and had no
+    # question anywhere separating them directly — order 19 forks
+    # speech-therapist away from psychologist, order 50 away from
+    # social-worker, but nothing forks it from school-teacher, so traced
+    # sessions kept landing in a cluster of the two. Verified against both
+    # profiles: school-teacher clearly prefers its own option (0.75 vs 0.25),
+    # speech-therapist clearly prefers its own (1.21 vs 0).
+    {"order": 52, "kind": "situational", "depth": 3, "age_variant": "senior",
+     "text": "Как ты хочешь помогать разбираться в чём-то?", "text_junior": None,
+     "options": [
+         {"text": "объяснять предмет целому классу, увлекать и держать внимание",
+          "axis_weights": {"Vis": 2, "Lead": 1}},
+         {"text": "работать один на один, регулярно, над конкретной проблемой человека",
+          "axis_weights": {"Exp": 2, "Focus": 1}},
+     ], "resolves_pair": ["school-teacher", "speech-therapist"]},
 ]
 
-assert len(QUESTIONS) == 44, f"expected 47 questions, got {len(QUESTIONS)}"
+assert len(QUESTIONS) == 43, f"expected 43 questions, got {len(QUESTIONS)}"
 assert len({q["order"] for q in QUESTIONS}) == len(QUESTIONS), "duplicate question order"
 
 # Every slug named in a resolves_pair must actually exist as a leaf — this is
 # what would have caught the dead order-39 question in the retirement pass.
-_ALL_PROF_SLUGS = {p["slug"] for p in PROFESSIONS}
+_ALL_SPECIALTY_SLUGS = {p["slug"] for p in SPECIALTIES}
 for _q in QUESTIONS:
     for _slug in _q["resolves_pair"] or []:
-        assert _slug in _ALL_PROF_SLUGS, f"q order {_q['order']}: unknown slug {_slug!r} in resolves_pair"
+        assert _slug in _ALL_SPECIALTY_SLUGS, f"q order {_q['order']}: unknown slug {_slug!r} in resolves_pair"
 
 
 # ---------------------------------------------------------------------------
@@ -803,6 +1007,22 @@ RETIRED_DIRECTION_SLUGS: list[str] = [
     # sections left with zero leaves once the professions above were cut
     "akinator-beauty-services", "akinator-logistics-service",
     "akinator-construction-manual",
+    # Specialty pivot (2026-07-17): these 51 profession leaves are replaced by
+    # 38 SPECIALTIES above — merged into a broader specialty (see the "Merge"
+    # comments in SPECIALTIES) or renamed 1:1 to a new slug. Either way the old
+    # slug must be retired so cleanup_retired_content nulls any
+    # Assessment.selected_direction_slug still pointing at it.
+    "surgeon", "physician", "emergency-physician", "psychiatrist",  # -> general-medicine
+    "veterinarian", "cynologist",  # -> veterinary-zootechnics
+    "programmer", "qa-tester",  # -> software-engineer
+    "data-analyst",  # -> data-science (renamed)
+    "sysadmin",  # -> it-infrastructure-security (renamed)
+    "civil-engineer", "building-systems-engineer",  # -> civil-engineering
+    "graphic-designer", "illustrator", "fashion-designer", "furniture-designer", "ux-designer",  # -> design
+    "head-chef", "confectionery-technologist",  # -> food-production-tech
+    "sales-manager", "entrepreneur", "logistician",  # -> management-entrepreneurship
+    "marketer",  # -> marketing (renamed)
+    "accountant",  # -> finance-accounting (renamed)
 ]
 
 # 22: disambiguated barista/waiter (both retired)
@@ -814,7 +1034,12 @@ RETIRED_DIRECTION_SLUGS: list[str] = [
 #     the remaining coach-vs-rehab fork is already covered by order 20.
 # 40: disambiguated taxi/courier/warehouse (all retired)
 # 44: disambiguated electrician/auto-mechanic (both retired)
-RETIRED_QUESTION_ORDERS: list[int] = [22, 27, 31, 33, 40, 44]
+# 23: illustrator/graphic-designer merged into one `design` specialty (specialty
+#     pivot) — pair no longer distinguishes anything.
+# 25: surgeon/physician/psychiatrist merged into `general-medicine` — same reasoning.
+# 35: head-chef/confectionery-technologist merged into `food-production-tech`.
+# 43: physician/emergency-physician merged into `general-medicine`.
+RETIRED_QUESTION_ORDERS: list[int] = [22, 23, 25, 27, 31, 33, 35, 40, 43, 44]
 
 # Nothing retired may still be referenced by a live question.
 for _q in QUESTIONS:
@@ -863,7 +1088,7 @@ async def audit_unmanaged_leaves(db: AsyncSession) -> list[str]:
     an empty profile — e.g. the legacy `explore-*` placeholders. Belief can
     never move for them, so they sit in the hypothesis space as dead weight.
     Deleting them is a separate product/data decision, not a seed-script call."""
-    known = {s["slug"] for s in SECTIONS} | {p["slug"] for p in PROFESSIONS}
+    known = {s["slug"] for s in SECTIONS} | {p["slug"] for p in SPECIALTIES}
     result = await db.execute(select(Direction).where(Direction.is_leaf.is_(True)))
     return sorted(
         d.slug for d in result.scalars() if d.slug not in known and not d.profile
@@ -924,28 +1149,31 @@ async def seed_sections(db: AsyncSession) -> tuple[dict[str, uuid.UUID], int, in
     return ids, inserted, updated, skipped
 
 
-async def seed_professions(
+async def seed_specialties(
     db: AsyncSession, section_ids: dict[str, uuid.UUID]
 ) -> tuple[int, int, int]:
-    """Upsert the 51 leaf Directions by slug. Returns (inserted, updated, skipped)."""
+    """Upsert the 38 leaf Directions (specialties) by slug. Returns (inserted, updated, skipped)."""
     inserted = updated = skipped = 0
 
-    for prof in PROFESSIONS:
-        parent_id = section_ids[prof["section"]]
-        label_junior = prof.get("label_junior")
-        result = await db.execute(select(Direction).where(Direction.slug == prof["slug"]))
+    for spec in SPECIALTIES:
+        parent_id = section_ids[spec["section"]]
+        label_junior = spec.get("label_junior")
+        result = await db.execute(select(Direction).where(Direction.slug == spec["slug"]))
         existing = result.scalar_one_or_none()
 
         if existing is not None:
             changed = False
-            if existing.name != prof["name"]:
-                existing.name = prof["name"]
+            if existing.name != spec["name"]:
+                existing.name = spec["name"]
                 changed = True
-            if existing.description != prof["description"]:
-                existing.description = prof["description"]
+            if existing.description != spec["description"]:
+                existing.description = spec["description"]
                 changed = True
-            if existing.profile != prof["profile"]:
-                existing.profile = prof["profile"]
+            if existing.profile != spec["profile"]:
+                existing.profile = spec["profile"]
+                changed = True
+            if existing.professions != spec["professions"]:
+                existing.professions = spec["professions"]
                 changed = True
             if existing.parent_id != parent_id:
                 existing.parent_id = parent_id
@@ -953,8 +1181,8 @@ async def seed_professions(
             if existing.is_leaf is not True:
                 existing.is_leaf = True
                 changed = True
-            if existing.age_groups != PROFESSION_AGE_GROUPS:
-                existing.age_groups = PROFESSION_AGE_GROUPS
+            if existing.age_groups != SPECIALTY_AGE_GROUPS:
+                existing.age_groups = SPECIALTY_AGE_GROUPS
                 changed = True
             if existing.label_junior != label_junior:
                 existing.label_junior = label_junior
@@ -964,14 +1192,15 @@ async def seed_professions(
             continue
 
         direction = Direction(
-            name=prof["name"],
-            slug=prof["slug"],
-            description=prof["description"],
+            name=spec["name"],
+            slug=spec["slug"],
+            description=spec["description"],
             required_scores={},
             parent_id=parent_id,
             is_leaf=True,
-            profile=prof["profile"],
-            age_groups=PROFESSION_AGE_GROUPS,
+            profile=spec["profile"],
+            professions=spec["professions"],
+            age_groups=SPECIALTY_AGE_GROUPS,
             label_junior=label_junior,
         )
         db.add(direction)
@@ -981,7 +1210,7 @@ async def seed_professions(
 
 
 async def seed_questions(db: AsyncSession) -> tuple[int, int, int]:
-    """Upsert the 44 AkinatorQuestion rows by `order` (this script owns 0-49,
+    """Upsert the 41 AkinatorQuestion rows by `order` (this script owns 0-50,
     minus the retired orders — see RETIRED_QUESTION_ORDERS).
     Returns (inserted, updated, skipped)."""
     inserted = updated = skipped = 0
@@ -1022,7 +1251,7 @@ async def main() -> None:
     async with async_session() as db:
         dirs_deleted, qs_deleted, sel_cleared = await cleanup_retired_content(db)
         section_ids, sec_ins, sec_upd, sec_skip = await seed_sections(db)
-        prof_ins, prof_upd, prof_skip = await seed_professions(db, section_ids)
+        spec_ins, spec_upd, spec_skip = await seed_specialties(db, section_ids)
         q_ins, q_upd, q_skip = await seed_questions(db)
         orphans = await audit_unmanaged_leaves(db)
         await db.commit()
@@ -1036,8 +1265,8 @@ async def main() -> None:
             f"(total {len(SECTIONS)}, age_groups={SECTION_AGE_GROUPS})"
         )
         print(
-            f"Professions: inserted {prof_ins}, updated {prof_upd}, skipped {prof_skip} "
-            f"(total {len(PROFESSIONS)}, age_groups={PROFESSION_AGE_GROUPS})"
+            f"Specialties: inserted {spec_ins}, updated {spec_upd}, skipped {spec_skip} "
+            f"(total {len(SPECIALTIES)}, age_groups={SPECIALTY_AGE_GROUPS})"
         )
         print(
             f"Questions:   inserted {q_ins}, updated {q_upd}, skipped {q_skip} "
