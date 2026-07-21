@@ -83,14 +83,24 @@ def test_ceiling_cluster_is_inconclusive_not_uncertain():
     assert report.message == REPORT_MESSAGES["inconclusive"]
 
 
-def test_confidence_cluster_stays_uncertain_even_with_leaf_profiles_passed():
+def test_confidence_cluster_stays_uncertain_but_now_carries_strengths():
+    """A genuine close race (reason="confidence") deserves the same "why
+    these came up" signal as a ceiling-forced cluster — only the message
+    template and `kind` differ between the two, not whether strengths get
+    computed. (Older behavior had confidence-clusters carry no strengths at
+    all; changed as part of the "почему предложены" reveal-screen ticket.)"""
     decision = StopDecision(status="reveal_cluster", leaves=["a", "b"], reason="confidence")
     belief = {"a": 0.4, "b": 0.35, "c": 0.25}
+    leaf_profiles = {
+        "a": {"People": 2, "Care": 1},
+        "b": {"People": 1, "Data": 2},
+        "c": {"Data": 1},
+    }
 
-    report = build_reveal_report(decision, belief, rejected_leaves=[], leaf_profiles={})
+    report = build_reveal_report(decision, belief, rejected_leaves=[], leaf_profiles=leaf_profiles)
 
     assert report.kind == "uncertain"
-    assert report.strengths == []
+    assert report.strengths
 
 
 def test_summarize_strengths_picks_top_positive_axes():

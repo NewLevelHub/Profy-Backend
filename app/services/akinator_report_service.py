@@ -110,6 +110,11 @@ def build_reveal_report(
             backups=[],
             followed_rejection=followed_rejection,
             message=REPORT_MESSAGES[key],
+            # Same honest "what belief still describes" signal as the
+            # inconclusive branch below — a close cluster deserves the same
+            # "here's why these came up" as a ceiling-forced one, not just a
+            # bare name list (see summarize_strengths' own docstring).
+            strengths=summarize_strengths(belief, leaf_profiles or {}),
         )
 
     ranked = sorted(belief.items(), key=lambda item: item[1], reverse=True)
