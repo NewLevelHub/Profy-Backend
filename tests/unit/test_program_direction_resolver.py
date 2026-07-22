@@ -1,7 +1,7 @@
 import pytest
 
 from app.models.direction import Direction
-from app.services.program_direction_resolver import program_direction_slugs_for
+from app.services.program_direction_resolver import program_direction_slugs_for, program_matches
 
 
 @pytest.mark.asyncio
@@ -39,3 +39,49 @@ async def test_program_direction_slugs_fallback_to_leaf_only(db_session):
     slugs = await program_direction_slugs_for("unknown-specialty", db_session)
 
     assert slugs == ["unknown-specialty"]
+
+
+# ---------------------------------------------------------------------------
+# program_matches — pure sync helper, no DB needed
+# ---------------------------------------------------------------------------
+
+def test_program_matches_intersection():
+    """A DevOps program covering both software-engineer and it-infrastructure-security
+    should match a search for either slug."""
+    program_slugs = ["software-engineer", "it-infrastructure-security"]
+
+    assert program_matches(program_slugs, ["software-engineer"]) is True
+    assert program_matches(program_slugs, ["it-infrastructure-security"]) is True
+    assert program_matches(program_slugs, ["software-engineer", "akinator-it-data"]) is True
+
+
+def test_program_matches_no_intersection():
+    """A program tagged for medicine should not match an IT search."""
+    program_slugs = ["general-medicine"]
+
+    assert program_matches(program_slugs, ["software-engineer", "akinator-it-data"]) is False
+    assert program_matches(program_slugs, ["data-science"]) is False
+
+
+def test_program_matches_empty():
+    """Edge cases: empty program slugs, empty allowed slugs, both empty."""
+    assert program_matches([], ["software-engineer"]) is False
+    assert program_matches(["software-engineer"], []) is False
+    assert program_matches([], []) is False
+
+
+def test_program_matches_exact_single():
+    """Single-element lists work."""
+    assert program_matches(["lawyer"], ["lawyer"]) is True
+    assert program_matches(["lawyer"], ["akinator-words-communication"]) is False
+
+
+def test_program_matches_multi_allowed():
+    """program_direction_slugs_for returns both the leaf and its parent section;
+    program_matches must succeed when the program is tagged at the section level."""
+    # Simulate: program tagged at section level, allowed_slugs includes both
+    # the leaf (software-engineer) and parent (akinator-it-data).
+    program_slugs = ["akinator-it-data"]
+    allowed_slugs = ["software-engineer", "akinator-it-data"]
+
+    assert program_matches(program_slugs, allowed_slugs) is True

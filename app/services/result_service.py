@@ -7,7 +7,8 @@ Direction.profile), so this can never 503.
 import uuid
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import Text, cast, select
+from sqlalchemy.dialects.postgresql import ARRAY, array as pg_array
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -202,7 +203,10 @@ async def _recommended_programs_for(
     """
     direction_slugs = await program_direction_slugs_for(selected_slug, db)
     conditions = [
-        Program.direction_slug.in_(direction_slugs),
+        # ?| operator: JSONB column has any element from the given text array.
+        Program.direction_slugs.op("?|")(
+            cast(pg_array(direction_slugs), ARRAY(Text))
+        ),
         University.country == "Казахстан",
     ]
     if city is not None:

@@ -10,7 +10,7 @@ from app.schemas.university import UniversityBrief
 class ResultProgramRecommendation(BaseModel):
     id: uuid.UUID
     name: str
-    direction_slug: str
+    direction_slugs: list[str]
     language: str
     cost_per_year: float | None
     description: str | None

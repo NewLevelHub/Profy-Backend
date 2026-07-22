@@ -1,7 +1,8 @@
 import uuid
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import Text, cast, select
+from sqlalchemy.dialects.postgresql import ARRAY, array as pg_array
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -22,7 +23,13 @@ async def search_programs(
         select(Program)
         .options(selectinload(Program.university))
         .join(Program.university)
-        .where(Program.direction_slug.in_(direction_slugs))
+        # ?| operator: JSONB column has any element from the given text array.
+        # This uses the GIN index on direction_slugs for efficient lookup.
+        .where(
+            Program.direction_slugs.op("?|")(
+                cast(pg_array(direction_slugs), ARRAY(Text))
+            )
+        )
     )
     if country is not None:
         query = query.where(University.country.ilike(country))

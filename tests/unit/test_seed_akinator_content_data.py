@@ -25,7 +25,7 @@ def _cosine(a: dict[str, int], b: dict[str, int]) -> float:
 def test_counts_match_acceptance_criteria():
     assert len(SECTIONS) == 13
     assert len(SPECIALTIES) == 38
-    assert len(QUESTIONS) == 40
+    assert len(QUESTIONS) == 43
 
 
 def test_specialty_slugs_are_unique():

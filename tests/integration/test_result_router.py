@@ -10,9 +10,11 @@ from app.main import app
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.assessment_session import AssessmentSession
 from app.models.profile import AgeGroup, Profile
+from app.models.program import Program
+from app.models.university import University
 from app.models.user import User
 from app.services.auth_service import create_jwt_token
-from scripts.seed_akinator_content import seed_questions, seed_sections, seed_specialties
+from scripts.seed_akinator_content import SPECIALTIES, seed_questions, seed_sections, seed_specialties
 from scripts.seed_astana_universities import main as seed_astana_universities
 
 
@@ -22,6 +24,48 @@ async def _ensure_seeded(db: AsyncSession) -> None:
     await seed_questions(db)
     await db.flush()
     await seed_astana_universities()
+    # Guarantee that every specialty has at least one Astana/KZ program in the
+    # test session, regardless of which slug the akinator engine picks. The
+    # real seed only covers a subset of specialties; this fills the gap so
+    # _recommended_programs_for always finds something and the assertion
+    # `len(recommended_programs) >= 1` is not accidentally falsified by a
+    # missing program in an otherwise correct flow.
+    await _ensure_all_specialty_programs(db)
+
+
+async def _ensure_all_specialty_programs(db: AsyncSession) -> None:
+    """Insert one catch-all Astana university + one program per specialty slug
+    into the test session so _recommended_programs_for always finds a result,
+    regardless of which slug wins the akinator run."""
+    from sqlalchemy import select
+
+    test_uni = University(
+        name="Test Coverage University",
+        country="Казахстан",
+        city="Астана",
+        website="https://test-coverage.kz",
+        ranking=None,
+        description="Auto-generated test fixture university.",
+    )
+    db.add(test_uni)
+    await db.flush()
+
+    for spec in SPECIALTIES:
+        prog = Program(
+            university_id=test_uni.id,
+            name=f"Test Program — {spec['slug']}",
+            direction_slugs=[spec["slug"]],
+            language="Русский",
+            cost_per_year=None,
+            description=f"Auto-generated test fixture for {spec['slug']}.",
+            career_options=[],
+            requirements={},
+            deadlines={},
+            grants=[],
+        )
+        db.add(prog)
+
+    await db.flush()
 
 
 async def _make_user_and_assessment(db: AsyncSession) -> tuple[User, Assessment]:
@@ -31,7 +75,7 @@ async def _make_user_and_assessment(db: AsyncSession) -> tuple[User, Assessment]
 
     profile = Profile(
         user_id=user.id, name="Test Student", age=16, grade=10,
-        city="Test City", country="Test Country", language="ru",
+        city="Астана", country="Казахстан", language="ru",
         age_group=AgeGroup.senior,
     )
     db.add(profile)
@@ -126,7 +170,7 @@ async def test_result_is_available_after_a_liked_reveal(client: AsyncClient, db_
     assert isinstance(body["recommended_programs"], list)
     assert len(body["recommended_programs"]) >= 1
     for program in body["recommended_programs"]:
-        assert {"id", "name", "language", "direction_slug", "university"} <= set(program)
+        assert {"id", "name", "language", "direction_slugs", "university"} <= set(program)
         assert {"name", "country", "city"} <= set(program["university"])
         assert program["university"]["city"] == "Астана"
 

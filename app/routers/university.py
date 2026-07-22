@@ -16,7 +16,7 @@ from app.schemas.gap import GapAnalysisResponse
 from app.schemas.university import ProgramBrief, ProgramDetail
 from app.services.artifact_service import get_artifacts
 from app.services.gap_analysis_service import analyze_gap, to_response
-from app.services.program_direction_resolver import program_direction_slugs_for
+from app.services.program_direction_resolver import program_direction_slugs_for, program_matches
 from app.services.university_service import get_program_by_id, search_programs
 
 GAP_CACHE_TTL = 60 * 60  # 1 hour
@@ -96,7 +96,7 @@ async def get_gap_analysis(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
 
     allowed_slugs = await program_direction_slugs_for(assessment.selected_direction_slug, db)
-    if program.direction_slug not in allowed_slugs:
+    if not program_matches(program.direction_slugs, allowed_slugs):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This program's direction does not match your assessment results",
