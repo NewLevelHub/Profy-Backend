@@ -6,6 +6,11 @@ from sqlalchemy import DateTime, ForeignKey, Numeric, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+# direction_slug (String) was replaced by direction_slugs (JSONB array) in
+# migration 0033. The column now holds a list of akinator specialty/section
+# slugs so a single program can match multiple specialties (e.g. DevOps maps
+# to both "software-engineer" and "it-infrastructure-security").
+
 from app.database import Base
 
 
@@ -20,7 +25,7 @@ class Program(Base):
         index=True,
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    direction_slug: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    direction_slugs: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
     language: Mapped[str] = mapped_column(String(50), nullable=False)
     cost_per_year: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)

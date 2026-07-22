@@ -20,7 +20,7 @@ class UniversityBrief(BaseModel):
 class ProgramBrief(BaseModel):
     id: uuid.UUID
     name: str
-    direction_slug: str
+    direction_slugs: list[str]
     language: str
     cost_per_year: Decimal | None
     description: str | None
@@ -32,7 +32,7 @@ class ProgramBrief(BaseModel):
 class ProgramDetail(BaseModel):
     id: uuid.UUID
     name: str
-    direction_slug: str
+    direction_slugs: list[str]
     language: str
     cost_per_year: Decimal | None
     description: str | None
