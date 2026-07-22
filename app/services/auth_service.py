@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 from jose import jwt
 from passlib.context import CryptContext
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -11,6 +11,7 @@ from app.models.email_verification import EmailVerificationToken
 from app.models.user import User
 from app.schemas.auth import RegisterResponse
 from app.services import email_service
+from app.services.email_validator import EmailValidator, default_validator
 from app.services.token_utils import generate_code, hash_code
 
 _pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -54,11 +55,51 @@ async def _create_verification_token(user_id: uuid.UUID, db: AsyncSession) -> st
     return code
 
 
-async def register(email: str, password: str, db: AsyncSession) -> RegisterResponse:
-    result = await db.execute(select(User).where(User.email == email))
-    if result.scalar_one_or_none():
-        raise ValueError("Email already exists")
+async def _purge_stale_unconfirmed(db: AsyncSession) -> None:
+    """Delete unconfirmed accounts created more than 24 hours ago."""
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    await db.execute(
+        delete(User).where(
+            User.is_verified.is_(False),
+            User.created_at < cutoff,
+        )
+    )
 
+
+async def register(
+    email: str,
+    password: str,
+    db: AsyncSession,
+    validator: EmailValidator = default_validator,
+) -> RegisterResponse:
+    # 1. MX-record check — rejects domains with no mail server.
+    await validator.validate(email)
+
+    # 2. Purge abandoned unconfirmed accounts older than 24 h.
+    await _purge_stale_unconfirmed(db)
+
+    # 3. Check for an existing account with this email.
+    result = await db.execute(select(User).where(User.email == email))
+    existing = result.scalar_one_or_none()
+
+    if existing is not None:
+        if existing.is_verified:
+            # Confirmed account — keep the 409-equivalent behaviour.
+            raise ValueError("Email already exists")
+
+        # Unconfirmed account that survived the stale purge (< 24 h old):
+        # reset it in-place so the user can correct a typo without waiting.
+        existing.hashed_password = hash_password(password)
+        existing.created_at = datetime.now(timezone.utc)
+        await db.flush()
+
+        code = await _create_verification_token(existing.id, db)
+        await db.commit()
+
+        await email_service.send_verification_email(email, code)
+        return RegisterResponse(user_id=existing.id, email=email, message="Код отправлен на почту")
+
+    # 4. Fresh registration.
     user = User(email=email, hashed_password=hash_password(password), is_verified=False)
     db.add(user)
     await db.flush()
