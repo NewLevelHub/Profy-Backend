@@ -131,15 +131,18 @@ SPECIALTIES: list[dict] = [
     {"slug": "general-medicine", "name": "Лечебное дело", "label_junior": "Врач", "section": "akinator-medicine",
      "description": "Лечебное дело готовит врачей широкого профиля — терапевтов, хирургов, врачей скорой помощи и психиатров. Конкретная специализация выбирается позже, в ординатуре, а не при поступлении.",
      "profile": {"People": 2, "Living": 2, "Phys": 1, "Care": 2, "Motor": 1, "Exp": 2, "Focus": 1, "Risk": 1, "Struct": 1, "Pace": 1, "Acad": 2, "PhysSt": 1, "Emp": 1, "Predict": 1},
-     "professions": ["Терапевт", "Хирург", "Врач скорой помощи", "Психиатр", "Кардиолог", "Педиатр"]},
+     "professions": ["Терапевт", "Хирург", "Врач скорой помощи", "Психиатр", "Кардиолог", "Педиатр"],
+     "subjects_required": {"Биология": 2, "Химия": 2, "Русский язык": 1}},
     {"slug": "dentist", "name": "Стоматология", "label_junior": "Зубной врач", "section": "akinator-medicine",
      "description": "Стоматология лечит зубы и полость рта — точная, кропотливая работа руками, требующая аккуратности и внимания к деталям.",
      "profile": {"People": 1, "Living": 2, "Phys": 1, "Care": 2, "Motor": 2, "Exp": 2, "Focus": 2, "Struct": 1, "Acad": 2},
-     "professions": ["Стоматолог-терапевт", "Стоматолог-хирург", "Ортодонт", "Детский стоматолог"]},
+     "professions": ["Стоматолог-терапевт", "Стоматолог-хирург", "Ортодонт", "Детский стоматолог"],
+     "subjects_required": {"Биология": 2, "Химия": 2, "Физика": 1}},
     {"slug": "pharmacist", "name": "Фармация", "label_junior": "Аптекарь", "section": "akinator-medicine",
      "description": "Фармация готовит специалистов, которые разбираются в лекарствах — помогают подобрать нужный препарат и объясняют, как его правильно принимать.",
      "profile": {"People": 1, "Living": 1, "Data": 1, "Care": 1, "Exp": 2, "Focus": 1, "Struct": 2, "Predict": -1, "Acad": 1, "Math": 1},
-     "professions": ["Фармацевт", "Провизор", "Технолог фармацевтического производства"]},
+     "professions": ["Фармацевт", "Провизор", "Технолог фармацевтического производства"],
+     "subjects_required": {"Химия": 2, "Биология": 2, "Математика": 1}},
 
     # Помощь и психология — три разных диплома, компрессии нет
     {"slug": "psychologist", "name": "Психология", "section": "akinator-psychology-help",
@@ -154,15 +157,18 @@ SPECIALTIES: list[dict] = [
      # profile's real signature (People/Care/Emp/Exp/Focus/Acad, all still
      # at magnitude 2) is untouched.
      "profile": {"People": 2, "Care": 2, "Emp": 2, "Exp": 2, "Focus": 2, "Motiv": -1, "Acad": 2, "Data": -1},
-     "professions": ["Психолог", "Клинический психолог", "Коуч"]},
+     "professions": ["Психолог", "Клинический психолог", "Коуч"],
+     "subjects_required": {"Обществознание": 2, "Биология": 1, "Русский язык": 1}},
     {"slug": "speech-therapist", "name": "Логопедия и дефектология", "label_junior": "Логопед", "section": "akinator-psychology-help",
      "description": "Логопедия и дефектология учат помогать детям и взрослым с речевыми и развивающими нарушениями — через регулярные занятия и коррекционные методики.",
      "profile": {"People": 2, "Care": 1, "Dev": 2, "Emp": 1, "Exp": 2, "Focus": 1, "Struct": 1, "Acad": 1},
-     "professions": ["Логопед", "Дефектолог", "Специалист по коррекционной педагогике"]},
+     "professions": ["Логопед", "Дефектолог", "Специалист по коррекционной педагогике"],
+     "subjects_required": {"Русский язык": 2, "Биология": 1, "Обществознание": 1}},
     {"slug": "social-worker", "name": "Социальная работа", "section": "akinator-psychology-help",
      "description": "Социальная работа готовит специалистов, которые помогают семьям и людям в трудной жизненной ситуации — организуют поддержку и решают практические проблемы.",
      "profile": {"People": 2, "Care": 2, "Emp": 2, "Lead": 1, "Struct": 1, "Motiv": -1, "Pace": 1, "Predict": 1, "Acad": 1},
-     "professions": ["Социальный работник", "Социальный педагог", "Специалист по соцзащите"]},
+     "professions": ["Социальный работник", "Социальный педагог", "Специалист по соцзащите"],
+     "subjects_required": {"Обществознание": 2, "История": 1, "Русский язык": 1}},
 
     # Животные и природа
     # Merge (specialty pivot): veterinarian+cynologist — KazATU runs both under
@@ -170,19 +176,23 @@ SPECIALTIES: list[dict] = [
     {"slug": "veterinary-zootechnics", "name": "Ветеринария и зоотехния", "label_junior": "Специалист по животным", "section": "akinator-animals-nature",
      "description": "Ветеринария и зоотехния объединяет лечение животных и уход за ними — от домашних питомцев до служебных собак и крупного скота.",
      "profile": {"People": 1, "Living": 2, "Phys": 1, "Care": 2, "Motor": 1, "Dev": 1, "Exp": 2, "Focus": 1, "Struct": 1, "Acad": 2, "PhysSt": 1},
-     "professions": ["Ветеринар", "Зоотехник", "Кинолог"]},
+     "professions": ["Ветеринар", "Зоотехник", "Кинолог"],
+     "subjects_required": {"Биология": 2, "Химия": 1, "География": 1}},
     {"slug": "agronomist", "name": "Агрономия", "label_junior": "Специалист по растениям", "section": "akinator-animals-nature",
      "description": "Агрономия готовит специалистов по выращиванию растений — подбору условий, удобрений и ухода для здорового и обильного урожая.",
      "profile": {"Living": 2, "Phys": 1, "Data": 1, "Exp": 1, "Struct": 1, "Predict": -1, "PhysSt": 1},
-     "professions": ["Агроном", "Агроинженер", "Специалист по растениеводству"]},
+     "professions": ["Агроном", "Агроинженер", "Специалист по растениеводству"],
+     "subjects_required": {"Биология": 2, "Химия": 1, "География": 1}},
     {"slug": "zoologist", "name": "Биология и зоология", "label_junior": "Учёный по животным", "section": "akinator-animals-nature",
      "description": "Биология и зоология изучают животных и их поведение — наблюдение, исследование и описание жизни дикой природы.",
      "profile": {"Living": 2, "Data": 1, "Obj": -2, "Exp": 2, "Focus": 2, "Auto": 1, "Predict": 1, "Acad": 2, "People": -1, "PhysSt": 1},
-     "professions": ["Зоолог", "Биолог-исследователь"]},
+     "professions": ["Зоолог", "Биолог-исследователь"],
+     "subjects_required": {"Биология": 2, "География": 1, "Химия": 1}},
     {"slug": "ecologist", "name": "Экология и природопользование", "section": "akinator-animals-nature",
      "description": "Экология и природопользование изучают, как человек влияет на природу, и ищут способы защитить экосистемы и снизить вред окружающей среде.",
      "profile": {"Living": 2, "Data": 1, "Ideas": 1, "Obj": -2, "Exp": 1, "Auto": 1, "Predict": 1, "Acad": 1},
-     "professions": ["Эколог", "Специалист по экомониторингу", "Специалист по устойчивому развитию"]},
+     "professions": ["Эколог", "Специалист по экомониторингу", "Специалист по устойчивому развитию"],
+     "subjects_required": {"Биология": 2, "География": 2, "Химия": 1}},
 
     # IT и данные (ux-designer перенесён в «Творчество и дизайн» — по осям
     # профиля Ideas/Inv он ближе к дизайну, чем к программированию/данным)
@@ -203,7 +213,8 @@ SPECIALTIES: list[dict] = [
      # different kind of fix (a real differentiating trait, not more
      # rival-weakening) to progress further.
      "profile": {"People": -1, "Living": -1, "Data": 2, "Ideas": 1, "Inv": 1, "Obj": 1, "Care": -1, "Dev": -1, "Exp": 2, "Focus": 2, "Auto": 1, "Struct": 2, "Acad": 1, "PhysSt": -2, "Math": 2, "Predict": -1},
-     "professions": ["Backend-разработчик", "Frontend-разработчик", "Fullstack-разработчик", "Мобильный разработчик", "QA-инженер"]},
+     "professions": ["Backend-разработчик", "Frontend-разработчик", "Fullstack-разработчик", "Мобильный разработчик", "QA-инженер"],
+     "subjects_required": {"Математика": 2, "Информатика": 2}},
     {"slug": "data-science", "name": "Data Science", "label_junior": "Аналитик", "section": "akinator-it-data",
      "description": "Data Science находит закономерности в больших массивах данных и помогает бизнесу принимать решения — от аналитики до машинного обучения.",
      # Struct:1 removal reverted (calibration playtest pass, 2026-07, round 6
@@ -213,23 +224,27 @@ SPECIALTIES: list[dict] = [
      # every remaining axis (including the bad Focus/Math overlap with
      # finance-accounting) score relatively *stronger*, not weaker. Restored.
      "profile": {"People": -1, "Living": -2, "Data": 2, "Obj": -2, "Care": -2, "Dev": -2, "Exp": 1, "Focus": 2, "Auto": 1, "Struct": 1, "Predict": -1, "Acad": 1, "PhysSt": -2, "Math": 2},
-     "professions": ["Аналитик данных", "Data Scientist", "BI-аналитик", "ML-инженер"]},
+     "professions": ["Аналитик данных", "Data Scientist", "BI-аналитик", "ML-инженер"],
+     "subjects_required": {"Математика": 2, "Информатика": 2, "Физика": 1}},
     {"slug": "it-infrastructure-security", "name": "Кибербезопасность и IT-инфраструктура", "label_junior": "Компьютерный мастер", "section": "akinator-it-data",
      "description": "Кибербезопасность и IT-инфраструктура следят, чтобы компьютеры, сети и данные компании работали без сбоев и были защищены от угроз.",
      "profile": {"Phys": 1, "Data": 2, "Obj": 1, "Exp": 2, "Focus": -1, "Auto": 1, "Struct": 1, "Pace": 1, "Predict": 1, "PhysSt": -1, "Math": 1, "People": -1},
-     "professions": ["Системный администратор", "Сетевой инженер", "Специалист по кибербезопасности"]},
+     "professions": ["Системный администратор", "Сетевой инженер", "Специалист по кибербезопасности"],
+     "subjects_required": {"Информатика": 2, "Математика": 2}},
 
     # Инженерия и техника
     {"slug": "mechanical-engineer", "name": "Машиностроение", "label_junior": "Инженер", "section": "akinator-engineering-tech",
      "description": "Машиностроение проектирует машины и механизмы — от отдельных деталей до целых устройств, — рассчитывая, как они будут работать.",
      "profile": {"Phys": 2, "Data": 1, "Ideas": 1, "Inv": 1, "Obj": 2, "Exp": 2, "Focus": 1, "Struct": 1, "Acad": 2, "Math": 2, "People": -1},
-     "professions": ["Инженер-механик", "Инженер-конструктор", "Инженер по автоматизации"]},
+     "professions": ["Инженер-механик", "Инженер-конструктор", "Инженер по автоматизации"],
+     "subjects_required": {"Физика": 2, "Математика": 2}},
     # Merge (specialty pivot): civil-engineer+building-systems-engineer — ТГВ
     # is a профиль within «Строительство», not a separate accredited code.
     {"slug": "civil-engineering", "name": "Строительство и инженерные системы", "label_junior": "Инженер", "section": "akinator-engineering-tech",
      "description": "Строительство и инженерные системы проектируют здания, сооружения и их инженерные системы — отопление, вентиляцию и водоснабжение, — рассчитывая прочность и надёжность.",
      "profile": {"Phys": 2, "Data": 1, "Obj": 2, "Lead": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Risk": -1, "Acad": 2, "Math": 2, "Motor": 1, "Predict": -1, "People": -1},
-     "professions": ["Инженер-строитель", "Инженер инженерных систем", "Инженер-проектировщик"]},
+     "professions": ["Инженер-строитель", "Инженер инженерных систем", "Инженер-проектировщик"],
+     "subjects_required": {"Математика": 2, "Физика": 2}},
     {"slug": "pilot", "name": "Лётная эксплуатация", "section": "akinator-engineering-tech",
      "description": "Лётная эксплуатация готовит пилотов и специалистов управления воздушным движением — работа требует быстрой реакции, хладнокровия и точного следования процедурам.",
      # Inv:-1, Care:-1 added (calibration playtest pass, 2026-07, round 3):
@@ -242,7 +257,8 @@ SPECIALTIES: list[dict] = [
      # (inventing from scratch), and the job has no individual-care
      # component (Care) the way medicine/therapy professions do.
      "profile": {"Phys": 1, "Data": 1, "Lead": 1, "Motor": 1, "Exp": 2, "Focus": 2, "Risk": 1, "Struct": 2, "Pace": 1, "Acad": 1, "Math": 1, "Inv": -1, "Care": -1},
-     "professions": ["Пилот", "Штурман", "Диспетчер УВД"]},
+     "professions": ["Пилот", "Штурман", "Диспетчер УВД"],
+     "subjects_required": {"Физика": 2, "Математика": 2, "Физическая культура": 1}},
 
     # Творчество и дизайн
     # Merge (specialty pivot): graphic-designer+illustrator+fashion-designer+
@@ -260,7 +276,8 @@ SPECIALTIES: list[dict] = [
      # carried it either way; People:-1 reinforces that this profile works
      # on objects/visuals, not people directly.
      "profile": {"Ideas": 2, "Inv": 2, "Obj": 1, "Exp": 1, "Auto": 1, "Struct": -1, "PhysSt": -1, "Motor": 1, "Phys": 1, "Vis": -1, "People": -1},
-     "professions": ["Графический дизайнер", "Иллюстратор", "UX/UI-дизайнер", "Модельер", "Дизайнер мебели"]},
+     "professions": ["Графический дизайнер", "Иллюстратор", "UX/UI-дизайнер", "Модельер", "Дизайнер мебели"],
+     "subjects_required": {"Искусство": 2, "Информатика": 1}},
     {"slug": "architect", "name": "Архитектура", "section": "akinator-creative-design",
      "description": "Архитектура проектирует здания и пространства, соединяя эстетику с инженерными расчётами.",
      # Care:-1 added (calibration playtest pass, 2026-07, round 9): already
@@ -272,18 +289,21 @@ SPECIALTIES: list[dict] = [
      # "помогать людям" style questions the way its Focus/Struct/Exp
      # overlap otherwise lets it.
      "profile": {"People": 1, "Phys": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Auto": 1, "Acad": 2, "Math": 1, "PhysSt": -1, "Care": -1},
-     "professions": ["Архитектор", "Ландшафтный архитектор", "Архитектор интерьеров"]},
+     "professions": ["Архитектор", "Ландшафтный архитектор", "Архитектор интерьеров"],
+     "subjects_required": {"Математика": 2, "Искусство": 2}},
 
     # Сцена и медиа — все аккредитованные программы творческих вузов различны,
     # компрессии нет даже при агрессивной группировке
     {"slug": "actor", "name": "Актёрское искусство", "section": "akinator-stage-media",
      "description": "Актёрское искусство готовит к работе на сцене, в кино и на телевидении — воплощению ролей, требующему эмоциональной открытости и умения держаться перед публикой.",
      "profile": {"People": 1, "Ideas": 2, "Vis": 2, "Emp": 1, "Motor": 1, "Risk": 1, "Struct": -1, "Auto": -1, "Predict": 1, "PhysSt": 1, "Math": -1, "Data": -1},
-     "professions": ["Актёр театра", "Актёр кино", "Актёр озвучивания"]},
+     "professions": ["Актёр театра", "Актёр кино", "Актёр озвучивания"],
+     "subjects_required": {"Искусство": 2, "Литература": 1}},
     {"slug": "musician", "name": "Музыкальное искусство", "section": "akinator-stage-media",
      "description": "Музыкальное искусство учит сочинять и исполнять музыку — на сцене, в студии или в составе оркестра.",
      "profile": {"Ideas": 2, "Vis": 1, "Motor": 2, "Exp": 2, "Focus": 2, "Auto": 1, "Risk": 1, "Struct": -1},
-     "professions": ["Музыкант-исполнитель", "Композитор", "Звукорежиссёр"]},
+     "professions": ["Музыкант-исполнитель", "Композитор", "Звукорежиссёр"],
+     "subjects_required": {"Искусство": 2, "Литература": 1}},
     {"slug": "film-director", "name": "Режиссура", "section": "akinator-stage-media",
      "description": "Режиссура учит придумывать, как будет выглядеть фильм или спектакль, и руководить творческой командой.",
      # Data:-1, Motor:-1 added (calibration playtest pass, 2026-07, round 3):
@@ -296,21 +316,25 @@ SPECIALTIES: list[dict] = [
      # (Motor:2 there) — this profile just never carried the negative side
      # of that same fork.
      "profile": {"People": 1, "Ideas": 2, "Inv": 2, "Lead": 2, "Exp": 1, "Focus": 1, "Risk": 1, "Auto": 1, "Struct": -1, "Data": -1, "Motor": -1},
-     "professions": ["Режиссёр кино", "Режиссёр театра", "Режиссёр монтажа"]},
+     "professions": ["Режиссёр кино", "Режиссёр театра", "Режиссёр монтажа"],
+     "subjects_required": {"Искусство": 2, "Литература": 2}},
     {"slug": "cinematographer", "name": "Операторское искусство", "label_junior": "Оператор кино", "section": "akinator-stage-media",
      "description": "Операторское искусство отвечает за то, как выглядит каждый кадр — свет, ракурс и движение камеры.",
      "profile": {"Phys": 1, "Ideas": 2, "Inv": 1, "Vis": -1, "Motor": 2, "Exp": 2, "Focus": 2, "Auto": 1, "Acad": 1, "PhysSt": 1},
-     "professions": ["Кинооператор", "Фотограф", "Видеооператор"]},
+     "professions": ["Кинооператор", "Фотограф", "Видеооператор"],
+     "subjects_required": {"Искусство": 2, "Физика": 1}},
     {"slug": "makeup-artist-film", "name": "Грим и художественный образ", "label_junior": "Гримёр", "section": "akinator-stage-media",
      "description": "Грим и художественный образ создают образы актёров с помощью грима, причёсок и костюмов — для кино, театра и телевидения.",
      "profile": {"People": 2, "Ideas": 2, "Inv": 2, "Motor": 2, "Emp": 1, "Exp": 1, "Vis": -1, "Auto": 1, "Acad": 1},
-     "professions": ["Художник-гримёр", "Визажист кино и театра", "Художник по костюмам"]},
+     "professions": ["Художник-гримёр", "Визажист кино и театра", "Художник по костюмам"],
+     "subjects_required": {"Искусство": 2, "Химия": 1}},
 
     # Слово и коммуникация — 4 разных аккредитованных программы, без изменений
     {"slug": "journalist", "name": "Журналистика", "section": "akinator-words-communication",
      "description": "Журналистика учит находить, проверять и рассказывать истории — держать людей в курсе того, что происходит в мире.",
      "profile": {"People": 1, "Ideas": 1, "Obj": -2, "Vis": 1, "Exp": 1, "Emp": 1, "Risk": 1, "Pace": 2, "Predict": 2, "Acad": 1, "Struct": -1},
-     "professions": ["Журналист", "Репортёр", "Блогер-журналист"]},
+     "professions": ["Журналист", "Репортёр", "Блогер-журналист"],
+     "subjects_required": {"Русский язык": 2, "Литература": 2, "Обществознание": 1}},
     {"slug": "translator", "name": "Переводческое дело", "section": "akinator-words-communication",
      "description": "Переводческое дело учит передавать смысл текста или речи с одного языка на другой, сохраняя точность и стиль.",
      # Motor:-1 addition reverted (calibration playtest pass, 2026-07, round 7
@@ -333,7 +357,8 @@ SPECIALTIES: list[dict] = [
      # data-science/finance-accounting/software-engineer, never against its
      # own resolver (order 32, which doesn't touch Math).
      "profile": {"Ideas": 1, "Obj": -1, "Exp": 2, "Focus": 2, "Auto": 2, "Struct": 1, "Predict": -1, "Acad": 1, "People": -1, "Math": -1},
-     "professions": ["Переводчик", "Устный переводчик", "Локализатор"]},
+     "professions": ["Переводчик", "Устный переводчик", "Локализатор"],
+     "subjects_required": {"Английский язык": 2, "Русский язык": 2}},
     {"slug": "lawyer", "name": "Юриспруденция", "section": "akinator-words-communication",
      "description": "Юриспруденция учит разбираться в законах и защищать интересы людей и компаний — в судах, договорах и переговорах.",
      # Math:-1, Inv:-1 added (calibration playtest pass, 2026-07, round 9):
@@ -345,31 +370,37 @@ SPECIALTIES: list[dict] = [
      # rules, not creating them (distinguishes from the design/IT cluster
      # that shares Inv:2).
      "profile": {"People": 1, "Data": 1, "Obj": -1, "Lead": 1, "Vis": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Acad": 2, "Math": -1, "Inv": -1},
-     "professions": ["Юрист", "Адвокат", "Юрисконсульт"]},
+     "professions": ["Юрист", "Адвокат", "Юрисконсульт"],
+     "subjects_required": {"Обществознание": 2, "История": 2, "Русский язык": 1}},
     {"slug": "pr-specialist", "name": "Реклама и связи с общественностью", "label_junior": "Специалист по рекламе", "section": "akinator-words-communication",
      "description": "Реклама и связи с общественностью учат рассказывать о компании или продукте так, чтобы это заметили и запомнили.",
      "profile": {"People": 1, "Ideas": 2, "Inv": 2, "Vis": 1, "Emp": 1, "Exp": 1, "Focus": 1, "Auto": 1, "Struct": -1, "Data": -1, "Math": -1, "Acad": 1},
-     "professions": ["PR-специалист", "Копирайтер", "Бренд-менеджер"]},
+     "professions": ["PR-специалист", "Копирайтер", "Бренд-менеджер"],
+     "subjects_required": {"Русский язык": 2, "Обществознание": 1, "Английский язык": 1}},
 
     # Образование — уже на минимуме (2 листа), не сжимаем
     {"slug": "school-teacher", "name": "Педагогическое образование", "label_junior": "Учитель", "section": "akinator-education",
      "description": "Педагогическое образование готовит учителей, которые объясняют школьный материал и помогают ученикам разобраться в предмете.",
      "profile": {"People": 2, "Dev": 2, "Care": 1, "Lead": 1, "Vis": 1, "Exp": 1, "Emp": 1, "Focus": -1, "Struct": 1, "Acad": 1},
-     "professions": ["Учитель-предметник", "Классный руководитель", "Методист"]},
+     "professions": ["Учитель-предметник", "Классный руководитель", "Методист"],
+     "subjects_required": {"Русский язык": 2, "Литература": 1, "Обществознание": 1}},
     {"slug": "kindergarten-teacher", "name": "Дошкольное образование", "label_junior": "Воспитатель", "section": "akinator-education",
      "description": "Дошкольное образование готовит воспитателей, которые заботятся о детях дошкольного возраста — организуют игры, занятия и распорядок дня.",
      "profile": {"People": 2, "Care": 2, "Dev": 1, "Emp": 2, "Focus": -1, "Struct": 1, "Pace": 1, "PhysSt": 1},
-     "professions": ["Воспитатель", "Педагог дошкольного образования"]},
+     "professions": ["Воспитатель", "Педагог дошкольного образования"],
+     "subjects_required": {"Русский язык": 2, "Обществознание": 1}},
 
     # Спорт и тело — уже на минимуме (2 листа), не сжимаем
     {"slug": "sports-coach", "name": "Физическая культура и спорт", "label_junior": "Тренер", "section": "akinator-sports-body",
      "description": "Физическая культура и спорт учат технике вида спорта и мотивации спортсменов на результат.",
      "profile": {"People": 1, "Living": 1, "Dev": 2, "Care": 1, "Lead": 1, "Motor": 1, "Emp": 1, "Motiv": 2, "Pace": 1, "PhysSt": 1, "Exp": 1},
-     "professions": ["Спортивный тренер", "Инструктор фитнеса", "Тренер-преподаватель"]},
+     "professions": ["Спортивный тренер", "Инструктор фитнеса", "Тренер-преподаватель"],
+     "subjects_required": {"Физическая культура": 2, "Биология": 1}},
     {"slug": "rehabilitation-therapist", "name": "Реабилитология", "label_junior": "Врач по восстановлению", "section": "akinator-sports-body",
      "description": "Реабилитология помогает восстанавливать подвижность тела после травм и операций с помощью упражнений и процедур.",
      "profile": {"People": 1, "Living": 2, "Care": 2, "Dev": 1, "Motor": 1, "Exp": 2, "Emp": 1, "Focus": 1, "Struct": 1, "Acad": 1, "PhysSt": 1},
-     "professions": ["Реабилитолог", "Специалист по адаптивной физкультуре", "Врач ЛФК"]},
+     "professions": ["Реабилитолог", "Специалист по адаптивной физкультуре", "Врач ЛФК"],
+     "subjects_required": {"Биология": 2, "Физическая культура": 2}},
 
     # Еда и гостеприимство
     # Merge (specialty pivot): head-chef+confectionery-technologist share one
@@ -389,7 +420,8 @@ SPECIALTIES: list[dict] = [
      # side of the existing order=34 fork, this profile just never carried
      # the negative half of it).
      "profile": {"Phys": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Motor": 2, "Lead": 1, "Focus": 1, "Struct": 2, "Pace": 1, "PhysSt": 1, "Acad": 1, "Exp": 1, "Predict": -1, "Math": -1, "People": -1},
-     "professions": ["Шеф-повар", "Кондитер-технолог", "Технолог пищевого производства"]},
+     "professions": ["Шеф-повар", "Кондитер-технолог", "Технолог пищевого производства"],
+     "subjects_required": {"Химия": 2, "Биология": 1}},
     {"slug": "hospitality-manager", "name": "Ресторанное и гостиничное дело", "label_junior": "Управляющий кафе", "section": "akinator-food-hospitality",
      "description": "Ресторанное и гостиничное дело организует работу кафе, ресторана или отеля — от персонала до атмосферы для гостей.",
      # Exp:-1, Focus:-1 added (calibration playtest pass, 2026-07, round 3):
@@ -402,7 +434,8 @@ SPECIALTIES: list[dict] = [
      # event-paced, constantly interrupted by guests/staff, the opposite of
      # e.g. finance-accounting's Focus:2).
      "profile": {"People": 2, "Data": 1, "Lead": 2, "Emp": 1, "Motiv": 1, "Risk": 1, "Struct": 1, "Pace": 2, "Predict": 1, "PhysSt": 1, "Acad": 1, "Exp": -1, "Focus": -1},
-     "professions": ["Менеджер ресторанного дела", "Менеджер отеля", "Ивент-менеджер"]},
+     "professions": ["Менеджер ресторанного дела", "Менеджер отеля", "Ивент-менеджер"],
+     "subjects_required": {"Английский язык": 2, "Обществознание": 1, "Экономика": 1}},
 
     # Бизнес и продажи
     # Merge (specialty pivot): sales-manager+entrepreneur+logistician share one
@@ -419,7 +452,8 @@ SPECIALTIES: list[dict] = [
      # (Struct — the literal opposite end from e.g. finance-accounting's
      # Struct:2 or civil-engineering's Struct:2).
      "profile": {"People": 1, "Emp": 1, "Vis": 1, "Motiv": 1, "Risk": 1, "Auto": 1, "Predict": 1, "Pace": 1, "Inv": 1, "Lead": 1, "Data": 1, "Exp": -1, "Struct": -1},
-     "professions": ["Менеджер по продажам", "Предприниматель", "Логист", "Менеджер проектов"]},
+     "professions": ["Менеджер по продажам", "Предприниматель", "Логист", "Менеджер проектов"],
+     "subjects_required": {"Экономика": 2, "Математика": 1, "Обществознание": 1}},
     {"slug": "marketing", "name": "Маркетинг", "label_junior": "Специалист по рекламе", "section": "akinator-business-sales",
      "description": "Маркетинг учит продумывать, как рассказать о продукте так, чтобы его захотели купить — анализировать рынок и запускать рекламные кампании.",
      # Ideas 1->2, Vis 1->2 (calibration playtest pass, 2026-07, round 6): this
@@ -431,7 +465,8 @@ SPECIALTIES: list[dict] = [
      # — sharpening them to match the strength convention used everywhere
      # else in the catalog.
      "profile": {"People": 1, "Data": 1, "Ideas": 2, "Inv": 1, "Obj": -1, "Vis": 2, "Emp": 1, "Motiv": 1, "Predict": 1, "Acad": 1},
-     "professions": ["Маркетолог", "Digital-маркетолог", "Бренд-менеджер"]},
+     "professions": ["Маркетолог", "Digital-маркетолог", "Бренд-менеджер"],
+     "subjects_required": {"Экономика": 2, "Обществознание": 1, "Русский язык": 1}},
     {"slug": "finance-accounting", "name": "Финансы и учёт", "section": "akinator-business-sales",
      "description": "Финансы и учёт готовят специалистов, которые ведут финансовый учёт компании — следят, чтобы деньги, налоги и отчётность были в порядке.",
      # Focus 2->1 (calibration playtest pass, 2026-07, round 8): traced 5
@@ -449,7 +484,8 @@ SPECIALTIES: list[dict] = [
      # alone (score drops only 2.92->2.70), while data-science's accidental
      # pull toward that option drops more meaningfully (1.95->1.62).
      "profile": {"Data": 2, "Obj": -1, "Exp": 2, "Focus": 1, "Struct": 2, "Motiv": -1, "Auto": 1, "Predict": -2, "Pace": -1, "Acad": 1, "Math": 2, "People": -1},
-     "professions": ["Бухгалтер", "Финансовый аналитик", "Аудитор"]},
+     "professions": ["Бухгалтер", "Финансовый аналитик", "Аудитор"],
+     "subjects_required": {"Математика": 2, "Экономика": 2}},
 
     # Безопасность и спасение — уже на минимуме (2 листа), не сжимаем
     {"slug": "fire-safety-engineer", "name": "Техносферная безопасность", "label_junior": "Пожарный", "section": "akinator-safety-rescue",
@@ -469,11 +505,13 @@ SPECIALTIES: list[dict] = [
      # from scratch — applies established safety codes/standards, same
      # reasoning already used for lawyer's Inv:-1 (round 9).
      "profile": {"People": 1, "Phys": 1, "Data": 1, "Care": 1, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 1, "Risk": 2, "Struct": 2, "Pace": 1, "Predict": 1, "PhysSt": 1, "Acad": 1, "Math": 1, "Auto": -1, "Inv": -1},
-     "professions": ["Инженер пожарной безопасности", "Специалист по охране труда", "Инспектор пожарной безопасности"]},
+     "professions": ["Инженер пожарной безопасности", "Специалист по охране труда", "Инспектор пожарной безопасности"],
+     "subjects_required": {"Физика": 2, "Химия": 1, "Физическая культура": 1}},
     {"slug": "police-officer", "name": "Правоохранительная деятельность", "section": "akinator-safety-rescue",
      "description": "Правоохранительная деятельность следит за порядком и безопасностью людей, реагирует на происшествия и расследует правонарушения.",
      "profile": {"People": 1, "Phys": 1, "Lead": 1, "Exp": 1, "Focus": -1, "Risk": 1, "Struct": 2, "Pace": 1, "Predict": 1, "PhysSt": 1},
-     "professions": ["Полицейский", "Следователь", "Инспектор"]},
+     "professions": ["Полицейский", "Следователь", "Инспектор"],
+     "subjects_required": {"Обществознание": 2, "История": 1, "Физическая культура": 1}},
 ]
 
 assert len(SECTIONS) == 13, f"expected 13 sections, got {len(SECTIONS)}"
@@ -1228,6 +1266,9 @@ async def seed_specialties(
             if existing.label_junior != label_junior:
                 existing.label_junior = label_junior
                 changed = True
+            if existing.subjects_required != spec["subjects_required"]:
+                existing.subjects_required = spec["subjects_required"]
+                changed = True
             updated += 1 if changed else 0
             skipped += 0 if changed else 1
             continue
@@ -1243,6 +1284,7 @@ async def seed_specialties(
             professions=spec["professions"],
             age_groups=SPECIALTY_AGE_GROUPS,
             label_junior=label_junior,
+            subjects_required=spec["subjects_required"],
         )
         db.add(direction)
         inserted += 1

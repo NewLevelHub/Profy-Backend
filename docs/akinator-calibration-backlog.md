@@ -171,8 +171,10 @@ shorter ceilings or a way to weight later answers more than earlier noise.
 `fire-safety-engineer`: added `Auto:-1, Inv:-1` (round 15) — it shared 8 of
 11 axes with it-infrastructure-security and had zero negatives, so any
 generic "precise/structured" question fed both, explaining the real user's
-"IT the whole time, still got fire-safety" experience. Confirmed
-it-infrastructure-security 75%→77%, fire-safety-engineer correctly cooled
-82%→65%. A same-seed n=100 repeat was in flight to rule out noise when this
-doc was written — check `/tmp/round15_repeat.txt` if it still exists, or
-just rerun the census command above.
+"IT the whole time, still got fire-safety" experience. **Confirmed stable
+across two n=100 runs**: it-infrastructure-security 75%→77%→84%,
+fire-safety-engineer correctly cooled 82%→65%→76%. Both runs also landed on
+3/38 overall (translator, data-science, marketing/school-teacher — the same
+already-known chronic borderline cases, not a new regression from this fix).
+Still uncommitted as of this doc — `git status`/`git diff
+scripts/seed_akinator_content.py` before doing anything else with the repo.

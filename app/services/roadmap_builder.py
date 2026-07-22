@@ -13,6 +13,7 @@ from app.config import settings
 from app.models.assessment import Assessment
 from app.models.direction_roadmap import DirectionRoadmap
 from app.models.profile import AgeGroup, Profile
+from app.models.subject_readiness_session import SubjectReadinessSession, SubjectReadinessStatus
 from app.prompts import direction_roadmap as direction_prompt
 from app.schemas.roadmap import (
     DIRECTION_HORIZONS,
@@ -195,6 +196,31 @@ async def generate_direction_roadmap(
     return response
 
 
+async def _measured_subjects_to_focus(
+    assessment_id: uuid.UUID, db: AsyncSession
+) -> list[str] | None:
+    """Growth-area subjects from a completed subject readiness quiz (see
+    app/services/subject_readiness_service.py), if the student has taken one
+    for this assessment — grounds subjects_to_focus in a measured signal
+    instead of the LLM's guess. None if no completed quiz exists yet."""
+    session = (
+        await db.execute(
+            select(SubjectReadinessSession).where(
+                SubjectReadinessSession.assessment_id == assessment_id,
+                SubjectReadinessSession.status == SubjectReadinessStatus.completed,
+            )
+        )
+    ).scalar_one_or_none()
+    if session is None:
+        return None
+    growth_subjects = [
+        subject
+        for subject, scores in session.subject_scores.items()
+        if not scores.get("is_strength")
+    ]
+    return growth_subjects or None
+
+
 async def _upsert_direction_roadmap(
     assessment_id: uuid.UUID,
     slug: str,
@@ -226,7 +252,10 @@ async def _upsert_direction_roadmap(
     roadmap.growth_focus = plan.growth_focus.model_dump()
     roadmap.stages = [s.model_dump() for s in plan.stages]
     roadmap.skills_to_build = plan.skills_to_build
-    roadmap.subjects_to_focus = plan.subjects_to_focus
+    measured_subjects = await _measured_subjects_to_focus(assessment_id, db)
+    roadmap.subjects_to_focus = (
+        measured_subjects if measured_subjects is not None else plan.subjects_to_focus
+    )
     roadmap.university_track = plan.university_track.model_dump()
     return roadmap
 
