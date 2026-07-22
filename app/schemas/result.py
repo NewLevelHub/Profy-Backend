@@ -29,7 +29,7 @@ class AxisGrowthExplanation(BaseModel):
 
 class AxisComparisonItem(BaseModel):
     """One axis compared between the child's own normalized signal (see
-    result_service._child_axis_scores) and the target direction's needs —
+    result_service.child_axis_scores) and the target direction's needs —
     "match" if the child's signal meets the need, "growth" if it falls
     short. `profile_value` is only set when the axis is actually one the
     direction needs (Direction.profile > 0); it's None for items surfaced

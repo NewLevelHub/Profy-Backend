@@ -2,9 +2,6 @@ import uuid
 
 from pydantic import BaseModel
 
-# Direction roadmap runs on 4 stages instead of the goal roadmap's 5 horizons.
-DIRECTION_HORIZONS = ["months_3", "months_6", "months_9", "months_12"]
-
 
 class RoadmapResource(BaseModel):
     """A concrete item from the app's content base (book, course, club, material).
@@ -45,40 +42,31 @@ class RoadmapResponse(BaseModel):
 
 
 # ─── Direction roadmap ─────────────────────────────────────────────────────────
-
-# What a step works on. Steps are tagged rather than grouped into fixed tracks,
-# so the model decides how much of each a given stage actually needs.
-STEP_TRACKS = ["profile", "growth", "integration"]
-
-
-class RoadmapStep(BaseModel):
-    text: str                       # short name of the step
-    description: str                # what to do, where to start, how to know it's done
-    track: str                      # profile | growth | integration
-    category: str
-    priority: int                   # 1 = do first
-    resources: list[RoadmapResource] = []
+#
+# Two layers: real curated/DB-backed facts (profession_options come from
+# Direction.professions, subjects_now weights from Direction.subjects_required,
+# university_requirements from real Program/University rows) plus a thin LLM
+# personalization layer (the `why`/`note` text, growth_focus, starter_actions
+# fallback) grounded in the student's measured signal. See
+# app/services/roadmap_builder.py and app/prompts/direction_roadmap.py.
 
 
-class DirectionStage(BaseModel):
-    horizon: str
-    title: str
-    # What the student will have by the end of the stage, and how it moves them
-    # towards the target role. Makes the plan explain itself.
-    outcome: str = ""
-    steps: list[RoadmapStep] = []
-    # Set from months_9 on, where the profile and growth work converge.
-    integration_project: str | None = None
+class ProfessionOption(BaseModel):
+    title: str                      # one of Direction.professions verbatim
+    # Set only when a real signal genuinely singles this one out among the
+    # direction's other professions; null when just listed as an open option —
+    # the model must not dress a guess as certainty (see roadmap_builder tests).
+    why: str | None = None
 
 
-class RoadmapTarget(BaseModel):
-    role: str                       # who the student is working towards becoming
-    why: str                        # why it fits *this* student
-    horizon_years: int
+class SubjectPriority(BaseModel):
+    subject: str
+    weight: int                     # from Direction.subjects_required — backend-attached, not LLM
+    note: str                       # 1-sentence personalized note, same evidence rules as growth_focus
 
 
 class GrowthFocus(BaseModel):
-    weakness: str                   # the weak spot the growth steps attack
+    weakness: str                   # the weak spot growth work should attack
     why_it_matters: str             # why it would hold them back in this direction
     # Which signal in the student's own data this was derived from. Forces the
     # model to ground the claim instead of inventing a plausible-sounding flaw,
@@ -86,9 +74,17 @@ class GrowthFocus(BaseModel):
     evidence: str = ""
 
 
-class UniversityTrack(BaseModel):
-    specialties: list[str]
-    prepare: list[str]
+class UniversityRequirement(BaseModel):
+    """Real admission facts for one program — backend-populated from
+    Program.requirements, never touched by the LLM (see
+    roadmap_builder._university_requirements_for)."""
+
+    program_name: str
+    university_name: str
+    city: str
+    exams: list[str] = []
+    admission_requirements: list[str] = []
+    admission_summary: str = ""
 
 
 class DirectionRoadmapResponse(BaseModel):
@@ -96,12 +92,12 @@ class DirectionRoadmapResponse(BaseModel):
     assessment_id: uuid.UUID
     direction_slug: str
     direction_name: str
-    target: RoadmapTarget
+    profession_options: list[ProfessionOption]
+    subjects_now: list[SubjectPriority]
+    starter_actions: list[str]
     growth_focus: GrowthFocus
-    stages: list[DirectionStage]
     skills_to_build: list[str]
-    subjects_to_focus: list[str]
-    university_track: UniversityTrack
+    university_requirements: list[UniversityRequirement]
 
     model_config = {"from_attributes": True}
 

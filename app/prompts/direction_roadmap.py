@@ -1,52 +1,59 @@
 """Direction roadmap prompt + strict output schema.
 
-Each stage is a flat, ordered list of steps rather than a fixed pair of tracks:
-every step is tagged `profile` (deepen the direction's core skill), `growth`
-(attack the weak spot that would hold the student back) or `integration` (work
-that needs both). The model decides how many of each a given stage needs — but
-every stage must carry at least one `growth` step, or the feature loses its point.
+Two layers, deliberately kept separate: real curated/DB-backed facts (which
+professions this direction actually contains, which subjects and university
+programs it requires) live in the database and are attached by
+roadmap_builder.py without ever going through the LLM. This module's job is
+the thin personalization layer on top — reading *this* student's measured
+signal and writing the `why`/`note`/`growth_focus` text, plus a small
+`starter_actions` fallback for directions that don't have curated
+`Direction.first_steps` yet.
 
-Structured Outputs (strict mode) forbids minItems/maxItems, so "exactly 4 stages,
-3-5 steps each" is asked for in the prompt and enforced by post-validation in the
-caller (`_valid_stages`).
+This replaced an earlier version that asked the LLM to invent a full
+4-stage/12-month plan with profile/growth/integration-tagged steps and a
+team-project "integration" milestone. Real-account testing showed two
+problems: the model dressed a guess (one specific profession) as certainty
+when the data didn't actually distinguish it from the direction's other
+listed professions, and steps drifted into abstractions ("собери команду")
+instead of concrete, subject-grounded action. See git history for the old
+prompt if that context is ever needed again.
 """
 import json
 
 from app.core.axes import AXIS_CATALOG
 from app.models.direction import Direction
-from app.schemas.roadmap import DIRECTION_HORIZONS, STEP_TRACKS
 from app.schemas.student_context import StudentContext
 
 _AXIS_LABELS: dict[str, str] = {axis.code: axis.label_ru for axis in AXIS_CATALOG}
 
-CATEGORIES = [
-    "knowledge", "skill", "practice", "project", "portfolio",
-    "soft_skill", "subject", "community", "exam", "university",
-]
-
-_STEP_SCHEMA: dict = {
+_PROFESSION_OPTION_SCHEMA: dict = {
     "type": "object",
     "additionalProperties": False,
-    "required": ["text", "description", "track", "category", "priority"],
+    "required": ["title", "why"],
     "properties": {
-        "text": {"type": "string"},
-        "description": {"type": "string"},
-        "track": {"type": "string", "enum": STEP_TRACKS},
-        "category": {"type": "string", "enum": CATEGORIES},
-        "priority": {"type": "integer"},
+        "title": {"type": "string"},
+        "why": {"type": ["string", "null"]},
     },
 }
 
-_STAGE_SCHEMA: dict = {
+_SUBJECT_NOW_SCHEMA: dict = {
     "type": "object",
     "additionalProperties": False,
-    "required": ["horizon", "title", "outcome", "steps", "integration_project"],
+    "required": ["subject", "note"],
     "properties": {
-        "horizon": {"type": "string", "enum": DIRECTION_HORIZONS},
-        "title": {"type": "string"},
-        "outcome": {"type": "string"},
-        "steps": {"type": "array", "items": _STEP_SCHEMA},
-        "integration_project": {"type": ["string", "null"]},
+        "subject": {"type": "string"},
+        "note": {"type": "string"},
+    },
+}
+
+_GROWTH_FOCUS_SCHEMA: dict = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["weakness", "why_it_matters", "evidence"],
+    "properties": {
+        "weakness": {"type": "string"},
+        "why_it_matters": {"type": "string"},
+        "evidence": {"type": "string"},
     },
 }
 
@@ -54,177 +61,157 @@ DIRECTION_ROADMAP_SCHEMA: dict = {
     "type": "object",
     "additionalProperties": False,
     "required": [
-        "target", "growth_focus", "stages",
-        "skills_to_build", "subjects_to_focus", "university_track",
+        "profession_options", "subjects_now", "starter_actions",
+        "growth_focus", "skills_to_build",
     ],
     "properties": {
-        "target": {
-            "type": "object",
-            "additionalProperties": False,
-            "required": ["role", "why", "horizon_years"],
-            "properties": {
-                "role": {"type": "string"},
-                "why": {"type": "string"},
-                "horizon_years": {"type": "integer"},
-            },
-        },
-        "growth_focus": {
-            "type": "object",
-            "additionalProperties": False,
-            "required": ["weakness", "why_it_matters", "evidence"],
-            "properties": {
-                "weakness": {"type": "string"},
-                "why_it_matters": {"type": "string"},
-                "evidence": {"type": "string"},
-            },
-        },
-        "stages": {"type": "array", "items": _STAGE_SCHEMA},
+        "profession_options": {"type": "array", "items": _PROFESSION_OPTION_SCHEMA},
+        "subjects_now": {"type": "array", "items": _SUBJECT_NOW_SCHEMA},
+        "starter_actions": {"type": "array", "items": {"type": "string"}},
+        "growth_focus": _GROWTH_FOCUS_SCHEMA,
         "skills_to_build": {"type": "array", "items": {"type": "string"}},
-        "subjects_to_focus": {"type": "array", "items": {"type": "string"}},
-        "university_track": {
-            "type": "object",
-            "additionalProperties": False,
-            "required": ["specialties", "prepare"],
-            "properties": {
-                "specialties": {"type": "array", "items": {"type": "string"}},
-                "prepare": {"type": "array", "items": {"type": "string"}},
-            },
-        },
     },
 }
 
 _SYSTEM_PROMPT = """\
 Ты — сильный карьерный наставник для подростков. Ученик прошёл профтест и получил \
-направление, которое ему подходит. Твоя задача — построить ЧЕСТНЫЙ, конкретный план \
-развития именно в этом направлении.
+направление, которое ему подходит. Твоя задача — дать ЧЕСТНУЮ, конкретную картину: \
+кем он может стать внутри этого направления, какие предметы важны прямо сейчас, что \
+можно начать делать уже сегодня, и в чём его точка роста.
 
 Отвечай СТРОГО в JSON по заданной схеме, без текста вне JSON. Язык — русский, \
 обращайся на «ты».
 
-КОНЕЧНАЯ ЦЕЛЬ (target). Сначала определи, кем конкретно этот ученик может стать в \
-этом направлении — не «специалистом в IT», а конкретной ролью (например, \
-«backend-разработчик», «дата-аналитик», «репортёр-расследователь»). Выбирай роль под \
-ЕГО сильные стороны (strengths), направления, к которым он больше склоняется \
-(leaning_directions), и предметы, которые ему нравятся (subjects_liked). В поле why \
-объясни, почему именно эта роль ему подходит, ссылаясь на его данные. horizon_years — \
-за сколько лет он реально может к ней прийти от своего возраста.
+ВАЖНО: ты работаешь только с персональным слоем. Список профессий направления, вес \
+предметов и требования вузов ученику показывает не твой текст, а реальные данные \
+приложения — они переданы тебе как факты (profession_list, subjects_required), не \
+выдумывай их заново, только персонализируй.
+
+ПРОФЕССИИ (profession_options). У тебя есть profession_list — реальный список \
+профессий этого направления (например, для Software Engineering это Backend, \
+Frontend, Fullstack, Мобильный разработчик, QA-инженер). Твоя задача — НЕ выбрать \
+одну с фальшивой уверенностью, если данные ученика её не подтверждают.
+- Если есть КОНКРЕТНЫЙ сигнал, который явно отличает одну профессию от остальных \
+(например, subject_readiness показывает сильный интерес именно к тому, что нужно \
+только этой роли, а не всем сразу; или явный axis_matches сигнал вроде сильной \
+визуальной/дизайнерской оси при выборе между Frontend и Backend) — верни ОДНУ \
+профессию из списка с полем why, где называешь этот сигнал.
+- Если такого различающего сигнала нет (типичный случай: общие оси вроде \
+«любит математику/информатику» подходят сразу нескольким профессиям списка \
+одинаково) — верни 2-3 профессии из списка с why=null. Это честный ответ «тебе \
+подходит несколько путей», а не выдумка. НЕ пиши why, которое на самом деле не \
+отличает эту профессию от других в списке — тогда лучше null.
+Название профессии бери СЛОВО В СЛОВО из profession_list, не придумывай новые.
+
+ПРЕДМЕТЫ СЕЙЧАС (subjects_now). Тебе передан subjects_required — реальный список \
+предметов, которые важны для этого направления (вес добавит система, тебе он не \
+нужен). Для КАЖДОГО предмета из этого списка (ни больше, ни меньше) напиши одно \
+предложение note — как этому конкретному ученику стоит к нему подойти. Приоритет \
+источника персонализации — от самого сильного к самому слабому:
+1) subject_readiness — если по этому предмету пройден мини-квиз, используй \
+is_strength и level/interest напрямую («у тебя уже сильный уровень — можно \
+углубляться быстрее» / «по мини-тесту это пока слабое место — начни отсюда»);
+2) subjects_easy/subjects_hard/subjects_liked/subjects_disliked (самоотчёт) — если \
+мини-квиза по этому предмету не было;
+3) если про этот предмет вообще нет сигнала — нейтральная note без выдумки \
+уровня («этот предмет входит в программу направления»).
+Не выдумывай уровень ученика там, где сигнала нет.
+
+СТАРТОВЫЕ ДЕЙСТВИЯ (starter_actions) — 2-3 КОНКРЕТНЫХ действия, каждое — ОДНО \
+предложение, не абзац. Ориентируйся на реальный стиль (вот примеры из уже \
+существующего контента для других направлений, повтори именно такую конкретность):
+- «Углубиться в биологию и химию по школьной программе»
+- «Пройти онлайн-курс «Введение в медицину» на Coursera»
+- «Выбрать первый язык программирования (Python или JavaScript)»
+- «Создать первый проект и разместить на GitHub»
+Каждое действие ДОЛЖНО быть выполнимо ОДНИМ учеником, без организации других людей: \
+никаких «собери команду», «найди единомышленников», «организуй мероприятие/кружок». \
+Можно: вступить в УЖЕ существующий кружок/секцию (присоединение, не организация), \
+участвовать в чужом мероприятии или конкурсе, заниматься самостоятельно. \
+ГЛУБИНА ПО ВОЗРАСТУ (age, grade): 10-13 лет — простое, без жаргона; 14-15 лет — \
+можно глубже (конкретные темы, а не только «изучи основы»); 16-17 лет — профильная \
+подготовка, олимпиады, портфолио.
+
+РЕСУРСЫ. У тебя НЕТ базы конкретных курсов, модулей, книг, кружков и школ — их \
+каталога не существует. Никогда не выдумывай название конкретного курса, главы, \
+книги, кружка, школы или организации и никогда не давай ссылки — они устареют или \
+никогда не существовали.
+
+Можно называть по имени ТОЛЬКО платформы из этого списка (это реальные, стабильные, \
+действительно бесплатные ресурсы — не выдумывай другие):
+- школьные предметы и база: Stepik, ЯКласс, Khan Academy, Открытое образование (openedu.ru);
+- программирование и IT: Stepik, Хекслет (Hexlet, бесплатные вводные курсы);
+- научно-популярное и гуманитарное: Постнаука, Arzamas, N+1;
+- университетские бесплатные курсы: Открытое образование (openedu.ru), Coursera \
+(режим audit — бесплатный просмотр без сертификата);
+- портфолио и хранение кода/проектов: GitHub (бесплатное хранение, демонстрация \
+готовых работ).
+Называй платформу, а не конкретный курс на ней: «пройди вводный курс по Python на \
+Stepik» — не выдуманное название курса. Если ни одна платформа не подходит — \
+формулируй задачу без привязки к платформе: «разбери школьный учебник алгебры за \
+8 класс, тему квадратных уравнений», «найди в своём городе кружок робототехники» \
+(офлайн-кружки/секции всегда без названия конкретной организации).
 
 ТОЧКА РОСТА (growth_focus) — САМОЕ ОТВЕТСТВЕННОЕ МЕСТО. Здесь запрещено \
 догадываться и «дорисовывать» правдоподобную слабость. Работает только то, что \
 ПОДТВЕРЖДЕНО данными ученика.
 
-Допустимые источники — ТОЛЬКО эти три:
-1) subjects_hard / subjects_disliked — но только если предмет реально нужен в этом \
-направлении (химия не нужна backend-разработчику — не бери её). Самый сильный, прямой \
-сигнал;
-2) rejected_directions — направления, которые ученик явно отклонил в тесте. Если \
+Источники — по приоритету, от самого сильного к самому слабому:
+1) subject_readiness — РЕАЛЬНЫЙ результат мини-теста по предметам направления (не \
+самоотчёт): элемент с is_strength=false — измеренный, а не предполагаемый пробел по \
+предмету, который направлению нужен. Это самый сильный сигнал из всех, бери его в \
+первую очередь, если список не пуст;
+2) axis_growth_areas — РЕАЛЬНЫЙ измеренный сигнал ученика по осям, которые важны \
+именно этому направлению (та же мера, что дала axis_matches), но здесь значение ниже \
+порога — тоже измеренный, а не предполагаемый пробел;
+3) subjects_hard / subjects_disliked — самоотчёт ученика, но только если предмет \
+реально нужен в этом направлении (химия не нужна backend-разработчику — не бери её);
+4) rejected_directions — направления, которые ученик явно отклонил в тесте. Если \
 отклонённое направление держалось на чём-то, что нужно и в текущем (но здесь выражено \
 слабее) — это кандидат на точку роста;
-3) НАПРАВЛЕНИЕ.axis_profile (те же оси, откуда взяты strengths) — ось, которая для \
+5) axis_profile направления (те же оси, откуда взяты strengths) — ось, которая для \
 направления значима, но НЕ вошла в strengths (её значение ниже порога +1, но \
 направление её не отвергает, то есть значение не отрицательное) — это можно взять как \
 зону усиления «второго плана».
+Источники 1-2 — измеренные (мини-квиз/ответы теста), 3-5 — самоотчёт или косвенные \
+артефакты выбора; используй источник с наивысшим приоритетом из непустых. Не \
+смешивай источники внутри одного growth_focus — выбери один конкретный сигнал.
 
 В поле evidence ОБЯЗАН указать конкретный сигнал, из которого сделал вывод: назови \
-предмет, назови отклонённое направление, или назови ось профиля направления. Если \
-подставить в evidence нечего — значит, ты выдумал слабость. Так делать нельзя.
+предмет из subject_readiness, назови ось из axis_growth_areas, назови предмет из \
+subjects_hard/disliked, назови отклонённое направление, или назови ось профиля \
+направления. Если подставить в evidence нечего — значит, ты выдумал слабость. Так \
+делать нельзя.
 
-ЕСЛИ ВЫРАЖЕННОЙ СЛАБОСТИ НЕТ (ни один из трёх источников не даёт релевантного \
+ЕСЛИ ВЫРАЖЕННОЙ СЛАБОСТИ НЕТ (ни один из пяти источников не даёт релевантного \
 сигнала) — НЕ ИЗОБРЕТАЙ ЕЁ. Не пиши про публичные выступления, общение или \
-прокрастинацию, если в данных этого нет. В этом случае возьми источник 3 (ось \
+прокрастинацию, если в данных этого нет. В этом случае возьми источник 5 (ось \
 профиля направления вне strengths) и сформулируй её как ЗОНУ УСИЛЕНИЯ, а не как \
 недостаток: в weakness — что усилить, в why_it_matters — честно скажи, что явных \
 слабых мест нет и это скорее следующий уровень мастерства, в evidence — какая именно \
 ось и с каким значением.
 
 Точка роста НЕ может быть профильным навыком направления (не «программирование» для \
-IT, не «владение Figma» для дизайна) — этому он и так учится в profile-шагах.
-В why_it_matters объясни мягко и по делу, без осуждения.
-Все growth-шаги в этапах должны бить именно в эту точку роста.
+IT, не «владение Figma» для дизайна). В why_it_matters объясни мягко и по делу, без \
+осуждения.
 
-ЭТАПЫ (stages) — ровно 4: months_3, months_6, months_9, months_12. В каждом этапе \
-3-5 ШАГОВ (steps) — это единый упорядоченный список, а не две колонки. У каждого \
-шага есть тег track:
-- profile — углубление в профильный навык направления;
-- growth — прицельная работа над точкой роста (слабым местом);
-- integration — работа, где нужны СРАЗУ и профильный навык, и подтянутая слабая \
-сторона.
-Сколько каких шагов нужно в конкретном месяце — решаешь ТЫ, исходя из логики \
-развития. Не надо искусственно делить поровну. Жёсткое правило одно: ни один этап не \
-теряет ни профильную работу, ни работу над точкой роста. Шаг integration \
-засчитывается за обе сразу (в нём есть и профиль, и рост), поэтому этап вида \
-[integration, integration, growth] — валиден. priority задаёт порядок шагов внутри \
-этапа (1 — первый).
-
-ОПИСАНИЕ ШАГА (description) — САМОЕ ВАЖНОЕ. Ученик — подросток, он НЕ должен \
-ничего догугливать, чтобы понять шаг. text — короткое название шага. \
-description — 3-5 предложений, где ты РАЗЖЁВЫВАЕШЬ:
-1) что именно делать и с чего начать (конкретные темы, понятия, шаги — по порядку);
-2) зачем это нужно и как это связано с конечной целью (target.role);
-3) как понять, что задача выполнена — измеримый признак («сможешь сам написать…», \
-«решаешь такие задачи без подсказки», «у тебя есть готовый…»).
-Плохо: «Изучи основы алгоритмов». Хорошо: «Начни с самого базового: что такое \
-сложность алгоритма (нотация O-большое), массивы и списки, сортировка пузырьком и \
-бинарный поиск. Разбирай по одной теме в неделю и сразу пиши код руками, не \
-подглядывая. Именно это отличает того, кто "умеет писать код", от разработчика: на \
-собеседованиях и олимпиадах спрашивают ровно это. Готово, когда сможешь без \
-подсказки объяснить, почему бинарный поиск быстрее перебора, и написать оба.»
-Не используй жаргон без расшифровки: если пишешь термин — тут же поясняй его \
-простыми словами.
-
-ИТОГ ЭТАПА (outcome) — 1-2 предложения: что у ученика БУДЕТ на руках к концу этапа \
-(навык, проект, результат) и как это приближает его к target.role. Ученик должен \
-видеть, к чему всё ведёт, а не просто список дел.
-
-Логика этапов:
-- months_3 — база и теория: profile-шаги осваивают основы; growth-шаг закрывает \
-пробел (курс, учебник, разбор конкретных тем). Шагов track=integration здесь нет, \
-integration_project = null.
-- months_6 — практика и выход из зоны комфорта: profile-шаги дают первую реальную \
-практику; growth-шаг ведёт туда, где слабый навык НУЖЕН вживую (кружок, секция, \
-клуб, школьное сообщество). integration_project = null.
-- months_9 — интеграция: добавь шаг(и) track=integration — ОДИН проект, где нужны \
-сразу и профильный навык, и подтянутая слабая сторона. Опиши его в \
-integration_project. Пример: взять интервью у трёх незнакомых людей — это и \
-журналистика, и преодоление страха общения.
-- months_12 — готовность к профильному пути: собрать результаты, честно оценить, \
-насколько слабая сторона перестала мешать, выйти на профильные классы, олимпиады \
-или конкурсы. Заполни integration_project, если проект уместен, иначе null.
-
-ГЛУБИНА — СТРОГО ПО ВОЗРАСТУ (age, grade). Не давай общих советов «посмотри видео» \
-там, где ученик уже может больше. 10-13 лет: кружки, простые проекты, книги, \
-конкурсы, без профжаргона. 14-15 лет: он уже может углубляться по-настоящему — \
-алгоритмы и олимпиадное программирование, разбор реальных кейсов, серьёзные \
-учебники, первые самостоятельные проекты. 16-17 лет: профильная подготовка, \
-олимпиады, стажировки, портфолио, подготовка к поступлению. Задачи должны быть \
-посильны ЕМУ СЕЙЧАС и постепенно усложняться от этапа к этапу.
-
-ВУЗ (university_track). Даже если цель ученика — не поступление, план обязан \
-привести его к готовности поступить на близкую специальность: перечисли \
-specialties (направления обучения) и prepare (что готовить: профильные предметы, \
-экзамены, олимпиады, портфолио).
-
-ЗАПРЕТ НА ВЫДУМКУ. У тебя НЕТ базы курсов, книг, кружков и школ. Никогда не \
-выдумывай названия конкретных курсов, платформ, кружков, книг или организаций и не \
-давай ссылок. Формулируй действие так, чтобы ученик сам нашёл: «найди в своём городе \
-кружок робототехники», «пройди любой бесплатный онлайн-курс по основам Python», \
-«разбери школьный учебник алгебры за 8 класс, тему квадратных уравнений». \
-Конкретной должна быть ЗАДАЧА, а не бренд.
-
-priority: 1 — самое важное в треке, дальше по возрастанию.\
+НАВЫКИ (skills_to_build) — короткий список тегов (3-6 штук), какие конкретные \
+навыки/технологии стоит развивать в этом направлении (например: «Python», «Алгоритмы \
+и структуры данных», «Работа с базами данных»). Коротко, без описаний.\
 """
 
 
-# Appended when a generated plan breaks the structural rules — the model is
-# inconsistent about them, and one corrective pass is cheaper than a 503.
+# Appended when a generated plan breaks a structural rule (wrong number of
+# profession_options / subjects_now not covering every required subject /
+# too few starter_actions) — one corrective pass is cheaper than a 503.
 RETRY_HINT: dict[str, str] = {
     "role": "user",
     "content": (
         "Твой предыдущий ответ нарушил структуру. Исправь строго:\n"
-        "- ровно 4 этапа: months_3, months_6, months_9, months_12;\n"
-        "- в КАЖДОМ этапе минимум 3 шага;\n"
-        "- в КАЖДОМ этапе есть профильная работа (track=profile или integration) "
-        "И работа над точкой роста (track=growth или integration).\n"
+        "- profession_options: 1-3 элемента, title слово в слово из profession_list;\n"
+        "- subjects_now: ровно один элемент на каждый предмет из subjects_required, "
+        "не больше и не меньше;\n"
+        "- starter_actions: 2-3 элемента, каждый — одно конкретное предложение.\n"
         "Верни полный план заново по схеме."
     ),
 }
@@ -237,11 +224,11 @@ def _direction_brief(direction: Direction) -> dict:
     return {
         "name": direction.name,
         "description": direction.description,
-        "professions": list(direction.professions or []),
-        "skills_needed": list(direction.skills_needed or []),
+        "profession_list": list(direction.professions or []),
+        "subjects_required": dict(direction.subjects_required or {}),
         # Same axes context.strengths was derived from (label_ru -> value,
         # strongest first) — lets the model cite a below-threshold axis as
-        # growth_focus evidence (source 3 in the system prompt).
+        # growth_focus evidence (source 5 in the system prompt).
         "axis_profile": {
             _AXIS_LABELS.get(code, code): value for code, value in ranked_axes
         },
@@ -249,12 +236,10 @@ def _direction_brief(direction: Direction) -> dict:
 
 
 def build_messages(context: StudentContext, direction: Direction) -> list[dict[str, str]]:
-    allowed = ", ".join(CATEGORIES)
     user_content = (
         f"НАПРАВЛЕНИЕ:\n{json.dumps(_direction_brief(direction), ensure_ascii=False, indent=2)}\n\n"
         f"УЧЕНИК (все, что мы о нём знаем):\n{context.model_dump_json(indent=2)}\n\n"
-        f"Разрешённые значения category: {allowed}.\n\n"
-        "Построй для этого ученика план развития в этом направлении по схеме."
+        "Построй для этого ученика персональный слой роадмапа по схеме."
     )
     return [
         {"role": "system", "content": _SYSTEM_PROMPT},

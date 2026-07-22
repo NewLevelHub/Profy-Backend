@@ -12,5 +12,3 @@ echo "Backend is ready: http://localhost/docs"
 docker-compose exec api python scripts/seed_questions.py
 docker-compose exec api python scripts/seed_universities.py
 docker-compose exec api python scripts/seed_directions.py
-# Ожидается: Total questions in bank: 102
-# Команда нужна для того что прогнать скрипт по вопросам 
