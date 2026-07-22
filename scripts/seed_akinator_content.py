@@ -396,27 +396,29 @@ SPECIALTIES: list[dict] = [
      # data-science/finance-accounting/software-engineer, never against its
      # own resolver (order 32, which doesn't touch Math).
      #
-     # Motor:-1 re-tried and reverted AGAIN (calibration playtest pass,
-     # 2026-07, round 18): retried the round-7 edit under the now-mature
-     # multi-run methodology, on the theory that the original n=30
-     # regression was noise (school-teacher, untouched that round, swung
-     # 60%->43% in the same run). It wasn't noise — this time confirmed
-     # WORSE across two independent n=100 runs (32%, 38%, vs 46-52% without
-     # it), and translator's loss count to cinematographer specifically went
-     # UP (45-52, from a pre-fix 31-36), the opposite of the intended
-     # effect. The one-option math still checks out in isolation (this axis
-     # does cut translator's score on cinematographer's own Motor:2
-     # resolver option roughly in half), but adding any axis changes the
-     # *whole* session's score landscape, not just that one option — it
-     # also slightly grows translator's profile norm (a tax on every other
-     # positive score for the rest of the session) and can shift which
-     # option the simulated persona itself prefers on unrelated questions
-     # earlier in the session, compounding over ~15-20 steps. Lesson: a
-     # single option's isolated match_score arithmetic checking out is not
-     # sufficient justification — even a well-reasoned missing-axis fix
-     # needs the full n=100 (x2) verification before being trusted, same as
-     # any other change. Do not retry this specific edit again without new
-     # evidence.
+     # Motor:-1 re-tried and reverted again, INCONCLUSIVE this time
+     # (calibration playtest pass, 2026-07, round 18): retried the round-7
+     # edit under the multi-run methodology, on the theory that the
+     # original n=30 regression was noise. Two n=100 runs WITH the edit
+     # came back at 32%/38% (vs a prior WITHOUT-edit band of 46-55% seen
+     # across rounds 16-17), which initially looked like a confirmed
+     # regression — but a further two WITHOUT-edit runs after reverting
+     # came back at 34% and 63%. translator's true noise band at n=100 is
+     # apparently much wider than the ~15-20pp ceiling characterized
+     # elsewhere in this doc (seen: 34/46/49/51/52/55/63 with no code
+     # change at all) — likely because both translator and its rival
+     # cinematographer sit deep in the crowded creative cluster, where
+     # entropy-based question selection has many near-equally-scoring
+     # candidates to sample from stochastically. With that band this wide,
+     # 32-38% is NOT distinguishable from noise on 2 runs either way — the
+     # round-18 "confirmed regression" conclusion recorded earlier today
+     # was overclaimed and has been corrected here. Left reverted as the
+     # conservative default (don't keep an unverified change), not because
+     # it was proven harmful. Re-evaluating this fairly would need a much
+     # larger sample (5+ n=100 runs per side) to get a stable mean — not
+     # attempted, given the cost of Docker rebuilds this session. If
+     # picking this back up, budget for that many runs before concluding
+     # anything either way.
      "profile": {"Ideas": 1, "Obj": -1, "Exp": 2, "Focus": 2, "Auto": 2, "Struct": 1, "Predict": -1, "Acad": 1, "People": -1, "Math": -1},
      "professions": ["Переводчик", "Устный переводчик", "Локализатор"],
      "subjects_required": {"Английский язык": 2, "Русский язык": 2}},

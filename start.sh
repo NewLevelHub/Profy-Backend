@@ -11,4 +11,6 @@ echo "Backend is ready: http://localhost/docs"
 
 docker-compose exec api python scripts/seed_questions.py
 docker-compose exec api python scripts/seed_universities.py
+docker-compose exec api python scripts/seed_astana_universities.py
+docker-compose exec api python scripts/seed_almaty_universities.py
 docker-compose exec api python scripts/seed_directions.py

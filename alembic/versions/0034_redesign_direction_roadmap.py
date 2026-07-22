@@ -5,7 +5,7 @@ university_track) with profession_options, subjects_now, starter_actions and
 university_requirements. growth_focus/skills_to_build are unchanged.
 
 Revision ID: 0034
-Revises: 0033
+Revises: 0033b
 Create Date: 2026-07-22 00:00:00.000000
 """
 from collections.abc import Sequence
@@ -15,7 +15,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision: str = "0034"
-down_revision: str | None = "0033"
+down_revision: str | None = "0033b"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

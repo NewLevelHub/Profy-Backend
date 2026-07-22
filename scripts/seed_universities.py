@@ -1385,7 +1385,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "Kazakh National Academy of Choreography": [
         {
             "name": "Арт-менеджмент в хореографии (бакалавр)",
-            "direction_slugs": ["akinator-stage-media"],
+            "direction_slugs": ["management-entrepreneurship"],
             "language": "Казахский / Русский",
             "cost_per_year": 2300,
             "description": (
@@ -1523,7 +1523,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
     "A.K. Kussayinov Eurasian Humanities Institute": [
         {
             "name": "Педагогика и психология (бакалавр)",
-            "direction_slugs": ["akinator-education"],
+            "direction_slugs": ["psychologist", "school-teacher"],
             "language": "Казахский / Русский",
             "cost_per_year": 1700,
             "description": (

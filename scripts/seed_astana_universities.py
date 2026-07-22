@@ -149,7 +149,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "Сестринское дело (бакалавр)",
-            "direction_slugs": ["akinator-medicine"],
+            "direction_slugs": ["general-medicine"],
             "language": "Казахский / Русский",
             "description": "Направления кинезитерапии и эрготерапии.",
         },
@@ -177,7 +177,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
     "academy-of-choreography": [
         {
             "name": "Арт-менеджмент (бакалавр)",
-            "direction_slugs": ["akinator-stage-media"],
+            "direction_slugs": ["management-entrepreneurship"],
             "language": "Казахский / Русский",
             "description": "Программа арт-менеджмента Академии хореографии.",
         },
@@ -291,7 +291,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
     "eagi": [
         {
             "name": "Педагогика и психология (бакалавр)",
-            "direction_slugs": ["akinator-education"],
+            "direction_slugs": ["psychologist", "school-teacher"],
             "language": "Казахский / Русский",
             "description": "Педагогические программы ЕАГИ.",
         },
