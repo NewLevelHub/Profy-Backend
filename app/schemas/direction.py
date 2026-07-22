@@ -23,7 +23,6 @@ class DirectionBase(BaseModel):
 class DirectionDetail(DirectionBase):
     required_scores: dict[str, float] | None = None
     skills_needed: list[str]
-    subjects_to_develop: list[str]
     first_steps: list[str]
 
 

@@ -23,8 +23,13 @@ class Direction(Base):
     required_scores: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     professions: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     skills_needed: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
-    subjects_to_develop: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     first_steps: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    # School subject -> weight (higher = more central to this specialty). Feeds
+    # question selection for the subject readiness quiz (see
+    # app/services/subject_readiness_service.py). Empty for directions that
+    # don't have this content authored yet — the quiz is simply unavailable
+    # for them (see subject_readiness_service.get_or_create_questions).
+    subjects_required: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
     # Tree taxonomy (Akinator). Old required_scores/bonus_scores scoring keeps
     # running untouched until [GATE] AKN-021 — these columns are additive.

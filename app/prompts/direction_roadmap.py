@@ -239,7 +239,6 @@ def _direction_brief(direction: Direction) -> dict:
         "description": direction.description,
         "professions": list(direction.professions or []),
         "skills_needed": list(direction.skills_needed or []),
-        "subjects_to_develop": list(direction.subjects_to_develop or []),
         # Same axes context.strengths was derived from (label_ru -> value,
         # strongest first) — lets the model cite a below-threshold axis as
         # growth_focus evidence (source 3 in the system prompt).
