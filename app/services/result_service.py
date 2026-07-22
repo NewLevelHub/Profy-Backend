@@ -60,7 +60,7 @@ def _axis_comparison_for(
     profile: dict[str, int], child_scores: dict[str, float]
 ) -> tuple[list[AxisComparisonItem], list[AxisComparisonItem], bool]:
     """Compare the direction's own needs against the child's normalized
-    per-axis signal (see _child_axis_scores). Only axes the direction
+    per-axis signal (see child_axis_scores). Only axes the direction
     actually leans into (profile > 0) are considered, and only where the
     child's answers actually touched that axis — no axis is ever assigned a
     fake neutral score just to have something to show.
@@ -115,13 +115,17 @@ def _growth_explanation_for(code: str) -> AxisGrowthExplanation | None:
     return AxisGrowthExplanation(meaning=copy.meaning, suggestion=copy.suggestion)
 
 
-async def _child_axis_scores(session_id: uuid.UUID, db: AsyncSession) -> dict[str, float]:
+async def child_axis_scores(session_id: uuid.UUID, db: AsyncSession) -> dict[str, float]:
     """Average axis_weight per axis across every option the child actually
     selected in the session, straight from the answer log. Averaging (rather
     than summing, as this used to) keeps axes touched by many questions from
     automatically outranking axes touched by few — otherwise the comparison
     in _axis_comparison_for would be measuring "how often this axis came up"
-    more than "how the child actually leaned on it"."""
+    more than "how the child actually leaned on it".
+
+    Public (no leading underscore): reused by student_context.py to ground
+    the direction-roadmap prompt in the same real per-axis signal shown on
+    the /results page, instead of only the direction's own ideal profile."""
     result = await db.execute(
         select(AkinatorAnswerLog).where(
             AkinatorAnswerLog.session_id == session_id,
@@ -190,7 +194,7 @@ async def _backups_for(session: AssessmentSession, exclude_slug: str, db: AsyncS
     ]
 
 
-async def _recommended_programs_for(
+async def recommended_programs_for(
     selected_slug: str,
     db: AsyncSession,
     city: str | None = None,
@@ -200,7 +204,10 @@ async def _recommended_programs_for(
     If *city* is provided, results are filtered to that city only.
     When *city* is None no city filter is applied (all cities are included).
     The country filter (Kazakhstan) always remains active.
-    """
+
+    Public (no leading underscore): also reused by roadmap_builder.py for the
+    direction roadmap's university_requirements — same real Program rows, no
+    LLM involved, same precedent as child_axis_scores above."""
     direction_slugs = await program_direction_slugs_for(selected_slug, db)
     conditions = [
         # ?| operator: JSONB column has any element from the given text array.
@@ -251,10 +258,10 @@ async def get_result(assessment_id: uuid.UUID, db: AsyncSession) -> AkinatorResu
     user_city: str | None = profile.city if profile is not None else None
 
     backups = await _backups_for(session, assessment.selected_direction_slug, db)
-    recommended_programs = await _recommended_programs_for(
+    recommended_programs = await recommended_programs_for(
         assessment.selected_direction_slug, db, city=user_city
     )
-    child_scores = await _child_axis_scores(session.id, db)
+    child_scores = await child_axis_scores(session.id, db)
     matches, growth_areas, is_direction_specific = _axis_comparison_for(
         direction.profile or {}, child_scores
     )

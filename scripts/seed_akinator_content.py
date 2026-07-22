@@ -156,7 +156,26 @@ SPECIALTIES: list[dict] = [
      # own dedicated resolvers (order 19, 42, 47) got a fair chance. The
      # profile's real signature (People/Care/Emp/Exp/Focus/Acad, all still
      # at magnitude 2) is untouched.
-     "profile": {"People": 2, "Care": 2, "Emp": 2, "Exp": 2, "Focus": 2, "Motiv": -1, "Acad": 2, "Data": -1},
+     #
+     # Ideas:-1 added (calibration playtest pass, 2026-07, round 17): round 6
+     # only zeroed Ideas out; that stopped psychologist polluting creative
+     # resolvers, but left it defenseless against the "creative cluster"
+     # (cinematographer/pr-specialist/makeup-artist-film/film-director) —
+     # same disease as data-science's pre-round-16 problem: checked all
+     # shared axes between psychologist and its three chronic n=100 rivals
+     # (cinematographer, pr-specialist, makeup-artist-film) and found ZERO
+     # opposing axes among any of them — every axis they share (Exp/Focus/
+     # Acad, plus People/Emp for makeup-artist-film/pr-specialist) points
+     # the same direction, so on any question that ALSO carries an
+     # Ideas-weighted option, psychologist has no way to lose relative
+     # ground while the creative-cluster leaf gains outright. Ideas
+     # ("Абстрактное, эстетика, замысел") is genuinely not central to
+     # psychology (talking through an existing person's situation, not
+     # inventing visual/abstract concepts) and is shared at magnitude 2 by
+     # all three chronic rivals plus film-director — a single axis that
+     # opposes the whole cluster at once, same shape as data-science's Inv
+     # wedge against finance-accounting.
+     "profile": {"People": 2, "Care": 2, "Emp": 2, "Exp": 2, "Focus": 2, "Motiv": -1, "Acad": 2, "Data": -1, "Ideas": -1},
      "professions": ["Психолог", "Клинический психолог", "Коуч"],
      "subjects_required": {"Обществознание": 2, "Биология": 1, "Русский язык": 1}},
     {"slug": "speech-therapist", "name": "Логопедия и дефектология", "label_junior": "Логопед", "section": "akinator-psychology-help",
@@ -223,7 +242,27 @@ SPECIALTIES: list[dict] = [
      # profile's own norm, so removing an axis SHRINKS the norm and makes
      # every remaining axis (including the bad Focus/Math overlap with
      # finance-accounting) score relatively *stronger*, not weaker. Restored.
-     "profile": {"People": -1, "Living": -2, "Data": 2, "Obj": -2, "Care": -2, "Dev": -2, "Exp": 1, "Focus": 2, "Auto": 1, "Struct": 1, "Predict": -1, "Acad": 1, "PhysSt": -2, "Math": 2},
+     #
+     # Inv:1 added (calibration playtest pass, 2026-07, round 16): traced
+     # fresh data-science sessions and found finance-accounting and
+     # data-science share NO opposing axis at all — every axis they both
+     # carry (Data/Obj/Exp/Focus/Struct/Predict/Acad/Math/People/Auto)
+     # points the same direction, so any question touching this cluster
+     # (order=37, order=48) can only ever separate them by relative
+     # normalization strength (finance's smaller, more concentrated profile
+     # norm wins almost every time — confirmed: finance beat data-science on
+     # order=48's shared option 2.694 vs 1.947 even after finance's own
+     # Focus was already trimmed in round 8). order=51 (their one dedicated
+     # resolver) relies on Obj, which doesn't oppose them either (both
+     # negative) — it only separates data-science from software-engineer/
+     # it-infrastructure-security, not from finance. Inv gives a genuine new
+     # wedge: data-science finds patterns in raw/messy data (some real
+     # constructive/investigative work), finance-accounting verifies known
+     # numbers against fixed external rules (opposite end — see
+     # finance-accounting's new Inv:-1 below, same "applies established
+     # rules, doesn't invent" reasoning already used for lawyer's and
+     # fire-safety-engineer's Inv:-1). Feeds the new order=53 resolver.
+     "profile": {"People": -1, "Living": -2, "Data": 2, "Obj": -2, "Care": -2, "Dev": -2, "Exp": 1, "Focus": 2, "Auto": 1, "Struct": 1, "Predict": -1, "Acad": 1, "PhysSt": -2, "Math": 2, "Inv": 1},
      "professions": ["Аналитик данных", "Data Scientist", "BI-аналитик", "ML-инженер"],
      "subjects_required": {"Математика": 2, "Информатика": 2, "Физика": 1}},
     {"slug": "it-infrastructure-security", "name": "Кибербезопасность и IT-инфраструктура", "label_junior": "Компьютерный мастер", "section": "akinator-it-data",
@@ -356,6 +395,28 @@ SPECIALTIES: list[dict] = [
      # neutral (0) on Math, so this only ever pushes it further from
      # data-science/finance-accounting/software-engineer, never against its
      # own resolver (order 32, which doesn't touch Math).
+     #
+     # Motor:-1 re-tried and reverted AGAIN (calibration playtest pass,
+     # 2026-07, round 18): retried the round-7 edit under the now-mature
+     # multi-run methodology, on the theory that the original n=30
+     # regression was noise (school-teacher, untouched that round, swung
+     # 60%->43% in the same run). It wasn't noise — this time confirmed
+     # WORSE across two independent n=100 runs (32%, 38%, vs 46-52% without
+     # it), and translator's loss count to cinematographer specifically went
+     # UP (45-52, from a pre-fix 31-36), the opposite of the intended
+     # effect. The one-option math still checks out in isolation (this axis
+     # does cut translator's score on cinematographer's own Motor:2
+     # resolver option roughly in half), but adding any axis changes the
+     # *whole* session's score landscape, not just that one option — it
+     # also slightly grows translator's profile norm (a tax on every other
+     # positive score for the rest of the session) and can shift which
+     # option the simulated persona itself prefers on unrelated questions
+     # earlier in the session, compounding over ~15-20 steps. Lesson: a
+     # single option's isolated match_score arithmetic checking out is not
+     # sufficient justification — even a well-reasoned missing-axis fix
+     # needs the full n=100 (x2) verification before being trusted, same as
+     # any other change. Do not retry this specific edit again without new
+     # evidence.
      "profile": {"Ideas": 1, "Obj": -1, "Exp": 2, "Focus": 2, "Auto": 2, "Struct": 1, "Predict": -1, "Acad": 1, "People": -1, "Math": -1},
      "professions": ["Переводчик", "Устный переводчик", "Локализатор"],
      "subjects_required": {"Английский язык": 2, "Русский язык": 2}},
@@ -483,7 +544,18 @@ SPECIALTIES: list[dict] = [
      # change: finance still wins order=48 outright on Math+Struct+Predict
      # alone (score drops only 2.92->2.70), while data-science's accidental
      # pull toward that option drops more meaningfully (1.95->1.62).
-     "profile": {"Data": 2, "Obj": -1, "Exp": 2, "Focus": 1, "Struct": 2, "Motiv": -1, "Auto": 1, "Predict": -2, "Pace": -1, "Acad": 1, "Math": 2, "People": -1},
+     #
+     # Inv:-1 added (calibration playtest pass, 2026-07, round 16): same
+     # "applies established rules, doesn't invent" reasoning already used
+     # for lawyer's and fire-safety-engineer's Inv:-1 — accounting follows
+     # fixed external standards (tax code, GAAP-equivalent) to the letter,
+     # zero net-new invention. Pairs with data-science's new Inv:1 (see that
+     # profile's comment) as the first genuinely OPPOSING axis between the
+     # two — every other shared axis points the same direction, which is
+     # why order=37/48 could never be tuned to stop favoring finance over
+     # data-science no matter how much their weights were scaled down (see
+     # round-16 note on order=37). Feeds the new order=53 resolver.
+     "profile": {"Data": 2, "Obj": -1, "Exp": 2, "Focus": 1, "Struct": 2, "Motiv": -1, "Auto": 1, "Predict": -2, "Pace": -1, "Acad": 1, "Math": 2, "People": -1, "Inv": -1},
      "professions": ["Бухгалтер", "Финансовый аналитик", "Аудитор"],
      "subjects_required": {"Математика": 2, "Экономика": 2}},
 
@@ -871,7 +943,32 @@ QUESTIONS: list[dict] = [
          # too big to close. Kept non-zero (still a useful generic
          # precise-vs-people-and-ideas signal), just no longer resolver-
          # strength for a question that isn't declared as one.
-         {"text": "люблю точность, порядок, считать", "axis_weights": {"Data": 1, "Struct": 1, "Focus": 1, "Math": 1}},
+         #
+         # Struct:1 dropped entirely (calibration playtest pass, 2026-07,
+         # round 16): traced a fresh data-science session on the current
+         # codebase — this question still handed finance-accounting the
+         # lead (belief 0.119->0.188) three steps before order=51 (the real
+         # data-science/software-engineer/finance-accounting/it-security
+         # resolver) got a chance to fire, and order=51 alone couldn't close
+         # the gap (finance still won the session, 0.385 vs data-science's
+         # 0.201). Root cause the round-2 halving didn't fix: match_score is
+         # LINEAR in an option's weights, so uniformly scaling every axis
+         # down (2->1) never changes which leaf scores higher relative to
+         # the other — finance-accounting and data-science both had dot=7
+         # against the old 4-axis weights, but finance's profile is more
+         # concentrated on just these axes (norm sqrt(27) vs data-science's
+         # sqrt(38), diluted by Care/Dev/Living/PhysSt that this question
+         # never touches), so normalization alone gave finance a ~19% edge
+         # every time regardless of scale. Struct is the specific axis where
+         # finance's own profile (Struct:2) is stronger than data-science's
+         # (Struct:1) — genuinely an accounting trait (follow the procedure
+         # precisely) rather than a general "good with numbers" one, and was
+         # explicitly named in the round-2 comment above as one of the axes
+         # copied from finance's own profile. Dropping it (not scaling it)
+         # brings the two leaves' scores on this option to near-parity
+         # (verified: data-science 0.973 vs finance-accounting 0.962) without
+         # touching either leaf's own profile/norm.
+         {"text": "люблю точность, порядок, считать", "axis_weights": {"Data": 1, "Focus": 1, "Math": 1}},
          {"text": "скучно, мне интереснее люди и идеи", "axis_weights": {"Data": -1, "People": 1}},
      ], "resolves_pair": None},  # source says "бухгалтер vs остальной бизнес" (generic) — flagged, see module docstring
     {"order": 38, "kind": "situational", "depth": 2, "age_variant": "both",
@@ -1043,9 +1140,31 @@ QUESTIONS: list[dict] = [
          {"text": "работать один на один, регулярно, над конкретной проблемой человека",
           "axis_weights": {"Exp": 2, "Focus": 1}},
      ], "resolves_pair": ["school-teacher", "speech-therapist"]},
+    # Added (calibration playtest pass, 2026-07, round 16): data-science and
+    # finance-accounting share no opposing axis anywhere else in the bank —
+    # order=37/48 both touch their overlapping Focus/Struct/Predict/Math
+    # cluster and can only ever favor finance (smaller, more concentrated
+    # profile norm), never data-science, no matter how those questions are
+    # scaled (see round-16 notes on order=37 and both profiles). Inv is the
+    # one genuinely new wedge: data-science finds patterns in raw/unclear
+    # data (some real investigative/constructive work), finance-accounting
+    # verifies known numbers against fixed external rules (zero invention —
+    # same reasoning as lawyer's/fire-safety-engineer's Inv:-1). Verified:
+    # data-science +0.640/-0.160 on its option vs finance-accounting
+    # -0.189/+0.756 on finance's — a real two-way split, not just "wins by
+    # less", unlike every other question these two share.
+    {"order": 53, "kind": "direct", "depth": 3, "age_variant": "senior",
+     "text": "В работе с информацией тебе интереснее…", "text_junior": None,
+     "options": [
+         {"text": "искать закономерности там, где их ещё чётко никто не видел",
+          "axis_weights": {"Inv": 2, "Obj": -1}},
+         {"text": "точно следовать правилам и стандартам, которые уже все проверили",
+          "axis_weights": {"Inv": -2, "Struct": 1}},
+         {"text": "не знаю", "axis_weights": {}},
+     ], "resolves_pair": ["data-science", "finance-accounting"]},
 ]
 
-assert len(QUESTIONS) == 43, f"expected 43 questions, got {len(QUESTIONS)}"
+assert len(QUESTIONS) == 44, f"expected 44 questions, got {len(QUESTIONS)}"
 assert len({q["order"] for q in QUESTIONS}) == len(QUESTIONS), "duplicate question order"
 
 # Every slug named in a resolves_pair must actually exist as a leaf — this is

@@ -12,8 +12,10 @@ class DirectionRoadmap(Base):
     """AI roadmap scoped to one direction the student confirmed as a fit.
 
     Separate from `roadmaps` (the goal-based template roadmap): different shape
-    — a long-term target plus 4 stages, each running a profile track and a
-    growth track in parallel."""
+    — two layers, real curated/DB-backed facts (profession_options,
+    subjects_now's weight, university_requirements) plus a thin LLM
+    personalization layer (why/note text, growth_focus, starter_actions
+    fallback). See app/services/roadmap_builder.py."""
 
     __tablename__ = "direction_roadmaps"
     __table_args__ = (
@@ -31,12 +33,12 @@ class DirectionRoadmap(Base):
     )
     direction_slug: Mapped[str] = mapped_column(String(100), nullable=False)
     direction_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    target: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    profession_options: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    subjects_now: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    starter_actions: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     growth_focus: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    stages: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     skills_to_build: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
-    subjects_to_focus: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
-    university_track: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    university_requirements: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

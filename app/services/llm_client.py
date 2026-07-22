@@ -16,9 +16,16 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-# gpt-4o-mini pricing (USD per token) — for cost logging only.
-_COST_PER_INPUT_TOKEN = 0.15 / 1_000_000
-_COST_PER_OUTPUT_TOKEN = 0.60 / 1_000_000
+# USD per token, for cost logging only — approximate, check OpenAI's pricing
+# page for current numbers. Keyed by model prefix so LLM_MODEL can change
+# without the log silently reporting the wrong model's cost. Falls back to
+# gpt-4o-mini pricing (cheapest) for an unlisted model, logged as a warning.
+_PRICING_PER_TOKEN: dict[str, tuple[float, float]] = {
+    "gpt-4o-mini": (0.15 / 1_000_000, 0.60 / 1_000_000),
+    "gpt-4.1-mini": (0.40 / 1_000_000, 1.60 / 1_000_000),
+    "gpt-4o": (2.50 / 1_000_000, 10.00 / 1_000_000),
+    "gpt-4.1": (2.00 / 1_000_000, 8.00 / 1_000_000),
+}
 
 _MAX_ATTEMPTS = 2  # 1 initial + 1 retry
 
@@ -31,12 +38,23 @@ def is_enabled() -> bool:
     return settings.LLM_ENABLED and bool(settings.LLM_API_KEY)
 
 
+def _pricing_for(model: str) -> tuple[float, float]:
+    # Dict order matters: "-mini" variants are listed before their base model
+    # so e.g. "gpt-4o-mini" (which startswith "gpt-4o" too) matches itself first.
+    for prefix, pricing in _PRICING_PER_TOKEN.items():
+        if model.startswith(prefix):
+            return pricing
+    logger.warning("No pricing entry for model=%s, cost log will be inaccurate", model)
+    return _PRICING_PER_TOKEN["gpt-4o-mini"]
+
+
 def _log_usage(usage: dict[str, Any] | None) -> None:
     if not usage:
         return
     prompt_tokens = usage.get("prompt_tokens", 0)
     completion_tokens = usage.get("completion_tokens", 0)
-    cost = prompt_tokens * _COST_PER_INPUT_TOKEN + completion_tokens * _COST_PER_OUTPUT_TOKEN
+    cost_per_input, cost_per_output = _pricing_for(settings.LLM_MODEL)
+    cost = prompt_tokens * cost_per_input + completion_tokens * cost_per_output
     logger.info(
         "LLM usage: model=%s prompt=%s completion=%s ~$%.5f",
         settings.LLM_MODEL, prompt_tokens, completion_tokens, cost,
