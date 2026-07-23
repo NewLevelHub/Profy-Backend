@@ -54,6 +54,7 @@ async def list_users(
                 is_verified=user.is_verified,
                 is_active=user.is_active,
                 is_admin=user.is_admin,
+                has_profile=profile is not None,
                 profile_name=profile.name if profile else None,
                 created_at=user.created_at,
             )

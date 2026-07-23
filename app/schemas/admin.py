@@ -81,3 +81,20 @@ class AdminListParams(BaseModel):
     page: int = Field(default=1, ge=1)
     limit: int = Field(default=20, ge=1, le=100)
     search: str | None = None
+
+
+class AdminFeedbackListItem(BaseModel):
+    id: uuid.UUID
+    user_email: str
+    context: str
+    rating: str
+    message: str | None = None
+    direction_slug: str | None = None
+    created_at: datetime
+
+
+class AdminFeedbackListResponse(BaseModel):
+    items: list[AdminFeedbackListItem]
+    total: int
+    page: int
+    limit: int

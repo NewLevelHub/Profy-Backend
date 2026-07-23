@@ -8,10 +8,11 @@ from app.dependencies import get_current_admin_user
 from app.models.user import User
 from app.schemas.admin import (
     AdminAssessmentDetailResponse,
+    AdminFeedbackListResponse,
     AdminUserDetailResponse,
     AdminUserListResponse,
 )
-from app.services import admin_service
+from app.services import admin_service, product_feedback_service
 
 router = APIRouter(tags=["admin"])
 
@@ -49,3 +50,14 @@ async def get_assessment_detail(
     if not detail:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
     return detail
+
+
+@router.get("/feedback", response_model=AdminFeedbackListResponse)
+async def list_feedback(
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=20, ge=1, le=100),
+    rating: str | None = Query(default=None),
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await product_feedback_service.list_feedback(db, page=page, limit=limit, rating=rating)

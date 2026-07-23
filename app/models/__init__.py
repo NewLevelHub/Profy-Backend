@@ -12,6 +12,7 @@ from app.models.profile import Profile  # noqa: F401 — keep model imported so 
 from app.models.program import Program  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.university import University  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.user import User  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.product_feedback import ProductFeedback  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.profession_simulation import ProfessionSimulation  # noqa: F401
 from app.models.profession_simulation_log import ProfessionSimulationLog  # noqa: F401
 from app.models.subject_question import SubjectQuestion  # noqa: F401 — keep model imported so Alembic discovers it
@@ -20,7 +21,7 @@ from app.models.subject_readiness_session import SubjectReadinessSession  # noqa
 __all__ = [
     "Base", "AkinatorAnswerLog", "AkinatorQuestion", "Artifact", "Assessment", "AssessmentSession",
     "Direction", "DirectionRoadmap",
-    "EmailVerificationToken", "PasswordResetToken", "Profile", "Program", "University", "User",
+    "EmailVerificationToken", "PasswordResetToken", "Profile", "Program", "ProductFeedback", "University", "User",
     "ProfessionSimulation", "ProfessionSimulationLog",
     "SubjectQuestion", "SubjectReadinessSession",
 ]

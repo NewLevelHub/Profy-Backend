@@ -6,6 +6,7 @@ from app.routers.artifacts import router as artifacts_router
 from app.routers.assessment import router as assessment_router
 from app.routers.auth import router as auth_router
 from app.routers.directions import router as directions_router
+from app.routers.product_feedback import router as product_feedback_router
 from app.routers.profile import router as profile_router
 from app.routers.result import router as result_router
 from app.routers.roadmap import router as roadmap_router
@@ -22,6 +23,7 @@ api_router.include_router(assessment_router, prefix="/api/v1/assessment")
 api_router.include_router(akinator_router, prefix="/api/v1/assessment")
 api_router.include_router(simulation_router, prefix="/api/v1/assessment")
 api_router.include_router(directions_router, prefix="/api/v1/directions")
+api_router.include_router(product_feedback_router, prefix="/api/v1/feedback")
 api_router.include_router(result_router, prefix="/api/v1/result")
 api_router.include_router(roadmap_router, prefix="/api/v1/roadmap")
 api_router.include_router(subject_readiness_router, prefix="/api/v1/subject-readiness")
