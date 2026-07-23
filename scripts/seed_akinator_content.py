@@ -1164,9 +1164,36 @@ QUESTIONS: list[dict] = [
           "axis_weights": {"Inv": -2, "Struct": 1}},
          {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": ["data-science", "finance-accounting"]},
+    # Added (calibration playtest pass, 2026-07, round 20): pilot had ZERO
+    # resolves_pair questions anywhere in the bank — the same "structural
+    # hole" pattern that data-science/finance-accounting had before order=53
+    # (round 16) and school-teacher/speech-therapist had before order=52
+    # (round 6), except here it also means cluster_resolver_service can
+    # never disambiguate a final cluster that includes pilot (it requires
+    # >=2 resolves_pair members to overlap the cluster). Traced sessions
+    # this round found pilot as the single most common "wrong" rival across
+    # nearly every STEM-cluster profession (mechanical-engineer,
+    # civil-engineering, architect, software-engineer, data-science,
+    # it-infrastructure-security, finance-accounting) — it already has a
+    # real opposing axis vs every one of them (Inv:-1, added round 3,
+    # against their Inv:1-2), but it was always a *weak* opposition (1-2
+    # magnitude) buried under 6-9 shared same-direction axes, and with no
+    # dedicated resolver to sharpen it, same failure shape as translator's
+    # weak-opposition rivals (see round 18 notes) rather than data-science's
+    # zero-opposition one. This question does for pilot what order=53 did
+    # for data-science: a sharp ±2 Inv fork with its own dedicated resolver.
+    {"order": 54, "kind": "direct", "depth": 3, "age_variant": "senior",
+     "text": "В работе тебе важнее…", "text_junior": None,
+     "options": [
+         {"text": "точно следовать проверенной процедуре, не отклоняясь",
+          "axis_weights": {"Inv": -2, "Struct": 1}},
+         {"text": "придумать и спроектировать что-то новое, чего раньше не было",
+          "axis_weights": {"Inv": 2, "Ideas": 1}},
+         {"text": "не знаю", "axis_weights": {}},
+     ], "resolves_pair": ["pilot", "mechanical-engineer", "civil-engineering", "architect", "software-engineer", "data-science"]},
 ]
 
-assert len(QUESTIONS) == 44, f"expected 44 questions, got {len(QUESTIONS)}"
+assert len(QUESTIONS) == 45, f"expected 45 questions, got {len(QUESTIONS)}"
 assert len({q["order"] for q in QUESTIONS}) == len(QUESTIONS), "duplicate question order"
 
 # Every slug named in a resolves_pair must actually exist as a leaf — this is
