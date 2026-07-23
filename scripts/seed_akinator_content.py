@@ -600,10 +600,102 @@ SPECIALTIES: list[dict] = [
      "profile": {"People": 1, "Phys": 1, "Lead": 1, "Exp": 1, "Focus": -1, "Risk": 1, "Struct": 2, "Pace": 1, "Predict": 1, "PhysSt": 1},
      "professions": ["Полицейский", "Следователь", "Инспектор"],
      "subjects_required": {"Обществознание": 2, "История": 1, "Физическая культура": 1}},
+
+    # ── Дополнительные специальности (добавлены 2026-07): 14 направлений, ────
+    # которые ранее существовали в БД с profile={} и не участвовали в работе
+    # движка. Теперь получают полноценные профили и родительские секции.
+
+    # IT и данные
+    {"slug": "it-development", "name": "IT и разработка", "label_junior": "Разработчик", "section": "akinator-it-data",
+     "description": "IT и разработка охватывает создание программных продуктов — сайтов, приложений и сервисов — без жёсткой специализации на конкретном стеке.",
+     "profile": {"Data": 2, "Ideas": 1, "Inv": 1, "Exp": 1, "Auto": 1, "People": -1, "PhysSt": -1},
+     "professions": ["Разработчик ПО", "Веб-разработчик", "Fullstack-разработчик", "IT-специалист"],
+     "subjects_required": {"Информатика": 2, "Математика": 1}},
+    {"slug": "artificial-intelligence", "name": "Искусственный интеллект", "label_junior": "AI-инженер", "section": "akinator-it-data",
+     "description": "Искусственный интеллект — разработка систем, которые учатся на данных и принимают решения: машинное обучение, компьютерное зрение, NLP.",
+     "profile": {"Data": 2, "Math": 2, "Ideas": 2, "Inv": 2, "Focus": 2, "Acad": 2, "Auto": 1, "People": -1, "Struct": -1, "Predict": -1, "PhysSt": -2, "Care": -2, "Living": -2},
+     "professions": ["ML-инженер", "AI-исследователь", "NLP-инженер", "Инженер компьютерного зрения", "Data Scientist"],
+     "subjects_required": {"Математика": 2, "Информатика": 2}},
+
+    # Инженерия и техника
+    {"slug": "engineering-architecture", "name": "Инженерия / архитектура", "label_junior": "Инженер-архитектор", "section": "akinator-engineering-tech",
+     "description": "Инженерия и архитектура проектируют физические объекты — здания, сооружения, инженерные системы — объединяя технические расчёты и пространственное мышление.",
+     "profile": {"Phys": 2, "Data": 1, "Ideas": 2, "Obj": 1, "Exp": 1, "Struct": 2, "Math": 2, "Acad": 1, "Motor": 1},
+     "professions": ["Архитектор", "Инженер-проектировщик", "Инженер-строитель", "Урбанист"],
+     "subjects_required": {"Математика": 2, "Физика": 1, "Искусство": 1}},
+
+    # Природа и наука
+    {"slug": "science-research", "name": "Наука и исследования", "label_junior": "Учёный", "section": "akinator-animals-nature",
+     "description": "Наука и исследования — академическая деятельность в лаборатории или «в поле»: выдвижение гипотез, сбор данных, публикации.",
+     "profile": {"Ideas": 2, "Acad": 2, "Inv": 2, "Auto": 2, "Focus": 2, "Data": 1, "People": -1, "Predict": -1},
+     "professions": ["Научный сотрудник", "Исследователь", "Постдок", "Лаборант"],
+     "subjects_required": {"Математика": 1, "Биология": 1, "Физика": 1}},
+    {"slug": "ecology-nature", "name": "Экология / природа", "label_junior": "Эколог", "section": "akinator-animals-nature",
+     "description": "Экология и природа — мониторинг экосистем, охрана окружающей среды и работа по устойчивому развитию.",
+     "profile": {"Living": 2, "Phys": 1, "Data": 1, "Exp": 1, "Ideas": 1, "Auto": 1, "Predict": 1, "PhysSt": 1},
+     "professions": ["Эколог", "Природоохранный инспектор", "Специалист по устойчивому развитию", "ESG-консультант"],
+     "subjects_required": {"Биология": 2, "География": 1}},
+
+    # Медицина и здоровье
+    {"slug": "medicine-biology", "name": "Медицина / биология", "label_junior": "Биомедик", "section": "akinator-medicine",
+     "description": "Медицина и биология — лабораторная и исследовательская работа на стыке наук о жизни: биохимия, генетика, биотехнологии.",
+     "profile": {"Living": 2, "Data": 1, "Care": 1, "Exp": 1, "Acad": 2, "Focus": 1, "People": 1, "PhysSt": 1, "Struct": 1},
+     "professions": ["Биомедицинский исследователь", "Биотехнолог", "Биохимик", "Микробиолог", "Генетик"],
+     "subjects_required": {"Биология": 2, "Химия": 2}},
+
+    # Психология и помощь
+    {"slug": "psychology-pedagogy", "name": "Психология / педагогика", "label_junior": "Педагог-психолог", "section": "akinator-psychology-help",
+     "description": "Психология и педагогика объединяют работу с людьми через обучение и психологическую поддержку — в школе, центрах развития, онлайн.",
+     "profile": {"People": 2, "Emp": 2, "Care": 2, "Dev": 1, "Exp": 1, "Acad": 1, "Focus": 1, "Motiv": 1},
+     "professions": ["Педагог-психолог", "Детский психолог", "Школьный психолог", "Коуч"],
+     "subjects_required": {"Биология": 1, "Обществознание": 2}},
+
+    # Бизнес и продажи
+    {"slug": "marketing-advertising", "name": "Маркетинг / реклама", "label_junior": "Маркетолог", "section": "akinator-business-sales",
+     "description": "Маркетинг и реклама — продвижение продуктов и брендов через цифровые каналы, рекламные кампании и работу с аудиторией.",
+     "profile": {"People": 2, "Ideas": 2, "Vis": 2, "Inv": 1, "Emp": 1, "Motiv": 1, "Data": 1, "Acad": 1},
+     "professions": ["Маркетолог", "Специалист по рекламе", "Таргетолог", "PR-менеджер", "Бренд-менеджер"],
+     "subjects_required": {"Обществознание": 1, "История": 1}},
+    {"slug": "business-entrepreneurship", "name": "Бизнес / предпринимательство", "label_junior": "Предприниматель", "section": "akinator-business-sales",
+     "description": "Бизнес и предпринимательство — запуск собственного дела, стартапы, бизнес-планирование с высокой степенью личной ответственности и риска.",
+     "profile": {"Ideas": 2, "Lead": 2, "Inv": 2, "Auto": 2, "Risk": 2, "Motiv": 2, "People": 1, "Data": 1, "Struct": -1},
+     "professions": ["Предприниматель", "Основатель стартапа", "Бизнес-консультант"],
+     "subjects_required": {"Математика": 1, "Обществознание": 1}},
+    {"slug": "finance-economics", "name": "Финансы / экономика", "label_junior": "Экономист", "section": "akinator-business-sales",
+     "description": "Финансы и экономика — анализ макроэкономических процессов, финансовых рынков и корпоративных финансов с научным или аналитическим уклоном.",
+     "profile": {"Data": 2, "Math": 1, "Acad": 2, "Ideas": 1, "Exp": 1, "Focus": 1, "Auto": 1, "People": -1, "Struct": 1},
+     "professions": ["Экономист", "Финансовый аналитик", "Макроэкономист", "Экономический советник"],
+     "subjects_required": {"Математика": 2, "Экономика": 2}},
+    {"slug": "project-management", "name": "Управление проектами", "label_junior": "Проджект-менеджер", "section": "akinator-business-sales",
+     "description": "Управление проектами — координация команд, планирование сроков и бюджетов, контроль выполнения задач в IT, строительстве, бизнесе.",
+     "profile": {"People": 2, "Lead": 2, "Data": 1, "Ideas": 1, "Struct": 2, "Motiv": 1, "Emp": 1, "Pace": 1, "Auto": -1},
+     "professions": ["Проджект-менеджер", "Продуктовый менеджер", "Скрам-мастер", "Бизнес-аналитик"],
+     "subjects_required": {"Математика": 1, "Обществознание": 1}},
+
+    # Слова и коммуникация
+    {"slug": "law-public-administration", "name": "Право / госуправление", "label_junior": "Юрист / чиновник", "section": "akinator-words-communication",
+     "description": "Право и государственное управление — юридическая практика, государственная служба, разработка и применение законодательства.",
+     "profile": {"People": 1, "Data": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Acad": 2, "Lead": 1, "Predict": 1},
+     "professions": ["Юрист", "Государственный служащий", "Политолог", "Дипломат", "Правовед"],
+     "subjects_required": {"История": 2, "Обществознание": 2}},
+
+    # Творчество и дизайн
+    {"slug": "design-digital-art", "name": "Дизайн / цифровое искусство", "label_junior": "Цифровой художник", "section": "akinator-creative-design",
+     "description": "Дизайн и цифровое искусство — создание визуальных образов и продуктов в цифровой среде: иллюстрация, моушн, 3D, концепт-арт.",
+     "profile": {"Ideas": 2, "Inv": 2, "Vis": 2, "Auto": 1, "Exp": 1, "Motor": 1, "Phys": 1, "People": 1, "Struct": -1},
+     "professions": ["Цифровой художник", "Моушн-дизайнер", "Концепт-художник", "3D-моделлер", "Иллюстратор"],
+     "subjects_required": {"Искусство": 2, "Информатика": 1}},
+
+    # Сцена и медиа
+    {"slug": "media-journalism", "name": "Медиа / журналистика", "label_junior": "Журналист", "section": "akinator-stage-media",
+     "description": "Медиа и журналистика — создание контента для аудитории через текст, видео, подкасты и социальные сети.",
+     "profile": {"People": 2, "Ideas": 2, "Emp": 1, "Vis": 1, "Exp": 1, "Risk": 1, "Motiv": 1, "Predict": -1},
+     "professions": ["Журналист", "Редактор", "Видеоблогер", "Подкастер", "Медиапродюсер"],
+     "subjects_required": {"История": 1, "Обществознание": 1}},
 ]
 
 assert len(SECTIONS) == 13, f"expected 13 sections, got {len(SECTIONS)}"
-assert len(SPECIALTIES) == 38, f"expected 38 specialties, got {len(SPECIALTIES)}"
+assert len(SPECIALTIES) == 52, f"expected 52 specialties, got {len(SPECIALTIES)}"
 
 _SECTION_SLUGS = {s["slug"] for s in SECTIONS}
 for _p in SPECIALTIES:
@@ -630,6 +722,43 @@ for _s in SECTIONS:
 
 SECTION_AGE_GROUPS = ["junior"]
 SPECIALTY_AGE_GROUPS = ["middle", "senior"]
+EXPLORE_AGE_GROUPS = ["junior", "middle"]
+
+# ---------------------------------------------------------------------------
+# 1b. Explore nodes — broad exploration directions for junior/middle users.
+#     Not specialties (no parent_id set by SPECIALTIES loop), seeded by
+#     seed_explore_nodes() with their own age_groups=["junior","middle"].
+# ---------------------------------------------------------------------------
+
+EXPLORE_NODES: list[dict] = [
+    {"slug": "explore-people", "name": "Общение и помощь людям", "label_junior": "Специалист по работе с людьми",
+     "section": "akinator-psychology-help",
+     "description": "Направление для тех, кто хочет помогать людям, общаться и поддерживать других.",
+     "profile": {"People": 2, "Emp": 2, "Care": 2, "Motiv": 1}},
+    {"slug": "explore-creative", "name": "Творчество и искусство", "label_junior": "Творческий человек",
+     "section": "akinator-creative-design",
+     "description": "Направление для тех, кто любит рисовать, создавать и воплощать идеи.",
+     "profile": {"Ideas": 2, "Vis": 2, "Inv": 1, "Motor": 1, "Auto": 1}},
+    {"slug": "explore-tech", "name": "Технологии и роботы", "label_junior": "Инженер / технарь",
+     "section": "akinator-engineering-tech",
+     "description": "Направление для тех, кто увлечён техникой, роботами и как всё устроено.",
+     "profile": {"Phys": 2, "Data": 1, "Inv": 1, "Motor": 1, "Ideas": 1}},
+    {"slug": "explore-numbers", "name": "Числа и головоломки", "label_junior": "Математик",
+     "section": "akinator-it-data",
+     "description": "Направление для тех, кому интересна математика, логика и числа.",
+     "profile": {"Data": 2, "Math": 2, "Focus": 2, "Ideas": 1, "Auto": 1}},
+    {"slug": "explore-nature-science", "name": "Природа и наука", "label_junior": "Учёный / натуралист",
+     "section": "akinator-animals-nature",
+     "description": "Направление для тех, кто любит природу, биологию и научные открытия.",
+     "profile": {"Living": 2, "Exp": 1, "Ideas": 1, "Phys": 1, "Auto": 1}},
+    {"slug": "explore-words", "name": "Слова, языки и истории", "label_junior": "Филолог / журналист",
+     "section": "akinator-words-communication",
+     "description": "Направление для тех, кто любит читать, писать, изучать языки и рассказывать истории.",
+     "profile": {"Ideas": 2, "Exp": 1, "Emp": 1, "People": 1, "Acad": 1}},
+]
+
+assert len(EXPLORE_NODES) == 6, f"expected 6 explore nodes, got {len(EXPLORE_NODES)}"
+assert len({n["slug"] for n in EXPLORE_NODES}) == len(EXPLORE_NODES), "duplicate explore node slug"
 
 
 def compute_section_profiles() -> dict[str, dict[str, float]]:
@@ -1326,10 +1455,13 @@ async def cleanup_retired_content(db: AsyncSession) -> tuple[int, int, int]:
 
 async def audit_unmanaged_leaves(db: AsyncSession) -> list[str]:
     """Report (do NOT delete) leaf Directions this script doesn't own that have
-    an empty profile — e.g. the legacy `explore-*` placeholders. Belief can
-    never move for them, so they sit in the hypothesis space as dead weight.
-    Deleting them is a separate product/data decision, not a seed-script call."""
-    known = {s["slug"] for s in SECTIONS} | {p["slug"] for p in SPECIALTIES}
+    an empty profile. Belief can never move for them, so they sit in the
+    hypothesis space as dead weight."""
+    known = (
+        {s["slug"] for s in SECTIONS}
+        | {p["slug"] for p in SPECIALTIES}
+        | {n["slug"] for n in EXPLORE_NODES}
+    )
     result = await db.execute(select(Direction).where(Direction.is_leaf.is_(True)))
     return sorted(
         d.slug for d in result.scalars() if d.slug not in known and not d.profile
@@ -1454,8 +1586,59 @@ async def seed_specialties(
     return inserted, updated, skipped
 
 
+async def seed_explore_nodes(
+    db: AsyncSession, section_ids: dict[str, uuid.UUID]
+) -> tuple[int, int, int]:
+    """Upsert the 6 explore-* leaf Directions with age_groups=["junior","middle"]."""
+    inserted = updated = skipped = 0
+
+    for node in EXPLORE_NODES:
+        parent_id = section_ids[node["section"]]
+        result = await db.execute(select(Direction).where(Direction.slug == node["slug"]))
+        existing = result.scalar_one_or_none()
+
+        if existing is not None:
+            changed = False
+            if existing.profile != node["profile"]:
+                existing.profile = node["profile"]
+                changed = True
+            if existing.description != node["description"]:
+                existing.description = node["description"]
+                changed = True
+            if existing.parent_id != parent_id:
+                existing.parent_id = parent_id
+                changed = True
+            if existing.age_groups != EXPLORE_AGE_GROUPS:
+                existing.age_groups = EXPLORE_AGE_GROUPS
+                changed = True
+            if existing.label_junior != node.get("label_junior"):
+                existing.label_junior = node.get("label_junior")
+                changed = True
+            updated += 1 if changed else 0
+            skipped += 0 if changed else 1
+            continue
+
+        direction = Direction(
+            name=node["name"],
+            slug=node["slug"],
+            description=node["description"],
+            required_scores={},
+            parent_id=parent_id,
+            is_leaf=True,
+            profile=node["profile"],
+            professions=[],
+            age_groups=EXPLORE_AGE_GROUPS,
+            label_junior=node.get("label_junior"),
+            subjects_required={},
+        )
+        db.add(direction)
+        inserted += 1
+
+    return inserted, updated, skipped
+
+
 async def seed_questions(db: AsyncSession) -> tuple[int, int, int]:
-    """Upsert the 41 AkinatorQuestion rows by `order` (this script owns 0-50,
+    """Upsert the 44 AkinatorQuestion rows by `order` (this script owns 0-53,
     minus the retired orders — see RETIRED_QUESTION_ORDERS).
     Returns (inserted, updated, skipped)."""
     inserted = updated = skipped = 0
@@ -1497,6 +1680,7 @@ async def main() -> None:
         dirs_deleted, qs_deleted, sel_cleared = await cleanup_retired_content(db)
         section_ids, sec_ins, sec_upd, sec_skip = await seed_sections(db)
         spec_ins, spec_upd, spec_skip = await seed_specialties(db, section_ids)
+        expl_ins, expl_upd, expl_skip = await seed_explore_nodes(db, section_ids)
         q_ins, q_upd, q_skip = await seed_questions(db)
         orphans = await audit_unmanaged_leaves(db)
         await db.commit()
@@ -1512,6 +1696,10 @@ async def main() -> None:
         print(
             f"Specialties: inserted {spec_ins}, updated {spec_upd}, skipped {spec_skip} "
             f"(total {len(SPECIALTIES)}, age_groups={SPECIALTY_AGE_GROUPS})"
+        )
+        print(
+            f"Explore:     inserted {expl_ins}, updated {expl_upd}, skipped {expl_skip} "
+            f"(total {len(EXPLORE_NODES)}, age_groups={EXPLORE_AGE_GROUPS})"
         )
         print(
             f"Questions:   inserted {q_ins}, updated {q_upd}, skipped {q_skip} "

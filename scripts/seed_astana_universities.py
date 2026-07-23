@@ -24,7 +24,7 @@ from app.database import async_session
 from app.models.program import Program
 from app.models.university import University
 from scripts.astana_universities_data import ASTANA_UNIVERSITIES
-from scripts.seed_akinator_content import SECTIONS, SPECIALTIES
+from scripts.seed_akinator_content import EXPLORE_NODES, SECTIONS, SPECIALTIES
 
 # direction_slugs = list of akinator section/specialty slugs from seed_akinator_content.py
 PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
@@ -51,7 +51,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
     "enu": [
         {
             "name": "Информационные технологии (бакалавр)",
-            "direction_slugs": ["software-engineer"],
+            "direction_slugs": ["software-engineer", "it-development"],
             "language": "Казахский / Русский / Английский",
             "description": "Факультет информационных технологий ЕНУ.",
         },
@@ -77,7 +77,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "Finance (бакалавр)",
-            "direction_slugs": ["finance-accounting"],
+            "direction_slugs": ["finance-accounting", "finance-economics"],
             "language": "Английский",
             "description": "International School of Economics.",
         },
@@ -109,7 +109,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "Digital Journalism (бакалавр)",
-            "direction_slugs": ["journalist"],
+            "direction_slugs": ["journalist", "media-journalism"],
             "language": "Английский",
             "description": "Школа креативных индустрий.",
         },
@@ -117,7 +117,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
     "kazatu": [
         {
             "name": "Агроинженерия (бакалавр)",
-            "direction_slugs": ["agronomist"],
+            "direction_slugs": ["agronomist", "mechanical-engineer"],
             "language": "Казахский / Русский",
             "description": "Технический факультет КазАТИУ.",
         },
@@ -129,7 +129,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "Архитектура и дизайн (бакалавр)",
-            "direction_slugs": ["design"],
+            "direction_slugs": ["design", "architect"],
             "language": "Казахский / Русский",
             "description": "Факультет управления земельными ресурсами, архитектуры и дизайна.",
         },
@@ -177,7 +177,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
     "academy-of-choreography": [
         {
             "name": "Арт-менеджмент (бакалавр)",
-            "direction_slugs": ["management-entrepreneurship"],
+            "direction_slugs": ["management-entrepreneurship", "explore-creative"],
             "language": "Казахский / Русский",
             "description": "Программа арт-менеджмента Академии хореографии.",
         },
@@ -217,13 +217,13 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
     "qairu": [
         {
             "name": "AI and Machine Learning (бакалавр)",
-            "direction_slugs": ["data-science"],
+            "direction_slugs": ["data-science", "artificial-intelligence"],
             "language": "Английский",
             "description": "Флагманская AI-программа QAIRU.",
         },
         {
             "name": "Physical AI (бакалавр)",
-            "direction_slugs": ["mechanical-engineer"],
+            "direction_slugs": ["mechanical-engineer", "artificial-intelligence"],
             "language": "Английский",
             "description": "Робототехника и интеллектуальные системы QAIRU.",
         },
@@ -231,13 +231,13 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
     "esil-university": [
         {
             "name": "Финансы (бакалавр)",
-            "direction_slugs": ["finance-accounting"],
+            "direction_slugs": ["finance-accounting", "finance-economics"],
             "language": "Казахский / Русский",
             "description": "Финансовое направление Esil University.",
         },
         {
             "name": "Вычислительная техника и ПО (бакалавр)",
-            "direction_slugs": ["software-engineer"],
+            "direction_slugs": ["software-engineer", "it-development"],
             "language": "Казахский / Русский",
             "description": "IT-направление Esil University.",
         },
@@ -251,7 +251,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
     "turan-astana": [
         {
             "name": "Digital-маркетинг (бакалавр)",
-            "direction_slugs": ["marketing"],
+            "direction_slugs": ["marketing", "marketing-advertising"],
             "language": "Казахский / Русский",
             "description": "Маркетинговые программы Туран-Астана.",
         },
@@ -271,7 +271,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
     "kazutb": [
         {
             "name": "Искусственный интеллект (бакалавр)",
-            "direction_slugs": ["data-science"],
+            "direction_slugs": ["data-science", "artificial-intelligence"],
             "language": "Казахский / Русский",
             "description": "Факультет инжиниринга и информационных технологий КазУТБ.",
         },
@@ -291,7 +291,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
     "eagi": [
         {
             "name": "Педагогика и психология (бакалавр)",
-            "direction_slugs": ["psychologist", "school-teacher"],
+            "direction_slugs": ["psychologist", "school-teacher", "psychology-pedagogy"],
             "language": "Казахский / Русский",
             "description": "Педагогические программы ЕАГИ.",
         },
@@ -305,13 +305,13 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
     "financial-academy": [
         {
             "name": "Финансы (бакалавр)",
-            "direction_slugs": ["finance-accounting"],
+            "direction_slugs": ["finance-accounting", "finance-economics"],
             "language": "Казахский / Русский",
             "description": "Финансовая академия — направление «Финансы».",
         },
         {
             "name": "Информационные системы (бакалавр)",
-            "direction_slugs": ["software-engineer"],
+            "direction_slugs": ["software-engineer", "it-development"],
             "language": "Казахский / Русский",
             "description": "IT-направление Финансовой академии.",
         },
@@ -333,7 +333,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
     "msu-kz-branch": [
         {
             "name": "Прикладная математика и информатика (бакалавр)",
-            "direction_slugs": ["data-science"],
+            "direction_slugs": ["data-science", "software-engineer", "explore-numbers"],
             "language": "Русский",
             "description": "Факультет вычислительной математики и кибернетики МГУ-КФ.",
         },
@@ -360,7 +360,11 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
     ],
 }
 
-_KNOWN_DIRECTION_SLUGS = {s["slug"] for s in SECTIONS} | {s["slug"] for s in SPECIALTIES}
+_KNOWN_DIRECTION_SLUGS = (
+    {s["slug"] for s in SECTIONS}
+    | {s["slug"] for s in SPECIALTIES}
+    | {n["slug"] for n in EXPLORE_NODES}
+)
 for _uni_slug, _programs in PROGRAMS_BY_UNIVERSITY_SLUG.items():
     for _prog in _programs:
         for _slug in _prog["direction_slugs"]:
