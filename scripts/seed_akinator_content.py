@@ -496,7 +496,21 @@ SPECIALTIES: list[dict] = [
      # in one thing) and not built around long solo focus (Focus — it's
      # event-paced, constantly interrupted by guests/staff, the opposite of
      # e.g. finance-accounting's Focus:2).
-     "profile": {"People": 2, "Data": 1, "Lead": 2, "Emp": 1, "Motiv": 1, "Risk": 1, "Struct": 1, "Pace": 2, "Predict": 1, "PhysSt": 1, "Acad": 1, "Exp": -1, "Focus": -1},
+     #
+     # Care:-1 added (calibration playtest pass, 2026-07, round 20): traced
+     # census showed kindergarten-teacher losing to hospitality-manager more
+     # than any other rival — checked their shared axes (People/Emp/Focus/
+     # Struct/Pace/PhysSt) and found ZERO opposing ones, same disease as
+     # data-science/finance-accounting (round 16) and psychologist/creative-
+     # cluster (round 17). hospitality-manager didn't carry Care in either
+     # direction despite the job being guest/operations-facing, not personal
+     # caregiving — the same "business/operations function, not individual
+     # care" distinction already used for architect's Care:-1 (round 9).
+     # Also a genuine (if weaker) opposing wedge against social-worker
+     # (Care:2) and sports-coach (Care:1), two more chronic rivals that
+     # previously had only a single 1-magnitude opposing axis (Motiv, Exp)
+     # buried under 6+ shared same-direction axes each.
+     "profile": {"People": 2, "Data": 1, "Lead": 2, "Emp": 1, "Motiv": 1, "Risk": 1, "Struct": 1, "Pace": 2, "Predict": 1, "PhysSt": 1, "Acad": 1, "Exp": -1, "Focus": -1, "Care": -1},
      "professions": ["Менеджер ресторанного дела", "Менеджер отеля", "Ивент-менеджер"],
      "subjects_required": {"Английский язык": 2, "Обществознание": 1, "Экономика": 1}},
 
