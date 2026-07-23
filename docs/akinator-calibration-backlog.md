@@ -60,24 +60,31 @@ same *named rivals* keep appearing, not by one profession's raw percentage.
 ## Current state (as of this doc)
 
 - Baseline before this session: 12/38 professions failing top-3 (n=30).
-- After the fixes below, including round 16 (data-science/finance-accounting)
-  and round 17 (psychologist): consistently ~1/38 failing at n=100 —
-  whichever creative-cluster member (translator/school-teacher/
-  speech-therapist/marketing/psychologist) is currently unluckiest in that
-  run's RNG, see the noise note above (now known to be wide, up to ~30pp for
-  some of these). No profession has failed *reproducibly in the same
-  direction* across multiple same-seed n=100 runs since data-science was
-  fixed in round 16 and psychologist in round 17.
+- After the fixes below, through round 21 (data-science/finance-accounting,
+  psychologist, pilot, hospitality-manager, actor): typically 0-1/38 failing
+  at n=100 (one run this session reached 0/38, the best result all
+  session) — whichever creative-cluster member (translator/school-teacher/
+  speech-therapist/marketing/psychologist/actor) is currently unluckiest in
+  that run's RNG, see the noise note above (now known to be wide, up to
+  ~30pp for some of these). No profession has failed *reproducibly in the
+  same direction* across multiple same-seed n=100 runs since data-science
+  was fixed in round 16.
 - Branch history: this work moved `pro-108` → `pro-116` → `pro-120` →
-  `pro-111` as the user merged/rebased across the session (`pro-120` was
-  merged into `pro-111` via PR #34). Fixes through round 16, including
-  data-science/finance-accounting, are committed on `pro-111` as of this
-  doc. **Round 17 (psychologist `Ideas:-1`) is verified and kept but not yet
-  committed as of this doc** — still in the working tree, along with round
-  18's revert (net effect of round 18 on the file: a comment only, no data
-  change — see "tried and reverted"). Check `git status` /
-  `git diff -- scripts/seed_akinator_content.py` before assuming a clean
-  tree. Check `git log --oneline -- scripts/seed_akinator_content.py
+  `pro-111` → `pro-114` as the user merged/rebased across the session
+  (`pro-120` merged into `pro-111` via PR #34; `pro-111` merged into `dev`
+  via PR #35/#36/#37 alongside other unrelated feature work; `pro-114` is
+  where rounds 19-21 happened). Fixes through round 16, including
+  data-science/finance-accounting, are committed. **Rounds 17 and 20-21
+  (psychologist, pilot resolver, hospitality-manager, actor) are verified
+  and kept but not yet committed as of this doc** — still in the working
+  tree, along with round 18's revert (net effect on the file: a comment
+  only, no data change — see "tried and reverted"). `app/services/
+  akinator_engine.py` similarly carries round 19's revert (a leader-based
+  relevance nudge, tried and reverted same-day — net effect: docstring
+  changes only, no behavior change from HEAD). Check `git status` /
+  `git diff -- scripts/seed_akinator_content.py app/services/
+  akinator_engine.py` before assuming a clean tree. Check `git log
+  --oneline -- scripts/seed_akinator_content.py
   app/services/akinator_engine.py` if picking this back up later — branch
   names in this doc are historical, not necessarily where the work lives now.
 - Content lives in `scripts/seed_akinator_content.py` (`SPECIALTIES` for leaf
@@ -200,6 +207,57 @@ same *named rivals* keep appearing, not by one profession's raw percentage.
     session (still one content addition, not the whole cluster) but is a
     real, low-risk, measured step in the right direction — see item 3 for
     what's still open. Kept; not yet committed.
+11. **hospitality-manager had zero opposing axis vs kindergarten-teacher
+    (round 20b)** — same audit method applied to the "business/service"
+    cluster (hospitality-manager, management-entrepreneurship,
+    social-worker, police-officer, kindergarten-teacher, sports-coach),
+    which showed the same "one profile dominates many others' loss lists"
+    shape as pilot did for STEM. hospitality-manager and kindergarten-
+    teacher share 6 axes (People/Emp/Focus/Struct/Pace/PhysSt), all same
+    direction, zero opposing — hospitality-manager didn't carry `Care` at
+    all despite being a guest/operations-facing role, not personal
+    caregiving (same reasoning as architect's existing `Care:-1`, round 9).
+    Added `Care:-1` to hospitality-manager — also a real (if weaker) wedge
+    against social-worker (`Care:2`) and sports-coach (`Care:1`), two more
+    chronic rivals. **Verified across two n=100 runs**: kindergarten-teacher
+    61% → 78% (up from a pre-fix baseline in the high-60s/low-70s), overall
+    census reached **0/38 failing** on the first run (best result all
+    session) and 1/38 (psychologist, the known chronic case) on the repeat.
+    hospitality-manager's presence in other professions' loss lists dropped
+    across the board. Noted but not chased further: kindergarten-teacher's
+    *new* #2 rival is now police-officer, which also shares zero opposing
+    axes with it (People/Focus/Struct/Pace/PhysSt) — kindergarten-teacher
+    still comfortably passes (61-78%) so this is low-priority, flagged for
+    whoever continues this. Kept; not yet committed.
+12. **actor's weak opposition against the creative cluster (round 21)** —
+    actor was this session's most persistently borderline profession
+    (repeatedly ~50%, and separately the traced casualty of the round-17
+    soft-nudge side effect). Unlike items 8/9/11, this wasn't a clean
+    zero-opposition case: actor already has real opposition vs design
+    (Vis/Auto/People/PhysSt) and food-production-tech (Struct/People). But
+    vs its single biggest rival, pr-specialist, it shared 7 same-direction
+    axes against only one weak (1-magnitude) opposing one (Auto). Actor
+    didn't carry `Inv` either way, despite the job being about interpreting
+    material someone else wrote rather than inventing it — added `Inv:-1`
+    (same "applies, doesn't invent" reasoning as lawyer/pilot/
+    fire-safety-engineer). This opposes pr-specialist/design/
+    makeup-artist-film/cinematographer/film-director all at once (everyone
+    in the cluster except musician, which carries no Inv either way).
+    **Verified across two n=100 runs**: actor 50% → 52%, up from a pre-fix
+    ~51% but now with pr-specialist gone from its top-3 losses entirely
+    (replaced by cinematographer/musician/makeup-artist-film) — a real
+    shift in *which* rival wins, not just a percentage nudge. Partial win,
+    not a clean one like items 8/9/11: musician has no Inv axis to oppose,
+    so it's now actor's most persistent uncontested rival (and grew
+    relatively). psychologist dipped to 39% on the first run (its worst
+    showing this session) but recovered to 47% on the repeat — within its
+    already-known 39-58% noise band (see item 9), not attributed to this
+    change since psychologist's own profile wasn't touched. 1/38 failing
+    both runs (psychologist, the known chronic case). Kept; not yet
+    committed. **Natural next step, not yet attempted**: find actor's real
+    differentiator from musician specifically (they share Ideas/Vis/Motor/
+    Risk/Struct, similar "performs live" signature) before touching
+    anything else in this cluster.
 
 ## Tried and reverted (documented in code so nobody repeats the experiment blind)
 

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models.email_verification import EmailVerificationToken
+from app.models.profile import Profile
 from app.models.user import User
 from app.schemas.auth import RegisterResponse
 from app.services import email_service
@@ -56,12 +57,21 @@ async def _create_verification_token(user_id: uuid.UUID, db: AsyncSession) -> st
 
 
 async def _purge_stale_unconfirmed(db: AsyncSession) -> None:
-    """Delete unconfirmed accounts created more than 24 hours ago."""
+    """Delete unconfirmed accounts created more than 24 hours ago.
+
+    Excludes accounts that somehow already have a Profile: profiles.user_id
+    has no ON DELETE CASCADE, so without this exclusion a single stray row
+    (a profile surviving on an otherwise-abandoned unverified account) makes
+    this bulk delete raise IntegrityError and fails registration for every
+    user, every request, until that one row is cleaned up by hand.
+    """
     cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    has_profile = select(Profile.id).where(Profile.user_id == User.id).exists()
     await db.execute(
         delete(User).where(
             User.is_verified.is_(False),
             User.created_at < cutoff,
+            ~has_profile,
         )
     )
 
