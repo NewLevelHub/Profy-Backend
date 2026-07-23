@@ -97,6 +97,14 @@ async def test_stale_purge_is_executed() -> None:
     """_purge_stale_unconfirmed must issue a DELETE before the SELECT."""
     db = _make_db(existing_user=None)
 
+    async def _flush_side_effect() -> None:
+        for call in db.add.call_args_list:
+            obj = call.args[0]
+            if not obj.id:
+                obj.id = uuid.uuid4()
+
+    db.flush.side_effect = _flush_side_effect
+
     with (
         patch("app.services.auth_service._purge_stale_unconfirmed", new_callable=AsyncMock) as mock_purge,
         patch("app.services.auth_service._create_verification_token", new_callable=AsyncMock, return_value="123456"),
