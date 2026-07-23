@@ -335,7 +335,25 @@ SPECIALTIES: list[dict] = [
     # компрессии нет даже при агрессивной группировке
     {"slug": "actor", "name": "Актёрское искусство", "section": "akinator-stage-media",
      "description": "Актёрское искусство готовит к работе на сцене, в кино и на телевидении — воплощению ролей, требующему эмоциональной открытости и умения держаться перед публикой.",
-     "profile": {"People": 1, "Ideas": 2, "Vis": 2, "Emp": 1, "Motor": 1, "Risk": 1, "Struct": -1, "Auto": -1, "Predict": 1, "PhysSt": 1, "Math": -1, "Data": -1},
+     # Inv:-1 added (calibration playtest pass, 2026-07, round 21): actor was
+     # this session's most consistently borderline profession (repeatedly
+     # ~50%, and separately the traced casualty of the round-17 soft-nudge
+     # side effect — see akinator_engine.select_next_question history).
+     # Checked its axis overlap with each chronic rival: vs design there's
+     # already real opposition (Vis/Auto/People/PhysSt all oppose), vs
+     # food-production-tech too (Struct/People), but vs pr-specialist —
+     # its single biggest rival across nearly every census run — the two
+     # share 7 same-direction axes (People/Ideas/Vis/Emp/Struct/Data/Math)
+     # against only one weak (1-magnitude) opposition (Auto). Actor didn't
+     # carry Inv in either direction, despite the job being about
+     # interpreting/embodying material someone else wrote (a script, a
+     # role) rather than inventing it from scratch — same "applies, doesn't
+     # invent" reasoning already used for lawyer/pilot/fire-safety-engineer.
+     # Inv:-1 opposes pr-specialist (Inv:2), design (Inv:2),
+     # makeup-artist-film (Inv:2), cinematographer (Inv:1), and
+     # film-director (Inv:2) all at once — essentially the entire creative
+     # cluster except musician (no Inv either way).
+     "profile": {"People": 1, "Ideas": 2, "Vis": 2, "Emp": 1, "Motor": 1, "Risk": 1, "Struct": -1, "Auto": -1, "Predict": 1, "PhysSt": 1, "Math": -1, "Data": -1, "Inv": -1},
      "professions": ["Актёр театра", "Актёр кино", "Актёр озвучивания"],
      "subjects_required": {"Искусство": 2, "Литература": 1}},
     {"slug": "musician", "name": "Музыкальное искусство", "section": "akinator-stage-media",
