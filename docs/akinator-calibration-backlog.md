@@ -210,6 +210,34 @@ same *named rivals* keep appearing, not by one profession's raw percentage.
   framing (it was corrected same-day in the inline code comment too). A fair
   re-test needs ~4-5 n=100 runs per side, not 2 — not attempted here given
   the time cost of Docker rebuilds this session.
+- **Third attempt at a `select_next_question` relevance nudge (round 19)** —
+  anchored the bonus to the CURRENT top-1 belief leaf's own score on a
+  resolver's options, instead of round-2-attempt's "either named leaf in
+  top-5" (which had caused actor's 18pp loss). Directly motivated by a real
+  user complaint (a clearly STEM-leaning session getting cinema/medicine
+  questions) — traced two sessions before running any census, and both were
+  bad enough to revert on trace evidence alone: (1) a software-engineer
+  session still got asked film-crew, medicine-cluster, and animals/nature
+  resolvers — the original complaint was NOT fixed; (2) a genuinely new
+  failure mode appeared that neither prior attempt had: because whichever
+  leaf is currently *leading* gets its own resolvers preferentially boosted
+  next, a broad/generic profile that edges narrowly ahead (pilot, in the
+  traced run) can bootstrap a feedback loop and end up dominating a session
+  that should have gone elsewhere — pilot reached 0.636 belief in a session
+  simulating a software-engineer persona. An actor-persona trace also still
+  hit an unrelated resolver and lost its lead late in the session. Reverted
+  same day, before spending a census run on it (Docker was also killing the
+  census process on every attempt that day — see below). This is the third
+  distinct way `select_next_question`-level nudging has broken something;
+  see item 3 below for the still-recommended content-level alternative.
+
+### Aside: Docker Desktop instability this session
+Multiple background census runs died with exit 137 (SIGKILL) mid-session,
+unrelated to any code change — confirmed by immediately retrying the exact
+same command after the api container auto-restarted, which then succeeded.
+If a census run comes back completely empty with exit 137, that's Docker,
+not a regression — just retry (`docker ps` to confirm the api container is
+stable/not mid-restart first).
 
 ## Open backlog — not yet fixed
 
@@ -250,19 +278,43 @@ translator's noisier case.
 A user going clearly down a physics/math-leaning path reported getting asked
 about cinema and medicine mid-session — jarring, and a plausible trust/
 completion-rate risk even where the final math still lands correctly.
+**Confirmed still present as of round 19** via a fresh trace: a
+software-engineer-target session got 4 of 15 questions from entirely
+unrelated resolvers (film-crew, medicine-cluster, fire-safety/police,
+animals/nature).
+
 Root cause: `select_next_question`'s entropy calculation scores a question's
 informativeness across *all 38 leaves*, not relative to the current user's
 apparent direction — a question that's still highly uncertain for two
 unrelated leaves (e.g. actor vs film-director) can out-score a
-directly-relevant one. The reverted "soft nudge" experiment (see above) was
-one attempt at this; it worked but had its own side effect. Untried
-alternative worth exploring: add more *deep* (depth 2-3) differentiating
-questions **within** already-strong clusters (e.g. further splitting
-mechanical-engineer/civil-engineering/data-science/software-engineer/
-it-infrastructure-security/pilot/architect beyond what order=28/51 already
-do) so that, for a genuinely STEM-leaning session, in-domain questions
-out-compete off-topic ones on raw expected-entropy-reduction — without
-touching the global selection algorithm at all.
+directly-relevant one.
+
+**Three separate attempts at an algorithm-level fix have now failed** (see
+"tried and reverted" above for full detail on each):
+1. Hard filter on irrelevant resolvers — measured worse overall.
+2. Soft nudge keyed to "either resolver leaf in top-5 belief" — real
+   aggregate improvement, but boosted resolvers between a leaf's *neighbors*
+   at that leaf's own expense (actor -18pp).
+3. Soft nudge keyed to the current #1 leaf's own score — didn't fix the
+   original complaint (still asked unrelated resolvers in a fresh trace)
+   *and* introduced a leader-lock-in feedback loop (a generic profile that
+   edges narrowly ahead gets its own resolvers preferentially boosted next,
+   entrenching it further — reached 0.636 belief for the wrong profession
+   in one traced session).
+
+**Recommendation: stop trying to fix this at the algorithm level.** Three
+different framings of "make relevant resolvers more likely" have each found
+a new way to misfire, and the failure modes keep appearing only via manual
+tracing, not census aggregates — meaning there's likely a fourth one hiding
+too. The still-untried, lower-risk alternative: add more *deep* (depth 2-3)
+differentiating questions **within** already-strong clusters (e.g. further
+splitting mechanical-engineer/civil-engineering/data-science/
+software-engineer/it-infrastructure-security/pilot/architect beyond what
+order=28/51 already do) so that, for a genuinely STEM-leaning session,
+in-domain questions out-compete off-topic ones on raw
+expected-entropy-reduction *on their own merits* — a pure content addition,
+no change to `select_next_question` itself, so it can't introduce a new
+selection-logic bug the way all three algorithm attempts did.
 
 ### 4. Long sessions dilute "quiet" professions
 A profession with few genuinely-relevant questions loses relative belief
