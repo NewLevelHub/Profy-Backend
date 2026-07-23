@@ -8,6 +8,10 @@ from app.schemas.artifact import ArtifactItem
 from app.schemas.profile import ProfileResponse
 
 
+# ---------------------------------------------------------------------------
+# User list / detail
+# ---------------------------------------------------------------------------
+
 class AdminUserListItem(BaseModel):
     id: uuid.UUID
     email: str
@@ -33,6 +37,7 @@ class AdminAssessmentSummary(BaseModel):
     goal: str
     status: str
     current_block: int
+    selected_direction_slug: str | None = None
     created_at: datetime
     completed_at: datetime | None = None
     has_result: bool = False
@@ -51,16 +56,73 @@ class AdminUserDetailResponse(BaseModel):
     assessments: list[AdminAssessmentSummary] = []
 
 
-class AdminResponseItem(BaseModel):
-    question_id: uuid.UUID
-    block: str
-    question_text: str
-    question_order: int
-    selected_option_index: int
-    selected_answer_text: str
-    scores: dict[str, Any]
-    created_at: datetime
+# ---------------------------------------------------------------------------
+# Assessment detail — Akinator sub-schemas
+# ---------------------------------------------------------------------------
 
+class AkinatorAnswerItem(BaseModel):
+    step: int
+    question_text: str
+    # None when selected_option_index was None ("не знаю")
+    selected_answer: str | None
+    # Belief snapshot immediately after this answer: slug → probability
+    belief_after: dict[str, Any]
+
+
+class TopDirectionItem(BaseModel):
+    slug: str
+    name: str | None = None
+    probability: float
+
+
+class AkinatorSessionSummary(BaseModel):
+    status: str
+    step: int
+    top_directions: list[TopDirectionItem]
+    rejected_leaves: list[str]
+    liked: bool | None
+    feedback_note: str | None
+    feedback_at: datetime | None
+    answers: list[AkinatorAnswerItem]
+
+
+class ProfessionSimulationItem(BaseModel):
+    leaf_slug: str
+    leaf_name: str | None = None
+    accepted: bool
+    answers: list[Any]
+
+
+class SubjectScoreItem(BaseModel):
+    subject: str
+    level: float | None
+    interest: float | None
+    is_strength: bool | None
+
+
+class SubjectReadinessItem(BaseModel):
+    direction_slug: str
+    direction_name: str | None = None
+    status: str
+    subject_scores: list[SubjectScoreItem]
+
+
+class DirectionRoadmapItem(BaseModel):
+    direction_slug: str
+    direction_name: str | None = None
+    profession_options: list[Any]
+    subjects_now: list[Any]
+    starter_actions: list[Any]
+    growth_focus: dict[str, Any]
+    skills_to_build: list[Any]
+    university_requirements: list[Any]
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+# ---------------------------------------------------------------------------
+# Assessment detail response
+# ---------------------------------------------------------------------------
 
 class AdminAssessmentDetailResponse(BaseModel):
     id: uuid.UUID
@@ -70,11 +132,20 @@ class AdminAssessmentDetailResponse(BaseModel):
     goal: str
     status: str
     current_block: int
+    selected_direction_slug: str | None = None
+    selected_direction_name: str | None = None
     created_at: datetime
     completed_at: datetime | None = None
-    responses: list[AdminResponseItem] = []
-    analysis_result: dict | None = None
-    roadmap: dict | None = None
+    # Akinator engine data
+    akinator_session: AkinatorSessionSummary | None = None
+    # Profession simulation logs for this assessment
+    profession_simulations: list[ProfessionSimulationItem] = []
+    # Subject readiness (post-direction confirmation)
+    subject_readiness: SubjectReadinessItem | None = None
+    # Direction roadmaps generated for this assessment
+    roadmaps: list[DirectionRoadmapItem] = []
+    # Deprecated — kept for backwards compat; always empty now
+    responses: list[Any] = []
 
 
 class AdminListParams(BaseModel):
