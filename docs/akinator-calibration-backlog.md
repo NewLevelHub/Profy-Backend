@@ -167,6 +167,39 @@ same *named rivals* keep appearing, not by one profession's raw percentage.
    baseline) → 53% → 50% → 51%, with pr-specialist and makeup-artist-film
    dropping out of its top-3 "loses to" list entirely in all three
    post-fix runs (previously its #1/#2 rivals). Kept; not yet committed.
+10. **pilot had zero `resolves_pair` questions anywhere in the bank (round
+    20)** — the content-level fix for the "off-topic questions" complaint
+    (item 3 below), after three algorithm-level attempts all failed (see
+    above). Traced sessions found pilot as the single most common wrong
+    rival across nearly the entire STEM cluster (mechanical-engineer,
+    civil-engineering, architect, software-engineer, data-science,
+    it-infrastructure-security, finance-accounting) — most visibly in the
+    round-19 trace where it bootstrapped a feedback loop to 0.636 belief in
+    a software-engineer-target session. It already had a real opposing axis
+    against every one of them (`Inv:-1`, round 3, vs their `Inv:1-2`), but
+    always weak (1-2 magnitude) and buried under 6-9 shared same-direction
+    axes, with no dedicated resolver to sharpen it or let
+    `cluster_resolver_service` disambiguate a final cluster containing
+    pilot (that service requires >=2 `resolves_pair` members to overlap the
+    cluster — impossible for pilot with zero resolvers). Added order=54: a
+    sharp ±2 `Inv` fork ("следовать проверенной процедуре" vs "придумать и
+    спроектировать что-то новое"), `resolves_pair` naming pilot plus its
+    five main STEM rivals — same playbook as order=53 for data-science.
+    Traced first: a software-engineer session that previously lost its lead
+    to pilot (0.636 by step 15, see round-19 notes) now never let pilot into
+    its top-3 at all, and reached a much more decisive lead (0.532 by step
+    12-13) either selecting order=54 directly or resolving cleanly without
+    it. **Verified across two n=100 runs**: 2/38 and 1/38 failing overall
+    (both were the same pre-existing psychologist/translator borderline
+    cases, no new failures). Whole STEM cluster stayed healthy both runs
+    (data-science 58-69%, software-engineer 95-98%, mechanical-engineer
+    69-74%, civil-engineering 97-99%, architect 96-98%,
+    it-infrastructure-security 74-75%, pilot 99%), and pilot's presence in
+    *other* professions' "loses to" lists dropped noticeably versus the
+    pre-fix pattern. Doesn't fully eliminate off-topic questions in a single
+    session (still one content addition, not the whole cluster) but is a
+    real, low-risk, measured step in the right direction — see item 3 for
+    what's still open. Kept; not yet committed.
 
 ## Tried and reverted (documented in code so nobody repeats the experiment blind)
 
