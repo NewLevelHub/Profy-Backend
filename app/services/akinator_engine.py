@@ -230,6 +230,50 @@ def _sample_by_entropy(
     return rng.choices(candidates, weights=weights, k=1)[0]
 
 
+_RELEVANCE_BONUS = 0.15
+_RELEVANCE_ONSET_STEP = 6
+
+
+def _relevance_bonus(
+    question: AkinatorQuestion,
+    belief: dict[str, float],
+    leaf_profiles: dict[str, dict[str, int]],
+) -> float:
+    """Entropy discount for a resolves_pair question that's actually useful
+    to the CURRENT top-1 belief leaf — i.e. that leaf itself scores > 0 on
+    at least one of the resolver's own options — regardless of whether the
+    leader is one of the two leaves the resolver is nominally "about".
+
+    Replaces an earlier version (calibration playtest pass, 2026-07, round
+    "first soft-nudge attempt") that granted the bonus whenever EITHER
+    named leaf of resolves_pair was anywhere in a top-5 belief basket. That
+    version measured a real net improvement (n=100: 4->3 failing) but had a
+    traced side effect: for a leaf like actor, whose habitual neighbors
+    (design, cinematographer, makeup-artist-film) are *also* usually in its
+    own top-5 (they share axes), any MUTUAL resolver between those
+    neighbors satisfied "either name in top-5" even though actor itself has
+    no stake in a design-vs-cinematographer dispute — so those resolvers
+    kept getting boosted at actor's expense (18pp lost) while actor's own
+    resolvers waited their turn. Checking the current leader's own score
+    directly, instead of pair-name-in-top-N membership, fixes that: a
+    design-vs-cinematographer resolver only gets boosted if the current
+    leader (whether it's design, cinematographer, actor, or anyone else)
+    would actually move on it — not just because two OTHER leaves happen to
+    be quarreling nearby.
+    """
+    pair = question.resolves_pair
+    if not pair:
+        return 0.0
+    leader_slug = max(belief.items(), key=lambda kv: kv[1])[0]
+    leader_profile = leaf_profiles.get(leader_slug)
+    if not leader_profile:
+        return 0.0
+    best = max(
+        match_score(opt.get("axis_weights", {}), leader_profile) for opt in question.options
+    )
+    return _RELEVANCE_BONUS if best > 0 else 0.0
+
+
 def select_next_question(
     session: AssessmentSession,
     candidate_questions: list[AkinatorQuestion],
@@ -251,31 +295,40 @@ def select_next_question(
     machinery as update_belief. Not a strict argmin — see
     AKINATOR_QUESTION_TEMPERATURE.
 
-    (Two attempts at nudging this toward resolves_pair questions relevant to
-    the CURRENT top belief were tried and both reverted (calibration
-    playtest pass, 2026-07) — worth knowing before trying a third:
+    From step >= _RELEVANCE_ONSET_STEP, a small entropy discount
+    (_relevance_bonus) nudges sampling toward resolves_pair questions that
+    are actually informative for the CURRENT top-1 belief leaf — see that
+    function's docstring for why it checks the leader's own score rather
+    than pair-name-in-top-N membership (third attempt at this idea; the
+    first two are recorded below for anyone tempted to retry them blind).
+
+    (Earlier attempts at nudging this toward resolves_pair questions
+    relevant to current belief (calibration playtest pass, 2026-07):
       1. Hard filter — excluded irrelevant resolves_pair questions outright.
          Measured worse (n=30, seed=7): weight-balance content fixes alone
          dropped failing professions 12->7; the filter on top made it
          12->10 (tried top_n=5 and 10) — excluding a resolver outright could
          permanently lock a leaf out of its own best rescue chance if it
          hadn't differentiated yet.
-      2. Soft nudge — discounted (not excluded) the expected entropy of
-         relevant resolvers, so every question stayed selectable. This DID
-         produce a real, reproducible net improvement (n=100, seed=7:
-         4->3 failing; data-science/marketing/speech-therapist each gained
-         6-11pp) — but at a traced, systematic cost to leaves *adjacent to*
-         a genuine rivalry without being part of it: actor lost 18pp because
-         its habitual neighbors (design, cinematographer, makeup-artist-film)
-         kept qualifying each other's resolvers as "relevant" (each was in
-         the other's top-5), so those resolvers — which say nothing about
-         actor — got selected more often at actor's expense. Reverted
-         because this failure mode was only found by tracing one profession;
-         its true prevalence across the other 37 is unknown, and unlike a
-         content edit this touches every single session's question order.
-         A future attempt should probably require the *querying* leaf itself
-         to score decently on at least one option, not just that a rival is
-         in its own top-N, before granting the bonus.)
+      2. Soft nudge (top-N pair membership) — discounted entropy for a
+         resolves_pair question whenever either named leaf was in the
+         current top-5 belief. DID produce a real, reproducible net
+         improvement (n=100, seed=7: 4->3 failing; data-science/marketing/
+         speech-therapist each gained 6-11pp) — but at a traced, systematic
+         cost to leaves *adjacent to* a genuine rivalry without being part
+         of it: actor lost 18pp because its habitual neighbors (design,
+         cinematographer, makeup-artist-film) are also usually in ITS OWN
+         top-5 (shared axes), so any MUTUAL resolver between those
+         neighbors satisfied "either name in top-5" even though actor had
+         no stake in their dispute — those resolvers kept winning airtime
+         at actor's expense. Reverted; replaced by the current
+         leader-score-based version above, which doesn't have this failure
+         mode by construction (see _relevance_bonus's docstring). Real user
+         complaint this also targets: a session answering clearly toward
+         one STEM cluster still got asked film-crew and medicine-cluster
+         resolvers with no connection to the leader (traced 2026-07,
+         4 of 15 questions in one software-engineer-persona session were
+         resolvers for entirely unrelated clusters).)
 
     Deviates from the ticket's one-line signature by taking `leaf_profiles`
     and `age_group` explicitly: neither entropy nor age eligibility can be
@@ -311,6 +364,11 @@ def select_next_question(
     entropies = [
         _expected_posterior_entropy(q, session.belief, leaf_profiles, beta) for q in candidates
     ]
+    if session.step >= _RELEVANCE_ONSET_STEP:
+        entropies = [
+            e - _relevance_bonus(q, session.belief, leaf_profiles)
+            for q, e in zip(candidates, entropies)
+        ]
     return _sample_by_entropy(candidates, entropies, temperature, rng)
 
 
