@@ -38,7 +38,11 @@ async def create_feedback(
         assessment_id=data.assessment_id,
         direction_slug=data.direction_slug,
         context=data.context,
-        rating=FeedbackRating(data.rating),
+        overall_rating=FeedbackRating(data.overall_rating),
+        questions_rating=FeedbackRating(data.questions_rating) if data.questions_rating else None,
+        result_match_rating=FeedbackRating(data.result_match_rating) if data.result_match_rating else None,
+        plan_usefulness_rating=FeedbackRating(data.plan_usefulness_rating) if data.plan_usefulness_rating else None,
+        design_rating=FeedbackRating(data.design_rating) if data.design_rating else None,
         message=data.message,
     )
     db.add(feedback)
@@ -57,7 +61,7 @@ async def list_feedback(
 
     query = select(ProductFeedback, User.email).join(User, ProductFeedback.user_id == User.id)
     if rating:
-        query = query.where(ProductFeedback.rating == FeedbackRating(rating))
+        query = query.where(ProductFeedback.overall_rating == FeedbackRating(rating))
 
     count_query = select(func.count()).select_from(query.subquery())
     total_count = (await db.execute(count_query)).scalar_one()
@@ -68,9 +72,14 @@ async def list_feedback(
     items = [
         AdminFeedbackListItem(
             id=feedback.id,
+            user_id=feedback.user_id,
             user_email=user_email,
             context=feedback.context,
-            rating=feedback.rating.value,
+            overall_rating=feedback.overall_rating.value,
+            questions_rating=feedback.questions_rating.value if feedback.questions_rating else None,
+            result_match_rating=feedback.result_match_rating.value if feedback.result_match_rating else None,
+            plan_usefulness_rating=feedback.plan_usefulness_rating.value if feedback.plan_usefulness_rating else None,
+            design_rating=feedback.design_rating.value if feedback.design_rating else None,
             message=feedback.message,
             direction_slug=feedback.direction_slug,
             created_at=feedback.created_at,

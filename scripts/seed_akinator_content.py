@@ -335,7 +335,25 @@ SPECIALTIES: list[dict] = [
     # компрессии нет даже при агрессивной группировке
     {"slug": "actor", "name": "Актёрское искусство", "section": "akinator-stage-media",
      "description": "Актёрское искусство готовит к работе на сцене, в кино и на телевидении — воплощению ролей, требующему эмоциональной открытости и умения держаться перед публикой.",
-     "profile": {"People": 1, "Ideas": 2, "Vis": 2, "Emp": 1, "Motor": 1, "Risk": 1, "Struct": -1, "Auto": -1, "Predict": 1, "PhysSt": 1, "Math": -1, "Data": -1},
+     # Inv:-1 added (calibration playtest pass, 2026-07, round 21): actor was
+     # this session's most consistently borderline profession (repeatedly
+     # ~50%, and separately the traced casualty of the round-17 soft-nudge
+     # side effect — see akinator_engine.select_next_question history).
+     # Checked its axis overlap with each chronic rival: vs design there's
+     # already real opposition (Vis/Auto/People/PhysSt all oppose), vs
+     # food-production-tech too (Struct/People), but vs pr-specialist —
+     # its single biggest rival across nearly every census run — the two
+     # share 7 same-direction axes (People/Ideas/Vis/Emp/Struct/Data/Math)
+     # against only one weak (1-magnitude) opposition (Auto). Actor didn't
+     # carry Inv in either direction, despite the job being about
+     # interpreting/embodying material someone else wrote (a script, a
+     # role) rather than inventing it from scratch — same "applies, doesn't
+     # invent" reasoning already used for lawyer/pilot/fire-safety-engineer.
+     # Inv:-1 opposes pr-specialist (Inv:2), design (Inv:2),
+     # makeup-artist-film (Inv:2), cinematographer (Inv:1), and
+     # film-director (Inv:2) all at once — essentially the entire creative
+     # cluster except musician (no Inv either way).
+     "profile": {"People": 1, "Ideas": 2, "Vis": 2, "Emp": 1, "Motor": 1, "Risk": 1, "Struct": -1, "Auto": -1, "Predict": 1, "PhysSt": 1, "Math": -1, "Data": -1, "Inv": -1},
      "professions": ["Актёр театра", "Актёр кино", "Актёр озвучивания"],
      "subjects_required": {"Искусство": 2, "Литература": 1}},
     {"slug": "musician", "name": "Музыкальное искусство", "section": "akinator-stage-media",
@@ -496,7 +514,21 @@ SPECIALTIES: list[dict] = [
      # in one thing) and not built around long solo focus (Focus — it's
      # event-paced, constantly interrupted by guests/staff, the opposite of
      # e.g. finance-accounting's Focus:2).
-     "profile": {"People": 2, "Data": 1, "Lead": 2, "Emp": 1, "Motiv": 1, "Risk": 1, "Struct": 1, "Pace": 2, "Predict": 1, "PhysSt": 1, "Acad": 1, "Exp": -1, "Focus": -1},
+     #
+     # Care:-1 added (calibration playtest pass, 2026-07, round 20): traced
+     # census showed kindergarten-teacher losing to hospitality-manager more
+     # than any other rival — checked their shared axes (People/Emp/Focus/
+     # Struct/Pace/PhysSt) and found ZERO opposing ones, same disease as
+     # data-science/finance-accounting (round 16) and psychologist/creative-
+     # cluster (round 17). hospitality-manager didn't carry Care in either
+     # direction despite the job being guest/operations-facing, not personal
+     # caregiving — the same "business/operations function, not individual
+     # care" distinction already used for architect's Care:-1 (round 9).
+     # Also a genuine (if weaker) opposing wedge against social-worker
+     # (Care:2) and sports-coach (Care:1), two more chronic rivals that
+     # previously had only a single 1-magnitude opposing axis (Motiv, Exp)
+     # buried under 6+ shared same-direction axes each.
+     "profile": {"People": 2, "Data": 1, "Lead": 2, "Emp": 1, "Motiv": 1, "Risk": 1, "Struct": 1, "Pace": 2, "Predict": 1, "PhysSt": 1, "Acad": 1, "Exp": -1, "Focus": -1, "Care": -1},
      "professions": ["Менеджер ресторанного дела", "Менеджер отеля", "Ивент-менеджер"],
      "subjects_required": {"Английский язык": 2, "Обществознание": 1, "Экономика": 1}},
 
@@ -515,7 +547,9 @@ SPECIALTIES: list[dict] = [
      # (Struct — the literal opposite end from e.g. finance-accounting's
      # Struct:2 or civil-engineering's Struct:2).
      "profile": {"People": 1, "Emp": 1, "Vis": 1, "Motiv": 1, "Risk": 1, "Auto": 1, "Predict": 1, "Pace": 1, "Inv": 1, "Lead": 1, "Data": 1, "Exp": -1, "Struct": -1},
-     "professions": ["Менеджер по продажам", "Предприниматель", "Логист", "Менеджер проектов"],
+     # "Логист" убран (2026-07-24) — теперь отдельная специальность
+     # `logistics`, см. новые направления в конце SPECIALTIES.
+     "professions": ["Менеджер по продажам", "Предприниматель", "Менеджер проектов"],
      "subjects_required": {"Экономика": 2, "Математика": 1, "Обществознание": 1}},
     {"slug": "marketing", "name": "Маркетинг", "label_junior": "Специалист по рекламе", "section": "akinator-business-sales",
      "description": "Маркетинг учит продумывать, как рассказать о продукте так, чтобы его захотели купить — анализировать рынок и запускать рекламные кампании.",
@@ -606,7 +640,22 @@ SPECIALTIES: list[dict] = [
     # Инженерия и техника
     {"slug": "engineering-architecture", "name": "Инженерия / архитектура", "label_junior": "Инженер-архитектор", "section": "akinator-engineering-tech",
      "description": "Инженерия и архитектура проектируют физические объекты — здания, сооружения, инженерные системы — объединяя технические расчёты и пространственное мышление.",
-     "profile": {"Phys": 2, "Data": 1, "Ideas": 2, "Obj": 1, "Exp": 1, "Struct": 2, "Math": 2, "Acad": 1, "Motor": 1},
+     # Inv:-1 added (2026-07-24, census round 1): this profile had ZERO
+     # negative axes (the "zero negative axes" bug documented throughout
+     # this file — see pilot/hospitality-manager/management-entrepreneurship
+     # comments) and had never been census-tested before, since it's one of
+     # the 14 additions from 2026-07 that predates the calibration-backlog.md
+     # session. Adding 3 new specialties to this section (petroleum-mining-
+     # geology, energy-engineering, aviation-engineering) made the section
+     # more crowded, and the n=100 census showed mechanical-engineer losing
+     # to it 35/100 times — the single biggest rival in mechanical-
+     # engineer's "loses to" list. Structural/systems engineering applies
+     # building codes and established structural calculations rather than
+     # inventing from scratch, same "applies, doesn't invent" reasoning as
+     # civil-engineering's neighbor pilot/aviation-engineering/energy-
+     # engineering's Inv:-1 — feeds order=54's existing Inv resolver rather
+     # than needing a new question.
+     "profile": {"Phys": 2, "Data": 1, "Ideas": 2, "Obj": 1, "Exp": 1, "Struct": 2, "Math": 2, "Acad": 1, "Motor": 1, "Inv": -1},
      "professions": ["Архитектор", "Инженер-проектировщик", "Инженер-строитель", "Урбанист"],
      "subjects_required": {"Математика": 2, "Физика": 1, "Искусство": 1}},
 
@@ -662,7 +711,8 @@ SPECIALTIES: list[dict] = [
     {"slug": "law-public-administration", "name": "Право / госуправление", "label_junior": "Юрист / чиновник", "section": "akinator-words-communication",
      "description": "Право и государственное управление — юридическая практика, государственная служба, разработка и применение законодательства.",
      "profile": {"People": 1, "Data": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Acad": 2, "Lead": 1, "Predict": 1},
-     "professions": ["Юрист", "Государственный служащий", "Политолог", "Дипломат", "Правовед"],
+     # "Дипломат" убран (2026-07-24) — теперь под `international-relations`.
+     "professions": ["Юрист", "Государственный служащий", "Политолог", "Правовед"],
      "subjects_required": {"История": 2, "Обществознание": 2}},
 
     # Творчество и дизайн
@@ -678,10 +728,130 @@ SPECIALTIES: list[dict] = [
      "profile": {"People": 2, "Ideas": 2, "Emp": 1, "Vis": 1, "Exp": 1, "Risk": 1, "Motiv": 1, "Predict": -1},
      "professions": ["Журналист", "Редактор", "Видеоблогер", "Подкастер", "Медиапродюсер"],
      "subjects_required": {"История": 1, "Обществознание": 1}},
+
+    # ── Новые направления (2026-07-24): 5 "явных пробелов" из
+    # docs/akinator-new-directions-proposal.md — направления с реальными
+    # программами в базе вузов Алматы (almaty_universities_data.py), которые
+    # раньше никуда не мапились. Средний/низкий приоритет из того же
+    # документа (таможенное дело, исламоведение, лёгкая промышленность,
+    # дорожное строительство, туризм, хореография и т.д.) сознательно НЕ
+    # добавлены в этом проходе — см. docstring файла для статуса.
+
+    # Инженерия и техника
+    {"slug": "petroleum-mining-geology", "name": "Нефтегазовое дело и геология", "label_junior": "Геолог", "section": "akinator-engineering-tech",
+     "description": "Нефтегазовое дело и геология исследуют недра земли и добывают полезные ископаемые — от разведки месторождений в экспедициях до нефтегазовой инженерии.",
+     # Obj:-2 — геология по сути своей деятельности исследовательская
+     # ("докопаться" до месторождения), а не конструкторская — прямая
+     # противоположность Obj:2 у mechanical-engineer/civil-engineering, её
+     # главных соседей по секции. PhysSt:2 — полевые экспедиции, чего нет ни
+     # у одного другого инженерного профиля в секции (реальный, а не
+     # дублирующий сигнал).
+     "profile": {"Phys": 2, "Data": 1, "Obj": -2, "Exp": 1, "Struct": 1, "Risk": 1, "PhysSt": 2, "Predict": 1, "Acad": 1, "Math": 1, "People": -1},
+     "professions": ["Инженер-нефтяник", "Геолог-разведчик", "Горный инженер", "Специалист урановой промышленности"],
+     "subjects_required": {"Физика": 2, "География": 2, "Математика": 1}},
+    {"slug": "energy-engineering", "name": "Энергетика", "label_junior": "Энергетик", "section": "akinator-engineering-tech",
+     "description": "Энергетика проектирует и обслуживает системы производства и передачи энергии — электрические сети, теплоснабжение и энергоснабжение промышленных объектов.",
+     # Inv:-1 — энергетик применяет установленные электротехнические нормы и
+     # стандарты безопасности, а не изобретает с нуля (та же логика, что у
+     # Inv:-1 юриста и fire-safety-engineer) — настоящая противоположность
+     # mechanical-engineer's Inv:1, его ближайшего соседа по секции.
+     #
+     # Care:-1 added (2026-07-24, census round 1): unexpected chronic rival
+     # in the n=100 census — pharmacist (x19, the single biggest "loses to"
+     # entry). Traced why: shares Data/Exp/Struct/Focus/Acad/Math ALL
+     # same-direction with zero opposition anywhere in the bank (same "zero
+     # opposing axis" disease as data-science/pre-round-16 finance-
+     # accounting) — pharmacist's profile is also smaller/more concentrated,
+     # so it wins by normalization on any "precise, structured" question
+     # regardless of fit. pharmacist's Care:1/Living:1 (patient-facing) has
+     # no equivalent in energy-engineering (electrical/thermal infrastructure
+     # work, not people-or-living-thing-facing) — same "business/technical
+     # function, not individual care" reasoning as architect's/
+     # hospitality-manager's existing Care:-1.
+     "profile": {"Phys": 1, "Data": 2, "Obj": 1, "Exp": 1, "Struct": 2, "Focus": 1, "Inv": -1, "Acad": 1, "Math": 2, "PhysSt": 1, "People": -1, "Care": -1},
+     "professions": ["Инженер-энергетик", "Инженер-электрик", "Инженер-теплотехник", "Специалист по энергообеспечению"],
+     "subjects_required": {"Физика": 2, "Математика": 2}},
+    {"slug": "aviation-engineering", "name": "Техническая эксплуатация авиационной техники", "label_junior": "Авиатехник", "section": "akinator-engineering-tech",
+     "description": "Техническая эксплуатация авиационной техники готовит специалистов, которые обслуживают и ремонтируют самолёты, двигатели и авиационное оборудование по строгим сертифицированным процедурам — не пилотирование, а инженерная забота о технике на земле.",
+     # Явно НЕ pilot (см. docs/akinator-new-directions-proposal.md, кандидат
+     # 5): Risk:-1/Pace:-1 против pilot's Risk:1/Pace:1 (методичное
+     # регламентное обслуживание, а не быстрые решения в полёте), Motor:2
+     # (которого у pilot почти нет) — реальная физическая работа руками с
+     # техникой. Inv:-1 против mechanical-engineer's Inv:1 (обслуживает по
+     # сертифицированному регламенту, не проектирует новое) — тот же фолд,
+     # что и у order=54.
+     "profile": {"Phys": 2, "Data": 1, "Obj": 2, "Motor": 2, "Exp": 2, "Struct": 2, "Focus": 1, "Risk": -1, "Pace": -1, "Inv": -1, "Acad": 1, "Math": 1, "PhysSt": 1},
+     "professions": ["Авиационный техник", "Инженер по техническому обслуживанию воздушных судов", "Специалист по авионике", "Специалист наземного радиоэлектронного оборудования"],
+     "subjects_required": {"Физика": 2, "Математика": 1}},
+
+    # Бизнес и продажи
+    {"slug": "logistics", "name": "Логистика", "label_junior": "Логист", "section": "akinator-business-sales",
+     "description": "Логистика планирует и координирует движение товаров и грузов — маршруты, склады и цепи поставок, — чтобы всё доезжало точно и вовремя.",
+     # Была растворена в management-entrepreneurship (профессия "Логист" в
+     # его списке — убрана оттуда, см. ниже). Struct:2/Predict:-1/Risk:-1 —
+     # прямая противоположность management-entrepreneurship's
+     # Struct:-1/Predict:1/Risk:1: логистика про надёжную систему без
+     # сюрпризов, а не про предпринимательский риск и импровизацию.
+     # People:-1 против project-management's People:2 — логист координирует
+     # процесс (маршруты, склады), а не ведёт людей. Motiv:1/Pace:1 против
+     # finance-accounting's Motiv:-1/Pace:-1 — логистика заточена на
+     # результат к сроку (доставка), а не на неспешный учётный процесс.
+     #
+     # Care:-1 added (2026-07-24, census round 1): same chronic-rival pattern
+     # as energy-engineering above — pharmacist was logistics' #2 rival
+     # (x11), sharing Data/Struct/Exp/Focus/Predict/Acad/Math all
+     # same-direction with zero opposition. Same "not a patient/person-care
+     # function" reasoning.
+     "profile": {"Data": 2, "Struct": 2, "Obj": 1, "Exp": 1, "Focus": 1, "Motiv": 1, "Phys": 1, "Predict": -1, "Risk": -1, "Pace": 1, "Acad": 1, "Math": 1, "People": -1, "Care": -1},
+     "professions": ["Логист", "Специалист по цепям поставок", "Транспортный логист", "Менеджер по логистике"],
+     "subjects_required": {"Математика": 1, "География": 1, "Обществознание": 1}},
+
+    # Слово и коммуникация
+    {"slug": "international-relations", "name": "Международные отношения", "label_junior": "Дипломат", "section": "akinator-words-communication",
+     "description": "Международные отношения готовят к работе на стыке стран и культур — дипломатии, международным переговорам и анализу мировой политики.",
+     # "Дипломат" был в professions у law-public-administration — перенесён
+     # сюда.
+     #
+     # Redesigned TWICE (2026-07-24):
+     # Round 1 draft (Ideas:1 instead of Exp/Motiv/Data/Care below) scored
+     # 2/100 in the n=100 census — catastrophic, losing to marketing-
+     # advertising(x53)/psychology-pedagogy(x36)/marketing(x34). Root cause:
+     # same "zero opposing axis" disease documented throughout this file for
+     # data-science/psychologist/hospitality-manager. Added Data:-1/Motiv:-1
+     # (vs marketing's Data:1/Motiv:1) and Care:-1 (vs psychology-pedagogy's
+     # Care:2), plus Exp:2 as an "uncontested" strong axis.
+     #
+     # Round 2: re-ran the census WITHOUT re-checking round 1's fix against
+     # the rest of the catalog first — got WORSE, 0/100, losing to entirely
+     # DIFFERENT rivals: design-digital-art(x61)/pr-specialist(x58)/
+     # speech-therapist(x30). Exp:2 was the mistake — Exp ("глубокая узкая
+     # экспертиза") is a generic axis carried by many unrelated profiles at
+     # magnitude 2 (dentist, mechanical-engineer, speech-therapist...), so
+     # raising it to 2 just added MORE overlap (an exact Exp:2/Exp:2 tie with
+     # speech-therapist) instead of a unique signature — same mistake as
+     # copying an axis without checking it against the WHOLE catalog, not
+     # just the previous round's named rivals. Trimmed back to Exp:1.
+     # design-digital-art/pr-specialist share zero opposing axis with the
+     # round-1 profile (People/Vis/Struct/Exp all same-direction) — both
+     # carry Inv:2 (invent a new campaign/image/story from scratch), which
+     # this profile never opposed. Added Inv:-1: diplomacy works within
+     # established international law/protocol/agreements, it doesn't invent
+     # a creative concept from nothing — same "applies, doesn't invent"
+     # reasoning used repeatedly elsewhere in this file (lawyer, pilot,
+     # fire-safety-engineer, energy-engineering, aviation-engineering,
+     # engineering-architecture). Feeds the new dedicated order=59 resolver
+     # below rather than relying on profile alone this time. Lesson for
+     # whoever continues this: a "fix" that isn't re-verified against the
+     # FULL census (not just the previously-named rivals) can trade one
+     # failure for a different one — see calibration-backlog.md's own
+     # repeated version of this same lesson.
+     "profile": {"People": 1, "Emp": 1, "Vis": 1, "Acad": 2, "Exp": 1, "Inv": -1, "Struct": -1, "Predict": 1, "Auto": -1, "Pace": -1, "Care": -1, "Data": -1, "Motiv": -1},
+     "professions": ["Дипломат", "Специалист по международным отношениям", "Регионовед", "Атташе"],
+     "subjects_required": {"История": 2, "Обществознание": 2, "Английский язык": 1}},
 ]
 
 assert len(SECTIONS) == 13, f"expected 13 sections, got {len(SECTIONS)}"
-assert len(SPECIALTIES) == 52, f"expected 52 specialties, got {len(SPECIALTIES)}"
+assert len(SPECIALTIES) == 57, f"expected 57 specialties, got {len(SPECIALTIES)}"
 
 _SECTION_SLUGS = {s["slug"] for s in SECTIONS}
 for _p in SPECIALTIES:
@@ -915,7 +1085,17 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "строить, создавать работающую вещь", "axis_weights": {"Obj": 2}},
          {"text": "разбираться, докапываться до сути, находить ответ", "axis_weights": {"Obj": -2}},
-     ], "resolves_pair": None},
+     # resolves_pair added (2026-07-24): petroleum-mining-geology's whole
+     # differentiation from its mechanical-engineer/civil-engineering section
+     # neighbors rests on this exact axis (Obj:-2, investigative fieldwork vs
+     # their Obj:2, building/constructing) — this question is its clearest
+     # dedicated signal in the bank. fire-safety-engineer and pilot added
+     # too (census round 1: both appeared in petroleum-mining-geology's
+     # "loses to" list) — fire-safety-engineer's Obj:1 genuinely opposes
+     # geology's Obj:-2 (protective/constructive vs investigative), pilot
+     # carries no Obj either way so this gives geology's Obj:-2 a clean,
+     # uncontested edge against it here.
+     ], "resolves_pair": ["mechanical-engineer", "civil-engineering", "petroleum-mining-geology", "fire-safety-engineer", "pilot"]},
     {"order": 15, "kind": "direct", "depth": 2, "age_variant": "both",
      "text": "Тебе комфортнее…", "text_junior": None,
      "options": [
@@ -1293,9 +1473,133 @@ QUESTIONS: list[dict] = [
           "axis_weights": {"Inv": -2, "Struct": 1}},
          {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": ["data-science", "finance-accounting"]},
+    # Added (calibration playtest pass, 2026-07, round 20): pilot had ZERO
+    # resolves_pair questions anywhere in the bank — the same "structural
+    # hole" pattern that data-science/finance-accounting had before order=53
+    # (round 16) and school-teacher/speech-therapist had before order=52
+    # (round 6), except here it also means cluster_resolver_service can
+    # never disambiguate a final cluster that includes pilot (it requires
+    # >=2 resolves_pair members to overlap the cluster). Traced sessions
+    # this round found pilot as the single most common "wrong" rival across
+    # nearly every STEM-cluster profession (mechanical-engineer,
+    # civil-engineering, architect, software-engineer, data-science,
+    # it-infrastructure-security, finance-accounting) — it already has a
+    # real opposing axis vs every one of them (Inv:-1, added round 3,
+    # against their Inv:1-2), but it was always a *weak* opposition (1-2
+    # magnitude) buried under 6-9 shared same-direction axes, and with no
+    # dedicated resolver to sharpen it, same failure shape as translator's
+    # weak-opposition rivals (see round 18 notes) rather than data-science's
+    # zero-opposition one. This question does for pilot what order=53 did
+    # for data-science: a sharp ±2 Inv fork with its own dedicated resolver.
+    {"order": 54, "kind": "direct", "depth": 3, "age_variant": "senior",
+     "text": "В работе тебе важнее…", "text_junior": None,
+     "options": [
+         {"text": "точно следовать проверенной процедуре, не отклоняясь",
+          "axis_weights": {"Inv": -2, "Struct": 1}},
+         {"text": "придумать и спроектировать что-то новое, чего раньше не было",
+          "axis_weights": {"Inv": 2, "Ideas": 1}},
+         {"text": "не знаю", "axis_weights": {}},
+     # resolves_pair extended (2026-07-24): aviation-engineering's and
+     # energy-engineering's own Inv:-1 ("применяет регламент/нормы, не
+     # изобретает") sit on exactly this fork's negative side, same
+     # "applies, doesn't invent" reasoning as pilot's. engineering-
+     # architecture added too, after its own Inv:-1 fix (see SPECIALTIES).
+     ], "resolves_pair": ["pilot", "mechanical-engineer", "civil-engineering", "architect", "software-engineer", "data-science", "aviation-engineering", "energy-engineering", "engineering-architecture"]},
+    # Added (2026-07-24, new-directions ticket): aviation-engineering's real
+    # differentiator from its section neighbors is Motor (hands-on physical
+    # maintenance) — order=54 already separates it from pilot/mechanical-
+    # engineer on Inv, but nothing in the bank forked specifically on
+    # "работать руками с техникой" vs "проектировать/рассчитывать". Verified:
+    # aviation-engineering scores clearly highest on option 1 (Motor:2 is its
+    # strongest axis, unmatched by any other engineering-tech leaf), while
+    # energy-engineering (Data:2, no Motor) and mechanical/civil-engineering
+    # (Motor 0-1) prefer option 2.
+    {"order": 55, "kind": "direct", "depth": 3, "age_variant": "senior",
+     "text": "В инженерной работе тебе ближе…", "text_junior": None,
+     "options": [
+         {"text": "чинить и обслуживать технику своими руками", "axis_weights": {"Motor": 2, "Obj": 1}},
+         {"text": "проектировать и рассчитывать — на бумаге или компьютере", "axis_weights": {"Motor": -1, "Data": 1}},
+         {"text": "не знаю", "axis_weights": {}},
+     ], "resolves_pair": ["aviation-engineering", "mechanical-engineer", "civil-engineering", "energy-engineering", "pilot"]},
+    # Added (2026-07-24, new-directions ticket): logistics carved out of
+    # management-entrepreneurship's "Логист" profession (see SPECIALTIES) —
+    # shares Data/Struct/Pace with project-management and Data/Struct/Focus/
+    # Acad/Math/People with finance-accounting, zero opposing axis anywhere
+    # else in the bank against either. People:-1 (coordinates a process, not
+    # a team) is logistics' real wedge against project-management's
+    # People:2/Lead:2; Struct:2/Predict:-1 against management-
+    # entrepreneurship's Struct:-1/Predict:1. Verified: logistics scores
+    # clearly highest on option 1 (4 vs -2/-2 on the other two), project-
+    # management clearly highest on option 2 (9 vs 0), management-
+    # entrepreneurship split 2/3 between option 2 and its own option 3 (not
+    # a clean win, but no longer confusable with logistics specifically).
+    {"order": 56, "kind": "situational", "depth": 3, "age_variant": "senior",
+     "text": "Организовывать процесс — что тебе ближе?", "text_junior": None,
+     "options": [
+         {"text": "следить, чтобы всё шло по системе — маршруты, склады, сроки — без сюрпризов",
+          "axis_weights": {"Struct": 1, "Predict": -1, "People": -1}},
+         {"text": "вести команду людей к результату, планировать и договариваться",
+          "axis_weights": {"People": 2, "Lead": 2, "Emp": 1}},
+         {"text": "рискну, придумаю своё дело сам", "axis_weights": {"Risk": 2, "Auto": 2}},
+         {"text": "не знаю", "axis_weights": {}},
+     ], "resolves_pair": ["logistics", "project-management", "management-entrepreneurship"]},
+    # Added (2026-07-24, new-directions ticket): international-relations
+    # shares 6 same-direction axes with journalist (People/Ideas/Vis/Emp/
+    # Predict/Struct) and Acad/People/Exp/Struct/Predict/Lead-shaped overlap
+    # with law-public-administration, with no dedicated question anywhere
+    # separating either. Verified: international-relations scores clearly
+    # highest on option 1 (6 vs -2), law-public-administration clearly
+    # highest on option 2 (4 vs 0); journalist and translator lean the
+    # historically-correct direction but weakly (not a clean win for either
+    # — same "partial, not clean" caveat as actor/musician in the
+    # calibration backlog).
+    {"order": 57, "kind": "situational", "depth": 3, "age_variant": "senior",
+     "text": "Работать на стыке разных сторон — что тебе ближе?", "text_junior": None,
+     "options": [
+         {"text": "быть посредником, вести переговоры между разными людьми и культурами, вдумчиво и не спеша",
+          "axis_weights": {"Emp": 2, "Vis": 1, "Pace": -1}},
+         {"text": "точно применять законы и установленные процедуры", "axis_weights": {"Struct": 2}},
+         {"text": "не знаю", "axis_weights": {}},
+     ], "resolves_pair": ["international-relations", "law-public-administration", "journalist", "translator"]},
+    # Added (2026-07-24, follow-up to census round 1, per user request for
+    # more dedicated coverage of the 5 new specialties): petroleum-mining-
+    # geology's PhysSt:2/Risk:1/Predict:1 (field expeditions) is its
+    # strongest real differentiator from the rest of the engineering-tech
+    # section, but nothing forked on it directly — order=14 covers Obj,
+    # order=55 covers Motor, neither touches fieldwork endurance. Verified:
+    # petroleum-mining-geology scores clearly highest on option 1 (6 vs -3),
+    # civil-engineering clearly prefers option 2 (1 vs -2) since it carries
+    # neither Risk nor Predict positively. energy-engineering (PhysSt:1, no
+    # Risk/Predict) leans toward option 1 too, but far more weakly (2 vs
+    # geology's 6) — a real but not fully clean split, same caveat as
+    # several other resolvers in this file.
+    {"order": 58, "kind": "situational", "depth": 3, "age_variant": "senior",
+     "text": "Работа в сложных полевых условиях — экспедиции, вахты, объекты вдали от города — это для тебя…", "text_junior": None,
+     "options": [
+         {"text": "интересно, готов(а) к трудностям ради находки или результата", "axis_weights": {"PhysSt": 2, "Risk": 1, "Predict": 1}},
+         {"text": "нет, предпочитаю стабильные условия рядом с домом", "axis_weights": {"PhysSt": -1, "Predict": -1}},
+         {"text": "не знаю", "axis_weights": {}},
+     ], "resolves_pair": ["petroleum-mining-geology", "civil-engineering", "mechanical-engineer", "energy-engineering"]},
+    # Added (2026-07-24, census round 2): international-relations' actual
+    # dominant rivals turned out to be design-digital-art/pr-specialist, not
+    # journalist/law-public-administration/translator (order=57's targets) —
+    # neither carries Struct or Pace, so order=57 pulls both of them toward
+    # its own option 1 alongside international-relations, resolving nothing
+    # between them. This question forks on Inv instead (see profile comment
+    # for the reasoning) with wording specific to this actual rivalry.
+    # Verified: international-relations scores clearly highest on option 2
+    # (1 vs -2), design-digital-art/pr-specialist/marketing-advertising/
+    # marketing all clearly prefer option 1 (4-6 vs -2 to -5).
+    {"order": 59, "kind": "direct", "depth": 3, "age_variant": "senior",
+     "text": "Придумывать, как повлиять на аудиторию или ситуацию — что тебе ближе?", "text_junior": None,
+     "options": [
+         {"text": "создавать новый образ, кампанию, историю с нуля", "axis_weights": {"Inv": 2, "Ideas": 1}},
+         {"text": "работать в рамках уже существующих правил, протокола, договорённостей", "axis_weights": {"Inv": -2, "Struct": 1}},
+         {"text": "не знаю", "axis_weights": {}},
+     ], "resolves_pair": ["international-relations", "pr-specialist", "design-digital-art", "marketing-advertising", "marketing"]},
 ]
 
-assert len(QUESTIONS) == 44, f"expected 44 questions, got {len(QUESTIONS)}"
+assert len(QUESTIONS) == 50, f"expected 50 questions, got {len(QUESTIONS)}"
 assert len({q["order"] for q in QUESTIONS}) == len(QUESTIONS), "duplicate question order"
 
 # Every slug named in a resolves_pair must actually exist as a leaf — this is

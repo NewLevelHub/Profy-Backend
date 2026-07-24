@@ -83,7 +83,30 @@ async def _pick_noise_subject(direction: Direction, db: AsyncSession) -> str | N
     all_subjects = {
         row[0] for row in (await db.execute(select(SubjectQuestion.subject).distinct())).all()
     }
-    candidates = list(all_subjects - set(direction.subjects_required.keys()))
+    own_subjects = set(direction.subjects_required.keys())
+
+    # Prefer a subject required by a sibling specialty in the same section
+    # (e.g. Физика for a software-engineer, whose section-mates are
+    # data-science/it-infrastructure-security) — still not what *this*
+    # direction measures, but a plausible neighbour instead of a total
+    # non-sequitur like География for a programmer. Only fall back to the
+    # full catalog when the section is too small/homogeneous to offer one.
+    sibling_subjects: set[str] = set()
+    if direction.parent_id is not None:
+        sibling_rows = (
+            await db.execute(
+                select(Direction.subjects_required).where(
+                    Direction.parent_id == direction.parent_id,
+                    Direction.id != direction.id,
+                )
+            )
+        ).scalars().all()
+        for subjects_required in sibling_rows:
+            sibling_subjects.update((subjects_required or {}).keys())
+
+    candidates = list((sibling_subjects & all_subjects) - own_subjects)
+    if not candidates:
+        candidates = list(all_subjects - own_subjects)
     if not candidates:
         return None
     return random.choice(candidates)
