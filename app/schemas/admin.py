@@ -156,9 +156,14 @@ class AdminListParams(BaseModel):
 
 class AdminFeedbackListItem(BaseModel):
     id: uuid.UUID
+    user_id: uuid.UUID
     user_email: str
     context: str
-    rating: str
+    overall_rating: str
+    questions_rating: str | None = None
+    result_match_rating: str | None = None
+    plan_usefulness_rating: str | None = None
+    design_rating: str | None = None
     message: str | None = None
     direction_slug: str | None = None
     created_at: datetime
