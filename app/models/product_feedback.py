@@ -40,8 +40,22 @@ class ProductFeedback(Base):
     # Postgres enum — more contexts land in later iterations, and adding
     # native enum values needs its own migration each time.
     context: Mapped[str] = mapped_column(String(30), nullable=False)
-    rating: Mapped[FeedbackRating] = mapped_column(
+    overall_rating: Mapped[FeedbackRating] = mapped_column(
         Enum(FeedbackRating, name="product_feedback_rating_enum"), nullable=False
+    )
+    # Per-aspect axes — nullable so pre-existing rows (collected before the
+    # survey was broken out into axes) stay valid.
+    questions_rating: Mapped[FeedbackRating | None] = mapped_column(
+        Enum(FeedbackRating, name="product_feedback_rating_enum"), nullable=True
+    )
+    result_match_rating: Mapped[FeedbackRating | None] = mapped_column(
+        Enum(FeedbackRating, name="product_feedback_rating_enum"), nullable=True
+    )
+    plan_usefulness_rating: Mapped[FeedbackRating | None] = mapped_column(
+        Enum(FeedbackRating, name="product_feedback_rating_enum"), nullable=True
+    )
+    design_rating: Mapped[FeedbackRating | None] = mapped_column(
+        Enum(FeedbackRating, name="product_feedback_rating_enum"), nullable=True
     )
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
