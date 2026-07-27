@@ -14,6 +14,7 @@ class AssessmentGoal(str, enum.Enum):
     profession = "profession"
     university = "university"
     unsure = "unsure"  # "Пока не знаю" — behaves like explore
+    known = "known"  # "Уже знаю, кем хочу стать" — see known_profession_service
 
 
 class AssessmentStatus(str, enum.Enum):

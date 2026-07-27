@@ -6,7 +6,11 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.assessment import AssessmentCreateRequest, AssessmentResponse
-from app.services import assessment_service
+from app.schemas.known_profession import (
+    KnownProfessionFinalizeRequest,
+    KnownProfessionFinalizeResponse,
+)
+from app.services import assessment_service, known_profession_service
 from app.services.profile_service import get_profile
 
 router = APIRouter(tags=["assessment"])
@@ -39,3 +43,21 @@ async def get_current_assessment(
     if assessment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No active assessment found")
     return assessment
+
+
+@router.post("/known-profession/finalize", response_model=KnownProfessionFinalizeResponse)
+async def finalize_known_profession_quiz(
+    data: KnownProfessionFinalizeRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> KnownProfessionFinalizeResponse:
+    """Finalizes the "Уже знаю, кем хочу стать" flow: scores the validation
+    quiz and creates a completed, sessionless Assessment so /result and
+    /roadmap work immediately — see known_profession_service."""
+    profile_id = await _require_profile_id(current_user, db)
+    assessment, percent, verdict = await known_profession_service.finalize(
+        profile_id, data.direction_slug, data.answers, db
+    )
+    return KnownProfessionFinalizeResponse(
+        assessment_id=assessment.id, percent=percent, verdict=verdict
+    )
