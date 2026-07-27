@@ -353,7 +353,22 @@ SPECIALTIES: list[dict] = [
      # makeup-artist-film (Inv:2), cinematographer (Inv:1), and
      # film-director (Inv:2) all at once — essentially the entire creative
      # cluster except musician (no Inv either way).
-     "profile": {"People": 1, "Ideas": 2, "Vis": 2, "Emp": 1, "Motor": 1, "Risk": 1, "Struct": -1, "Auto": -1, "Predict": 1, "PhysSt": 1, "Math": -1, "Data": -1, "Inv": -1},
+     #
+     # Focus:-1 added (calibration playtest pass, 2026-07, round 22): after
+     # round 21, musician became actor's one remaining uncontested rival
+     # (carries no Inv either way). Checked their overlap: 5 same-direction
+     # shared axes (Ideas/Vis/Motor/Risk/Struct) against one weak opposition
+     # (Auto) — same "weak opposition buried under volume" shape as
+     # translator/cinematographer (round 18, inconclusive) rather than a
+     # clean zero-opposition case, so treating this more cautiously than
+     # round 21. musician carries Focus:2 ("Глубокий длительный фокус") —
+     # years of solitary instrumental practice accumulating one narrow
+     # craft. Acting isn't built the same way: it's reactive, collaborative
+     # (scene partners), and about range across different roles rather than
+     # deepening one narrow skill — actor didn't carry Focus in either
+     # direction. Also a secondary wedge against pr-specialist and
+     # food-production-tech, which both carry Focus:1.
+     "profile": {"People": 1, "Ideas": 2, "Vis": 2, "Emp": 1, "Motor": 1, "Risk": 1, "Struct": -1, "Auto": -1, "Predict": 1, "PhysSt": 1, "Math": -1, "Data": -1, "Inv": -1, "Focus": -1},
      "professions": ["Актёр театра", "Актёр кино", "Актёр озвучивания"],
      "subjects_required": {"Искусство": 2, "Литература": 1}},
     {"slug": "musician", "name": "Музыкальное искусство", "section": "akinator-stage-media",
@@ -802,7 +817,35 @@ SPECIALTIES: list[dict] = [
      # (x11), sharing Data/Struct/Exp/Focus/Predict/Acad/Math all
      # same-direction with zero opposition. Same "not a patient/person-care
      # function" reasoning.
-     "profile": {"Data": 2, "Struct": 2, "Obj": 1, "Exp": 1, "Focus": 1, "Motiv": 1, "Phys": 1, "Predict": -1, "Risk": -1, "Pace": 1, "Acad": 1, "Math": 1, "People": -1, "Care": -1},
+     #
+     # Motor:-1 added (2026-07-24, census round 3): with Care:-1 in place,
+     # pilot became logistics' new #1 rival (x30/100) — the two share Data/
+     # Struct/Exp/Focus/Phys/Pace/Acad/Math ALL same-direction (Care:-1 even
+     # made this worse: pilot already carries Care:-1 too, so that "fix"
+     # accidentally added a ninth same-direction axis against THIS rival
+     # while helping against pharmacist). Risk was the only real opposition
+     # (logistics:-1 vs pilot:1). Motor is a genuine second wedge: a
+     # logistics coordinator plans routes/schedules/warehouses, they don't
+     # personally operate a vehicle or aircraft the way a pilot does — same
+     # "coordinates the process, doesn't perform it" distinction already
+     # used for logistics' own People:-1 vs project-management.
+     #
+     # Round 4: Motor:-1 didn't fix pilot (still #1 rival, x36) and a WORSE
+     # problem surfaced — energy-engineering (x34, brand new) turned out to
+     # share Data/Struct/Obj/Exp/Focus/Acad/Math/People/Care ALL
+     # same-direction with ZERO opposing axis at all (never checked the two
+     # new specialties against EACH OTHER, only against pre-existing
+     # leaves — same class of miss as the round-1 pharmacist surprise).
+     # Root cause of both this and the pilot problem: Phys:1 was added on
+     # thin reasoning ("physical goods/warehouses") but does no real
+     # differentiating work — it's shared same-direction by nearly every
+     # engineering-tech/technical leaf (pilot, energy-engineering,
+     # mechanical-engineer, aviation-engineering, petroleum-mining-geology),
+     # so it only ever adds overlap, never opposition. Removed — logistics'
+     # real core is coordination/data/scheduling, not physical materials
+     # engineering. Feeds new dedicated order=62 resolver (Phys+Math vs
+     # Motiv+Pace) rather than another single-axis patch.
+     "profile": {"Data": 2, "Struct": 2, "Obj": 1, "Exp": 1, "Focus": 1, "Motiv": 1, "Predict": -1, "Risk": -1, "Pace": 1, "Acad": 1, "Math": 1, "People": -1, "Care": -1, "Motor": -1},
      "professions": ["Логист", "Специалист по цепям поставок", "Транспортный логист", "Менеджер по логистике"],
      "subjects_required": {"Математика": 1, "География": 1, "Обществознание": 1}},
 
@@ -845,7 +888,77 @@ SPECIALTIES: list[dict] = [
      # FULL census (not just the previously-named rivals) can trade one
      # failure for a different one — see calibration-backlog.md's own
      # repeated version of this same lesson.
-     "profile": {"People": 1, "Emp": 1, "Vis": 1, "Acad": 2, "Exp": 1, "Inv": -1, "Struct": -1, "Predict": 1, "Auto": -1, "Pace": -1, "Care": -1, "Data": -1, "Motiv": -1},
+     #
+     # Round 3: STILL 0/100 after the Inv fix — round 2's rivals
+     # (design-digital-art/pr-specialist) are gone from the top-3 entirely
+     # (order=59 worked), but a THIRD distinct set took over: speech-
+     # therapist(x44)/psychology-pedagogy(x40)/media-journalism(x28). Against
+     # media-journalism this profile already has two real oppositions
+     # (Motiv, Predict) so that one's comparatively minor; against speech-
+     # therapist/psychology-pedagogy — People/Emp/Exp/Acad all same-direction
+     # (Care/Struct already oppose, but apparently not decisively enough,
+     # likely because order=0 (the very first, deterministic question) gives
+     # People:2 a hard head start to the pure-People-cluster leaves that this
+     # profile's People:1 can't contest, and none of this profile's existing
+     # negative axes get asked about before the belief gap is already large).
+     # Dev ("учить, растить других") is the one axis speech-therapist (Dev:2)
+     # and psychology-pedagogy (Dev:1) both lean on that this profile never
+     # touched: diplomacy represents a state/institution's interests in
+     # negotiation, it doesn't individually develop/teach a person the way
+     # therapy or pedagogy does. Added Dev:-1 and a dedicated order=60
+     # resolver (individual growth vs institutional representation) rather
+     # than trusting a profile-only edit again after round 2's lesson.
+     #
+     # Round 4: STILL 0/100 — a FOURTH distinct rival set (social-worker x47,
+     # psychology-pedagogy x37 again, general-medicine x26). Stepped back
+     # instead of another reactive one-axis patch: this profile had grown to
+     # 14 axes, mostly small -1's each aimed at a single past rival, with no
+     # single STRONG signature doing real work. Two structural problems
+     # found: (1) Acad:2 — meant as a defining trait, but Acad:2 turns out
+     # to be one of the most COMMON magnitude-2 axes in the whole catalog
+     # (dentist, general-medicine, architect, data-science, mechanical-
+     # engineer...), so it kept creating exact-magnitude ties with whichever
+     # rival showed up next (general-medicine's Acad:2 this round, speech-
+     # therapist's Exp:2 last round) instead of differentiating anything —
+     # trimmed to 1. (2) Care:-1 was real but too weak: Care is touched by
+     # one of the EARLIEST generic questions in the bank (order=4, depth 2),
+     # so a weak signal there lets concentrated Care:2 profiles (social-
+     # worker, general-medicine, psychology-pedagogy, kindergarten-teacher,
+     # rehabilitation-therapist — the whole "helper" supercluster) build an
+     # early lead that this profile's few LATE dedicated resolvers (order
+     # 57/59/60, all depth=3) can't fully claw back by the end of a session.
+     # Strengthened to Care:-2 (same full-strength precedent as artificial-
+     # intelligence's Care:-2) so it counts for something on that early,
+     # high-traffic question too, not just in dedicated late resolvers. Also
+     # added order=61, a dedicated resolver naming this round's actual worst
+     # rivals directly rather than guessing who's next.
+     #
+     # Round 5: STILL 0/100, FIFTH distinct rival set (media-journalism x30,
+     # social-worker x30 — AGAIN, despite order=61 correctly, verifiably
+     # discriminating against it — and project-management x29, brand new).
+     # order=61 itself checks out on paper, which means the real problem
+     # isn't any single missing resolver — it's this profile's baseline
+     # performance across the ~45 OTHER, non-dedicated questions in a
+     # session. Recognized the actual root cause, already documented
+     # elsewhere in THIS FILE and missed until now: marketing (round 6 of
+     # the original calibration session) was "the only profile in the whole
+     # catalog with zero axes at magnitude 2 — could never win a contested
+     # question against ANY resolver (which always carry at least one ±2
+     # weight)". This profile had exactly the same disease — Care:-2 was
+     # its only magnitude-2 axis, and it's negative (helps LOSE ground, does
+     # nothing to WIN a question outright). Four rounds of reactive
+     # per-rival patches never addressed this because each patch targeted a
+     # specific named rival instead of asking "can this profile win
+     # ANYTHING on its own terms" — same trap already documented in the
+     # STEM-cluster notes ("the win rotates to whoever's next closest... not
+     # fixable by trimming rivals one at a time"; the actual data-science
+     # fix was giving IT a new positive identity, Inv:1, not more opposition
+     # to finance-accounting). Applied the same fix here: sharpened Emp and
+     # Acad — both genuinely central to diplomacy (reading/negotiating with
+     # counterparts; sustained formal study of law/history/languages) and
+     # already present at 1 — to 2, giving this profile three real
+     # magnitude-2 anchors (Emp, Acad, Care) instead of one negative one.
+     "profile": {"People": 1, "Emp": 2, "Vis": 1, "Acad": 2, "Exp": 1, "Inv": -1, "Struct": -1, "Predict": 1, "Auto": -1, "Pace": -1, "Care": -2, "Data": -1, "Motiv": -1, "Dev": -1},
      "professions": ["Дипломат", "Специалист по международным отношениям", "Регионовед", "Атташе"],
      "subjects_required": {"История": 2, "Обществознание": 2, "Английский язык": 1}},
 ]
@@ -1597,9 +1710,62 @@ QUESTIONS: list[dict] = [
          {"text": "работать в рамках уже существующих правил, протокола, договорённостей", "axis_weights": {"Inv": -2, "Struct": 1}},
          {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": ["international-relations", "pr-specialist", "design-digital-art", "marketing-advertising", "marketing"]},
+    # Added (2026-07-24, census round 3): international-relations' third
+    # distinct set of dominant rivals — speech-therapist/psychology-
+    # pedagogy — after order=59 fixed the previous ones. Forks on Dev (see
+    # profile comment). Verified: international-relations scores clearly
+    # highest on option 2 (3 vs -3), speech-therapist clearly highest on
+    # option 1 (5 vs -4), psychology-pedagogy clearly highest on option 1
+    # (4 vs -2). media-journalism (this profile's 3rd rival, weaker at x28)
+    # carries neither Dev nor Care, so scores ~0 on both — not resolved by
+    # this question, but already opposed elsewhere (Motiv, Predict) in the
+    # profile itself.
+    {"order": 60, "kind": "situational", "depth": 3, "age_variant": "senior",
+     "text": "Помогать людям — это скорее про…", "text_junior": None,
+     "options": [
+         {"text": "растить, развивать конкретного человека — учить, лечить, поддерживать один на один",
+          "axis_weights": {"Dev": 2, "Care": 1}},
+         {"text": "представлять интересы — страны, организации, группы — в переговорах с другой стороной",
+          "axis_weights": {"Dev": -2, "Auto": -1}},
+         {"text": "не знаю", "axis_weights": {}},
+     ], "resolves_pair": ["international-relations", "speech-therapist", "psychology-pedagogy"]},
+    # Added (2026-07-24, census round 4): international-relations' FOURTH
+    # distinct rival set — social-worker(x47)/psychology-pedagogy(x37 again)/
+    # general-medicine(x26) — after orders 57/59/60 fixed the previous three.
+    # All three share Care:2/People:2 at full strength, the one axis this
+    # profile most decisively opposes (Care:-2, see profile comment).
+    # Verified: international-relations scores clearly highest on option 2
+    # (5 vs -3), social-worker/psychology-pedagogy/general-medicine all
+    # clearly prefer option 1 (6 vs -4).
+    {"order": 61, "kind": "situational", "depth": 3, "age_variant": "senior",
+     "text": "Забота о ком-то — это для тебя больше про…", "text_junior": None,
+     "options": [
+         {"text": "лично помочь, вылечить, поддержать конкретного человека или семью",
+          "axis_weights": {"Care": 2, "People": 1}},
+         {"text": "договориться, представить интересы стороны на международном уровне",
+          "axis_weights": {"Care": -2, "Auto": -1}},
+         {"text": "не знаю", "axis_weights": {}},
+     ], "resolves_pair": ["international-relations", "social-worker", "psychology-pedagogy", "general-medicine"]},
+    # Added (2026-07-24, census round 4): logistics and energy-engineering
+    # turned out to share NINE same-direction axes with zero opposition
+    # (Data/Struct/Obj/Exp/Focus/Acad/Math/People/Care) — the two new
+    # specialties were never checked directly against each other. Also
+    # covers pilot/finance-accounting, both chronic logistics rivals.
+    # Verified: energy-engineering and pilot both clearly prefer option 1
+    # (4 vs 0, 3 vs 1), logistics clearly prefers option 2 (3 vs 1, after
+    # removing its non-differentiating Phys axis — see profile comment),
+    # finance-accounting prefers option 1 but actively AVOIDS option 2
+    # (2 vs -3, consistent with its own Motiv:-1/Pace:-1 identity).
+    {"order": 62, "kind": "direct", "depth": 3, "age_variant": "senior",
+     "text": "Организовывать сложную систему — что тебе интереснее?", "text_junior": None,
+     "options": [
+         {"text": "разбираться в физике, электричестве, инженерных расчётах", "axis_weights": {"Phys": 2, "Math": 1}},
+         {"text": "успевать точно в срок — маршруты, склады, доставка вовремя", "axis_weights": {"Motiv": 2, "Pace": 1}},
+         {"text": "не знаю", "axis_weights": {}},
+     ], "resolves_pair": ["energy-engineering", "logistics", "pilot", "finance-accounting"]},
 ]
 
-assert len(QUESTIONS) == 50, f"expected 50 questions, got {len(QUESTIONS)}"
+assert len(QUESTIONS) == 53, f"expected 53 questions, got {len(QUESTIONS)}"
 assert len({q["order"] for q in QUESTIONS}) == len(QUESTIONS), "duplicate question order"
 
 # Every slug named in a resolves_pair must actually exist as a leaf — this is
