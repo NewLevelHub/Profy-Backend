@@ -3,14 +3,4 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-docker compose up -d --build
-docker compose restart nginx
-docker compose exec api alembic upgrade head
-
-echo "Backend is ready: http://localhost/docs"
-
-docker-compose exec api python scripts/seed_questions.py
-docker-compose exec api python scripts/seed_universities.py
-docker-compose exec api python scripts/seed_astana_universities.py
-docker-compose exec api python scripts/seed_almaty_universities.py
-docker-compose exec api python scripts/seed_directions.py
+docker compose up --build
