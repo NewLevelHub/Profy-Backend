@@ -155,7 +155,7 @@ async def child_axis_scores(session_id: uuid.UUID, db: AsyncSession) -> dict[str
     return {code: sums[code] / counts[code] for code in sums}
 
 
-def _message_for(session: AssessmentSession) -> str:
+def _message_for(session: AssessmentSession | None) -> str:
     """The Results page always shows a direction the user explicitly
     confirmed (assessment.selected_direction_slug is only ever set by a
     "liked" feedback — see akinator_session_service.submit_feedback), no
@@ -163,8 +163,12 @@ def _message_for(session: AssessmentSession) -> str:
     landed on a cluster, or hit the question ceiling. So the message here is
     always the "confident" framing — the engine's own convergence status
     (session.status) reflects uncertainty from *before* the child chose,
-    which no longer applies once they've picked and confirmed one."""
-    key = "confident_after_rejection" if session.rejected_leaves else "confident"
+    which no longer applies once they've picked and confirmed one.
+
+    `session` is None for sessionless assessments (known-profession flow —
+    see known_profession_service), which never ran the belief-walk engine
+    and so never rejected any leaves either — falls back to "confident"."""
+    key = "confident_after_rejection" if session and session.rejected_leaves else "confident"
     return REPORT_MESSAGES[key]
 
 
@@ -246,22 +250,26 @@ async def get_result(assessment_id: uuid.UUID, db: AsyncSession) -> AkinatorResu
     if direction is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Direction not found")
 
+    # None for sessionless assessments (known-profession flow — see
+    # known_profession_service), which never ran the belief-walk engine.
+    # Every downstream use below already degrades to an empty/neutral result
+    # for that case instead of erroring — mirrors student_context.py's
+    # `belief = session.belief if session else {}` handling for the same
+    # sessionless case in the roadmap-prompt path.
     session = (
         await db.execute(
             select(AssessmentSession).where(AssessmentSession.assessment_id == assessment_id)
         )
     ).scalar_one_or_none()
-    if session is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Result not ready yet")
 
     profile = await db.get(Profile, assessment.profile_id)
     user_city: str | None = profile.city if profile is not None else None
 
-    backups = await _backups_for(session, assessment.selected_direction_slug, db)
+    backups = await _backups_for(session, assessment.selected_direction_slug, db) if session else []
     recommended_programs = await recommended_programs_for(
         assessment.selected_direction_slug, db, city=user_city
     )
-    child_scores = await child_axis_scores(session.id, db)
+    child_scores = await child_axis_scores(session.id, db) if session else {}
     matches, growth_areas, is_direction_specific = _axis_comparison_for(
         direction.profile or {}, child_scores
     )

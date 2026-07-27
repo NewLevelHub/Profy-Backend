@@ -7,6 +7,8 @@ from app.models.assessment import Assessment  # noqa: F401 — keep model import
 from app.models.assessment_session import AssessmentSession  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.direction import Direction  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.direction_roadmap import DirectionRoadmap  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.known_profession_quiz import KnownProfessionQuiz  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.known_profession_quiz_log import KnownProfessionQuizLog  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.password_reset import PasswordResetToken  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.profile import Profile  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.program import Program  # noqa: F401 — keep model imported so Alembic discovers it
@@ -20,7 +22,7 @@ from app.models.subject_readiness_session import SubjectReadinessSession  # noqa
 
 __all__ = [
     "Base", "AkinatorAnswerLog", "AkinatorQuestion", "Artifact", "Assessment", "AssessmentSession",
-    "Direction", "DirectionRoadmap",
+    "Direction", "DirectionRoadmap", "KnownProfessionQuiz", "KnownProfessionQuizLog",
     "EmailVerificationToken", "PasswordResetToken", "Profile", "Program", "ProductFeedback", "University", "User",
     "ProfessionSimulation", "ProfessionSimulationLog",
     "SubjectQuestion", "SubjectReadinessSession",

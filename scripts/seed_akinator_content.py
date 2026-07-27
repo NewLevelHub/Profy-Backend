@@ -175,7 +175,21 @@ SPECIALTIES: list[dict] = [
      # all three chronic rivals plus film-director — a single axis that
      # opposes the whole cluster at once, same shape as data-science's Inv
      # wedge against finance-accounting.
-     "profile": {"People": 2, "Care": 2, "Emp": 2, "Exp": 2, "Focus": 2, "Motiv": -1, "Acad": 2, "Data": -1, "Ideas": -1},
+     #
+     # Dev:-1, Predict:-1 added (calibration playtest pass, 2026-07, round
+     # 24, new-specialties expansion): census found this losing to the new
+     # psychology-pedagogy (People/Care/Emp/Exp/Focus/Acad all same-
+     # direction, zero opposition — psychology-pedagogy's one real
+     # differentiator, Dev:1, had no counterpart here) and to
+     # speech-therapist/social-worker with the same zero-opposition shape.
+     # Dev ("учить, растить других") opposes psychology-pedagogy(Dev:1) and
+     # speech-therapist(Dev:2) at once: psychologist works through
+     # conversation with whoever comes to them, not structured teaching/
+     # skill-drilling — already the system's own recognized differentiator
+     # for this pair (order=19's resolver). Predict:-1 opposes social-worker
+     # (Predict:1): psychologist's work is sustained depth with one known
+     # client, not constantly-new practical crises across different cases.
+     "profile": {"People": 2, "Care": 2, "Emp": 2, "Exp": 2, "Focus": 2, "Motiv": -1, "Acad": 2, "Data": -1, "Ideas": -1, "Dev": -1, "Predict": -1},
      "professions": ["Психолог", "Клинический психолог", "Коуч"],
      "subjects_required": {"Обществознание": 2, "Биология": 1, "Русский язык": 1}},
     {"slug": "speech-therapist", "name": "Логопедия и дефектология", "label_junior": "Логопед", "section": "akinator-psychology-help",
@@ -262,7 +276,19 @@ SPECIALTIES: list[dict] = [
      # finance-accounting's new Inv:-1 below, same "applies established
      # rules, doesn't invent" reasoning already used for lawyer's and
      # fire-safety-engineer's Inv:-1). Feeds the new order=53 resolver.
-     "profile": {"People": -1, "Living": -2, "Data": 2, "Obj": -2, "Care": -2, "Dev": -2, "Exp": 1, "Focus": 2, "Auto": 1, "Struct": 1, "Predict": -1, "Acad": 1, "PhysSt": -2, "Math": 2, "Inv": 1},
+     #
+     # Ideas:-1 added (calibration playtest pass, 2026-07, round 24,
+     # new-specialties expansion): census found this losing to architect/
+     # software-engineer/science-research — data-science carried no `Ideas`
+     # axis at all, while all three rivals carry it positive (architect+2,
+     # software-engineer+1, science-research+2), on top of 10+ other
+     # same-direction shared axes. Data-science is quantitative
+     # pattern-finding with established statistical/ML techniques, not
+     # abstract/aesthetic conceptual design (architect) or open-ended
+     # theorizing (science-research) — a genuine triple-wedge, same shape
+     # as psychologist's Ideas:-1 fix. Doesn't touch the Inv/Obj
+     # differentiators already working against finance-accounting above.
+     "profile": {"People": -1, "Living": -2, "Data": 2, "Obj": -2, "Care": -2, "Dev": -2, "Exp": 1, "Focus": 2, "Auto": 1, "Struct": 1, "Predict": -1, "Acad": 1, "PhysSt": -2, "Math": 2, "Inv": 1, "Ideas": -1},
      "professions": ["Аналитик данных", "Data Scientist", "BI-аналитик", "ML-инженер"],
      "subjects_required": {"Математика": 2, "Информатика": 2, "Физика": 1}},
     {"slug": "it-infrastructure-security", "name": "Кибербезопасность и IT-инфраструктура", "label_junior": "Компьютерный мастер", "section": "akinator-it-data",
@@ -404,7 +430,16 @@ SPECIALTIES: list[dict] = [
     # Слово и коммуникация — 4 разных аккредитованных программы, без изменений
     {"slug": "journalist", "name": "Журналистика", "section": "akinator-words-communication",
      "description": "Журналистика учит находить, проверять и рассказывать истории — держать людей в курсе того, что происходит в мире.",
-     "profile": {"People": 1, "Ideas": 1, "Obj": -2, "Vis": 1, "Exp": 1, "Emp": 1, "Risk": 1, "Pace": 2, "Predict": 2, "Acad": 1, "Struct": -1},
+     # Inv:-1 added (calibration playtest pass, 2026-07, round 23, new-
+     # specialties expansion): after 19 new specialties were added, census
+     # found journalist losing to design-digital-art/marketing-advertising/
+     # marketing (all sharing Ideas/Vis/Exp/People with zero opposition).
+     # Journalism relays and verifies real events rather than inventing
+     # creative concepts from scratch — genuine "applies, doesn't invent"
+     # distinction, same reasoning as lawyer's/pilot's existing Inv:-1.
+     # Opposes all three rivals (design-digital-art Inv:2, marketing-
+     # advertising Inv:1, marketing Inv:1) at once.
+     "profile": {"People": 1, "Ideas": 1, "Obj": -2, "Vis": 1, "Exp": 1, "Emp": 1, "Risk": 1, "Pace": 2, "Predict": 2, "Acad": 1, "Struct": -1, "Inv": -1},
      "professions": ["Журналист", "Репортёр", "Блогер-журналист"],
      "subjects_required": {"Русский язык": 2, "Литература": 2, "Обществознание": 1}},
     {"slug": "translator", "name": "Переводческое дело", "section": "akinator-words-communication",
@@ -568,6 +603,11 @@ SPECIALTIES: list[dict] = [
      "subjects_required": {"Экономика": 2, "Математика": 1, "Обществознание": 1}},
     {"slug": "marketing", "name": "Маркетинг", "label_junior": "Специалист по рекламе", "section": "akinator-business-sales",
      "description": "Маркетинг учит продумывать, как рассказать о продукте так, чтобы его захотели купить — анализировать рынок и запускать рекламные кампании.",
+     # Risk:-1 added (calibration playtest pass, 2026-07, round 23,
+     # new-specialties expansion): census found this losing most to
+     # business-entrepreneurship (shares Ideas/Inv/People/Data/Motiv, zero
+     # opposition). Same "campaign work within an employer's guardrails vs
+     # founding a venture" reasoning as marketing-advertising's Risk:-1.
      # Ideas 1->2, Vis 1->2 (calibration playtest pass, 2026-07, round 6): this
      # was the only profile in the whole catalog with zero axes at magnitude
      # 2 — every trait capped at ±1, so it could never win a contested
@@ -648,7 +688,14 @@ SPECIALTIES: list[dict] = [
      "subjects_required": {"Информатика": 2, "Математика": 1}},
     {"slug": "artificial-intelligence", "name": "Искусственный интеллект", "label_junior": "AI-инженер", "section": "akinator-it-data",
      "description": "Искусственный интеллект — разработка систем, которые учатся на данных и принимают решения: машинное обучение, компьютерное зрение, NLP.",
-     "profile": {"Data": 2, "Math": 2, "Ideas": 2, "Inv": 2, "Focus": 2, "Acad": 2, "Auto": 1, "People": -1, "Struct": -1, "Predict": -1, "PhysSt": -2, "Care": -2, "Living": -2},
+     # Phys:-1 added (calibration playtest pass, 2026-07, round 24,
+     # new-specialties expansion): census found this losing most to
+     # architect — real opposition already exists (People, Struct) but
+     # architect's extra uncontested axes (Phys:1, Obj:1, Lead:1, Exp:2)
+     # plus a smaller norm let it dominate anyway. AI/ML work is purely
+     # virtual (data, code, models), never physical materials — directly
+     # opposes architect's Phys:1 and other physical-engineering rivals.
+     "profile": {"Data": 2, "Math": 2, "Ideas": 2, "Inv": 2, "Focus": 2, "Acad": 2, "Auto": 1, "People": -1, "Struct": -1, "Predict": -1, "PhysSt": -2, "Care": -2, "Living": -2, "Phys": -1},
      "professions": ["ML-инженер", "AI-исследователь", "NLP-инженер", "Инженер компьютерного зрения", "Data Scientist"],
      "subjects_required": {"Математика": 2, "Информатика": 2}},
 
@@ -689,7 +736,17 @@ SPECIALTIES: list[dict] = [
     # Медицина и здоровье
     {"slug": "medicine-biology", "name": "Медицина / биология", "label_junior": "Биомедик", "section": "akinator-medicine",
      "description": "Медицина и биология — лабораторная и исследовательская работа на стыке наук о жизни: биохимия, генетика, биотехнологии.",
-     "profile": {"Living": 2, "Data": 1, "Care": 1, "Exp": 1, "Acad": 2, "Focus": 1, "People": 1, "PhysSt": 1, "Struct": 1},
+     # Obj:-2 added (calibration playtest pass, 2026-07, round 24,
+     # new-specialties expansion): census found this losing to
+     # rehabilitation-therapist/veterinary-zootechnics/dentist — all three
+     # are hands-on clinical/applied roles carrying zero axes in either
+     # direction on Obj ("Разбирать/докапываться vs строить инструмент"),
+     # so no shared opposition existed anywhere. Biomedical/biotech research
+     # (biochemistry, genetics, microbiology) is investigative lab work, not
+     # applying a known procedure to restore a working outcome — same
+     # magnitude already used for its closest analogues zoologist/ecologist.
+     # Opposes all three rivals at once since none of them touch Obj.
+     "profile": {"Living": 2, "Data": 1, "Care": 1, "Exp": 1, "Acad": 2, "Focus": 1, "People": 1, "PhysSt": 1, "Struct": 1, "Obj": -2},
      "professions": ["Биомедицинский исследователь", "Биотехнолог", "Биохимик", "Микробиолог", "Генетик"],
      "subjects_required": {"Биология": 2, "Химия": 2}},
 
@@ -703,7 +760,16 @@ SPECIALTIES: list[dict] = [
     # Бизнес и продажи
     {"slug": "marketing-advertising", "name": "Маркетинг / реклама", "label_junior": "Маркетолог", "section": "akinator-business-sales",
      "description": "Маркетинг и реклама — продвижение продуктов и брендов через цифровые каналы, рекламные кампании и работу с аудиторией.",
-     "profile": {"People": 2, "Ideas": 2, "Vis": 2, "Inv": 1, "Emp": 1, "Motiv": 1, "Data": 1, "Acad": 1},
+     # Risk:-1 added (calibration playtest pass, 2026-07, round 23,
+     # new-specialties expansion): census found this losing most to
+     # business-entrepreneurship (shares People/Ideas/Inv/Data, zero
+     # opposition) and film-director/pr-specialist (already weakly opposed
+     # via Data, but under-strength). Running campaigns for a client/
+     # employer within budget and brand guardrails is materially lower
+     # personal stakes than founding a venture (business-entrepreneurship
+     # Risk:2) or making high-stakes authorial bets as a director
+     # (film-director Risk:1) — opposes both at once.
+     "profile": {"People": 2, "Ideas": 2, "Vis": 2, "Inv": 1, "Emp": 1, "Motiv": 1, "Data": 1, "Acad": 1, "Risk": -1},
      "professions": ["Маркетолог", "Специалист по рекламе", "Таргетолог", "PR-менеджер", "Бренд-менеджер"],
      "subjects_required": {"Обществознание": 1, "История": 1}},
     {"slug": "business-entrepreneurship", "name": "Бизнес / предпринимательство", "label_junior": "Предприниматель", "section": "akinator-business-sales",
@@ -713,12 +779,47 @@ SPECIALTIES: list[dict] = [
      "subjects_required": {"Математика": 1, "Обществознание": 1}},
     {"slug": "finance-economics", "name": "Финансы / экономика", "label_junior": "Экономист", "section": "akinator-business-sales",
      "description": "Финансы и экономика — анализ макроэкономических процессов, финансовых рынков и корпоративных финансов с научным или аналитическим уклоном.",
-     "profile": {"Data": 2, "Math": 1, "Acad": 2, "Ideas": 1, "Exp": 1, "Focus": 1, "Auto": 1, "People": -1, "Struct": 1},
+     # Inv:1, Care:-1 added (calibration playtest pass, 2026-07, round 24,
+     # new-specialties expansion): census found this losing to
+     # finance-accounting (zero opposition, exact same disease data-science
+     # had pre-round-16 — economists build/invent forecasting and
+     # theoretical models, accountants apply fixed external rules, same
+     # "applies vs invents" wedge already validated for data-science/
+     # finance-accounting) and to pharmacist (weak real People opposition
+     # buried under 6 same-direction axes — finance-economics works with
+     # abstract financial/economic systems, not individual patient care,
+     # same reasoning as architect's/hospitality-manager's Care:-1). Inv:1
+     # also opposes pilot's Inv:-1 as a side effect.
+     "profile": {"Data": 2, "Math": 1, "Acad": 2, "Ideas": 1, "Exp": 1, "Focus": 1, "Auto": 1, "People": -1, "Struct": 1, "Inv": 1, "Care": -1},
      "professions": ["Экономист", "Финансовый аналитик", "Макроэкономист", "Экономический советник"],
      "subjects_required": {"Математика": 2, "Экономика": 2}},
     {"slug": "project-management", "name": "Управление проектами", "label_junior": "Проджект-менеджер", "section": "akinator-business-sales",
      "description": "Управление проектами — координация команд, планирование сроков и бюджетов, контроль выполнения задач в IT, строительстве, бизнесе.",
-     "profile": {"People": 2, "Lead": 2, "Data": 1, "Ideas": 1, "Struct": 2, "Motiv": 1, "Emp": 1, "Pace": 1, "Auto": -1},
+     # Exp:-1, Care:-1 added (calibration playtest pass, 2026-07, round 23):
+     # traced a real international-relations session (that leaf had already
+     # been through 5 failed calibration rounds, all targeting ITS OWN
+     # profile — see "Redesigned TWICE" below) and found the actual root
+     # cause was here, not there: project-management had 9 axes and only
+     # ONE negative (Auto:-1) — the same "zero negative axis" disease fixed
+     # repeatedly elsewhere in this file (pilot round 3, hospitality-manager
+     # round 3, marketing round 6). It kept winning ANY generic
+     # leadership/organize/people question regardless of fit, snowballing
+     # to 0.53 belief by step 11 of a 22-step session and locking out the
+     # real answer for the rest of the session — international-relations
+     # barely touches Lead/Emp/Pace/Struct at all, so it had zero chance
+     # once this leaf took an early lead. This "broad attractor with no way
+     # to lose" shape also shows up in project-management's loss lists for
+     # speech-therapist, lawyer, fire-safety-engineer, school-teacher,
+     # police-officer, kindergarten-teacher, social-worker — i.e. this is
+     # a catalog-wide fix, not narrowly about international-relations.
+     # Exp:-1 is grounded in the profile's own description: coordination
+     # ACROSS different domains (IT, construction, business) is breadth,
+     # not narrow deep specialization — same reasoning already used for
+     # hospitality-manager's and management-entrepreneurship's existing
+     # Exp:-1. Care:-1: this is an operations/coordination function, not
+     # personal caregiving — same reasoning as hospitality-manager's
+     # existing Care:-1 (round 20b).
+     "profile": {"People": 2, "Lead": 2, "Data": 1, "Ideas": 1, "Struct": 2, "Motiv": 1, "Emp": 1, "Pace": 1, "Auto": -1, "Exp": -1, "Care": -1},
      "professions": ["Проджект-менеджер", "Продуктовый менеджер", "Скрам-мастер", "Бизнес-аналитик"],
      "subjects_required": {"Математика": 1, "Обществознание": 1}},
 
@@ -740,7 +841,14 @@ SPECIALTIES: list[dict] = [
     # Сцена и медиа
     {"slug": "media-journalism", "name": "Медиа / журналистика", "label_junior": "Журналист", "section": "akinator-stage-media",
      "description": "Медиа и журналистика — создание контента для аудитории через текст, видео, подкасты и социальные сети.",
-     "profile": {"People": 2, "Ideas": 2, "Emp": 1, "Vis": 1, "Exp": 1, "Risk": 1, "Motiv": 1, "Predict": -1},
+     # Inv:-1 added (calibration playtest pass, 2026-07, round 23, new-
+     # specialties expansion): census found this losing to pr-specialist/
+     # design-digital-art/film-director, all sharing People/Ideas/Vis/Emp/Exp
+     # with zero opposition, and all three carrying Inv:2 which
+     # media-journalism didn't touch. Content/reporting curates and relays
+     # real material rather than inventing ad campaigns/original art/fiction
+     # — same "applies, doesn't invent" wedge as journalist's Inv:-1 above.
+     "profile": {"People": 2, "Ideas": 2, "Emp": 1, "Vis": 1, "Exp": 1, "Risk": 1, "Motiv": 1, "Predict": -1, "Inv": -1},
      "professions": ["Журналист", "Редактор", "Видеоблогер", "Подкастер", "Медиапродюсер"],
      "subjects_required": {"История": 1, "Обществознание": 1}},
 
@@ -958,7 +1066,49 @@ SPECIALTIES: list[dict] = [
      # counterparts; sustained formal study of law/history/languages) and
      # already present at 1 — to 2, giving this profile three real
      # magnitude-2 anchors (Emp, Acad, Care) instead of one negative one.
-     "profile": {"People": 1, "Emp": 2, "Vis": 1, "Acad": 2, "Exp": 1, "Inv": -1, "Struct": -1, "Predict": 1, "Auto": -1, "Pace": -1, "Care": -2, "Data": -1, "Motiv": -1, "Dev": -1},
+     #
+     # Round 6 (2026-07, round 24): STILL 1/100 going into this round
+     # (verified by a fresh full-catalog census, not just the named rivals).
+     # Computed this profile's actual vector norm (~4.90) against its three
+     # worst rivals' norms (social-worker ~4.24, psychology-pedagogy ~4.12,
+     # media-journalism ~3.74) — it's the LARGEST, not smallest, of the
+     # group. Round 4 already diagnosed "grown to 14 axes with no single
+     # strong signature" but round 5's fix (raising Emp to 2) made this
+     # WORSE, not better: social-worker and psychology-pedagogy both carry
+     # Emp:2 themselves, so this profile's supposed "new anchor" was an
+     # exact tie with the two rivals it was meant to beat — ties don't
+     # differentiate under dot-product/norm scoring, they just add mass
+     # that gets diluted by this profile's now-larger norm. Also found a
+     # real conceptual error: Struct:-1 (added round 1) is backwards —
+     # diplomacy is protocol- and treaty-bound, one of the most
+     # rule-structured fields in the catalog, not rule-averse; it should
+     # have been positive from the start, aligned with law-public-
+     # administration (Struct:2) rather than accidentally opposing its own
+     # true intellectual family.
+     #
+     # Full reconsideration rather than another single-axis patch (per
+     # round 4/5's own lesson about reactive patching): dropped Vis/Auto/
+     # Pace/Data — checked each against all 3 rivals, none of them provided
+     # real opposition, they were pure norm-dilution filler diluting the
+     # axes that actually matter. Flipped Struct to +2 (protocol-bound,
+     # uncontested by any of the 3 rivals). Added Focus:2 (sustained policy
+     # analysis/negotiation prep — near-uncontested; only psychology-
+     # pedagogy touches it, weakly). Raised Exp 1->2 (deep regional/policy
+     # expertise — now dominates media-journalism's Exp:1 instead of tying
+     # it). Demoted Emp 2->1 (real trait, but no longer a tied anchor with
+     # social-worker/psychology-pedagogy's own strongest axis). Kept Acad:2,
+     # Care:-2 (both real, proven anchors from earlier rounds), Dev:-1/
+     # Motiv:-1/Predict:1/Inv:-1 (all still genuinely justified, still
+     # uncontested by the current worst rivals). Net effect: 5 real anchors
+     # (Struct/Focus/Exp/Acad/Care) instead of 2, smaller/more concentrated
+     # norm, zero exact-magnitude ties with any of the 3 named rivals.
+     # Trade-off, accepted deliberately: this pulls international-relations
+     # noticeably closer to law-public-administration (5 shared
+     # same-direction axes) — they ARE genuinely related fields in real
+     # life; the existing dedicated resolvers (order=57/59) are there
+     # specifically to split this pair, lean on those rather than fighting
+     # the resemblance in the base profile.
+     "profile": {"People": 1, "Emp": 1, "Struct": 2, "Focus": 2, "Exp": 2, "Acad": 2, "Inv": -1, "Predict": 1, "Care": -2, "Motiv": -1, "Dev": -1},
      "professions": ["Дипломат", "Специалист по международным отношениям", "Регионовед", "Атташе"],
      "subjects_required": {"История": 2, "Обществознание": 2, "Английский язык": 1}},
 ]

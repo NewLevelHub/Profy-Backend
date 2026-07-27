@@ -3,7 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.schemas.direction import DirectionBase, DirectionDetail, DirectionTreeNode
-from app.services import direction_service
+from app.schemas.known_profession import KnownProfessionQuizResponse
+from app.services import direction_service, known_profession_service
 
 router = APIRouter(tags=["directions"])
 
@@ -28,3 +29,15 @@ async def get_direction(slug: str, db: AsyncSession = Depends(get_db)) -> Direct
     if detail is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Direction not found")
     return detail
+
+
+@router.get("/{slug}/known-profession-quiz", response_model=KnownProfessionQuizResponse)
+async def get_known_profession_quiz(
+    slug: str, db: AsyncSession = Depends(get_db)
+) -> KnownProfessionQuizResponse:
+    """Validation quiz for the "Уже знаю, кем хочу стать" flow — see
+    known_profession_service. Public, like the rest of the direction catalog."""
+    quiz = await known_profession_service.get_quiz(slug, db)
+    if quiz is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz not found")
+    return KnownProfessionQuizResponse(leaf_slug=quiz.leaf_slug, questions=quiz.questions)
