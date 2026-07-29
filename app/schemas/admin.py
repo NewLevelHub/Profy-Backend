@@ -174,3 +174,11 @@ class AdminFeedbackListResponse(BaseModel):
     total: int
     page: int
     limit: int
+
+
+class AdminStatsResponse(BaseModel):
+    users_count: int
+    completed_assessments_count: int
+    in_progress_assessments_count: int
+    average_design_rating: float
+

@@ -11,6 +11,7 @@ from app.schemas.admin import (
     AdminFeedbackListResponse,
     AdminUserDetailResponse,
     AdminUserListResponse,
+    AdminStatsResponse,
 )
 from app.services import admin_service, product_feedback_service
 
@@ -26,6 +27,15 @@ async def list_users(
     db: AsyncSession = Depends(get_db),
 ):
     return await admin_service.list_users(db, page=page, limit=limit, search=search)
+
+
+@router.get("/stats", response_model=AdminStatsResponse)
+async def get_admin_stats(
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await admin_service.get_admin_stats(db)
+
 
 
 @router.get("/users/{user_id}", response_model=AdminUserDetailResponse)
