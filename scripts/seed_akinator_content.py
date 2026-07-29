@@ -1214,7 +1214,66 @@ SPECIALTIES: list[dict] = [
      # life; the existing dedicated resolvers (order=57/59) are there
      # specifically to split this pair, lean on those rather than fighting
      # the resemblance in the base profile.
-     "profile": {"People": 1, "Emp": 1, "Struct": 2, "Focus": 2, "Exp": 2, "Acad": 2, "Inv": -1, "Predict": 1, "Care": -2, "Motiv": -1, "Dev": -1},
+     #
+     # Round 7 (2026-07-29): STILL 34-40/100 across two fresh n=50 census
+     # seeds — chronic rivals now consistently law-public-administration
+     # (x27-31), lawyer (x27-30), pilot (x25-29). Traced WHY order=57 (the
+     # resolver round 6 explicitly said existed "specifically to split this
+     # pair") wasn't working: computed match_score by hand for all four
+     # leaves on its two options — international-relations, law-public-
+     # administration, lawyer, AND pilot ALL score highest on the same
+     # option (Struct), because round 6 flipped this profile's Struct to +2
+     # to align with (not oppose) law-public-administration, and none of the
+     # four carry Emp/Vis/Pace (option 1's axes) meaningfully. order=57 is
+     # stale — written when this profile's Struct was different — and now
+     # resolves nothing between these four (still works fine for journalist,
+     # its other named leaf, left untouched). Every other axis this profile
+     # carries (Emp/Care/Motiv/Dev) is EXTRA relative to the trio, not
+     # opposing — the trio simply doesn't touch those axes at all, so they
+     # can't win a contested question against them. Found one real, unused
+     # axis: Data. law-public-administration, lawyer, and pilot ALL carry
+     # Data:1 (precise records/precedent/instrument data); this profile
+     # carries none. Diplomacy and international negotiation is a
+     # relationship/language field, not a data-analysis one — genuinely
+     # opposes all three at once. Feeds new order=67 resolver.
+     #
+     # Re-checked after order=67 alone: targeted census (n=100) moved
+     # international-relations 34-40%->45% — real, but still short, still
+     # losing to the same three at nearly the same rate (45-48/100 each).
+     # Tried a SECOND axis (Lead, order=68) — REVERTED same day, made it
+     # WORSE (45%->25%). Traced real target-persona sessions instead of
+     # trusting the isolated match_score check (which looked clean) and
+     # found the actual mechanism: this profile's existing Inv:-1 (added
+     # round 2 to oppose the design/creative cluster) also happens to match
+     # lawyer's/pilot's own Inv:-1. On multi-axis STEM resolvers that pair
+     # Inv with Motor/Phys (order=54/63, written for the engineering
+     # cluster), the target-persona simulation picks whichever option best
+     # matches ITS OWN profile — international-relations "correctly" picks
+     # the Inv:-1 side every time, but that option's OTHER axes (Motor:2 in
+     # particular) contribute nothing to international-relations (Motor not
+     # in its profile) while massively boosting pilot/aviation-engineering/
+     # mechanical-engineer (which DO carry real Motor). Adding Lead:-1 made
+     # the profile's norm larger, diluting this already-thin position
+     # further, on top of not fixing the actual mechanism. Root cause is
+     # Inv:-1's unintended alignment with its own current worst rivals, not
+     # a missing axis. Kept the Data axis/order=67 (real, measured net
+     # positive).
+     #
+     # Round 7, part 3: removed Inv:-1 (the "never remove an axis" rule has
+     # a strong track record in this file, so this was NOT done lightly —
+     # only after the trace above pinpointed Inv:-1 itself, not a missing
+     # axis, as the active mechanism dragging belief toward pilot/
+     # mechanical-engineer). Checked collateral before removing: order=59
+     # (this profile's own design-digital-art/pr-specialist resolver) still
+     # correctly separates via Struct alone (0.0 vs 0.392) — doesn't depend
+     # on Inv. order=63 (the STEM Inv+Motor double-fork) goes from a forced
+     # wrong-genre pick (0.385 vs -0.385, dragging Motor's full weight onto
+     # pilot/mechanical-engineer for zero benefit to this profile, which
+     # has no Motor) to an exact 0/0 tie — the persona now answers "не
+     # знаю" on that question instead of accidentally reinforcing its own
+     # worst rivals. See census verification below before treating this as
+     # final.
+     "profile": {"People": 1, "Emp": 1, "Struct": 2, "Focus": 2, "Exp": 2, "Acad": 2, "Predict": 1, "Care": -2, "Motiv": -1, "Dev": -1, "Data": -1},
      "professions": ["Дипломат", "Специалист по международным отношениям", "Регионовед", "Атташе"],
      "subjects_required": {"История": 2, "Обществознание": 2, "Английский язык": 1}},
 ]
@@ -1390,7 +1449,6 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "переделаю — меня это будет раздражать", "axis_weights": {"Focus": 1, "Struct": 1}},
          {"text": "оставлю как есть, работает же", "axis_weights": {"Motiv": -1}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": None},
     {"order": 7, "kind": "situational", "depth": 2, "age_variant": "both",
      "text": "Что тебе приятнее на целый день?",
@@ -1398,7 +1456,6 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "одно большое дело — погрузиться надолго", "axis_weights": {"Focus": 2}},
          {"text": "много разных мелких задач, переключаться", "axis_weights": {"Focus": -2, "Pace": 1}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": None},
     {"order": 8, "kind": "situational", "depth": 2, "age_variant": "both",
      "text": "Что тебе ближе?",
@@ -1406,7 +1463,6 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "надёжное и понятное, со стабильным результатом", "axis_weights": {"Risk": -2}},
          {"text": "рискованное, но может выстрелить по-крупному", "axis_weights": {"Risk": 2}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": None},
     {"order": 9, "kind": "situational", "depth": 2, "age_variant": "both",
      "text": "Работа мечты — это скорее…",
@@ -1414,7 +1470,6 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "в команде, вместе с другими", "axis_weights": {"Auto": -2}},
          {"text": "самому, по-своему", "axis_weights": {"Auto": 2}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": None},
     {"order": 10, "kind": "situational", "depth": 2, "age_variant": "both",
      "text": "Что тебе комфортнее?",
@@ -1422,7 +1477,6 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "чёткие правила и понятный порядок", "axis_weights": {"Struct": 2}},
          {"text": "свобода делать по-своему, без рамок", "axis_weights": {"Struct": -2}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": None},
     {"order": 11, "kind": "situational", "depth": 2, "age_variant": "both",
      "text": "Какая работа ближе?",
@@ -1430,7 +1484,6 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "спокойная, размеренная, предсказуемая", "axis_weights": {"Pace": -1, "Predict": -1}},
          {"text": "быстрая, где каждый день по-разному", "axis_weights": {"Pace": 1, "Predict": 1}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": None},
     {"order": 12, "kind": "situational", "depth": 2, "age_variant": "both",
      "text": "Что тебя больше радует?",
@@ -1438,7 +1491,6 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "сам процесс, когда занимаешься любимым делом", "axis_weights": {"Motiv": -2}},
          {"text": "результат: победа, когда добился цели", "axis_weights": {"Motiv": 2}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": None},
     {"order": 13, "kind": "situational", "depth": 2, "age_variant": "both",
      "text": "Тебе дали задачу. Что приятнее?",
@@ -1446,7 +1498,6 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "придумать своё, с нуля", "axis_weights": {"Inv": 2}},
          {"text": "сделать хорошо по готовому образцу", "axis_weights": {"Inv": -2}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": None},
     {"order": 14, "kind": "direct", "depth": 2, "age_variant": "both",
      "text": "Что интереснее?",
@@ -1477,7 +1528,6 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "на улице, в движении, руками", "axis_weights": {"PhysSt": 2, "Phys": 1}},
          {"text": "за столом, в тепле, спокойно", "axis_weights": {"PhysSt": -2}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": None},
     {"order": 17, "kind": "direct", "depth": 2, "age_variant": "senior",
      "text": "Профессия мечты требует 5–6 лет учёбы. Как тебе?", "text_junior": None,
@@ -1530,7 +1580,6 @@ QUESTIONS: list[dict] = [
          # an escape hatch they were forced into a non-answer that nudged
          # belief toward whichever side had ANY overlap (e.g. dragging
          # school-teacher/marketing personas toward hospitality-manager).
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": None},  # specialty pivot: emergency-physician/physician/surgeon all merged into general-medicine — no longer a specialty-level fork, kept as general belief-shaping signal
     {"order": 26, "kind": "direct", "depth": 2, "age_variant": "both",
      "text": "Про животных и природу — что ближе?",
@@ -1569,7 +1618,6 @@ QUESTIONS: list[dict] = [
          {"text": "да, люблю физическую работу, на ногах, с материалами", "axis_weights": {"PhysSt": 2, "Motor": 1, "Phys": 2}},
          {"text": "лучше что-то поспокойнее, не тяжёлое физически", "axis_weights": {"PhysSt": -2}},
          # Neutral option added (calibration playtest pass, 2026-07) — see order 24.
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": None},
     {"order": 30, "kind": "direct", "depth": 2, "age_variant": "both",
      "text": "В творчестве что тебя тянет?",
@@ -1602,10 +1650,9 @@ QUESTIONS: list[dict] = [
          {"text": "рискну, придумаю своё дело, буду сам за всё отвечать", "axis_weights": {"Risk": 2, "Auto": 2, "Inv": 2, "Lead": 2}},
          {"text": "лучше в понятной роли с стабильностью", "axis_weights": {"Risk": -2, "Struct": 1}},
          # Neutral option added (calibration playtest pass, 2026-07) — see order 24.
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": None},  # source says "предприниматель vs исполнительские роли" (generic) — flagged, see module docstring
     {"order": 37, "kind": "direct", "depth": 3, "age_variant": "senior",
-     "text": "С числами и деньгами тебе как?", "text_junior": None,
+     "text": "Точные расчёты и порядок — это про тебя?", "text_junior": None,
      "options": [
          # Halved 2->1 on every axis (calibration playtest pass, 2026-07,
          # round 2): at full strength this option's weights were nearly an
@@ -1734,7 +1781,7 @@ QUESTIONS: list[dict] = [
           "axis_weights": {"Lead": 1, "Pace": 1, "Predict": 1, "Struct": 1}},
      ], "resolves_pair": ["psychologist", "social-worker"]},
     {"order": 48, "kind": "direct", "depth": 3, "age_variant": "senior",
-     "text": "Работа с цифрами — что ближе?", "text_junior": None,
+     "text": "В бизнес-процессах тебе ближе…", "text_junior": None,
      "options": [
          {"text": "планировать движение товаров: маршруты, склады, поставки",
           "axis_weights": {"Obj": 1, "Lead": 1, "Pace": 1}},
@@ -1781,7 +1828,7 @@ QUESTIONS: list[dict] = [
     # 0.97 vs 0.49 next-best; software-engineer 0.86 vs 0.69; finance-
     # accounting 1.10 vs 0.73; it-infrastructure-security 0.71 vs 0.47).
     {"order": 51, "kind": "direct", "depth": 3, "age_variant": "senior",
-     "text": "Работа с числами и данными — что тебе конкретно нравится?", "text_junior": None,
+     "text": "В IT и данных тебе конкретно нравится…", "text_junior": None,
      "options": [
          {"text": "искать закономерности и смысл в больших массивах данных",
           "axis_weights": {"Obj": -2, "Data": 1, "Ideas": 1}},
@@ -1802,7 +1849,6 @@ QUESTIONS: list[dict] = [
          # psychologist sessions confirmed this dragging it toward
          # software-engineer/pr-specialist/makeup-artist-film with zero
          # genuine signal behind it.
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": ["data-science", "software-engineer", "finance-accounting", "it-infrastructure-security"]},
     # Added (calibration playtest pass, 2026-07, round 6): school-teacher and
     # speech-therapist share both their top axes (People:2, Dev:2) and had no
@@ -1834,13 +1880,12 @@ QUESTIONS: list[dict] = [
     # -0.189/+0.756 on finance's — a real two-way split, not just "wins by
     # less", unlike every other question these two share.
     {"order": 53, "kind": "direct", "depth": 3, "age_variant": "senior",
-     "text": "В работе с информацией тебе интереснее…", "text_junior": None,
+     "text": "Разбираясь в фактах, тебе важнее…", "text_junior": None,
      "options": [
          {"text": "искать закономерности там, где их ещё чётко никто не видел",
           "axis_weights": {"Inv": 2, "Obj": -1}},
          {"text": "точно следовать правилам и стандартам, которые уже все проверили",
           "axis_weights": {"Inv": -2, "Struct": 1}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": ["data-science", "finance-accounting"]},
     # Added (calibration playtest pass, 2026-07, round 20): pilot had ZERO
     # resolves_pair questions anywhere in the bank — the same "structural
@@ -1867,7 +1912,6 @@ QUESTIONS: list[dict] = [
           "axis_weights": {"Inv": -2, "Struct": 1}},
          {"text": "придумать и спроектировать что-то новое, чего раньше не было",
           "axis_weights": {"Inv": 2, "Ideas": 1}},
-         {"text": "не знаю", "axis_weights": {}},
      # resolves_pair extended (2026-07-24): aviation-engineering's and
      # energy-engineering's own Inv:-1 ("применяет регламент/нормы, не
      # изобретает") sit on exactly this fork's negative side, same
@@ -1888,7 +1932,6 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "чинить и обслуживать технику своими руками", "axis_weights": {"Motor": 2, "Obj": 1}},
          {"text": "проектировать и рассчитывать — на бумаге или компьютере", "axis_weights": {"Motor": -1, "Data": 1}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": ["aviation-engineering", "mechanical-engineer", "civil-engineering", "energy-engineering", "pilot"]},
     # Added (2026-07-24, new-directions ticket): logistics carved out of
     # management-entrepreneurship's "Логист" profession (see SPECIALTIES) —
@@ -1910,7 +1953,6 @@ QUESTIONS: list[dict] = [
          {"text": "вести команду людей к результату, планировать и договариваться",
           "axis_weights": {"People": 2, "Lead": 2, "Emp": 1}},
          {"text": "рискну, придумаю своё дело сам", "axis_weights": {"Risk": 2, "Auto": 2}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": ["logistics", "project-management", "management-entrepreneurship"]},
     # Added (2026-07-24, new-directions ticket): international-relations
     # shares 6 same-direction axes with journalist (People/Ideas/Vis/Emp/
@@ -1928,7 +1970,6 @@ QUESTIONS: list[dict] = [
          {"text": "быть посредником, вести переговоры между разными людьми и культурами, вдумчиво и не спеша",
           "axis_weights": {"Emp": 2, "Vis": 1, "Pace": -1}},
          {"text": "точно применять законы и установленные процедуры", "axis_weights": {"Struct": 2}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": ["international-relations", "law-public-administration", "journalist", "translator"]},
     # Added (2026-07-24, follow-up to census round 1, per user request for
     # more dedicated coverage of the 5 new specialties): petroleum-mining-
@@ -1947,7 +1988,6 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "интересно, готов(а) к трудностям ради находки или результата", "axis_weights": {"PhysSt": 2, "Risk": 1, "Predict": 1}},
          {"text": "нет, предпочитаю стабильные условия рядом с домом", "axis_weights": {"PhysSt": -1, "Predict": -1}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": ["petroleum-mining-geology", "civil-engineering", "mechanical-engineer", "energy-engineering"]},
     # Added (2026-07-24, census round 2): international-relations' actual
     # dominant rivals turned out to be design-digital-art/pr-specialist, not
@@ -1964,7 +2004,6 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "создавать новый образ, кампанию, историю с нуля", "axis_weights": {"Inv": 2, "Ideas": 1}},
          {"text": "работать в рамках уже существующих правил, протокола, договорённостей", "axis_weights": {"Inv": -2, "Struct": 1}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": ["international-relations", "pr-specialist", "design-digital-art", "marketing-advertising", "marketing"]},
     # Added (2026-07-24, census round 3): international-relations' third
     # distinct set of dominant rivals — speech-therapist/psychology-
@@ -1977,13 +2016,12 @@ QUESTIONS: list[dict] = [
     # this question, but already opposed elsewhere (Motiv, Predict) in the
     # profile itself.
     {"order": 60, "kind": "situational", "depth": 3, "age_variant": "senior",
-     "text": "Помогать людям — это скорее про…", "text_junior": None,
+     "text": "Оказывать поддержку — это скорее про…", "text_junior": None,
      "options": [
          {"text": "растить, развивать конкретного человека — учить, лечить, поддерживать один на один",
           "axis_weights": {"Dev": 2, "Care": 1}},
          {"text": "представлять интересы — страны, организации, группы — в переговорах с другой стороной",
           "axis_weights": {"Dev": -2, "Auto": -1}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": ["international-relations", "speech-therapist", "psychology-pedagogy"]},
     # Added (2026-07-24, census round 4): international-relations' FOURTH
     # distinct rival set — social-worker(x47)/psychology-pedagogy(x37 again)/
@@ -1994,13 +2032,12 @@ QUESTIONS: list[dict] = [
     # (5 vs -3), social-worker/psychology-pedagogy/general-medicine all
     # clearly prefer option 1 (6 vs -4).
     {"order": 61, "kind": "situational", "depth": 3, "age_variant": "senior",
-     "text": "Забота о ком-то — это для тебя больше про…", "text_junior": None,
+     "text": "Если нужно о ком-то позаботиться, тебе ближе…", "text_junior": None,
      "options": [
          {"text": "лично помочь, вылечить, поддержать конкретного человека или семью",
           "axis_weights": {"Care": 2, "People": 1}},
-         {"text": "договориться, представить интересы стороны на международном уровне",
+         {"text": "вести переговоры и защищать интересы стороны на международном уровне",
           "axis_weights": {"Care": -2, "Auto": -1}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": ["international-relations", "social-worker", "psychology-pedagogy", "general-medicine"]},
     # Added (2026-07-24, census round 4): logistics and energy-engineering
     # turned out to share NINE same-direction axes with zero opposition
@@ -2017,7 +2054,6 @@ QUESTIONS: list[dict] = [
      "options": [
          {"text": "разбираться в физике, электричестве, инженерных расчётах", "axis_weights": {"Phys": 2, "Math": 1}},
          {"text": "успевать точно в срок — маршруты, склады, доставка вовремя", "axis_weights": {"Motiv": 2, "Pace": 1}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": ["energy-engineering", "logistics", "pilot", "finance-accounting"]},
 
     # ── Deep differentiation pass (2026-07-28) — see
@@ -2037,13 +2073,12 @@ QUESTIONS: list[dict] = [
     # one behind mechanical-engineer's and artificial-intelligence's still-
     # failing census entries as of round 25.
     {"order": 63, "kind": "direct", "depth": 3, "age_variant": "senior",
-     "text": "В инженерной работе тебе интереснее…", "text_junior": None,
+     "text": "В технической задаче тебе интереснее…", "text_junior": None,
      "options": [
          {"text": "рассчитывать и проектировать конструкцию или механизм с нуля",
           "axis_weights": {"Inv": 2}},
          {"text": "физически обслуживать, ремонтировать и точно настраивать готовую технику по регламенту",
           "axis_weights": {"Motor": 2, "Inv": -2}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": ["mechanical-engineer", "civil-engineering", "architect", "engineering-architecture", "aviation-engineering"]},
     # mechanical-engineer's chronic #1 rival (aviation-engineering, 34/100 in
     # the 2026-07-28 census) already has real opposition on Inv (1 vs -1),
@@ -2063,7 +2098,6 @@ QUESTIONS: list[dict] = [
           "axis_weights": {"Data": 2, "Predict": -1}},
          {"text": "довериться творческому видению и вкусу",
           "axis_weights": {"Data": -2}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": ["artificial-intelligence", "data-science", "film-director"]},
     # artificial-intelligence's chronic #1 rival after round 25's Obj:-1 fix
     # (film-director, 40/100 in the 2026-07-28 census, up from architect
@@ -2081,7 +2115,6 @@ QUESTIONS: list[dict] = [
           "axis_weights": {"Math": 2}},
          {"text": "гипотезы, наблюдения, эксперименты — без тяжёлой математики",
           "axis_weights": {"Math": -2}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": ["artificial-intelligence", "data-science", "science-research"]},
     # artificial-intelligence's #2 rival (science-research, 33/100). Real
     # opposition already exists (AI Math:2 vs science-research Math:-1,
@@ -2091,13 +2124,12 @@ QUESTIONS: list[dict] = [
     # this specific pair. Same axis data-science shares with AI (Math:2),
     # so this question reinforces that pairing too.
     {"order": 66, "kind": "direct", "depth": 3, "age_variant": "senior",
-     "text": "В работе тебе важнее…", "text_junior": None,
+     "text": "В любом деле тебе важнее…", "text_junior": None,
      "options": [
          {"text": "довести до измеримого результата — продажи, рост, запуск, сделка",
           "axis_weights": {"Motiv": 2}},
          {"text": "сам процесс создания образа, истории или картинки — без привязки к цифрам",
           "axis_weights": {"Motiv": -2}},
-         {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": ["marketing", "marketing-advertising", "business-entrepreneurship",
                            "pr-specialist", "design-digital-art", "film-director", "makeup-artist-film"]},
     # deep-diff priority 2 (business/service cluster, 2026-07-28): the 2026-
@@ -2112,9 +2144,28 @@ QUESTIONS: list[dict] = [
     # trio's own Motiv:1-2 already being central to their identity — this
     # question is the dedicated resolver forcing that axis, naming all 7
     # leaves at once (mirrors order=54/63's multi-leaf fork pattern).
+    {"order": 67, "kind": "direct", "depth": 3, "age_variant": "senior",
+     "text": "В своей работе тебе важнее опираться на…", "text_junior": None,
+     "options": [
+         {"text": "точные факты, документы и данные",
+          "axis_weights": {"Data": 2}},
+         {"text": "отношения и переговоры между сторонами",
+          "axis_weights": {"Data": -2, "Emp": 1}},
+     ], "resolves_pair": ["international-relations", "law-public-administration", "lawyer", "pilot"]},
+    # international-relations round 7 (2026-07-29): its dedicated resolver
+    # order=57 stopped discriminating after round 6 flipped this profile's
+    # Struct to +2 (see that profile's own comment) — verified by hand that
+    # international-relations/law-public-administration/lawyer/pilot all
+    # score highest on the SAME option there now. Data is the one axis all
+    # three rivals share (Data:1, precise records/precedent/instrument
+    # data) that this profile never touched at all. Verified via match_score:
+    # international-relations scores clearly toward option 2 (-0.38 vs
+    # 0.58), all three rivals clearly toward option 1 (~0.42-0.45 vs
+    # ~-0.42 to -0.45) — a clean 4-way split, unlike order=57's current
+    # non-split.
 ]
 
-assert len(QUESTIONS) == 57, f"expected 57 questions, got {len(QUESTIONS)}"
+assert len(QUESTIONS) == 58, f"expected 58 questions, got {len(QUESTIONS)}"
 assert len({q["order"] for q in QUESTIONS}) == len(QUESTIONS), "duplicate question order"
 
 # Every slug named in a resolves_pair must actually exist as a leaf — this is

@@ -18,6 +18,7 @@ from app.models.akinator_question import AkinatorQuestion
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.assessment_session import AssessmentSession
 from app.models.direction import Direction
+from app.models.known_profession_quiz_log import KnownProfessionQuizLog
 from app.models.profile import Profile
 from app.models.program import Program
 from app.models.university import University
@@ -198,6 +199,39 @@ async def _backups_for(session: AssessmentSession, exclude_slug: str, db: AsyncS
     ]
 
 
+async def _completion_stats_for(
+    assessment: Assessment, session: AssessmentSession | None, db: AsyncSession
+) -> tuple[int | None, int | None]:
+    """Real progress/confidence numbers for the completed-test summary shown
+    on the home screen — never invented, just surfaced from whichever flow
+    produced this assessment.
+
+    Akinator flow: session.step is how many questions were actually
+    answered; session.belief is the engine's own per-direction probability,
+    so the selected direction's share of it is the same "match" number
+    admin's session view already shows as top_directions[].probability.
+    Known-profession flow never runs this engine, so its own quiz log
+    (percent + answers) is used instead. Both are None only when neither
+    signal exists (e.g. an assessment that predates this tracking)."""
+    if session is not None:
+        match_percent = None
+        belief_score = session.belief.get(assessment.selected_direction_slug)
+        if belief_score is not None:
+            match_percent = round(belief_score * 100)
+        return session.step, match_percent
+
+    quiz_log = (
+        await db.execute(
+            select(KnownProfessionQuizLog)
+            .where(KnownProfessionQuizLog.assessment_id == assessment.id)
+            .order_by(KnownProfessionQuizLog.created_at.desc())
+        )
+    ).scalars().first()
+    if quiz_log is None:
+        return None, None
+    return len(quiz_log.answers), quiz_log.percent
+
+
 async def recommended_programs_for(
     selected_slug: str,
     db: AsyncSession,
@@ -273,6 +307,7 @@ async def get_result(assessment_id: uuid.UUID, db: AsyncSession) -> AkinatorResu
     matches, growth_areas, is_direction_specific = _axis_comparison_for(
         direction.profile or {}, child_scores
     )
+    questions_answered, match_percent = await _completion_stats_for(assessment, session, db)
 
     return AkinatorResultResponse(
         assessment_id=assessment.id,
@@ -287,4 +322,7 @@ async def get_result(assessment_id: uuid.UUID, db: AsyncSession) -> AkinatorResu
         backups=backups,
         recommended_programs=recommended_programs,
         created_at=assessment.created_at,
+        completed_at=assessment.completed_at,
+        questions_answered=questions_answered,
+        match_percent=match_percent,
     )

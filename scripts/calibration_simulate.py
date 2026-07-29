@@ -5,10 +5,19 @@ stats: average questions to reveal, single/cluster/ceiling split, per-axis-
 family coverage, which questions actually get asked, and (for --strategy
 target) whether the engine converges on the persona it was aimed at.
 
-Everything runs inside one outer transaction that's ALWAYS rolled back at the
-end (same SAVEPOINT trick as tests/conftest.py's db_session fixture) — no
-throwaway users/profiles/sessions are ever left in the dev database, however
-many runs you ask for.
+Commits for real, periodically (2026-07-29 — was one giant outer transaction
+rolled back at the end, same SAVEPOINT trick as tests/conftest.py's
+db_session fixture; changed because a full 57x100 census took 3+ hours,
+traced to Postgres MVCC visibility-check cost growing with the size of a
+single transaction — thousands of sessions inside ONE transaction, not a
+DB-side bug). Every `db.commit()` already called throughout this script and
+inside akinator_session_service (once per session start, once per answer)
+is now a REAL commit instead of a savepoint release, so each simulated
+session only pays visibility-check cost against its own small transaction.
+Throwaway users/profiles are cleaned up (real DELETE, cascades to their
+assessments/sessions) at the end of every run via `_cleanup_calibration_data`
+— safe to interrupt mid-run too, since this is only ever pointed at the
+isolated `profi-calib` stack, not a real dev/prod database.
 
 Replaces the one-off `docker-compose exec api python -c "..."` snippets used
 during the first calibration pass — same idea, just reusable and versioned.
@@ -32,7 +41,7 @@ from dataclasses import dataclass, field
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import engine
@@ -288,45 +297,65 @@ async def _leaf_profiles_by_slug(db: AsyncSession) -> dict[str, dict]:
     return {d.slug: (d.profile or {}) for d in result.scalars().all() if d.profile}
 
 
+async def _cleanup_calibration_data(db: AsyncSession) -> int:
+    """Deletes every throwaway user this run created (matched by the fixed
+    @calibration.local email domain _run_one always uses) and their
+    profiles. Profile must go first — profiles.user_id -> users.id has NO
+    ON DELETE CASCADE (only assessments.profile_id and
+    assessment_sessions.assessment_id do), so deleting User first raises a
+    ForeignKeyViolationError. Real DELETE + commit, since we're no longer
+    relying on an outer rollback to erase this data. Returns how many
+    users were deleted."""
+    calibration_user_ids = (
+        select(User.id).where(User.email.like("%@calibration.local"))
+    )
+    await db.execute(delete(Profile).where(Profile.user_id.in_(calibration_user_ids)))
+    result = await db.execute(
+        delete(User).where(User.email.like("%@calibration.local"))
+    )
+    await db.commit()
+    return result.rowcount
+
+
 async def main(
     runs: int, ages: list[str], strategies: list[str], seed: int,
     census: bool, census_top_n: int, census_only: set[str] | None = None,
 ) -> None:
-    async with engine.connect() as conn:
-        outer_trans = await conn.begin()
-        db = AsyncSession(bind=conn, expire_on_commit=False, join_transaction_mode="create_savepoint")
-        try:
-            section_ids, *_ = await seed_sections(db)
-            await seed_specialties(db, section_ids)
-            await seed_questions(db)
-            await db.commit()
+    db = AsyncSession(engine, expire_on_commit=False)
+    deleted = 0
+    try:
+        section_ids, *_ = await seed_sections(db)
+        await seed_specialties(db, section_ids)
+        await seed_questions(db)
+        await db.commit()
 
-            total_questions = (await db.execute(select(AkinatorQuestion))).scalars().all()
-            total_question_count = len(total_questions)
-            leaf_profiles_by_slug = await _leaf_profiles_by_slug(db)
+        total_questions = (await db.execute(select(AkinatorQuestion))).scalars().all()
+        total_question_count = len(total_questions)
+        leaf_profiles_by_slug = await _leaf_profiles_by_slug(db)
 
-            rng = random.Random(seed)
+        rng = random.Random(seed)
 
-            if census:
-                for age_key in ages:
-                    await run_census(
-                        db, AGE_GROUPS[age_key], runs, rng, leaf_profiles_by_slug, census_top_n,
-                        only_slugs=census_only,
-                    )
-            else:
-                for age_key in ages:
-                    age_group = AGE_GROUPS[age_key]
-                    for strategy in strategies:
-                        agg = Aggregate()
-                        for _ in range(runs):
-                            result = await _run_one(db, age_group, strategy, rng, leaf_profiles_by_slug)
-                            agg.add(result)
-                        agg.print_report(f"age={age_key} strategy={strategy}", total_question_count)
-        finally:
-            await db.close()
-            await outer_trans.rollback()
+        if census:
+            for age_key in ages:
+                await run_census(
+                    db, AGE_GROUPS[age_key], runs, rng, leaf_profiles_by_slug, census_top_n,
+                    only_slugs=census_only,
+                )
+        else:
+            for age_key in ages:
+                age_group = AGE_GROUPS[age_key]
+                for strategy in strategies:
+                    agg = Aggregate()
+                    for _ in range(runs):
+                        result = await _run_one(db, age_group, strategy, rng, leaf_profiles_by_slug)
+                        agg.add(result)
+                    agg.print_report(f"age={age_key} strategy={strategy}", total_question_count)
+    finally:
+        deleted = await _cleanup_calibration_data(db)
+        await db.close()
 
-    print("\nDone. Rolled back — nothing was persisted to the database.")
+    print(f"\nDone. Committed as real (periodic) transactions — cleaned up {deleted} "
+          f"calibration user(s)/profile(s)/session(s) at the end.")
 
 
 if __name__ == "__main__":

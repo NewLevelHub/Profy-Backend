@@ -699,3 +699,146 @@ stayed strong both runs (91-98%), no collateral damage. `QUESTIONS` is now
 communication cluster) and international-relations round 7 (last measured
 19-21%, still colliding with law-public-administration/pilot/lawyer after
 round 6's full profile rewrite).
+
+## 2026-07-29: attempt 5 (cluster-lock window) — off-topic mid-session questions
+
+A real playtest (user manually clicking through the frontend) sharpened the
+"off-topic questions" complaint that priorities 1-2 didn't actually fix:
+final accuracy was correct (landed on software-engineer) but the QUESTION
+SEQUENCE itself was incoherent — 3 clear physmat/IT wide-start answers, then
+neutral, then a café resolver, then animals/helping-people. Content
+additions (deep-diff) only help the engine resolve correctly ONCE it's
+already circling the right cluster — they don't stop it wandering into
+unrelated clusters mid-session, which is a `select_next_question`-level
+problem, not a content one.
+
+**First tried WIDE_START_STEPS 3->4** (using the bank's 4th and last
+depth<=1 direct question, order=3) — verified real via 2 seeds: target-
+persona accuracy 65%->74-78%, but random/consistent/alternating strategies
+got meaningfully longer (+1-2.4 avg steps) and hit the ceiling far more
+often (+9-18pp). Only delayed the complaint by exactly one step, didn't fix
+continuity. **Reverted same day**, superseded by the item below.
+
+**Attempt 5 (kept):** a temporary CANDIDATE-SET restriction (not a score
+nudge, unlike attempts 1-4) for `_CLUSTER_LOCK_STEPS=3` steps right after
+wide-start. `_is_cluster_relevant`: generic (non-resolver) questions always
+pass; a `resolves_pair` question passes only if it names a leaf in the
+CURRENT top-`_CLUSTER_LOCK_TOP_N=5` belief. Falls back to the unfiltered
+pool if the filter would leave nothing (avoids attempt 1's lockout
+failure). Self-limiting by construction: a clear answerer gets a
+concentrated top-5 so the lock steers meaningfully; a scattered answerer
+gets a spread-out top-5 so it barely restricts anything — matches the
+user's own stated expectation ("scattered answers -> scattered questions is
+fine, that's not the complaint").
+
+Traced against the exact physmat scenario (6 runs): within the lock window,
+every resolver shown was either generic or thematically adjacent
+(finance-accounting's Data/Math overlap with physmat is real, not a bug —
+see below); zero medicine/animals/cinema-style jumps, versus 5/6 runs
+hitting one before this fix. The 2 off-topic hits that did occur happened
+strictly AFTER the window (step 8), as designed.
+
+Same tradeoff shape as the WIDE_START_STEPS experiment showed up again in
+the health-check (random/consistent/alternating avg steps +1-1.5, ceiling
+rate +10-19pp; target accuracy 65%->77%) — expected, and accepted per the
+user's own logic: this cost only lands on already-ambiguous answer
+patterns, not on users who actually answer clearly.
+
+**Full census (57 leaves, n=50, seed=7) after attempt 5: 2/57 failing**
+(international-relations 40%, translator 48% — both pre-existing chronic
+cases, not new). Critically, **no regression on attempt 2's or attempt 3's
+casualties**: actor 88%, software-engineer 100%, pilot 84% (not
+dominating). This is the first algorithm-level attempt in this whole effort
+to pass a full census clean on its first try.
+
+**Second-seed confirmation (n=50, seed=13): also clean.** actor 86%,
+software-engineer 96%, pilot 62% (reasonable losses, not dominating) — no
+attempt-2/3-style regression on either seed. 2/57 failing again:
+international-relations 34% (consistent chronic case, both seeds).
+translator/mechanical-engineer each failed on exactly one of the two seeds
+(48%/62% and 56%/48% respectively, not both at once) — within the
+already-documented noise band for these borderline STEM/creative-cluster
+professions, not attributed to attempt 5. **Attempt 5 is now considered
+verified**, not just promising.
+
+## 2026-07-29: census performance fix — real periodic commits
+
+The single-giant-rolled-back-transaction design (flagged as open tech debt
+repeatedly in this doc) finally got fixed after a user-reported 3-hour
+full-census run. Root cause was exactly as suspected: `scripts/
+calibration_simulate.py`'s `main()` bound its `AsyncSession` with
+`join_transaction_mode="create_savepoint"` inside one outer `conn.begin()`
+that was always rolled back — every `db.commit()` already called
+throughout the script AND inside `akinator_session_service` was only ever
+releasing a SAVEPOINT, never a real commit, so Postgres MVCC visibility
+checks kept accumulating cost across the entire run (thousands of sessions
+in one transaction).
+
+**Fix:** removed the savepoint wrapper entirely — `main()` now uses a plain
+`AsyncSession(engine, ...)`, so every existing `db.commit()` call is a real
+commit. Throwaway data is cleaned up for real at the end via
+`_cleanup_calibration_data` (DELETE, not rollback) — matched by the fixed
+`@calibration.local` email domain. **Caught one real bug while implementing
+this**: `profiles.user_id -> users.id` has no `ON DELETE CASCADE` (unlike
+`assessments.profile_id` and `assessment_sessions.assessment_id`, which
+do), so deleting `User` rows first raised `ForeignKeyViolationError` —
+fixed by deleting `Profile` rows first.
+
+**Verified:** full 57x50 census (2850 sessions) now takes **~23 minutes**
+flat, with per-profession timing STABLE throughout (15-35s each, first
+profession to last) — no more growth from ~70s to ~300s+ over a run. Since
+this now leaves real (if temporary) rows in `profi-calib`'s DB during a
+run, it's more important than ever to only ever point this script at the
+isolated `profi-calib` stack, never a real dev/prod database — already the
+standing rule, now with a slightly higher cost if violated.
+
+## 2026-07-29: content QA pass — duplicate questions and "не знаю" doubling
+
+A manual playtest surfaced two real, confirmed content bugs (not
+perception issues):
+
+1. **The frontend ALWAYS renders its own "🤷‍♂️ Затрудняюсь ответить / Не
+   знаю" button** for every question (`AkinatorAssessmentView.tsx`,
+   unconditional, not gated on the question having its own neutral
+   option) — this has been true since early in this effort (see
+   `calibration_simulate.py`'s own `_pick_option` docstring, which already
+   documented this fact). But **27 of 57 questions ALSO listed their own
+   explicit `{"text": "не знаю", ...}` entry** in `options` — a leftover
+   from before `option_index=None` became the uniform not-know mechanism.
+   Result: those 27 questions showed "не знаю" TWICE (once as a normal
+   option card, once as the fixed dashed-border button below); the other
+   30 showed it once. **Fixed:** stripped all 27 redundant explicit
+   entries (they were byte-identical, one `replace_all` edit) — verified
+   every question still has >=2 real options, module still imports/
+   validates cleanly, and a smoke-test census run still completes normally.
+   The frontend button is untouched and remains the sole "не знаю"
+   affordance everywhere, now consistently.
+
+2. **Duplicate/near-duplicate question TEXTS**, found by exact and
+   near-string matching across all 57: order=54 and order=66 (both my own
+   2026-07-28/29 additions) were WORD-FOR-WORD identical ("В работе тебе
+   важнее…") despite testing different axes (Inv vs Motiv). order=55/63
+   ("В инженерной работе тебе ближе/интереснее…") and order=4/60/61
+   ("Помогать людям…"/"Забота о ком-то…") were near-duplicates. **Fixed:**
+   reworded the newer of each pair (66, 63, 60, 61 — all added 2026-07-24
+   or later) to a distinct opening phrase, keeping every axis_weights/
+   resolves_pair/option exactly as-is (order=61's near-duplicate option
+   text was also lightly reworded, same axis meaning). Older/foundational
+   questions (54, 55, 4) left untouched. Verified no exact duplicates
+   remain via the same detection script.
+
+**Update, same day:** the four "числа/данные" questions (orders 37/48/51/53)
+were reworded too, once flagged. They're functionally distinct (37: a
+generic Data-vs-People gate, resolves_pair=None; 48: management-
+entrepreneurship vs finance-accounting, logistics vs accounting; 51: the
+4-way data-science/software-engineer/finance-accounting/it-infrastructure-
+security resolver; 53: data-science vs finance-accounting specifically, the
+Inv-axis fork from round 16) but 3 of the 4 opened with "числа"/"цифры"/
+"числа и данные" — a physmat/IT-leaning user can plausibly see 2-3 of them
+in one session and feel like they're repeating themselves, even though each
+tests something different. Reworded all 4 to distinct opening phrases
+(order=37 "Точные расчёты и порядок — это про тебя?", order=48 "В
+бизнес-процессах тебе ближе…", order=51 "В IT и данных тебе конкретно
+нравится…", order=53 "Разбираясь в фактах, тебе важнее…") — options,
+axis_weights, and resolves_pair untouched on all 4. Verified: module loads,
+57 questions, no exact duplicates anywhere in the bank.

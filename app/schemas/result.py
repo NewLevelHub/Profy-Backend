@@ -64,3 +64,8 @@ class AkinatorResultResponse(BaseModel):
     backups: list[RevealLeaf]
     recommended_programs: list[ResultProgramRecommendation]
     created_at: datetime
+    completed_at: datetime | None = None
+    # None when neither signal is available (e.g. an old assessment from
+    # before this was tracked) — the UI must handle that, not assume a value.
+    questions_answered: int | None = None
+    match_percent: int | None = None
