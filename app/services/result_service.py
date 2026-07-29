@@ -7,7 +7,7 @@ Direction.profile), so this can never 503.
 import uuid
 
 from fastapi import HTTPException, status
-from sqlalchemy import Text, cast, select
+from sqlalchemy import Text, cast, func, select
 from sqlalchemy.dialects.postgresql import ARRAY, array as pg_array
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -274,6 +274,25 @@ async def get_result(assessment_id: uuid.UUID, db: AsyncSession) -> AkinatorResu
         direction.profile or {}, child_scores
     )
 
+    # Same belief probability the admin panel shows per direction (see
+    # admin_service._top_directions) — how confident the akinator engine's
+    # final belief distribution was in the direction the child confirmed.
+    # None for sessionless assessments (known-profession flow), which never
+    # ran the belief-walk engine and so never produced a belief dict.
+    match_percentage = (
+        session.belief.get(assessment.selected_direction_slug) if session else None
+    )
+
+    questions_answered = 0
+    if session is not None:
+        count_result = await db.execute(
+            select(func.count()).where(
+                AkinatorAnswerLog.session_id == session.id,
+                AkinatorAnswerLog.selected_option_index.is_not(None),
+            )
+        )
+        questions_answered = count_result.scalar_one()
+
     return AkinatorResultResponse(
         assessment_id=assessment.id,
         direction_slug=direction.slug,
@@ -287,4 +306,6 @@ async def get_result(assessment_id: uuid.UUID, db: AsyncSession) -> AkinatorResu
         backups=backups,
         recommended_programs=recommended_programs,
         created_at=assessment.created_at,
+        match_percentage=match_percentage,
+        questions_answered=questions_answered,
     )

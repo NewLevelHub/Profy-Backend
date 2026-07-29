@@ -64,3 +64,5 @@ class AkinatorResultResponse(BaseModel):
     backups: list[RevealLeaf]
     recommended_programs: list[ResultProgramRecommendation]
     created_at: datetime
+    match_percentage: float | None = None
+    questions_answered: int = 0
