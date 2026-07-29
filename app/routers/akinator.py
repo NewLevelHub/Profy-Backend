@@ -179,7 +179,8 @@ async def answer_akinator(
     age_group = await _require_owned_assessment(assessment_id, current_user, db)
     try:
         turn = await akinator_session_service.submit_answer(
-            assessment_id, data.question_id, data.selected_option_index, age_group, db
+            assessment_id, data.question_id, data.selected_option_index, age_group, db,
+            disinterested=data.disinterested,
         )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc

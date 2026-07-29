@@ -109,7 +109,26 @@ class Aggregate:
             print(f"target-persona accuracy: {self.target_hits}/{self.target_attempts} ({hit_rate:.0f}%)")
 
 
-def _pick_option(strategy: str, question: AkinatorQuestion, rng: random.Random, target_profile: dict | None) -> int:
+def _pick_option(
+    strategy: str, question: AkinatorQuestion, rng: random.Random, target_profile: dict | None
+) -> int | None:
+    """Returns an index into question.options, or None for "не знаю".
+
+    None mirrors a real fact about the production system, not a simulation
+    shortcut: the frontend always renders a "Затрудняюсь ответить / Не
+    знаю" button for every single question (not conditional on the question
+    having its own explicit neutral option), and submit_answer's docstring
+    is explicit that option_index=None is "a real, recorded answer with
+    zero axis contribution (identity update), not a skip" — for ANY
+    question, not just ones the content happened to give a spare option to.
+    A real user with no genuine stake in a question clicks that button.
+    Earlier versions of this function tried to approximate this by hunting
+    for an in-list option with empty axis_weights that ties the best score
+    — but that only worked for the subset of questions that happened to
+    have one, and produced a systematically different (worse) simulation
+    of the off-topic-question experience than what real users actually do.
+    Returning None directly whenever no option is a genuine positive match
+    covers every question uniformly, exactly like the real frontend."""
     options = question.options
     if strategy == "random":
         return rng.randrange(len(options))
@@ -123,16 +142,8 @@ def _pick_option(strategy: str, question: AkinatorQuestion, rng: random.Random, 
             for opt in options
         ]
         best = max(range(len(options)), key=lambda i: scores[i])
-        # A tie at the top (frequently 0-0-0 when the question is simply
-        # irrelevant to this persona's axes) used to default to option 0
-        # regardless of what it actually says — silently dragging belief
-        # toward whichever *other* profession that option happens to favor.
-        # Prefer a genuinely neutral option ("и то и другое поровну", empty
-        # axis_weights) when one's available and ties the best real score.
         if scores[best] <= 0:
-            neutral = next((i for i, opt in enumerate(options) if not opt.get("axis_weights")), None)
-            if neutral is not None and scores[neutral] == scores[best]:
-                return neutral
+            return None
         return best
     raise ValueError(f"unknown strategy: {strategy!r}")
 
@@ -205,16 +216,35 @@ async def run_census(
     rng: random.Random,
     leaf_profiles_by_slug: dict[str, dict],
     top_n: int,
+    only_slugs: set[str] | None = None,
 ) -> None:
     """One "textbook" persona per real profession (skips the old placeholder
     "explore-*" directions, which carry no profile), run `trials_per_profession`
     times each. Reports, per profession, how often it lands in the top `top_n`
     by final belief — the bar for "would a real user plausibly see this
-    suggested" — and what beats it when it doesn't."""
+    suggested" — and what beats it when it doesn't.
+
+    `only_slugs`, if given, restricts which professions get their OWN persona
+    simulated (each is still scored against the full leaf catalog — this only
+    cuts down how many of the 57 outer loops run, not what they compete
+    against). Added 2026-07 once the catalog grew past 50 leaves and a full
+    `--runs 100` census started taking 30-40 minutes even on an otherwise-idle
+    stack (57 leaves x 100 trials = 5700 full simulated sessions through the
+    real engine/DB, not a fast mock) — most iteration during a single fix
+    only needs to recheck the profession just changed plus its named rivals,
+    not all 57."""
     real_slugs = [p["slug"] for p in SPECIALTIES if p["slug"] in leaf_profiles_by_slug]
+    if only_slugs:
+        real_slugs = [s for s in real_slugs if s in only_slugs]
     rows: list[tuple[str, int, int, Counter]] = []
 
-    for slug in real_slugs:
+    # TEMPORARY progress logging (2026-07-28, remove once the "why is this so
+    # slow" question is settled) — one line per profession with elapsed/ETA,
+    # so a long full run shows visible progress instead of looking hung.
+    import time as _time
+    _t_start = _time.monotonic()
+    for _slug_i, slug in enumerate(real_slugs):
+        _t_slug_start = _time.monotonic()
         hits = 0
         beaten_by: Counter = Counter()
         for _ in range(trials_per_profession):
@@ -229,6 +259,15 @@ async def run_census(
                 top = [s for s, _ in sorted(belief.items(), key=lambda kv: -kv[1])[:top_n]]
                 beaten_by.update(top)
         rows.append((slug, hits, trials_per_profession, beaten_by))
+        _elapsed = _time.monotonic() - _t_start
+        _per_slug = _elapsed / (_slug_i + 1)
+        _eta = _per_slug * (len(real_slugs) - _slug_i - 1)
+        print(
+            f"[progress] {_slug_i + 1}/{len(real_slugs)} {slug}: "
+            f"{_time.monotonic() - _t_slug_start:.1f}s this profession, "
+            f"{_elapsed:.0f}s elapsed, ~{_eta:.0f}s remaining",
+            file=sys.stderr,
+        )
 
     rows.sort(key=lambda r: r[1] / r[2])  # worst hit-rate first
     print(f"\n=== profession census (top-{top_n}, {trials_per_profession} trials each, age={age_group.value}) ===")
@@ -251,7 +290,7 @@ async def _leaf_profiles_by_slug(db: AsyncSession) -> dict[str, dict]:
 
 async def main(
     runs: int, ages: list[str], strategies: list[str], seed: int,
-    census: bool, census_top_n: int,
+    census: bool, census_top_n: int, census_only: set[str] | None = None,
 ) -> None:
     async with engine.connect() as conn:
         outer_trans = await conn.begin()
@@ -271,7 +310,8 @@ async def main(
             if census:
                 for age_key in ages:
                     await run_census(
-                        db, AGE_GROUPS[age_key], runs, rng, leaf_profiles_by_slug, census_top_n
+                        db, AGE_GROUPS[age_key], runs, rng, leaf_profiles_by_slug, census_top_n,
+                        only_slugs=census_only,
                     )
             else:
                 for age_key in ages:
@@ -318,12 +358,23 @@ if __name__ == "__main__":
         "--census-top-n", type=int, default=3,
         help="with --census: how many top-belief slots count as 'a real user would plausibly see this'",
     )
+    parser.add_argument(
+        "--census-only", type=str, default=None,
+        help="with --census: comma-separated leaf slugs to simulate a persona for, instead of all "
+             "57 (e.g. --census-only project-management,international-relations,lawyer). Every "
+             "candidate leaf is still fully scored/competed against on every question — this only "
+             "cuts how many OUTER personas run, for fast iteration on a specific fix. Full runs "
+             "without this flag are still needed before calling a fix verified.",
+    )
     args = parser.parse_args()
 
     resolved_ages = list(AGE_GROUPS) if args.age == "all" else [args.age]
     resolved_strategies = STRATEGIES if args.strategy == "all" else [args.strategy]
+    resolved_census_only = (
+        {s.strip() for s in args.census_only.split(",") if s.strip()} if args.census_only else None
+    )
 
     asyncio.run(main(
         args.runs, resolved_ages, resolved_strategies, args.seed,
-        args.census, args.census_top_n,
+        args.census, args.census_top_n, resolved_census_only,
     ))

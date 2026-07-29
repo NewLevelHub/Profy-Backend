@@ -7,6 +7,10 @@ from pydantic import BaseModel, Field
 class AkinatorAnswerRequest(BaseModel):
     question_id: uuid.UUID
     selected_option_index: int | None = Field(default=None, ge=0)  # null = "не знаю"
+    # "Не интересует" — a distinct, stronger signal than "не знаю" (null
+    # selected_option_index with disinterested=False). Mutually exclusive
+    # with selected_option_index; see akinator_session_service.submit_answer.
+    disinterested: bool = False
 
 
 class AkinatorOption(BaseModel):

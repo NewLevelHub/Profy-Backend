@@ -431,9 +431,271 @@ this work with the seed file open elsewhere, check `git status` before
 assuming a clean baseline — this file accumulates edits from more than one
 concurrent effort.
 
+## 2026-07-27 update: catalog grew from 38 to 57 specialties
+
+Between sessions, the user's own parallel work (a different branch/chat)
+added **19 new leaves** on top of the original 38 — see
+`docs/akinator-new-directions-proposal.md` (a doc from this same effort,
+proposing exactly these gaps from the Almaty university dataset; the user
+independently implemented 5 of its "явные пробелы" as `petroleum-mining-
+geology`, `energy-engineering`, `international-relations`, `logistics`,
+`aviation-engineering`, plus 14 more from an earlier pass). `SPECIALTIES` is
+now 57, `QUESTIONS` is 53. Branch history since the last update moved
+through `pro-114` → `pro-126` → `pro-131` as the user kept merging/rebasing;
+branch names in this doc are historical, check `git log` for current state.
+
+**New tooling this round:**
+- **Isolated calibration Docker stack** — the user regularly runs parallel
+  dev work in other chats against the shared `profi-backend-*` containers,
+  which repeatedly caused stuck transactions and SIGKILLs when a census run
+  and their dev work hit the same `db`/`api` containers at once. Fixed by
+  bringing up a **second, fully separate Compose project**:
+  `docker-compose -p profi-calib -f docker-compose.yml -f
+  docker-compose.local.yml up -d --build db redis api` (omit `nginx`, the
+  only service that binds a host port). Full detail + rationale saved to
+  memory (`profi-backend-docker-compose-local` memory file) so future
+  sessions start here directly instead of rediscovering it.
+- **`--census-only <slug1,slug2,...>` flag added to
+  `scripts/calibration_simulate.py`** — a full `--census --runs 100` now
+  means 57×100=5700 full simulated sessions through the real engine/DB
+  (was 38×100=3800), taking 35-40 minutes even on an idle, uncontended
+  stack (confirmed via `time`, not a bug — inherent ~0.4-0.6s/session cost).
+  The new flag restricts which leaves get their own persona simulated
+  (every leaf is still fully scored/competed against on every question —
+  this only cuts how many *outer* personas run) for fast iteration:
+  `--census-only project-management,international-relations,... --runs
+  30-50` finishes in 1-8 minutes depending on cluster size. **Always
+  confirm a fix with at least one full unfiltered `--runs 100` pass before
+  calling it done** — the filtered mode is for fast iteration, not final
+  verification (a change can help everything you're watching and quietly
+  hurt something outside the filtered set, as round 25 demonstrated with
+  `architect`).
+
+**Fresh n=100 baseline on the grown catalog: 10/57 failing** —
+`international-relations` **1%** (essentially broken), `media-journalism`
+27%, `artificial-intelligence` 34%, `marketing-advertising` 36%,
+`data-science` 40%, `psychologist` 41%, `journalist` 41%, `marketing` 42%,
+`medicine-biology` 45%, `finance-economics` 47%.
+
+### Root-caused international-relations' catastrophic failure — it wasn't international-relations
+`international-relations` had already been through **5 documented rounds**
+of the standard playbook in the user's own parallel work (search
+"Redesigned TWICE" in `scripts/seed_akinator_content.py` for the full
+blow-by-blow: zero-opposition fixes, a dedicated resolver, axis-magnitude
+trims, a "give it a real positive identity" pass) and was *still* failing
+at ~0-1%, each round surfacing a *different* set of rivals. Traced a real
+session instead of patching the profile a 6th time: `project-management`
+(one of the 19 new leaves) had **9 axes and only ONE negative** — the
+exact "zero negative axis" disease fixed repeatedly elsewhere in this file
+(pilot round 3, hospitality-manager round 3, marketing round 6) — and won
+almost every generic leadership/organize/people question regardless of
+fit, reaching 0.53 belief by step 11 of a 22-step session and locking out
+the real answer for the rest of it. This wasn't narrowly about
+international-relations — the same shape showed up in project-management's
+loss lists for speech-therapist, lawyer, fire-safety-engineer,
+school-teacher, police-officer, kindergarten-teacher, social-worker.
+**Fix (round 23): added `Exp:-1, Care:-1` to `project-management`**
+(breadth-across-domains per its own description; operations/coordination
+function, not personal caregiving — same reasoning already used for
+hospitality-manager's `Exp:-1`/`Care:-1`). **Verified**: overall census
+10/57 → 7/57 failing; `international-relations` 1%→8-16% across three runs
+(still failing, but no longer catastrophic — see below for what's still
+open); `finance-economics`, `medicine-biology` crossed reliably into
+passing; `marketing-advertising`/`media-journalism`/`marketing` improved
+inconsistently but net-positive. **Traced side effect**: `data-science` and
+`artificial-intelligence` got reproducibly *worse* (not noise — repeated in
+the same direction on 2 independent runs) — the entropy-based question
+selector is global across all 57 leaves, so changing one leaf's profile
+measurably shifts which questions get picked in *every* session, including
+ones that never touch that leaf's own axes. Expected and compensated for by
+the fixes below.
+
+### Parallel diagnostic agents + convergent independent fixing
+Launched 4 read-only diagnostic agents in parallel (no Docker/DB access, to
+avoid contention) covering the other 9 baseline failures, each tasked with
+the same "zero/weak opposing axis" method used throughout this file.
+Findings: `psychologist` needed `Dev:-1` (vs `psychology-pedagogy`/
+`speech-therapist`); `medicine-biology` needed an axis vs
+`rehabilitation-therapist`/`veterinary-zootechnics`/`dentist`;
+`journalist`/`media-journalism` both needed `Inv:-1` (vs `pr-specialist`/
+`design-digital-art`/`film-director`/`marketing-advertising`);
+`marketing`/`marketing-advertising` both needed `Risk:-1` (vs
+`business-entrepreneurship`/`film-director`); `artificial-intelligence`
+needed an axis vs `architect`; `data-science` needed `Ideas:-1`;
+`science-research` needed `Math:-1` (it had no domain anchor axis at all);
+the engineering cluster needed `engineering-architecture`/
+`mechanical-engineer`/`it-infrastructure-security` axis work.
+
+**Before implementing any of it, discovered the user's parallel session had
+already independently applied 7 of these 12 fixes** — same diagnosis,
+sometimes the exact same axis (`data-science Ideas:-1`, `journalist
+Inv:-1`, `media-journalism Inv:-1`, `marketing-advertising Risk:-1`,
+`psychologist Dev:-1`), sometimes a different-but-equally-valid one
+(`medicine-biology Obj:-2` instead of `Motor:-1`; `artificial-intelligence
+Phys:-1` instead of `Obj:-1`) — all marked "round 23/24, new-specialties
+expansion" in the inline comments, converging on the exact same
+methodology documented in this file without prompting. **Found one bug
+while auditing**: `marketing`'s comment claimed "Risk:-1 added round 23"
+but the actual `profile` dict was missing the key — fixed.
+
+**Round 25 — applied the 5 genuinely still-missing fixes** (plus the
+marketing bug fix): `artificial-intelligence` got an *additional* `Obj:-1`
+(the existing `Phys:-1` alone wasn't enough — still 17-18% failing);
+`science-research` got `Math:-1`; `engineering-architecture` got
+`Predict:-1` (mirrors civil-engineering, opposes it-infrastructure-
+security's `Predict:1`); `mechanical-engineer` got `Predict:1` (opposes
+both civil-engineering's and the new engineering-architecture's
+`Predict:-1` at once); `it-infrastructure-security` got `Ideas:-1` (opposes
+engineering-architecture, its new #1 rival since the section grew to 9
+leaves). **Mixed result on fast filtered re-check (2×, n=50)**:
+`marketing`/`marketing-advertising` jumped decisively (42→84-88%,
+36→54-78%) — clean wins. But `data-science` (18-20%), `artificial-
+intelligence` (22-38%), `mechanical-engineer` (26-34%), `it-infrastructure-
+security` (36-40%) got *worse*, not better, with **`architect` appearing as
+the dominant rival across nearly all of them** — reproducible across both
+runs, not noise.
+
+### The engineering/analytical supercluster has hit diminishing returns from axis tweaks
+`architect` was already flagged in its own round-9 comment as "the loudest
+profile in the catalog" (6 axes at magnitude 2, only 1 negative) — the
+disease resurfaced because the surrounding sections grew from 2-3 leaves to
+9-10 (engineering-tech: mechanical-engineer/civil-engineering/
+engineering-architecture/aviation-engineering/energy-engineering/
+petroleum-mining-geology/pilot/architect; plus data-science/artificial-
+intelligence/science-research sharing much of the same Ideas/Inv/Exp/Focus/
+Struct/Acad territory). **Round 26**: added `Predict:1` to `architect`
+(additive — architecture is an iterative, client-driven creative process,
+genuinely less predictable-up-front than either rigorous structural
+engineering or statistical/scientific method; opposes civil-engineering,
+engineering-architecture, data-science, artificial-intelligence, and
+science-research's `Predict:-1` all at once). Kept — it's benign and
+description-grounded — but the aggregate result was only modest/
+inconsistent: `mechanical-engineer` improved slightly (26-34%→34%) but its
+rivals *rotated* to entirely different leaves (cinematographer,
+civil-engineering, food-production-tech) rather than resolving;
+`data-science`/`international-relations` didn't move at all. **This is the
+same rotation pattern documented in round 11** (trimming one loud rival
+just hands the win to the next-closest one) — except this time the fix was
+purely *additive*, not a trim, and it still rotated rather than resolved,
+because the underlying problem isn't any single leaf anymore: it's that
+10+ leaves now genuinely share most of their axis space with no single
+missing-axis fix able to cover all of them. **Conclusion: stop
+axis-tweaking this cluster.** See `docs/akinator-deep-differentiation-plan.md`
+(written this session) for the next approach — dedicated depth 2-3 resolver
+questions naming specific rivals within this cluster, the same structural
+content-fix pattern that worked for pilot (round 20) and data-science
+(round 16), rather than more profile edits.
+
+### Still open as of this doc
+- `international-relations`: 8-16% across 3 filtered runs — hugely
+  improved from 1% but still failing. Its 3 dedicated resolvers (order=
+  59/60/61) exist but its current rivals (`law-public-administration`,
+  `lawyer`, `pilot`) aren't the ones those resolvers were built against.
+  Needs a fresh trace against its *current* rival set, not another
+  profile-only patch (5 rounds of that already failed once).
+- `data-science`, `artificial-intelligence`, `mechanical-engineer`,
+  `it-infrastructure-security`: still failing (18-40% range), rivals rotate
+  between `architect`/`software-engineer`/`finance-economics`/
+  `civil-engineering`/`cinematographer` depending on the run — this is the
+  supercluster problem above, needs deep-differentiation questions, not
+  more axes.
+- `psychologist` (42-45%), `journalist` (48-58%): borderline, existing
+  fixes (Dev/Predict/Ideas/Inv) already applied, not chased further this
+  round.
+- **Near-duplicate taxonomy flags from the diagnostic agents** (not
+  axis-fixable, a product decision): `marketing`/`marketing-advertising`/
+  `pr-specialist` share professions in their lists (Бренд-менеджер,
+  PR-менеджер); `journalist`/`media-journalism` share "Журналист"/
+  "Блогер-журналист"; `engineering-architecture` sits profile-wise almost
+  exactly between `civil-engineering` and `architect`. Worth a deliberate
+  decision on whether all of these should coexist as separate leaves before
+  spending more calibration effort on any of them.
+- A full unfiltered `--census --runs 100` (no `--census-only`) was kicked
+  off after round 26 to get a clean overall picture including leaves not
+  in the filtered set this round — check for its output/results if picking
+  this up fresh; it was still running when this doc was last edited.
+
+## Note on parallel edits to this file (original, pre-2026-07-27)
+
 Round 16 is committed. **Round 17 (psychologist `Ideas:-1`) is verified and
 kept, but sits uncommitted in the working tree as of this doc** — round 18
 touched the same file (added then reverted translator's `Motor:-1`,
 replacing the surrounding comment) so the tree isn't clean even though the
 net data change from round 18 is zero. Run `git diff -- scripts/seed_akinator_content.py`
 before committing to see exactly what round 17 changed.
+
+## Status snapshot, 2026-07-28 (context-clear checkpoint)
+
+Everything below is uncommitted as of this checkpoint (`git status` in both
+`profi-backend` and `Profy-Frontend` shows the full list). Picking this up
+fresh: read this whole doc plus `docs/akinator-deep-differentiation-plan.md`
+before doing anything else — a lot happened in one sitting.
+
+**Solid, working, ready to commit whenever:**
+- Round 24 content fixes (data-science/journalist/psychologist/medicine-biology/
+  finance-economics/marketing/marketing-advertising/media-journalism/
+  artificial-intelligence axis additions) — all verified via full n=100 census.
+- Deep-differentiation priority 1 (STEM/engineering cluster, orders 63-65 in
+  `QUESTIONS`) — verified, AI 44%→64%, mechanical-engineer 32%→41%.
+- "Не интересует" feature (backend `apply_disinterest` + frontend button) —
+  traced and confirmed working in isolation (named leaves drop ~5-6x, all
+  other leaves' relative order exactly preserved). Touches
+  `app/services/akinator_engine.py`, `app/services/akinator_session_service.py`,
+  `app/schemas/akinator_session.py`, `app/routers/akinator.py` on the backend,
+  and `AkinatorAssessmentView.tsx`/`useAkinatorAssessment.ts`/`shared/types/index.ts`
+  on the frontend (Profy-Frontend repo, separate `git status`).
+- `entrypoint.sh` CRLF fix (real infra bug, unrelated to calibration — see
+  [[profi-backend-docker-compose-local]] memory).
+
+**REVERTED, 2026-07-28 (same day as found broken):** `_has_topic_relevance` /
+the topic-irrelevance penalty in `select_next_question` (attempt 4 at the
+off-topic-question algorithm fix). Cleanly removed — `_has_topic_relevance`,
+`_TOPIC_RELEVANCE_TOP_N`, `_TOPIC_IRRELEVANCE_PENALTY`,
+`_TOPIC_IRRELEVANCE_ONSET_STEP`, and the penalty-wiring block inside
+`select_next_question` are all gone; `select_next_question`'s docstring now
+documents attempt 4 (false-positive via shared-but-unrelated axis VALUE
+between `data-science`/`international-relations`'s `Care:-2`, same as
+before) inline alongside attempts 1-3, with an explicit "don't try a 5th"
+conclusion. **Decision: stop trying to fix this at the `select_next_question`
+algorithm level entirely** (4/4 attempts have each failed in a genuinely
+different way, found only via manual tracing). Going forward, the two
+sanctioned mitigations are (a) the "Не интересует" button — the user's own
+explicit preference, since it hands the judgment call to the user rather
+than guessing algorithmically — and (b) the deep-differentiation content
+plan's remaining priorities (below), not further `select_next_question`
+edits.
+
+**Deep-differentiation priority 2 (business/service cluster) — DONE and
+VERIFIED, 2026-07-28.** Targeted census on the 8 originally-planned leaves
+(marketing/marketing-advertising/business-entrepreneurship/management-
+entrepreneurship/project-management/finance-economics/finance-accounting/
+pr-specialist) found all 8 already passing (75-98%), so the plan's own
+assumption (a failure *within* that labeled cluster) didn't hold — the real,
+empirically-confirmed rivalry was cross-cluster: marketing/marketing-
+advertising/business-entrepreneurship's top-2 rivals were consistently
+pr-specialist and design-digital-art (10-20/100 losses each), with
+film-director/makeup-artist-film also appearing — all from the creative-
+design/stage-media sections, sharing Ideas/Inv/Vis/People with zero
+opposition. Root cause: none of those 4 creative leaves carried `Motiv`
+("результат, финиш vs процесс") despite the business trio's own `Motiv:1-2`
+already being central to their identity. Fixed the standard way: added
+`Motiv:-1` to pr-specialist/design-digital-art/film-director/
+makeup-artist-film (each has its own inline justification — crafting a
+story/image/visual/film is process work, not a measured business outcome)
+plus a new order=66 direct resolver naming all 7 leaves at once (mirrors
+order=54/63's multi-leaf fork pattern). Traced first (pure `match_score`
+check, no DB needed): clean fork for all 7 named leaves, negligible
+collateral on their other existing resolvers (orders 39/45/46/59/64 don't
+touch Motiv, so the added axis only grows the profile norm slightly — same
+safe pattern as every prior "add a real axis" fix). **Verified across two
+independent n=100 runs (seed=7, seed=13):** marketing-advertising 75%→86%→
+87%, business-entrepreneurship 86%→96%→95%, marketing 89%→98%→97% — all
+three consistent across both seeds, not noise. Rivals themselves
+(pr-specialist, design-digital-art, film-director, makeup-artist-film)
+stayed strong both runs (91-98%), no collateral damage. `QUESTIONS` is now
+57 (was 56), `assert` updated. Kept; not yet committed.
+
+**Not done, next up:** deep-differentiation plan priority 3 (words/
+communication cluster) and international-relations round 7 (last measured
+19-21%, still colliding with law-public-administration/pilot/lawyer after
+round 6's full profile rewrite).

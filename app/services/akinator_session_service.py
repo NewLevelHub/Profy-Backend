@@ -139,12 +139,22 @@ async def submit_answer(
     option_index: int | None,
     age_group: AgeGroup,
     db: AsyncSession,
+    disinterested: bool = False,
 ) -> SessionTurn:
     """Score one answer and advance the session. `option_index=None` is
     "не знаю" — a real, recorded answer with zero axis contribution (identity
-    update), not a skip. Guard clauses (explicit errors, no silent fallback):
-    session not started, question not found, question not valid for this
-    session's age, question already answered, option_index out of range."""
+    update), not a skip. `disinterested=True` is a distinct, stronger signal
+    ("Не интересует") — see akinator_engine.apply_disinterest's docstring
+    for why this needs to exist separately from "не знаю": a real user can
+    *sincerely* answer an off-topic resolver question, which still counts as
+    real evidence toward whatever it favors even though the user has no
+    actual stake in that direction. Requires option_index=None (mutually
+    exclusive with picking a real option — you can't simultaneously answer
+    a specific option and say the topic doesn't interest you at all). Guard
+    clauses (explicit errors, no silent fallback): session not started,
+    question not found, question not valid for this session's age, question
+    already answered, option_index out of range, disinterested+option_index
+    both set."""
     result = await db.execute(
         select(AssessmentSession).where(AssessmentSession.assessment_id == assessment_id)
     )
@@ -163,14 +173,20 @@ async def submit_answer(
     if str(question_id) in already_asked:
         raise ValueError(f"question {question_id} was already answered in this session")
 
+    if disinterested and option_index is not None:
+        raise ValueError("disinterested and option_index are mutually exclusive")
+
     if option_index is not None and not (0 <= option_index < len(question.options)):
         raise ValueError(f"option_index {option_index} out of range for question {question_id}")
 
-    answer_weights = (
-        question.options[option_index].get("axis_weights", {}) if option_index is not None else {}
-    )
     leaf_profiles = await _leaf_profiles_for(db, session.belief)
-    new_belief = akinator_engine.update_belief(session.belief, answer_weights, leaf_profiles)
+    if disinterested:
+        new_belief = akinator_engine.apply_disinterest(session.belief, question.resolves_pair)
+    else:
+        answer_weights = (
+            question.options[option_index].get("axis_weights", {}) if option_index is not None else {}
+        )
+        new_belief = akinator_engine.update_belief(session.belief, answer_weights, leaf_profiles)
 
     touched_families = {family.value for family in akinator_engine.question_axis_families(question)}
     new_asked_families = sorted({*session.asked_axis_families, *touched_families})

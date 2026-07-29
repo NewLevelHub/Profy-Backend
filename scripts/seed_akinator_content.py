@@ -293,14 +293,33 @@ SPECIALTIES: list[dict] = [
      "subjects_required": {"Математика": 2, "Информатика": 2, "Физика": 1}},
     {"slug": "it-infrastructure-security", "name": "Кибербезопасность и IT-инфраструктура", "label_junior": "Компьютерный мастер", "section": "akinator-it-data",
      "description": "Кибербезопасность и IT-инфраструктура следят, чтобы компьютеры, сети и данные компании работали без сбоев и были защищены от угроз.",
-     "profile": {"Phys": 1, "Data": 2, "Obj": 1, "Exp": 2, "Focus": -1, "Auto": 1, "Struct": 1, "Pace": 1, "Predict": 1, "PhysSt": -1, "Math": 1, "People": -1},
+     # Ideas:-1 added (calibration playtest pass, 2026-07, round 25):
+     # engineering-architecture became this profile's #1 rival once the
+     # engineering-tech section grew to 9 leaves — shared Phys/Data/Obj/
+     # Struct/Math all same-direction, zero opposition. Cybersecurity/
+     # sysadmin work applies established security protocols and standards
+     # operationally; it isn't abstract creative/spatial ideation the way
+     # architecture is. Directly opposes engineering-architecture's
+     # `Ideas:2`. (engineering-architecture's own new `Predict:-1`, added
+     # this same round, independently opposes this profile's `Predict:1` —
+     # the two fixes reinforce each other from both sides.)
+     "profile": {"Phys": 1, "Data": 2, "Obj": 1, "Exp": 2, "Focus": -1, "Auto": 1, "Struct": 1, "Pace": 1, "Predict": 1, "PhysSt": -1, "Math": 1, "People": -1, "Ideas": -1},
      "professions": ["Системный администратор", "Сетевой инженер", "Специалист по кибербезопасности"],
      "subjects_required": {"Информатика": 2, "Математика": 2}},
 
     # Инженерия и техника
     {"slug": "mechanical-engineer", "name": "Машиностроение", "label_junior": "Инженер", "section": "akinator-engineering-tech",
      "description": "Машиностроение проектирует машины и механизмы — от отдельных деталей до целых устройств, — рассчитывая, как они будут работать.",
-     "profile": {"Phys": 2, "Data": 1, "Ideas": 1, "Inv": 1, "Obj": 2, "Exp": 2, "Focus": 1, "Struct": 1, "Acad": 2, "Math": 2, "People": -1},
+     # Predict:1 added (calibration playtest pass, 2026-07, round 25):
+     # chronic loser to civil-engineering (Predict:-1) and, since the
+     # section grew to 9 leaves, to the new engineering-architecture
+     # (Predict:-1, added same round) — both are structural/systems
+     # engineering, applying fixed codes toward a predictable outcome.
+     # Mechanical/machine design is iterative and prototype-driven (novel
+     # mechanisms, testing unknowns, tolerances that shift during design) —
+     # genuinely less predictable up front than a structural calculation.
+     # One change resolves two of this profile's three chronic rivals.
+     "profile": {"Phys": 2, "Data": 1, "Ideas": 1, "Inv": 1, "Obj": 2, "Exp": 2, "Focus": 1, "Struct": 1, "Acad": 2, "Math": 2, "People": -1, "Predict": 1},
      "professions": ["Инженер-механик", "Инженер-конструктор", "Инженер по автоматизации"],
      "subjects_required": {"Физика": 2, "Математика": 2}},
     # Merge (specialty pivot): civil-engineer+building-systems-engineer — ТГВ
@@ -353,7 +372,31 @@ SPECIALTIES: list[dict] = [
      # people — keeps it from picking up stray belief on generic
      # "помогать людям" style questions the way its Focus/Struct/Exp
      # overlap otherwise lets it.
-     "profile": {"People": 1, "Phys": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Auto": 1, "Acad": 2, "Math": 1, "PhysSt": -1, "Care": -1},
+     #
+     # Predict:1 added (calibration playtest pass, 2026-07, round 25): the
+     # section (and neighboring analytical fields) grew from 2-3 leaves to
+     # 9+ since round 9's fix, and architect resurfaced as THE dominant
+     # rival for data-science, artificial-intelligence, mechanical-engineer,
+     # and civil-engineering/engineering-architecture all at once — same
+     # "loudest profile, too few negatives" disease as round-9 diagnosed,
+     # just re-triggered by the new leaves. Real oppositions already exist
+     # on several axes (Ideas vs data-science/AI, Obj vs AI, People vs
+     # mechanical-engineer/civil-engineering) but were all getting drowned
+     # out by 5-6 SHARED magnitude-2 axes (Ideas, Inv, Exp, Focus, Struct,
+     # Acad) where architect scores equally strong or stronger. `Predict`
+     # was untouched in either direction — civil-engineering,
+     # engineering-architecture, data-science, artificial-intelligence, AND
+     # science-research all carry `Predict:-1` (fixed calculations /
+     # established statistical method toward a known outcome). Architecture
+     # is genuinely the opposite: an iterative, client-driven creative
+     # process where the brief and concept keep shifting — a real,
+     # description-grounded trait architect never had a word for. Single
+     # change opposes five of its current worst rivals at once. This is an
+     # ADDITION, not a trim of an existing axis — round 11 already showed
+     # trimming a loud profile's existing strength just hands the win to
+     # the next-closest rival; this instead gives its rivals something new
+     # to win on, same shape as pilot's/project-management's fixes.
+     "profile": {"People": 1, "Phys": 1, "Data": 1, "Ideas": 2, "Inv": 2, "Obj": 1, "Lead": 1, "Exp": 2, "Focus": 2, "Struct": 2, "Auto": 1, "Acad": 2, "Math": 1, "PhysSt": -1, "Care": -1, "Predict": 1},
      "professions": ["Архитектор", "Ландшафтный архитектор", "Архитектор интерьеров"],
      "subjects_required": {"Математика": 2, "Искусство": 2}},
 
@@ -413,7 +456,15 @@ SPECIALTIES: list[dict] = [
      # exactly the split order=46 already draws against cinematographer
      # (Motor:2 there) — this profile just never carried the negative side
      # of that same fork.
-     "profile": {"People": 1, "Ideas": 2, "Inv": 2, "Lead": 2, "Exp": 1, "Focus": 1, "Risk": 1, "Auto": 1, "Struct": -1, "Data": -1, "Motor": -1},
+     #
+     # Motiv:-1 added (calibration playtest pass, 2026-07, deep-diff priority
+     # 2, business/service cluster): business-entrepreneurship's #3 chronic
+     # rival (8/100), sharing Ideas/Inv/People/Struct with zero opposition
+     # beyond the already-present Data (which business-entrepreneurship
+     # doesn't share either way). Directing is about the creative vision and
+     # process of making the film, not a business outcome — same reasoning
+     # as pr-specialist's/design-digital-art's Motiv:-1.
+     "profile": {"People": 1, "Ideas": 2, "Inv": 2, "Lead": 2, "Exp": 1, "Focus": 1, "Risk": 1, "Auto": 1, "Struct": -1, "Data": -1, "Motor": -1, "Motiv": -1},
      "professions": ["Режиссёр кино", "Режиссёр театра", "Режиссёр монтажа"],
      "subjects_required": {"Искусство": 2, "Литература": 2}},
     {"slug": "cinematographer", "name": "Операторское искусство", "label_junior": "Оператор кино", "section": "akinator-stage-media",
@@ -423,7 +474,12 @@ SPECIALTIES: list[dict] = [
      "subjects_required": {"Искусство": 2, "Физика": 1}},
     {"slug": "makeup-artist-film", "name": "Грим и художественный образ", "label_junior": "Гримёр", "section": "akinator-stage-media",
      "description": "Грим и художественный образ создают образы актёров с помощью грима, причёсок и костюмов — для кино, театра и телевидения.",
-     "profile": {"People": 2, "Ideas": 2, "Inv": 2, "Motor": 2, "Emp": 1, "Exp": 1, "Vis": -1, "Auto": 1, "Acad": 1},
+     # Motiv:-1 added (calibration playtest pass, 2026-07, deep-diff priority
+     # 2, business/service cluster): marketing-advertising's #2 chronic rival
+     # (18/100), sharing People/Ideas/Inv/Emp with zero opposition. Physically
+     # crafting a visual image by hand is process/craft work, same reasoning
+     # as pr-specialist's/design-digital-art's/film-director's Motiv:-1.
+     "profile": {"People": 2, "Ideas": 2, "Inv": 2, "Motor": 2, "Emp": 1, "Exp": 1, "Vis": -1, "Auto": 1, "Acad": 1, "Motiv": -1},
      "professions": ["Художник-гримёр", "Визажист кино и театра", "Художник по костюмам"],
      "subjects_required": {"Искусство": 2, "Химия": 1}},
 
@@ -505,7 +561,16 @@ SPECIALTIES: list[dict] = [
      "subjects_required": {"Обществознание": 2, "История": 2, "Русский язык": 1}},
     {"slug": "pr-specialist", "name": "Реклама и связи с общественностью", "label_junior": "Специалист по рекламе", "section": "akinator-words-communication",
      "description": "Реклама и связи с общественностью учат рассказывать о компании или продукте так, чтобы это заметили и запомнили.",
-     "profile": {"People": 1, "Ideas": 2, "Inv": 2, "Vis": 1, "Emp": 1, "Exp": 1, "Focus": 1, "Auto": 1, "Struct": -1, "Data": -1, "Math": -1, "Acad": 1},
+     # Motiv:-1 added (calibration playtest pass, 2026-07, deep-diff priority
+     # 2, business/service cluster): census showed marketing/marketing-
+     # advertising/business-entrepreneurship all losing most to this profile
+     # (11-20/100) — shares Ideas/Inv/Vis/Emp/Acad, all same direction, zero
+     # opposition. Crafting a story/image is process work (Motiv, "результат
+     # vs процесс") — the business trio is all outcome/result-oriented
+     # (Motiv:1-2, launching a venture or hitting campaign numbers), this
+     # profile never carried Motiv either way despite the description being
+     # squarely about narrative/image craft, not measurable business results.
+     "profile": {"People": 1, "Ideas": 2, "Inv": 2, "Vis": 1, "Emp": 1, "Exp": 1, "Focus": 1, "Auto": 1, "Struct": -1, "Data": -1, "Math": -1, "Acad": 1, "Motiv": -1},
      "professions": ["PR-специалист", "Копирайтер", "Бренд-менеджер"],
      "subjects_required": {"Русский язык": 2, "Обществознание": 1, "Английский язык": 1}},
 
@@ -616,7 +681,7 @@ SPECIALTIES: list[dict] = [
      # being seen/heard) are marketing's actual core identity, not incidental
      # — sharpening them to match the strength convention used everywhere
      # else in the catalog.
-     "profile": {"People": 1, "Data": 1, "Ideas": 2, "Inv": 1, "Obj": -1, "Vis": 2, "Emp": 1, "Motiv": 1, "Predict": 1, "Acad": 1},
+     "profile": {"People": 1, "Data": 1, "Ideas": 2, "Inv": 1, "Obj": -1, "Vis": 2, "Emp": 1, "Motiv": 1, "Predict": 1, "Acad": 1, "Risk": -1},
      "professions": ["Маркетолог", "Digital-маркетолог", "Бренд-менеджер"],
      "subjects_required": {"Экономика": 2, "Обществознание": 1, "Русский язык": 1}},
     {"slug": "finance-accounting", "name": "Финансы и учёт", "section": "akinator-business-sales",
@@ -695,7 +760,20 @@ SPECIALTIES: list[dict] = [
      # plus a smaller norm let it dominate anyway. AI/ML work is purely
      # virtual (data, code, models), never physical materials — directly
      # opposes architect's Phys:1 and other physical-engineering rivals.
-     "profile": {"Data": 2, "Math": 2, "Ideas": 2, "Inv": 2, "Focus": 2, "Acad": 2, "Auto": 1, "People": -1, "Struct": -1, "Predict": -1, "PhysSt": -2, "Care": -2, "Living": -2, "Phys": -1},
+     #
+     # Obj:-1 added (calibration playtest pass, 2026-07, round 25): still
+     # failing (17-18% across two fast filtered checks) even after the
+     # Phys:-1 fix above — architect remains the #1 rival by a wide margin,
+     # with science-research a close second. Neither Phys:-1 nor the
+     # existing People/Struct opposition was enough on its own; AI never
+     # carried `Obj` ("Разбирать/докапываться vs строить инструмент") at
+     # all, while architect (Obj:1, build/apply) and, more importantly,
+     # science-research (no Obj either — see below) share this gap.
+     # AI/ML work is fundamentally investigative (finding patterns/testing
+     # hypotheses in data), the same "разбирать" end data-science already
+     # occupies at Obj:-2 — a real, additional wedge against architect, not
+     # a duplicate of Phys.
+     "profile": {"Data": 2, "Math": 2, "Ideas": 2, "Inv": 2, "Focus": 2, "Acad": 2, "Auto": 1, "People": -1, "Struct": -1, "Predict": -1, "PhysSt": -2, "Care": -2, "Living": -2, "Phys": -1, "Obj": -1},
      "professions": ["ML-инженер", "AI-исследователь", "NLP-инженер", "Инженер компьютерного зрения", "Data Scientist"],
      "subjects_required": {"Математика": 2, "Информатика": 2}},
 
@@ -717,14 +795,35 @@ SPECIALTIES: list[dict] = [
      # civil-engineering's neighbor pilot/aviation-engineering/energy-
      # engineering's Inv:-1 — feeds order=54's existing Inv resolver rather
      # than needing a new question.
-     "profile": {"Phys": 2, "Data": 1, "Ideas": 2, "Obj": 1, "Exp": 1, "Struct": 2, "Math": 2, "Acad": 1, "Motor": 1, "Inv": -1},
+     #
+     # Predict:-1 added (calibration playtest pass, 2026-07, round 25):
+     # even after the Inv:-1 fix above, this remained mechanical-engineer's
+     # and it-infrastructure-security's #1 rival by a wide margin (32-35 of
+     # 100 losses). Mirrors civil-engineering's existing `Predict:-1`
+     # (structural/systems engineering follows established codes and
+     # calculations toward a known, predictable outcome — the same
+     # "applies known rules" identity already used for this profile's
+     # Inv:-1) and creates a real opposing wedge against
+     # it-infrastructure-security's `Predict:1` (incident response is
+     # inherently about the unpredictable) — its single biggest rival.
+     "profile": {"Phys": 2, "Data": 1, "Ideas": 2, "Obj": 1, "Exp": 1, "Struct": 2, "Math": 2, "Acad": 1, "Motor": 1, "Inv": -1, "Predict": -1},
      "professions": ["Архитектор", "Инженер-проектировщик", "Инженер-строитель", "Урбанист"],
      "subjects_required": {"Математика": 2, "Физика": 1, "Искусство": 1}},
 
     # Природа и наука
     {"slug": "science-research", "name": "Наука и исследования", "label_junior": "Учёный", "section": "akinator-animals-nature",
      "description": "Наука и исследования — академическая деятельность в лаборатории или «в поле»: выдвижение гипотез, сбор данных, публикации.",
-     "profile": {"Ideas": 2, "Acad": 2, "Inv": 2, "Auto": 2, "Focus": 2, "Data": 1, "People": -1, "Predict": -1},
+     # Math:-1 added (calibration playtest pass, 2026-07, round 25): this
+     # profile had no domain anchor at all — reads as generic "academic" and
+     # shares 7-8 axes with both data-science and artificial-intelligence,
+     # every one same-direction, zero opposition (the classic round-16
+     # shape). It has no `Math` in either direction while both AI (Math:2)
+     # and data-science (Math:2) are built around heavy algorithmic/
+     # statistical math. Science-research covers the much broader
+     # "гипотезы, сбор данных, публикации" territory (fieldwork, biology,
+     # social science included) — not defined by heavy math the way
+     # AI/data-science are. Opposes both at once with one change.
+     "profile": {"Ideas": 2, "Acad": 2, "Inv": 2, "Auto": 2, "Focus": 2, "Data": 1, "People": -1, "Predict": -1, "Math": -1},
      "professions": ["Научный сотрудник", "Исследователь", "Постдок", "Лаборант"],
      "subjects_required": {"Математика": 1, "Биология": 1, "Физика": 1}},
     {"slug": "ecology-nature", "name": "Экология / природа", "label_junior": "Эколог", "section": "akinator-animals-nature",
@@ -834,7 +933,14 @@ SPECIALTIES: list[dict] = [
     # Творчество и дизайн
     {"slug": "design-digital-art", "name": "Дизайн / цифровое искусство", "label_junior": "Цифровой художник", "section": "akinator-creative-design",
      "description": "Дизайн и цифровое искусство — создание визуальных образов и продуктов в цифровой среде: иллюстрация, моушн, 3D, концепт-арт.",
-     "profile": {"Ideas": 2, "Inv": 2, "Vis": 2, "Auto": 1, "Exp": 1, "Motor": 1, "Phys": 1, "People": 1, "Struct": -1},
+     # Motiv:-1 added (calibration playtest pass, 2026-07, deep-diff priority
+     # 2, business/service cluster): same fix as pr-specialist's, same
+     # reasoning — this was marketing/marketing-advertising/business-
+     # entrepreneurship's #2 chronic rival (10-18/100), sharing Ideas/Inv/Vis
+     # with zero opposition. Illustration/concept-art/3D craft is process
+     # work, not measured against a business result the way the trio's own
+     # Motiv:1-2 is.
+     "profile": {"Ideas": 2, "Inv": 2, "Vis": 2, "Auto": 1, "Exp": 1, "Motor": 1, "Phys": 1, "People": 1, "Struct": -1, "Motiv": -1},
      "professions": ["Цифровой художник", "Моушн-дизайнер", "Концепт-художник", "3D-моделлер", "Иллюстратор"],
      "subjects_required": {"Искусство": 2, "Информатика": 1}},
 
@@ -1913,9 +2019,102 @@ QUESTIONS: list[dict] = [
          {"text": "успевать точно в срок — маршруты, склады, доставка вовремя", "axis_weights": {"Motiv": 2, "Pace": 1}},
          {"text": "не знаю", "axis_weights": {}},
      ], "resolves_pair": ["energy-engineering", "logistics", "pilot", "finance-accounting"]},
+
+    # ── Deep differentiation pass (2026-07-28) — see
+    # docs/akinator-deep-differentiation-plan.md. Root cause: three failed
+    # attempts to fix "off-topic mid-session questions" at the
+    # select_next_question algorithm level (see that file's history) —
+    # content-only path instead: within an already-crowded cluster, a real
+    # opposing axis already exists between two chronic rivals, but no
+    # DEDICATED depth-3 question forces that fork sharply enough, so the
+    # opposition gets diluted across many shared same-direction axes.
+    # These three target the STEM/engineering supercluster specifically
+    # (13 leaves as of this pass: software-engineer/data-science/
+    # it-infrastructure-security/artificial-intelligence/mechanical-engineer/
+    # civil-engineering/pilot/architect/engineering-architecture/
+    # petroleum-mining-geology/energy-engineering/aviation-engineering/
+    # science-research) — highest-priority cluster per the plan doc, and the
+    # one behind mechanical-engineer's and artificial-intelligence's still-
+    # failing census entries as of round 25.
+    {"order": 63, "kind": "direct", "depth": 3, "age_variant": "senior",
+     "text": "В инженерной работе тебе интереснее…", "text_junior": None,
+     "options": [
+         {"text": "рассчитывать и проектировать конструкцию или механизм с нуля",
+          "axis_weights": {"Inv": 2}},
+         {"text": "физически обслуживать, ремонтировать и точно настраивать готовую технику по регламенту",
+          "axis_weights": {"Motor": 2, "Inv": -2}},
+         {"text": "не знаю", "axis_weights": {}},
+     ], "resolves_pair": ["mechanical-engineer", "civil-engineering", "architect", "engineering-architecture", "aviation-engineering"]},
+    # mechanical-engineer's chronic #1 rival (aviation-engineering, 34/100 in
+    # the 2026-07-28 census) already has real opposition on Inv (1 vs -1),
+    # but it was buried under 8 shared same-direction axes (Phys/Data/Obj/
+    # Exp/Focus/Struct/Acad/Math) and no dedicated question forced it
+    # sharply. Reinforces Inv AND adds Motor (aviation-engineering:2,
+    # mechanical-engineer/civil-engineering/architect/engineering-
+    # architecture: 0 or 1) as a second independent axis on the same fork —
+    # doubles the signal instead of relying on Inv alone. Verified:
+    # aviation-engineering scores 6/norm on option 1 vs mechanical-
+    # engineer's -2/norm; mechanical-engineer/civil-engineering/architect
+    # all score positive-or-neutral on option 0, negative on option 1.
+    {"order": 64, "kind": "direct", "depth": 3, "age_variant": "senior",
+     "text": "Придумывая новое решение, тебе важнее…", "text_junior": None,
+     "options": [
+         {"text": "чтобы это подтверждалось цифрами, данными, метриками",
+          "axis_weights": {"Data": 2, "Predict": -1}},
+         {"text": "довериться творческому видению и вкусу",
+          "axis_weights": {"Data": -2}},
+         {"text": "не знаю", "axis_weights": {}},
+     ], "resolves_pair": ["artificial-intelligence", "data-science", "film-director"]},
+    # artificial-intelligence's chronic #1 rival after round 25's Obj:-1 fix
+    # (film-director, 40/100 in the 2026-07-28 census, up from architect
+    # after that fix removed architect from the top spot) — architect never
+    # had this problem, film-director does: 5 shared same-direction axes
+    # (Ideas/Inv/Focus/Auto/Struct) but ALSO a real, strong, pre-existing
+    # opposition on Data (AI:2 vs film-director:-1) that no dedicated
+    # question was forcing. A pure Data-only fork (deliberately NOT adding
+    # Ideas/Inv weights, which are shared same-direction and would dilute
+    # the opposition this question exists to sharpen).
+    {"order": 65, "kind": "direct", "depth": 3, "age_variant": "senior",
+     "text": "В исследовании тебе ближе…", "text_junior": None,
+     "options": [
+         {"text": "строгие вычисления, алгоритмы, формулы — точный математический аппарат",
+          "axis_weights": {"Math": 2}},
+         {"text": "гипотезы, наблюдения, эксперименты — без тяжёлой математики",
+          "axis_weights": {"Math": -2}},
+         {"text": "не знаю", "axis_weights": {}},
+     ], "resolves_pair": ["artificial-intelligence", "data-science", "science-research"]},
+    # artificial-intelligence's #2 rival (science-research, 33/100). Real
+    # opposition already exists (AI Math:2 vs science-research Math:-1,
+    # added round 25) but Math wasn't previously the subject of any
+    # dedicated resolver in this cluster — order=18 ("Математика для тебя —
+    # это…") is a generic depth=2 wide-coverage question, not targeted at
+    # this specific pair. Same axis data-science shares with AI (Math:2),
+    # so this question reinforces that pairing too.
+    {"order": 66, "kind": "direct", "depth": 3, "age_variant": "senior",
+     "text": "В работе тебе важнее…", "text_junior": None,
+     "options": [
+         {"text": "довести до измеримого результата — продажи, рост, запуск, сделка",
+          "axis_weights": {"Motiv": 2}},
+         {"text": "сам процесс создания образа, истории или картинки — без привязки к цифрам",
+          "axis_weights": {"Motiv": -2}},
+         {"text": "не знаю", "axis_weights": {}},
+     ], "resolves_pair": ["marketing", "marketing-advertising", "business-entrepreneurship",
+                           "pr-specialist", "design-digital-art", "film-director", "makeup-artist-film"]},
+    # deep-diff priority 2 (business/service cluster, 2026-07-28): the 2026-
+    # 07-28 targeted census (8 leaves, n=100) found 0/8 failing, but
+    # marketing/marketing-advertising/business-entrepreneurship's top-2
+    # rivals in every case were pr-specialist and design-digital-art
+    # (10-20/100 each), with film-director/makeup-artist-film also showing
+    # up — all from the creative-design/stage-media sections, sharing
+    # Ideas/Inv/(Vis/People) with the business trio and zero prior
+    # opposition. Added Motiv:-1 to all 4 rivals (see their own profile
+    # comments) since none of them carried Motiv despite the business
+    # trio's own Motiv:1-2 already being central to their identity — this
+    # question is the dedicated resolver forcing that axis, naming all 7
+    # leaves at once (mirrors order=54/63's multi-leaf fork pattern).
 ]
 
-assert len(QUESTIONS) == 53, f"expected 53 questions, got {len(QUESTIONS)}"
+assert len(QUESTIONS) == 57, f"expected 57 questions, got {len(QUESTIONS)}"
 assert len({q["order"] for q in QUESTIONS}) == len(QUESTIONS), "duplicate question order"
 
 # Every slug named in a resolves_pair must actually exist as a leaf — this is

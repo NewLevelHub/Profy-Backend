@@ -22,6 +22,16 @@ from app.models.assessment_session import AssessmentSession
 # "первые ~3 вопроса" from profi_axes_phase1.md — not tunable via settings,
 # it's a structural rule of the start, not a calibration knob like beta.
 WIDE_START_STEPS = 3
+# Briefly bumped 3->4 (calibration playtest pass, 2026-07-29), then reverted
+# same day: verified across 2 seeds to genuinely raise target-persona
+# accuracy (65%->74-78%) at ~no cost to target-strategy session length, but
+# also verified (same 2 seeds) to meaningfully lengthen sessions and raise
+# ceiling-reveal rate for less clear-cut answer patterns (random/consistent/
+# alternating: +9-18pp hitting the question ceiling). More importantly, it
+# only delayed the real complaint below by one step, it didn't fix it —
+# superseded by the cluster-lock window (attempt 5, see
+# select_next_question's docstring), which addresses the actual complaint
+# directly and makes this narrower, costlier fix unnecessary.
 
 _AXIS_FAMILY: dict[str, AxisFamily] = {axis.code: axis.family for axis in AXIS_CATALOG}
 
@@ -72,6 +82,39 @@ def update_belief(
     beta = settings.AKINATOR_BETA if beta is None else beta
     log_belief = {
         leaf: _log(prob) + beta * match_score(answer_weights, leaf_profiles[leaf])
+        for leaf, prob in belief.items()
+    }
+    return _softmax(log_belief)
+
+
+_DISINTEREST_PENALTY = 1.8
+
+def apply_disinterest(
+    belief: dict[str, float], resolves_pair: list[str] | None
+) -> dict[str, float]:
+    """"Не интересует" — an explicit, honest disinterest signal, distinct
+    from "не знаю" (update_belief's empty-answer_weights identity update).
+    A real user answering a genuinely off-topic resolver question
+    "sincerely" still moves belief toward whatever it happens to favor,
+    even with no real stake in the outcome — "не знаю" only covers the case
+    where the user has no opinion, not the case where they actively don't
+    care about the whole topic. This applies a fixed negative log-belief
+    penalty to exactly the leaves this question's `resolves_pair` names,
+    leaving every other leaf's belief untouched (no axis/match_score
+    involved at all — a deliberate, named rejection, not an axis nudge),
+    then renormalizes.
+
+    Generic questions (`resolves_pair=None`, mostly the wide-start
+    questions and other non-resolver content) have no specific leaves to
+    reject — falls back to the identity update, same as "не знаю". This is
+    why the button only needs to be *shown* starting after the wide-start
+    phase on the frontend: every wide-start question already has
+    resolves_pair=None, so this function is a safe no-op for them
+    regardless."""
+    if not resolves_pair:
+        return dict(belief)
+    log_belief = {
+        leaf: _log(prob) - (_DISINTEREST_PENALTY if leaf in resolves_pair else 0.0)
         for leaf, prob in belief.items()
     }
     return _softmax(log_belief)
@@ -160,6 +203,28 @@ def _is_wide_start_candidate(question: AkinatorQuestion, asked_families: set[str
     if question.depth > 1 or question.kind != "direct":
         return False
     return not question_axis_families(question).issubset(asked_families)
+
+
+_CLUSTER_LOCK_STEPS = 3
+_CLUSTER_LOCK_TOP_N = 5
+
+
+def _is_cluster_relevant(
+    question: AkinatorQuestion, belief: dict[str, float], top_n: int
+) -> bool:
+    """True if this question is safe to ask during the post-wide-start
+    cluster-lock window (see select_next_question's docstring, attempt 5).
+
+    Generic questions (resolves_pair empty/None) always pass — they're
+    broad axis-coverage questions, not the sharply-worded "X vs Y" resolvers
+    that actually produce the jarring "why is it asking me about cafés"
+    experience. A resolves_pair question passes only if it names at least
+    one leaf in the CURRENT top-`top_n` belief — explicit curated slugs, not
+    an inferred match_score (see attempt 4's false-positive postmortem)."""
+    if not question.resolves_pair:
+        return True
+    top_slugs = {slug for slug, _ in sorted(belief.items(), key=lambda kv: -kv[1])[:top_n]}
+    return bool(set(question.resolves_pair) & top_slugs)
 
 
 def _entropy(belief: dict[str, float]) -> float:
@@ -294,12 +359,69 @@ def select_next_question(
          whoever's currently leading" without a plan for this feedback-loop
          risk specifically.
 
-    The backlog's still-untried alternative for the underlying complaint
-    (off-topic questions mid-session): add more *deep* differentiating
-    questions **within** already-strong clusters so in-domain questions
-    out-compete off-topic ones on raw expected-entropy-reduction, without
-    touching this function's selection logic at all. See
-    docs/akinator-calibration-backlog.md item 3.)
+      4. Penalty (not bonus) based on real top-N score (2026-07-28) — from
+         step >= WIDE_START_STEPS, discourage (never exclude) a candidate
+         question whenever NONE of the current top-3 belief leaves would
+         score a genuine positive match_score on any of its own options.
+         Designed to dodge attempt 2's "neighbor" problem (checked each
+         leaf's REAL score against the question's actual options, not just
+         resolves_pair membership) and attempt 3's leader-lock-in (used
+         top-3, not a single leader). Traced against the exact scenarios
+         that broke attempts 2 and 3 before trusting census numbers, and
+         still failed: a shared axis VALUE between two unrelated leaves
+         (e.g. data-science and international-relations both carry
+         Care:-2, for unrelated reasons) makes the relevance check see a
+         genuinely off-topic question as "relevant" to whichever of them is
+         currently in the top-3 — false positive lets the penalty miss the
+         exact case it was built for. Traced against the real user's own
+         reported scenario (3 IT-leaning wide-start answers, then step 4):
+         the off-topic question still got through. Reverted same-day.
+
+    Four attempts at nudging select_next_question's SCORING failed in four
+    genuinely different ways (see above) — but a real user's own playtest
+    (2026-07-29) sharpened the actual complaint: it's not about final
+    accuracy (their session correctly landed on software-engineer) but
+    about mid-session COHERENCE — a user who answers consistently toward
+    one direction for the whole wide-start still gets asked about cafés,
+    animals, and unrelated helping-professions right after it ends. Content
+    additions (deep-diff plan) don't fix this — they help the engine
+    resolve correctly ONCE it's already circling the right cluster, not
+    stop it from wandering into unrelated clusters on the way there.
+
+    5. Cluster-lock window (2026-07-29) — structurally different from 1-4:
+       not a score nudge at all, a temporary CANDIDATE-SET restriction, and
+       only for _CLUSTER_LOCK_STEPS steps right after wide-start ends (not
+       the whole session, unlike attempt 1). For step in
+       [WIDE_START_STEPS, WIDE_START_STEPS + _CLUSTER_LOCK_STEPS), candidates
+       are filtered to _is_cluster_relevant (generic non-resolver questions
+       always pass through untouched; a resolves_pair question passes only
+       if it names a leaf in the CURRENT top-_CLUSTER_LOCK_TOP_N belief) —
+       falls back to the unfiltered set if filtering would leave nothing
+       (never locks the user out entirely, unlike attempt 1's failure mode).
+       Avoids attempt 2's neighbor problem by using explicit resolves_pair
+       membership against a snapshot of top-N belief, not a discount that
+       compounds every step. Avoids attempt 3's leader-lock-in because it's
+       time-boxed and uses top-N, not a single leader, and because it's a
+       hard filter, not a score that entrenches itself — after the window
+       it releases fully back to normal global selection. Avoids attempt
+       4's false-positive mechanism entirely because it checks explicit,
+       curated resolves_pair slugs, not an inferred match_score off shared
+       axis VALUES. Self-limiting by design: a user who answered clearly
+       during wide-start gets a concentrated top-N, so the lock meaningfully
+       steers; a user who answered ambiguously gets a spread-out top-N, so
+       the filter barely restricts anything — same behavior as before for
+       exactly the sessions where "before" was already fine.
+
+    The deep-differentiation content path
+    (docs/akinator-deep-differentiation-plan.md) — add more *deep* questions
+    within already-strong clusters so in-domain questions out-compete
+    off-topic ones on raw expected-entropy-reduction — remains the right
+    tool for correctly resolving WITHIN a cluster (verified for STEM and
+    business/service, 2026-07-28/29) and complements the cluster-lock above,
+    which targets the separate problem of wandering BETWEEN clusters
+    mid-session. The user-facing "Не интересует" button
+    (akinator_engine.apply_disinterest) remains the reactive fallback for
+    whatever both of these still miss.
 
     Deviates from the ticket's one-line signature by taking `leaf_profiles`
     and `age_group` explicitly: neither entropy nor age eligibility can be
@@ -331,6 +453,15 @@ def select_next_question(
         # families at once) — running out of untouched-family wide candidates
         # is normal, not a sign the whole bank is exhausted. Fall through to
         # entropy-based selection over the general candidate pool instead.
+
+    if WIDE_START_STEPS <= session.step < WIDE_START_STEPS + _CLUSTER_LOCK_STEPS:
+        relevant = [
+            c for c in candidates if _is_cluster_relevant(c, session.belief, _CLUSTER_LOCK_TOP_N)
+        ]
+        # Never lock the user out entirely (attempt 1's mistake) — fall back
+        # to the unfiltered pool if the lock would leave nothing.
+        if relevant:
+            candidates = relevant
 
     entropies = [
         _expected_posterior_entropy(q, session.belief, leaf_profiles, beta) for q in candidates
