@@ -842,3 +842,139 @@ tests something different. Reworded all 4 to distinct opening phrases
 нравится…", order=53 "Разбираясь в фактах, тебе важнее…") — options,
 axis_weights, and resolves_pair untouched on all 4. Verified: module loads,
 57 questions, no exact duplicates anywhere in the bank.
+
+## 2026-07-29: international-relations round 7 — partial progress, honestly reported
+
+Baseline going in: 34-40% across two n=50 full-catalog census seeds, losing
+consistently to law-public-administration, lawyer, and pilot.
+
+**Root cause, found by tracing (not just re-reading the profile):** this
+profile's own dedicated resolver, order=57 ("Работать на стыке разных
+сторон — что тебе ближе?"), was written when this profile's `Struct` was
+different — round 6 (2026-07-24, documented in the profile's own long
+comment history) flipped `Struct` to +2 to align with law-public-
+administration, and nobody re-verified order=57 afterward. Computed
+`match_score` by hand and confirmed: international-relations, law-public-
+administration, lawyer, AND pilot ALL score highest on the SAME option of
+order=57 now — it resolves nothing between them (still correctly opposes
+journalist, its other named leaf, untouched). Every other axis this profile
+carries (Emp/Care/Motiv/Dev) is extra relative to the trio, not opposing —
+they just don't touch those axes.
+
+**Fix that worked:** found one real, fully unused, fully shared axis —
+`Data`. All three rivals carry `Data:1` (precise records/precedent/
+instrument data); this profile carried none. Diplomacy/negotiation is a
+relationship field, not a data-analysis one. Added `Data:-1` + new order=67
+resolver (clean single-axis fork, verified via `match_score`: international-
+relations -0.38/0.58, all three rivals ~0.42-0.45/~-0.42 to -0.45).
+**Targeted census (n=100): 34-40%->45%.** Real, measured improvement — but
+still short of 50%, still losing to the same three at nearly the same rate.
+
+**Two follow-up attempts, BOTH tried and reverted after full-census
+verification came back worse** (documented in detail inline in the
+profile's own comment, so nobody repeats them blind):
+- Second axis, `Lead:-1` + order=68 (all three rivals also share `Lead:1`,
+  untouched by this profile) — isolated `match_score` looked clean, full
+  census came back WORSE (45%->25%).
+- Removing `Inv:-1` after tracing WHY: this profile's existing `Inv:-1`
+  (added round 2, correctly opposes the design/creative cluster) also
+  happens to match lawyer's/pilot's own `Inv:-1` — on the STEM Inv+Motor
+  double-fork (order=63), the target-persona "correctly" picks the `Inv:-1`
+  side, but that option's `Motor:2` benefits pilot/mechanical-engineer
+  enormously while contributing nothing to this profile (no Motor axis).
+  Removing `Inv:-1` turns that into an exact 0/0 tie ("не знаю") instead of
+  a forced wrong-genre pick — looked like a clean improvement in isolation,
+  and didn't break order=59 (still separates via `Struct` alone). Full
+  census came back WORSE anyway (45%->38%): a "не знаю" answer wastes that
+  question's slot entirely in a ceiling-bound session instead of extracting
+  even `Inv`'s partial signal — see open backlog #4 ("long sessions dilute
+  quiet professions"). A lesson worth generalizing: **a change that looks
+  correct on an isolated `match_score` check for one question can still be
+  a net negative once you account for the full session** (wasted slots,
+  not just wrong-direction pulls) — always verify via census even when the
+  isolated trace looks unambiguous.
+
+**Standing result, end of round 7: 45% (order=67/`Data` only), up from
+34-40%, still failing top-3.** Honestly not fully solved. Whoever continues
+this: the lesson above points toward a full-session-aware fix (e.g. more of
+this profile's OWN high-signal resolvers so it wastes fewer question slots)
+rather than another isolated axis edit — not attempted today.
+
+**Deep-differentiation priority 3 (words/communication cluster) — not
+otherwise started.** journalist/media-journalism/translator/lawyer/
+law-public-administration/pr-specialist were all re-checked as collateral
+during this round's census runs and are healthy (55-99%, no regressions
+from any of the international-relations changes above, including the two
+reverted ones — profile edits to one leaf don't touch any other leaf's own
+profile).
+
+**Priority 3 follow-up, same day: journalist/media-journalism.** Clean
+14-leaf baseline census for the whole cluster found journalist at 58%
+(losing most to media-journalism, x30/100) and translator at 64% (losing
+most to cinematographer, food-production-tech — the same crowded creative
+cluster this session already spent two rounds on, with the documented
+conclusion "needs 4-5+ n=100 runs per side to say anything, not attempted
+here given Docker rebuild cost" — left alone this round rather than repeat
+that mistake).
+
+journalist/media-journalism turned out to share the exact "structural hole"
+pattern already fixed for pilot in round 20: they're each other's #1 mutual
+rival but had ZERO `resolves_pair` questions naming both together, despite
+a real, already-existing opposing axis sitting unused — `Predict`
+(journalist:2, comfortable with breaking-news unpredictability; media-
+journalism:-1, planned/produced content). Added order=69, a clean
+single-axis resolver. Verified via `match_score` first (journalist
+0.873/-0.873, media-journalism -0.516/0.516), then via two independent
+n=100 census runs: **journalist 58%→69% (seed=7) / 62% (seed=21)** — real
+improvement both seeds, media-journalism unaffected (90-96%, within noise).
+`QUESTIONS` now 59.
+
+**Still open, not attempted:** translator (64%, deliberately left alone
+per the noise-band lesson above); the two remaining priority-3 clusters
+named in the plan doc's "taxonomy, not calibration" note (marketing/
+marketing-advertising/pr-specialist professions-list overlap; engineering-
+architecture sitting between civil-engineering/architect) — product
+decisions, not calibration work.
+
+## 2026-07-29: two real bugs found via manual playtest (not calibration)
+
+A user manually clicking through the app (main stack, not profi-calib) found
+two real product bugs while testing as a reference "programmer" persona,
+unrelated to axis/question calibration:
+
+**1. Zombie question row.** A manual reference-persona trace surfaced a
+question (order=68) that no longer exists in `scripts/seed_akinator_
+content.py` — it was this session's own Lead-axis experiment for
+international-relations, tried and reverted earlier the same day. Root
+cause: `seed_questions` only ever upserts by `order`, never deletes a row
+whose `order` disappeared from `QUESTIONS` unless it's explicitly listed in
+`RETIRED_QUESTION_ORDERS` — a same-day add-then-revert during iteration
+was never registered there, so the row silently kept being served by the
+live engine. **Fixed properly, not just patched once**: `seed_questions`
+now also deletes any `AkinatorQuestion` row whose `order` isn't in the
+live `QUESTIONS` list, on every run — this makes the DB self-healing on
+every deploy (entrypoint.sh already runs this script unconditionally on
+every container start), regardless of whether anyone remembers to register
+a retirement. Verified live: manufactured a fake order=999 row, ran the
+seed script, confirmed it reported "1 orphan(s) deleted" and the row was
+gone — on both `profi-calib` and the main stack.
+
+**2. `explore-*` nodes (junior/middle-only reveal buckets) leaking into the
+"I already know my profession" picker, 404ing when picked.** `GET /
+directions/tree` (the picker's only data source) returned every `is_leaf`
+Direction with zero age filtering, including the 6 `EXPLORE_NODES` —
+these are the Akinator engine's own internal fallback reveal buckets for
+junior sessions that don't differentiate within the real 57-specialty
+catalog, `age_groups=["junior","middle"]` only (no "senior"), and have no
+row in `known_profession_quizzes` (seeded only for the 57 real
+specialties, confirmed 1:1 — no gaps). Junior isn't a wired-up branch of
+the app currently, so these nodes should never be user-selectable at all
+right now. **Fixed:** `direction_service.get_direction_tree` now filters
+to leaves with `"senior" in age_groups`, which cleanly excludes all 6
+`explore-*` nodes without hardcoding slugs. Verified live via `GET /api/v1/
+directions/tree` on the main stack: response shrank from 42052 to 39262
+bytes, zero `explore-*` slugs remain in it. Applied to the main stack
+directly (`docker cp` + `docker restart profi-backend-api-1`) since this
+is an app bug, not calibration content — no profi-calib involvement needed.
+
+Both fixes are uncommitted, same as everything else today.

@@ -23,12 +23,23 @@ async def get_direction_details(slug: str, db: AsyncSession) -> DirectionDetail 
 
 
 async def get_direction_tree(db: AsyncSession) -> list[DirectionTreeNode]:
-    """Return Akinator sections with nested leaf professions, sorted by name."""
+    """Return Akinator sections with nested leaf professions, sorted by name.
+
+    Feeds the "I already know my profession" picker (known-profession flow).
+    Excludes junior/middle-only leaves (the 6 `explore-*` nodes, age_groups
+    `["junior", "middle"]`, no "senior") — these are the Akinator engine's
+    own internal fallback reveal buckets for junior sessions that don't
+    differentiate within the real 57-specialty catalog, not real
+    professions a user would ever type into "I already know what I want".
+    They also have no matching row in `known_profession_quizzes` (seeded
+    only for the 57 real specialties), so picking one here 404s on the
+    next step — junior isn't a wired-up branch of the app yet either way.
+    """
     result = await db.execute(select(Direction).order_by(Direction.name))
     all_dirs = list(result.scalars().all())
 
     sections = [d for d in all_dirs if not d.is_leaf and d.parent_id is None]
-    leaves = [d for d in all_dirs if d.is_leaf]
+    leaves = [d for d in all_dirs if d.is_leaf and "senior" in (d.age_groups or [])]
 
     by_parent: dict = {}
     for leaf in leaves:

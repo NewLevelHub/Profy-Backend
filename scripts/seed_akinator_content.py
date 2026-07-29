@@ -1240,40 +1240,39 @@ SPECIALTIES: list[dict] = [
      # Re-checked after order=67 alone: targeted census (n=100) moved
      # international-relations 34-40%->45% — real, but still short, still
      # losing to the same three at nearly the same rate (45-48/100 each).
-     # Tried a SECOND axis (Lead, order=68) — REVERTED same day, made it
-     # WORSE (45%->25%). Traced real target-persona sessions instead of
-     # trusting the isolated match_score check (which looked clean) and
-     # found the actual mechanism: this profile's existing Inv:-1 (added
-     # round 2 to oppose the design/creative cluster) also happens to match
-     # lawyer's/pilot's own Inv:-1. On multi-axis STEM resolvers that pair
-     # Inv with Motor/Phys (order=54/63, written for the engineering
-     # cluster), the target-persona simulation picks whichever option best
-     # matches ITS OWN profile — international-relations "correctly" picks
-     # the Inv:-1 side every time, but that option's OTHER axes (Motor:2 in
-     # particular) contribute nothing to international-relations (Motor not
-     # in its profile) while massively boosting pilot/aviation-engineering/
-     # mechanical-engineer (which DO carry real Motor). Adding Lead:-1 made
-     # the profile's norm larger, diluting this already-thin position
-     # further, on top of not fixing the actual mechanism. Root cause is
-     # Inv:-1's unintended alignment with its own current worst rivals, not
-     # a missing axis. Kept the Data axis/order=67 (real, measured net
-     # positive).
+     # Two follow-up experiments this same day, BOTH reverted after
+     # measuring worse, kept here so they aren't retried blind:
      #
-     # Round 7, part 3: removed Inv:-1 (the "never remove an axis" rule has
-     # a strong track record in this file, so this was NOT done lightly —
-     # only after the trace above pinpointed Inv:-1 itself, not a missing
-     # axis, as the active mechanism dragging belief toward pilot/
-     # mechanical-engineer). Checked collateral before removing: order=59
-     # (this profile's own design-digital-art/pr-specialist resolver) still
-     # correctly separates via Struct alone (0.0 vs 0.392) — doesn't depend
-     # on Inv. order=63 (the STEM Inv+Motor double-fork) goes from a forced
-     # wrong-genre pick (0.385 vs -0.385, dragging Motor's full weight onto
-     # pilot/mechanical-engineer for zero benefit to this profile, which
-     # has no Motor) to an exact 0/0 tie — the persona now answers "не
-     # знаю" on that question instead of accidentally reinforcing its own
-     # worst rivals. See census verification below before treating this as
-     # final.
-     "profile": {"People": 1, "Emp": 1, "Struct": 2, "Focus": 2, "Exp": 2, "Acad": 2, "Predict": 1, "Care": -2, "Motiv": -1, "Dev": -1, "Data": -1},
+     # (a) Added a second axis, Lead:-1 + order=68 (law-public-
+     # administration/lawyer/pilot all carry Lead:1, this profile carried
+     # none) — isolated match_score looked clean, but a full census came
+     # back WORSE (45%->25%). Reverted.
+     #
+     # (b) Traced real target-persona sessions to understand why, and found
+     # this profile's existing Inv:-1 (added round 2 to oppose the design/
+     # creative cluster) also matches lawyer's/pilot's own Inv:-1 — on
+     # multi-axis STEM resolvers pairing Inv with Motor (order=63), the
+     # target-persona "correctly" picks the Inv:-1 side, but that option's
+     # Motor:2 contributes nothing to this profile (no Motor axis) while
+     # massively boosting pilot/mechanical-engineer. Removing Inv:-1 looked
+     # right in isolation (order=63 becomes an exact 0/0 tie instead of a
+     # forced wrong-genre pick) and didn't break order=59 (still separates
+     # via Struct alone). But a full census came back WORSE again (45%->
+     # 38%) — the 0/0 tie means "не знаю" (session's own docstring: option
+     # scoring <=0 everywhere means no answer), which wastes that question
+     # slot entirely instead of extracting even Inv's partial signal,  and
+     # this profile doesn't have many spare high-value slots in a
+     # ceiling-bound session (see open backlog #4, "long sessions dilute
+     # quiet professions"). Reverted; Inv:-1 kept as-is.
+     #
+     # Lesson for whoever continues this: a change that looks correct on an
+     # isolated match_score check for ONE question can still be a net
+     # negative in a full session — this profile's still-open problem
+     # needs a full-session-aware fix (e.g. more of ITS OWN high-signal
+     # resolvers, not more axis edits), not attempted further today.
+     # Standing result: 45% (order=67/Data only), up from 34-40% baseline,
+     # still failing top-3, not fully solved.
+     "profile": {"People": 1, "Emp": 1, "Struct": 2, "Focus": 2, "Exp": 2, "Acad": 2, "Inv": -1, "Predict": 1, "Care": -2, "Motiv": -1, "Dev": -1, "Data": -1},
      "professions": ["Дипломат", "Специалист по международным отношениям", "Регионовед", "Атташе"],
      "subjects_required": {"История": 2, "Обществознание": 2, "Английский язык": 1}},
 ]
@@ -2163,9 +2162,26 @@ QUESTIONS: list[dict] = [
     # 0.58), all three rivals clearly toward option 1 (~0.42-0.45 vs
     # ~-0.42 to -0.45) — a clean 4-way split, unlike order=57's current
     # non-split.
+    {"order": 69, "kind": "situational", "depth": 3, "age_variant": "senior",
+     "text": "Работать с новостями и событиями — что тебе ближе?", "text_junior": None,
+     "options": [
+         {"text": "реагировать на неожиданное, ловить событие прямо в моменте",
+          "axis_weights": {"Predict": 2}},
+         {"text": "заранее продумывать и готовить контент",
+          "axis_weights": {"Predict": -2}},
+     ], "resolves_pair": ["journalist", "media-journalism"]},
+    # deep-diff priority 3 (words/communication cluster, 2026-07-29):
+    # journalist/media-journalism are each other's #1 mutual rival
+    # (journalist lost to media-journalism x30/100 in a targeted census)
+    # but had ZERO resolves_pair questions naming both together — same
+    # "structural hole" pattern as pilot (round 20). A real, already-
+    # existing opposing axis was sitting unused: Predict (journalist:2,
+    # comfortable with breaking-news unpredictability; media-journalism:-1,
+    # planned/produced content). Verified via match_score: journalist
+    # 0.873/-0.873, media-journalism -0.516/0.516 — clean opposition.
 ]
 
-assert len(QUESTIONS) == 58, f"expected 58 questions, got {len(QUESTIONS)}"
+assert len(QUESTIONS) == 59, f"expected 59 questions, got {len(QUESTIONS)}"
 assert len({q["order"] for q in QUESTIONS}) == len(QUESTIONS), "duplicate question order"
 
 # Every slug named in a resolves_pair must actually exist as a leaf — this is
@@ -2466,11 +2482,24 @@ async def seed_explore_nodes(
     return inserted, updated, skipped
 
 
-async def seed_questions(db: AsyncSession) -> tuple[int, int, int]:
-    """Upsert the 44 AkinatorQuestion rows by `order` (this script owns 0-53,
-    minus the retired orders — see RETIRED_QUESTION_ORDERS).
-    Returns (inserted, updated, skipped)."""
+async def seed_questions(db: AsyncSession) -> tuple[int, int, int, int]:
+    """Upsert every AkinatorQuestion row by `order`, then hard-delete any
+    row whose `order` is NOT in the current QUESTIONS list.
+
+    The delete step is what makes deploys self-healing: `RETIRED_QUESTION_
+    ORDERS` (see cleanup_retired_content) is for deliberately-retired
+    content and documents WHY an order is gone, but it relies on a human
+    remembering to add an order there — a question added then removed
+    again during same-day iteration (confirmed to happen in practice,
+    2026-07-29: an order=68 experiment was reverted in the source but its
+    DB row silently kept being served by the live engine until found by
+    manual QA and deleted by hand) would otherwise linger forever, since
+    nothing else ever looks at orders missing from QUESTIONS. This makes
+    the DB authoritative to this file on every single deploy, regardless
+    of whether anyone remembered to register a retirement.
+    Returns (inserted, updated, skipped, orphans_deleted)."""
     inserted = updated = skipped = 0
+    live_orders = {q["order"] for q in QUESTIONS}
 
     for q in QUESTIONS:
         result = await db.execute(
@@ -2501,7 +2530,15 @@ async def seed_questions(db: AsyncSession) -> tuple[int, int, int]:
         db.add(AkinatorQuestion(order=q["order"], is_active=True, **fields))
         inserted += 1
 
-    return inserted, updated, skipped
+    result = await db.execute(
+        select(AkinatorQuestion).where(AkinatorQuestion.order.not_in(live_orders))
+    )
+    orphans_deleted = 0
+    for question in result.scalars():
+        await db.delete(question)
+        orphans_deleted += 1
+
+    return inserted, updated, skipped, orphans_deleted
 
 
 async def main() -> None:
@@ -2510,7 +2547,7 @@ async def main() -> None:
         section_ids, sec_ins, sec_upd, sec_skip = await seed_sections(db)
         spec_ins, spec_upd, spec_skip = await seed_specialties(db, section_ids)
         expl_ins, expl_upd, expl_skip = await seed_explore_nodes(db, section_ids)
-        q_ins, q_upd, q_skip = await seed_questions(db)
+        q_ins, q_upd, q_skip, q_orphans = await seed_questions(db)
         orphans = await audit_unmanaged_leaves(db)
         await db.commit()
 
@@ -2531,8 +2568,8 @@ async def main() -> None:
             f"(total {len(EXPLORE_NODES)}, age_groups={EXPLORE_AGE_GROUPS})"
         )
         print(
-            f"Questions:   inserted {q_ins}, updated {q_upd}, skipped {q_skip} "
-            f"(total {len(QUESTIONS)})"
+            f"Questions:   inserted {q_ins}, updated {q_upd}, skipped {q_skip}, "
+            f"{q_orphans} orphan(s) deleted (total {len(QUESTIONS)})"
         )
         if orphans:
             print(
