@@ -699,3 +699,282 @@ stayed strong both runs (91-98%), no collateral damage. `QUESTIONS` is now
 communication cluster) and international-relations round 7 (last measured
 19-21%, still colliding with law-public-administration/pilot/lawyer after
 round 6's full profile rewrite).
+
+## 2026-07-29: attempt 5 (cluster-lock window) — off-topic mid-session questions
+
+A real playtest (user manually clicking through the frontend) sharpened the
+"off-topic questions" complaint that priorities 1-2 didn't actually fix:
+final accuracy was correct (landed on software-engineer) but the QUESTION
+SEQUENCE itself was incoherent — 3 clear physmat/IT wide-start answers, then
+neutral, then a café resolver, then animals/helping-people. Content
+additions (deep-diff) only help the engine resolve correctly ONCE it's
+already circling the right cluster — they don't stop it wandering into
+unrelated clusters mid-session, which is a `select_next_question`-level
+problem, not a content one.
+
+**First tried WIDE_START_STEPS 3->4** (using the bank's 4th and last
+depth<=1 direct question, order=3) — verified real via 2 seeds: target-
+persona accuracy 65%->74-78%, but random/consistent/alternating strategies
+got meaningfully longer (+1-2.4 avg steps) and hit the ceiling far more
+often (+9-18pp). Only delayed the complaint by exactly one step, didn't fix
+continuity. **Reverted same day**, superseded by the item below.
+
+**Attempt 5 (kept):** a temporary CANDIDATE-SET restriction (not a score
+nudge, unlike attempts 1-4) for `_CLUSTER_LOCK_STEPS=3` steps right after
+wide-start. `_is_cluster_relevant`: generic (non-resolver) questions always
+pass; a `resolves_pair` question passes only if it names a leaf in the
+CURRENT top-`_CLUSTER_LOCK_TOP_N=5` belief. Falls back to the unfiltered
+pool if the filter would leave nothing (avoids attempt 1's lockout
+failure). Self-limiting by construction: a clear answerer gets a
+concentrated top-5 so the lock steers meaningfully; a scattered answerer
+gets a spread-out top-5 so it barely restricts anything — matches the
+user's own stated expectation ("scattered answers -> scattered questions is
+fine, that's not the complaint").
+
+Traced against the exact physmat scenario (6 runs): within the lock window,
+every resolver shown was either generic or thematically adjacent
+(finance-accounting's Data/Math overlap with physmat is real, not a bug —
+see below); zero medicine/animals/cinema-style jumps, versus 5/6 runs
+hitting one before this fix. The 2 off-topic hits that did occur happened
+strictly AFTER the window (step 8), as designed.
+
+Same tradeoff shape as the WIDE_START_STEPS experiment showed up again in
+the health-check (random/consistent/alternating avg steps +1-1.5, ceiling
+rate +10-19pp; target accuracy 65%->77%) — expected, and accepted per the
+user's own logic: this cost only lands on already-ambiguous answer
+patterns, not on users who actually answer clearly.
+
+**Full census (57 leaves, n=50, seed=7) after attempt 5: 2/57 failing**
+(international-relations 40%, translator 48% — both pre-existing chronic
+cases, not new). Critically, **no regression on attempt 2's or attempt 3's
+casualties**: actor 88%, software-engineer 100%, pilot 84% (not
+dominating). This is the first algorithm-level attempt in this whole effort
+to pass a full census clean on its first try.
+
+**Second-seed confirmation (n=50, seed=13): also clean.** actor 86%,
+software-engineer 96%, pilot 62% (reasonable losses, not dominating) — no
+attempt-2/3-style regression on either seed. 2/57 failing again:
+international-relations 34% (consistent chronic case, both seeds).
+translator/mechanical-engineer each failed on exactly one of the two seeds
+(48%/62% and 56%/48% respectively, not both at once) — within the
+already-documented noise band for these borderline STEM/creative-cluster
+professions, not attributed to attempt 5. **Attempt 5 is now considered
+verified**, not just promising.
+
+## 2026-07-29: census performance fix — real periodic commits
+
+The single-giant-rolled-back-transaction design (flagged as open tech debt
+repeatedly in this doc) finally got fixed after a user-reported 3-hour
+full-census run. Root cause was exactly as suspected: `scripts/
+calibration_simulate.py`'s `main()` bound its `AsyncSession` with
+`join_transaction_mode="create_savepoint"` inside one outer `conn.begin()`
+that was always rolled back — every `db.commit()` already called
+throughout the script AND inside `akinator_session_service` was only ever
+releasing a SAVEPOINT, never a real commit, so Postgres MVCC visibility
+checks kept accumulating cost across the entire run (thousands of sessions
+in one transaction).
+
+**Fix:** removed the savepoint wrapper entirely — `main()` now uses a plain
+`AsyncSession(engine, ...)`, so every existing `db.commit()` call is a real
+commit. Throwaway data is cleaned up for real at the end via
+`_cleanup_calibration_data` (DELETE, not rollback) — matched by the fixed
+`@calibration.local` email domain. **Caught one real bug while implementing
+this**: `profiles.user_id -> users.id` has no `ON DELETE CASCADE` (unlike
+`assessments.profile_id` and `assessment_sessions.assessment_id`, which
+do), so deleting `User` rows first raised `ForeignKeyViolationError` —
+fixed by deleting `Profile` rows first.
+
+**Verified:** full 57x50 census (2850 sessions) now takes **~23 minutes**
+flat, with per-profession timing STABLE throughout (15-35s each, first
+profession to last) — no more growth from ~70s to ~300s+ over a run. Since
+this now leaves real (if temporary) rows in `profi-calib`'s DB during a
+run, it's more important than ever to only ever point this script at the
+isolated `profi-calib` stack, never a real dev/prod database — already the
+standing rule, now with a slightly higher cost if violated.
+
+## 2026-07-29: content QA pass — duplicate questions and "не знаю" doubling
+
+A manual playtest surfaced two real, confirmed content bugs (not
+perception issues):
+
+1. **The frontend ALWAYS renders its own "🤷‍♂️ Затрудняюсь ответить / Не
+   знаю" button** for every question (`AkinatorAssessmentView.tsx`,
+   unconditional, not gated on the question having its own neutral
+   option) — this has been true since early in this effort (see
+   `calibration_simulate.py`'s own `_pick_option` docstring, which already
+   documented this fact). But **27 of 57 questions ALSO listed their own
+   explicit `{"text": "не знаю", ...}` entry** in `options` — a leftover
+   from before `option_index=None` became the uniform not-know mechanism.
+   Result: those 27 questions showed "не знаю" TWICE (once as a normal
+   option card, once as the fixed dashed-border button below); the other
+   30 showed it once. **Fixed:** stripped all 27 redundant explicit
+   entries (they were byte-identical, one `replace_all` edit) — verified
+   every question still has >=2 real options, module still imports/
+   validates cleanly, and a smoke-test census run still completes normally.
+   The frontend button is untouched and remains the sole "не знаю"
+   affordance everywhere, now consistently.
+
+2. **Duplicate/near-duplicate question TEXTS**, found by exact and
+   near-string matching across all 57: order=54 and order=66 (both my own
+   2026-07-28/29 additions) were WORD-FOR-WORD identical ("В работе тебе
+   важнее…") despite testing different axes (Inv vs Motiv). order=55/63
+   ("В инженерной работе тебе ближе/интереснее…") and order=4/60/61
+   ("Помогать людям…"/"Забота о ком-то…") were near-duplicates. **Fixed:**
+   reworded the newer of each pair (66, 63, 60, 61 — all added 2026-07-24
+   or later) to a distinct opening phrase, keeping every axis_weights/
+   resolves_pair/option exactly as-is (order=61's near-duplicate option
+   text was also lightly reworded, same axis meaning). Older/foundational
+   questions (54, 55, 4) left untouched. Verified no exact duplicates
+   remain via the same detection script.
+
+**Update, same day:** the four "числа/данные" questions (orders 37/48/51/53)
+were reworded too, once flagged. They're functionally distinct (37: a
+generic Data-vs-People gate, resolves_pair=None; 48: management-
+entrepreneurship vs finance-accounting, logistics vs accounting; 51: the
+4-way data-science/software-engineer/finance-accounting/it-infrastructure-
+security resolver; 53: data-science vs finance-accounting specifically, the
+Inv-axis fork from round 16) but 3 of the 4 opened with "числа"/"цифры"/
+"числа и данные" — a physmat/IT-leaning user can plausibly see 2-3 of them
+in one session and feel like they're repeating themselves, even though each
+tests something different. Reworded all 4 to distinct opening phrases
+(order=37 "Точные расчёты и порядок — это про тебя?", order=48 "В
+бизнес-процессах тебе ближе…", order=51 "В IT и данных тебе конкретно
+нравится…", order=53 "Разбираясь в фактах, тебе важнее…") — options,
+axis_weights, and resolves_pair untouched on all 4. Verified: module loads,
+57 questions, no exact duplicates anywhere in the bank.
+
+## 2026-07-29: international-relations round 7 — partial progress, honestly reported
+
+Baseline going in: 34-40% across two n=50 full-catalog census seeds, losing
+consistently to law-public-administration, lawyer, and pilot.
+
+**Root cause, found by tracing (not just re-reading the profile):** this
+profile's own dedicated resolver, order=57 ("Работать на стыке разных
+сторон — что тебе ближе?"), was written when this profile's `Struct` was
+different — round 6 (2026-07-24, documented in the profile's own long
+comment history) flipped `Struct` to +2 to align with law-public-
+administration, and nobody re-verified order=57 afterward. Computed
+`match_score` by hand and confirmed: international-relations, law-public-
+administration, lawyer, AND pilot ALL score highest on the SAME option of
+order=57 now — it resolves nothing between them (still correctly opposes
+journalist, its other named leaf, untouched). Every other axis this profile
+carries (Emp/Care/Motiv/Dev) is extra relative to the trio, not opposing —
+they just don't touch those axes.
+
+**Fix that worked:** found one real, fully unused, fully shared axis —
+`Data`. All three rivals carry `Data:1` (precise records/precedent/
+instrument data); this profile carried none. Diplomacy/negotiation is a
+relationship field, not a data-analysis one. Added `Data:-1` + new order=67
+resolver (clean single-axis fork, verified via `match_score`: international-
+relations -0.38/0.58, all three rivals ~0.42-0.45/~-0.42 to -0.45).
+**Targeted census (n=100): 34-40%->45%.** Real, measured improvement — but
+still short of 50%, still losing to the same three at nearly the same rate.
+
+**Two follow-up attempts, BOTH tried and reverted after full-census
+verification came back worse** (documented in detail inline in the
+profile's own comment, so nobody repeats them blind):
+- Second axis, `Lead:-1` + order=68 (all three rivals also share `Lead:1`,
+  untouched by this profile) — isolated `match_score` looked clean, full
+  census came back WORSE (45%->25%).
+- Removing `Inv:-1` after tracing WHY: this profile's existing `Inv:-1`
+  (added round 2, correctly opposes the design/creative cluster) also
+  happens to match lawyer's/pilot's own `Inv:-1` — on the STEM Inv+Motor
+  double-fork (order=63), the target-persona "correctly" picks the `Inv:-1`
+  side, but that option's `Motor:2` benefits pilot/mechanical-engineer
+  enormously while contributing nothing to this profile (no Motor axis).
+  Removing `Inv:-1` turns that into an exact 0/0 tie ("не знаю") instead of
+  a forced wrong-genre pick — looked like a clean improvement in isolation,
+  and didn't break order=59 (still separates via `Struct` alone). Full
+  census came back WORSE anyway (45%->38%): a "не знаю" answer wastes that
+  question's slot entirely in a ceiling-bound session instead of extracting
+  even `Inv`'s partial signal — see open backlog #4 ("long sessions dilute
+  quiet professions"). A lesson worth generalizing: **a change that looks
+  correct on an isolated `match_score` check for one question can still be
+  a net negative once you account for the full session** (wasted slots,
+  not just wrong-direction pulls) — always verify via census even when the
+  isolated trace looks unambiguous.
+
+**Standing result, end of round 7: 45% (order=67/`Data` only), up from
+34-40%, still failing top-3.** Honestly not fully solved. Whoever continues
+this: the lesson above points toward a full-session-aware fix (e.g. more of
+this profile's OWN high-signal resolvers so it wastes fewer question slots)
+rather than another isolated axis edit — not attempted today.
+
+**Deep-differentiation priority 3 (words/communication cluster) — not
+otherwise started.** journalist/media-journalism/translator/lawyer/
+law-public-administration/pr-specialist were all re-checked as collateral
+during this round's census runs and are healthy (55-99%, no regressions
+from any of the international-relations changes above, including the two
+reverted ones — profile edits to one leaf don't touch any other leaf's own
+profile).
+
+**Priority 3 follow-up, same day: journalist/media-journalism.** Clean
+14-leaf baseline census for the whole cluster found journalist at 58%
+(losing most to media-journalism, x30/100) and translator at 64% (losing
+most to cinematographer, food-production-tech — the same crowded creative
+cluster this session already spent two rounds on, with the documented
+conclusion "needs 4-5+ n=100 runs per side to say anything, not attempted
+here given Docker rebuild cost" — left alone this round rather than repeat
+that mistake).
+
+journalist/media-journalism turned out to share the exact "structural hole"
+pattern already fixed for pilot in round 20: they're each other's #1 mutual
+rival but had ZERO `resolves_pair` questions naming both together, despite
+a real, already-existing opposing axis sitting unused — `Predict`
+(journalist:2, comfortable with breaking-news unpredictability; media-
+journalism:-1, planned/produced content). Added order=69, a clean
+single-axis resolver. Verified via `match_score` first (journalist
+0.873/-0.873, media-journalism -0.516/0.516), then via two independent
+n=100 census runs: **journalist 58%→69% (seed=7) / 62% (seed=21)** — real
+improvement both seeds, media-journalism unaffected (90-96%, within noise).
+`QUESTIONS` now 59.
+
+**Still open, not attempted:** translator (64%, deliberately left alone
+per the noise-band lesson above); the two remaining priority-3 clusters
+named in the plan doc's "taxonomy, not calibration" note (marketing/
+marketing-advertising/pr-specialist professions-list overlap; engineering-
+architecture sitting between civil-engineering/architect) — product
+decisions, not calibration work.
+
+## 2026-07-29: two real bugs found via manual playtest (not calibration)
+
+A user manually clicking through the app (main stack, not profi-calib) found
+two real product bugs while testing as a reference "programmer" persona,
+unrelated to axis/question calibration:
+
+**1. Zombie question row.** A manual reference-persona trace surfaced a
+question (order=68) that no longer exists in `scripts/seed_akinator_
+content.py` — it was this session's own Lead-axis experiment for
+international-relations, tried and reverted earlier the same day. Root
+cause: `seed_questions` only ever upserts by `order`, never deletes a row
+whose `order` disappeared from `QUESTIONS` unless it's explicitly listed in
+`RETIRED_QUESTION_ORDERS` — a same-day add-then-revert during iteration
+was never registered there, so the row silently kept being served by the
+live engine. **Fixed properly, not just patched once**: `seed_questions`
+now also deletes any `AkinatorQuestion` row whose `order` isn't in the
+live `QUESTIONS` list, on every run — this makes the DB self-healing on
+every deploy (entrypoint.sh already runs this script unconditionally on
+every container start), regardless of whether anyone remembers to register
+a retirement. Verified live: manufactured a fake order=999 row, ran the
+seed script, confirmed it reported "1 orphan(s) deleted" and the row was
+gone — on both `profi-calib` and the main stack.
+
+**2. `explore-*` nodes (junior/middle-only reveal buckets) leaking into the
+"I already know my profession" picker, 404ing when picked.** `GET /
+directions/tree` (the picker's only data source) returned every `is_leaf`
+Direction with zero age filtering, including the 6 `EXPLORE_NODES` —
+these are the Akinator engine's own internal fallback reveal buckets for
+junior sessions that don't differentiate within the real 57-specialty
+catalog, `age_groups=["junior","middle"]` only (no "senior"), and have no
+row in `known_profession_quizzes` (seeded only for the 57 real
+specialties, confirmed 1:1 — no gaps). Junior isn't a wired-up branch of
+the app currently, so these nodes should never be user-selectable at all
+right now. **Fixed:** `direction_service.get_direction_tree` now filters
+to leaves with `"senior" in age_groups`, which cleanly excludes all 6
+`explore-*` nodes without hardcoding slugs. Verified live via `GET /api/v1/
+directions/tree` on the main stack: response shrank from 42052 to 39262
+bytes, zero `explore-*` slugs remain in it. Applied to the main stack
+directly (`docker cp` + `docker restart profi-backend-api-1`) since this
+is an app bug, not calibration content — no profi-calib involvement needed.
+
+Both fixes are uncommitted, same as everything else today.
