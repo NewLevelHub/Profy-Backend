@@ -1235,3 +1235,22 @@ specific feature ("profi-known-profession-redesign" — dead-end quiz,
 decided plan: server-side banks, sessionless Assessment) — didn't want to
 bake a behavior change into the boot sequence for a feature already flagged
 for rework without the user's explicit call.
+
+**Resolved same day**: user confirmed `seed_known_profession_quizzes.py`
+should be added — it's the per-leaf validation quiz for the "Уже знаю, кем
+хочу стать" flow (`AssessmentGoal.known`): a user picks a specific leaf
+directly from `/directions/tree` (skipping the belief-walk engine
+entirely), answers 5 profession-specific questions, and gets a fit
+percentage/verdict (strong/partial/weak) via `known_profession_service.
+score_answers` — a sanity-check on an already-made choice, not a discovery
+mechanism, so it was safe to add regardless of the separate known-
+profession-*redesign* plan (which is about the picker/entry-point UX, not
+this validation step). Confirmed idempotent (upserts by `leaf_slug`, no
+assert of its own) and all 56 `leaf_slug`s valid against current
+SPECIALTIES before wiring in. Added to `entrypoint.sh` after the Almaty
+universities step, before the broken-session cleanup. Verified via a real
+container restart on both stacks (not just the standalone script) — full
+pipeline boots clean, `validate_content_integrity.py` now reports 56
+known-profession quizzes (was 0 on `profi-calib`, which had never run this
+script before), and `GET /api/v1/directions/software-engineer/known-
+profession-quiz` returns real data instead of 404.

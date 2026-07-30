@@ -19,6 +19,9 @@ python scripts/seed_astana_universities.py
 echo "==> Seeding Almaty universities..."
 python scripts/seed_almaty_universities.py
 
+echo "==> Seeding known-profession quizzes..."
+python scripts/seed_known_profession_quizzes.py
+
 echo "==> Cleaning broken subject readiness sessions..."
 python - <<'PYEOF'
 import asyncio, sys
