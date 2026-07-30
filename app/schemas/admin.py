@@ -164,6 +164,13 @@ class AdminFeedbackListItem(BaseModel):
     result_match_rating: str | None = None
     plan_usefulness_rating: str | None = None
     design_rating: str | None = None
+    # Raw 1-5 scores — None on responses submitted before these columns
+    # existed (the *_rating category above is all those rows have).
+    overall_score: int | None = None
+    questions_score: int | None = None
+    result_match_score: int | None = None
+    plan_usefulness_score: int | None = None
+    design_score: int | None = None
     message: str | None = None
     direction_slug: str | None = None
     created_at: datetime
@@ -180,5 +187,26 @@ class AdminStatsResponse(BaseModel):
     users_count: int
     completed_assessments_count: int
     in_progress_assessments_count: int
-    average_design_rating: float
+
+
+class FeedbackAxisStats(BaseModel):
+    # None (not a fake number) when nobody has scored this axis yet.
+    # good/neutral/bad counts cover every response (old rows only ever had
+    # these); `average` is the real mean of the raw 1-5 scores, which only
+    # exist on rows submitted after the score columns were added — hence
+    # scored_count can be lower than total_count.
+    average: float | None
+    good_count: int
+    neutral_count: int
+    bad_count: int
+    total_count: int
+    scored_count: int
+
+
+class AdminFeedbackStatsResponse(BaseModel):
+    overall: FeedbackAxisStats
+    questions: FeedbackAxisStats
+    result_match: FeedbackAxisStats
+    plan_usefulness: FeedbackAxisStats
+    design: FeedbackAxisStats
 
