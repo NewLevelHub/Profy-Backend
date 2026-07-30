@@ -101,7 +101,7 @@ def _valid_plan(plan: _DirectionPlan, direction) -> bool:
 
 async def _require_direction_roadmap_access(
     assessment_id: uuid.UUID, slug: str, db: AsyncSession
-) -> tuple[Assessment, object]:
+) -> tuple[Assessment, object, str]:
     assessment = (
         await db.execute(select(Assessment).where(Assessment.id == assessment_id))
     ).scalar_one_or_none()
@@ -126,17 +126,27 @@ async def _require_direction_roadmap_access(
     # plan feature in this codebase to defer to instead — "Найти университеты"
     # (a plain program search) is a different, already-independent action.
 
-    if assessment.selected_direction_slug != slug:
+    confirmed = assessment.selected_direction_slug
+    if confirmed is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Сначала выберите это направление в тесте",
         )
 
+    # Gap Analysis passes the URL-filter slug which may differ from the confirmed
+    # leaf slug — always build the roadmap for what the user actually confirmed.
+    if confirmed != slug:
+        logger.info(
+            "Roadmap requested for %r but assessment %s confirmed %r — using confirmed slug",
+            slug, assessment_id, confirmed,
+        )
+        slug = confirmed
+
     direction = await direction_service.get_direction_by_slug(slug, db)
     if direction is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Direction not found")
 
-    return assessment, direction
+    return assessment, direction, slug
 
 
 _MAX_PLAN_ATTEMPTS = 2
@@ -200,15 +210,18 @@ async def generate_direction_roadmap(
     if not llm_client.is_enabled():
         raise _AI_UNAVAILABLE
 
+    # Access check normalises slug to the confirmed direction when they differ.
+    assessment, direction, effective_slug = await _require_direction_roadmap_access(
+        assessment_id, slug, db
+    )
+
     redis = _get_redis()
-    key = direction_cache_key(assessment_id, slug)
+    key = direction_cache_key(assessment_id, effective_slug)
     cached = await redis.get(key)
     if cached:
         return DirectionRoadmapResponse.model_validate_json(cached)
 
-    assessment, direction = await _require_direction_roadmap_access(assessment_id, slug, db)
-
-    context = await build_student_context(assessment_id, db, direction_slug=slug)
+    context = await build_student_context(assessment_id, db, direction_slug=effective_slug)
     if context is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
 
@@ -216,8 +229,8 @@ async def generate_direction_roadmap(
     if plan is None:
         raise _AI_UNAVAILABLE
 
-    roadmap = await _upsert_direction_roadmap(assessment_id, slug, direction, plan, db)
-    assessment.selected_direction_slug = slug
+    roadmap = await _upsert_direction_roadmap(assessment_id, effective_slug, direction, plan, db)
+    assessment.selected_direction_slug = effective_slug
     await db.commit()
     await db.refresh(roadmap)
 
