@@ -433,7 +433,6 @@ async def get_assessment_detail(
 
 async def get_admin_stats(db: AsyncSession) -> AdminStatsResponse:
     from app.models.assessment import AssessmentStatus
-    from app.models.product_feedback import ProductFeedback, FeedbackRating
 
     users_count = (await db.execute(select(func.count(User.id)))).scalar_one()
     completed_count = (await db.execute(
@@ -443,27 +442,9 @@ async def get_admin_stats(db: AsyncSession) -> AdminStatsResponse:
         select(func.count(Assessment.id)).where(Assessment.status == AssessmentStatus.in_progress)
     )).scalar_one()
 
-    feedback_ratings = (await db.execute(
-        select(ProductFeedback.design_rating).where(ProductFeedback.design_rating.is_not(None))
-    )).scalars().all()
-
-    if not feedback_ratings:
-        avg_rating = 4.6
-    else:
-        rating_values = []
-        for r in feedback_ratings:
-            if r == FeedbackRating.good:
-                rating_values.append(5.0)
-            elif r == FeedbackRating.neutral:
-                rating_values.append(3.0)
-            elif r == FeedbackRating.bad:
-                rating_values.append(1.0)
-        avg_rating = round(sum(rating_values) / len(rating_values), 1) if rating_values else 4.6
-
     return AdminStatsResponse(
         users_count=users_count,
         completed_assessments_count=completed_count,
         in_progress_assessments_count=in_progress_count,
-        average_design_rating=avg_rating,
     )
 

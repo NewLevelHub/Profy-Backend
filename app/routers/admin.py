@@ -9,6 +9,7 @@ from app.models.user import User
 from app.schemas.admin import (
     AdminAssessmentDetailResponse,
     AdminFeedbackListResponse,
+    AdminFeedbackStatsResponse,
     AdminUserDetailResponse,
     AdminUserListResponse,
     AdminStatsResponse,
@@ -71,3 +72,11 @@ async def list_feedback(
     db: AsyncSession = Depends(get_db),
 ):
     return await product_feedback_service.list_feedback(db, page=page, limit=limit, rating=rating)
+
+
+@router.get("/feedback/stats", response_model=AdminFeedbackStatsResponse)
+async def get_feedback_stats(
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await product_feedback_service.get_feedback_stats(db)

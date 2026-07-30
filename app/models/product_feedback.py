@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, Enum, ForeignKey, SmallInteger, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -57,6 +57,16 @@ class ProductFeedback(Base):
     design_rating: Mapped[FeedbackRating | None] = mapped_column(
         Enum(FeedbackRating, name="product_feedback_rating_enum"), nullable=True
     )
+    # Raw 1-5 scores — the *_rating enum above is derived from these (see
+    # product_feedback_service.create_feedback) and kept for filtering/badge
+    # display, but analytics averages from these instead of approximating
+    # the enum back into a number. Nullable: rows from before this column
+    # existed have no score to backfill.
+    overall_score: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    questions_score: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    result_match_score: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    plan_usefulness_score: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    design_score: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
