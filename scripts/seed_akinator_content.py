@@ -841,7 +841,17 @@ SPECIALTIES: list[dict] = [
      # "гипотезы, сбор данных, публикации" territory (fieldwork, biology,
      # social science included) — not defined by heavy math the way
      # AI/data-science are. Opposes both at once with one change.
-     "profile": {"Ideas": 2, "Acad": 2, "Inv": 2, "Auto": 2, "Focus": 2, "Data": 1, "People": -1, "Predict": -1, "Math": -1},
+     #
+     # Exp:-1 added (off-topic-rate pass, 2026-07-29): a full census found
+     # this had ZERO resolves_pair questions against its actual chronic
+     # rivals — translator, cinematographer, musician (0 shared resolvers
+     # among all 3 pairs, checked directly) — and zero axis opposition
+     # against any of them either: all three carry Exp:2 ("глубокая узкая
+     # экспертиза" — one narrow, deep craft skill), which this profile
+     # never touched. Research explores broadly across hypotheses/methods
+     # rather than perfecting one narrow technical craft — genuinely
+     # opposes all three rivals at once. Feeds new order=77 resolver.
+     "profile": {"Ideas": 2, "Acad": 2, "Inv": 2, "Auto": 2, "Focus": 2, "Data": 1, "People": -1, "Predict": -1, "Math": -1, "Exp": -1},
      "professions": ["Научный сотрудник", "Исследователь", "Постдок", "Лаборант"],
      "subjects_required": {"Математика": 1, "Биология": 1, "Физика": 1}},
     {"slug": "ecology-nature", "name": "Экология / природа", "label_junior": "Эколог", "section": "akinator-animals-nature",
@@ -2283,9 +2293,39 @@ QUESTIONS: list[dict] = [
     # actively teaches/develops a skill; psychologist:-1, supports without
     # directing). Verified via match_score: psychology-pedagogy 0.728/-0.728,
     # psychologist -0.557/0.557.
+    {"order": 76, "kind": "direct", "depth": 3, "age_variant": "senior",
+     "text": "На сцене или на площадке тебе важнее…", "text_junior": None,
+     "options": [
+         {"text": "самому придумывать и решать, что и как делать",
+          "axis_weights": {"Inv": 2, "Auto": 2}},
+         {"text": "точно исполнять то, что придумал и решил кто-то другой — режиссёр, автор, сценарист",
+          "axis_weights": {"Inv": -2, "Auto": -2}},
+     ], "resolves_pair": ["actor", "design-digital-art", "marketing", "pr-specialist", "design",
+                           "cinematographer", "film-director", "makeup-artist-film", "musician"]},
+    # off-topic-rate pass (2026-07-29): actor had ZERO resolves_pair
+    # questions against ANY of its 8 creative-cluster neighbors, despite
+    # already carrying real opposition against all of them via Inv (-1,
+    # already added round 21) and/or Auto (-1) — actor interprets material
+    # someone else wrote/directed, it doesn't invent the concept or work
+    # autonomously the way a designer/director/marketer does. A double-axis
+    # fork so every named leaf discriminates via at least one of the two
+    # (musician has no Inv but has Auto:1; marketing has no Auto but has
+    # Inv:1) — same "double the signal" technique as order=63.
+    {"order": 77, "kind": "direct", "depth": 3, "age_variant": "senior",
+     "text": "В своей работе тебе ближе…", "text_junior": None,
+     "options": [
+         {"text": "оттачивать одно узкое мастерство — технику, инструмент, язык",
+          "axis_weights": {"Exp": 2}},
+         {"text": "исследовать широко — разные гипотезы, методы, направления",
+          "axis_weights": {"Exp": -2}},
+     ], "resolves_pair": ["science-research", "translator", "cinematographer", "musician"]},
+    # off-topic-rate pass (2026-07-29): science-research had ZERO
+    # resolves_pair questions against its actual chronic census rivals
+    # (translator/cinematographer/musician) and zero axis opposition against
+    # any of them either — see that profile's own Exp:-1 comment.
 ]
 
-assert len(QUESTIONS) == 64, f"expected 64 questions, got {len(QUESTIONS)}"
+assert len(QUESTIONS) == 66, f"expected 66 questions, got {len(QUESTIONS)}"
 assert len({q["order"] for q in QUESTIONS}) == len(QUESTIONS), "duplicate question order"
 
 # Every slug named in a resolves_pair must actually exist as a leaf — this is

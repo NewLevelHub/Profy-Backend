@@ -1254,3 +1254,43 @@ pipeline boots clean, `validate_content_integrity.py` now reports 56
 known-profession quizzes (was 0 on `profi-calib`, which had never run this
 script before), and `GET /api/v1/directions/software-engineer/known-
 profession-quiz` returns real data instead of 404.
+
+## 2026-07-29: off-topic-rate cleanup round 2 — actor and science-research
+
+Continued the same structural-hole audit into two more worst-10 off-topic
+leaves (user-approved follow-up after committing everything so far).
+
+**actor: same "zero resolvers against ANY cluster neighbor" pattern as
+kindergarten-teacher/police-officer** — checked all 8 pairs (design-digital-
+art/marketing/pr-specialist/design/cinematographer/film-director/makeup-
+artist-film/musician), all NONE. Unlike those two, no profile change was
+needed — actor already carries real opposition via `Inv:-1` (added round
+21) and `Auto:-1` against nearly all 8 (interprets material someone else
+wrote/directed, doesn't invent the concept or work autonomously). Added
+order=76, a double-axis (Inv+Auto) fork naming all 9 leaves at once — every
+rival discriminates via at least one of the two axes (musician has no Inv
+but has Auto:1; marketing has no Auto but has Inv:1). Verified via
+`match_score` (actor -0.894/0.894, all 8 rivals clearly opposite) then two
+n=100 census runs: **off-topic rate 10.3%→8.2-8.8% (real improvement, both
+seeds), accuracy 97-98% (no regression).**
+
+**science-research: zero resolvers against its actual chronic rivals**
+(translator/cinematographer/musician) AND zero axis opposition against any
+of them (unlike actor) — a true zero-opposition case. All three rivals
+carry `Exp:2` ("глубокая узкая экспертиза" — one deep craft skill);
+science-research had none. Added `Exp:-1` (research explores broadly across
+hypotheses/methods rather than perfecting one narrow craft — grounded in
+its own description) + order=77 naming all 4. Verified via `match_score`
+(science-research -0.4/0.4, all 3 rivals clearly opposite) then two n=100
+runs: **accuracy stayed healthy (77-81%) but off-topic rate got WORSE
+(8.6%→10.2-10.6%, consistent both seeds, not noise)** — the same norm-
+growth dilution cost seen on police-officer's `Emp:-1` fix. Kept anyway:
+the underlying structural fix (real opposition against real chronic rivals)
+is sound, accuracy didn't suffer, and this specific tradeoff (small
+off-topic cost for a genuine correctness fix) has now shown up twice with
+the same shape — treating it as an accepted, understood cost of this
+technique rather than a reason to revert.
+
+0/13 failing across both census runs covering this round's leaves (actor,
+science-research, and their full rival sets). `QUESTIONS` now 66 (was 64).
+Applied to main stack; `validate_content_integrity.py` confirms clean.
