@@ -978,3 +978,260 @@ directly (`docker cp` + `docker restart profi-backend-api-1`) since this
 is an app bug, not calibration content — no profi-calib involvement needed.
 
 Both fixes are uncommitted, same as everything else today.
+
+## 2026-07-29: IT cluster — 3 structural holes found via reference-persona playtest
+
+Ran 5 manual "textbook" reference-persona sessions through the real engine
+(software-engineer, data-science, it-development, it-infrastructure-
+security, artificial-intelligence — the whole `akinator-it-data` section
+minus the junior-only explore node), including the full post-reveal
+cluster-resolver phase (`cluster_resolver_service`), not just the main
+akinator phase. 3/5 personas landed on the wrong result in at least one run
+(RNG-noise dependent, per the usual caveat). Traced each with `match_score`
+by hand rather than guessing.
+
+**it-development lost a real session to [it-development, finance-economics,
+software-engineer] with ZERO eligible cluster-resolver questions to
+disambiguate further** (none existed linking any two of the three). Root
+cause: zero axis opposition among all three — classic disease. Real,
+description-grounded fix: `Exp` flipped 1→-1 on it-development's profile —
+its own description says "без жёсткой специализации на конкретном стеке"
+(no strict specialization) but it carried `Exp:1` ("глубокая узкая
+экспертиза" per axes.py — literally the opposite trait). This alone
+creates real opposition against software-engineer (Exp:2) and finance-
+economics (Exp:1). Added order=70, a dedicated Exp resolver naming all
+three. **Verified: it-development 100%→99% across two n=100 seeds** (no
+prior census number existed for it — this was its first-ever calibration
+check), 0 collateral damage on software-engineer/finance-economics.
+
+**it-infrastructure-security lost a real session to [energy-engineering,
+engineering-architecture, pilot].** It already carried a real, unused
+opposing axis — `Focus:-1` ("реагировать на нештатные ситуации" — incident
+response is constant context-switching, the literal opposite of energy-
+engineering's `Focus:1` and pilot's `Focus:2` sustained deep work) — just
+no dedicated resolver ever forced it. Added order=71. **Verified: it-
+infrastructure-security 83%/82% across two seeds** (first-ever calibration
+check for this leaf too).
+
+**data-science lost a real session to [software-engineer, finance-
+economics, architect]**, with the only cluster-resolver question touching
+two of the three (order=54, a diluted 9-way STEM fork) rather than a
+dedicated one. It already carried real opposition on `Obj` (-2, "разбирать/
+докапываться") against software-engineer (Obj:1) and architect (Obj:1) —
+same "applies/builds vs investigates" wedge used elsewhere in this file —
+just no resolver naming this specific trio. Added order=72. **Verified:
+data-science 61%/58% across two seeds** — within its already-documented
+noise band (not a regression; no prior number existed specifically
+post-order=67 either, so this is a fresh baseline, not a comparison point).
+
+`QUESTIONS` now 62 (was 59).
+
+**Also fixed: `cluster_resolver_service.get_eligible_questions` picked the
+lowest-`order` eligible resolver with no regard for how much of the
+cluster it actually covered.** Re-examining the it-infrastructure-security
+trace found this WASN'T actually the cause of that specific miss (it-
+infrastructure-security had already lost in the MAIN phase before cluster
+resolution even started — the resolve phase was legitimately disambiguating
+only the 3 leaves that made the cluster). But the underlying logic gap is
+real and general: with only a `>=2 overlap` bar and no preference for
+covering leaves not yet addressed, the scarce 3-question resolve budget
+could still get spent on a resolver that leaves a genuinely-undecided
+cluster member completely unaddressed when a better alternative exists.
+Fixed: `get_eligible_questions` now sorts by (fresh cluster-leaf coverage
+descending, total overlap descending, curation order ascending) instead of
+order alone. Verified: `tests/integration/test_cluster_resolver.py` still
+passes.
+
+## 2026-07-29: it-development retired — confirmed accidental near-duplicate
+
+User's own follow-up question after the round above ("чем IT и разработка
+отличается по факту от SE?") led to retiring it-development entirely —
+their read was that a teammate probably added it by accident, and the
+axis/content analysis backed that up completely: zero real opposition
+against software-engineer even after today's Exp fix (that fix was
+*constructed* to make the engine technically distinguish them, not a
+restored real distinction), both `professions` lists literally shared
+"Fullstack-разработчик", and both descriptions said the same thing in
+different words. Confirmed via the university data itself: **151 of 155**
+`Program` rows tagged with `it-development` already ALSO carried
+`software-engineer` — only 4 ("Информатика"/"Компьютерные науки"/
+"Компьютерная инженерия" at Melbourne/KTH/NTU/Bilkent) had it as their sole
+tag.
+
+**Removal, done properly, not just deleted from the list:**
+- Added `it-development` to `RETIRED_DIRECTION_SLUGS` (comment explains why,
+  matches the file's own established retirement convention).
+- Removed order=70 (this session's own Exp resolver, built specifically for
+  it-development — no longer meaningful without it).
+- New one-off `scripts/retag_it_development.py`: strips `it-development`
+  from every `Program.direction_slugs`; the 4 sole-tag programs get
+  `software-engineer` added instead so none end up with an empty array.
+  Not part of the regular entrypoint pipeline (one-time cleanup).
+- Ran the (now self-healing, see the zombie-question fix above)
+  `seed_akinator_content.py`: hard-deleted the `it-development` Direction
+  row, cleared 2 real `Assessment.selected_direction_slug` references that
+  had already resolved to it (prevents a 500 on those users' roadmap page),
+  and auto-deleted the now-orphaned order=70 question row.
+
+`SPECIALTIES` now 56 (was 57), `QUESTIONS` now 61 (was 62). Verified zero
+remaining references anywhere (`programs.direction_slugs`,
+`directions.slug`, `akinator_questions.resolves_pair`) on both stacks.
+Applied to the main stack directly (retag + seed + restart), same as the
+other app-level fixes today.
+
+## 2026-07-29: new metric — off-topic question rate, and a full n=50 census
+
+Added a genuine measurement for "how often do completely irrelevant
+questions appear", operationalized precisely (not by feel): a question
+counts as off-topic for a session if it's a dedicated resolver naming
+specific OTHER professions (never this session's own target) on which the
+target persona has no honest positive answer — the case a real user would
+plausibly hit "Не интересует" on, distinct from generic "не знаю" (see
+`_run_one`'s new tracking in `scripts/calibration_simulate.py`,
+`RunResult.off_topic_count`/`not_know_count`, reported per-profession and
+catalog-wide by `run_census`).
+
+**Full n=50 census across all 56 leaves (post it-development retirement):
+0/56 failing — the best result of the whole 2026-07 effort.** Worst:
+international-relations 54%, mechanical-engineer 60%, journalist 64%,
+translator 66% — nobody below 50%. **Off-topic rate: 6.5% catalog-wide
+average** (2467/37842 questions). Worst 10: school-teacher (12.3%),
+psychology-pedagogy (11.4%), international-relations (10.6%), psychologist
+(10.6%), law-public-administration (10.5%), police-officer (10.4%), actor
+(10.3%), science-research (8.6%), lawyer (8.3%), media-journalism (8.3%) —
+clustering around two groups: the "helper" cluster (school-teacher/
+psychology-pedagogy/psychologist/police-officer) and the "law" cluster
+(international-relations/law-public-administration/lawyer).
+
+**Helper cluster — same structural-hole audit as everything else today,
+and the gaps were dramatic:** of 21 possible pairs among the 7 leaves
+(school-teacher/psychology-pedagogy/psychologist/kindergarten-teacher/
+speech-therapist/social-worker/police-officer), **15 had ZERO shared
+`resolves_pair` question.** kindergarten-teacher and police-officer each
+had zero resolvers against ALL 6 of the others. Three fixes:
+- kindergarten-teacher: added `Acad:-1` (the only one of the 6 with no
+  Acad at all, despite every real rival carrying positive Acad) + new
+  order=73 resolver naming 5 rivals at once.
+- police-officer: added `Emp:-1` (procedure/authority-driven, not
+  emotional-attunement work, despite 4 rivals carrying `Emp:2`) + new
+  order=74 resolver.
+- psychology-pedagogy vs psychologist: near-identical profiles, zero
+  resolver, but real existing opposition on `Motiv`/`Dev` (pedagogy is
+  result/teaching-oriented, psychologist is process/non-directive) — new
+  order=75 resolver, no profile changes needed.
+
+**Verified via two n=100 census seeds, all 7 leaves: 0/7 failing (79-96%
+range), accuracy healthy.** Off-topic rate: mixed but net positive —
+school-teacher/psychology-pedagogy improved, kindergarten-teacher (5.8-7.4%)
+and social-worker (3.9-4.2%) now clearly low, psychologist roughly flat,
+**police-officer got WORSE (10.4%→12.3-12.7%, consistent both seeds, not
+noise)**. Root cause: adding `Emp:-1` grows police-officer's profile norm,
+which dilutes its OTHER axis scores slightly on every unrelated question in
+the bank — the same "add an axis, pay a small universal dilution cost"
+tradeoff documented all day, just newly visible because this is the first
+metric sensitive enough to detect it directly (top-3 accuracy wasn't).
+Accepted as a reasonable trade: closing a confirmed zero-resolver
+structural hole for a real, measured +2pp cost elsewhere. `QUESTIONS` now
+64 (was 61).
+
+**Law cluster (international-relations/law-public-administration/lawyer) —
+investigated, NOT further fixed, and this was a deliberate decision, not
+an oversight.** Unlike the helper cluster, internal coverage is already
+complete (order=67 links all pairs). Traced 20 sessions per leaf and found
+off-topic hits scattered across **15+ different, unrelated orders** (STEM
+resolvers, business resolvers, psychology resolvers, medicine resolvers —
+no concentration on 1-2 fixable gaps). Root cause: these three share a
+generic "serious, structured professional" signature (People:1, Data:1,
+Exp:2, Focus:2, Struct:2, Acad:2) that weakly touches almost every resolver
+in the catalog without a strong specific stake either way. This is the same
+diffuse "generic broad profile vs sharply-worded specific resolvers"
+pattern already diagnosed and abandoned for the STEM supercluster earlier
+this session ("stop axis-tweaking this cluster... the win rotates to
+whoever's next closest") — chasing individual off-topic orders here would
+be whack-a-mole with no stable fix. The two mitigations already built today
+(cluster-lock window, "Не интересует" button) are the right tools for this
+specific shape of problem, not more resolvers.
+
+## 2026-07-29: it-development retirement was incomplete — found the hard way
+
+Restarting the main stack after the helper-cluster fixes above crashed it:
+`entrypoint.sh`'s pipeline runs `seed_astana_universities.py` unconditionally
+on every container start, and that script has its own hardcoded per-program
+`direction_slugs` literals (NOT sourced from the live `programs` table) —
+it still listed `it-development` for 18 Astana programs, and its own
+`assert _slug in _KNOWN_DIRECTION_SLUGS` check (validated against the
+current live SPECIALTIES/EXPLORE_NODES, which correctly no longer include
+it-development) crashed the whole boot on that mismatch.
+
+The earlier retirement only fixed the **live database** (via
+`retag_it_development.py` + the self-healing seed) — it missed that
+`it-development` was ALSO hardcoded directly in seed-script source, which
+re-asserts/re-inserts on every fresh deploy regardless of what's already in
+the database. Found and fixed the same pattern in three more files:
+- `scripts/seed_astana_universities.py` — 18 occurrences in
+  `"direction_slugs": [...]` literals, all alongside other real tags (0
+  sole-tag cases, same pattern as the database had).
+- `scripts/seed_almaty_universities.py` — 133 occurrences, same pattern, 0
+  sole-tag cases (these two files' counts, 18+133=151, exactly match the
+  151 "had other tags" count `retag_it_development.py` reported against
+  the live database — confirms this was the same underlying data, just
+  duplicated across the DB and these two source files).
+- `scripts/seed_known_profession_quizzes.py` — a whole 5-question quiz
+  block for `leaf_slug: "it-development"`. Not in `entrypoint.sh`'s
+  pipeline (didn't cause the crash) but still stale/orphaned content —
+  removed the block entirely.
+
+Fixed via a small script-driven removal (strip `it-development` from every
+`direction_slugs` array, verified 0 remaining afterward) rather than by
+hand across 151 occurrences. Verified: main stack now boots clean through
+the full `entrypoint.sh` pipeline end to end, `curl /docs` returns 200,
+zero remaining `it-development` references anywhere in the codebase or
+either stack's database. All four touched files now byte-identical
+(`md5sum`) between `profi-calib` and the main stack.
+
+**Lesson for any future retirement**: `RETIRED_DIRECTION_SLUGS` in
+`seed_akinator_content.py` only guarantees the *akinator content* self-heals
+— it says nothing about the university-seeding scripts, which turned out to
+carry their own independent copies of the same slug. Check `grep -rl
+"<slug>" scripts/` across the WHOLE scripts directory before considering a
+retirement complete, not just the akinator content file.
+
+## 2026-07-29: made this class of bug catchable automatically — `validate_content_integrity.py`
+
+Follow-up to the it-development retirement above, which took three separate
+discoveries (live `programs` table, then `seed_astana_universities.py`/
+`seed_almaty_universities.py`'s own hardcoded copies, then a stale
+`known_profession_quizzes` row) before it was actually complete. Rather
+than rely on remembering to `grep` everywhere next time, added a single
+consolidated check: new `scripts/validate_content_integrity.py`, wired in
+as the LAST step of `entrypoint.sh` (after every seed script, before
+`Starting API`). One pass over the live database, checks every place a
+Direction slug gets referenced:
+- `programs.direction_slugs` — reported as a WARNING (a stale tag there
+  degrades gracefully, the program just doesn't show up under that
+  direction).
+- `akinator_questions.resolves_pair` — FATAL (a dangling slug here silently
+  breaks a resolver's whole point, and the akinator engine reads this at
+  runtime).
+- `known_profession_quizzes.leaf_slug` — FATAL. This is the ONLY validation
+  that has ever covered this table — `seed_known_profession_quizzes.py` has
+  no assert of its own, and isn't even in the entrypoint pipeline (open
+  question below).
+
+Verified: ran standalone (`Content integrity OK: 75 directions, 1513
+programs, 64 questions, 56 known-profession quizzes`), then verified the
+FULL `entrypoint.sh` end-to-end via a real container restart (not just the
+individual script) — boots clean through to `Starting API`. Applied to both
+stacks, `entrypoint.sh` and the new script byte-identical (`md5sum`)
+between them.
+
+**Open question, not decided today:** `seed_known_profession_quizzes.py`
+itself is still NOT in `entrypoint.sh`'s pipeline — a genuinely fresh
+deploy (empty DB) would boot with ZERO `known_profession_quizzes` rows,
+silently breaking the "I already know my profession" quiz feature entirely
+for that environment, until someone runs the script by hand. Not added to
+the pipeline today because memory notes an existing plan to redesign this
+specific feature ("profi-known-profession-redesign" — dead-end quiz,
+decided plan: server-side banks, sessionless Assessment) — didn't want to
+bake a behavior change into the boot sequence for a feature already flagged
+for rework without the user's explicit call.

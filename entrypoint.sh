@@ -40,5 +40,8 @@ async def main():
 asyncio.run(main())
 PYEOF
 
+echo "==> Validating content integrity..."
+python scripts/validate_content_integrity.py
+
 echo "==> Starting API..."
 exec uvicorn app.main:app --host 0.0.0.0 --port 8000

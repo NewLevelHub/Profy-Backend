@@ -67,6 +67,8 @@ class RunResult:
     revealed_slugs: list[str]
     final_belief: dict[str, float]
     target_slug: str | None = None
+    not_know_count: int = 0
+    off_topic_count: int = 0
 
 
 @dataclass
@@ -190,10 +192,24 @@ async def _run_one(
     orders: list[int] = []
     families: set[str] = set()
     steps = 0
+    not_know_count = 0
+    off_topic_count = 0
     while question is not None:
         orders.append(question.order)
         families |= {f.value for f in akinator_engine.question_axis_families(question)}
         option_index = _pick_option(strategy, question, rng, target_profile)
+        if option_index is None and strategy == "target":
+            not_know_count += 1
+            # Distinguishes a plain "не знаю" (neutral, no stake either way)
+            # from a genuinely OFF-TOPIC question: a dedicated resolver that
+            # names specific OTHER professions, none of them this session's
+            # own target, on which the target persona has no honest positive
+            # answer. A real user would more plausibly hit "Не интересует"
+            # (apply_disinterest) here than the generic не-знаю button — see
+            # AkinatorAssessmentView.tsx, shown from step>=3, vs the always-
+            # present не-знаю button shown on every question.
+            if question.resolves_pair and target_slug not in question.resolves_pair:
+                off_topic_count += 1
         turn = await akinator_session_service.submit_answer(
             assessment.id, question.id, option_index, age_group, db
         )
@@ -209,6 +225,8 @@ async def _run_one(
         revealed_slugs=list(turn.decision.leaves),
         final_belief=turn.session.belief,
         target_slug=target_slug,
+        not_know_count=not_know_count,
+        off_topic_count=off_topic_count,
     )
 
 
@@ -246,6 +264,7 @@ async def run_census(
     if only_slugs:
         real_slugs = [s for s in real_slugs if s in only_slugs]
     rows: list[tuple[str, int, int, Counter]] = []
+    off_topic_rows: list[tuple[str, int, int]] = []  # (slug, off_topic_questions, total_questions)
 
     # TEMPORARY progress logging (2026-07-28, remove once the "why is this so
     # slow" question is settled) — one line per profession with elapsed/ETA,
@@ -256,6 +275,8 @@ async def run_census(
         _t_slug_start = _time.monotonic()
         hits = 0
         beaten_by: Counter = Counter()
+        off_topic_total = 0
+        questions_total = 0
         for _ in range(trials_per_profession):
             result = await _run_one(
                 db, age_group, "target", rng, leaf_profiles_by_slug, forced_target_slug=slug
@@ -267,7 +288,10 @@ async def run_census(
             else:
                 top = [s for s, _ in sorted(belief.items(), key=lambda kv: -kv[1])[:top_n]]
                 beaten_by.update(top)
+            off_topic_total += result.off_topic_count
+            questions_total += result.steps
         rows.append((slug, hits, trials_per_profession, beaten_by))
+        off_topic_rows.append((slug, off_topic_total, questions_total))
         _elapsed = _time.monotonic() - _t_start
         _per_slug = _elapsed / (_slug_i + 1)
         _eta = _per_slug * (len(real_slugs) - _slug_i - 1)
@@ -290,6 +314,28 @@ async def run_census(
         beaters = ", ".join(f"{s}x{c}" for s, c in beaten_by.most_common(3))
         print(f"  {slug:26s} {hits}/{trials} ({100*rate:3.0f}%){flag}" + (f"   often loses to: {beaters}" if beaters else ""))
     print(f"\n{failing}/{len(rows)} professions fail top-{top_n} more often than not ({trials_per_profession} trials each).")
+
+    # Off-topic question rate: for each session, a question counts as
+    # off-topic if it's a dedicated resolver naming specific OTHER
+    # professions (not this session's own target) on which the target
+    # persona has no honest positive answer — the case a real user would
+    # plausibly hit "Не интересует" on, not just generic "не знаю" (see
+    # _run_one's comment). Reported per-profession and as a catalog-wide
+    # average, so "how often do genuinely off-topic questions show up" has
+    # an actual number instead of relying on manual trace impressions.
+    total_off_topic = sum(r[1] for r in off_topic_rows)
+    total_questions = sum(r[2] for r in off_topic_rows)
+    off_topic_rows.sort(key=lambda r: -(r[1] / r[2] if r[2] else 0))
+    print(f"\n=== off-topic question rate (resolver questions naming OTHER "
+          f"professions, target persona has no honest answer) ===")
+    for slug, off_topic, total in off_topic_rows[:10]:
+        rate = off_topic / total if total else 0
+        print(f"  {slug:26s} {off_topic}/{total} questions ({100*rate:4.1f}%)")
+    if len(off_topic_rows) > 10:
+        print(f"  ... ({len(off_topic_rows) - 10} more professions not shown, worst 10 above)")
+    overall_rate = total_off_topic / total_questions if total_questions else 0
+    print(f"\nCatalog-wide: {total_off_topic}/{total_questions} questions were off-topic "
+          f"({100*overall_rate:.1f}% average per session).")
 
 
 async def _leaf_profiles_by_slug(db: AsyncSession) -> dict[str, dict]:

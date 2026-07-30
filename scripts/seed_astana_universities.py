@@ -54,7 +54,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
     "enu": [
         {
             "name": "Информационные технологии (бакалавр)",
-            "direction_slugs": ["software-engineer", "it-development"],
+            "direction_slugs": ["software-engineer"],
             "language": "Казахский / Русский / Английский",
             "description": "Факультет информационных технологий ЕНУ им. Гумилёва готовит разработчиков, системных администраторов и IT-специалистов широкого профиля. Студенты изучают программирование, базы данных, сети и веб-технологии — с акцентом на практические проекты и стажировки в казахстанских IT-компаниях.",
             "requirements": {"ent_subjects": ["Математика", "Информатика"]},
@@ -371,7 +371,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "IT в бизнесе (бакалавр)",
-            "direction_slugs": ["it-development", "management-entrepreneurship"],
+            "direction_slugs": ["management-entrepreneurship"],
             "language": "Английский",
             "description": "Программа готовит специалистов на стыке IT и управления бизнесом: студенты изучают цифровую трансформацию, внедрение корпоративных систем, аналитику данных и управление IT-проектами. Выпускники работают IT-менеджерами, бизнес-аналитиками и консультантами по цифровизации.",
             "requirements": {"ent_subjects": ["Математика", "География"]},
@@ -392,7 +392,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "Информационные системы и технологии (бакалавр)",
-            "direction_slugs": ["software-engineer", "it-development", "akinator-it-data"],
+            "direction_slugs": ["software-engineer", "akinator-it-data"],
             "language": "Казахский / Русский / Английский",
             "description": "Программа готовит специалистов по проектированию и сопровождению корпоративных IT-систем — баз данных, ERP-решений и облачных сервисов. Студенты изучают архитектуру ПО, сетевые технологии и управление данными. Выпускники работают системными аналитиками, IT-менеджерами и разработчиками в банках, госструктурах и крупных компаниях.",
             "requirements": {"ent_subjects": ["Математика", "Информатика"]},
@@ -534,7 +534,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "IT Management (бакалавр)",
-            "direction_slugs": ["management-entrepreneurship", "it-development"],
+            "direction_slugs": ["management-entrepreneurship"],
             "language": "Английский",
             "description": "Программа Школы креативных индустрий AITU готовит менеджеров, которые понимают и бизнес, и технологии: управление IT-проектами, продуктовый менеджмент, цифровая трансформация и Agile-методологии. Выпускники становятся Product Manager и IT-директорами в компаниях, где технологии — основной продукт.",
             "requirements": {"ent_subjects": ["Математика", "География"]},
@@ -548,7 +548,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "IT Entrepreneurship (бакалавр)",
-            "direction_slugs": ["business-entrepreneurship", "it-development"],
+            "direction_slugs": ["business-entrepreneurship"],
             "language": "Английский",
             "description": "Программа AITU для тех, кто хочет запустить технологический стартап: продуктовое мышление, прототипирование, привлечение инвестиций и базовые навыки разработки. Студенты работают над собственными проектами с ментором-предпринимателем и получают доступ к акселераторам.",
             "requirements": {"ent_subjects": ["Математика", "География"]},
@@ -590,7 +590,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "Промышленная автоматизация (бакалавр)",
-            "direction_slugs": ["software-engineer", "it-development", "akinator-it-data"],
+            "direction_slugs": ["software-engineer", "akinator-it-data"],
             "language": "Русский/Казахский",
             "description": "Программа AITU готовит инженеров для автоматизации производства: программирование ПЛК, встраиваемые системы, промышленный интернет вещей и цифровые двойники. Выпускники внедряют решения автоматизации на предприятиях и в smart-factory проектах.",
             "requirements": {"ent_subjects": ["Математика", "Информатика"]},
@@ -718,7 +718,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "Компьютерная инженерия (бакалавр)",
-            "direction_slugs": ["software-engineer", "it-development", "akinator-it-data"],
+            "direction_slugs": ["software-engineer", "akinator-it-data"],
             "language": "Русский/Казахский",
             "description": "Программа охватывает разработку компьютерных систем, сетевую инженерию, администрирование серверов и встраиваемые системы управления. Выпускники работают системными инженерами, сетевыми администраторами и разработчиками аппаратно-программных комплексов.",
             "requirements": {"ent_subjects": ["Математика", "Информатика"]},
@@ -1125,7 +1125,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "Информационные системы и технологии (бакалавр)",
-            "direction_slugs": ["software-engineer", "it-development"],
+            "direction_slugs": ["software-engineer"],
             "language": "Казахский / Русский / Английский",
             "description": "Программа готовит специалистов по проектированию и сопровождению корпоративных IT-систем — баз данных, ERP-решений и облачных сервисов. Студенты изучают архитектуру ПО, сетевые технологии и управление данными. Выпускники работают системными аналитиками, IT-менеджерами и разработчиками в банках, госструктурах и крупных компаниях.",
             "requirements": {"ent_subjects": ["Математика", "Информатика"]},
@@ -1192,7 +1192,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "Вычислительная техника и ПО (бакалавр)",
-            "direction_slugs": ["software-engineer", "it-development"],
+            "direction_slugs": ["software-engineer"],
             "language": "Казахский / Русский",
             "description": "Программа соединяет изучение аппаратной архитектуры компьютеров с системным и прикладным программированием. Студенты осваивают операционные системы, компиляторы и встроенные системы. Выпускники работают инженерами-программистами, системными программистами и разработчиками встроенного ПО.",
             "requirements": {"ent_subjects": ["Математика", "Информатика"]},
@@ -1234,7 +1234,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "Информационные системы (бакалавр)",
-            "direction_slugs": ["software-engineer", "it-development"],
+            "direction_slugs": ["software-engineer"],
             "language": "Казахский / Русский",
             "description": "Программа готовит специалистов по проектированию и сопровождению корпоративных IT-систем — баз данных, ERP-решений и облачных сервисов. Студенты изучают архитектуру ПО, сетевые технологии и управление данными. Выпускники работают системными аналитиками, IT-менеджерами и разработчиками в банках, госструктурах и крупных компаниях.",
             "requirements": {"ent_subjects": ["Математика", "Информатика"]},
@@ -1297,7 +1297,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "Вычислительная техника и программное обеспечение (бакалавр)",
-            "direction_slugs": ["software-engineer", "it-development", "akinator-it-data"],
+            "direction_slugs": ["software-engineer", "akinator-it-data"],
             "language": "Казахский / Русский",
             "description": "Программа охватывает разработку программного обеспечения, архитектуру вычислительных систем и проектирование аппаратно-программных комплексов. Выпускники работают разработчиками ПО, системными программистами и инженерами встраиваемых систем.",
             "requirements": {"ent_subjects": ["Математика", "Информатика"]},
@@ -1390,7 +1390,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "Информационные системы (бакалавр)",
-            "direction_slugs": ["software-engineer", "it-development"],
+            "direction_slugs": ["software-engineer"],
             "language": "Казахский / Русский",
             "description": "Программа готовит специалистов по проектированию и сопровождению корпоративных IT-систем — баз данных, ERP-решений и облачных сервисов. Студенты изучают архитектуру ПО, сетевые технологии и управление данными. Выпускники работают системными аналитиками, IT-менеджерами и разработчиками в банках, госструктурах и крупных компаниях.",
             "requirements": {"ent_subjects": ["Математика", "Информатика"]},
@@ -1411,7 +1411,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "Вычислительная техника и программное обеспечение (бакалавр)",
-            "direction_slugs": ["software-engineer", "it-development", "akinator-it-data"],
+            "direction_slugs": ["software-engineer", "akinator-it-data"],
             "language": "Казахский / Русский",
             "description": "Программа соединяет изучение аппаратной архитектуры компьютеров с системным и прикладным программированием. Студенты осваивают операционные системы, компиляторы и встроенные системы. Выпускники работают инженерами-программистами, системными программистами и разработчиками встроенного ПО.",
             "requirements": {"ent_subjects": ["Математика", "Информатика"]},
@@ -1462,7 +1462,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "Информационные системы (бакалавр)",
-            "direction_slugs": ["software-engineer", "it-development"],
+            "direction_slugs": ["software-engineer"],
             "language": "Казахский / Русский",
             "description": "Программа готовит специалистов по проектированию и сопровождению корпоративных IT-систем — баз данных, ERP-решений и облачных сервисов. Студенты изучают архитектуру ПО, сетевые технологии и управление данными. Выпускники работают системными аналитиками, IT-менеджерами и разработчиками в банках, госструктурах и крупных компаниях.",
             "requirements": {"ent_subjects": ["Математика", "Информатика"]},
@@ -1539,7 +1539,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "IT-менеджмент (бакалавр)",
-            "direction_slugs": ["management-entrepreneurship", "it-development"],
+            "direction_slugs": ["management-entrepreneurship"],
             "language": "Казахский / Русский",
             "description": "Программа раскрывает принципы управления организациями: студенты изучают стратегический менеджмент, управление проектами, финансовый анализ и лидерство. Особое внимание уделяется кейсам из казахстанского и международного бизнеса. Выпускники работают менеджерами проектов, руководителями подразделений и предпринимателями.",
             "requirements": {"ent_subjects": ["Математика", "География"]},
@@ -1609,7 +1609,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "ИТ-технологии в сфере сервиса (бакалавр)",
-            "direction_slugs": ["hospitality-manager", "it-development"],
+            "direction_slugs": ["hospitality-manager"],
             "language": "Казахский / Русский",
             "description": "Программа сочетает IT-компетенции с пониманием сервисного бизнеса: системы бронирования, CRM для гостиниц, цифровой маркетинг в туризме и автоматизация клиентского обслуживания. Выпускники работают IT-менеджерами в сервисных компаниях и гостиничных сетях.",
             "requirements": {"ent_subjects": ["География", "Иностранный язык"]},
@@ -1697,7 +1697,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "Информационные системы (бакалавр)",
-            "direction_slugs": ["software-engineer", "it-development"],
+            "direction_slugs": ["software-engineer"],
             "language": "Казахский / Русский",
             "description": "Программа готовит специалистов по проектированию и сопровождению корпоративных IT-систем — баз данных, ERP-решений и облачных сервисов. Студенты изучают архитектуру ПО, сетевые технологии и управление данными. Выпускники работают системными аналитиками, IT-менеджерами и разработчиками в банках, госструктурах и крупных компаниях.",
             "requirements": {"ent_subjects": ["Математика", "Информатика"]},
@@ -1803,7 +1803,7 @@ PROGRAMS_BY_UNIVERSITY_SLUG: dict[str, list[dict]] = {
         },
         {
             "name": "IT в бизнесе (бакалавр)",
-            "direction_slugs": ["it-development", "management-entrepreneurship", "akinator-it-data"],
+            "direction_slugs": ["management-entrepreneurship", "akinator-it-data"],
             "language": "Казахский / Русский",
             "description": "Программа готовит специалистов, сочетающих бизнес-понимание с ИТ-компетенциями: цифровая трансформация, бизнес-аналитика, корпоративные системы и управление данными. Выпускники работают бизнес-аналитиками, ИТ-консультантами и продукт-менеджерами.",
             "requirements": {"ent_subjects": ["Математика", "География"]},
