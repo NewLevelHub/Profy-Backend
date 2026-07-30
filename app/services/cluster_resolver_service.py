@@ -29,8 +29,20 @@ async def get_eligible_questions(
         select(AkinatorQuestion).where(AkinatorQuestion.is_active.is_(True))
     )
     all_qs = result.scalars().all()
+    by_id = {str(q.id): q for q in all_qs}
 
     asked_ids = {str(qid) for qid in (session.asked_question_ids or [])}
+
+    # Which cluster leaves has ANY already-asked question (main phase or an
+    # earlier resolve_step round) already put in front of the user via a
+    # named resolves_pair — used below to prefer resolvers bringing FRESH
+    # cluster coverage over ones that only re-cover leaves that already got
+    # their own dedicated question.
+    already_addressed: set[str] = set()
+    for qid in asked_ids:
+        asked_q = by_id.get(qid)
+        if asked_q and asked_q.resolves_pair:
+            already_addressed |= set(asked_q.resolves_pair) & cluster_leaves
 
     eligible = []
     for q in all_qs:
@@ -42,8 +54,22 @@ async def get_eligible_questions(
         if q.resolves_pair and len(set(q.resolves_pair) & cluster_leaves) >= 2:
             eligible.append(q)
 
-    # Sort by curation order
-    eligible.sort(key=lambda q: q.order)
+    # Sort by (1) how much FRESH cluster coverage this question brings —
+    # cluster leaves no earlier question already addressed — descending,
+    # (2) total cluster overlap descending, (3) curation order ascending as
+    # a final tiebreak. Plain curation-order sorting (pre-2026-07-29) could
+    # spend one of only 3 precious resolve_step questions on a resolver
+    # that names 2 of 3 cluster leaves while leaving the third — potentially
+    # the one genuinely in doubt — completely unaddressed, even when a
+    # different eligible question would have covered it instead. This
+    # makes the scarce resolve-phase budget try to touch every cluster
+    # member at least once before repeating.
+    def _sort_key(q: AkinatorQuestion) -> tuple[int, int, int]:
+        overlap = set(q.resolves_pair or []) & cluster_leaves
+        fresh = len(overlap - already_addressed)
+        return (-fresh, -len(overlap), q.order)
+
+    eligible.sort(key=_sort_key)
     return eligible
 
 

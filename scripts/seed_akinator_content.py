@@ -582,7 +582,18 @@ SPECIALTIES: list[dict] = [
      "subjects_required": {"Русский язык": 2, "Литература": 1, "Обществознание": 1}},
     {"slug": "kindergarten-teacher", "name": "Дошкольное образование", "label_junior": "Воспитатель", "section": "akinator-education",
      "description": "Дошкольное образование готовит воспитателей, которые заботятся о детях дошкольного возраста — организуют игры, занятия и распорядок дня.",
-     "profile": {"People": 2, "Care": 2, "Dev": 1, "Emp": 2, "Focus": -1, "Struct": 1, "Pace": 1, "PhysSt": 1},
+     # Acad:-1 added (calibration playtest pass, 2026-07-29, off-topic-rate
+     # pass): a full n=50 census found the "helper" cluster (school-teacher/
+     # psychology-pedagogy/psychologist/kindergarten-teacher/speech-
+     # therapist/social-worker/police-officer) had 15 of 21 possible pairs
+     # with ZERO shared resolves_pair question — this profile specifically
+     # had none against ANY of the other 6. It's also the only one of the
+     # six carrying no Acad in either direction, despite every real rival
+     # (school-teacher 1, psychology-pedagogy 1, psychologist 2, social-
+     # worker 1, speech-therapist 1) having positive Acad. Play/routine-based
+     # early-childhood care genuinely isn't subject-depth academic work —
+     # opposes 5 rivals at once. Feeds new order=73 resolver.
+     "profile": {"People": 2, "Care": 2, "Dev": 1, "Emp": 2, "Focus": -1, "Struct": 1, "Pace": 1, "PhysSt": 1, "Acad": -1},
      "professions": ["Воспитатель", "Педагог дошкольного образования"],
      "subjects_required": {"Русский язык": 2, "Обществознание": 1}},
 
@@ -737,7 +748,19 @@ SPECIALTIES: list[dict] = [
      "subjects_required": {"Физика": 2, "Химия": 1, "Физическая культура": 1}},
     {"slug": "police-officer", "name": "Правоохранительная деятельность", "section": "akinator-safety-rescue",
      "description": "Правоохранительная деятельность следит за порядком и безопасностью людей, реагирует на происшествия и расследует правонарушения.",
-     "profile": {"People": 1, "Phys": 1, "Lead": 1, "Exp": 1, "Focus": -1, "Risk": 1, "Struct": 2, "Pace": 1, "Predict": 1, "PhysSt": 1},
+     # Emp:-1 added (calibration playtest pass, 2026-07-29, off-topic-rate
+     # pass): same "helper" cluster audit as kindergarten-teacher's — this
+     # profile had ZERO resolves_pair questions against any of the other 6
+     # (school-teacher/psychology-pedagogy/psychologist/kindergarten-
+     # teacher/speech-therapist/social-worker), despite showing up as a real
+     # census rival for several of them (school-teacher x7, kindergarten-
+     # teacher x5, social-worker x5). Enforcing order/investigating
+     # violations is a procedure- and authority-driven function, not
+     # emotional attunement to an individual — this profile never carried
+     # Emp either way despite social-worker/psychologist/psychology-
+     # pedagogy/kindergarten-teacher all having Emp:2. Opposes all four at
+     # once. Feeds new order=74 resolver.
+     "profile": {"People": 1, "Phys": 1, "Lead": 1, "Exp": 1, "Focus": -1, "Risk": 1, "Struct": 2, "Pace": 1, "Predict": 1, "PhysSt": 1, "Emp": -1},
      "professions": ["Полицейский", "Следователь", "Инспектор"],
      "subjects_required": {"Обществознание": 2, "История": 1, "Физическая культура": 1}},
 
@@ -746,12 +769,7 @@ SPECIALTIES: list[dict] = [
     # движка. Теперь получают полноценные профили и родительские секции.
 
     # IT и данные
-    {"slug": "it-development", "name": "IT и разработка", "label_junior": "Разработчик", "section": "akinator-it-data",
-     "description": "IT и разработка охватывает создание программных продуктов — сайтов, приложений и сервисов — без жёсткой специализации на конкретном стеке.",
-     "profile": {"Data": 2, "Ideas": 1, "Inv": 1, "Exp": 1, "Auto": 1, "People": -1, "PhysSt": -1},
-     "professions": ["Разработчик ПО", "Веб-разработчик", "Fullstack-разработчик", "IT-специалист"],
-     "subjects_required": {"Информатика": 2, "Математика": 1}},
-    {"slug": "artificial-intelligence", "name": "Искусственный интеллект", "label_junior": "AI-инженер", "section": "akinator-it-data",
+       {"slug": "artificial-intelligence", "name": "Искусственный интеллект", "label_junior": "AI-инженер", "section": "akinator-it-data",
      "description": "Искусственный интеллект — разработка систем, которые учатся на данных и принимают решения: машинное обучение, компьютерное зрение, NLP.",
      # Phys:-1 added (calibration playtest pass, 2026-07, round 24,
      # new-specialties expansion): census found this losing most to
@@ -1278,7 +1296,7 @@ SPECIALTIES: list[dict] = [
 ]
 
 assert len(SECTIONS) == 13, f"expected 13 sections, got {len(SECTIONS)}"
-assert len(SPECIALTIES) == 57, f"expected 57 specialties, got {len(SPECIALTIES)}"
+assert len(SPECIALTIES) == 56, f"expected 56 specialties, got {len(SPECIALTIES)}"
 
 _SECTION_SLUGS = {s["slug"] for s in SECTIONS}
 for _p in SPECIALTIES:
@@ -2179,9 +2197,95 @@ QUESTIONS: list[dict] = [
     # comfortable with breaking-news unpredictability; media-journalism:-1,
     # planned/produced content). Verified via match_score: journalist
     # 0.873/-0.873, media-journalism -0.516/0.516 — clean opposition.
+    {"order": 71, "kind": "direct", "depth": 3, "age_variant": "senior",
+     "text": "В защите систем тебе ближе…", "text_junior": None,
+     "options": [
+         {"text": "долго и вдумчиво проектировать надёжную систему заранее",
+          "axis_weights": {"Focus": 2}},
+         {"text": "постоянно быть начеку и быстро реагировать на неожиданные атаки и сбои",
+          "axis_weights": {"Focus": -2}},
+     ], "resolves_pair": ["it-infrastructure-security", "energy-engineering", "pilot"]},
+    # manual reference-persona playtest (2026-07-29): it-infrastructure-
+    # security lost a real session to the cluster [energy-engineering,
+    # engineering-architecture, pilot] — and the one cluster-resolver
+    # question the app COULD offer (order=55) didn't even name it-
+    # infrastructure-security, wasting the disambiguation budget on a
+    # question that structurally couldn't rescue it (see the
+    # cluster_resolver_service fix below). It already carries a real,
+    # unused opposing axis: Focus:-1 ("реагировать на нештатные ситуации" —
+    # incident response is constant context-switching, the literal opposite
+    # of energy-engineering's Focus:1 and pilot's Focus:2 sustained deep
+    # work) — just never had a dedicated resolver forcing it. Verified via
+    # match_score: it-infrastructure-security -0.459/0.459, energy-
+    # engineering 0.436/-0.436, pilot 0.853/-0.853 — clean opposition.
+    {"order": 72, "kind": "direct", "depth": 3, "age_variant": "senior",
+     "text": "Разбираясь в системе, тебе интереснее…", "text_junior": None,
+     "options": [
+         {"text": "строить и настраивать инструмент, который решает задачу",
+          "axis_weights": {"Obj": 2}},
+         {"text": "разбирать и докапываться, как всё устроено изнутри",
+          "axis_weights": {"Obj": -2}},
+     ], "resolves_pair": ["data-science", "software-engineer", "architect", "finance-economics"]},
+    # manual reference-persona playtest (2026-07-29): data-science lost a
+    # real session to the cluster [software-engineer, finance-economics,
+    # architect] with ZERO eligible cluster-resolver questions (none linked
+    # data-science to finance-economics or architect at all — only order=54,
+    # a diluted 9-way STEM fork, touched data-science+architect together).
+    # data-science already carries real opposition on Obj (-2, "разбирать/
+    # докапываться") against software-engineer (Obj:1) and architect
+    # (Obj:1) — the "applies/builds vs investigates" wedge already used
+    # elsewhere in this file — just never had a dedicated resolver naming
+    # this specific trio (+finance-economics, neutral on Obj but included
+    # for context). Verified via match_score: data-science -0.632/0.632,
+    # software-engineer 0.343/-0.343, architect 0.343/-0.343.
+    {"order": 73, "kind": "direct", "depth": 3, "age_variant": "senior",
+     "text": "Занимаясь с детьми или учениками, тебе важнее…", "text_junior": None,
+     "options": [
+         {"text": "чтобы они разобрались в предмете, продвинулись в знаниях",
+          "axis_weights": {"Acad": 2}},
+         {"text": "чтобы им было интересно играть, заниматься, проводить день",
+          "axis_weights": {"Acad": -2}},
+     ], "resolves_pair": ["kindergarten-teacher", "school-teacher", "psychology-pedagogy",
+                           "psychologist", "social-worker", "speech-therapist"]},
+    # off-topic-rate pass (2026-07-29): kindergarten-teacher had zero
+    # resolves_pair questions against ANY of the other 6 "helper" leaves —
+    # see that profile's own Acad:-1 comment. Verified via match_score:
+    # kindergarten-teacher scores clearly toward option 2, all 5 named
+    # rivals (Acad:1-2 each) clearly toward option 1.
+    {"order": 74, "kind": "situational", "depth": 3, "age_variant": "senior",
+     "text": "Реагируя на ситуацию с человеком, тебе ближе…", "text_junior": None,
+     "options": [
+         {"text": "прежде всего понять и прочувствовать его состояние",
+          "axis_weights": {"Emp": 2}},
+         {"text": "прежде всего разобраться в фактах и действовать по процедуре",
+          "axis_weights": {"Emp": -2}},
+     ], "resolves_pair": ["police-officer", "social-worker", "psychologist",
+                           "psychology-pedagogy", "kindergarten-teacher"]},
+    # off-topic-rate pass (2026-07-29): police-officer had zero
+    # resolves_pair questions against any of the other 6 "helper" leaves
+    # despite showing up as a real census rival for several of them — see
+    # that profile's own Emp:-1 comment. Verified via match_score: police-
+    # officer scores clearly toward option 2, all 4 named rivals (Emp:2
+    # each) clearly toward option 1.
+    {"order": 75, "kind": "situational", "depth": 3, "age_variant": "senior",
+     "text": "Работая с человеком один на один, тебе важнее…", "text_junior": None,
+     "options": [
+         {"text": "довести до результата — навык освоен, цель достигнута",
+          "axis_weights": {"Motiv": 2, "Dev": 1}},
+         {"text": "сам процесс — чтобы человеку стало легче прямо сейчас",
+          "axis_weights": {"Motiv": -2, "Dev": -1}},
+     ], "resolves_pair": ["psychology-pedagogy", "psychologist"]},
+    # off-topic-rate pass (2026-07-29): psychology-pedagogy and psychologist
+    # share People/Care/Emp/Exp/Acad/Focus at near-identical strength with
+    # zero resolves_pair questions between them despite already carrying
+    # real opposition on Motiv (pedagogy:1, results-oriented — a lesson
+    # learned or not; psychologist:-1, process-oriented) and Dev (pedagogy:1,
+    # actively teaches/develops a skill; psychologist:-1, supports without
+    # directing). Verified via match_score: psychology-pedagogy 0.728/-0.728,
+    # psychologist -0.557/0.557.
 ]
 
-assert len(QUESTIONS) == 59, f"expected 59 questions, got {len(QUESTIONS)}"
+assert len(QUESTIONS) == 64, f"expected 64 questions, got {len(QUESTIONS)}"
 assert len({q["order"] for q in QUESTIONS}) == len(QUESTIONS), "duplicate question order"
 
 # Every slug named in a resolves_pair must actually exist as a leaf — this is
@@ -2238,6 +2342,21 @@ RETIRED_DIRECTION_SLUGS: list[str] = [
     "sales-manager", "entrepreneur", "logistician",  # -> management-entrepreneurship
     "marketer",  # -> marketing (renamed)
     "accountant",  # -> finance-accounting (renamed)
+    # Retired 2026-07-29 (user request — accidental duplicate, likely added
+    # by a teammate without noticing software-engineer already covered the
+    # same ground): "it-development" and "software-engineer" shared zero
+    # axis opposition (it-development was strictly weaker/subset-like on
+    # every shared axis), their `professions` lists both literally listed
+    # "Fullstack-разработчик", and their descriptions said the same thing in
+    # different words ("без жёсткой специализации на конкретном стеке" vs
+    # "можно расти в разных направлениях: backend, frontend..."). Confirmed
+    # via the university program data itself: 151 of 155 Program rows tagged
+    # with it-development ALSO already carried software-engineer — only 4
+    # ("Информатика"/"Компьютерные науки"/"Компьютерная инженерия" at
+    # Melbourne/KTH/NTU/Bilkent) had it as their sole tag, retagged to
+    # software-engineer by hand (scripts/retag_it_development.py, one-off,
+    # not part of the regular seed pipeline) before this retirement. -> software-engineer
+    "it-development",
 ]
 
 # 22: disambiguated barista/waiter (both retired)
