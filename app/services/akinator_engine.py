@@ -207,6 +207,27 @@ def _is_wide_start_candidate(question: AkinatorQuestion, asked_families: set[str
 
 _CLUSTER_LOCK_STEPS = 3
 _CLUSTER_LOCK_TOP_N = 5
+# Tried 3->6 (2026-07-29, off-topic-rate follow-up), REVERTED same day.
+# Motivation: catalog-wide off-topic rate had grown over the day's content
+# work (6.5%->7.3-7.5%, confirmed 2 seeds) — every new dedicated resolver
+# that correctly helps its own leaf also becomes one more potential
+# off-topic hit for the ~55 leaves it doesn't name, and the lock window is
+# the one lever that suppresses that exposure without touching any leaf's
+# profile or resolver content. A longer window DID lower it (7.3-7.5%->
+# 5.7-6.0%, confirmed 2 seeds) — but at a real accuracy cost: translator/
+# data-science/artificial-intelligence dropped substantially (translator
+# 72%->54%->48%, actually crossing into "failing" on the second seed —
+# the census went from this whole effort's best-ever 0/56 to 1/56 failing).
+# Root cause: restricting the candidate pool for 6 steps instead of 3 means
+# crowded/slow-to-resolve clusters (translator's creative cluster,
+# data-science/AI's STEM cluster — both already documented as noisy/
+# borderline all session) lose access to their OWN best resolvers for
+# longer if those leaves haven't reached the current top-5 belief yet,
+# which happens more often for exactly the leaves that most need help.
+# Verdict: off-topic-rate gain isn't worth an accuracy regression on the
+# metric that matters most — reverted to 3. Don't retry a longer window
+# without first addressing why translator/data-science/AI take so long to
+# enter their own top-5.
 
 
 def _is_cluster_relevant(

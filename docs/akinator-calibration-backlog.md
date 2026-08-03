@@ -1294,3 +1294,52 @@ technique rather than a reason to revert.
 0/13 failing across both census runs covering this round's leaves (actor,
 science-research, and their full rival sets). `QUESTIONS` now 66 (was 64).
 Applied to main stack; `validate_content_integrity.py` confirms clean.
+
+## 2026-07-29: end-of-day full census + one more algorithm attempt, reverted
+
+**Full 56-leaf n=50 census, two seeds, confirms the day's content work
+holds up: 0/56 failing both runs** (worst: mechanical-engineer 50-54%,
+translator 54-72%, international-relations 62-70% — all already-known
+borderline cases, nobody new). **But the catalog-wide off-topic rate had
+grown over the day, not shrunk: 6.5% (this morning's baseline) -> 7.3%
+(seed=7) / 7.5% (seed=21).** Root cause, not obvious until measured: every
+one of today's 8 new dedicated resolvers (orders 67/69/71-77) correctly
+helps its OWN target leaf, but is simultaneously one more potential
+off-topic hit for the ~55 leaves it doesn't name — content fixes that
+raise accuracy for specific leaves can raise the catalog-wide off-topic
+average even while every individual targeted leaf's OWN off-topic rate
+genuinely improves. Worst offenders were leaves nobody touched today at
+all (law-public-administration 13-15.5%, police-officer 13-17.5%,
+school-teacher 12.7-13.6%) — pure exposure-surface growth, not a
+regression in their own content.
+
+**Tried extending the cluster-lock window (`_CLUSTER_LOCK_STEPS`) 3->6 to
+counteract this — reverted same day.** Reasoning: the lock window is the
+only lever that suppresses off-topic exposure without touching any leaf's
+own profile/resolvers, so a longer window seemed like the natural
+counter-move. It worked exactly as intended on the metric it targets:
+off-topic rate dropped 7.3-7.5%->5.7-6.0%, confirmed both seeds. But it
+cost real accuracy: translator 72%->54%->48% (crossing into "failing" on
+the second seed), data-science and artificial-intelligence both dropped
+into the low 50s-60s. **The census went from this whole effort's best-ever
+0/56 to 1/56 failing** — the exact metric this whole session has protected
+most carefully. Root cause: a longer lock window keeps restricting the
+candidate pool for crowded, slow-to-resolve clusters (translator's
+creative cluster, data-science/AI's STEM cluster — both already
+documented all session as noisy/borderline) for longer, and those are
+precisely the leaves that take longest to enter their own top-5 belief in
+the first place — so the lock ends up working against the leaves that
+need help most. Reverted to `_CLUSTER_LOCK_STEPS = 3`; full revert
+verified via `ast.parse` + `md5sum` parity across both stacks, main stack
+restarted and confirmed healthy (`GET /docs` 200).
+
+**Standing conclusion for whoever continues this**: catalog-wide off-topic
+rate and per-leaf top-3 accuracy are now in genuine tension at the margin
+— every further structural-hole fix (more resolvers) likely nudges the
+former up slightly while fixing the latter, and blunt algorithm-level
+counters (a longer lock window) trade the reverse direction, disproportionately
+hurting the same handful of already-fragile crowded-cluster leaves
+(translator, data-science, artificial-intelligence, mechanical-engineer).
+Don't retry a longer lock window without first understanding why those
+specific leaves take unusually long to reach their own top-5 — that's the
+actual lever, not the window size.
