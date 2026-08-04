@@ -1,14 +1,15 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel
 
 
-class DirectionResult(BaseModel):
+class CareerMatch(BaseModel):
     slug: str
     name: str
+    holland_code: str
     match_score: int
-    why_it_fits: str
     description: str
     professions: list[str]
     skills_needed: list[str]
@@ -16,16 +17,28 @@ class DirectionResult(BaseModel):
     first_steps: list[str]
 
 
+class RiasecMeta(BaseModel):
+    differentiation: float
+    consistency: Literal["high", "medium", "low"]
+    aversion: dict[str, int]
+
+
+class DevelopmentPlan(BaseModel):
+    reinforce: list[str]
+    compensate: list[str]
+
+
 class AnalysisResultResponse(BaseModel):
     id: uuid.UUID
     assessment_id: uuid.UUID
-    summary: str
+    profile: dict[str, float]
+    code: list[str]
+    meta: RiasecMeta
+    careers: list[CareerMatch]
     strengths: list[str]
-    interests_map: dict[str, float]
-    thinking_style: dict[str, float]
-    motivation: list[str]
-    directions: list[DirectionResult]
-    wellbeing_zones: list[str] = []
+    weaknesses: list[str]
+    development_plan: DevelopmentPlan
+    summary: str
     created_at: datetime
 
     model_config = {"from_attributes": True}

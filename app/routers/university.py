@@ -105,7 +105,7 @@ async def get_gap_analysis(
             detail="Generate a report for this assessment before running gap analysis",
         )
 
-    matched_slugs = {d["slug"] for d in analysis.directions if isinstance(d, dict) and "slug" in d}
+    matched_slugs = {d["slug"] for d in analysis.careers if isinstance(d, dict) and "slug" in d}
     if program.direction_slug not in matched_slugs:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -20,12 +20,13 @@ class AnalysisResult(Base):
         index=True,
     )
     summary: Mapped[str] = mapped_column(Text, nullable=False)
-    strengths: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
-    interests_map: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    thinking_style: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    motivation: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
-    directions: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
-    wellbeing_zones: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    profile: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # {"R": 82.0, ...}
+    code: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)  # ["R", "I", "A"]
+    meta: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # differentiation/consistency/aversion
+    careers: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)  # was `directions`
+    strengths: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)  # ["R", "I"]
+    weaknesses: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)  # ["C"]
+    development_plan: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # {reinforce, compensate}
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

@@ -1,20 +1,18 @@
 import uuid
 
-from pydantic import BaseModel
-
-from app.models.question import QuestionBlock
+from pydantic import BaseModel, Field
 
 
 class AnswerItem(BaseModel):
     question_id: uuid.UUID
-    selected_option_index: int
+    value: int = Field(ge=1, le=5)
 
 
-class SaveAnswersRequest(BaseModel):
-    block: QuestionBlock
+class SubmitAnswersRequest(BaseModel):
     answers: list[AnswerItem]
 
 
-class SaveAnswersResponse(BaseModel):
-    block: QuestionBlock
-    scores: dict[str, float]
+class SubmitAnswersResponse(BaseModel):
+    answered_count: int
+    total: int
+    completed: bool

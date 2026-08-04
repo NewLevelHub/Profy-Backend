@@ -1,5 +1,4 @@
 import uuid
-from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,36 +23,16 @@ from app.schemas.artifact import ArtifactItem
 from app.schemas.profile import ProfileResponse
 from app.schemas.result import AnalysisResultResponse
 from app.schemas.roadmap import RoadmapResponse
-from app.services.scoring_service import LIKERT_LABELS, is_likert_question
+from app.services import riasec_service
+from app.services.riasec_content import LIKERT_LABELS
 
-BLOCK_ORDER = {
-    "interests": 0,
-    "thinking": 1,
-    "personality": 2,
-    "motivation": 3,
-    "academic": 4,
-    "directions": 5,
-    "goal_clarification": 6,
-    "university": 7,
-    "wellbeing": 8,
-}
+RIASEC_ORDER = {letter: i for i, letter in enumerate(riasec_service.HOLLAND_ORDER)}
 
 
-def _selected_answer_text(options: Any, index: int) -> str:
-    if is_likert_question(options):
-        if 0 <= index < len(LIKERT_LABELS):
-            return LIKERT_LABELS[index]
-        return f"Шкала {index + 1}/5"
-
-    if isinstance(options, list):
-        if index < 0 or index >= len(options):
-            return f"Вариант {index + 1}"
-        option = options[index]
-        if isinstance(option, dict):
-            return str(option.get("text", f"Вариант {index + 1}"))
-        return str(option)
-
-    return f"Вариант {index + 1}"
+def _selected_answer_text(answer_value: int) -> str:
+    if 1 <= answer_value <= len(LIKERT_LABELS):
+        return LIKERT_LABELS[answer_value - 1]
+    return f"Шкала {answer_value}/5"
 
 
 async def list_users(
@@ -150,6 +129,7 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
 
         result_ids: set[uuid.UUID] = set()
         roadmap_ids: set[uuid.UUID] = set()
+        answered_by_assessment: dict[uuid.UUID, int] = {}
         if assessment_ids:
             results_result = await db.execute(
                 select(AnalysisResult.assessment_id).where(
@@ -163,12 +143,23 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
             )
             roadmap_ids = {row[0] for row in roadmaps_result.all()}
 
+            answered_result = await db.execute(
+                select(UserResponse.assessment_id, func.count(UserResponse.id))
+                .where(UserResponse.assessment_id.in_(assessment_ids))
+                .group_by(UserResponse.assessment_id)
+            )
+            answered_by_assessment = dict(answered_result.all())
+
+        total_questions_result = await db.execute(select(func.count(Question.id)))
+        total_questions = total_questions_result.scalar_one()
+
         assessments = [
             AdminAssessmentSummary(
                 id=assessment.id,
                 goal=assessment.goal.value,
                 status=assessment.status.value,
-                current_block=assessment.current_block,
+                answered_count=answered_by_assessment.get(assessment.id, 0),
+                total_questions=total_questions,
                 created_at=assessment.created_at,
                 completed_at=assessment.completed_at,
                 has_result=assessment.id in result_ids,
@@ -233,12 +224,11 @@ async def get_assessment_detail(
             responses.append(
                 AdminResponseItem(
                     question_id=response.question_id,
-                    block="unknown",
+                    riasec_type="?",
                     question_text="Вопрос удалён",
                     question_order=0,
-                    selected_option_index=response.selected_option_index,
-                    selected_answer_text=f"Вариант {response.selected_option_index + 1}",
-                    scores=response.scores,
+                    answer_value=response.answer_value,
+                    selected_answer_text=_selected_answer_text(response.answer_value),
                     created_at=response.created_at,
                 )
             )
@@ -247,21 +237,18 @@ async def get_assessment_detail(
         responses.append(
             AdminResponseItem(
                 question_id=response.question_id,
-                block=question.block.value,
+                riasec_type=question.riasec_type.value,
                 question_text=question.text,
                 question_order=question.order,
-                selected_option_index=response.selected_option_index,
-                selected_answer_text=_selected_answer_text(
-                    question.options, response.selected_option_index
-                ),
-                scores=response.scores,
+                answer_value=response.answer_value,
+                selected_answer_text=_selected_answer_text(response.answer_value),
                 created_at=response.created_at,
             )
         )
 
     responses.sort(
         key=lambda item: (
-            BLOCK_ORDER.get(item.block, 99),
+            RIASEC_ORDER.get(item.riasec_type, 99),
             item.question_order,
             item.created_at,
         )
@@ -281,6 +268,9 @@ async def get_assessment_detail(
     if roadmap:
         roadmap_result = RoadmapResponse.model_validate(roadmap)
 
+    total_questions_result = await db.execute(select(func.count(Question.id)))
+    total_questions = total_questions_result.scalar_one()
+
     return AdminAssessmentDetailResponse(
         id=assessment.id,
         user_id=user.id,
@@ -288,7 +278,8 @@ async def get_assessment_detail(
         profile_name=profile.name,
         goal=assessment.goal.value,
         status=assessment.status.value,
-        current_block=assessment.current_block,
+        answered_count=len(user_responses),
+        total_questions=total_questions,
         created_at=assessment.created_at,
         completed_at=assessment.completed_at,
         responses=responses,

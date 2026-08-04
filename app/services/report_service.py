@@ -13,11 +13,12 @@ from app.config import settings
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
-from app.models.profile import AgeGroup, Profile
+from app.models.direction import Direction
+from app.models.profile import Profile
 from app.prompts import report_summary
 from app.schemas.result import AnalysisResultResponse
-from app.services import assessment_service, direction_service, llm_client
-from app.services.ai_service import MatchedDirection, ReportDraft, generate_report
+from app.services import llm_client, riasec_service
+from app.services.riasec_content import RIASEC_LABELS
 
 logger = logging.getLogger(__name__)
 
@@ -33,38 +34,48 @@ def _get_redis() -> aioredis.Redis:
     return _redis
 
 
-async def _match_directions_full(
-    total_scores: dict[str, float],
-    db: AsyncSession,
-    age_group: AgeGroup | None = None,
-) -> list[MatchedDirection]:
-    top = await direction_service.scored_directions(
-        total_scores, db, age_group=age_group
+def _career_dict(direction: Direction, match_score: int) -> dict:
+    return {
+        "slug": direction.slug,
+        "name": direction.name,
+        "holland_code": direction.holland_code,
+        "match_score": match_score,
+        "description": direction.description or "",
+        "professions": list(direction.professions or []),
+        "skills_needed": list(direction.skills_needed or []),
+        "subjects_to_develop": list(direction.subjects_to_develop or []),
+        "first_steps": list(direction.first_steps or []),
+    }
+
+
+def _build_summary(code: list[str]) -> str:
+    if not code:
+        return "Твои результаты показывают широкий потенциал для развития."
+    labels = [RIASEC_LABELS.get(letter, letter) for letter in code]
+    code_str = "".join(code)
+    if len(labels) == 1:
+        cats_str = labels[0]
+    else:
+        cats_str = ", ".join(labels[:-1]) + " и " + labels[-1]
+    return (
+        f"Твой код RIASEC — {code_str}. Сильнее всего у тебя выражены типы: {cats_str}. "
+        f"Это подсказывает, в какую сторону тебе интересно и комфортно развиваться."
     )
-    return [
-        MatchedDirection(
-            slug=d.slug,
-            name=d.name,
-            match_score=score,
-            description=d.description or "",
-            professions=list(d.professions or []),
-            skills_needed=list(d.skills_needed or []),
-            subjects_to_develop=list(d.subjects_to_develop or []),
-            first_steps=list(d.first_steps or []),
-            required_scores=dict(d.required_scores or {}),
-        )
-        for d, score in top
-    ]
 
 
 async def _generate_ai_summary(
-    profile: Profile | None, goal: str, draft: ReportDraft, artifacts: list
+    profile: Profile | None,
+    goal: str,
+    code: list[str],
+    strengths: list[str],
+    careers: list[dict],
+    artifacts: list,
 ) -> str | None:
     """AI-personalized result summary. Returns None (→ template) if disabled or fails."""
     if profile is None or not llm_client.is_enabled():
         return None
     try:
-        messages = report_summary.build_messages(profile, goal, draft, artifacts)
+        messages = report_summary.build_messages(profile, goal, code, strengths, careers, artifacts)
         raw = await llm_client.complete_json(
             messages, report_summary.SUMMARY_SCHEMA, "report_summary"
         )
@@ -120,22 +131,39 @@ async def build_report(
     )
     artifacts = list(artifacts_result.scalars().all())
 
-    total_scores = await assessment_service.get_total_scores(assessment_id, db)
-    wb_raw = await assessment_service.get_wellbeing_raw_scores(assessment_id, db)
-    age_group = profile.age_group if profile else None
-    matched = await _match_directions_full(total_scores, db, age_group)
-    draft = generate_report(profile, artifacts, total_scores, matched, wb_raw_scores=wb_raw)
-    summary = await _generate_ai_summary(profile, assessment.goal.value, draft, artifacts) or draft.summary
+    raw = await riasec_service.raw_scores(assessment_id, db)
+    counts = await riasec_service.question_counts(db)
+    profile_scores = riasec_service.normalize(raw, counts)
+    aversion_counts = await riasec_service.aversion(assessment_id, db)
+
+    code = riasec_service.top_code(profile_scores)
+    meta = {
+        "differentiation": riasec_service.differentiation(profile_scores),
+        "consistency": riasec_service.consistency(code[:2]),
+        "aversion": aversion_counts,
+    }
+    strengths, weaknesses = riasec_service.strengths_weaknesses(profile_scores, aversion_counts, counts)
+    plan = riasec_service.development_plan(code, weaknesses, aversion_counts, counts)
+
+    matched = await riasec_service.matched_careers(code, db)
+    careers = [_career_dict(d, score) for d, score in matched]
+
+    template_summary = _build_summary(code)
+    ai_summary = await _generate_ai_summary(
+        profile, assessment.goal.value, code, strengths, careers, artifacts
+    )
+    summary = ai_summary or template_summary
 
     analysis = AnalysisResult(
         assessment_id=assessment_id,
         summary=summary,
-        strengths=draft.strengths,
-        interests_map=draft.interests_map,
-        thinking_style=draft.thinking_style,
-        motivation=draft.motivation,
-        directions=draft.directions,
-        wellbeing_zones=draft.wellbeing_zones,
+        profile=profile_scores,
+        code=code,
+        meta=meta,
+        careers=careers,
+        strengths=strengths,
+        weaknesses=weaknesses,
+        development_plan=plan,
     )
     db.add(analysis)
     try:

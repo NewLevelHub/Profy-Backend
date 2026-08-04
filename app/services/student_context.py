@@ -1,9 +1,8 @@
 """Assemble a complete StudentContext from stored data.
 
 Single source of truth for "everything we know about this student" — profile,
-chosen goal, the stored analysis (report), age-appropriate matched directions,
-and the raw signals that scoring drops (values, goal-clarification, university
-preferences). Consumed by the roadmap builder (and, in Phase 3, the LLM).
+chosen goal, and the stored RIASEC report (profile/code/strengths/weaknesses/
+careers). Consumed by the roadmap builder and direction-inquiry LLM prompts.
 """
 import uuid
 
@@ -17,11 +16,10 @@ from app.models.direction_inquiry import DirectionInquiry
 from app.models.profile import Profile
 from app.schemas.student_context import (
     ContextArtifact,
-    ContextDirection,
+    ContextCareer,
     ContextInquiry,
     StudentContext,
 )
-from app.services import ai_service, assessment_service, scoring_service
 
 # Likert index (0-4) at or below which an answer reads as "not me" — and at or
 # above which it reads as "that's me".
@@ -55,26 +53,27 @@ def _context_inquiry(inquiry: DirectionInquiry | None) -> ContextInquiry | None:
     )
 
 
-def _context_directions(analysis: AnalysisResult | None) -> list[ContextDirection]:
+def _context_careers(analysis: AnalysisResult | None) -> list[ContextCareer]:
     if analysis is None:
         return []
-    directions: list[ContextDirection] = []
-    for d in analysis.directions or []:
-        if not isinstance(d, dict) or "slug" not in d:
+    careers: list[ContextCareer] = []
+    for c in analysis.careers or []:
+        if not isinstance(c, dict) or "slug" not in c:
             continue
-        directions.append(
-            ContextDirection(
-                slug=d.get("slug", ""),
-                name=d.get("name", ""),
-                match_score=int(d.get("match_score", 0)),
-                description=d.get("description", ""),
-                professions=list(d.get("professions", [])),
-                skills_needed=list(d.get("skills_needed", [])),
-                subjects_to_develop=list(d.get("subjects_to_develop", [])),
-                first_steps=list(d.get("first_steps", [])),
+        careers.append(
+            ContextCareer(
+                slug=c.get("slug", ""),
+                name=c.get("name", ""),
+                holland_code=c.get("holland_code", ""),
+                match_score=int(c.get("match_score", 0)),
+                description=c.get("description", ""),
+                professions=list(c.get("professions", [])),
+                skills_needed=list(c.get("skills_needed", [])),
+                subjects_to_develop=list(c.get("subjects_to_develop", [])),
+                first_steps=list(c.get("first_steps", [])),
             )
         )
-    return directions
+    return careers
 
 
 async def build_student_context(
@@ -121,10 +120,6 @@ async def build_student_context(
             )
         ).scalar_one_or_none()
 
-    # Surface the raw signals that normalize_scores drops.
-    raw_scores = await assessment_service.get_raw_scores(assessment_id, db)
-    total_scores = scoring_service.normalize_scores(raw_scores)
-
     return StudentContext(
         name=profile.name,
         age=profile.age,
@@ -140,15 +135,10 @@ async def build_student_context(
         artifacts=artifacts,
         goal=assessment.goal.value,
         summary=analysis.summary if analysis else "",
+        profile=dict(analysis.profile) if analysis else {},
+        code=list(analysis.code) if analysis else [],
         strengths=list(analysis.strengths) if analysis else [],
-        interests_map=dict(analysis.interests_map) if analysis else {},
-        thinking_style=dict(analysis.thinking_style) if analysis else {},
-        motivation=list(analysis.motivation) if analysis else [],
-        wellbeing_zones=list(analysis.wellbeing_zones) if analysis else [],
-        growth_areas=ai_service.build_growth_areas(total_scores),
-        values=scoring_service.extract_values(raw_scores),
-        goal_clarification=scoring_service.extract_goal_signals(raw_scores),
-        university_preferences=scoring_service.extract_preferences(raw_scores),
-        directions=_context_directions(analysis),
+        weaknesses=list(analysis.weaknesses) if analysis else [],
+        careers=_context_careers(analysis),
         inquiry=_context_inquiry(inquiry),
     )

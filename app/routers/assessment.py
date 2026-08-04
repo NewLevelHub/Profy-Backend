@@ -5,10 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models.assessment import AssessmentStatus
 from app.models.user import User
 from app.schemas.assessment import AssessmentCreateRequest, AssessmentResponse
-from app.schemas.response import SaveAnswersRequest, SaveAnswersResponse
+from app.schemas.response import SubmitAnswersRequest, SubmitAnswersResponse
 from app.services import assessment_service
 from app.services.profile_service import get_profile
 
@@ -44,16 +43,14 @@ async def get_current_assessment(
     return assessment
 
 
-
-@router.post("/{assessment_id}/answers", response_model=SaveAnswersResponse)
+@router.post("/{assessment_id}/answers", response_model=SubmitAnswersResponse)
 async def submit_answers(
     assessment_id: uuid.UUID,
-    data: SaveAnswersRequest,
+    data: SubmitAnswersRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> SaveAnswersResponse:
+) -> SubmitAnswersResponse:
     profile_id = await _require_profile_id(current_user, db)
-    scores = await assessment_service.complete_block(
-        assessment_id, data.block, data.answers, profile_id, db
+    return await assessment_service.submit_answers(
+        assessment_id, data.answers, profile_id, db
     )
-    return SaveAnswersResponse(block=data.block, scores=scores)

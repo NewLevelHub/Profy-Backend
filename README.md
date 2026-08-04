@@ -26,7 +26,7 @@ Profy-Backend/
 │   └── prompts/         # LLM-промпты
 ├── alembic/             # Миграции (async SQLAlchemy)
 ├── scripts/
-│   └── seed_questions.py  # Наполнение БД вопросами
+│   └── seed_riasec_questions.py  # Наполнение БД вопросами
 ├── docker-compose.yml
 ├── Dockerfile
 ├── nginx/
@@ -79,7 +79,7 @@ API пока без эндпоинтов — роутеры подключают
 После применения миграций нужно наполнить БД вопросами:
 
 ```bash
-docker compose exec api python scripts/seed_questions.py
+docker compose exec api python scripts/seed_riasec_questions.py
 ```
 
 Скрипт добавит **213 вопросов**, покрывающих все 9 блоков опросника (`interests`, `thinking`, `personality`, `motivation`, `academic`, `directions`, `goal_clarification`, `university`, `wellbeing`) и три возрастные группы (`junior`, `middle`, `senior`). Блок `university` — только для `senior`.
@@ -125,7 +125,7 @@ docker compose down -v
 docker compose exec api alembic upgrade head
 
 # Наполнение вопросами (после миграций)
-docker compose exec api python scripts/seed_questions.py
+docker compose exec api python scripts/seed_riasec_questions.py
 ```
 
 ## Проверка

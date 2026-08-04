@@ -1,13 +1,13 @@
 """Prompt + strict schema for the AI-generated result summary ("Резюме").
 
 Personalizes on onboarding (city/country/subjects/clubs), goal, age, and the
-test-derived strengths/interests/motivation. One call at report-generation time;
-falls back to the template summary on any failure.
+RIASEC code/strengths/top careers. One call at report-generation time; falls
+back to the template summary on any failure.
 """
 import json
 
 from app.models.profile import Profile
-from app.services.ai_service import ReportDraft
+from app.services.riasec_content import RIASEC_LABELS
 
 SUMMARY_SCHEMA: dict = {
     "type": "object",
@@ -34,7 +34,12 @@ senior — взрослее. Язык — русский. Строго JSON, п�
 
 
 def build_messages(
-    profile: Profile, goal: str, draft: ReportDraft, artifacts: list
+    profile: Profile,
+    goal: str,
+    code: list[str],
+    strengths: list[str],
+    careers: list[dict],
+    artifacts: list,
 ) -> list[dict[str, str]]:
     student = {
         "age": profile.age,
@@ -46,10 +51,9 @@ def build_messages(
         "subjects_easy": list(profile.subjects_easy or []),
         "subjects_hard": list(profile.subjects_hard or []),
         "clubs_sections": [a.value for a in artifacts],
-        "strengths": draft.strengths,
-        "interests": draft.interests_map,
-        "motivation": draft.motivation,
-        "top_directions": [d.get("name", "") for d in draft.directions[:3]],
+        "riasec_code": "".join(code),
+        "strengths": [RIASEC_LABELS.get(letter, letter) for letter in strengths],
+        "top_careers": [c.get("name", "") for c in careers[:3]],
     }
     framing = _GOAL_FRAMING.get(goal, _GOAL_FRAMING["explore"])
     user = (

@@ -354,7 +354,7 @@ async def generate_roadmap(
         select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
     )
     analysis = result_row.scalar_one_or_none()
-    directions_raw: list = analysis.directions if analysis else []
+    directions_raw: list = analysis.careers if analysis else []
     directions = _parse_directions(directions_raw)
 
     # Gap analysis (university + program_id)

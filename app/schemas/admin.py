@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -34,7 +33,8 @@ class AdminAssessmentSummary(BaseModel):
     id: uuid.UUID
     goal: str
     status: str
-    current_block: int
+    answered_count: int
+    total_questions: int
     created_at: datetime
     completed_at: datetime | None = None
     has_result: bool = False
@@ -55,12 +55,11 @@ class AdminUserDetailResponse(BaseModel):
 
 class AdminResponseItem(BaseModel):
     question_id: uuid.UUID
-    block: str
+    riasec_type: str
     question_text: str
     question_order: int
-    selected_option_index: int
+    answer_value: int
     selected_answer_text: str
-    scores: dict[str, Any]
     created_at: datetime
 
 
@@ -71,7 +70,8 @@ class AdminAssessmentDetailResponse(BaseModel):
     profile_name: str | None = None
     goal: str
     status: str
-    current_block: int
+    answered_count: int
+    total_questions: int
     created_at: datetime
     completed_at: datetime | None = None
     responses: list[AdminResponseItem] = []

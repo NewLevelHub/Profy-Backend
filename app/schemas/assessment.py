@@ -14,7 +14,8 @@ class AssessmentResponse(BaseModel):
     id: uuid.UUID
     goal: AssessmentGoal
     status: AssessmentStatus
-    current_block: int
+    answered_count: int
+    total_questions: int
     created_at: datetime
 
     model_config = {"from_attributes": True}

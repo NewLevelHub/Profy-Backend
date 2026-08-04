@@ -2,16 +2,13 @@ import uuid
 
 from pydantic import BaseModel
 
-from app.models.question import QuestionBlock
-
-
-class QuestionOption(BaseModel):
-    text: str
-    index: int
+from app.models.question import HollandType
 
 
 class QuestionResponse(BaseModel):
     id: uuid.UUID
-    block: QuestionBlock
+    riasec_type: HollandType
     text: str
-    options: list[QuestionOption]
+    order: int
+
+    model_config = {"from_attributes": True}

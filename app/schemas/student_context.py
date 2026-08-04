@@ -1,9 +1,8 @@
 """StudentContext: the single, complete input bundle for report/roadmap generation.
 
-This is what the roadmap LLM (Phase 3) receives. It deliberately gathers data
-that was collected but previously unused — city/country, school subjects, stated
-values (money/freedom/…), goal-clarification signals, university preferences —
-so generation can actually personalize on them.
+This is what the roadmap/direction-inquiry LLM prompts receive. It deliberately
+gathers data that was collected but previously unused — city/country, school
+subjects — so generation can actually personalize on them.
 """
 from pydantic import BaseModel
 
@@ -13,9 +12,10 @@ class ContextArtifact(BaseModel):
     value: str
 
 
-class ContextDirection(BaseModel):
+class ContextCareer(BaseModel):
     slug: str
     name: str
+    holland_code: str
     match_score: int
     description: str = ""
     professions: list[str] = []
@@ -57,25 +57,15 @@ class StudentContext(BaseModel):
     # ─── Chosen goal ───
     goal: str
 
-    # ─── Analysis (from the stored report) ───
+    # ─── Analysis (from the stored RIASEC report) ───
     summary: str = ""
-    strengths: list[str] = []
-    interests_map: dict[str, float] = {}
-    thinking_style: dict[str, float] = {}
-    motivation: list[str] = []
-    wellbeing_zones: list[str] = []
+    profile: dict[str, float] = {}   # {"R": 82.0, ...}
+    code: list[str] = []             # ["R", "I", "A"]
+    strengths: list[str] = []        # letters
+    weaknesses: list[str] = []       # letters
 
-    # Lowest-scoring categories (Russian label → score). The growth track of the
-    # direction roadmap is built against these, not against the strengths.
-    growth_areas: dict[str, float] = {}
-
-    # ─── Previously-dead raw signals, now surfaced ───
-    values: dict[str, float] = {}                 # money / freedom / stability / …
-    goal_clarification: dict[str, float] = {}     # goal_* signals
-    university_preferences: dict[str, str] = {}   # pref_* (senior + university goal)
-
-    # ─── Age-appropriate matched directions ───
-    directions: list[ContextDirection] = []
+    # ─── Matched careers ───
+    careers: list[ContextCareer] = []
 
     # ─── Inquiry outcome for the direction being planned (when there is one) ───
     inquiry: ContextInquiry | None = None
