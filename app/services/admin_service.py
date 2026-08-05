@@ -8,7 +8,7 @@ from app.models.artifact import Artifact
 from app.models.assessment import Assessment
 from app.models.profile import Profile
 from app.models.roadmap import Roadmap
-from app.models.question import Question
+from app.models.question import Question, QuestionInstrument
 from app.models.user import User
 from app.models.user_response import UserResponse
 from app.schemas.admin import (
@@ -23,15 +23,14 @@ from app.schemas.artifact import ArtifactItem
 from app.schemas.profile import ProfileResponse
 from app.schemas.result import AnalysisResultResponse
 from app.schemas.roadmap import RoadmapResponse
-from app.services import riasec_service
-from app.services.riasec_content import LIKERT_LABELS
-
-RIASEC_ORDER = {letter: i for i, letter in enumerate(riasec_service.HOLLAND_ORDER)}
+from app.services import bigfive_content
+from app.services.riasec_content import LIKERT_LABELS as RIASEC_LIKERT_LABELS
 
 
-def _selected_answer_text(answer_value: int) -> str:
-    if 1 <= answer_value <= len(LIKERT_LABELS):
-        return LIKERT_LABELS[answer_value - 1]
+def _selected_answer_text(answer_value: int, instrument: QuestionInstrument | None = None) -> str:
+    labels = bigfive_content.LIKERT_LABELS if instrument == QuestionInstrument.big_five else RIASEC_LIKERT_LABELS
+    if 1 <= answer_value <= len(labels):
+        return labels[answer_value - 1]
     return f"Шкала {answer_value}/5"
 
 
@@ -224,7 +223,8 @@ async def get_assessment_detail(
             responses.append(
                 AdminResponseItem(
                     question_id=response.question_id,
-                    riasec_type="?",
+                    instrument="?",
+                    category="?",
                     question_text="Вопрос удалён",
                     question_order=0,
                     answer_value=response.answer_value,
@@ -234,25 +234,27 @@ async def get_assessment_detail(
             )
             continue
 
+        category = (
+            question.riasec_type.value
+            if question.instrument == QuestionInstrument.riasec
+            else question.bigfive_domain.value
+        )
         responses.append(
             AdminResponseItem(
                 question_id=response.question_id,
-                riasec_type=question.riasec_type.value,
+                instrument=question.instrument.value,
+                category=category,
                 question_text=question.text,
                 question_order=question.order,
                 answer_value=response.answer_value,
-                selected_answer_text=_selected_answer_text(response.answer_value),
+                selected_answer_text=_selected_answer_text(response.answer_value, question.instrument),
                 created_at=response.created_at,
             )
         )
 
-    responses.sort(
-        key=lambda item: (
-            RIASEC_ORDER.get(item.riasec_type, 99),
-            item.question_order,
-            item.created_at,
-        )
-    )
+    # `order` already reflects test administration sequence (RIASEC block,
+    # then Big Five block — see bigfive_question_bank.py's order offset).
+    responses.sort(key=lambda item: item.question_order)
 
     analysis_result = None
     analysis_row = await db.execute(

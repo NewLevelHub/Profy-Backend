@@ -28,6 +28,13 @@ class DevelopmentPlan(BaseModel):
     compensate: list[str]
 
 
+class ThinkingStyle(BaseModel):
+    creative_think: float
+    systematic: float
+    strategic: float
+    practical: float
+
+
 class AnalysisResultResponse(BaseModel):
     id: uuid.UUID
     assessment_id: uuid.UUID
@@ -38,6 +45,9 @@ class AnalysisResultResponse(BaseModel):
     strengths: list[str]
     weaknesses: list[str]
     development_plan: DevelopmentPlan
+    big_five: dict[str, float]
+    thinking_style: ThinkingStyle
+    personality_highlights: list[str]
     summary: str
     created_at: datetime
 

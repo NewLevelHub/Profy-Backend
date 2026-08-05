@@ -27,6 +27,9 @@ class AnalysisResult(Base):
     strengths: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)  # ["R", "I"]
     weaknesses: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)  # ["C"]
     development_plan: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # {reinforce, compensate}
+    big_five: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # {"N": 32.0, ...} — admin-only display
+    thinking_style: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # {creative_think, systematic, strategic, practical}
+    personality_highlights: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)  # RU phrases, merged into "Сильные стороны"
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

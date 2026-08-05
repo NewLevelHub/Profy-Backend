@@ -40,6 +40,7 @@ def build_messages(
     strengths: list[str],
     careers: list[dict],
     artifacts: list,
+    personality_highlights: list[str],
 ) -> list[dict[str, str]]:
     student = {
         "age": profile.age,
@@ -54,6 +55,9 @@ def build_messages(
         "riasec_code": "".join(code),
         "strengths": [RIASEC_LABELS.get(letter, letter) for letter in strengths],
         "top_careers": [c.get("name", "") for c in careers[:3]],
+        # Already-interpreted RU phrases from Big Five — never raw domain
+        # percentages, so the LLM can't turn them into "Openness: 78%" talk.
+        "personality_highlights": personality_highlights,
     }
     framing = _GOAL_FRAMING.get(goal, _GOAL_FRAMING["explore"])
     user = (

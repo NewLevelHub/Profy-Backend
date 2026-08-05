@@ -17,14 +17,45 @@ class HollandType(str, enum.Enum):
     C = "C"
 
 
+class QuestionInstrument(str, enum.Enum):
+    riasec = "riasec"
+    big_five = "big_five"
+
+
+class BigFiveDomain(str, enum.Enum):
+    N = "N"
+    E = "E"
+    O = "O"
+    A = "A"
+    C = "C"
+
+
+class Keyed(str, enum.Enum):
+    plus = "plus"
+    minus = "minus"
+
+
 class Question(Base):
     __tablename__ = "questions"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    riasec_type: Mapped[HollandType] = mapped_column(
-        Enum(HollandType, name="holland_type_enum"), nullable=False, index=True
+    instrument: Mapped[QuestionInstrument] = mapped_column(
+        Enum(QuestionInstrument, name="question_instrument_enum"),
+        nullable=False,
+        server_default="riasec",
+        index=True,
+    )
+    riasec_type: Mapped[HollandType | None] = mapped_column(
+        Enum(HollandType, name="holland_type_enum"), nullable=True, index=True
+    )
+    bigfive_domain: Mapped[BigFiveDomain | None] = mapped_column(
+        Enum(BigFiveDomain, name="bigfive_domain_enum"), nullable=True
+    )
+    facet: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    keyed: Mapped[Keyed | None] = mapped_column(
+        Enum(Keyed, name="keyed_enum"), nullable=True
     )
     text: Mapped[str] = mapped_column(String, nullable=False)
     order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

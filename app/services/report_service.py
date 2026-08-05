@@ -17,7 +17,8 @@ from app.models.direction import Direction
 from app.models.profile import Profile
 from app.prompts import report_summary
 from app.schemas.result import AnalysisResultResponse
-from app.services import llm_client, riasec_service
+from app.services import bigfive_service, llm_client, riasec_service, thinking_style_service
+from app.services.bigfive_content import strength_phrases
 from app.services.riasec_content import RIASEC_LABELS
 
 logger = logging.getLogger(__name__)
@@ -70,12 +71,15 @@ async def _generate_ai_summary(
     strengths: list[str],
     careers: list[dict],
     artifacts: list,
+    personality_highlights: list[str],
 ) -> str | None:
     """AI-personalized result summary. Returns None (→ template) if disabled or fails."""
     if profile is None or not llm_client.is_enabled():
         return None
     try:
-        messages = report_summary.build_messages(profile, goal, code, strengths, careers, artifacts)
+        messages = report_summary.build_messages(
+            profile, goal, code, strengths, careers, artifacts, personality_highlights
+        )
         raw = await llm_client.complete_json(
             messages, report_summary.SUMMARY_SCHEMA, "report_summary"
         )
@@ -148,9 +152,20 @@ async def build_report(
     matched = await riasec_service.matched_careers(code, db)
     careers = [_career_dict(d, score) for d, score in matched]
 
+    bf_raw = await bigfive_service.raw_scores(assessment_id, db)
+    bf_counts = await bigfive_service.question_counts(db)
+    bigfive_scores = bigfive_service.normalize(bf_raw, bf_counts)
+
+    bf_facet_raw = await bigfive_service.facet_raw(assessment_id, db)
+    bf_facet_counts = await bigfive_service.facet_counts(db)
+    bf_facet_norm = bigfive_service.facet_normalize(bf_facet_raw, bf_facet_counts)
+    thinking_style = thinking_style_service.compute(bf_facet_norm)
+
+    personality_highlights = strength_phrases(bigfive_scores)
+
     template_summary = _build_summary(code)
     ai_summary = await _generate_ai_summary(
-        profile, assessment.goal.value, code, strengths, careers, artifacts
+        profile, assessment.goal.value, code, strengths, careers, artifacts, personality_highlights
     )
     summary = ai_summary or template_summary
 
@@ -164,6 +179,9 @@ async def build_report(
         strengths=strengths,
         weaknesses=weaknesses,
         development_plan=plan,
+        big_five=bigfive_scores,
+        thinking_style=thinking_style,
+        personality_highlights=personality_highlights,
     )
     db.add(analysis)
     try:

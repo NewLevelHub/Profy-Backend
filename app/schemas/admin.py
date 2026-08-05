@@ -55,7 +55,8 @@ class AdminUserDetailResponse(BaseModel):
 
 class AdminResponseItem(BaseModel):
     question_id: uuid.UUID
-    riasec_type: str
+    instrument: str
+    category: str  # riasec_type letter or bigfive_domain letter, disambiguated by `instrument`
     question_text: str
     question_order: int
     answer_value: int
