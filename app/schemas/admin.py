@@ -64,6 +64,17 @@ class AdminResponseItem(BaseModel):
     created_at: datetime
 
 
+class AdminMotivationResponseItem(BaseModel):
+    triplet_index: int
+    most_text: str
+    most_category: str
+    least_text: str
+    least_category: str
+    neutral_text: str
+    neutral_category: str
+    created_at: datetime
+
+
 class AdminAssessmentDetailResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
@@ -76,6 +87,7 @@ class AdminAssessmentDetailResponse(BaseModel):
     created_at: datetime
     completed_at: datetime | None = None
     responses: list[AdminResponseItem] = []
+    motivation_responses: list[AdminMotivationResponseItem] = []
     analysis_result: AnalysisResultResponse | None = None
     roadmap: RoadmapResponse | None = None
 

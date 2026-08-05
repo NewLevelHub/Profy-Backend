@@ -41,6 +41,7 @@ def build_messages(
     careers: list[dict],
     artifacts: list,
     personality_highlights: list[str],
+    motivation_highlights: list[str],
 ) -> list[dict[str, str]]:
     student = {
         "age": profile.age,
@@ -58,6 +59,7 @@ def build_messages(
         # Already-interpreted RU phrases from Big Five — never raw domain
         # percentages, so the LLM can't turn them into "Openness: 78%" talk.
         "personality_highlights": personality_highlights,
+        "motivation_highlights": motivation_highlights,
     }
     framing = _GOAL_FRAMING.get(goal, _GOAL_FRAMING["explore"])
     user = (

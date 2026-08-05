@@ -48,6 +48,9 @@ class AnalysisResultResponse(BaseModel):
     big_five: dict[str, float]
     thinking_style: ThinkingStyle
     personality_highlights: list[str]
+    motivation: dict[str, int]
+    motivation_top: list[str]
+    motivation_highlights: list[str]
     summary: str
     created_at: datetime
 

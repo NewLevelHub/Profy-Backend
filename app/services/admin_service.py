@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment
+from app.models.motivation import MotivationResponse
 from app.models.profile import Profile
 from app.models.roadmap import Roadmap
 from app.models.question import Question, QuestionInstrument
@@ -14,6 +15,7 @@ from app.models.user_response import UserResponse
 from app.schemas.admin import (
     AdminAssessmentDetailResponse,
     AdminAssessmentSummary,
+    AdminMotivationResponseItem,
     AdminResponseItem,
     AdminUserDetailResponse,
     AdminUserListItem,
@@ -23,7 +25,7 @@ from app.schemas.artifact import ArtifactItem
 from app.schemas.profile import ProfileResponse
 from app.schemas.result import AnalysisResultResponse
 from app.schemas.roadmap import RoadmapResponse
-from app.services import bigfive_content
+from app.services import bigfive_content, motivation_service
 from app.services.riasec_content import LIKERT_LABELS as RIASEC_LIKERT_LABELS
 
 
@@ -256,6 +258,37 @@ async def get_assessment_detail(
     # then Big Five block — see bigfive_question_bank.py's order offset).
     responses.sort(key=lambda item: item.question_order)
 
+    motivation_rows_result = await db.execute(
+        select(MotivationResponse).where(MotivationResponse.assessment_id == assessment.id)
+    )
+    motivation_rows = motivation_rows_result.scalars().all()
+
+    motivation_responses: list[AdminMotivationResponseItem] = []
+    if motivation_rows:
+        triplets = await motivation_service.triplets(db)
+        for row in motivation_rows:
+            statements = triplets.get(row.triplet_index, [])
+            by_id = {s.id: s for s in statements}
+            most = by_id.get(row.most_statement_id)
+            least = by_id.get(row.least_statement_id)
+            neutral = next(
+                (s for s in statements if s.id not in (row.most_statement_id, row.least_statement_id)),
+                None,
+            )
+            motivation_responses.append(
+                AdminMotivationResponseItem(
+                    triplet_index=row.triplet_index,
+                    most_text=most.text if most else "?",
+                    most_category=most.category.value if most else "?",
+                    least_text=least.text if least else "?",
+                    least_category=least.category.value if least else "?",
+                    neutral_text=neutral.text if neutral else "?",
+                    neutral_category=neutral.category.value if neutral else "?",
+                    created_at=row.created_at,
+                )
+            )
+        motivation_responses.sort(key=lambda item: item.triplet_index)
+
     analysis_result = None
     analysis_row = await db.execute(
         select(AnalysisResult).where(AnalysisResult.assessment_id == assessment.id)
@@ -285,6 +318,7 @@ async def get_assessment_detail(
         created_at=assessment.created_at,
         completed_at=assessment.completed_at,
         responses=responses,
+        motivation_responses=motivation_responses,
         analysis_result=analysis_result,
         roadmap=roadmap_result,
     )

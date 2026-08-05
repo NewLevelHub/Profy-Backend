@@ -17,8 +17,15 @@ from app.models.direction import Direction
 from app.models.profile import Profile
 from app.prompts import report_summary
 from app.schemas.result import AnalysisResultResponse
-from app.services import bigfive_service, llm_client, riasec_service, thinking_style_service
+from app.services import (
+    bigfive_service,
+    llm_client,
+    motivation_service,
+    riasec_service,
+    thinking_style_service,
+)
 from app.services.bigfive_content import strength_phrases
+from app.services.motivation_content import highlight_phrases as motivation_highlight_phrases
 from app.services.riasec_content import RIASEC_LABELS
 
 logger = logging.getLogger(__name__)
@@ -72,13 +79,15 @@ async def _generate_ai_summary(
     careers: list[dict],
     artifacts: list,
     personality_highlights: list[str],
+    motivation_highlights: list[str],
 ) -> str | None:
     """AI-personalized result summary. Returns None (→ template) if disabled or fails."""
     if profile is None or not llm_client.is_enabled():
         return None
     try:
         messages = report_summary.build_messages(
-            profile, goal, code, strengths, careers, artifacts, personality_highlights
+            profile, goal, code, strengths, careers, artifacts,
+            personality_highlights, motivation_highlights,
         )
         raw = await llm_client.complete_json(
             messages, report_summary.SUMMARY_SCHEMA, "report_summary"
@@ -163,9 +172,14 @@ async def build_report(
 
     personality_highlights = strength_phrases(bigfive_scores)
 
+    mot_scores = await motivation_service.raw_scores(assessment_id, db)
+    mot_top = motivation_service.top_categories(mot_scores)
+    mot_highlights = motivation_highlight_phrases(mot_top)
+
     template_summary = _build_summary(code)
     ai_summary = await _generate_ai_summary(
-        profile, assessment.goal.value, code, strengths, careers, artifacts, personality_highlights
+        profile, assessment.goal.value, code, strengths, careers, artifacts,
+        personality_highlights, mot_highlights,
     )
     summary = ai_summary or template_summary
 
@@ -182,6 +196,9 @@ async def build_report(
         big_five=bigfive_scores,
         thinking_style=thinking_style,
         personality_highlights=personality_highlights,
+        motivation=mot_scores,
+        motivation_top=mot_top,
+        motivation_highlights=mot_highlights,
     )
     db.add(analysis)
     try:

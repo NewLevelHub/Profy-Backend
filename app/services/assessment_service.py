@@ -1,83 +1,33 @@
 import uuid
-from datetime import datetime, timezone
 
-import redis.asyncio as aioredis
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from app.config import settings
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
-from app.models.direction_inquiry import DirectionInquiry
-from app.models.direction_roadmap import DirectionRoadmap
 from app.models.profile import Profile
 from app.models.question import Question
 from app.models.user_response import UserResponse
 from app.schemas.assessment import AssessmentResponse
 from app.schemas.response import AnswerItem, SubmitAnswersResponse
-from app.services import riasec_service
-
-_redis: aioredis.Redis | None = None
-
-
-def _get_redis() -> aioredis.Redis:
-    global _redis
-    if _redis is None:
-        _redis = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
-    return _redis
-
-
-async def _invalidate_direction_flow(
-    assessment: Assessment, db: AsyncSession, redis: aioredis.Redis
-) -> None:
-    """Drop everything derived from the direction flow for this assessment."""
-    assessment_id = assessment.id
-    slugs_result = await db.execute(
-        select(DirectionInquiry.direction_slug).where(
-            DirectionInquiry.assessment_id == assessment_id
-        )
-    )
-    slugs = slugs_result.scalars().all()
-
-    await db.execute(
-        DirectionRoadmap.__table__.delete().where(
-            DirectionRoadmap.assessment_id == assessment_id
-        )
-    )
-    await db.execute(
-        DirectionInquiry.__table__.delete().where(
-            DirectionInquiry.assessment_id == assessment_id
-        )
-    )
-    assessment.selected_direction_slug = None
-
-    for slug in slugs:
-        await redis.delete(f"droadmap:{assessment_id}:{slug}", f"dq:{assessment_id}:{slug}")
-
-
-async def _total_questions(db: AsyncSession) -> int:
-    result = await db.execute(select(func.count(Question.id)))
-    return result.scalar_one()
-
-
-async def _answered_count(assessment_id: uuid.UUID, db: AsyncSession) -> int:
-    result = await db.execute(
-        select(func.count(UserResponse.id)).where(UserResponse.assessment_id == assessment_id)
-    )
-    return result.scalar_one()
+from app.services import assessment_shared, motivation_service, riasec_service
 
 
 async def _to_response(assessment: Assessment, db: AsyncSession) -> AssessmentResponse:
-    answered = await _answered_count(assessment.id, db)
-    total = await _total_questions(db)
+    answered = await assessment_shared.likert_answered_count(assessment.id, db)
+    total = await assessment_shared.likert_total_questions(db)
+    mot_answered = await motivation_service.answered_count(assessment.id, db)
+    mot_total = await motivation_service.total_triplets(db)
     return AssessmentResponse(
         id=assessment.id,
         goal=assessment.goal,
         status=assessment.status,
         answered_count=answered,
         total_questions=total,
+        motivation_answered_count=mot_answered,
+        motivation_total=mot_total,
         created_at=assessment.created_at,
     )
 
@@ -190,17 +140,17 @@ async def submit_answers(
         old_analysis = old_result.scalar_one_or_none()
         if old_analysis is not None:
             await db.delete(old_analysis)
-        redis = _get_redis()
+        redis = assessment_shared.get_redis()
         await redis.delete(f"report:{assessment_id}")
-        await _invalidate_direction_flow(assessment, db, redis)
+        await assessment_shared.invalidate_direction_flow(assessment, db, redis)
 
-    answered = await _answered_count(assessment_id, db)
-    total = await _total_questions(db)
+    answered = await assessment_shared.likert_answered_count(assessment_id, db)
+    total = await assessment_shared.likert_total_questions(db)
+    # This phase (Likert) being done does NOT mean the whole test is done —
+    # the motivation phase may still be pending. assessment.status only
+    # flips to completed once motivation_service.submit_motivation_answers
+    # confirms both phases are answered (see that function).
     completed = total > 0 and answered >= total
-
-    if completed and assessment.status != AssessmentStatus.completed:
-        assessment.status = AssessmentStatus.completed
-        assessment.completed_at = datetime.now(timezone.utc)
 
     await db.commit()
 

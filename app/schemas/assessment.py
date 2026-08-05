@@ -16,6 +16,8 @@ class AssessmentResponse(BaseModel):
     status: AssessmentStatus
     answered_count: int
     total_questions: int
+    motivation_answered_count: int
+    motivation_total: int
     created_at: datetime
 
     model_config = {"from_attributes": True}
