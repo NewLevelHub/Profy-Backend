@@ -14,7 +14,7 @@ from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.direction import Direction
-from app.models.profile import Profile
+from app.models.profile import AgeGroup, Profile
 from app.prompts import report_summary
 from app.schemas.result import AnalysisResultResponse
 from app.services import (
@@ -48,6 +48,7 @@ def _career_dict(direction: Direction, match_score: int) -> dict:
         "slug": direction.slug,
         "name": direction.name,
         "holland_code": direction.holland_code,
+        "category_slugs": list(direction.category_slugs or []),
         "match_score": match_score,
         "description": direction.description or "",
         "professions": list(direction.professions or []),
@@ -139,16 +140,17 @@ async def build_report(
         select(Profile).where(Profile.id == assessment.profile_id)
     )
     profile = profile_result.scalar_one_or_none()
+    age_group = profile.age_group if profile is not None else AgeGroup.senior
 
     artifacts_result = await db.execute(
         select(Artifact).where(Artifact.profile_id == assessment.profile_id)
     )
     artifacts = list(artifacts_result.scalars().all())
 
-    raw = await riasec_service.raw_scores(assessment_id, db)
-    counts = await riasec_service.question_counts(db)
+    raw = await riasec_service.raw_scores(assessment_id, db, age_group)
+    counts = await riasec_service.question_counts(db, age_group)
     profile_scores = riasec_service.normalize(raw, counts)
-    aversion_counts = await riasec_service.aversion(assessment_id, db)
+    aversion_counts = await riasec_service.aversion(assessment_id, db, age_group)
 
     code = riasec_service.top_code(profile_scores)
     meta = {
@@ -162,12 +164,12 @@ async def build_report(
     matched = await riasec_service.matched_careers(code, db)
     careers = [_career_dict(d, score) for d, score in matched]
 
-    bf_raw = await bigfive_service.raw_scores(assessment_id, db)
-    bf_counts = await bigfive_service.question_counts(db)
+    bf_raw = await bigfive_service.raw_scores(assessment_id, db, age_group)
+    bf_counts = await bigfive_service.question_counts(db, age_group)
     bigfive_scores = bigfive_service.normalize(bf_raw, bf_counts)
 
-    bf_facet_raw = await bigfive_service.facet_raw(assessment_id, db)
-    bf_facet_counts = await bigfive_service.facet_counts(db)
+    bf_facet_raw = await bigfive_service.facet_raw(assessment_id, db, age_group)
+    bf_facet_counts = await bigfive_service.facet_counts(db, age_group)
     bf_facet_norm = bigfive_service.facet_normalize(bf_facet_raw, bf_facet_counts)
     thinking_style = thinking_style_service.compute(bf_facet_norm)
 

@@ -8,6 +8,7 @@ class DirectionBase(BaseModel):
     name: str
     slug: str
     holland_code: str
+    category_slugs: list[str]
 
     model_config = {"from_attributes": True}
 

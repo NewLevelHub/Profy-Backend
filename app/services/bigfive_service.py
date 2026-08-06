@@ -8,8 +8,10 @@ import uuid
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.profile import AgeGroup
 from app.models.question import Keyed, Question, QuestionInstrument
 from app.models.user_response import UserResponse
+from app.services.age_tiers import visible_tiers
 
 BIGFIVE_ORDER: list[str] = ["N", "E", "O", "A", "C"]
 
@@ -22,24 +24,29 @@ _SCORE_EXPR = case(
 )
 
 
-async def question_counts(db: AsyncSession) -> dict[str, int]:
-    """Questions per domain — computed live, never hardcoded (bank can change size)."""
+async def question_counts(db: AsyncSession, age_group: AgeGroup) -> dict[str, int]:
+    """Questions per domain, scoped to what this age branch was actually
+    shown — computed live, never hardcoded (bank/age tiering can change size)."""
     result = await db.execute(
         select(Question.bigfive_domain, func.count(Question.id))
-        .where(Question.instrument == QuestionInstrument.big_five)
+        .where(
+            Question.instrument == QuestionInstrument.big_five,
+            Question.age_tier.in_(visible_tiers(age_group)),
+        )
         .group_by(Question.bigfive_domain)
     )
     counts = {d.value: c for d, c in result.all()}
     return {d: counts.get(d, 0) for d in BIGFIVE_ORDER}
 
 
-async def raw_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, int]:
+async def raw_scores(assessment_id: uuid.UUID, db: AsyncSession, age_group: AgeGroup) -> dict[str, int]:
     result = await db.execute(
         select(Question.bigfive_domain, func.sum(_SCORE_EXPR))
         .join(UserResponse, UserResponse.question_id == Question.id)
         .where(
             UserResponse.assessment_id == assessment_id,
             Question.instrument == QuestionInstrument.big_five,
+            Question.age_tier.in_(visible_tiers(age_group)),
         )
         .group_by(Question.bigfive_domain)
     )
@@ -56,23 +63,29 @@ def normalize(raw: dict[str, int], counts: dict[str, int]) -> dict[str, float]:
     }
 
 
-async def facet_raw(assessment_id: uuid.UUID, db: AsyncSession) -> dict[tuple[str, int], int]:
+async def facet_raw(
+    assessment_id: uuid.UUID, db: AsyncSession, age_group: AgeGroup
+) -> dict[tuple[str, int], int]:
     result = await db.execute(
         select(Question.bigfive_domain, Question.facet, func.sum(_SCORE_EXPR))
         .join(UserResponse, UserResponse.question_id == Question.id)
         .where(
             UserResponse.assessment_id == assessment_id,
             Question.instrument == QuestionInstrument.big_five,
+            Question.age_tier.in_(visible_tiers(age_group)),
         )
         .group_by(Question.bigfive_domain, Question.facet)
     )
     return {(d.value, f): int(s) for d, f, s in result.all()}
 
 
-async def facet_counts(db: AsyncSession) -> dict[tuple[str, int], int]:
+async def facet_counts(db: AsyncSession, age_group: AgeGroup) -> dict[tuple[str, int], int]:
     result = await db.execute(
         select(Question.bigfive_domain, Question.facet, func.count(Question.id))
-        .where(Question.instrument == QuestionInstrument.big_five)
+        .where(
+            Question.instrument == QuestionInstrument.big_five,
+            Question.age_tier.in_(visible_tiers(age_group)),
+        )
         .group_by(Question.bigfive_domain, Question.facet)
     )
     return {(d.value, f): c for d, f, c in result.all()}

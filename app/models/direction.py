@@ -19,6 +19,13 @@ class Direction(Base):
     # (riasec_service.career_match_score). Replaces the old required_scores/
     # bonus_scores threshold scoring entirely.
     holland_code: Mapped[str] = mapped_column(String(3), nullable=False, index=True)
+    # One or more of the ~10 curated categories also used for
+    # Program.direction_slug (see scripts/specialty_category_lookup.py) —
+    # bridges the profession catalog to the university/program tagging
+    # vocabulary, which uses a much coarser taxonomy than individual
+    # profession slugs. A list because some professions (e.g. "Архитектор")
+    # genuinely span more than one category's real programs.
+    category_slugs: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
     # Descriptive fields kept for downstream consumers (report_service,
     # roadmap_builder, direction_inquiry_service, frontend DirectionDetailPage)
     # that predate this migration. The new profession catalog (seeded from

@@ -155,8 +155,9 @@ async def submit_motivation_answers(
     mot_total = await total_triplets(db)
     mot_completed = mot_total > 0 and mot_answered >= mot_total
 
+    age_group = await assessment_shared.get_profile_age_group(assessment.profile_id, db)
     likert_answered = await assessment_shared.likert_answered_count(assessment_id, db)
-    likert_total = await assessment_shared.likert_total_questions(db)
+    likert_total = await assessment_shared.likert_total_questions(db, age_group)
     likert_completed = likert_total > 0 and likert_answered >= likert_total
 
     if mot_completed and likert_completed and assessment.status != AssessmentStatus.completed:

@@ -25,9 +25,19 @@ from app.models.direction import Direction
 from scripts.riasec_professions import PROFESSIONS
 
 
+_CYRILLIC_TO_LATIN = {
+    "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "e",
+    "ж": "zh", "з": "z", "и": "i", "й": "y", "к": "k", "л": "l", "м": "m",
+    "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t", "у": "u",
+    "ф": "f", "х": "h", "ц": "ts", "ч": "ch", "ш": "sh", "щ": "sch", "ъ": "",
+    "ы": "y", "ь": "", "э": "e", "ю": "yu", "я": "ya",
+}
+
+
 def slugify(title: str) -> str:
     slug = title.lower()
     slug = slug.replace("&", " and ")
+    slug = "".join(_CYRILLIC_TO_LATIN.get(ch, ch) for ch in slug)
     slug = re.sub(r"[^a-z0-9]+", "-", slug)
     return slug.strip("-")
 
@@ -42,6 +52,7 @@ def dedupe_by_title(professions: list[dict]) -> list[dict]:
             "name": title,
             "slug": slugify(title),
             "holland_code": entry["holland_code"],
+            "category_slugs": entry["category_slugs"],
         }
     return list(seen.values())
 
@@ -70,6 +81,9 @@ async def main() -> None:
                 if existing.holland_code != data["holland_code"]:
                     existing.holland_code = data["holland_code"]
                     changed = True
+                if existing.category_slugs != data["category_slugs"]:
+                    existing.category_slugs = data["category_slugs"]
+                    changed = True
                 if changed:
                     updated += 1
                 else:
@@ -80,6 +94,7 @@ async def main() -> None:
                 name=data["name"],
                 slug=data["slug"],
                 holland_code=data["holland_code"],
+                category_slugs=data["category_slugs"],
             ))
             inserted += 1
 

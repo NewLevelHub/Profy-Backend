@@ -37,12 +37,20 @@ router = APIRouter(tags=["universities"])
 
 @router.get("/programs", response_model=list[ProgramBrief])
 async def list_programs(
-    direction: str = Query(..., description="Direction slug, e.g. it-development"),
+    direction: str = Query(
+        ...,
+        description=(
+            "Comma-separated category slug(s), e.g. it-development or "
+            "engineering-science,design-digital-art for professions that "
+            "span more than one category"
+        ),
+    ),
     country: str | None = Query(None, description="ISO country code or name, e.g. us or Kazakhstan"),
     limit: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ) -> list[ProgramBrief]:
-    return await search_programs(db, direction_slug=direction, country=country, limit=limit)
+    direction_slugs = [slug.strip() for slug in direction.split(",") if slug.strip()]
+    return await search_programs(db, direction_slugs=direction_slugs, country=country, limit=limit)
 
 
 @router.get("/programs/{program_id}", response_model=ProgramDetail)
@@ -105,8 +113,18 @@ async def get_gap_analysis(
             detail="Generate a report for this assessment before running gap analysis",
         )
 
-    matched_slugs = {d["slug"] for d in analysis.careers if isinstance(d, dict) and "slug" in d}
-    if program.direction_slug not in matched_slugs:
+    # Program.direction_slug is one of the ~10 curated categories, not a
+    # profession slug — compare against category_slugs, not slug (see
+    # scripts/specialty_category_lookup.py / Direction.category_slugs). A
+    # profession can list more than one category (e.g. "Архитектор" spans
+    # engineering-science and design-digital-art), so flatten them all.
+    matched_categories = {
+        category
+        for d in analysis.careers
+        if isinstance(d, dict)
+        for category in d.get("category_slugs", [])
+    }
+    if program.direction_slug not in matched_categories:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This program's direction does not match your assessment results",

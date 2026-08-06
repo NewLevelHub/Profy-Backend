@@ -7,8 +7,10 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.direction import Direction
+from app.models.profile import AgeGroup
 from app.models.question import HollandType, Question, QuestionInstrument
 from app.models.user_response import UserResponse
+from app.services.age_tiers import visible_tiers
 from app.services.riasec_content import TYPE_ACTIVITIES
 
 HOLLAND_ORDER: list[str] = ["R", "I", "A", "S", "E", "C"]
@@ -22,24 +24,29 @@ _AVERSION_MAX_VALUE = 2
 _AVERSION_DISQUALIFY_RATIO = 0.3
 
 
-async def question_counts(db: AsyncSession) -> dict[str, int]:
-    """Questions per type — computed live, never hardcoded (bank can change size)."""
+async def question_counts(db: AsyncSession, age_group: AgeGroup) -> dict[str, int]:
+    """Questions per type, scoped to what this age branch was actually shown
+    — computed live, never hardcoded (bank/age tiering can change size)."""
     result = await db.execute(
         select(Question.riasec_type, func.count(Question.id))
-        .where(Question.instrument == QuestionInstrument.riasec)
+        .where(
+            Question.instrument == QuestionInstrument.riasec,
+            Question.age_tier.in_(visible_tiers(age_group)),
+        )
         .group_by(Question.riasec_type)
     )
     counts = {t.value: c for t, c in result.all()}
     return {t: counts.get(t, 0) for t in HOLLAND_ORDER}
 
 
-async def raw_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, int]:
+async def raw_scores(assessment_id: uuid.UUID, db: AsyncSession, age_group: AgeGroup) -> dict[str, int]:
     result = await db.execute(
         select(Question.riasec_type, func.sum(UserResponse.answer_value))
         .join(UserResponse, UserResponse.question_id == Question.id)
         .where(
             UserResponse.assessment_id == assessment_id,
             Question.instrument == QuestionInstrument.riasec,
+            Question.age_tier.in_(visible_tiers(age_group)),
         )
         .group_by(Question.riasec_type)
     )
@@ -47,7 +54,7 @@ async def raw_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, in
     return {t: sums.get(t, 0) for t in HOLLAND_ORDER}
 
 
-async def aversion(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, int]:
+async def aversion(assessment_id: uuid.UUID, db: AsyncSession, age_group: AgeGroup) -> dict[str, int]:
     """Count of explicit-negative (<=2) answers per type."""
     result = await db.execute(
         select(Question.riasec_type, func.count(UserResponse.id))
@@ -56,6 +63,7 @@ async def aversion(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, int]
             UserResponse.assessment_id == assessment_id,
             UserResponse.answer_value <= _AVERSION_MAX_VALUE,
             Question.instrument == QuestionInstrument.riasec,
+            Question.age_tier.in_(visible_tiers(age_group)),
         )
         .group_by(Question.riasec_type)
     )

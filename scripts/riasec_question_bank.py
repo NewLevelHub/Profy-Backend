@@ -186,4 +186,29 @@ QUESTIONS: list[dict] = [
 for _i, _q in enumerate(QUESTIONS, start=1):
     _q["order"] = _i
 
+# age_tier: junior/middle get a PREFIX of each type's items (not a separate
+# curated set) — first ceil(n/4) items of a type are junior-visible, first
+# ceil(n/2) are middle-visible, all are senior-visible. Computed from the
+# bank's own per-type counts, never hardcoded, so editing the bank keeps the
+# 1/2/4 ratio automatically.
+import math  # noqa: E402
+from collections import Counter  # noqa: E402
+
+_type_totals = Counter(_q["riasec_type"] for _q in QUESTIONS)
+_type_seen: dict[str, int] = dict.fromkeys(_type_totals, 0)
+
+for _q in QUESTIONS:
+    _type = _q["riasec_type"]
+    _n = _type_totals[_type]
+    _junior_cut = math.ceil(_n / 4)
+    _middle_cut = math.ceil(_n / 2)
+    _pos = _type_seen[_type]
+    _type_seen[_type] += 1
+    if _pos < _junior_cut:
+        _q["age_tier"] = "junior"
+    elif _pos < _middle_cut:
+        _q["age_tier"] = "middle"
+    else:
+        _q["age_tier"] = "senior"
+
 assert len(QUESTIONS) == 146, f"expected 146 unique questions, got {len(QUESTIONS)}"

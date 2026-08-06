@@ -26,6 +26,7 @@ from app.schemas.profile import ProfileResponse
 from app.schemas.result import AnalysisResultResponse
 from app.schemas.roadmap import RoadmapResponse
 from app.services import bigfive_content, motivation_service
+from app.services.age_tiers import visible_tiers
 from app.services.riasec_content import LIKERT_LABELS as RIASEC_LIKERT_LABELS
 
 
@@ -151,7 +152,11 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
             )
             answered_by_assessment = dict(answered_result.all())
 
-        total_questions_result = await db.execute(select(func.count(Question.id)))
+        total_questions_result = await db.execute(
+            select(func.count(Question.id)).where(
+                Question.age_tier.in_(visible_tiers(profile.age_group))
+            )
+        )
         total_questions = total_questions_result.scalar_one()
 
         assessments = [
@@ -303,7 +308,11 @@ async def get_assessment_detail(
     if roadmap:
         roadmap_result = RoadmapResponse.model_validate(roadmap)
 
-    total_questions_result = await db.execute(select(func.count(Question.id)))
+    total_questions_result = await db.execute(
+        select(func.count(Question.id)).where(
+            Question.age_tier.in_(visible_tiers(profile.age_group))
+        )
+    )
     total_questions = total_questions_result.scalar_one()
 
     return AdminAssessmentDetailResponse(

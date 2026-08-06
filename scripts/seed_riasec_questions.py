@@ -16,7 +16,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sqlalchemy import select
 
 from app.database import async_session
-from app.models.question import HollandType, Question
+from app.models.profile import AgeGroup
+from app.models.question import HollandType, Question, QuestionInstrument
 from scripts.riasec_question_bank import QUESTIONS
 
 
@@ -24,7 +25,13 @@ async def main() -> None:
     async with async_session() as db:
         live_orders = {q["order"] for q in QUESTIONS}
 
-        existing_result = await db.execute(select(Question))
+        # Scoped to instrument='riasec' — unscoped would also match Big Five
+        # rows (same table) and the orphan-cleanup below would wrongly delete
+        # every one of them, since their `order` is never in RIASEC's own
+        # live_orders.
+        existing_result = await db.execute(
+            select(Question).where(Question.instrument == QuestionInstrument.riasec)
+        )
         existing_by_order = {q.order: q for q in existing_result.scalars().all()}
 
         inserted = 0
@@ -35,6 +42,7 @@ async def main() -> None:
         for data in QUESTIONS:
             existing = existing_by_order.get(data["order"])
             riasec_type = HollandType(data["riasec_type"])
+            age_tier = AgeGroup(data["age_tier"])
 
             if existing is not None:
                 changed = False
@@ -44,13 +52,18 @@ async def main() -> None:
                 if existing.text != data["text"]:
                     existing.text = data["text"]
                     changed = True
+                if existing.age_tier != age_tier:
+                    existing.age_tier = age_tier
+                    changed = True
                 if changed:
                     updated += 1
                 else:
                     skipped += 1
                 continue
 
-            db.add(Question(riasec_type=riasec_type, text=data["text"], order=data["order"]))
+            db.add(Question(
+                riasec_type=riasec_type, text=data["text"], order=data["order"], age_tier=age_tier,
+            ))
             inserted += 1
 
         for order, question in existing_by_order.items():

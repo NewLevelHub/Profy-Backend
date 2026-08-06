@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
-from app.models.profile import Profile
+from app.models.profile import AgeGroup, Profile
 from app.models.question import Question
 from app.models.user_response import UserResponse
 from app.schemas.assessment import AssessmentResponse
@@ -16,8 +16,9 @@ from app.services import assessment_shared, motivation_service, riasec_service
 
 
 async def _to_response(assessment: Assessment, db: AsyncSession) -> AssessmentResponse:
+    age_group = await assessment_shared.get_profile_age_group(assessment.profile_id, db)
     answered = await assessment_shared.likert_answered_count(assessment.id, db)
-    total = await assessment_shared.likert_total_questions(db)
+    total = await assessment_shared.likert_total_questions(db, age_group)
     mot_answered = await motivation_service.answered_count(assessment.id, db)
     mot_total = await motivation_service.total_triplets(db)
     return AssessmentResponse(
@@ -103,6 +104,8 @@ async def submit_answers(
     if assessment.profile_id != current_profile_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
+    age_group = await assessment_shared.get_profile_age_group(assessment.profile_id, db)
+
     question_ids = [item.question_id for item in answers]
     questions_result = await db.execute(select(Question.id).where(Question.id.in_(question_ids)))
     valid_ids = set(questions_result.scalars().all())
@@ -145,7 +148,7 @@ async def submit_answers(
         await assessment_shared.invalidate_direction_flow(assessment, db, redis)
 
     answered = await assessment_shared.likert_answered_count(assessment_id, db)
-    total = await assessment_shared.likert_total_questions(db)
+    total = await assessment_shared.likert_total_questions(db, age_group)
     # This phase (Likert) being done does NOT mean the whole test is done —
     # the motivation phase may still be pending. assessment.status only
     # flips to completed once motivation_service.submit_motivation_answers
@@ -157,11 +160,22 @@ async def submit_answers(
     return SubmitAnswersResponse(answered_count=answered, total=total, completed=completed)
 
 
+async def _age_group_for_assessment(assessment_id: uuid.UUID, db: AsyncSession) -> AgeGroup:
+    result = await db.execute(
+        select(Profile.age_group)
+        .join(Assessment, Assessment.profile_id == Profile.id)
+        .where(Assessment.id == assessment_id)
+    )
+    return result.scalar_one()
+
+
 async def get_raw_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, int]:
-    return await riasec_service.raw_scores(assessment_id, db)
+    age_group = await _age_group_for_assessment(assessment_id, db)
+    return await riasec_service.raw_scores(assessment_id, db, age_group)
 
 
 async def get_total_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, float]:
-    raw = await riasec_service.raw_scores(assessment_id, db)
-    counts = await riasec_service.question_counts(db)
+    age_group = await _age_group_for_assessment(assessment_id, db)
+    raw = await riasec_service.raw_scores(assessment_id, db, age_group)
+    counts = await riasec_service.question_counts(db, age_group)
     return riasec_service.normalize(raw, counts)

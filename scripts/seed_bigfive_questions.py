@@ -17,6 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sqlalchemy import select
 
 from app.database import async_session
+from app.models.profile import AgeGroup
 from app.models.question import BigFiveDomain, Keyed, Question, QuestionInstrument
 from scripts.bigfive_question_bank import QUESTIONS
 
@@ -39,6 +40,7 @@ async def main() -> None:
             existing = existing_by_order.get(data["order"])
             domain = BigFiveDomain(data["bigfive_domain"])
             keyed = Keyed(data["keyed"])
+            age_tier = AgeGroup(data["age_tier"])
 
             if existing is not None:
                 changed = False
@@ -54,6 +56,9 @@ async def main() -> None:
                 if existing.text != data["text"]:
                     existing.text = data["text"]
                     changed = True
+                if existing.age_tier != age_tier:
+                    existing.age_tier = age_tier
+                    changed = True
                 if changed:
                     updated += 1
                 else:
@@ -68,6 +73,7 @@ async def main() -> None:
                     keyed=keyed,
                     text=data["text"],
                     order=data["order"],
+                    age_tier=age_tier,
                 )
             )
             inserted += 1

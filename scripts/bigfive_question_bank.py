@@ -153,3 +153,18 @@ _BASE = len(_RIASEC_QUESTIONS)
 for _i, _q in enumerate(QUESTIONS, start=_BASE + 1):
     _q["order"] = _i
     _q["instrument"] = "big_five"
+
+# age_tier: the 120 items are laid out as 4 blocks of 30 (each block = one
+# full pass through all 30 domain x facet combos). Cutting whole blocks
+# — not individual items — guarantees every facet still has >=1 item at
+# every age tier, which thinking_style_service.compute() depends on (it
+# reads specific facets O1/O2/C1/C2/C4). Block 0 -> junior, block 1 also
+# unlocks at middle, blocks 2-3 are senior-only.
+for _idx, _q in enumerate(QUESTIONS):
+    _block = _idx // 30
+    if _block == 0:
+        _q["age_tier"] = "junior"
+    elif _block == 1:
+        _q["age_tier"] = "middle"
+    else:
+        _q["age_tier"] = "senior"

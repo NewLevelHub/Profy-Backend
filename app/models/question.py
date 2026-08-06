@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+from app.models.profile import AgeGroup
 
 
 class HollandType(str, enum.Enum):
@@ -59,3 +60,13 @@ class Question(Base):
     )
     text: Mapped[str] = mapped_column(String, nullable=False)
     order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # Minimum age branch this question is shown to — junior sees only
+    # age_tier='junior' rows, middle sees junior+middle, senior sees all
+    # (app/services/age_tiers.py:visible_tiers). Reuses profiles' own
+    # age_group_enum Postgres type, not a duplicate.
+    age_tier: Mapped[AgeGroup] = mapped_column(
+        Enum(AgeGroup, name="age_group_enum", create_type=False),
+        nullable=False,
+        server_default="senior",
+        index=True,
+    )
