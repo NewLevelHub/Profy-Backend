@@ -18,6 +18,7 @@ from app.models.profile import Profile
 from app.prompts import report_summary
 from app.schemas.result import AnalysisResultResponse
 from app.services import (
+    bigfive_content,
     bigfive_service,
     llm_client,
     motivation_service,
@@ -171,6 +172,7 @@ async def build_report(
     thinking_style = thinking_style_service.compute(bf_facet_norm)
 
     personality_highlights = strength_phrases(bigfive_scores)
+    personality_profile, personality_notes = bigfive_content.build_personality_profile(bigfive_scores)
 
     mot_scores = await motivation_service.raw_scores(assessment_id, db)
     mot_top = motivation_service.top_categories(mot_scores)
@@ -196,6 +198,8 @@ async def build_report(
         big_five=bigfive_scores,
         thinking_style=thinking_style,
         personality_highlights=personality_highlights,
+        personality_profile=personality_profile,
+        personality_notes=personality_notes,
         motivation=mot_scores,
         motivation_top=mot_top,
         motivation_highlights=mot_highlights,
