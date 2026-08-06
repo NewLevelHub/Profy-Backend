@@ -46,6 +46,9 @@ async def main() -> None:
                 if existing.text != data["text"]:
                     existing.text = data["text"]
                     changed = True
+                if existing.text_junior != data.get("text_junior"):
+                    existing.text_junior = data.get("text_junior")
+                    changed = True
                 if changed:
                     updated += 1
                 else:
@@ -58,6 +61,7 @@ async def main() -> None:
                     order=data["order"],
                     category=category,
                     text=data["text"],
+                    text_junior=data.get("text_junior"),
                 )
             )
             inserted += 1

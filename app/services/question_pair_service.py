@@ -39,11 +39,13 @@ _PICKED_VALUE = 5
 _OTHER_VALUE = 1
 
 
-def _to_option(question: Question) -> QuestionPairOption:
+def _to_option(
+    question: Question, override_text: str | None = None, override_icon: str | None = None
+) -> QuestionPairOption:
     return QuestionPairOption(
         id=question.id,
-        text=question.short_text or question.text,
-        icon=question.icon,
+        text=override_text or question.short_text or question.text,
+        icon=override_icon or question.icon,
         riasec_type=question.riasec_type,
         bigfive_domain=question.bigfive_domain,
     )
@@ -65,8 +67,8 @@ async def get_pairs(db: AsyncSession, age_group: AgeGroup) -> list[QuestionPairI
             instrument=pair.instrument,
             frame=pair.frame,
             display_order=min(q_a.order, q_b.order),
-            option_a=_to_option(q_a),
-            option_b=_to_option(q_b),
+            option_a=_to_option(q_a, pair.option_a_text, pair.option_a_icon),
+            option_b=_to_option(q_b, pair.option_b_text, pair.option_b_icon),
         )
         for pair, q_a, q_b in result.all()
     ]
