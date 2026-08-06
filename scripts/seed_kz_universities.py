@@ -1,8 +1,6 @@
 """
 Seed script: populate universities/programs from the university-data/*.py
-scrape (55 real KZ universities: Almaty + Astana), tagging each specialty
-group with one of the ~10 program categories via
-scripts/specialty_category_lookup.py.
+scrape (55 real KZ universities: Almaty + Astana).
 
 Run inside Docker: docker-compose exec api python scripts/seed_kz_universities.py
 
@@ -12,11 +10,18 @@ under a different, hand-written English name — LEGACY_NAME_BY_SLUG reconciles
 those so re-running this script attaches the richer specialty data to the
 existing row (and backfills its slug) instead of creating a duplicate.
 
-One Program row is created per specialty group (e.g. "Информационные
-технологии и кибербезопасность"), not per individual program name inside it —
-that group already carries the keywords scripts/specialty_category_lookup.py
-classifies on, and Program.career_options is exactly where the individual
-program names belong.
+One Program row is created per INDIVIDUAL specialty (e.g. "Дизайн",
+"Биотехнология"), not per specialty group. An earlier version created one
+Program per group and classified the whole group at once — that broke down
+hard whenever a "group" in the source data wasn't actually a cohesive unit:
+some universities list their entire faculty index (agriculture + veterinary
++ economics + IT, unrelated fields) as a single "group", so any one-shot
+classification of the group (by name, or by voting across its unrelated
+members) was closer to a coin flip than a real answer. Classifying each
+specialty on its own name removes that failure mode entirely — a name like
+"Дизайн" or "Биотехнология" is unambiguous on its own, whereas concatenating
+it with seven unrelated faculty names never was. See CLEANUP_ below for the
+one-time migration that removes the old group-level rows.
 """
 import asyncio
 import os
@@ -77,11 +82,37 @@ async def _find_university(db: AsyncSession, record: dict) -> University | None:
     return result.scalar_one_or_none()
 
 
+def _cleanup_legacy_group_names(record: dict) -> set[str]:
+    """Reproduces just enough of the old group-level naming to find and
+    delete rows from before this migration — not used for anything else.
+    Covers both the raw group name and the old comma-joined synthesized
+    name for universities whose group label was a generic placeholder."""
+    generic = {
+        "направления", "факультеты", "факультеты / направления",
+        "факультеты и направления", "программы",
+    }
+    names = set()
+    for group in record.get("specialties", []):
+        group_name = group["group"]
+        names.add(group_name)
+        if group_name.strip().lower() in generic:
+            parts: list[str] = []
+            length = 0
+            for name in group["programs"]:
+                if parts and length + len(name) > 150:
+                    break
+                parts.append(name)
+                length += len(name)
+            suffix = " и др." if len(parts) < len(group["programs"]) else ""
+            names.add(", ".join(parts) + suffix)
+    return names
+
+
 async def main() -> None:
     async with async_session() as db:
         uni_inserted = uni_updated = uni_skipped = 0
-        prog_inserted = prog_updated = prog_skipped = 0
-        unresolved_groups: list[str] = []
+        prog_inserted = prog_updated = prog_skipped = prog_deleted = 0
+        unresolved: list[str] = []
 
         for record in ALL_UNIVERSITIES:
             existing_uni = await _find_university(db, record)
@@ -112,46 +143,63 @@ async def main() -> None:
                 else:
                     uni_skipped += 1
 
-            for group in record.get("specialties", []):
-                group_name = group["group"]
-                program_names = group["programs"]
-                category_slug, confident = categorize(group_name, program_names)
-                if not confident:
-                    unresolved_groups.append(f"{record['name']} / {group_name}")
-
-                prog_data = {
-                    "direction_slug": category_slug,
-                    "language": "Казахский/Русский",
-                    "cost_per_year": None,
-                    "description": ", ".join(program_names),
-                    "who_its_for": None,
-                    "career_options": program_names,
-                    "requirements": {"notes": record.get("admission_requirements", [])},
-                    "deadlines": {},
-                    "grants": [],
-                }
-
+            specialty_names = {
+                name for group in record.get("specialties", []) for name in group["programs"]
+            }
+            legacy_names = _cleanup_legacy_group_names(record) - specialty_names
+            if legacy_names:
                 result = await db.execute(
                     select(Program).where(
                         Program.university_id == existing_uni.id,
-                        Program.name == group_name,
+                        Program.name.in_(legacy_names),
                     )
                 )
-                existing_prog = result.scalar_one_or_none()
+                for stale in result.scalars().all():
+                    await db.delete(stale)
+                    prog_deleted += 1
 
-                if existing_prog is None:
-                    db.add(Program(university_id=existing_uni.id, name=group_name, **prog_data))
-                    prog_inserted += 1
-                else:
-                    changed = False
-                    for field, value in prog_data.items():
-                        if getattr(existing_prog, field) != value:
-                            setattr(existing_prog, field, value)
-                            changed = True
-                    if changed:
-                        prog_updated += 1
+            admission_notes = record.get("admission_requirements", [])
+
+            for group in record.get("specialties", []):
+                group_name = group["group"]
+                for specialty_name in group["programs"]:
+                    category_slug, confident = categorize(specialty_name)
+                    if not confident:
+                        unresolved.append(f"{record['name']} / {group_name} / {specialty_name}")
+
+                    prog_data = {
+                        "direction_slug": category_slug,
+                        "language": "Казахский/Русский",
+                        "cost_per_year": None,
+                        "description": group_name,
+                        "who_its_for": None,
+                        "career_options": [],
+                        "requirements": {"notes": admission_notes},
+                        "deadlines": {},
+                        "grants": [],
+                    }
+
+                    result = await db.execute(
+                        select(Program).where(
+                            Program.university_id == existing_uni.id,
+                            Program.name == specialty_name,
+                        )
+                    )
+                    existing_prog = result.scalar_one_or_none()
+
+                    if existing_prog is None:
+                        db.add(Program(university_id=existing_uni.id, name=specialty_name, **prog_data))
+                        prog_inserted += 1
                     else:
-                        prog_skipped += 1
+                        changed = False
+                        for field, value in prog_data.items():
+                            if getattr(existing_prog, field) != value:
+                                setattr(existing_prog, field, value)
+                                changed = True
+                        if changed:
+                            prog_updated += 1
+                        else:
+                            prog_skipped += 1
 
         await db.commit()
 
@@ -160,16 +208,17 @@ async def main() -> None:
         f"skipped: {uni_skipped}. Total in source: {len(ALL_UNIVERSITIES)}"
     )
     print(
-        f"Programs (specialty groups) — inserted: {prog_inserted}, "
-        f"updated: {prog_updated}, skipped: {prog_skipped}."
+        f"Programs (individual specialties) — inserted: {prog_inserted}, "
+        f"updated: {prog_updated}, skipped: {prog_skipped}, "
+        f"stale group-level rows deleted: {prog_deleted}."
     )
-    if unresolved_groups:
+    if unresolved:
         print(
-            f"\n{len(unresolved_groups)} specialty group(s) fell back to the default "
-            f"category ({categorize.__module__}.DEFAULT_CATEGORY) — review "
+            f"\n{len(unresolved)} specialty(ies) fell back to the default category "
+            f"({categorize.__module__}.DEFAULT_CATEGORY) — review "
             f"scripts/specialty_category_lookup.py keywords:"
         )
-        for name in unresolved_groups:
+        for name in unresolved:
             print(f"  - {name}")
 
 

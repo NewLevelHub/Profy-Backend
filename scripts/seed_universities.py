@@ -643,7 +643,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         # специальности на welcome.kaznu.kz не была доступна для парсинга).
         {
             "name": "Физика (бакалавр)",
-            "direction_slug": "engineering-science",
+            "direction_slug": "natural-sciences-research",
             "language": "Казахский / Русский",
             "cost_per_year": 2075,
             "description": (
@@ -795,7 +795,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         # satbayev.university (пороговые баллы по группам ОП бакалавриата 2025). Проверено: 2026-07-03.
         {
             "name": "Архитектура (бакалавр)",
-            "direction_slug": "engineering-science",
+            "direction_slug": "construction-architecture",
             "language": "Казахский / Русский",
             "cost_per_year": 2151,
             "description": (
@@ -1816,7 +1816,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
         {
             "name": "Компьютерная инженерия (магистр)",
-            "direction_slug": "engineering-science",
+            "direction_slug": "it-development",
             "language": "Английский",
             "cost_per_year": 18750,
             "description": (
@@ -2428,7 +2428,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
         {
             "name": "Электроинженерия (бакалавр)",
-            "direction_slug": "engineering-science",
+            "direction_slug": "electrical-power-engineering",
             "language": "Английский / Корейский",
             "cost_per_year": 4400,
             "description": (
@@ -2514,7 +2514,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
         {
             "name": "Биомедицинская инженерия (магистр инженерии)",
-            "direction_slug": "engineering-science",
+            "direction_slug": "mechanical-industrial-engineering",
             "language": "Английский",
             "cost_per_year": 37900,
             "description": (
@@ -2600,7 +2600,7 @@ PROGRAMS_BY_UNIVERSITY: dict[str, list[dict]] = {
         },
         {
             "name": "Промышленная инженерия (бакалавр)",
-            "direction_slug": "engineering-science",
+            "direction_slug": "mechanical-industrial-engineering",
             "language": "Корейский / Английский",
             "cost_per_year": 5500,
             "description": (

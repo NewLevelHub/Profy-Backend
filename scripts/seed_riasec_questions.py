@@ -44,6 +44,9 @@ async def main() -> None:
             riasec_type = HollandType(data["riasec_type"])
             age_tier = AgeGroup(data["age_tier"])
 
+            short_text = data.get("short_text")
+            icon = data.get("icon")
+
             if existing is not None:
                 changed = False
                 if existing.riasec_type != riasec_type:
@@ -55,6 +58,12 @@ async def main() -> None:
                 if existing.age_tier != age_tier:
                     existing.age_tier = age_tier
                     changed = True
+                if existing.short_text != short_text:
+                    existing.short_text = short_text
+                    changed = True
+                if existing.icon != icon:
+                    existing.icon = icon
+                    changed = True
                 if changed:
                     updated += 1
                 else:
@@ -63,6 +72,7 @@ async def main() -> None:
 
             db.add(Question(
                 riasec_type=riasec_type, text=data["text"], order=data["order"], age_tier=age_tier,
+                short_text=short_text, icon=icon,
             ))
             inserted += 1
 

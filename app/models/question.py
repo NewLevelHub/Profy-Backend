@@ -59,6 +59,12 @@ class Question(Base):
         Enum(Keyed, name="keyed_enum"), nullable=True
     )
     text: Mapped[str] = mapped_column(String, nullable=False)
+    # Short button-label form of `text`, used by the junior forced-choice-pair
+    # UI instead of the full Likert statement. Null for middle/senior rows.
+    short_text: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Single emoji rendered as the "icon" the junior format requires
+    # (TZ_Profi.md §13 — junior's allowed formats all mandate icons).
+    icon: Mapped[str | None] = mapped_column(String, nullable=True)
     order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     # Minimum age branch this question is shown to — junior sees only
     # age_tier='junior' rows, middle sees junior+middle, senior sees all

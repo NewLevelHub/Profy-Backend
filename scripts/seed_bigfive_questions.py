@@ -59,6 +59,12 @@ async def main() -> None:
                 if existing.age_tier != age_tier:
                     existing.age_tier = age_tier
                     changed = True
+                if existing.short_text != data.get("short_text"):
+                    existing.short_text = data.get("short_text")
+                    changed = True
+                if existing.icon != data.get("icon"):
+                    existing.icon = data.get("icon")
+                    changed = True
                 if changed:
                     updated += 1
                 else:
@@ -74,6 +80,8 @@ async def main() -> None:
                     text=data["text"],
                     order=data["order"],
                     age_tier=age_tier,
+                    short_text=data.get("short_text"),
+                    icon=data.get("icon"),
                 )
             )
             inserted += 1

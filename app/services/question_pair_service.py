@@ -1,0 +1,146 @@
+"""Junior forced-choice-pair format — TZ_Profi.md §13 bans Likert for junior
+(6-9), so this is the junior-only alternative to assessment_service's
+Likert flow. `question_pairs` rows only ever reference junior-tier
+`questions` (built by scripts/question_pairing.py), so there is no
+age_group filtering here the way riasec_service/bigfive_service need it.
+
+A pair pick is written as two ordinary `UserResponse` rows (picked=5,
+other=1) — riasec_service/bigfive_service and the Likert-completion
+counters in assessment_shared read `UserResponse` regardless of whether it
+came from a Likert answer or a pair pick, so neither of those needed any
+changes for this format to work.
+"""
+import uuid
+
+from fastapi import HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
+
+from app.models.analysis_result import AnalysisResult
+from app.models.assessment import Assessment, AssessmentStatus
+from app.models.question import Question
+from app.models.question_pair import QuestionPair
+from app.models.user_response import UserResponse
+from app.schemas.question_pair import (
+    PairAnswerItem,
+    QuestionPairItem,
+    QuestionPairOption,
+    SubmitPairAnswersResponse,
+)
+from app.services import assessment_shared
+
+_PICKED_VALUE = 5
+_OTHER_VALUE = 1
+
+
+def _to_option(question: Question) -> QuestionPairOption:
+    return QuestionPairOption(
+        id=question.id,
+        text=question.short_text or question.text,
+        icon=question.icon,
+        riasec_type=question.riasec_type,
+        bigfive_domain=question.bigfive_domain,
+    )
+
+
+async def get_pairs(db: AsyncSession) -> list[QuestionPairItem]:
+    question_a = aliased(Question)
+    question_b = aliased(Question)
+    result = await db.execute(
+        select(QuestionPair, question_a, question_b)
+        .join(question_a, QuestionPair.question_a_id == question_a.id)
+        .join(question_b, QuestionPair.question_b_id == question_b.id)
+        .order_by(QuestionPair.pair_index)
+    )
+    return [
+        QuestionPairItem(
+            pair_index=pair.pair_index,
+            instrument=pair.instrument,
+            frame=pair.frame,
+            option_a=_to_option(q_a),
+            option_b=_to_option(q_b),
+        )
+        for pair, q_a, q_b in result.all()
+    ]
+
+
+async def submit_pair_answers(
+    assessment_id: uuid.UUID,
+    answers: list[PairAnswerItem],
+    current_profile_id: uuid.UUID,
+    db: AsyncSession,
+) -> SubmitPairAnswersResponse:
+    row_result = await db.execute(select(Assessment).where(Assessment.id == assessment_id))
+    assessment = row_result.scalar_one_or_none()
+    if assessment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+
+    if assessment.profile_id != current_profile_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    age_group = await assessment_shared.get_profile_age_group(assessment.profile_id, db)
+
+    pair_indexes = [item.pair_index for item in answers]
+    pairs_result = await db.execute(
+        select(QuestionPair).where(QuestionPair.pair_index.in_(pair_indexes))
+    )
+    pairs_by_index = {p.pair_index: p for p in pairs_result.scalars().all()}
+
+    response_rows: list[dict] = []
+    for item in answers:
+        pair = pairs_by_index.get(item.pair_index)
+        if pair is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Pair {item.pair_index} not found",
+            )
+        if item.picked_question_id not in (pair.question_a_id, pair.question_b_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Question {item.picked_question_id} is not part of pair {item.pair_index}",
+            )
+        other_id = pair.question_b_id if item.picked_question_id == pair.question_a_id else pair.question_a_id
+        response_rows.append({
+            "id": uuid.uuid4(), "assessment_id": assessment_id,
+            "question_id": item.picked_question_id, "answer_value": _PICKED_VALUE,
+        })
+        response_rows.append({
+            "id": uuid.uuid4(), "assessment_id": assessment_id,
+            "question_id": other_id, "answer_value": _OTHER_VALUE,
+        })
+
+    is_retake = assessment.status == AssessmentStatus.completed
+    if response_rows:
+        stmt = pg_insert(UserResponse).values(response_rows)
+        stmt = stmt.on_conflict_do_update(
+            constraint="uq_user_response_assessment_question",
+            set_={"answer_value": stmt.excluded.answer_value},
+        )
+        await db.execute(stmt)
+
+    if is_retake:
+        assessment.status = AssessmentStatus.in_progress
+        assessment.completed_at = None
+
+        old_result = await db.execute(
+            select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        )
+        old_analysis = old_result.scalar_one_or_none()
+        if old_analysis is not None:
+            await db.delete(old_analysis)
+        redis = assessment_shared.get_redis()
+        await redis.delete(f"report:{assessment_id}")
+        await assessment_shared.invalidate_direction_flow(assessment, db, redis)
+
+    answered = await assessment_shared.likert_answered_count(assessment_id, db)
+    total = await assessment_shared.likert_total_questions(db, age_group)
+    # Same caveat as assessment_service.submit_answers: this phase being done
+    # does not flip assessment.status — motivation_service does that once
+    # both phases are confirmed answered.
+    completed = total > 0 and answered >= total
+
+    await db.commit()
+
+    return SubmitPairAnswersResponse(answered_count=answered, total=total, completed=completed)

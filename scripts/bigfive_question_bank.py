@@ -11,42 +11,47 @@ preserved for each rewrite, so the scoring key is unaffected).
 direction of the item: `minus` items are reverse-scored at read time
 (app/services/bigfive_service.py), never inverted here or at storage time.
 
+Block-1 items (age_tier="junior", assigned below) additionally carry
+`short_text`/`icon` — a short child-friendly button label + emoji, used by
+the junior forced-choice-pair format instead of the full Likert statement
+(TZ_Profi.md §13 bans Likert for junior).
+
 To change the question bank: edit this list and rerun
 scripts/seed_bigfive_questions.py — nothing elsewhere hardcodes question
 count, text, or per-domain/per-facet counts.
 """
 
 QUESTIONS: list[dict] = [
-    {"bigfive_domain": "N", "facet": 1, "keyed": "plus", "text": "Переживаю о разном"},
-    {"bigfive_domain": "E", "facet": 1, "keyed": "plus", "text": "С легкостью завожу друзей"},
-    {"bigfive_domain": "O", "facet": 1, "keyed": "plus", "text": "Имею яркое воображение"},
-    {"bigfive_domain": "A", "facet": 1, "keyed": "plus", "text": "Доверяю другим"},
-    {"bigfive_domain": "C", "facet": 1, "keyed": "plus", "text": "Завершаю задачи успешно"},
-    {"bigfive_domain": "N", "facet": 2, "keyed": "plus", "text": "Легко начинаю злиться"},
-    {"bigfive_domain": "E", "facet": 2, "keyed": "plus", "text": "Люблю большие вечеринки"},
-    {"bigfive_domain": "O", "facet": 2, "keyed": "plus", "text": "Верю в важность искусства"},
-    {"bigfive_domain": "A", "facet": 2, "keyed": "minus", "text": "Использую других ради личных целей"},
-    {"bigfive_domain": "C", "facet": 2, "keyed": "plus", "text": "Люблю прибраться"},
-    {"bigfive_domain": "N", "facet": 3, "keyed": "plus", "text": "Часто грущу"},
-    {"bigfive_domain": "E", "facet": 3, "keyed": "plus", "text": "Беру на себя ответственность"},
-    {"bigfive_domain": "O", "facet": 3, "keyed": "plus", "text": "Остро переживаю свои эмоции"},
-    {"bigfive_domain": "A", "facet": 3, "keyed": "plus", "text": "Люблю помогать другим"},
-    {"bigfive_domain": "C", "facet": 3, "keyed": "plus", "text": "Сдерживаю обещания"},
-    {"bigfive_domain": "N", "facet": 4, "keyed": "plus", "text": "Нахожу трудным обращаться к людям"},
-    {"bigfive_domain": "E", "facet": 4, "keyed": "plus", "text": "У меня всегда много дел"},
-    {"bigfive_domain": "O", "facet": 4, "keyed": "plus", "text": "Предпочитаю разнообразие рутине"},
-    {"bigfive_domain": "A", "facet": 4, "keyed": "minus", "text": "Люблю хорошую потасовку"},
-    {"bigfive_domain": "C", "facet": 4, "keyed": "plus", "text": "Много работаю"},
-    {"bigfive_domain": "N", "facet": 5, "keyed": "plus", "text": "Иногда не могу вовремя остановиться"},
-    {"bigfive_domain": "E", "facet": 5, "keyed": "plus", "text": "Люблю эмоциональное волнение"},
-    {"bigfive_domain": "O", "facet": 5, "keyed": "plus", "text": "Люблю читать что-то посложнее"},
-    {"bigfive_domain": "A", "facet": 5, "keyed": "minus", "text": "Считаю, что я лучше других"},
-    {"bigfive_domain": "C", "facet": 5, "keyed": "plus", "text": "У меня есть план на случай неожиданностей"},
-    {"bigfive_domain": "N", "facet": 6, "keyed": "plus", "text": "Легко паникую"},
-    {"bigfive_domain": "E", "facet": 6, "keyed": "plus", "text": "Излучаю позитив"},
-    {"bigfive_domain": "O", "facet": 6, "keyed": "plus", "text": "Мне интересно узнавать о разных культурах и непривычных для меня традициях"},
-    {"bigfive_domain": "A", "facet": 6, "keyed": "plus", "text": "Сопереживаю бездомным"},
-    {"bigfive_domain": "C", "facet": 6, "keyed": "minus", "text": "Начинаю разные вещи не подумав"},
+    {"bigfive_domain": "N", "facet": 1, "keyed": "plus", "text": "Переживаю о разном", "short_text": "Часто переживаю", "icon": "😟"},
+    {"bigfive_domain": "E", "facet": 1, "keyed": "plus", "text": "С легкостью завожу друзей", "short_text": "Легко завожу друзей", "icon": "👋"},
+    {"bigfive_domain": "O", "facet": 1, "keyed": "plus", "text": "Имею яркое воображение", "short_text": "У меня богатая фантазия", "icon": "🌈"},
+    {"bigfive_domain": "A", "facet": 1, "keyed": "plus", "text": "Доверяю другим", "short_text": "Доверяю людям", "icon": "🤝"},
+    {"bigfive_domain": "C", "facet": 1, "keyed": "plus", "text": "Завершаю задачи успешно", "short_text": "Довожу дела до конца", "icon": "✅"},
+    {"bigfive_domain": "N", "facet": 2, "keyed": "plus", "text": "Легко начинаю злиться", "short_text": "Быстро злюсь", "icon": "😠"},
+    {"bigfive_domain": "E", "facet": 2, "keyed": "plus", "text": "Люблю большие вечеринки", "short_text": "Люблю шумные праздники", "icon": "🎉"},
+    {"bigfive_domain": "O", "facet": 2, "keyed": "plus", "text": "Верю в важность искусства", "short_text": "Люблю искусство", "icon": "🎨"},
+    {"bigfive_domain": "A", "facet": 2, "keyed": "minus", "text": "Использую других ради личных целей", "short_text": "Использую других для своей выгоды", "icon": "😏"},
+    {"bigfive_domain": "C", "facet": 2, "keyed": "plus", "text": "Люблю прибраться", "short_text": "Люблю наводить порядок", "icon": "🧹"},
+    {"bigfive_domain": "N", "facet": 3, "keyed": "plus", "text": "Часто грущу", "short_text": "Часто грущу", "icon": "😢"},
+    {"bigfive_domain": "E", "facet": 3, "keyed": "plus", "text": "Беру на себя ответственность", "short_text": "Беру на себя главное", "icon": "🙋"},
+    {"bigfive_domain": "O", "facet": 3, "keyed": "plus", "text": "Остро переживаю свои эмоции", "short_text": "Сильно всё чувствую", "icon": "💗"},
+    {"bigfive_domain": "A", "facet": 3, "keyed": "plus", "text": "Люблю помогать другим", "short_text": "Люблю помогать", "icon": "🤗"},
+    {"bigfive_domain": "C", "facet": 3, "keyed": "plus", "text": "Сдерживаю обещания", "short_text": "Держу слово", "icon": "🤞"},
+    {"bigfive_domain": "N", "facet": 4, "keyed": "plus", "text": "Нахожу трудным обращаться к людям", "short_text": "Стесняюсь обращаться к людям", "icon": "😳"},
+    {"bigfive_domain": "E", "facet": 4, "keyed": "plus", "text": "У меня всегда много дел", "short_text": "У меня всегда много дел", "icon": "🏃"},
+    {"bigfive_domain": "O", "facet": 4, "keyed": "plus", "text": "Предпочитаю разнообразие рутине", "short_text": "Люблю разнообразие", "icon": "🔀"},
+    {"bigfive_domain": "A", "facet": 4, "keyed": "minus", "text": "Люблю хорошую потасовку", "short_text": "Люблю подраться в шутку", "icon": "🤼"},
+    {"bigfive_domain": "C", "facet": 4, "keyed": "plus", "text": "Много работаю", "short_text": "Много стараюсь", "icon": "💼"},
+    {"bigfive_domain": "N", "facet": 5, "keyed": "plus", "text": "Иногда не могу вовремя остановиться", "short_text": "Иногда не могу остановиться", "icon": "🛑"},
+    {"bigfive_domain": "E", "facet": 5, "keyed": "plus", "text": "Люблю эмоциональное волнение", "short_text": "Люблю адреналин", "icon": "🎢"},
+    {"bigfive_domain": "O", "facet": 5, "keyed": "plus", "text": "Люблю читать что-то посложнее", "short_text": "Люблю сложные книги", "icon": "📖"},
+    {"bigfive_domain": "A", "facet": 5, "keyed": "minus", "text": "Считаю, что я лучше других", "short_text": "Считаю себя лучше других", "icon": "😤"},
+    {"bigfive_domain": "C", "facet": 5, "keyed": "plus", "text": "У меня есть план на случай неожиданностей", "short_text": "У меня есть план на всякий случай", "icon": "🗺️"},
+    {"bigfive_domain": "N", "facet": 6, "keyed": "plus", "text": "Легко паникую", "short_text": "Легко паникую", "icon": "😱"},
+    {"bigfive_domain": "E", "facet": 6, "keyed": "plus", "text": "Излучаю позитив", "short_text": "Всегда в хорошем настроении", "icon": "☀️"},
+    {"bigfive_domain": "O", "facet": 6, "keyed": "plus", "text": "Мне интересно узнавать о разных культурах и непривычных для меня традициях", "short_text": "Люблю узнавать о других странах", "icon": "🌍"},
+    {"bigfive_domain": "A", "facet": 6, "keyed": "plus", "text": "Сопереживаю бездомным", "short_text": "Жалею тех, кому трудно", "icon": "💔"},
+    {"bigfive_domain": "C", "facet": 6, "keyed": "minus", "text": "Начинаю разные вещи не подумав", "short_text": "Берусь за всё не подумав", "icon": "🌪️"},
 
     {"bigfive_domain": "N", "facet": 1, "keyed": "plus", "text": "Опасаюсь худшего"},
     {"bigfive_domain": "E", "facet": 1, "keyed": "plus", "text": "Чувствую себя комфортно в окружении людей"},
@@ -168,3 +173,7 @@ for _idx, _q in enumerate(QUESTIONS):
         _q["age_tier"] = "middle"
     else:
         _q["age_tier"] = "senior"
+    if _q["age_tier"] != "junior":
+        assert "short_text" not in _q, f"non-junior item unexpectedly has short_text: {_q['text']!r}"
+
+assert sum(1 for _q in QUESTIONS if _q.get("short_text")) == 30, "expected exactly 30 junior short_text items"
