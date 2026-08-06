@@ -11,7 +11,7 @@ from app.models.university import University
 
 async def search_programs(
     db: AsyncSession,
-    direction_slugs: list[str],
+    profession_slug: str,
     country: str | None = None,
     limit: int = 10,
 ) -> list[Program]:
@@ -19,7 +19,7 @@ async def search_programs(
         select(Program)
         .options(selectinload(Program.university))
         .join(Program.university)
-        .where(Program.direction_slug.in_(direction_slugs))
+        .where(Program.profession_slugs.contains([profession_slug]))
     )
     if country is not None:
         query = query.where(University.country.ilike(country))

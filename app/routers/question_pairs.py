@@ -34,7 +34,7 @@ async def get_pairs(
     db: AsyncSession = Depends(get_db),
 ) -> list[QuestionPairItem]:
     row_result = await db.execute(
-        select(Assessment, Profile.user_id)
+        select(Assessment, Profile.user_id, Profile.age_group)
         .join(Profile, Assessment.profile_id == Profile.id)
         .where(Assessment.id == assessment_id)
     )
@@ -42,11 +42,11 @@ async def get_pairs(
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
 
-    _, owner_user_id = row
+    _, owner_user_id, age_group = row
     if owner_user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    return await question_pair_service.get_pairs(db)
+    return await question_pair_service.get_pairs(db, age_group)
 
 
 @router.post("/{assessment_id}/pair-answers", response_model=SubmitPairAnswersResponse)

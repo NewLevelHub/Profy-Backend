@@ -19,6 +19,11 @@ class QuestionPairItem(BaseModel):
     pair_index: int
     instrument: QuestionInstrument
     frame: str | None
+    # min(option_a's, option_b's) underlying Question.order — lets the
+    # frontend interleave a pair into its position in the plain-Likert
+    # sequence (middle only; junior's screen ignores it and just uses
+    # pair_index order). See buildDisplaySequence.ts.
+    display_order: int
     option_a: QuestionPairOption
     option_b: QuestionPairOption
 

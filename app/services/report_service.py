@@ -48,7 +48,6 @@ def _career_dict(direction: Direction, match_score: int) -> dict:
         "slug": direction.slug,
         "name": direction.name,
         "holland_code": direction.holland_code,
-        "category_slugs": list(direction.category_slugs or []),
         "match_score": match_score,
         "description": direction.description or "",
         "professions": list(direction.professions or []),

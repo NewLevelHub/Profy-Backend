@@ -11,17 +11,15 @@ those so re-running this script attaches the richer specialty data to the
 existing row (and backfills its slug) instead of creating a duplicate.
 
 One Program row is created per INDIVIDUAL specialty (e.g. "Дизайн",
-"Биотехнология"), not per specialty group. An earlier version created one
-Program per group and classified the whole group at once — that broke down
-hard whenever a "group" in the source data wasn't actually a cohesive unit:
-some universities list their entire faculty index (agriculture + veterinary
-+ economics + IT, unrelated fields) as a single "group", so any one-shot
-classification of the group (by name, or by voting across its unrelated
-members) was closer to a coin flip than a real answer. Classifying each
-specialty on its own name removes that failure mode entirely — a name like
-"Дизайн" or "Биотехнология" is unambiguous on its own, whereas concatenating
-it with seven unrelated faculty names never was. See CLEANUP_ below for the
-one-time migration that removes the old group-level rows.
+"Биотехнология"), tagged with the profession(s) it actually trains someone
+for via scripts/specialty_profession_map.py — a hand-curated direct mapping,
+not an inferred category. Two earlier versions (one Program per specialty
+GROUP classified as a whole; then one per specialty but classified by
+keyword/category) both produced confidently wrong matches in practice — a
+shared category is not the same thing as a real profession match. Entries in
+GARBAGE_SPECIALTIES (partner-university names listed as if they were
+programs, purely administrative units, faculty labels with no specific
+subject) are skipped entirely, not force-fit into anything.
 """
 import asyncio
 import os
@@ -37,7 +35,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import async_session
 from app.models.program import Program
 from app.models.university import University
-from scripts.specialty_category_lookup import categorize
+from scripts.specialty_profession_map import GARBAGE_SPECIALTIES, SPECIALTY_TO_PROFESSIONS
 
 from almaty_universities_data import ALMATY_UNIVERSITIES
 from astana_universities_data import ASTANA_UNIVERSITIES
@@ -83,10 +81,10 @@ async def _find_university(db: AsyncSession, record: dict) -> University | None:
 
 
 def _cleanup_legacy_group_names(record: dict) -> set[str]:
-    """Reproduces just enough of the old group-level naming to find and
-    delete rows from before this migration — not used for anything else.
-    Covers both the raw group name and the old comma-joined synthesized
-    name for universities whose group label was a generic placeholder."""
+    """Reproduces just enough of two earlier versions' naming schemes to find
+    and delete rows seeded before this migration — not used for anything
+    else. Covers raw group names, the old comma-joined synthesized name for
+    generic group labels, and garbage specialty names now excluded outright."""
     generic = {
         "направления", "факультеты", "факультеты / направления",
         "факультеты и направления", "программы",
@@ -112,7 +110,7 @@ async def main() -> None:
     async with async_session() as db:
         uni_inserted = uni_updated = uni_skipped = 0
         prog_inserted = prog_updated = prog_skipped = prog_deleted = 0
-        unresolved: list[str] = []
+        unmapped: list[str] = []
 
         for record in ALL_UNIVERSITIES:
             existing_uni = await _find_university(db, record)
@@ -146,7 +144,13 @@ async def main() -> None:
             specialty_names = {
                 name for group in record.get("specialties", []) for name in group["programs"]
             }
-            legacy_names = _cleanup_legacy_group_names(record) - specialty_names
+            # GARBAGE_SPECIALTIES must always be deleted even though they're
+            # still literally present in specialty_names (they're skipped at
+            # creation time below, but a prior run — before this exclusion
+            # existed — may have already created a Program row for one).
+            legacy_names = (_cleanup_legacy_group_names(record) - specialty_names) | (
+                GARBAGE_SPECIALTIES & specialty_names
+            )
             if legacy_names:
                 result = await db.execute(
                     select(Program).where(
@@ -163,12 +167,15 @@ async def main() -> None:
             for group in record.get("specialties", []):
                 group_name = group["group"]
                 for specialty_name in group["programs"]:
-                    category_slug, confident = categorize(specialty_name)
-                    if not confident:
-                        unresolved.append(f"{record['name']} / {group_name} / {specialty_name}")
+                    if specialty_name in GARBAGE_SPECIALTIES:
+                        continue
+
+                    profession_slugs = SPECIALTY_TO_PROFESSIONS.get(specialty_name, [])
+                    if not profession_slugs:
+                        unmapped.append(f"{record['name']} / {group_name} / {specialty_name}")
 
                     prog_data = {
-                        "direction_slug": category_slug,
+                        "profession_slugs": profession_slugs,
                         "language": "Казахский/Русский",
                         "cost_per_year": None,
                         "description": group_name,
@@ -210,15 +217,14 @@ async def main() -> None:
     print(
         f"Programs (individual specialties) — inserted: {prog_inserted}, "
         f"updated: {prog_updated}, skipped: {prog_skipped}, "
-        f"stale group-level rows deleted: {prog_deleted}."
+        f"stale/garbage rows deleted: {prog_deleted}."
     )
-    if unresolved:
+    if unmapped:
         print(
-            f"\n{len(unresolved)} specialty(ies) fell back to the default category "
-            f"({categorize.__module__}.DEFAULT_CATEGORY) — review "
-            f"scripts/specialty_category_lookup.py keywords:"
+            f"\n{len(unmapped)} specialty(ies) have no profession mapping — "
+            f"review scripts/specialty_profession_map.py:"
         )
-        for name in unresolved:
+        for name in unmapped:
             print(f"  - {name}")
 
 

@@ -9,7 +9,6 @@ class CareerMatch(BaseModel):
     slug: str
     name: str
     holland_code: str
-    category_slugs: list[str]
     match_score: int
     description: str
     professions: list[str]

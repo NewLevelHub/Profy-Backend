@@ -1,8 +1,11 @@
-"""Junior forced-choice-pair format — TZ_Profi.md §13 bans Likert for junior
-(6-9), so this is the junior-only alternative to assessment_service's
-Likert flow. `question_pairs` rows only ever reference junior-tier
-`questions` (built by scripts/question_pairing.py), so there is no
-age_group filtering here the way riasec_service/bigfive_service need it.
+"""Forced-choice-pair format — junior (6-9, TZ_Profi.md §13 bans Likert
+outright) gets its whole test this way, shown on its own screen. Middle
+(10-13) gets a subset of its own tier-exclusive questions woven into the
+ordinary Likert flow instead, to break up monotony (TZ_Profi.md §14) without
+abandoning Likert (still fine for that age). `QuestionPair.age_tier` is an
+exact match, unlike `Question.age_tier` (checked via visible_tiers(),
+cumulative) — a junior pair is never returned to a middle profile or vice
+versa.
 
 A pair pick is written as two ordinary `UserResponse` rows (picked=5,
 other=1) — riasec_service/bigfive_service and the Likert-completion
@@ -20,6 +23,7 @@ from sqlalchemy.orm import aliased
 
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentStatus
+from app.models.profile import AgeGroup
 from app.models.question import Question
 from app.models.question_pair import QuestionPair
 from app.models.user_response import UserResponse
@@ -45,13 +49,14 @@ def _to_option(question: Question) -> QuestionPairOption:
     )
 
 
-async def get_pairs(db: AsyncSession) -> list[QuestionPairItem]:
+async def get_pairs(db: AsyncSession, age_group: AgeGroup) -> list[QuestionPairItem]:
     question_a = aliased(Question)
     question_b = aliased(Question)
     result = await db.execute(
         select(QuestionPair, question_a, question_b)
         .join(question_a, QuestionPair.question_a_id == question_a.id)
         .join(question_b, QuestionPair.question_b_id == question_b.id)
+        .where(QuestionPair.age_tier == age_group)
         .order_by(QuestionPair.pair_index)
     )
     return [
@@ -59,6 +64,7 @@ async def get_pairs(db: AsyncSession) -> list[QuestionPairItem]:
             pair_index=pair.pair_index,
             instrument=pair.instrument,
             frame=pair.frame,
+            display_order=min(q_a.order, q_b.order),
             option_a=_to_option(q_a),
             option_b=_to_option(q_b),
         )

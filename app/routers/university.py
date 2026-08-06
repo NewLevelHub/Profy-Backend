@@ -37,20 +37,12 @@ router = APIRouter(tags=["universities"])
 
 @router.get("/programs", response_model=list[ProgramBrief])
 async def list_programs(
-    direction: str = Query(
-        ...,
-        description=(
-            "Comma-separated category slug(s), e.g. it-development or "
-            "engineering-science,design-digital-art for professions that "
-            "span more than one category"
-        ),
-    ),
+    profession: str = Query(..., description="Direction (profession) slug, e.g. arhitektor"),
     country: str | None = Query(None, description="ISO country code or name, e.g. us or Kazakhstan"),
     limit: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ) -> list[ProgramBrief]:
-    direction_slugs = [slug.strip() for slug in direction.split(",") if slug.strip()]
-    return await search_programs(db, direction_slugs=direction_slugs, country=country, limit=limit)
+    return await search_programs(db, profession_slug=profession, country=country, limit=limit)
 
 
 @router.get("/programs/{program_id}", response_model=ProgramDetail)
@@ -113,18 +105,11 @@ async def get_gap_analysis(
             detail="Generate a report for this assessment before running gap analysis",
         )
 
-    # Program.direction_slug is one of the ~10 curated categories, not a
-    # profession slug — compare against category_slugs, not slug (see
-    # scripts/specialty_category_lookup.py / Direction.category_slugs). A
-    # profession can list more than one category (e.g. "Архитектор" spans
-    # engineering-science and design-digital-art), so flatten them all.
-    matched_categories = {
-        category
-        for d in analysis.careers
-        if isinstance(d, dict)
-        for category in d.get("category_slugs", [])
-    }
-    if program.direction_slug not in matched_categories:
+    # Program.profession_slugs directly lists which professions (Direction
+    # slugs) this specialty prepares someone for — check whether any of the
+    # user's matched professions overlap with it.
+    matched_profession_slugs = {d["slug"] for d in analysis.careers if isinstance(d, dict) and "slug" in d}
+    if not matched_profession_slugs.intersection(program.profession_slugs):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This program's direction does not match your assessment results",

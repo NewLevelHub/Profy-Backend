@@ -52,7 +52,6 @@ def dedupe_by_title(professions: list[dict]) -> list[dict]:
             "name": title,
             "slug": slugify(title),
             "holland_code": entry["holland_code"],
-            "category_slugs": entry["category_slugs"],
         }
     return list(seen.values())
 
@@ -81,9 +80,6 @@ async def main() -> None:
                 if existing.holland_code != data["holland_code"]:
                     existing.holland_code = data["holland_code"]
                     changed = True
-                if existing.category_slugs != data["category_slugs"]:
-                    existing.category_slugs = data["category_slugs"]
-                    changed = True
                 if changed:
                     updated += 1
                 else:
@@ -94,7 +90,6 @@ async def main() -> None:
                 name=data["name"],
                 slug=data["slug"],
                 holland_code=data["holland_code"],
-                category_slugs=data["category_slugs"],
             ))
             inserted += 1
 

@@ -17,6 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sqlalchemy import select
 
 from app.database import async_session
+from app.models.profile import AgeGroup
 from app.models.question import Question, QuestionInstrument
 from app.models.question_pair import QuestionPair
 from scripts.question_pairing import PAIRS
@@ -39,6 +40,7 @@ async def main() -> None:
 
         for data in PAIRS:
             instrument = QuestionInstrument(data["instrument"])
+            age_tier = AgeGroup(data["age_tier"])
             key = (instrument, data["pair_index"])
             question_a_id = order_to_id[data["question_a_order"]]
             question_b_id = order_to_id[data["question_b_order"]]
@@ -46,6 +48,9 @@ async def main() -> None:
 
             if existing is not None:
                 changed = False
+                if existing.age_tier != age_tier:
+                    existing.age_tier = age_tier
+                    changed = True
                 if existing.question_a_id != question_a_id:
                     existing.question_a_id = question_a_id
                     changed = True
@@ -63,6 +68,7 @@ async def main() -> None:
 
             db.add(QuestionPair(
                 instrument=instrument,
+                age_tier=age_tier,
                 pair_index=data["pair_index"],
                 question_a_id=question_a_id,
                 question_b_id=question_b_id,
