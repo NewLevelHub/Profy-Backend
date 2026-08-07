@@ -21,6 +21,7 @@ from app.services import (
     bigfive_content,
     bigfive_service,
     llm_client,
+    motivation_pair_service,
     motivation_service,
     riasec_service,
     thinking_style_service,
@@ -175,7 +176,12 @@ async def build_report(
     personality_highlights = strength_phrases(bigfive_scores)
     personality_profile, personality_notes = bigfive_content.build_personality_profile(bigfive_scores)
 
-    mot_scores = await motivation_service.raw_scores(assessment_id, db)
+    # Junior/middle answer the Harter-format pairs instead of the 3-way
+    # MOST/LEAST triplets (senior) — different tables/scoring, same shape.
+    if age_group in (AgeGroup.junior, AgeGroup.middle):
+        mot_scores = await motivation_pair_service.raw_scores(assessment_id, db)
+    else:
+        mot_scores = await motivation_service.raw_scores(assessment_id, db)
     mot_top = motivation_service.top_categories(mot_scores)
     mot_highlights = motivation_highlight_phrases(mot_top)
 

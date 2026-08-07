@@ -12,15 +12,21 @@ from app.models.question import Question
 from app.models.user_response import UserResponse
 from app.schemas.assessment import AssessmentResponse
 from app.schemas.response import AnswerItem, SubmitAnswersResponse
-from app.services import assessment_shared, motivation_service, riasec_service
+from app.services import assessment_shared, motivation_pair_service, motivation_service, riasec_service
 
 
 async def _to_response(assessment: Assessment, db: AsyncSession) -> AssessmentResponse:
     age_group = await assessment_shared.get_profile_age_group(assessment.profile_id, db)
     answered = await assessment_shared.likert_answered_count(assessment.id, db)
     total = await assessment_shared.likert_total_questions(db, age_group)
-    mot_answered = await motivation_service.answered_count(assessment.id, db)
-    mot_total = await motivation_service.total_triplets(db)
+    # Junior/middle answer the Harter-format pairs instead of the 3-way
+    # MOST/LEAST triplets (senior) — different tables, see motivation_pair_service.py.
+    if age_group in (AgeGroup.junior, AgeGroup.middle):
+        mot_answered = await motivation_pair_service.answered_count(assessment.id, db)
+        mot_total = await motivation_pair_service.total_pairs(db)
+    else:
+        mot_answered = await motivation_service.answered_count(assessment.id, db)
+        mot_total = await motivation_service.total_triplets(db)
     return AssessmentResponse(
         id=assessment.id,
         goal=assessment.goal,

@@ -1,0 +1,69 @@
+import enum
+import uuid
+from datetime import datetime
+
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint, func
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.database import Base
+from app.models.motivation import MotivationCategory
+
+
+class MotivationIntensity(str, enum.Enum):
+    high = "high"  # "Точно про меня"
+    medium = "medium"  # "Немного про меня"
+
+
+class MotivationPair(Base):
+    """One Harter-style forced-choice pair: 'Some kids like [category_a], but
+    other kids [category_b]' — junior/middle's motivation format instead of
+    the 3-way MOST/LEAST triplet (app/models/motivation.py), which senior
+    keeps using unchanged. Two sequential binary micro-decisions (pick a
+    camp, then intensity) are cognitively lighter than holding 3 constructs
+    at once — see scripts/motivation_pair_bank.py for the balance design."""
+
+    __tablename__ = "motivation_pairs"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    pair_index: Mapped[int] = mapped_column(Integer, nullable=False, unique=True, index=True)
+    category_a: Mapped[MotivationCategory] = mapped_column(
+        Enum(MotivationCategory, name="motivation_category_enum", create_type=False), nullable=False
+    )
+    category_b: Mapped[MotivationCategory] = mapped_column(
+        Enum(MotivationCategory, name="motivation_category_enum", create_type=False), nullable=False
+    )
+    text_a: Mapped[str] = mapped_column(String, nullable=False)
+    text_b: Mapped[str] = mapped_column(String, nullable=False)
+
+
+class MotivationPairResponse(Base):
+    """One answer to one Harter pair: which side (category) was picked, and
+    how strongly ('Точно про меня' vs 'Немного про меня'). Scoring
+    (app/services/motivation_pair_service.py): high -> chosen=2/other=0,
+    medium -> chosen=1/other=1 (a soft lean, not a hard zero — 'kind of true'
+    shouldn't fully discount the unchosen side)."""
+
+    __tablename__ = "motivation_pair_responses"
+    __table_args__ = (
+        UniqueConstraint(
+            "assessment_id", "pair_index", name="uq_motivation_pair_response_assessment_pair"
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    assessment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("assessments.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    pair_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    chosen_category: Mapped[MotivationCategory] = mapped_column(
+        Enum(MotivationCategory, name="motivation_category_enum", create_type=False), nullable=False
+    )
+    intensity: Mapped[MotivationIntensity] = mapped_column(
+        Enum(MotivationIntensity, name="motivation_intensity_enum"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
