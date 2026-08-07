@@ -64,6 +64,19 @@ class StudentContext(BaseModel):
     strengths: list[str] = []        # letters
     weaknesses: list[str] = []       # letters
 
+    # ─── Big Five / motivation — safe, display-ready derived layer only.
+    # AnalysisResult.big_five/motivation (raw scores) are admin-only
+    # (app/models/analysis_result.py:30,33 — ТЗ §18.3: no raw percentages to
+    # the student) and are deliberately NOT exposed here. These five fields
+    # mirror what the report already shows the student (bigfive_content.py,
+    # report_service.py:176), so prompts can use them without any risk of a
+    # raw score leaking into student-facing text.
+    personality_profile: dict[str, float] = {}   # 5 traits, display-ready (N flipped to emotional_stability)
+    personality_notes: dict[str, str] = {}        # 1 tiered RU phrase per trait, high/low/mid-honest, never a number
+    thinking_style: dict[str, float] = {}         # {creative_think, systematic, strategic, practical}
+    motivation_top: list[str] = []                # ["interest", "creation"] — categorical, not a score
+    motivation_highlights: list[str] = []          # RU phrases, "что тебя драйвит"
+
     # ─── Matched careers ───
     careers: list[ContextCareer] = []
 

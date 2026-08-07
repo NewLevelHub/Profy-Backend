@@ -150,6 +150,7 @@ async def submit_motivation_answers(
         redis = assessment_shared.get_redis()
         await redis.delete(f"report:{assessment_id}")
         await assessment_shared.invalidate_direction_flow(assessment, db, redis)
+        await assessment_shared.invalidate_goal_roadmap(assessment_id, db, redis)
 
     mot_answered = await answered_count(assessment_id, db)
     mot_total = await total_triplets(db)

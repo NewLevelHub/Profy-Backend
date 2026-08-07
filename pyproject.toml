@@ -1,0 +1,13 @@
+[dependency-groups]
+# Actually installed via requirements.txt (Docker image build) — this table
+# is the declarative dev-dependency record. Keep versions in sync by hand.
+dev = [
+    "pytest==8.3.4",
+    "pytest-asyncio==0.24.0",
+    "httpx==0.28.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

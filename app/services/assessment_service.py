@@ -146,6 +146,7 @@ async def submit_answers(
         redis = assessment_shared.get_redis()
         await redis.delete(f"report:{assessment_id}")
         await assessment_shared.invalidate_direction_flow(assessment, db, redis)
+        await assessment_shared.invalidate_goal_roadmap(assessment_id, db, redis)
 
     answered = await assessment_shared.likert_answered_count(assessment_id, db)
     total = await assessment_shared.likert_total_questions(db, age_group)

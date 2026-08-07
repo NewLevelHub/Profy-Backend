@@ -16,6 +16,7 @@ from app.models.direction_inquiry import DirectionInquiry
 from app.models.direction_roadmap import DirectionRoadmap
 from app.models.profile import AgeGroup, Profile
 from app.models.question import Question
+from app.models.roadmap import Roadmap
 from app.models.user_response import UserResponse
 from app.services.age_tiers import visible_tiers
 
@@ -51,6 +52,28 @@ async def invalidate_direction_flow(
 
     for slug in slugs:
         await redis.delete(f"droadmap:{assessment_id}:{slug}", f"dq:{assessment_id}:{slug}")
+
+
+async def invalidate_goal_roadmap(
+    assessment_id: uuid.UUID, db: AsyncSession, redis: aioredis.Redis
+) -> None:
+    """Drop the goal roadmap (`roadmaps` table + Redis cache) on retake.
+
+    Without this, a retake regenerates `AnalysisResult` and the direction
+    roadmap (see `invalidate_direction_flow`) but silently leaves the OLD
+    goal roadmap in place — the DB row survives, and `roadmap_builder.
+    generate_roadmap` checks its Redis cache *before* ever touching the DB,
+    so a cached response can outlive the test it was generated from for up
+    to `CACHE_TTL` (24h). One assessment can have several cached variants
+    (one per distinct `program_id` ever passed to `POST /roadmap/generate`
+    for the university gap-analysis case) — `roadmap_builder._cache_key` is
+    deliberately a plain `roadmap:{assessment_id}:{program_id|"none"}` (not
+    hashed) so all of them can be found and cleared here via a scan, not
+    just the one this function happens to know about."""
+    await db.execute(Roadmap.__table__.delete().where(Roadmap.assessment_id == assessment_id))
+
+    async for key in redis.scan_iter(match=f"roadmap:{assessment_id}:*"):
+        await redis.delete(key)
 
 
 async def get_profile_age_group(profile_id: uuid.UUID, db: AsyncSession) -> AgeGroup:
