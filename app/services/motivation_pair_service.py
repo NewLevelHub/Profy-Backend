@@ -1,10 +1,12 @@
 """Motivation (Harter-format pairs) — junior/middle's alternative to the
 3-way MOST/LEAST triplet mechanic (app/services/motivation_service.py,
-which senior keeps using unchanged). "Some kids like X, but other kids
-[prefer] Y" -> pick a camp -> rate intensity ("Точно про меня" / "Немного
-про меня"). Mirrors motivation_service.py's shape (pairs/total/answered/
-raw_scores/submit) so report_service.py can call whichever one matches the
-profile's age_group."""
+which senior keeps using unchanged). "Some kids [positive pole], but other
+kids [negative pole]" of the SAME category -> pick a pole -> rate intensity
+("Точно про меня" / "Немного про меня"). Genuine Harter SPPC structure
+(same-category polar pairs), not a cross-category ipsative comparison — see
+scripts/motivation_pair_bank.py. Mirrors motivation_service.py's shape
+(pairs/total/answered/raw_scores/submit) so report_service.py can call
+whichever one matches the profile's age_group."""
 
 import uuid
 from datetime import datetime, timezone
@@ -16,15 +18,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentStatus
-from app.models.motivation_pair import MotivationIntensity, MotivationPair, MotivationPairResponse
+from app.models.motivation_pair import MotivationIntensity, MotivationPair, MotivationPairResponse, PairSide
 from app.schemas.motivation_pair import MotivationPairItem, PairIntensityAnswer, SubmitMotivationPairResponse
 from app.services import assessment_shared
 from scripts.motivation_statement_bank import CATEGORIES as CATEGORY_ORDER
 
-_HIGH_CHOSEN_POINTS = 2
-_HIGH_OTHER_POINTS = 0
-_MEDIUM_CHOSEN_POINTS = 1
-_MEDIUM_OTHER_POINTS = 1
+# (chosen_side, intensity) -> 1-4 Harter-style score for this one item.
+# Each pair's option_a is always the positive/high pole, option_b the
+# negative/low pole (content convention, scripts/motivation_pair_bank.py).
+_SCORE_TABLE: dict[tuple[str, str], int] = {
+    ("a", "high"): 4,    # positive pole, "Точно про меня"
+    ("a", "medium"): 3,  # positive pole, "Немного про меня"
+    ("b", "medium"): 2,  # negative pole, "Немного про меня"
+    ("b", "high"): 1,    # negative pole, "Точно про меня"
+}
 
 
 async def pairs(db: AsyncSession) -> list[MotivationPair]:
@@ -58,15 +65,8 @@ async def raw_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, in
         pair = pairs_by_index.get(response.pair_index)
         if pair is None:
             continue
-        other_category = (
-            pair.category_b.value if response.chosen_category == pair.category_a else pair.category_a.value
-        )
-        if response.intensity == MotivationIntensity.high:
-            scores[response.chosen_category.value] += _HIGH_CHOSEN_POINTS
-            scores[other_category] += _HIGH_OTHER_POINTS
-        else:
-            scores[response.chosen_category.value] += _MEDIUM_CHOSEN_POINTS
-            scores[other_category] += _MEDIUM_OTHER_POINTS
+        points = _SCORE_TABLE[(response.chosen_side.value, response.intensity.value)]
+        scores[pair.category_a.value] += points
     return scores
 
 
@@ -99,6 +99,7 @@ async def submit_pair_answers(
             "assessment_id": assessment_id,
             "pair_index": item.pair_index,
             "chosen_category": chosen_category,
+            "chosen_side": PairSide(item.chosen_side),
             "intensity": MotivationIntensity(item.intensity),
         })
 
@@ -109,6 +110,7 @@ async def submit_pair_answers(
             constraint="uq_motivation_pair_response_assessment_pair",
             set_={
                 "chosen_category": stmt.excluded.chosen_category,
+                "chosen_side": stmt.excluded.chosen_side,
                 "intensity": stmt.excluded.intensity,
             },
         )

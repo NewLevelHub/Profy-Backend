@@ -15,7 +15,7 @@ from app.models.assessment import Assessment
 from app.models.direction_inquiry import DirectionInquiry
 from app.models.direction_roadmap import DirectionRoadmap
 from app.models.profile import AgeGroup, Profile
-from app.models.question import Question
+from app.models.question import Question, QuestionInstrument
 from app.models.user_response import UserResponse
 from app.services.age_tiers import visible_tiers
 
@@ -59,9 +59,13 @@ async def get_profile_age_group(profile_id: uuid.UUID, db: AsyncSession) -> AgeG
 
 
 async def likert_total_questions(db: AsyncSession, age_group: AgeGroup) -> int:
-    result = await db.execute(
-        select(func.count(Question.id)).where(Question.age_tier.in_(visible_tiers(age_group)))
-    )
+    query = select(func.count(Question.id)).where(Question.age_tier.in_(visible_tiers(age_group)))
+    if age_group == AgeGroup.junior:
+        # Junior's RIASEC content is retired in favor of the MI instrument
+        # (see question_pair_service.get_pairs) — exclude it from the total
+        # so completion tracking doesn't count stale, never-shown questions.
+        query = query.where(Question.instrument != QuestionInstrument.riasec)
+    result = await db.execute(query)
     return result.scalar_one()
 
 
