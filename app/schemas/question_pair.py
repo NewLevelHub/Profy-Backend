@@ -2,7 +2,7 @@ import uuid
 
 from pydantic import BaseModel
 
-from app.models.question import BigFiveDomain, HollandType, QuestionInstrument
+from app.models.question import BigFiveDomain, HollandType, MIType, QuestionInstrument
 
 
 class QuestionPairOption(BaseModel):
@@ -11,6 +11,7 @@ class QuestionPairOption(BaseModel):
     icon: str | None
     riasec_type: HollandType | None
     bigfive_domain: BigFiveDomain | None
+    mi_category: MIType | None
 
     model_config = {"from_attributes": True}
 

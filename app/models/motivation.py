@@ -37,6 +37,12 @@ class MotivationStatement(Base):
         Enum(MotivationCategory, name="motivation_category_enum"), nullable=False, index=True
     )
     text: Mapped[str] = mapped_column(String, nullable=False)
+    # Junior (6-9) rewrite of `text` — same category/position, worded around
+    # school/friends/hobbies instead of career/money/work (TZ_Profi.md §13's
+    # format ban doesn't apply here, this is a wording-only fix). Null means
+    # "show `text` to everyone", which is what happens for middle/senior
+    # always, and for junior until this is seeded.
+    text_junior: Mapped[str | None] = mapped_column(String, nullable=True)
 
 
 class MotivationResponse(Base):

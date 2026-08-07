@@ -21,11 +21,14 @@ from app.services import (
     bigfive_content,
     bigfive_service,
     llm_client,
+    mi_service,
+    motivation_pair_service,
     motivation_service,
     riasec_service,
     thinking_style_service,
 )
 from app.services.bigfive_content import strength_phrases
+from app.services.mi_content import MI_LABELS
 from app.services.motivation_content import highlight_phrases as motivation_highlight_phrases
 from app.services.riasec_content import RIASEC_LABELS
 
@@ -69,6 +72,20 @@ def _build_summary(code: list[str]) -> str:
     return (
         f"Твой код RIASEC — {code_str}. Сильнее всего у тебя выражены типы: {cats_str}. "
         f"Это подсказывает, в какую сторону тебе интересно и комфортно развиваться."
+    )
+
+
+def _build_junior_summary(code: list[str]) -> str:
+    if not code:
+        return "Твои результаты показывают широкий потенциал для развития."
+    labels = [MI_LABELS.get(category, category) for category in code]
+    if len(labels) == 1:
+        cats_str = labels[0]
+    else:
+        cats_str = ", ".join(labels[:-1]) + " и " + labels[-1]
+    return (
+        f"Тебе больше всего интересно вот это: {cats_str}. "
+        f"Это подсказывает, какие занятия и кружки стоит попробовать."
     )
 
 
@@ -146,22 +163,41 @@ async def build_report(
     )
     artifacts = list(artifacts_result.scalars().all())
 
-    raw = await riasec_service.raw_scores(assessment_id, db, age_group)
-    counts = await riasec_service.question_counts(db, age_group)
-    profile_scores = riasec_service.normalize(raw, counts)
-    aversion_counts = await riasec_service.aversion(assessment_id, db, age_group)
+    if age_group == AgeGroup.junior:
+        # Junior (6-9) is not career-oriented (TZ_Profi.md §4.1) — RIASEC and
+        # its career matching are replaced with an MI-style "what to try"
+        # instrument. Big Five stays unchanged below for personality/thinking_style.
+        raw = await mi_service.raw_scores(assessment_id, db, age_group)
+        counts = await mi_service.question_counts(db, age_group)
+        profile_scores = mi_service.normalize(raw, counts)
+        aversion_counts = await mi_service.aversion(assessment_id, db, age_group)
 
-    code = riasec_service.top_code(profile_scores)
-    meta = {
-        "differentiation": riasec_service.differentiation(profile_scores),
-        "consistency": riasec_service.consistency(code[:2]),
-        "aversion": aversion_counts,
-    }
-    strengths, weaknesses = riasec_service.strengths_weaknesses(profile_scores, aversion_counts, counts)
-    plan = riasec_service.development_plan(code, weaknesses, aversion_counts, counts)
+        code = mi_service.top_code(profile_scores)
+        meta = {
+            "differentiation": mi_service.differentiation(profile_scores),
+            "consistency": mi_service.consistency(profile_scores),
+            "aversion": aversion_counts,
+        }
+        strengths, weaknesses = mi_service.strengths_weaknesses(profile_scores, aversion_counts, counts)
+        plan = mi_service.development_plan(code, weaknesses, aversion_counts, counts)
+        careers: list[dict] = []
+    else:
+        raw = await riasec_service.raw_scores(assessment_id, db, age_group)
+        counts = await riasec_service.question_counts(db, age_group)
+        profile_scores = riasec_service.normalize(raw, counts)
+        aversion_counts = await riasec_service.aversion(assessment_id, db, age_group)
 
-    matched = await riasec_service.matched_careers(code, db)
-    careers = [_career_dict(d, score) for d, score in matched]
+        code = riasec_service.top_code(profile_scores)
+        meta = {
+            "differentiation": riasec_service.differentiation(profile_scores),
+            "consistency": riasec_service.consistency(code[:2]),
+            "aversion": aversion_counts,
+        }
+        strengths, weaknesses = riasec_service.strengths_weaknesses(profile_scores, aversion_counts, counts)
+        plan = riasec_service.development_plan(code, weaknesses, aversion_counts, counts)
+
+        matched = await riasec_service.matched_careers(code, db)
+        careers = [_career_dict(d, score) for d, score in matched]
 
     bf_raw = await bigfive_service.raw_scores(assessment_id, db, age_group)
     bf_counts = await bigfive_service.question_counts(db, age_group)
@@ -175,11 +211,16 @@ async def build_report(
     personality_highlights = strength_phrases(bigfive_scores)
     personality_profile, personality_notes = bigfive_content.build_personality_profile(bigfive_scores)
 
-    mot_scores = await motivation_service.raw_scores(assessment_id, db)
+    # Junior/middle answer the Harter-format pairs instead of the 3-way
+    # MOST/LEAST triplets (senior) — different tables/scoring, same shape.
+    if age_group in (AgeGroup.junior, AgeGroup.middle):
+        mot_scores = await motivation_pair_service.raw_scores(assessment_id, db)
+    else:
+        mot_scores = await motivation_service.raw_scores(assessment_id, db)
     mot_top = motivation_service.top_categories(mot_scores)
     mot_highlights = motivation_highlight_phrases(mot_top)
 
-    template_summary = _build_summary(code)
+    template_summary = _build_junior_summary(code) if age_group == AgeGroup.junior else _build_summary(code)
     ai_summary = await _generate_ai_summary(
         profile, assessment.goal.value, code, strengths, careers, artifacts,
         personality_highlights, mot_highlights,

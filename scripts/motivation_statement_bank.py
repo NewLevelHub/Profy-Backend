@@ -88,6 +88,75 @@ PHRASES: dict[str, list[str]] = {
 assert set(PHRASES) == set(CATEGORIES)
 assert all(len(v) == 4 for v in PHRASES.values())
 
+# Junior (6-9) rewrite of PHRASES — same category, same position (index N of
+# a category here is the junior version of PHRASES[category][N], paired 1:1
+# in the STATEMENTS loop below) — worded around school/friends/hobbies
+# instead of career/money/work, since a 6-9 year old has no personal
+# experience of "a stable job" or "earning money". Shown instead of `text`
+# only for junior profiles (app/routers/motivation.py); middle/senior are
+# unaffected. Same tone-neutral principle as PHRASES: all 4 phrasings of a
+# category read at the same register, so forced-choice isn't biased toward
+# the better-written option.
+PHRASES_JUNIOR: dict[str, list[str]] = {
+    "interest": [
+        "Делать то, что мне по-настоящему нравится",
+        "Заниматься тем, что увлекает, даже если не за оценку",
+        "С головой уходить в то, что меня зацепило",
+        "Пробовать и узнавать то, что мне любопытно",
+    ],
+    "challenge": [
+        "Решать трудные задачи, которые не все берутся решать",
+        "Пробовать то, что сначала кажется слишком трудным",
+        "Постоянно учиться новому и становиться лучше",
+        "Проверять себя на по-настоящему трудных заданиях",
+    ],
+    "helping": [
+        "Помогать людям и быть им полезным",
+        "Делать что-то, что правда помогает другим",
+        "Быть рядом с теми, кому нужна помощь",
+        "Стараться, чтобы другим было лучше",
+    ],
+    "freedom": [
+        "Самому решать, что и как делать",
+        "Делать всё в своём темпе, без строгих указаний",
+        "Самому решать, чем заняться прямо сейчас",
+        "Делать по-своему, не спрашивая разрешения",
+    ],
+    "money": [
+        "Получать много всего хорошего за старания",
+        "Получать хорошую награду за то, что делаю",
+        "Иметь возможность покупать себе, что хочется",
+        "Получать достаточно, чтобы ни о чём не беспокоиться",
+    ],
+    "recognition": [
+        "Чтобы меня уважали за то, что я умею",
+        "Стать тем, кто лучше всех разбирается в своём деле",
+        "Чтобы замечали, когда я делаю что-то хорошо",
+        "Чтобы другие видели, что я в этом хорош",
+    ],
+    "stability": [
+        "Чтобы моя жизнь была спокойной и предсказуемой",
+        "Знать заранее, что будет завтра",
+        "Заниматься тем, где не бывает внезапных перемен",
+        "Заниматься тем, в чём я уверен",
+    ],
+    "creation": [
+        "Создать что-то своё, что раньше не существовало",
+        "Придумать и сделать что-то с нуля",
+        "Собрать или смастерить что-то своё",
+        "Оставить после себя то, что я сам придумал и сделал",
+    ],
+    "teamwork": [
+        "Быть в команде, где все друг друга поддерживают",
+        "Делать общее дело вместе с другими",
+        "Быть частью дружной команды",
+        "Добиваться результата вместе, а не одному",
+    ],
+}
+
+assert set(PHRASES_JUNIOR) == set(CATEGORIES)
+assert all(len(v) == 4 for v in PHRASES_JUNIOR.values())
+
 
 def _generate_lines() -> list[list[int]]:
     """AG(2,3): 3 vertical lines + 9 sloped lines (3 slopes x 3 intercepts,
@@ -115,6 +184,7 @@ for _triplet_index, _line in enumerate(LINES):
                 "order": _order,
                 "category": _category,
                 "text": PHRASES[_category][_seen[_category]],
+                "text_junior": PHRASES_JUNIOR[_category][_seen[_category]],
             }
         )
         _seen[_category] += 1

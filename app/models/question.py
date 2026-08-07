@@ -21,6 +21,7 @@ class HollandType(str, enum.Enum):
 class QuestionInstrument(str, enum.Enum):
     riasec = "riasec"
     big_five = "big_five"
+    mi = "mi"
 
 
 class BigFiveDomain(str, enum.Enum):
@@ -34,6 +35,20 @@ class BigFiveDomain(str, enum.Enum):
 class Keyed(str, enum.Enum):
     plus = "plus"
     minus = "minus"
+
+
+# Multiple-Intelligences-style categories replacing RIASEC for junior (6-9) —
+# TZ_Profi.md §4.1 explicitly excludes career orientation for this age group,
+# so junior's "interests" instrument is this instead of Holland codes.
+class MIType(str, enum.Enum):
+    verbal = "verbal"
+    logical = "logical"
+    musical = "musical"
+    visual = "visual"
+    bodily = "bodily"
+    interpersonal = "interpersonal"
+    intrapersonal = "intrapersonal"
+    naturalistic = "naturalistic"
 
 
 class Question(Base):
@@ -53,6 +68,9 @@ class Question(Base):
     )
     bigfive_domain: Mapped[BigFiveDomain | None] = mapped_column(
         Enum(BigFiveDomain, name="bigfive_domain_enum"), nullable=True
+    )
+    mi_category: Mapped[MIType | None] = mapped_column(
+        Enum(MIType, name="mi_type_enum"), nullable=True
     )
     facet: Mapped[int | None] = mapped_column(Integer, nullable=True)
     keyed: Mapped[Keyed | None] = mapped_column(

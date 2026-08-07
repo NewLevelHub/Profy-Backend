@@ -24,7 +24,7 @@ from sqlalchemy.orm import aliased
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.profile import AgeGroup
-from app.models.question import Question
+from app.models.question import Question, QuestionInstrument
 from app.models.question_pair import QuestionPair
 from app.models.user_response import UserResponse
 from app.schemas.question_pair import (
@@ -39,34 +39,47 @@ _PICKED_VALUE = 5
 _OTHER_VALUE = 1
 
 
-def _to_option(question: Question) -> QuestionPairOption:
+def _to_option(
+    question: Question, override_text: str | None = None, override_icon: str | None = None
+) -> QuestionPairOption:
     return QuestionPairOption(
         id=question.id,
-        text=question.short_text or question.text,
-        icon=question.icon,
+        text=override_text or question.short_text or question.text,
+        icon=override_icon or question.icon,
         riasec_type=question.riasec_type,
         bigfive_domain=question.bigfive_domain,
+        mi_category=question.mi_category,
     )
 
 
 async def get_pairs(db: AsyncSession, age_group: AgeGroup) -> list[QuestionPairItem]:
     question_a = aliased(Question)
     question_b = aliased(Question)
-    result = await db.execute(
+    query = (
         select(QuestionPair, question_a, question_b)
         .join(question_a, QuestionPair.question_a_id == question_a.id)
         .join(question_b, QuestionPair.question_b_id == question_b.id)
         .where(QuestionPair.age_tier == age_group)
         .order_by(QuestionPair.pair_index)
     )
+    if age_group == AgeGroup.junior:
+        # Junior's RIASEC content is retired in favor of the MI instrument
+        # (TZ_Profi.md §4.1 — no career orientation for 6-9-year-olds); old
+        # junior-tagged `riasec` QuestionPair rows are left in the DB but
+        # excluded here rather than migrated/deleted. MI itself is answered
+        # as plain Likert now (product override: ipsative pairing between
+        # unrelated MI categories made an already-weak construct worse — see
+        # question_service.get_all_questions), so only Big Five stays paired.
+        query = query.where(QuestionPair.instrument == QuestionInstrument.big_five)
+    result = await db.execute(query)
     return [
         QuestionPairItem(
             pair_index=pair.pair_index,
             instrument=pair.instrument,
             frame=pair.frame,
             display_order=min(q_a.order, q_b.order),
-            option_a=_to_option(q_a),
-            option_b=_to_option(q_b),
+            option_a=_to_option(q_a, pair.option_a_text, pair.option_a_icon),
+            option_b=_to_option(q_b, pair.option_b_text, pair.option_b_icon),
         )
         for pair, q_a, q_b in result.all()
     ]

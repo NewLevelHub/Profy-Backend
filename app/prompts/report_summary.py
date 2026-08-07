@@ -6,7 +6,8 @@ back to the template summary on any failure.
 """
 import json
 
-from app.models.profile import Profile
+from app.models.profile import AgeGroup, Profile
+from app.services.mi_content import MI_LABELS
 from app.services.riasec_content import RIASEC_LABELS
 
 SUMMARY_SCHEMA: dict = {
@@ -43,6 +44,11 @@ def build_messages(
     personality_highlights: list[str],
     motivation_highlights: list[str],
 ) -> list[dict[str, str]]:
+    # Junior (6-9) uses MI-style categories instead of RIASEC letters — see
+    # mi_service.py/mi_content.py. `code`/`strengths` hold MI category keys
+    # for that age group, RIASEC letters for middle/senior.
+    is_junior = profile.age_group == AgeGroup.junior
+    labels = MI_LABELS if is_junior else RIASEC_LABELS
     student = {
         "age": profile.age,
         "age_group": profile.age_group.value,
@@ -53,8 +59,9 @@ def build_messages(
         "subjects_easy": list(profile.subjects_easy or []),
         "subjects_hard": list(profile.subjects_hard or []),
         "clubs_sections": [a.value for a in artifacts],
-        "riasec_code": "".join(code),
-        "strengths": [RIASEC_LABELS.get(letter, letter) for letter in strengths],
+        "riasec_code": "" if is_junior else "".join(code),
+        "interests": [labels.get(c, c) for c in code] if is_junior else [],
+        "strengths": [labels.get(c, c) for c in strengths],
         "top_careers": [c.get("name", "") for c in careers[:3]],
         # Already-interpreted RU phrases from Big Five — never raw domain
         # percentages, so the LLM can't turn them into "Openness: 78%" talk.

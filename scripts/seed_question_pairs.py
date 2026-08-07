@@ -60,6 +60,18 @@ async def main() -> None:
                 if existing.frame != data["frame"]:
                     existing.frame = data["frame"]
                     changed = True
+                if existing.option_a_text != data.get("option_a_text"):
+                    existing.option_a_text = data.get("option_a_text")
+                    changed = True
+                if existing.option_b_text != data.get("option_b_text"):
+                    existing.option_b_text = data.get("option_b_text")
+                    changed = True
+                if existing.option_a_icon != data.get("option_a_icon"):
+                    existing.option_a_icon = data.get("option_a_icon")
+                    changed = True
+                if existing.option_b_icon != data.get("option_b_icon"):
+                    existing.option_b_icon = data.get("option_b_icon")
+                    changed = True
                 if changed:
                     updated += 1
                 else:
@@ -73,6 +85,10 @@ async def main() -> None:
                 question_a_id=question_a_id,
                 question_b_id=question_b_id,
                 frame=data["frame"],
+                option_a_text=data.get("option_a_text"),
+                option_b_text=data.get("option_b_text"),
+                option_a_icon=data.get("option_a_icon"),
+                option_b_icon=data.get("option_b_icon"),
             ))
             inserted += 1
 
