@@ -69,9 +69,11 @@ def _get_redis() -> aioredis.Redis:
 
 
 def _cache_key(assessment_id: uuid.UUID, program_id: uuid.UUID | None) -> str:
-    raw = f"{assessment_id}:{program_id or ''}"
-    h = hashlib.sha256(raw.encode()).hexdigest()[:24]
-    return f"roadmap:{h}"
+    # assessment_id stays in the clear so assessment_shared.invalidate_goal_roadmap
+    # can SCAN and drop every program variant of this assessment's roadmap at
+    # retake — only the program disambiguator needs hashing.
+    h = hashlib.sha256(str(program_id or "").encode()).hexdigest()[:24]
+    return f"roadmap:{assessment_id}:{h}"
 
 
 def _parse_directions(directions_jsonb: list) -> list[_DirectionSummary]:

@@ -5,7 +5,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
 from app.models.question import Question
@@ -142,16 +141,8 @@ async def submit_answers(
     if is_retake:
         assessment.status = AssessmentStatus.in_progress
         assessment.completed_at = None
-
-        old_result = await db.execute(
-            select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
-        )
-        old_analysis = old_result.scalar_one_or_none()
-        if old_analysis is not None:
-            await db.delete(old_analysis)
         redis = assessment_shared.get_redis()
-        await redis.delete(f"report:{assessment_id}")
-        await assessment_shared.invalidate_direction_flow(assessment, db, redis)
+        await assessment_shared.invalidate_retake(assessment, db, redis)
 
     answered = await assessment_shared.likert_answered_count(assessment_id, db)
     total = await assessment_shared.likert_total_questions(db, age_group)
