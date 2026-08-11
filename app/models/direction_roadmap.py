@@ -37,6 +37,9 @@ class DirectionRoadmap(Base):
     skills_to_build: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     subjects_to_focus: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     university_track: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    # Backend-populated only (never from the LLM): Program/University facts for
+    # goal="university" — empty list for every other goal. See UniversityRequirement.
+    university_requirements: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

@@ -2,7 +2,10 @@
 
 Single source of truth for "everything we know about this student" — profile,
 chosen goal, and the stored RIASEC report (profile/code/strengths/weaknesses/
-careers). Consumed by the roadmap builder and direction-inquiry LLM prompts.
+careers), plus the safe display-ready Big Five/motivation layer (personality_*/
+thinking_style/motivation_*; the raw admin-only scores stay out, see
+StudentContext). Consumed by the roadmap builder and direction-inquiry LLM
+prompts.
 """
 import uuid
 
@@ -139,6 +142,11 @@ async def build_student_context(
         code=list(analysis.code) if analysis else [],
         strengths=list(analysis.strengths) if analysis else [],
         weaknesses=list(analysis.weaknesses) if analysis else [],
+        personality_profile=dict(analysis.personality_profile) if analysis else {},
+        personality_notes=dict(analysis.personality_notes) if analysis else {},
+        thinking_style=dict(analysis.thinking_style) if analysis else {},
+        motivation_top=list(analysis.motivation_top) if analysis else [],
+        motivation_highlights=list(analysis.motivation_highlights) if analysis else [],
         careers=_context_careers(analysis),
         inquiry=_context_inquiry(inquiry),
     )

@@ -61,8 +61,10 @@ async def invalidate_goal_roadmap(
     """Drop the goal roadmap (roadmap_builder.generate_roadmap/get_roadmap):
     the DB row plus every cached variant for this assessment, including the
     program-specific ones from the university gap-analysis path. Cache keys
-    are `roadmap:{assessment_id}:{program_hash}` (see roadmap_builder._cache_key)
-    — SCAN, not a single known key, because the program_id suffix varies."""
+    are a plain `roadmap:{assessment_id}:{program_id|"none"}` (see
+    roadmap_builder._cache_key — deliberately not hashed) so every variant
+    can be found via a scan, not just the one program_id this call happens
+    to know about."""
     assessment_id = assessment.id
     pattern = f"roadmap:{assessment_id}:*"
     stale_keys = [key async for key in redis.scan_iter(match=pattern)]
