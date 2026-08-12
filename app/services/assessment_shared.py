@@ -56,7 +56,7 @@ async def invalidate_direction_flow(
 
 
 async def invalidate_goal_roadmap(
-    assessment: Assessment, db: AsyncSession, redis: aioredis.Redis
+    assessment_id: uuid.UUID, db: AsyncSession, redis: aioredis.Redis
 ) -> None:
     """Drop the goal roadmap (roadmap_builder.generate_roadmap/get_roadmap):
     the DB row plus every cached variant for this assessment, including the
@@ -64,8 +64,9 @@ async def invalidate_goal_roadmap(
     are a plain `roadmap:{assessment_id}:{program_id|"none"}` (see
     roadmap_builder._cache_key — deliberately not hashed) so every variant
     can be found via a scan, not just the one program_id this call happens
-    to know about."""
-    assessment_id = assessment.id
+    to know about. Takes the bare id (not the `Assessment` object, unlike
+    `invalidate_direction_flow`) — see tests/integration/
+    test_goal_roadmap_retake_invalidation.py for the contract this matches."""
     pattern = f"roadmap:{assessment_id}:*"
     stale_keys = [key async for key in redis.scan_iter(match=pattern)]
     if stale_keys:
@@ -94,7 +95,7 @@ async def invalidate_retake(
 
     await redis.delete(f"report:{assessment_id}")
     await invalidate_direction_flow(assessment, db, redis)
-    await invalidate_goal_roadmap(assessment, db, redis)
+    await invalidate_goal_roadmap(assessment_id, db, redis)
 
 
 async def get_profile_age_group(profile_id: uuid.UUID, db: AsyncSession) -> AgeGroup:
