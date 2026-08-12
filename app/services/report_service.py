@@ -1,11 +1,10 @@
-import json
 import logging
 import uuid
 from datetime import datetime, timezone
 
 import redis.asyncio as aioredis
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,23 +14,30 @@ from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.direction import Direction
 from app.models.profile import AgeGroup, Profile
-from app.prompts import report_summary
-from app.schemas.result import AnalysisResultResponse
+from app.schemas.report_narrative import ReportNarrativeOutput
+from app.schemas.result_v2 import (
+    MiResultResponse,
+    ResultResponseV2,
+    ResultV2Adapter,
+    RiasecResultResponse,
+    StudentStrengthCard,
+    StudentThinkingStyleNote,
+)
 from app.services import (
     assessment_shared,
     bigfive_content,
     bigfive_service,
-    llm_client,
     mi_service,
     motivation_pair_service,
     motivation_service,
+    report_narrative_context,
+    report_v2_assembler,
     riasec_service,
     thinking_style_service,
 )
 from app.services.bigfive_content import strength_phrases
-from app.services.mi_content import MI_LABELS
 from app.services.motivation_content import highlight_phrases as motivation_highlight_phrases
-from app.services.riasec_content import RIASEC_LABELS
+from app.services.report_narrative_service import generate_report_narrative
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +51,30 @@ def _get_redis() -> aioredis.Redis:
     if _redis is None:
         _redis = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
     return _redis
+
+
+# Cache key itself lives in assessment_shared (report_cache_key) so the one
+# place that invalidates it on retake (invalidate_retake) can never drift
+# from the key this module reads/writes.
+_cache_key = assessment_shared.report_cache_key
+
+
+async def _cache_get(redis: aioredis.Redis, key: str) -> str | None:
+    """Redis is an accelerator for the DB-backed report, never its source of
+    truth — an outage here must fall through to the DB path, not surface as
+    a 500 for a report that's actually available."""
+    try:
+        return await redis.get(key)
+    except aioredis.RedisError:
+        logger.warning("redis get failed for key=%s — falling back to DB", key, exc_info=True)
+        return None
+
+
+async def _cache_set(redis: aioredis.Redis, key: str, value: str) -> None:
+    try:
+        await redis.setex(key, CACHE_TTL, value)
+    except aioredis.RedisError:
+        logger.warning("redis set failed for key=%s — response served without caching", key, exc_info=True)
 
 
 def _career_dict(direction: Direction, match_score: int) -> dict:
@@ -61,63 +91,107 @@ def _career_dict(direction: Direction, match_score: int) -> dict:
     }
 
 
-def _build_summary(code: list[str]) -> str:
-    if not code:
-        return "Твои результаты показывают широкий потенциал для развития."
-    labels = [RIASEC_LABELS.get(letter, letter) for letter in code]
-    code_str = "".join(code)
-    if len(labels) == 1:
-        cats_str = labels[0]
-    else:
-        cats_str = ", ".join(labels[:-1]) + " и " + labels[-1]
-    return (
-        f"Твой код RIASEC — {code_str}. Сильнее всего у тебя выражены типы: {cats_str}. "
-        f"Это подсказывает, в какую сторону тебе интересно и комфортно развиваться."
-    )
-
-
-def _build_junior_summary(code: list[str]) -> str:
-    if not code:
-        return "Твои результаты показывают широкий потенциал для развития."
-    labels = [MI_LABELS.get(category, category) for category in code]
-    if len(labels) == 1:
-        cats_str = labels[0]
-    else:
-        cats_str = ", ".join(labels[:-1]) + " и " + labels[-1]
-    return (
-        f"Тебе больше всего интересно вот это: {cats_str}. "
-        f"Это подсказывает, какие занятия и кружки стоит попробовать."
-    )
-
-
-async def _generate_ai_summary(
-    profile: Profile | None,
-    goal: str,
-    code: list[str],
+async def _build_narrative(
+    *,
+    age_group: AgeGroup,
     strengths: list[str],
-    careers: list[dict],
-    artifacts: list,
-    personality_highlights: list[str],
+    personality_profile: dict[str, float],
+    personality_notes: dict[str, str],
+    thinking_style: dict[str, float],
+    motivation_top: list[str],
     motivation_highlights: list[str],
-) -> str | None:
-    """AI-personalized result summary. Returns None (→ template) if disabled or fails."""
-    if profile is None or not llm_client.is_enabled():
-        return None
-    try:
-        messages = report_summary.build_messages(
-            profile, goal, code, strengths, careers, artifacts,
-            personality_highlights, motivation_highlights,
+    profile: Profile | None,
+    artifacts: list[Artifact],
+) -> tuple[report_narrative_context.ReportNarrativeContext, ReportNarrativeOutput]:
+    """One LLM→validate→fallback call (report_narrative_service) produces
+    everything text-shaped: summary, strength_cards, thinking_style_notes —
+    used for all three, not just strength_cards/thinking_style_notes, so a
+    personalized summary and the cards it's consistent with never diverge
+    into two independent generations."""
+    context = report_narrative_context.build_report_narrative_context(
+        age_group=age_group,
+        strengths=strengths,
+        personality_profile=personality_profile,
+        personality_notes=personality_notes,
+        thinking_style=thinking_style,
+        motivation_top=motivation_top,
+        motivation_highlights=motivation_highlights,
+        subjects_liked=list(profile.subjects_liked or []) if profile else [],
+        subjects_easy=list(profile.subjects_easy or []) if profile else [],
+        artifacts=artifacts,
+    )
+    narrative, is_ai = await generate_report_narrative(
+        context, language=(profile.language if profile else "ru") or "ru"
+    )
+    logger.info("report_narrative generated is_ai=%s age_group=%s", is_ai, age_group.value)
+    return context, narrative
+
+
+async def _acquire_generation_lock(assessment_id: uuid.UUID, db: AsyncSession) -> None:
+    """Transaction-scoped Postgres advisory lock keyed on assessment_id —
+    serializes the "check DB, then generate" section of build_report()
+    across concurrent requests for the *same* assessment, so a second
+    concurrent POST /result/generate never runs its own LLM call/scoring
+    pass in parallel with the first, only to have it discarded on
+    IntegrityError. `pg_advisory_xact_lock` auto-releases when the
+    transaction ends (commit or rollback) — no manual unlock, so it can
+    never leak even if generation raises or the connection drops.
+    `hashtext()` collapses the UUID to the bigint the lock function wants;
+    a hash collision with an unrelated assessment_id would only ever cause
+    extra (harmless) serialization, never a correctness bug — the re-check
+    after acquiring the lock is what actually prevents a duplicate insert."""
+    await db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:key))"), {"key": str(assessment_id)})
+
+
+def _stored_interest_instrument(profile: dict) -> str:
+    """riasec_service.HOLLAND_ORDER keys are single uppercase letters, MI
+    keys are lowercase words — unambiguous either way, so a stored row's
+    own `profile` dict is enough to tell the two apart without also having
+    to persist age_group on AnalysisResult."""
+    return "riasec" if any(key in riasec_service.HOLLAND_ORDER for key in profile) else "mi"
+
+
+def _shape_response(analysis: AnalysisResult) -> ResultResponseV2:
+    """Rebuilds the v2 shape from an already-generated, already-stored row —
+    no LLM call, no re-generation. `strength_cards`/`thinking_style_notes`
+    are read back verbatim (already the final {title, description} shape,
+    migration 0041); `careers`/`interest_map`/`is_flat_profile`/
+    `exploration_activities` are recomputed from the other stored raw
+    fields via report_v2_assembler — the same functions generation uses,
+    just fed from storage instead of a fresh context."""
+    instrument = _stored_interest_instrument(analysis.profile)
+    effective_age_group = AgeGroup.junior if instrument == "mi" else AgeGroup.senior
+    minimal_context = report_narrative_context.build_report_narrative_context(
+        age_group=effective_age_group,
+        strengths=list(analysis.strengths),
+        personality_profile={}, personality_notes={}, thinking_style={},
+        motivation_top=[], motivation_highlights=[],
+        subjects_liked=[], subjects_easy=[], artifacts=[],
+    )
+    differentiation = float((analysis.meta or {}).get("differentiation", 0.0))
+    flat = report_v2_assembler.is_flat_profile(differentiation)
+
+    common = dict(
+        assessment_id=analysis.assessment_id,
+        summary=analysis.summary,
+        strength_cards=[StudentStrengthCard.model_validate(c) for c in analysis.strength_cards],
+        interest_map=report_v2_assembler.build_interest_map(effective_age_group, dict(analysis.profile)),
+        thinking_style_notes=[StudentThinkingStyleNote.model_validate(n) for n in analysis.thinking_style_notes],
+        motivation_highlights=list(analysis.motivation_highlights),
+        is_flat_profile=flat,
+        created_at=analysis.created_at,
+    )
+
+    if instrument == "mi":
+        return MiResultResponse(
+            **common,
+            exploration_activities=report_v2_assembler.build_exploration_activities(minimal_context),
         )
-        raw = await llm_client.complete_json(
-            messages, report_summary.SUMMARY_SCHEMA, "report_summary"
-        )
-    except (llm_client.LLMError, TypeError):
-        logger.warning("AI summary failed, using template summary")
-        return None
-    summary = raw.get("summary")
-    if isinstance(summary, str) and summary.strip():
-        return summary.strip()
-    return None
+
+    return RiasecResultResponse(
+        **common,
+        careers=report_v2_assembler.build_riasec_careers(minimal_context, list(analysis.careers), flat),
+    )
 
 
 async def _assert_assessment_complete(
@@ -154,21 +228,39 @@ async def _assert_assessment_complete(
 
 async def build_report(
     assessment_id: uuid.UUID, db: AsyncSession
-) -> AnalysisResultResponse:
-    cache_key = f"report:{assessment_id}"
+) -> ResultResponseV2:
+    cache_key = _cache_key(assessment_id)
     redis = _get_redis()
 
-    cached = await redis.get(cache_key)
+    cached = await _cache_get(redis, cache_key)
     if cached:
-        return AnalysisResultResponse.model_validate(json.loads(cached))
+        return ResultV2Adapter.validate_json(cached)
 
     existing_result = await db.execute(
         select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
     )
     existing = existing_result.scalar_one_or_none()
     if existing:
-        response = AnalysisResultResponse.model_validate(existing)
-        await redis.setex(cache_key, CACHE_TTL, response.model_dump_json())
+        response = _shape_response(existing)
+        await _cache_set(redis, cache_key, response.model_dump_json())
+        return response
+
+    # No result yet — but a concurrent request for this same assessment_id
+    # might already be generating one. Block here (real DB-level wait, not
+    # busy-polling) until any such request's transaction finishes, then
+    # re-check: if it landed a row while we waited, read that instead of
+    # independently repeating the scoring pass + LLM call below. This is
+    # what actually stops duplicate generation work — the IntegrityError
+    # handler further down is only a defense-in-depth backstop now, not the
+    # primary mechanism.
+    await _acquire_generation_lock(assessment_id, db)
+    existing_result = await db.execute(
+        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+    )
+    existing = existing_result.scalar_one_or_none()
+    if existing:
+        response = _shape_response(existing)
+        await _cache_set(redis, cache_key, response.model_dump_json())
         return response
 
     assessment_result = await db.execute(
@@ -252,16 +344,29 @@ async def build_report(
     mot_top = motivation_service.top_categories(mot_scores)
     mot_highlights = motivation_highlight_phrases(mot_top)
 
-    template_summary = _build_junior_summary(code) if age_group == AgeGroup.junior else _build_summary(code)
-    ai_summary = await _generate_ai_summary(
-        profile, assessment.goal.value, code, strengths, careers, artifacts,
-        personality_highlights, mot_highlights,
+    # One narrative call feeds summary + strength_cards + thinking_style_notes
+    # together (LLM when enabled and valid, deterministic fallback otherwise
+    # — report_narrative_service never raises and never leaves any of the
+    # three empty/inconsistent with each other).
+    context, narrative = await _build_narrative(
+        age_group=age_group,
+        strengths=strengths,
+        personality_profile=personality_profile,
+        personality_notes=personality_notes,
+        thinking_style=thinking_style,
+        motivation_top=mot_top,
+        motivation_highlights=mot_highlights,
+        profile=profile,
+        artifacts=artifacts,
     )
-    summary = ai_summary or template_summary
+    strength_cards_stored = [card.model_dump(exclude={"evidence_ids"}) for card in narrative.strength_cards]
+    thinking_style_notes_stored = [
+        note.model_dump(exclude={"evidence_ids"}) for note in narrative.thinking_style_notes
+    ]
 
     analysis = AnalysisResult(
         assessment_id=assessment_id,
-        summary=summary,
+        summary=narrative.summary,
         profile=profile_scores,
         code=code,
         meta=meta,
@@ -277,6 +382,9 @@ async def build_report(
         motivation=mot_scores,
         motivation_top=mot_top,
         motivation_highlights=mot_highlights,
+        strength_cards=strength_cards_stored,
+        thinking_style_notes=thinking_style_notes_stored,
+        report_version=2,
     )
     db.add(analysis)
     if assessment.status != AssessmentStatus.completed:
@@ -294,21 +402,33 @@ async def build_report(
             select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
         )
         analysis = existing_result.scalar_one()
+        response = _shape_response(analysis)
+        await _cache_set(redis, cache_key, response.model_dump_json())
+        return response
 
-    response = AnalysisResultResponse.model_validate(analysis)
-    await redis.setex(cache_key, CACHE_TTL, response.model_dump_json())
+    response = report_v2_assembler.assemble_result_v2(
+        assessment_id=assessment_id,
+        age_group=age_group,
+        context=context,
+        narrative=narrative,
+        profile_scores=profile_scores,
+        differentiation=meta["differentiation"],
+        careers=careers,
+        created_at=analysis.created_at,
+    )
+    await _cache_set(redis, cache_key, response.model_dump_json())
     return response
 
 
 async def get_report(
     assessment_id: uuid.UUID, db: AsyncSession
-) -> AnalysisResultResponse | None:
-    cache_key = f"report:{assessment_id}"
+) -> ResultResponseV2 | None:
+    cache_key = _cache_key(assessment_id)
     redis = _get_redis()
 
-    cached = await redis.get(cache_key)
+    cached = await _cache_get(redis, cache_key)
     if cached:
-        return AnalysisResultResponse.model_validate(json.loads(cached))
+        return ResultV2Adapter.validate_json(cached)
 
     result = await db.execute(
         select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
@@ -316,6 +436,6 @@ async def get_report(
     analysis = result.scalar_one_or_none()
     if analysis is None:
         return None
-    response = AnalysisResultResponse.model_validate(analysis)
-    await redis.setex(cache_key, CACHE_TTL, response.model_dump_json())
+    response = _shape_response(analysis)
+    await _cache_set(redis, cache_key, response.model_dump_json())
     return response

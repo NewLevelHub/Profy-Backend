@@ -26,7 +26,13 @@ from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
 from app.models.question import BigFiveDomain, MIType, Question, QuestionInstrument
 from app.models.user import User
-from app.services import assessment_shared, motivation_pair_service, motivation_service, report_service
+from app.services import (
+    assessment_shared,
+    llm_client,
+    motivation_pair_service,
+    motivation_service,
+    report_service,
+)
 
 _AGE_SAMPLE = {AgeGroup.junior: 8, AgeGroup.middle: 12, AgeGroup.senior: 16}
 
@@ -165,6 +171,10 @@ async def test_successful_generation_atomically_sets_completion_and_result(
     assessment = await _make_assessment(db_session, AgeGroup.senior)
     _patch_likert(monkeypatch, answered=1, total=1)
     _patch_senior_motivation(monkeypatch, answered=1, total=1)
+    # This dev env actually has a working LLM key (LLM_ENABLED=true) — force
+    # it off so this test is a fast, deterministic fallback run, not an
+    # accidental real API call on every suite run.
+    monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
 
     response = await report_service.build_report(assessment.id, db_session)
 
@@ -178,3 +188,29 @@ async def test_successful_generation_atomically_sets_completion_and_result(
         select(AnalysisResult).where(AnalysisResult.assessment_id == assessment.id)
     )
     assert stored.scalar_one_or_none() is not None
+
+
+async def test_successful_generation_populates_v2_narrative_fields(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """report_service.build_report now calls report_narrative_service under
+    the hood (docs/rs-progress-notes.md) — this pins that wiring: a fresh
+    report must land with report_version=2 and a non-empty strength_cards
+    list, not the old report_version=1/empty-list default. LLM is forced
+    off (see comment in the previous test) so this exercises the
+    deterministic fallback builder, not a real model call."""
+    assessment = await _make_assessment(db_session, AgeGroup.senior)
+    _patch_likert(monkeypatch, answered=1, total=1)
+    _patch_senior_motivation(monkeypatch, answered=1, total=1)
+    monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
+
+    await report_service.build_report(assessment.id, db_session)
+
+    stored = await db_session.execute(
+        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment.id)
+    )
+    analysis = stored.scalar_one()
+    assert analysis.report_version == 2
+    assert analysis.strength_cards
+    for card in analysis.strength_cards:
+        assert set(card.keys()) == {"title", "description"}

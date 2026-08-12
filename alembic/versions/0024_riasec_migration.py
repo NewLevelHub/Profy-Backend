@@ -146,3 +146,6 @@ def downgrade() -> None:
     op.add_column("questions", sa.Column("block", question_block_enum, nullable=False))
     op.add_column("questions", sa.Column("age_group", sa.Enum(name="age_group_enum", create_type=False), nullable=False))
     op.add_column("questions", sa.Column("options", postgresql.JSONB(), nullable=False, server_default=sa.text("'[]'::jsonb")))
+    op.create_index("ix_questions_block", "questions", ["block"])
+    op.create_index("ix_questions_age_group", "questions", ["age_group"])
+    op.create_index("ix_questions_block_age_group", "questions", ["block", "age_group"])

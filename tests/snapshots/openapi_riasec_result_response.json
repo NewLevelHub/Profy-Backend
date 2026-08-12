@@ -1,0 +1,71 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "assessment_id": {
+      "type": "string"
+    },
+    "careers": {
+      "items": "StudentCareer",
+      "maxItems": 5,
+      "type": "array"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "disclaimer": {
+      "default": "Это не окончательный выбор, а карта возможных направлений — со временем картина может измениться, и это нормально.",
+      "type": "string"
+    },
+    "exploration_activities": {
+      "items": "string",
+      "maxItems": 0,
+      "type": "array"
+    },
+    "interest_instrument": {
+      "const": "riasec",
+      "default": "riasec",
+      "type": "string"
+    },
+    "interest_map": {
+      "items": "StudentInterestMapItem",
+      "maxItems": 6,
+      "minItems": 6,
+      "type": "array"
+    },
+    "is_flat_profile": {
+      "type": "boolean"
+    },
+    "motivation_highlights": {
+      "items": "string",
+      "type": "array"
+    },
+    "report_version": {
+      "const": 2,
+      "default": 2,
+      "type": "integer"
+    },
+    "strength_cards": {
+      "items": "StudentStrengthCard",
+      "type": "array"
+    },
+    "summary": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "thinking_style_notes": {
+      "items": "StudentThinkingStyleNote",
+      "type": "array"
+    }
+  },
+  "required": [
+    "assessment_id",
+    "careers",
+    "created_at",
+    "interest_map",
+    "is_flat_profile",
+    "motivation_highlights",
+    "strength_cards",
+    "summary",
+    "thinking_style_notes"
+  ]
+}

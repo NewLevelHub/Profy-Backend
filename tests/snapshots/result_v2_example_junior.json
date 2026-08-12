@@ -1,0 +1,70 @@
+{
+  "assessment_id": "00000000-0000-0000-0000-000000000001",
+  "careers": [],
+  "created_at": "2026-01-01T00:00:00Z",
+  "disclaimer": "Это не окончательный выбор, а карта возможных направлений — со временем картина может измениться, и это нормально.",
+  "exploration_activities": [
+    "Собери конструктор LEGO"
+  ],
+  "interest_instrument": "mi",
+  "interest_map": [
+    {
+      "code": "verbal",
+      "level": "medium",
+      "sphere": "verbal"
+    },
+    {
+      "code": "logical",
+      "level": "medium",
+      "sphere": "logical"
+    },
+    {
+      "code": "musical",
+      "level": "medium",
+      "sphere": "musical"
+    },
+    {
+      "code": "visual",
+      "level": "medium",
+      "sphere": "visual"
+    },
+    {
+      "code": "bodily",
+      "level": "medium",
+      "sphere": "bodily"
+    },
+    {
+      "code": "interpersonal",
+      "level": "medium",
+      "sphere": "interpersonal"
+    },
+    {
+      "code": "intrapersonal",
+      "level": "medium",
+      "sphere": "intrapersonal"
+    },
+    {
+      "code": "naturalistic",
+      "level": "medium",
+      "sphere": "naturalistic"
+    }
+  ],
+  "is_flat_profile": false,
+  "motivation_highlights": [
+    "Тебе важно разбираться в интересном"
+  ],
+  "report_version": 2,
+  "strength_cards": [
+    {
+      "description": "Короткое описание",
+      "title": "Сильная сторона 0"
+    }
+  ],
+  "summary": "Тебе нравится решать логические задачки.",
+  "thinking_style_notes": [
+    {
+      "description": "Короткое описание",
+      "title": "Стиль 0"
+    }
+  ]
+}

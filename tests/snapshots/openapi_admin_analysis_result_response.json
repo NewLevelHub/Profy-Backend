@@ -1,0 +1,104 @@
+{
+  "additionalProperties": null,
+  "properties": {
+    "assessment_id": {
+      "type": "string"
+    },
+    "big_five": {
+      "type": "object"
+    },
+    "careers": {
+      "items": "AdminCareerMatch",
+      "type": "array"
+    },
+    "code": {
+      "items": "string",
+      "type": "array"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "development_plan": {
+      "ref": "AdminDevelopmentPlan"
+    },
+    "id": {
+      "type": "string"
+    },
+    "meta": {
+      "ref": "AnalysisMeta"
+    },
+    "motivation": {
+      "type": "object"
+    },
+    "motivation_highlights": {
+      "items": "string",
+      "type": "array"
+    },
+    "motivation_top": {
+      "items": "string",
+      "type": "array"
+    },
+    "personality_highlights": {
+      "items": "string",
+      "type": "array"
+    },
+    "personality_notes": {
+      "type": "object"
+    },
+    "personality_profile": {
+      "type": "object"
+    },
+    "profile": {
+      "type": "object"
+    },
+    "report_version": {
+      "type": "integer"
+    },
+    "strength_cards": {
+      "items": "AdminStrengthCard",
+      "type": "array"
+    },
+    "strengths": {
+      "items": "string",
+      "type": "array"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "thinking_style": {
+      "ref": "AdminThinkingStyle"
+    },
+    "thinking_style_notes": {
+      "items": "AdminThinkingStyleNote",
+      "type": "array"
+    },
+    "weaknesses": {
+      "items": "string",
+      "type": "array"
+    }
+  },
+  "required": [
+    "assessment_id",
+    "big_five",
+    "careers",
+    "code",
+    "created_at",
+    "development_plan",
+    "id",
+    "meta",
+    "motivation",
+    "motivation_highlights",
+    "motivation_top",
+    "personality_highlights",
+    "personality_notes",
+    "personality_profile",
+    "profile",
+    "report_version",
+    "strength_cards",
+    "strengths",
+    "summary",
+    "thinking_style",
+    "thinking_style_notes",
+    "weaknesses"
+  ]
+}

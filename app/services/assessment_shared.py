@@ -4,6 +4,7 @@ needs motivation's totals for AssessmentResponse; motivation needs
 assessment's Likert totals + retake-invalidation to decide when the whole
 test — not just its own phase — is complete)."""
 
+import logging
 import uuid
 
 import redis.asyncio as aioredis
@@ -21,7 +22,20 @@ from app.models.roadmap import Roadmap
 from app.models.user_response import UserResponse
 from app.services.age_tiers import visible_tiers
 
+logger = logging.getLogger(__name__)
+
 _redis: aioredis.Redis | None = None
+
+# Single source of truth for the report cache key — report_service.py reads/
+# writes this, invalidate_retake() below must delete the exact same key.
+# Versioned (v2, was bare "report:{id}") so a pre-rollout v1-shaped payload
+# can never be read back as v2: the old prefix is simply never addressed
+# again by any code path, not filtered out at read time.
+REPORT_CACHE_KEY_PREFIX = "report:v2"
+
+
+def report_cache_key(assessment_id: uuid.UUID) -> str:
+    return f"{REPORT_CACHE_KEY_PREFIX}:{assessment_id}"
 
 
 def get_redis() -> aioredis.Redis:
@@ -29,6 +43,27 @@ def get_redis() -> aioredis.Redis:
     if _redis is None:
         _redis = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
     return _redis
+
+
+async def safe_redis_delete(redis: aioredis.Redis, *keys: str) -> None:
+    """Best-effort cache invalidation: the DB row this cache mirrors is
+    deleted/updated in the same transaction by the caller regardless, so a
+    Redis outage here means the cache goes stale until its TTL expires —
+    not a lost write and not a reason to fail the whole request."""
+    if not keys:
+        return
+    try:
+        await redis.delete(*keys)
+    except aioredis.RedisError:
+        logger.warning("redis delete failed for keys=%s", keys, exc_info=True)
+
+
+async def safe_redis_scan(redis: aioredis.Redis, pattern: str) -> list[str]:
+    try:
+        return [key async for key in redis.scan_iter(match=pattern)]
+    except aioredis.RedisError:
+        logger.warning("redis scan failed for pattern=%s", pattern, exc_info=True)
+        return []
 
 
 async def invalidate_direction_flow(
@@ -52,7 +87,7 @@ async def invalidate_direction_flow(
     assessment.selected_direction_slug = None
 
     for slug in slugs:
-        await redis.delete(f"droadmap:{assessment_id}:{slug}", f"dq:{assessment_id}:{slug}")
+        await safe_redis_delete(redis, f"droadmap:{assessment_id}:{slug}", f"dq:{assessment_id}:{slug}")
 
 
 async def invalidate_goal_roadmap(
@@ -68,9 +103,8 @@ async def invalidate_goal_roadmap(
     `invalidate_direction_flow`) — see tests/integration/
     test_goal_roadmap_retake_invalidation.py for the contract this matches."""
     pattern = f"roadmap:{assessment_id}:*"
-    stale_keys = [key async for key in redis.scan_iter(match=pattern)]
-    if stale_keys:
-        await redis.delete(*stale_keys)
+    stale_keys = await safe_redis_scan(redis, pattern)
+    await safe_redis_delete(redis, *stale_keys)
     await db.execute(Roadmap.__table__.delete().where(Roadmap.assessment_id == assessment_id))
 
 
@@ -93,7 +127,7 @@ async def invalidate_retake(
     if old_analysis is not None:
         await db.delete(old_analysis)
 
-    await redis.delete(f"report:{assessment_id}")
+    await safe_redis_delete(redis, report_cache_key(assessment_id))
     await invalidate_direction_flow(assessment, db, redis)
     await invalidate_goal_roadmap(assessment_id, db, redis)
 

@@ -1,0 +1,85 @@
+{
+  "assessment_id": "00000000-0000-0000-0000-000000000001",
+  "careers": [
+    {
+      "description": null,
+      "first_steps": [],
+      "matched_strengths": [],
+      "name": "Направление",
+      "rank": 1,
+      "skills_needed": [],
+      "slug": "swe",
+      "subjects_to_develop": [],
+      "tier": "strong",
+      "try_now": "Попробуй маленький проект",
+      "why": "Совпадает с твоими ответами"
+    },
+    {
+      "description": null,
+      "first_steps": [],
+      "matched_strengths": [],
+      "name": "Направление",
+      "rank": 1,
+      "skills_needed": [],
+      "slug": "designer",
+      "subjects_to_develop": [],
+      "tier": "good",
+      "try_now": "Попробуй маленький проект",
+      "why": "Совпадает с твоими ответами"
+    }
+  ],
+  "created_at": "2026-01-01T00:00:00Z",
+  "disclaimer": "Это не окончательный выбор, а карта возможных направлений — со временем картина может измениться, и это нормально.",
+  "exploration_activities": [],
+  "interest_instrument": "riasec",
+  "interest_map": [
+    {
+      "code": "R",
+      "level": "medium",
+      "sphere": "R"
+    },
+    {
+      "code": "I",
+      "level": "medium",
+      "sphere": "I"
+    },
+    {
+      "code": "A",
+      "level": "medium",
+      "sphere": "A"
+    },
+    {
+      "code": "S",
+      "level": "medium",
+      "sphere": "S"
+    },
+    {
+      "code": "E",
+      "level": "medium",
+      "sphere": "E"
+    },
+    {
+      "code": "C",
+      "level": "medium",
+      "sphere": "C"
+    }
+  ],
+  "is_flat_profile": false,
+  "motivation_highlights": [
+    "Тебе важно докапываться до сути"
+  ],
+  "report_version": 2,
+  "strength_cards": [
+    {
+      "description": "Короткое описание",
+      "title": "Сильная сторона 0"
+    }
+  ],
+  "summary": "У тебя выражен исследовательский и артистичный тип.",
+  "thinking_style_notes": [
+    {
+      "description": "Короткое описание",
+      "title": "Стиль 0"
+    }
+  ]
+}

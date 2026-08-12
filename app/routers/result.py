@@ -10,7 +10,7 @@ from app.dependencies import get_current_user
 from app.models.assessment import Assessment
 from app.models.profile import Profile
 from app.models.user import User
-from app.schemas.result import AnalysisResultResponse
+from app.schemas.result_v2 import ResultResponseV2, ResultV2Schema
 from app.services import report_service
 
 router = APIRouter(tags=["result"])
@@ -42,22 +42,22 @@ async def _require_assessment_access(
         )
 
 
-@router.post("/generate", response_model=AnalysisResultResponse)
+@router.post("/generate", response_model=ResultV2Schema)
 async def generate_report(
     data: GenerateReportRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> AnalysisResultResponse:
+) -> ResultResponseV2:
     await _require_assessment_access(data.assessment_id, current_user, db)
     return await report_service.build_report(data.assessment_id, db)
 
 
-@router.get("/{assessment_id}", response_model=AnalysisResultResponse)
+@router.get("/{assessment_id}", response_model=ResultV2Schema)
 async def get_report(
     assessment_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> AnalysisResultResponse:
+) -> ResultResponseV2:
     await _require_assessment_access(assessment_id, current_user, db)
     result = await report_service.get_report(assessment_id, db)
     if result is None:

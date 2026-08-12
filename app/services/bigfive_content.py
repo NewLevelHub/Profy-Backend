@@ -92,6 +92,14 @@ _NOTES: dict[str, dict[str, str]] = {
 }
 
 
+def is_high_tier(value: float) -> bool:
+    """Same threshold `build_personality_profile` uses for its "high" tier —
+    exposed so other consumers (the report narrative evidence catalog) can
+    filter to only strongly-evidenced traits without duplicating the magic
+    number or re-deriving the tier from scratch."""
+    return value >= _STRONG
+
+
 def build_personality_profile(
     bigfive_normalized: dict[str, float],
 ) -> tuple[dict[str, float], dict[str, str]]:

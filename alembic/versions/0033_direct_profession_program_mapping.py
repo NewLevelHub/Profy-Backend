@@ -48,5 +48,6 @@ def downgrade() -> None:
         "programs",
         sa.Column("direction_slug", sa.String(length=100), nullable=False, server_default=""),
     )
+    op.create_index("ix_programs_direction_slug", "programs", ["direction_slug"])
     op.drop_index("ix_programs_profession_slugs", table_name="programs")
     op.drop_column("programs", "profession_slugs")
