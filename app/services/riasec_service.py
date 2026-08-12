@@ -123,7 +123,9 @@ async def matched_careers(
     result = await db.execute(select(Direction))
     directions = list(result.scalars().all())
     scored = [(d, career_match_score(user_code, d.holland_code)) for d in directions]
-    scored.sort(key=lambda pair: pair[1], reverse=True)
+    # Tie-break on slug (ascending) so equal scores don't depend on DB row
+    # order — same convention as top_code's HOLLAND_ORDER tie-break above.
+    scored.sort(key=lambda pair: (-pair[1], pair[0].slug))
     return scored[:limit]
 
 

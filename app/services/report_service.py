@@ -18,6 +18,7 @@ from app.models.profile import AgeGroup, Profile
 from app.prompts import report_summary
 from app.schemas.result import AnalysisResultResponse
 from app.services import (
+    assessment_shared,
     bigfive_content,
     bigfive_service,
     llm_client,
@@ -119,6 +120,38 @@ async def _generate_ai_summary(
     return None
 
 
+async def _assert_assessment_complete(
+    assessment_id: uuid.UUID, age_group: AgeGroup, db: AsyncSession
+) -> None:
+    """Server-side re-check, independent of whatever `completed` flag a
+    client last saw from /assessment/answers or /assessment/motivation —
+    each of those only ever confirms its own phase, not the whole test.
+    Required counts are age-specific since the MI/Harter merge: junior's
+    Likert total is MI + Big Five with the retired RIASEC rows excluded
+    (assessment_shared.likert_total_questions already does this), middle
+    and senior are RIASEC + Big Five (question pairs land in the same
+    Question/UserResponse tables, so no separate count is needed for them).
+    Motivation is Harter pairs for junior/middle, MOST/LEAST triplets for
+    senior — different tables, so the right counter has to be picked here."""
+    likert_answered = await assessment_shared.likert_answered_count(assessment_id, db)
+    likert_total = await assessment_shared.likert_total_questions(db, age_group)
+    likert_done = likert_total > 0 and likert_answered >= likert_total
+
+    if age_group == AgeGroup.senior:
+        mot_answered = await motivation_service.answered_count(assessment_id, db)
+        mot_total = await motivation_service.total_triplets(db)
+    else:
+        mot_answered = await motivation_pair_service.answered_count(assessment_id, db)
+        mot_total = await motivation_pair_service.total_pairs(db)
+    mot_done = mot_total > 0 and mot_answered >= mot_total
+
+    if not (likert_done and mot_done):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Тест ещё не завершён — сначала ответь на все обязательные вопросы",
+        )
+
+
 async def build_report(
     assessment_id: uuid.UUID, db: AsyncSession
 ) -> AnalysisResultResponse:
@@ -147,16 +180,15 @@ async def build_report(
             status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found"
         )
 
-    if assessment.status != AssessmentStatus.completed:
-        assessment.status = AssessmentStatus.completed
-        assessment.completed_at = datetime.now(timezone.utc)
-        await db.commit()
-
     profile_result = await db.execute(
         select(Profile).where(Profile.id == assessment.profile_id)
     )
     profile = profile_result.scalar_one_or_none()
     age_group = profile.age_group if profile is not None else AgeGroup.senior
+
+    # Gate before any write: an incomplete assessment must not flip to
+    # `completed` and must not get a partial AnalysisResult.
+    await _assert_assessment_complete(assessment_id, age_group, db)
 
     artifacts_result = await db.execute(
         select(Artifact).where(Artifact.profile_id == assessment.profile_id)
@@ -247,6 +279,12 @@ async def build_report(
         motivation_highlights=mot_highlights,
     )
     db.add(analysis)
+    if assessment.status != AssessmentStatus.completed:
+        # Same transaction as the AnalysisResult insert below — either both
+        # land or neither does, so a completed-without-a-report assessment
+        # can no longer exist.
+        assessment.status = AssessmentStatus.completed
+        assessment.completed_at = datetime.now(timezone.utc)
     try:
         await db.commit()
         await db.refresh(analysis)
