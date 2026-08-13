@@ -112,9 +112,26 @@ def top_code(normalized: dict[str, float], limit: int = 3) -> list[str]:
     return ranked[:limit]
 
 
+def direction_letter_weight(letter: str, direction_code: str) -> int:
+    """3 if `letter` is direction_code's primary (first) letter, 2 if
+    secondary, 1 if tertiary, 0 if absent — positional, not just membership.
+    Holland's own congruence theory (Iachan-style indices) treats matching
+    a direction's PRIMARY letter as worth more than matching its third —
+    plain `letter in direction_code` collapsed that distinction, which is
+    also why every anagram of the same 3 letters (CSE/ESC/SEC/...) used to
+    score identically (found live: report_v2_assembler.py's
+    _matched_strengths_for produced byte-identical `why` text across
+    unrelated careers sharing a letter set)."""
+    position = direction_code.find(letter)
+    return 3 - position if 0 <= position < 3 else 0
+
+
 def career_match_score(user_code: list[str], direction_code: str) -> int:
-    weights = [3, 2, 1]
-    return sum(w for w, letter in zip(weights, user_code) if letter in direction_code)
+    user_weights = [3, 2, 1]
+    return sum(
+        w * direction_letter_weight(letter, direction_code)
+        for w, letter in zip(user_weights, user_code)
+    )
 
 
 async def matched_careers(
@@ -126,7 +143,21 @@ async def matched_careers(
     # Tie-break on slug (ascending) so equal scores don't depend on DB row
     # order — same convention as top_code's HOLLAND_ORDER tie-break above.
     scored.sort(key=lambda pair: (-pair[1], pair[0].slug))
-    return scored[:limit]
+    # Never surface two directions with the literally identical holland_code
+    # in the same result — found live: 3 of the top-5 careers shown to a
+    # student (Архивариус/Аудитор/Бухгалтер) all had holland_code=="CSE",
+    # so they scored identically AND cited the identical evidence, reading
+    # as the app just repeating itself. Positional scoring above already
+    # differentiates anagrams (CSE vs ESC) — this handles the case no
+    # scoring change can fix: an exact duplicate code has no order to weigh.
+    deduped: list[tuple[Direction, int]] = []
+    seen_codes: set[str] = set()
+    for direction, score in scored:
+        if direction.holland_code in seen_codes:
+            continue
+        seen_codes.add(direction.holland_code)
+        deduped.append((direction, score))
+    return deduped[:limit]
 
 
 def _aversion_ratio(letter: str, aversion_counts: dict[str, int], counts: dict[str, int]) -> float:
@@ -146,6 +177,20 @@ def strengths_weaknesses(
         t for t in ranked
         if _aversion_ratio(t, aversion_counts, counts) < _AVERSION_DISQUALIFY_RATIO
     ][:limit]
+    if len(strengths) < limit:
+        # A strict aversion filter can leave too few (even zero) categories
+        # — found live: a student with >=30% explicit dislike on 5 of 6
+        # RIASEC types ended up with a near-empty/empty evidence catalog,
+        # so "Сильные стороны" disappeared from the report entirely. That
+        # reads worse than showing the best-available signal. career
+        # matching (top_code, above) already ignores aversion completely —
+        # this just brings the evidence catalog in line with that, padding
+        # with the next best-scoring types regardless of aversion.
+        for t in ranked:
+            if len(strengths) >= limit:
+                break
+            if t not in strengths:
+                strengths.append(t)
 
     weaknesses = list(reversed(ranked))[:limit]
 

@@ -277,6 +277,18 @@ async def test_junior_full_flow_gives_eight_mi_interests_no_careers_and_activiti
     assert response.strength_cards
     assert response.motivation_highlights
 
+    # "Твой характер" — always all 5 Big Five traits, junior-simplified
+    # wording (TZ_Profi.md §4.1), and never duplicated into strength_cards.
+    assert len(response.personality_notes) == 5
+    assert {n.trait for n in response.personality_notes} == {
+        "openness", "conscientiousness", "extraversion", "agreeableness", "emotional_stability",
+    }
+    from app.services.bigfive_content import _NOTES
+    adult_descriptions = {note for tiers in _NOTES.values() for note in tiers.values()}
+    assert not any(n.description in adult_descriptions for n in response.personality_notes)
+    strength_texts = " ".join(c.title + c.description for c in response.strength_cards)
+    assert not any(n.description in strength_texts for n in response.personality_notes)
+
 
 async def test_junior_incomplete_harter_generation_forbidden_status_unchanged(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch,
@@ -384,3 +396,9 @@ async def test_senior_full_flow_same_motivation_shape_and_harter_rows_ignored(
         await db_session.execute(select(Assessment).where(Assessment.id == assessment.id))
     ).scalar_one()
     assert stored_motivation_top.status == AssessmentStatus.completed
+
+    # "Твой характер" — adult wording for senior (not junior's simplified table).
+    assert len(response.personality_notes) == 5
+    from app.services.bigfive_content import _NOTES_JUNIOR
+    junior_descriptions = {note for tiers in _NOTES_JUNIOR.values() for note in tiers.values()}
+    assert not any(n.description in junior_descriptions for n in response.personality_notes)

@@ -27,10 +27,6 @@ from app.services.thinking_style_content import (
     THINKING_STYLE_IMPACT,
 )
 
-# TZ_Profi.md §17.5 point 7 / Приложение C В.2 — required framing, reused
-# verbatim by both this fallback and instructed identically to the LLM.
-_FRAME_PHRASE = "Это не окончательный выбор, а карта возможных направлений."
-
 # TZ_Profi.md §18.2 п.2: each strength card is "короткая формулировка +
 # одно предложение объяснения со ссылкой на ответы ребёнка" — the
 # formulation (item.text, e.g. "Любишь докапываться до сути и разбираться,
@@ -116,18 +112,23 @@ def _join_ru(items: list[str]) -> str:
 
 def _summary(age_group: AgeGroup) -> str:
     # TZ_Profi.md §18.2 п.1 wants a short but real summary — 2 sentences
-    # (story sentence + the mandatory frame phrase) read as too thin; a
-    # third, bridging sentence pointing at the rest of the report is genuine
-    # content, not padding.
+    # read as too thin, so a third, genuinely new sentence is needed. That
+    # third sentence used to be the "не окончательный выбор" frame phrase,
+    # but `disclaimer` (app/schemas/result_v2.py, DISCLAIMER) already says
+    # almost the same thing right next to summary on the page — repeating
+    # it here just duplicated that line (user feedback). Closes on a
+    # forward-looking, actionable note instead, which says something the
+    # disclaimer doesn't.
     if age_group == AgeGroup.junior:
         return (
             f"Ты попробовал разные задания, и по ответам видно, чем тебе интересно заниматься. "
-            f"Дальше в отчёте — что у тебя получается лучше всего и что можно попробовать. {_FRAME_PHRASE}"
+            f"Дальше в отчёте — что у тебя получается лучше всего и что можно попробовать. "
+            f"Пробуй разное и смотри, что нравится тебе больше всего."
         )
     return (
         f"По твоим ответам заметно, что тебе интересны определённые сферы и есть сильные стороны, на "
         f"которые стоит опереться. Дальше в отчёте — подробнее о них и о том, что стоит попробовать. "
-        f"{_FRAME_PHRASE}"
+        f"Обращай внимание на то, что откликается сильнее всего, и пробуй это на практике."
     )
 
 

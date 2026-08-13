@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 import redis.asyncio as aioredis
 from fastapi import HTTPException, status
+from pydantic import ValidationError
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -75,6 +76,24 @@ async def _cache_set(redis: aioredis.Redis, key: str, value: str) -> None:
         await redis.setex(key, CACHE_TTL, value)
     except aioredis.RedisError:
         logger.warning("redis set failed for key=%s — response served without caching", key, exc_info=True)
+
+
+async def _cache_get_response(redis: aioredis.Redis, key: str) -> ResultResponseV2 | None:
+    """Wraps _cache_get with shape validation: a cache entry written before
+    a schema change (a new required field, e.g. personality_notes) can't
+    deserialize into the current ResultV2Schema. Redis is an accelerator,
+    never the source of truth, so this must degrade the exact same way a
+    connection failure does — fall through to the DB path (which rebuilds a
+    fully current response and overwrites the stale entry) rather than
+    surface a 500 for a report that's actually available."""
+    cached = await _cache_get(redis, key)
+    if not cached:
+        return None
+    try:
+        return ResultV2Adapter.validate_json(cached)
+    except ValidationError:
+        logger.warning("cached payload for key=%s no longer matches the schema — falling back to DB", key)
+        return None
 
 
 def _career_dict(direction: Direction, match_score: int) -> dict:
@@ -177,6 +196,12 @@ def _shape_response(analysis: AnalysisResult) -> ResultResponseV2:
         strength_cards=[StudentStrengthCard.model_validate(c) for c in analysis.strength_cards],
         interest_map=report_v2_assembler.build_interest_map(effective_age_group, dict(analysis.profile)),
         thinking_style_notes=[StudentThinkingStyleNote.model_validate(n) for n in analysis.thinking_style_notes],
+        # personality_profile is stored on every row regardless of
+        # interest_instrument (Big Five doesn't branch by age) — read back
+        # directly, no need to recompute or route through minimal_context.
+        personality_notes=report_v2_assembler.build_personality_notes(
+            instrument == "mi", dict(analysis.personality_profile)
+        ),
         motivation_highlights=list(analysis.motivation_highlights),
         is_flat_profile=flat,
         created_at=analysis.created_at,
@@ -232,9 +257,9 @@ async def build_report(
     cache_key = _cache_key(assessment_id)
     redis = _get_redis()
 
-    cached = await _cache_get(redis, cache_key)
-    if cached:
-        return ResultV2Adapter.validate_json(cached)
+    cached_response = await _cache_get_response(redis, cache_key)
+    if cached_response is not None:
+        return cached_response
 
     existing_result = await db.execute(
         select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
@@ -412,6 +437,7 @@ async def build_report(
         context=context,
         narrative=narrative,
         profile_scores=profile_scores,
+        personality_profile=personality_profile,
         differentiation=meta["differentiation"],
         careers=careers,
         created_at=analysis.created_at,
@@ -426,9 +452,9 @@ async def get_report(
     cache_key = _cache_key(assessment_id)
     redis = _get_redis()
 
-    cached = await _cache_get(redis, cache_key)
-    if cached:
-        return ResultV2Adapter.validate_json(cached)
+    cached_response = await _cache_get_response(redis, cache_key)
+    if cached_response is not None:
+        return cached_response
 
     result = await db.execute(
         select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)

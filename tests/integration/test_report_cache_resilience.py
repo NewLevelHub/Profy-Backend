@@ -174,6 +174,32 @@ async def test_get_report_survives_redis_outage_via_db(
     assert fetched.summary == generated.summary
 
 
+async def test_stale_cached_payload_missing_a_new_required_field_falls_back_to_db(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A payload cached under the *current* versioned key by a previous
+    deploy — before `personality_notes` became required — must not crash
+    the read path with a ValidationError. `_cache_get_response` catches
+    that and falls through to a fresh DB-backed rebuild instead."""
+    import json
+
+    assessment = await _make_assessment(db_session, AgeGroup.senior)
+    _force_complete_and_llm_disabled(monkeypatch, senior=True)
+
+    generated = await report_service.build_report(assessment.id, db_session)
+
+    redis = assessment_shared.get_redis()
+    cache_key = assessment_shared.report_cache_key(assessment.id)
+    stale_payload = generated.model_dump(mode="json")
+    del stale_payload["personality_notes"]
+    await redis.set(cache_key, json.dumps(stale_payload))
+
+    fetched = await report_service.get_report(assessment.id, db_session)
+
+    assert fetched is not None
+    assert len(fetched.personality_notes) == 5
+
+
 async def test_invalidate_retake_survives_redis_outage(
     db_session: AsyncSession,
 ) -> None:

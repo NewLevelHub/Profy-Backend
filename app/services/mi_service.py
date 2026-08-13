@@ -124,6 +124,17 @@ def strengths_weaknesses(
         t for t in ranked
         if _aversion_ratio(t, aversion_counts, counts) < _AVERSION_DISQUALIFY_RATIO
     ][:limit]
+    if len(strengths) < limit:
+        # See riasec_service.strengths_weaknesses's matching comment — a
+        # strict aversion filter can leave too few (even zero) categories,
+        # collapsing "Сильные стороны" to near-empty/empty. top_code above
+        # already ignores aversion entirely; pad with the next best-scoring
+        # categories regardless, up to `limit`.
+        for t in ranked:
+            if len(strengths) >= limit:
+                break
+            if t not in strengths:
+                strengths.append(t)
 
     weaknesses = list(reversed(ranked))[:limit]
 

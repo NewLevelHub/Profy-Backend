@@ -54,6 +54,33 @@
   "motivation_highlights": [
     "Тебе важно разбираться в интересном"
   ],
+  "personality_notes": [
+    {
+      "description": "Короткое описание",
+      "label": "Открытость новому",
+      "trait": "openness"
+    },
+    {
+      "description": "Короткое описание",
+      "label": "Организованность",
+      "trait": "conscientiousness"
+    },
+    {
+      "description": "Короткое описание",
+      "label": "Общительность",
+      "trait": "extraversion"
+    },
+    {
+      "description": "Короткое описание",
+      "label": "Доброжелательность",
+      "trait": "agreeableness"
+    },
+    {
+      "description": "Короткое описание",
+      "label": "Эмоциональная устойчивость",
+      "trait": "emotional_stability"
+    }
+  ],
   "report_version": 2,
   "strength_cards": [
     {

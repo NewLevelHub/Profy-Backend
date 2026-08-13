@@ -51,6 +51,7 @@ EXPLORATION_CLOSING_NOTE = (
 
 _MI_INTEREST_COUNT = 8  # len(mi_content.MI_LABELS) — every MI category, always
 _RIASEC_INTEREST_COUNT = 6  # len(riasec_content.RIASEC_LABELS) — every Holland letter, always
+_PERSONALITY_TRAIT_COUNT = 5  # len(bigfive_content.PERSONALITY_LABELS) — every Big Five domain, always
 _MAX_CAREERS = 5
 _FLAT_PROFILE_CAREER_COUNT = 3
 
@@ -65,6 +66,20 @@ class StudentStrengthCard(BaseModel):
 
 class StudentThinkingStyleNote(BaseModel):
     title: str
+    description: str
+    model_config = _model_config
+
+
+class StudentPersonalityNote(BaseModel):
+    """"Твой характер" — one card per Big Five domain, always exactly 5
+    (Field constraint below), same for every age group/interest_instrument:
+    unlike interests, the Big Five instrument itself never varies by age
+    (only the *wording* does — junior gets simplified phrasing, see
+    bigfive_content.personality_notes_for_age — the shape here is
+    identical either way)."""
+
+    trait: str  # "openness" | "conscientiousness" | "extraversion" | "agreeableness" | "emotional_stability"
+    label: str  # "Открытость новому" — for display
     description: str
     model_config = _model_config
 
@@ -97,6 +112,14 @@ class _ResultResponseBase(BaseModel):
     disclaimer: str = DISCLAIMER
     strength_cards: list[StudentStrengthCard]
     thinking_style_notes: list[StudentThinkingStyleNote]
+    # Big Five is answered identically by all three age groups (only the
+    # interest instrument/motivation format branch by age — TZ_Profi.md's
+    # confirmed methodology: junior = MI + Big Five + Harter, middle =
+    # RIASEC + Big Five + Harter, senior = RIASEC + Big Five + triplets),
+    # so this lives on the common base, not per-branch.
+    personality_notes: list[StudentPersonalityNote] = Field(
+        min_length=_PERSONALITY_TRAIT_COUNT, max_length=_PERSONALITY_TRAIT_COUNT
+    )
     motivation_highlights: list[str]
     is_flat_profile: bool
     exploration_note: str = EXPLORATION_CLOSING_NOTE

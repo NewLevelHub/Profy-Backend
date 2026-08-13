@@ -20,6 +20,10 @@ from app.services.riasec_content import NEUTRAL_CAREER_WHY
 from app.services.riasec_service import HOLLAND_ORDER
 
 _NOW = datetime.now(timezone.utc)
+_DEFAULT_PERSONALITY_PROFILE = {
+    "openness": 50.0, "conscientiousness": 50.0, "extraversion": 50.0,
+    "agreeableness": 50.0, "emotional_stability": 50.0,
+}
 
 
 def _context(*, age_group: str, evidence: list[EvidenceItem]) -> ReportNarrativeContext:
@@ -69,6 +73,7 @@ def test_junior_gets_eight_mi_items_no_careers_and_activities() -> None:
         context=context,
         narrative=_narrative(),
         profile_scores={k: 40.0 for k in MI_ORDER},
+        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
         differentiation=30.0,
         careers=[_direction("swe", "RIA", 5)],  # must be ignored for junior regardless
         created_at=_NOW,
@@ -92,6 +97,7 @@ def test_middle_senior_get_six_riasec_items_and_valid_career_explanations() -> N
         context=context,
         narrative=_narrative(),
         profile_scores={k: 40.0 for k in HOLLAND_ORDER},
+        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
         differentiation=30.0,
         careers=careers,
         created_at=_NOW,
@@ -113,6 +119,79 @@ def test_middle_senior_get_six_riasec_items_and_valid_career_explanations() -> N
     assert other.why == NEUTRAL_CAREER_WHY
 
 
+def test_careers_sharing_the_same_letters_in_a_different_order_get_different_why_text() -> None:
+    """Found live: Архивариус/Аудитор/Бухгалтер/Директор по логистике/
+    HR-менеджер all showed the exact same `why` sentence — their Holland
+    codes were the same 3 letters ("CSE"/"ESC"/"SEC"/...), and the old
+    _matched_strengths_for listed every matching letter in the same fixed
+    (user-rank) order regardless of which direction it was for. Now the
+    order is direction-specific (riasec_service.direction_letter_weight),
+    so two directions built from an identical evidence set but a different
+    code must not produce byte-identical why text."""
+    context = _context(age_group="senior", evidence=[
+        EvidenceItem(source_id="riasec:C", source_type="riasec_category", text="Умеешь наводить порядок"),
+        EvidenceItem(source_id="riasec:S", source_type="riasec_category", text="Умеешь работать с людьми"),
+        EvidenceItem(source_id="riasec:E", source_type="riasec_category", text="Умеешь вести за собой"),
+    ])
+    careers = [_direction("buhgalter", "CSE", 6), _direction("hr", "SEC", 6)]
+    response = report_v2_assembler.assemble_result_v2(
+        assessment_id=uuid.uuid4(),
+        age_group=AgeGroup.senior,
+        context=context,
+        narrative=_narrative(),
+        profile_scores={k: 40.0 for k in HOLLAND_ORDER},
+        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
+        differentiation=30.0,
+        careers=careers,
+        created_at=_NOW,
+    )
+
+    buhgalter = next(c for c in response.careers if c.slug == "buhgalter")
+    hr = next(c for c in response.careers if c.slug == "hr")
+    assert buhgalter.why != hr.why
+    # Same underlying facts, matches all 3 evidence items — nothing dropped.
+    assert set(buhgalter.matched_strengths) == set(hr.matched_strengths)
+    assert len(buhgalter.matched_strengths) == 3
+
+
+def test_careers_with_identical_evidence_after_reordering_get_a_skills_needed_differentiator() -> None:
+    """Found live (residual case, after the reordering fix above): two
+    directions can differ ONLY in a letter that isn't part of the student's
+    confirmed top-3 evidence at all — e.g. "CSI" vs "CSR" both only match
+    on C/S, in the same order, since I/R aren't vetted strengths. Reordering
+    can't help here (there's nothing left to reorder), so the second such
+    card gets an extra clause naming its own skills_needed — a fact about
+    the job, not an unvetted claim about the student."""
+    context = _context(age_group="senior", evidence=[
+        EvidenceItem(source_id="riasec:C", source_type="riasec_category", text="Умеешь наводить порядок"),
+        EvidenceItem(source_id="riasec:S", source_type="riasec_category", text="Умеешь работать с людьми"),
+    ])
+    careers = [
+        _direction("first", "CSI", 6),
+        _direction("second", "CSR", 5),
+    ]
+    careers[0]["skills_needed"] = ["Внимательность"]
+    careers[1]["skills_needed"] = ["Техническая грамотность"]
+    response = report_v2_assembler.assemble_result_v2(
+        assessment_id=uuid.uuid4(),
+        age_group=AgeGroup.senior,
+        context=context,
+        narrative=_narrative(),
+        profile_scores={k: 40.0 for k in HOLLAND_ORDER},
+        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
+        differentiation=30.0,
+        careers=careers,
+        created_at=_NOW,
+    )
+
+    first = next(c for c in response.careers if c.slug == "first")
+    second = next(c for c in response.careers if c.slug == "second")
+    assert set(first.matched_strengths) == set(second.matched_strengths)  # same confirmed evidence
+    assert first.why != second.why
+    assert "Техническая грамотность" in second.why
+    assert "Техническая грамотность" not in first.why
+
+
 def test_flat_profile_gives_exactly_three_worth_trying_careers() -> None:
     context = _context(age_group="senior", evidence=[])
     careers = [_direction(f"d{i}", "RIA", 5 - i) for i in range(5)]
@@ -122,6 +201,7 @@ def test_flat_profile_gives_exactly_three_worth_trying_careers() -> None:
         context=context,
         narrative=_narrative(),
         profile_scores={k: 50.0 for k in HOLLAND_ORDER},  # flat: no spread at all
+        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
         differentiation=5.0,  # below the flat threshold
         careers=careers,
         created_at=_NOW,
@@ -149,6 +229,7 @@ def test_flat_profile_with_artifact_evidence_gets_an_honest_summary_note() -> No
         context=context,
         narrative=_narrative(),
         profile_scores={k: 50.0 for k in HOLLAND_ORDER},
+        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
         differentiation=5.0,
         careers=careers,
         created_at=_NOW,
@@ -167,6 +248,7 @@ def test_flat_profile_without_artifact_evidence_gets_no_note() -> None:
         context=context,
         narrative=_narrative(),
         profile_scores={k: 50.0 for k in HOLLAND_ORDER},
+        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
         differentiation=5.0,
         careers=careers,
         created_at=_NOW,
@@ -186,6 +268,7 @@ def test_non_flat_profile_with_artifact_evidence_gets_no_note() -> None:
         context=context,
         narrative=_narrative(),
         profile_scores={"R": 90.0, "I": 10.0, "A": 10.0, "S": 10.0, "E": 10.0, "C": 10.0},
+        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
         differentiation=80.0,
         careers=careers,
         created_at=_NOW,
@@ -207,6 +290,7 @@ def test_junior_never_gets_the_flat_profile_artifact_note() -> None:
         context=context,
         narrative=_narrative(),
         profile_scores={k: 50.0 for k in MI_ORDER},
+        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
         differentiation=5.0,
         careers=[],
         created_at=_NOW,
@@ -225,6 +309,7 @@ def test_non_flat_profile_tiers_are_strong_good_worth_trying_by_rank() -> None:
         context=context,
         narrative=_narrative(),
         profile_scores={"R": 90.0, "I": 10.0, "A": 10.0, "S": 10.0, "E": 10.0, "C": 10.0},
+        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
         differentiation=80.0,  # well above the flat threshold
         careers=careers,
         created_at=_NOW,
@@ -250,6 +335,7 @@ def test_same_context_gives_identical_fallback_output() -> None:
     kwargs = dict(
         assessment_id=assessment_id, age_group=AgeGroup.senior, context=context, narrative=narrative,
         profile_scores=profile_scores, differentiation=45.0, careers=careers, created_at=_NOW,
+        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
     )
     first = report_v2_assembler.assemble_result_v2(**kwargs)
     second = report_v2_assembler.assemble_result_v2(**kwargs)
@@ -265,6 +351,7 @@ def test_interest_map_levels_follow_documented_thresholds() -> None:
         context=context,
         narrative=_narrative(),
         profile_scores={"R": 75.0, "I": 55.0, "A": 20.0, "S": 0.0, "E": 50.0, "C": 100.0},
+        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
         differentiation=100.0,
         careers=[],
         created_at=_NOW,
@@ -277,3 +364,47 @@ def test_interest_map_levels_follow_documented_thresholds() -> None:
     assert levels["S"] == "low"
     assert levels["E"] == "medium"  # exactly 50
     assert levels["C"] == "high"
+
+
+def test_build_personality_notes_covers_all_five_traits_in_a_fixed_order() -> None:
+    from app.services.bigfive_content import PERSONALITY_LABELS
+
+    notes = report_v2_assembler.build_personality_notes(False, _DEFAULT_PERSONALITY_PROFILE)
+
+    assert [n.trait for n in notes] == list(PERSONALITY_LABELS)
+    assert all(n.label and n.description for n in notes)
+
+
+def test_build_personality_notes_uses_junior_wording_for_junior() -> None:
+    from app.services.bigfive_content import _NOTES, _NOTES_JUNIOR
+
+    profile = {**_DEFAULT_PERSONALITY_PROFILE, "openness": 90.0}
+    junior_notes = {n.trait: n.description for n in report_v2_assembler.build_personality_notes(True, profile)}
+    adult_notes = {n.trait: n.description for n in report_v2_assembler.build_personality_notes(False, profile)}
+
+    assert junior_notes["openness"] == _NOTES_JUNIOR["openness"]["high"]
+    assert adult_notes["openness"] == _NOTES["openness"]["high"]
+    assert junior_notes["openness"] != adult_notes["openness"]
+
+
+def test_assemble_result_v2_includes_personality_notes_for_junior_and_senior() -> None:
+    junior_context = _context(age_group="junior", evidence=[])
+    junior_response = report_v2_assembler.assemble_result_v2(
+        assessment_id=uuid.uuid4(), age_group=AgeGroup.junior, context=junior_context,
+        narrative=_narrative(), profile_scores={k: 40.0 for k in MI_ORDER},
+        personality_profile={**_DEFAULT_PERSONALITY_PROFILE, "openness": 80.0},
+        differentiation=30.0, careers=[], created_at=_NOW,
+    )
+    senior_context = _context(age_group="senior", evidence=[])
+    senior_response = report_v2_assembler.assemble_result_v2(
+        assessment_id=uuid.uuid4(), age_group=AgeGroup.senior, context=senior_context,
+        narrative=_narrative(), profile_scores={k: 40.0 for k in HOLLAND_ORDER},
+        personality_profile={**_DEFAULT_PERSONALITY_PROFILE, "openness": 80.0},
+        differentiation=30.0, careers=[], created_at=_NOW,
+    )
+
+    assert len(junior_response.personality_notes) == 5
+    assert len(senior_response.personality_notes) == 5
+    junior_openness = next(n for n in junior_response.personality_notes if n.trait == "openness").description
+    senior_openness = next(n for n in senior_response.personality_notes if n.trait == "openness").description
+    assert junior_openness != senior_openness  # junior wording differs from adult wording

@@ -32,13 +32,15 @@ from app.schemas.result_v2 import (
     RiasecResultResponse,
     StudentCareer,
     StudentInterestMapItem,
+    StudentPersonalityNote,
     StudentStrengthCard,
     StudentThinkingStyleNote,
 )
+from app.services import bigfive_content
 from app.services.mi_content import MI_ACTIVITIES, MI_LABELS
 from app.services.mi_service import MI_ORDER
 from app.services.riasec_content import NEUTRAL_CAREER_WHY, NEUTRAL_TRY_NOW, RIASEC_LABELS
-from app.services.riasec_service import HOLLAND_ORDER
+from app.services.riasec_service import HOLLAND_ORDER, direction_letter_weight
 
 # TZ_Profi.md §16.6: "разброс между максимальной и минимальной категорией
 # меньше 25 пунктов" — a provisional default. §16.4 wants matrix/threshold
@@ -100,6 +102,23 @@ def build_interest_map(age_group: AgeGroup, profile_scores: dict[str, float]) ->
     ]
 
 
+def build_personality_notes(is_junior: bool, personality_profile: dict[str, float]) -> list[StudentPersonalityNote]:
+    """"Твой характер" — TZ_Profi.md's Big Five instrument is answered
+    identically by all three age groups (only interests/motivation branch
+    by age), so unlike interest_map this never varies by instrument, only
+    by wording (junior gets bigfive_content._NOTES_JUNIOR's short, concrete
+    phrasing instead of the adult table). Entirely deterministic, no LLM,
+    no narrative pipeline involved — `personality_profile` is already a
+    plain 5-domain float dict (report_service.py computes it once,
+    unconditionally, for every age group), so this is a straight lookup,
+    same shape as build_interest_map."""
+    notes = bigfive_content.personality_notes_for_age(is_junior, personality_profile)
+    return [
+        StudentPersonalityNote(trait=trait, label=label, description=notes[trait])
+        for trait, label in bigfive_content.PERSONALITY_LABELS.items()
+    ]
+
+
 def build_exploration_activities(context: ReportNarrativeContext) -> list[str]:
     """Always non-empty — MI never fakes career matching (TZ_Profi.md
     §4.1), it offers activities instead. Built from the top MI categories in
@@ -126,10 +145,17 @@ def _join_ru(items: list[str]) -> str:
 
 
 def _matched_strengths_for(direction_code: str, context: ReportNarrativeContext) -> list[str]:
-    return [
-        e.text for e in context.evidence
+    """Ordered by how central each matched letter is to THIS direction's own
+    code (primary letter first), not by the user's own top-3 rank — two
+    directions sharing the same 3 letters in a different order (e.g. "ESC"
+    vs "SEC") then read as differently-emphasized `why` text instead of a
+    byte-identical sentence (riasec_service.direction_letter_weight)."""
+    matches = [
+        e for e in context.evidence
         if e.source_type == "riasec_category" and e.source_id.split(":", 1)[1] in direction_code
     ]
+    matches.sort(key=lambda e: -direction_letter_weight(e.source_id.split(":", 1)[1], direction_code))
+    return [e.text for e in matches]
 
 
 def _tier_for_rank(rank: int) -> Literal["strong", "good", "worth_trying"]:
@@ -154,9 +180,20 @@ def build_riasec_careers(
     is always non-empty: the direction's own Holland-code overlap with
     vetted RIASEC evidence when there is one, otherwise the neutral
     product-approved fallback — never blank, never invented beyond what's
-    in `context`."""
+    in `context`.
+
+    Two shown directions can still be equally well-supported by the exact
+    same confirmed evidence — e.g. codes "CSI" and "CSR" differ only in a
+    letter that isn't one of the student's top-3 (so, correctly, it's not
+    part of `why` at all): both get the identical matched_strengths in the
+    identical order. Rather than repeat the sentence, the second (and any
+    later) such card gets one extra clause naming something specific to
+    THAT direction — its own catalog `skills_needed[0]`, a fact about the
+    job, not a claim about the student, so this never overclaims beyond
+    vetted evidence the way citing an unconfirmed RIASEC letter would."""
     top = careers[:_FLAT_PROFILE_CAREER_COUNT] if flat else careers[:5]
     result: list[StudentCareer] = []
+    seen_evidence: set[tuple[str, ...]] = set()
     for rank, career in enumerate(top, start=1):
         holland_code = career.get("holland_code", "")
         matched_strengths = _matched_strengths_for(holland_code, context)
@@ -165,6 +202,11 @@ def build_riasec_careers(
             if matched_strengths
             else NEUTRAL_CAREER_WHY
         )
+        evidence_key = tuple(matched_strengths)
+        skills_needed = list(career.get("skills_needed") or [])
+        if evidence_key and evidence_key in seen_evidence and skills_needed:
+            why += f" Именно здесь особенно пригодится: {skills_needed[0]}."
+        seen_evidence.add(evidence_key)
         # Direction.first_steps may hold several catalog entries, but the
         # student only ever sees one, as `try_now` — a separate "3 first
         # steps" list read as pointless filler on top of it (product
@@ -179,7 +221,7 @@ def build_riasec_careers(
             matched_strengths=matched_strengths,
             try_now=first_steps[0] if first_steps else NEUTRAL_TRY_NOW,
             description=career.get("description") or None,
-            skills_needed=list(career.get("skills_needed") or []),
+            skills_needed=skills_needed,
             subjects_to_develop=list(career.get("subjects_to_develop") or []),
         ))
     return result
@@ -200,6 +242,7 @@ def assemble_result_v2(
     context: ReportNarrativeContext,
     narrative: ReportNarrativeOutput,
     profile_scores: dict[str, float],
+    personality_profile: dict[str, float],
     differentiation: float,
     careers: list[dict],
     created_at: datetime,
@@ -215,6 +258,7 @@ def assemble_result_v2(
         summary=narrative.summary,
         strength_cards=_map_cards(narrative.strength_cards),
         thinking_style_notes=_map_thinking_notes(narrative.thinking_style_notes),
+        personality_notes=build_personality_notes(age_group == AgeGroup.junior, personality_profile),
         motivation_highlights=[e.text for e in context.evidence if e.source_type == "motivation"],
         is_flat_profile=flat,
         created_at=created_at,

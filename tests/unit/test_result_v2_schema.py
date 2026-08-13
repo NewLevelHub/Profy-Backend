@@ -24,9 +24,11 @@ from app.schemas.result_v2 import (
     RiasecResultResponse,
     StudentCareer,
     StudentInterestMapItem,
+    StudentPersonalityNote,
     StudentStrengthCard,
     StudentThinkingStyleNote,
 )
+from app.services.bigfive_content import PERSONALITY_LABELS
 
 _NOW = datetime.now(timezone.utc)
 
@@ -50,6 +52,13 @@ def _career(slug: str = "swe", *, tier: str = "strong", why: str = "Совпад
     )
 
 
+def _personality_notes() -> list[StudentPersonalityNote]:
+    return [
+        StudentPersonalityNote(trait=trait, label=label, description="Короткое описание")
+        for trait, label in PERSONALITY_LABELS.items()
+    ]
+
+
 _MI_CODES = ["verbal", "logical", "musical", "visual", "bodily", "interpersonal", "intrapersonal", "naturalistic"]
 _RIASEC_CODES = ["R", "I", "A", "S", "E", "C"]
 
@@ -62,6 +71,7 @@ def _junior_fixture(**overrides) -> MiResultResponse:
         strength_cards=[_strength_card()],
         interest_map=_interest_items(_MI_CODES),
         thinking_style_notes=[_thinking_note()],
+        personality_notes=_personality_notes(),
         motivation_highlights=["Тебе важно разбираться в интересном"],
         careers=[],
         exploration_activities=["Собери конструктор LEGO"],
@@ -80,6 +90,7 @@ def _middle_fixture(**overrides) -> RiasecResultResponse:
         strength_cards=[_strength_card()],
         interest_map=_interest_items(_RIASEC_CODES),
         thinking_style_notes=[_thinking_note()],
+        personality_notes=_personality_notes(),
         motivation_highlights=["Тебе важно докапываться до сути"],
         careers=[_career("swe"), _career("designer", tier="good")],
         is_flat_profile=False,
@@ -97,6 +108,7 @@ def _senior_fixture(**overrides) -> RiasecResultResponse:
         strength_cards=[_strength_card()],
         interest_map=_interest_items(_RIASEC_CODES),
         thinking_style_notes=[_thinking_note()],
+        personality_notes=_personality_notes(),
         motivation_highlights=["Тебе важно пробовать разное"],
         careers=[_career(f"d{i}", tier="worth_trying") for i in range(3)],
         is_flat_profile=True,
@@ -194,6 +206,18 @@ def test_non_flat_profile_is_not_bound_by_the_three_careers_rule():
     assert len(response.careers) == 5
 
 
+def test_personality_notes_must_have_exactly_five_items():
+    with pytest.raises(ValidationError):
+        _junior_fixture(personality_notes=_personality_notes()[:4])
+
+
+def test_personality_notes_present_on_both_branches():
+    junior = _junior_fixture()
+    senior = _senior_fixture()
+    assert {n.trait for n in junior.personality_notes} == set(PERSONALITY_LABELS)
+    assert {n.trait for n in senior.personality_notes} == set(PERSONALITY_LABELS)
+
+
 def test_adapter_picks_the_mi_branch_from_a_plain_dict():
     data = _junior_fixture().model_dump(mode="json")
     parsed = ResultV2Adapter.validate_python(data)
@@ -214,11 +238,16 @@ def test_adapter_rejects_an_unknown_interest_instrument():
 
 
 def test_no_admin_only_raw_field_names_leak_into_the_student_schema():
+    # `personality_notes` is deliberately NOT in this set: it's a shared
+    # *name* across two independent, differently-shaped schemas (admin's
+    # dict[str, str] of always-adult-phrased text vs student's
+    # list[StudentPersonalityNote], age-aware wording) — same situation as
+    # `strength_cards`/`thinking_style_notes`, which share names across
+    # admin/student for the same reason and were never flagged here either.
     admin_fields = set(AdminAnalysisResultResponse.model_fields)
     admin_only = {
         "profile", "code", "meta", "big_five", "personality_profile",
-        "personality_notes", "motivation", "motivation_top",
-        "strengths", "weaknesses", "development_plan",
+        "motivation", "motivation_top", "strengths", "weaknesses", "development_plan",
     }
     assert admin_only <= admin_fields  # sanity: not a typo'd set
 

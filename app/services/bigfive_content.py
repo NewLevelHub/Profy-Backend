@@ -92,6 +92,58 @@ _NOTES: dict[str, dict[str, str]] = {
 }
 
 
+# Same 5 traits as _NOTES, but short/concrete phrasing with no abstractions
+# (TZ_Profi.md §4.1: junior needs "очень короткие предложения, конкретные
+# образы") — a 6-9-year-old reading "нестандартные подходы" or "отстаивать
+# границы" gets nothing out of it. Derived fresh from the numeric profile at
+# render time (personality_notes_for_age below), never from the stored
+# adult-phrased `personality_notes` text — that stays adult-only (admin
+# panel, and middle/senior's own "Твой характер" block).
+_NOTES_JUNIOR: dict[str, dict[str, str]] = {
+    "openness": {
+        "high": "Тебе нравится пробовать новое и придумывать необычное",
+        "low": "Тебе больше нравится привычное и понятное",
+        "mid": "Тебе интересно и новое, и привычное — по-разному",
+    },
+    "conscientiousness": {
+        "high": "Ты доводишь начатое до конца",
+        "low": "Тебе легче, когда можно менять план на ходу",
+        "mid": "Ты можешь и по плану, и без плана — как удобнее",
+    },
+    "extraversion": {
+        "high": "Тебе нравится быть среди людей и знакомиться",
+        "low": "Тебе комфортнее в тишине с близкими друзьями",
+        "mid": "Тебе хорошо и в компании, и одному",
+    },
+    "agreeableness": {
+        "high": "Тебе важно помогать другим и дружить",
+        "low": "Ты прямо говоришь, что думаешь",
+        "mid": "Ты умеешь и дружить, и стоять на своём",
+    },
+    "emotional_stability": {
+        "high": "Ты спокойно переживаешь неудачи",
+        "low": "Ты сильно всё чувствуешь — и это нормально",
+        "mid": "Ты по-разному переживаешь трудности",
+    },
+}
+
+
+def personality_notes_for_age(is_junior: bool, profile: dict[str, float]) -> dict[str, str]:
+    """Age-appropriate tiered note per trait in `profile` (the 5-domain dict
+    build_personality_profile() returns) — computed fresh from the numeric
+    tier every time, not read from the stored `personality_notes` text
+    (which is always adult-phrased, used for admin/storage regardless of
+    the student's age). `profile` may be a stored `AnalysisResult.
+    personality_profile` row just as well as a freshly-computed one — same
+    5 keys either way."""
+    table = _NOTES_JUNIOR if is_junior else _NOTES
+    notes: dict[str, str] = {}
+    for trait, value in profile.items():
+        tier = "high" if value >= _STRONG else "low" if value <= _LOW else "mid"
+        notes[trait] = table[trait][tier]
+    return notes
+
+
 def is_high_tier(value: float) -> bool:
     """Same threshold `build_personality_profile` uses for its "high" tier —
     exposed so other consumers (the report narrative evidence catalog) can

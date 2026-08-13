@@ -57,7 +57,7 @@ def test_structurally_valid_but_banned_phrase_is_rejected():
 def test_summary_with_fewer_than_three_sentences_is_rejected():
     context = _senior_context()
     output = build_fallback_narrative(context)
-    output.summary = "Коротко о тебе. Это не окончательный выбор."
+    output.summary = "Коротко о тебе. Ты интересуешься многим."
 
     issues = validate(output, context)
 
@@ -67,11 +67,35 @@ def test_summary_with_fewer_than_three_sentences_is_rejected():
 def test_summary_with_three_sentences_is_accepted():
     context = _senior_context()
     output = build_fallback_narrative(context)
-    output.summary = "Коротко о тебе. Ты интересуешься многим. Это не окончательный выбор."
+    output.summary = "Коротко о тебе. Ты интересуешься многим. Это заметно по твоим ответам."
 
     issues = validate(output, context)
 
     assert not any(i.code == "summary_too_short" for i in issues)
+
+
+def test_summary_repeating_the_disclaimer_framing_is_rejected():
+    """DISCLAIMER (app/schemas/result_v2.py) already shows this exact idea
+    right next to summary on the page, unconditionally — the model used to
+    be *required* to also write it into summary, which duplicated the line
+    right below it (user feedback: it showed up "often"). Now forbidden."""
+    context = _senior_context()
+    output = build_fallback_narrative(context)
+    output.summary = "Коротко о тебе. Ты интересуешься многим. Это не окончательный выбор, а карта возможных направлений."
+
+    issues = validate(output, context)
+
+    assert any(i.code == "summary_duplicates_disclaimer" for i in issues)
+
+
+def test_summary_without_disclaimer_framing_is_accepted():
+    context = _senior_context()
+    output = build_fallback_narrative(context)
+    output.summary = "Коротко о тебе. Ты интересуешься многим. Обращай внимание на то, что откликается сильнее всего."
+
+    issues = validate(output, context)
+
+    assert not any(i.code == "summary_duplicates_disclaimer" for i in issues)
 
 
 def test_junior_career_narrative_is_rejected():
@@ -236,9 +260,13 @@ def test_thinking_style_card_missing_one_signal_is_rejected():
 
 
 def test_strength_card_count_below_minimum_is_rejected():
-    context = _senior_context()  # 4 strength-eligible items (thinking_style + motivation excluded) -> expects min(5,4)=4
+    # 6 evidence items, 4 excluded (thinking_style + motivation + 2x
+    # personality — personality now has its own dedicated "Твой характер"
+    # block, entirely outside this pipeline) -> 2 strength-eligible ->
+    # expects min(5,2)=2.
+    context = _senior_context()
     output = build_fallback_narrative(context)
-    output.strength_cards = output.strength_cards[:2]
+    output.strength_cards = output.strength_cards[:1]
 
     issues = validate(output, context)
 

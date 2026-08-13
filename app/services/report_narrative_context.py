@@ -35,7 +35,13 @@ _TOP_THINKING_STYLES = 2
 # never eligible for strength_cards — so the same fact can't surface twice
 # with identical text (report_narrative_fallback.py,
 # report_narrative_validator.py, and the LLM prompt all consult this).
-STRENGTH_CARD_EXCLUDED_SOURCE_TYPES: frozenset[str] = frozenset({"thinking_style", "motivation"})
+# personality joined the set once "Твой характер" became its own dedicated,
+# fully deterministic block (report_v2_assembler.build_personality_notes) —
+# built straight from personality_profile, entirely outside this narrative
+# pipeline, so nothing downstream of `context.evidence` reads
+# source_type=="personality" anymore either; it's excluded here purely to
+# stop it from also leaking into strength_cards.
+STRENGTH_CARD_EXCLUDED_SOURCE_TYPES: frozenset[str] = frozenset({"thinking_style", "motivation", "personality"})
 
 
 def _interest_evidence(age_group: AgeGroup, strengths: list[str]) -> tuple[str, list[EvidenceItem]]:

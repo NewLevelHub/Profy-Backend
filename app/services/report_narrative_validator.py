@@ -252,6 +252,27 @@ def _check_motivation_grounding(output: ReportNarrativeOutput, context: ReportNa
     return []
 
 
+# Substrings of the "не окончательный выбор / карта возможных направлений"
+# framing — DISCLAIMER (app/schemas/result_v2.py) already carries this exact
+# idea, shown right next to summary on the page every time, unconditionally.
+# A prompt instruction alone wasn't reliable here (this is what the model
+# used to be *required* to write, so it needs an active check now that the
+# requirement is reversed, not just silence) — user feedback: it showed up
+# in the summary "often", duplicating the disclaimer line right below it.
+_FRAME_PHRASE_SUBSTRINGS: tuple[str, ...] = (
+    "не окончательный выбор",
+    "карта возможных направлений",
+)
+
+
+def _check_summary_no_disclaimer_duplicate(output: ReportNarrativeOutput) -> list[ValidationIssue]:
+    lowered = output.summary.lower()
+    for phrase in _FRAME_PHRASE_SUBSTRINGS:
+        if phrase in lowered:
+            return [ValidationIssue("summary_duplicates_disclaimer", phrase)]
+    return []
+
+
 def _check_summary_sentence_count(output: ReportNarrativeOutput) -> list[ValidationIssue]:
     """TZ_Profi.md §18.2 п.1's summary read as too thin at 2 sentences (the
     story sentence + the mandatory frame phrase, nothing else) — user
@@ -303,5 +324,6 @@ def validate(
     issues += _check_career_narrative(output, context, age_group)
     issues += _check_motivation_grounding(output, context)
     issues += _check_summary_sentence_count(output)
+    issues += _check_summary_no_disclaimer_duplicate(output)
     issues += _check_lengths(output, age_group)
     return issues
