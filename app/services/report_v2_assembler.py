@@ -87,6 +87,34 @@ def _level(value: float) -> Literal["low", "medium", "high"]:
     return "low"
 
 
+def build_interest_map_note(items: list[StudentInterestMapItem]) -> str:
+    """1-2 sentences summarizing the numeric map itself — deterministic,
+    straight from the already-computed levels, nothing to personalize
+    beyond that (no LLM involved, unlike summary/final_analysis).
+
+    The "medium" branch only fires when medium-tier spheres are a genuine
+    minority (< half of all spheres) — naming a subset only reads as a
+    highlight if it actually leaves most spheres out. Found live: a mostly-
+    flat profile with 5 of 6 RIASEC spheres landing "medium" produced "Заметнее
+    всего проявляется: [5 of 6 categories] — без резких пиков" — self-
+    contradictory (calling out "most notable" while also saying nothing
+    stands out) and useless as a highlight. That case now falls through to
+    the honest flat-profile message instead."""
+    high = [i.sphere for i in items if i.level == "high"]
+    if high:
+        return f"Ярко выражено: {_join_ru(high)}. Остальные сферы проявляются тише — и это нормально."
+    medium = [i.sphere for i in items if i.level == "medium"]
+    if medium and len(medium) < len(items) / 2:
+        return (
+            f"Заметнее всего проявляется: {_join_ru(medium)} — без резких пиков, "
+            f"интересы распределены довольно ровно."
+        )
+    return (
+        "Пока сложно выделить одну явно ведущую сферу — интересы распределены "
+        "довольно ровно, и это нормально: есть время присмотреться к разным направлениям."
+    )
+
+
 def build_interest_map(age_group: AgeGroup, profile_scores: dict[str, float]) -> list[StudentInterestMapItem]:
     """All 6 RIASEC spheres (middle/senior) or all 8 MI spheres (junior), in
     a fixed order — every category, not just the ones evidenced as a
@@ -117,6 +145,29 @@ def build_personality_notes(is_junior: bool, personality_profile: dict[str, floa
         StudentPersonalityNote(trait=trait, label=label, description=notes[trait])
         for trait, label in bigfive_content.PERSONALITY_LABELS.items()
     ]
+
+
+def build_personality_note(personality_profile: dict[str, float]) -> str:
+    """1-2 sentences of synthesis on top of the 5 static tiered cards
+    `build_personality_notes` renders — the cards alone read as a plain
+    lookup table with "no analysis" (reported live), same gap
+    build_interest_map_note already closes for the interest map. Same
+    minority guard as build_interest_map_note: naming traits only reads as
+    a highlight if it's not most of them."""
+    high = [
+        label
+        for trait, label in bigfive_content.PERSONALITY_LABELS.items()
+        if bigfive_content.is_high_tier(personality_profile.get(trait, 0.0))
+    ]
+    if high and len(high) < len(bigfive_content.PERSONALITY_LABELS) / 2:
+        return (
+            f"Ярко выражено: {_join_ru(high)} — это то, что тебе, скорее всего, "
+            f"даётся естественнее всего."
+        )
+    return (
+        "Черты характера выражены сбалансированно, без одной резко доминирующей — "
+        "и это нормально, у характера не обязательно должна быть одна главная черта."
+    )
 
 
 def build_exploration_activities(context: ReportNarrativeContext) -> list[str]:
@@ -253,21 +304,25 @@ def assemble_result_v2(
     deterministic fallback (report_service decides that; this function
     doesn't care which)."""
     flat = is_flat_profile(differentiation)
+    interest_map = build_interest_map(age_group, profile_scores)
     common = dict(
         assessment_id=assessment_id,
         summary=narrative.summary,
         strength_cards=_map_cards(narrative.strength_cards),
+        interest_map_note=build_interest_map_note(interest_map),
         thinking_style_notes=_map_thinking_notes(narrative.thinking_style_notes),
         personality_notes=build_personality_notes(age_group == AgeGroup.junior, personality_profile),
+        personality_note=build_personality_note(personality_profile),
         motivation_highlights=[e.text for e in context.evidence if e.source_type == "motivation"],
         is_flat_profile=flat,
+        final_analysis=narrative.final_analysis,
         created_at=created_at,
     )
 
     if age_group == AgeGroup.junior:
         return MiResultResponse(
             **common,
-            interest_map=build_interest_map(age_group, profile_scores),
+            interest_map=interest_map,
             exploration_activities=build_exploration_activities(context),
         )
 
@@ -276,6 +331,6 @@ def assemble_result_v2(
 
     return RiasecResultResponse(
         **common,
-        interest_map=build_interest_map(age_group, profile_scores),
+        interest_map=interest_map,
         careers=build_riasec_careers(context, careers, flat),
     )

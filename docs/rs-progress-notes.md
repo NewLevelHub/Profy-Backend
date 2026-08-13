@@ -1471,3 +1471,158 @@ skills_needed-клаузу). Полный бэкенд-сьют: 233/233 зел�
 не проверялся на это специально), differentiator не сработает и `why`
 снова совпадёт. Не считается блокером — это уже второй уровень fallback на
 редкий случай, а не основной путь.
+
+## Синтез между блоками: заметка к карте интересов, связка стиль-мышления+
+## характер, итоговый анализ ("Итог")
+
+Запрошено пользователем: 1-2 предложения анализа в блоке "Твоя карта
+интересов", 1-2 предложения в "Стиль мышления" на основе стиля мышления +
+характера, и 3-5 предложений итогового синтеза в самом конце отчёта.
+Выбрано пользователем через уточняющие вопросы: новый синтез без повтора
+факта (не пересказывать то, что уже сказано в других блоках) и связка,
+объединяющая все блоки воедино (не пересказ одного блока).
+
+**Новое поле `final_analysis`** в `ReportNarrativeOutput`
+(`app/schemas/report_narrative.py`) — обязательное, наравне с summary/
+strength_cards/thinking_style_notes. Промпт (`app/prompts/report_narrative.py`)
+требует 3-5 предложений, запрещает дословное цитирование evidence и запрещает
+повторять дисклеймер-фразу ("не окончательный выбор..."). Для thinking_style_
+notes добавлена отдельная инструкция: для middle/senior, если есть evidence
+по personality, добавить ОДНО предложение-синтез (не цитату) черты характера
++ стиля мышления; junior синтеза не получает никогда.
+
+**Fallback** (`report_narrative_fallback.py`): `_final_analysis()` —
+детерминированно собирает список присутствующих секций (interests/
+personality/thinking_style/motivation по факту наличия evidence нужного
+source_type) и строит одну связующую фразу + возрастной хвост (junior короче
+и проще). `_thinking_style_notes()` для middle/senior ищет первый personality-
+evidence и добавляет `_PERSONALITY_SYNTHESIS_HINT[trait]` фразу.
+
+**Валидатор** (`report_narrative_validator.py`): `_check_final_analysis_
+sentence_count` (мин. 3 предложения), обобщённый `_check_no_disclaimer_
+duplicate` теперь проверяет и summary, и final_analysis на повтор
+дисклеймер-фразы, `_check_lengths` добавил `final_analysis` в проверяемые
+поля. Три новых correction-hint'а в `report_narrative_service.py` для
+корректирующего повтора генерации.
+
+**`interest_map_note`** — НЕ через LLM, чисто детерминированная функция
+`build_interest_map_note()` в `report_v2_assembler.py`: смотрит на уровни
+(`high`/`medium`) уже посчитанной `interest_map` и строит одну фразу без
+LLM-вызова (эта часть карты — просто пересчёт существующих чисел, не нужен
+творческий синтез).
+
+**DB persistence — найден и закрыт архитектурный пробел**: новое поле
+`final_analysis` изначально текло только через in-memory pipeline
+(`assemble_result_v2`), но `AnalysisResult` не имело для него колонки, а
+`_shape_response()` (реконструкция ответа из уже сохранённой строки — путь,
+которым идёт второй конкурентный запрос или повторный `GET /result`) молча
+подставлял Pydantic-дефолт вместо реального текста. Обнаружено через
+`test_result_generation_concurrency.py` — два параллельных запроса
+возвращали РАЗНЫЙ `final_analysis` при одном факте генерации (`call_count
+== 1`). Исправлено по тому же паттерну, что уже применён для summary/
+strength_cards/thinking_style_notes: добавлена колонка `final_analysis`
+(миграция `0042_add_final_analysis_to_analysis_result.py`,
+`NOT NULL DEFAULT ''`, без backfill), `build_report()` сохраняет
+`narrative.final_analysis` при первой генерации, `_shape_response()`
+читает её обратно и отдельно пересчитывает `interest_map_note` через
+`build_interest_map_note()` (эта колонка не нужна — `interest_map_note`
+чисто детерминирован от уже сохранённого `profile`).
+
+**Regression-proofing**: фикс сломан внутри контейнера (убрана строка
+`final_analysis=analysis.final_analysis,` из `_shape_response`), оба теста
+конкурентности упали с ожидаемым `AssertionError` (разный `final_analysis`
+у первого/второго ответа), контейнер пересобран из чистого host-кода —
+тесты снова зелёные.
+
+**Live-verification через реальный LLM-вызов** (`testU@testmail.com`,
+senior-профиль, удалена сохранённая `AnalysisResult` + инвалидирован кэш,
+вызван `build_report` напрямую): LLM сгенерировал валидный `final_analysis`
+из 3 предложений со второй попытки (первая была отклонена валидатором —
+`motivation_ungrounded`, `thinking_style_count`), `interest_map_note`
+корректно перечислил проявленные сферы. Повторное чтение через
+`get_report()` подтвердило, что значение из БД совпадает с тем, что вернул
+`get_report()` — persistence работает.
+
+**Frontend**: `interest_map_note`/`final_analysis` добавлены в
+`ResultResponseBase` (`shared/types/index.ts`), `InterestMapSection`
+получил `note`-проп, новый компонент `FinalAnalysisSection.tsx` — последний
+блок на странице результатов ("Итог", emoji 🧩). `npm run typecheck` и
+`npm run build` чистые.
+
+Полный бэкенд-сьют: 244/244 зелёных (было 235/244 сразу после первой
+реализации — 9 падений, все закрыты: 2 concurrency-теста по persistence-
+багу выше, 5 устаревших снапшотов (openapi mi/riasec + result_v2_example
+junior/middle/senior — регенерированы через существующие нормализующие
+хелперы, `sort_keys=True`, минимальные диффы), 1 промпт-тест на число
+required top-level секций (6 → 7), 1 собственный баг в новом тесте
+(`test_interest_map_note_handles_a_flat_profile_with_no_high_or_medium`
+передавал `careers=[]` вместе с `is_flat_profile=True`, а модель требует
+ровно 3 `worth_trying` при плоском профиле — исправлено на непустой список
+направлений, как в остальных flat-profile тестах).
+
+## Два живых бага сразу после релиза: `interest_map_note` перечисляет
+## почти всё, и в "Твой характер" "нет анализа"
+
+Пользователь сразу после деплоя прислал реальный текст с production:
+"Заметнее всего проявляется: Реалистичный, Исследовательский, Артистичный,
+Предприимчивый и Конвенциональный — без резких пиков, интересы распределены
+довольно ровно" — 5 из 6 категорий RIASEC названы "заметнее всего", в одном
+предложении с "без резких пиков" — противоречиво и бесполезно как хайлайт.
+
+**Root cause**: `build_interest_map_note()`'s medium-ветка перечисляла ВСЕ
+категории с уровнем "medium" без ограничения — при плоском профиле
+(разброс баллов небольшой) типично 4-5 из 6 категорий попадают в "medium"
+(порог `_LEVEL_MEDIUM_MIN = 50`). Найдено и воспроизведено на 2 реальных
+сохранённых `AnalysisResult` строках (профили с почти всеми баллами в
+диапазоне 50-65). **Фикс**: medium-ветка теперь срабатывает только если
+`len(medium) < len(items) / 2` — называть категории хайлайтом имеет смысл,
+только если это явное меньшинство; иначе — честное "пока сложно выделить
+одну явно ведущую сферу". 2 новых теста (`test_interest_map_note_names_a_
+minority_of_medium_spheres`, `..._does_not_list_a_majority_of_medium_
+spheres` — второй использует данные, воспроизводящие реальный кейс),
+regression-proofed, live-verified на обеих реальных строках — обе теперь
+получают честное сообщение.
+
+**Второй баг, отдельная уточняющая реплика пользователя** ("нету
+анализа" в блоке "Твой характер"): в отличие от `interest_map_note`, у
+"Твой характер" никогда не было своего синтезирующего предложения — только
+5 статичных карточек по тегам tier (`build_personality_notes`), без единой
+связывающей фразы, как уже есть у карты интересов/стиля мышления. Не баг
+в старом коде — отсутствовавшая фича, которую пользователь ожидал по
+аналогии. Добавлено симметрично `build_interest_map_note()`: новая функция
+`build_personality_note()` (`report_v2_assembler.py`) — если 1-2 черты
+(меньшинство) в tier "high" (`bigfive_content.is_high_tier`, порог 60),
+называет их ("Ярко выражено: X и Y — ..."); если ни одной, либо high —
+БОЛЬШИНСТВО (тот же guard, что и у interest_map_note), честное "черты
+выражены сбалансированно, без одной резко доминирующей". Новое поле
+`personality_note` на `_ResultResponseBase` (`result_v2.py`,
+`PERSONALITY_NOTE_FALLBACK` default — тот же cache-safety паттерн, что и у
+`interest_map_note`/`final_analysis`: старый закэшированный ответ без поля
+десериализуется на дефолт, не падает). Персистенции в БД не нужно — чистая
+функция от уже сохранённого `personality_profile`, как и `interest_map_note`
+(отличие от `final_analysis`, который реально льётся через LLM и требует
+колонки). Wired в `assemble_result_v2()` и `_shape_response()`. Фронтенд:
+`PersonalitySection.tsx` получил `note`-проп (рендерится так же, как в
+`InterestMapSection`), `personality_note` добавлен в `ResultResponseBase`
+(`shared/types/index.ts`), `ResultsPage.tsx` передаёт
+`report.personality_note`. `npm run typecheck`/`build` чистые.
+
+**Regression-proofing поймал реальный пробел в покрытии**: изначально
+удаление wiring-строки `personality_note=build_personality_note(...)` из
+`assemble_result_v2()` НЕ ловилось никаким тестом — поле имеет
+schema-дефолт (намеренно, для cache-safety), так что пропавший kwarg молча
+подставляет дефолт вместо ошибки. Добавлена явная assertion в
+`test_assemble_result_v2_includes_personality_notes_for_junior_and_senior`,
+проверяющая, что `personality_note` содержит реально вычисленный текст
+(не дефолт) — теперь ловит. Отдельно проверено, что тот же баг в
+`_shape_response()` (`report_service.py`) уже ловится существующим
+`test_result_generation_concurrency.py` (та же схема, что и раньше словила
+пропавший `final_analysis`) — подтверждено обратным экспериментом (снял
+wiring внутри контейнера, оба concurrency-теста упали, восстановил).
+
+5 стейл-снапшотов (openapi mi/riasec + result_v2_example junior/middle/
+senior) регенерированы повторно тем же способом. 3 новых теста для
+`build_personality_note`. Полный сьют: 249/249 (было 246 после первого
+фикса `interest_map_note`, до этого 244). Live-verified на реальных
+данных `testU@testmail.com` через настоящий LLM-вызов, включая проверку
+round-trip через `get_report()`.

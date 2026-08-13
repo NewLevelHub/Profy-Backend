@@ -189,12 +189,14 @@ def _shape_response(analysis: AnalysisResult) -> ResultResponseV2:
     )
     differentiation = float((analysis.meta or {}).get("differentiation", 0.0))
     flat = report_v2_assembler.is_flat_profile(differentiation)
+    interest_map = report_v2_assembler.build_interest_map(effective_age_group, dict(analysis.profile))
 
     common = dict(
         assessment_id=analysis.assessment_id,
         summary=analysis.summary,
         strength_cards=[StudentStrengthCard.model_validate(c) for c in analysis.strength_cards],
-        interest_map=report_v2_assembler.build_interest_map(effective_age_group, dict(analysis.profile)),
+        interest_map=interest_map,
+        interest_map_note=report_v2_assembler.build_interest_map_note(interest_map),
         thinking_style_notes=[StudentThinkingStyleNote.model_validate(n) for n in analysis.thinking_style_notes],
         # personality_profile is stored on every row regardless of
         # interest_instrument (Big Five doesn't branch by age) — read back
@@ -202,7 +204,9 @@ def _shape_response(analysis: AnalysisResult) -> ResultResponseV2:
         personality_notes=report_v2_assembler.build_personality_notes(
             instrument == "mi", dict(analysis.personality_profile)
         ),
+        personality_note=report_v2_assembler.build_personality_note(dict(analysis.personality_profile)),
         motivation_highlights=list(analysis.motivation_highlights),
+        final_analysis=analysis.final_analysis,
         is_flat_profile=flat,
         created_at=analysis.created_at,
     )
@@ -409,6 +413,7 @@ async def build_report(
         motivation_highlights=mot_highlights,
         strength_cards=strength_cards_stored,
         thinking_style_notes=thinking_style_notes_stored,
+        final_analysis=narrative.final_analysis,
         report_version=2,
     )
     db.add(analysis)

@@ -40,6 +40,8 @@ class AnalysisResult(Base):
     # them lands. [{"title": ..., "description": ...}, ...] each.
     strength_cards: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     thinking_style_notes: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    # 3-5 sentence synthesis tying every section together, "Итог" block.
+    final_analysis: Mapped[str] = mapped_column(Text, nullable=False, default="")
     # 1 = legacy/raw-only row (every row until the v2 pipeline ships writes
     # this — it is NOT inferred from strength_cards being empty). 2 = has
     # v2 narrative, written in the same insert/commit as strength_cards/

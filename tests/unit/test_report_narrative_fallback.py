@@ -171,6 +171,86 @@ def test_thinking_style_notes_junior_has_no_style_labels_or_career_language():
     assert validate(output, context) == []
 
 
+def test_thinking_style_notes_adds_personality_synthesis_for_senior_when_evidence_present():
+    """User feedback: wanted thinking_style + personality combined into a
+    new synthesis sentence, WITHOUT repeating the personality trait's own
+    note text (that's already shown verbatim in "Твой характер" —
+    report_v2_assembler.build_personality_notes)."""
+    personality_text = "Ты организован, доводишь дела до конца и держишь слово"
+    context = _context(AgeGroup.senior, "riasec", [
+        EvidenceItem(source_id="thinking_style:systematic", source_type="thinking_style", text="x"),
+        EvidenceItem(source_id="personality:conscientiousness", source_type="personality", text=personality_text),
+    ])
+    output = build_fallback_narrative(context)
+
+    assert len(output.thinking_style_notes) == 1
+    card = output.thinking_style_notes[0]
+    assert "personality:conscientiousness" in card.evidence_ids
+    assert "организованность" in card.description.lower()
+    # Must NOT just repeat "Твой характер"'s own sentence verbatim.
+    assert personality_text not in card.description
+
+
+def test_thinking_style_notes_no_personality_synthesis_when_no_personality_evidence():
+    context = _context(AgeGroup.senior, "riasec", [
+        EvidenceItem(source_id="thinking_style:systematic", source_type="thinking_style", text="x"),
+    ])
+    output = build_fallback_narrative(context)
+
+    card = output.thinking_style_notes[0]
+    assert card.evidence_ids == ["thinking_style:systematic"]
+    assert "твоя" not in card.description.lower()
+
+
+def test_thinking_style_notes_junior_never_gets_personality_synthesis():
+    """TZ_Profi.md §4.1: junior gets no trait labels at all, even when
+    personality evidence exists in the catalog."""
+    context = _context(AgeGroup.junior, "mi", [
+        EvidenceItem(source_id="thinking_style:systematic", source_type="thinking_style", text="x"),
+        EvidenceItem(source_id="personality:conscientiousness", source_type="personality", text="Ты организован"),
+    ])
+    output = build_fallback_narrative(context)
+
+    card = output.thinking_style_notes[0]
+    assert "personality:conscientiousness" not in card.evidence_ids
+    assert "организован" not in card.description.lower()
+
+
+def test_final_analysis_has_at_least_three_sentences_and_no_disclaimer_duplicate():
+    context = _context(AgeGroup.senior, "riasec", [
+        EvidenceItem(source_id="riasec:R", source_type="riasec_category", text="Любишь работать руками"),
+        EvidenceItem(source_id="motivation:interest", source_type="motivation", text="Тебя драйвит интерес"),
+    ])
+    output = build_fallback_narrative(context)
+
+    assert validate(output, context) == []  # includes the sentence-count + disclaimer-duplicate checks
+    assert output.final_analysis
+
+
+def test_final_analysis_mentions_available_sections():
+    context = _context(AgeGroup.senior, "riasec", [
+        EvidenceItem(source_id="riasec:R", source_type="riasec_category", text="Любишь работать руками"),
+        EvidenceItem(source_id="thinking_style:systematic", source_type="thinking_style", text="x"),
+        EvidenceItem(source_id="motivation:interest", source_type="motivation", text="Тебя драйвит интерес"),
+    ])
+    output = build_fallback_narrative(context)
+
+    lowered = output.final_analysis.lower()
+    assert "интерес" in lowered  # references the interests section
+    assert "мышлени" in lowered  # references thinking style
+    assert "мотивац" in lowered  # references motivation
+
+
+def test_final_analysis_valid_with_no_evidence_at_all():
+    """Graceful degradation — must still produce a valid 3+ sentence text
+    even when there's nothing to synthesize."""
+    context = _context(AgeGroup.junior, "mi", [])
+    output = build_fallback_narrative(context)
+
+    assert validate(output, context) == []
+    assert output.final_analysis
+
+
 def test_strength_card_title_is_the_specific_observation_not_a_generic_bucket_label():
     """TZ_Profi.md §18.2 п.2 wants each card's own short formulation as the
     headline (e.g. "Ты замечаешь, когда что-то не работает и хочешь

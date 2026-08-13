@@ -60,3 +60,10 @@ class ReportNarrativeOutput(BaseModel):
     # narrative — never profession names/salaries/university facts, since
     # none of that exists in the evidence catalog to ground it in.
     career_narrative: list[NarrativeCard] = []
+    # Shown last on the page, after every other section — ties the report
+    # together instead of repeating `summary` (written first, before the
+    # reader has seen anything else). Deliberately a plain string, not a
+    # NarrativeCard: it's meta-commentary about how the sections relate to
+    # each other, not a new individually-cited fact, so it doesn't carry
+    # evidence_ids the way a strength/thinking-style card does.
+    final_analysis: str

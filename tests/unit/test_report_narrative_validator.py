@@ -98,6 +98,36 @@ def test_summary_without_disclaimer_framing_is_accepted():
     assert not any(i.code == "summary_duplicates_disclaimer" for i in issues)
 
 
+def test_final_analysis_with_fewer_than_three_sentences_is_rejected():
+    context = _senior_context()
+    output = build_fallback_narrative(context)
+    output.final_analysis = "Коротко. Вот и всё."
+
+    issues = validate(output, context)
+
+    assert any(i.code == "final_analysis_too_short" for i in issues)
+
+
+def test_final_analysis_repeating_the_disclaimer_framing_is_rejected():
+    context = _senior_context()
+    output = build_fallback_narrative(context)
+    output.final_analysis = "Смотри на всё вместе. Это не окончательный выбор, а карта возможных направлений. Пробуй разное."
+
+    issues = validate(output, context)
+
+    assert any(i.code == "final_analysis_duplicates_disclaimer" for i in issues)
+
+
+def test_final_analysis_without_disclaimer_framing_is_accepted():
+    context = _senior_context()
+    output = build_fallback_narrative(context)
+    output.final_analysis = "Смотри на всё вместе. Интересы и характер вместе дают более точную картину. Пробуй разное."
+
+    issues = validate(output, context)
+
+    assert not any(i.code == "final_analysis_duplicates_disclaimer" for i in issues)
+
+
 def test_junior_career_narrative_is_rejected():
     context = _junior_context()
     output = build_fallback_narrative(context)

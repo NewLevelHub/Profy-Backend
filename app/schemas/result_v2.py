@@ -49,6 +49,35 @@ EXPLORATION_CLOSING_NOTE = (
     "тебе действительно нравится."
 )
 
+# Default for `interest_map_note` — a *default*, not a required field, same
+# reasoning as EXPLORATION_CLOSING_NOTE: an already-cached response
+# serialized before this field existed must still deserialize cleanly
+# (ResultV2Adapter.validate_json in report_service.py) rather than raising.
+# report_v2_assembler.build_interest_map_note() overrides this with a real,
+# personalized note every time a fresh response is assembled.
+INTEREST_MAP_NOTE_FALLBACK = (
+    "Карта показывает, какие сферы проявляются ярче, а какие — тише. Это не "
+    "оценка, а просто снимок текущего состояния."
+)
+
+# Same reasoning again for `final_analysis` — a plain default so old cached
+# responses (from before this field existed) don't fail to deserialize.
+FINAL_ANALYSIS_FALLBACK = (
+    "Каждый раздел этого отчёта — отдельный кусочек общей картины: не "
+    "разрозненные факты, а разные стороны одного и того же человека. "
+    "Используй их вместе, а не по одному, когда будешь решать, что "
+    "попробовать дальше."
+)
+
+# Same reasoning again for `personality_note` — a plain default so old
+# cached responses (from before this field existed) don't fail to
+# deserialize. report_v2_assembler.build_personality_note() overrides this
+# with a real synthesis every time a fresh response is assembled.
+PERSONALITY_NOTE_FALLBACK = (
+    "Каждая черта характера проявляется по-своему — вместе они складываются "
+    "в общую картину того, как тебе комфортнее действовать и общаться."
+)
+
 _MI_INTEREST_COUNT = 8  # len(mi_content.MI_LABELS) — every MI category, always
 _RIASEC_INTEREST_COUNT = 6  # len(riasec_content.RIASEC_LABELS) — every Holland letter, always
 _PERSONALITY_TRAIT_COUNT = 5  # len(bigfive_content.PERSONALITY_LABELS) — every Big Five domain, always
@@ -111,6 +140,12 @@ class _ResultResponseBase(BaseModel):
     summary: str = Field(min_length=1)
     disclaimer: str = DISCLAIMER
     strength_cards: list[StudentStrengthCard]
+    # 1-2 sentences summarizing the interest_map itself (which spheres are
+    # most/least pronounced) — the numeric map (per-branch below) has no
+    # prose at all on its own. Deterministic, server-authored (report_v2_
+    # assembler.build_interest_map_note), not LLM — it's a straight read of
+    # already-computed levels, nothing to personalize beyond that.
+    interest_map_note: str = INTEREST_MAP_NOTE_FALLBACK
     thinking_style_notes: list[StudentThinkingStyleNote]
     # Big Five is answered identically by all three age groups (only the
     # interest instrument/motivation format branch by age — TZ_Profi.md's
@@ -120,9 +155,19 @@ class _ResultResponseBase(BaseModel):
     personality_notes: list[StudentPersonalityNote] = Field(
         min_length=_PERSONALITY_TRAIT_COUNT, max_length=_PERSONALITY_TRAIT_COUNT
     )
+    # 1-2 sentences of synthesis on top of the 5 static cards above — same
+    # role as interest_map_note, closing the "just a lookup table, no
+    # analysis" gap reported live for "Твой характер". Deterministic,
+    # server-authored (report_v2_assembler.build_personality_note), not LLM.
+    personality_note: str = PERSONALITY_NOTE_FALLBACK
     motivation_highlights: list[str]
     is_flat_profile: bool
     exploration_note: str = EXPLORATION_CLOSING_NOTE
+    # Shown last on the page, after every other section — ties the report
+    # together instead of repeating `summary` (written first). LLM-
+    # personalized when available, same pipeline as summary/strength_cards
+    # (report_narrative_service), with a deterministic fallback either way.
+    final_analysis: str = FINAL_ANALYSIS_FALLBACK
     created_at: datetime
     model_config = _model_config
 

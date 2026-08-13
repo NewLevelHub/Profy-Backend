@@ -59,9 +59,13 @@ _SUMMARY_MAX_LEN = {AgeGroup.junior: 350, AgeGroup.middle: 550, AgeGroup.senior:
 _CARD_DESC_MAX_LEN = {AgeGroup.junior: 160, AgeGroup.middle: 240, AgeGroup.senior: 320}
 # thinking_style_notes gets its own, larger budget: it's now one card
 # merging up to 2 signals (cue + example each) plus, for middle/senior, a
-# real-world-relevance sentence — more genuine content than a single
-# strength/career card ever carries, not padding.
-_THINKING_STYLE_DESC_MAX_LEN = {AgeGroup.junior: 220, AgeGroup.middle: 380, AgeGroup.senior: 460}
+# real-world-relevance sentence AND (when there's a high-tier personality
+# trait) one more sentence synthesizing it with the style — more genuine
+# content than a single strength/career card ever carries, not padding.
+_THINKING_STYLE_DESC_MAX_LEN = {AgeGroup.junior: 220, AgeGroup.middle: 480, AgeGroup.senior: 560}
+# final_analysis: last section of the report, 3-5 sentences tying multiple
+# earlier sections together — naturally longer than a single card.
+_FINAL_ANALYSIS_MAX_LEN = {AgeGroup.junior: 400, AgeGroup.middle: 550, AgeGroup.senior: 650}
 
 _CYRILLIC_RE = re.compile(r"[а-яё]", re.IGNORECASE)
 _LATIN_RE = re.compile(r"[a-z]", re.IGNORECASE)
@@ -69,6 +73,7 @@ _DIGIT_OR_PERCENT_RE = re.compile(r"[\d%]")
 _MIN_CYRILLIC_RATIO = 0.85
 _SENTENCE_END_RE = re.compile(r"[.!?]+(?=\s|$)")
 _MIN_SUMMARY_SENTENCES = 3
+_MIN_FINAL_ANALYSIS_SENTENCES = 3
 
 
 @dataclass(frozen=True)
@@ -78,7 +83,7 @@ class ValidationIssue:
 
 
 def _all_texts(output: ReportNarrativeOutput) -> list[str]:
-    texts = [output.summary]
+    texts = [output.summary, output.final_analysis]
     for card in output.strength_cards + output.thinking_style_notes + output.career_narrative:
         texts += [card.title, card.description]
     for interest in output.interests:
@@ -265,12 +270,20 @@ _FRAME_PHRASE_SUBSTRINGS: tuple[str, ...] = (
 )
 
 
-def _check_summary_no_disclaimer_duplicate(output: ReportNarrativeOutput) -> list[ValidationIssue]:
-    lowered = output.summary.lower()
-    for phrase in _FRAME_PHRASE_SUBSTRINGS:
-        if phrase in lowered:
-            return [ValidationIssue("summary_duplicates_disclaimer", phrase)]
-    return []
+def _check_no_disclaimer_duplicate(output: ReportNarrativeOutput) -> list[ValidationIssue]:
+    """Applies to both summary and final_analysis — same reasoning either
+    way: DISCLAIMER already carries this exact idea, shown unconditionally
+    on the page, so writing it again anywhere in the LLM's own text
+    duplicates that line."""
+    issues: list[ValidationIssue] = []
+    for field_name, text in (("summary", output.summary), ("final_analysis", output.final_analysis)):
+        lowered = text.lower()
+        for phrase in _FRAME_PHRASE_SUBSTRINGS:
+            if phrase in lowered:
+                code = "summary_duplicates_disclaimer" if field_name == "summary" else "final_analysis_duplicates_disclaimer"
+                issues.append(ValidationIssue(code, phrase))
+                break
+    return issues
 
 
 def _check_summary_sentence_count(output: ReportNarrativeOutput) -> list[ValidationIssue]:
@@ -283,11 +296,29 @@ def _check_summary_sentence_count(output: ReportNarrativeOutput) -> list[Validat
     return []
 
 
+def _check_final_analysis_sentence_count(output: ReportNarrativeOutput) -> list[ValidationIssue]:
+    """final_analysis is the closing, whole-report synthesis — asked for
+    explicitly (user feedback) as its own 3-5 sentence block, distinct from
+    summary (written first, before the reader has seen the rest)."""
+    count = len(_SENTENCE_END_RE.findall(output.final_analysis.strip()))
+    if count < _MIN_FINAL_ANALYSIS_SENTENCES:
+        return [ValidationIssue(
+            "final_analysis_too_short", f"expected >= {_MIN_FINAL_ANALYSIS_SENTENCES} sentences, got {count}",
+        )]
+    return []
+
+
 def _check_lengths(output: ReportNarrativeOutput, age_group: AgeGroup) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     summary_max = _SUMMARY_MAX_LEN[age_group]
     if not (10 <= len(output.summary) <= summary_max):
         issues.append(ValidationIssue("summary_length", f"len={len(output.summary)}, max={summary_max}"))
+
+    final_analysis_max = _FINAL_ANALYSIS_MAX_LEN[age_group]
+    if not (10 <= len(output.final_analysis) <= final_analysis_max):
+        issues.append(ValidationIssue(
+            "final_analysis_length", f"len={len(output.final_analysis)}, max={final_analysis_max}",
+        ))
 
     desc_max = _CARD_DESC_MAX_LEN[age_group]
     all_cards = output.strength_cards + output.career_narrative + [output.motivation_narrative]
@@ -324,6 +355,7 @@ def validate(
     issues += _check_career_narrative(output, context, age_group)
     issues += _check_motivation_grounding(output, context)
     issues += _check_summary_sentence_count(output)
-    issues += _check_summary_no_disclaimer_duplicate(output)
+    issues += _check_final_analysis_sentence_count(output)
+    issues += _check_no_disclaimer_duplicate(output)
     issues += _check_lengths(output, age_group)
     return issues

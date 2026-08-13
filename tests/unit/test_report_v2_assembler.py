@@ -46,6 +46,7 @@ def _narrative(strength_cards: int = 2, thinking_style_notes: int = 1) -> Report
         ],
         motivation_narrative=MotivationNarrative(title="Драйв", description="Описание"),
         career_narrative=[],
+        final_analysis="Тестовый итоговый анализ, связывающий разделы.",
     )
 
 
@@ -366,6 +367,92 @@ def test_interest_map_levels_follow_documented_thresholds() -> None:
     assert levels["C"] == "high"
 
 
+def test_interest_map_note_names_the_high_spheres() -> None:
+    context = _context(age_group="senior", evidence=[])
+    response = report_v2_assembler.assemble_result_v2(
+        assessment_id=uuid.uuid4(),
+        age_group=AgeGroup.senior,
+        context=context,
+        narrative=_narrative(),
+        profile_scores={"R": 75.0, "I": 55.0, "A": 20.0, "S": 0.0, "E": 50.0, "C": 100.0},
+        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
+        differentiation=100.0,
+        careers=[],
+        created_at=_NOW,
+    )
+
+    assert "Реалистичный" in response.interest_map_note
+    assert "Конвенциональный" in response.interest_map_note
+    assert "Артистичный" not in response.interest_map_note  # low, not high
+
+
+def test_interest_map_note_handles_a_flat_profile_with_no_high_or_medium() -> None:
+    context = _context(age_group="senior", evidence=[])
+    careers = [_direction(f"d{i}", "RIA", 5 - i) for i in range(5)]
+    response = report_v2_assembler.assemble_result_v2(
+        assessment_id=uuid.uuid4(),
+        age_group=AgeGroup.senior,
+        context=context,
+        narrative=_narrative(),
+        profile_scores={k: 20.0 for k in HOLLAND_ORDER},
+        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
+        differentiation=0.0,
+        careers=careers,
+        created_at=_NOW,
+    )
+
+    assert response.interest_map_note  # never empty, even with nothing "high" or "medium"
+
+
+def test_interest_map_note_names_a_minority_of_medium_spheres() -> None:
+    context = _context(age_group="senior", evidence=[])
+    careers = [_direction(f"d{i}", "RIA", 5 - i) for i in range(5)]
+    scores = {k: 30.0 for k in HOLLAND_ORDER}
+    scores["R"] = 55.0
+    scores["I"] = 55.0
+    response = report_v2_assembler.assemble_result_v2(
+        assessment_id=uuid.uuid4(),
+        age_group=AgeGroup.senior,
+        context=context,
+        narrative=_narrative(),
+        profile_scores=scores,
+        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
+        differentiation=25.0,
+        careers=careers,
+        created_at=_NOW,
+    )
+
+    assert "Реалистичный" in response.interest_map_note
+    assert "Исследовательский" in response.interest_map_note
+
+
+def test_interest_map_note_does_not_list_a_majority_of_medium_spheres() -> None:
+    """Found live: 5 of 6 RIASEC spheres landing "medium" produced a note
+    naming almost the whole list as "заметнее всего" — self-contradictory
+    with "без резких пиков" in the same sentence. Naming a majority isn't a
+    highlight, so this must fall through to the honest flat-profile message
+    instead of listing them."""
+    context = _context(age_group="senior", evidence=[])
+    careers = [_direction(f"d{i}", "RIA", 5 - i) for i in range(5)]
+    scores = {k: 55.0 for k in HOLLAND_ORDER}
+    scores["S"] = 30.0
+    response = report_v2_assembler.assemble_result_v2(
+        assessment_id=uuid.uuid4(),
+        age_group=AgeGroup.senior,
+        context=context,
+        narrative=_narrative(),
+        profile_scores=scores,
+        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
+        differentiation=25.0,
+        careers=careers,
+        created_at=_NOW,
+    )
+
+    assert "Реалистичный" not in response.interest_map_note
+    assert "Заметнее всего" not in response.interest_map_note
+    assert response.interest_map_note
+
+
 def test_build_personality_notes_covers_all_five_traits_in_a_fixed_order() -> None:
     from app.services.bigfive_content import PERSONALITY_LABELS
 
@@ -385,6 +472,32 @@ def test_build_personality_notes_uses_junior_wording_for_junior() -> None:
     assert junior_notes["openness"] == _NOTES_JUNIOR["openness"]["high"]
     assert adult_notes["openness"] == _NOTES["openness"]["high"]
     assert junior_notes["openness"] != adult_notes["openness"]
+
+
+def test_build_personality_note_names_a_minority_of_high_traits() -> None:
+    profile = {**_DEFAULT_PERSONALITY_PROFILE, "openness": 75.0}
+
+    note = report_v2_assembler.build_personality_note(profile)
+
+    assert "Открытость новому" in note
+    assert "Организованность" not in note
+
+
+def test_build_personality_note_falls_back_when_nothing_stands_out() -> None:
+    note = report_v2_assembler.build_personality_note(_DEFAULT_PERSONALITY_PROFILE)
+
+    assert "Ярко выражено" not in note
+    assert note
+
+
+def test_build_personality_note_falls_back_when_a_majority_of_traits_are_high() -> None:
+    """Same guard as build_interest_map_note: naming traits only reads as a
+    highlight if it's not most of them."""
+    profile = {trait: 75.0 for trait in _DEFAULT_PERSONALITY_PROFILE}
+
+    note = report_v2_assembler.build_personality_note(profile)
+
+    assert "Ярко выражено" not in note
 
 
 def test_assemble_result_v2_includes_personality_notes_for_junior_and_senior() -> None:
@@ -408,3 +521,8 @@ def test_assemble_result_v2_includes_personality_notes_for_junior_and_senior() -
     junior_openness = next(n for n in junior_response.personality_notes if n.trait == "openness").description
     senior_openness = next(n for n in senior_response.personality_notes if n.trait == "openness").description
     assert junior_openness != senior_openness  # junior wording differs from adult wording
+    # Guards the wiring itself, not just build_personality_note() in isolation
+    # — personality_note has a schema default, so a dropped kwarg in
+    # assemble_result_v2() would silently fall back instead of failing loudly.
+    assert "Открытость новому" in junior_response.personality_note
+    assert "Открытость новому" in senior_response.personality_note

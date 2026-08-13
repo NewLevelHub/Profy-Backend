@@ -30,10 +30,10 @@ def _senior_context() -> ReportNarrativeContext:
     )
 
 
-def test_schema_top_level_requires_all_six_sections():
+def test_schema_top_level_requires_all_seven_sections():
     assert set(prompt.NARRATIVE_JSON_SCHEMA["required"]) == {
         "summary", "strength_cards", "interests", "thinking_style_notes",
-        "motivation_narrative", "career_narrative",
+        "motivation_narrative", "career_narrative", "final_analysis",
     }
     assert prompt.NARRATIVE_JSON_SCHEMA["additionalProperties"] is False
 

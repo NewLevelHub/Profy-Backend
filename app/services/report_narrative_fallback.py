@@ -18,6 +18,7 @@ from app.schemas.report_narrative import (
     ReportNarrativeOutput,
 )
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
+from app.services.bigfive_content import PERSONALITY_LABELS
 from app.services.mi_content import MI_LABELS
 from app.services.report_narrative_context import STRENGTH_CARD_EXCLUDED_SOURCE_TYPES
 from app.services.riasec_content import RIASEC_LABELS
@@ -26,6 +27,18 @@ from app.services.thinking_style_content import (
     THINKING_STYLE_CUE_SHORT,
     THINKING_STYLE_IMPACT,
 )
+
+# middle/senior only — a short "helps to..." clause per Big Five trait, used
+# to synthesize thinking_style_notes with personality WITHOUT quoting the
+# trait's own note text (that's already shown verbatim in "Твой характер" —
+# report_v2_assembler.build_personality_notes). New wording, not a repeat.
+_PERSONALITY_SYNTHESIS_HINT: dict[str, str] = {
+    "openness": "не бояться пробовать непривычные способы",
+    "conscientiousness": "доводить начатое до конца, а не бросать на середине",
+    "extraversion": "смело предлагать такие идеи вслух, а не держать при себе",
+    "agreeableness": "договариваться с другими, если задача общая",
+    "emotional_stability": "не сдаваться, если с первого раза не получилось",
+}
 
 # TZ_Profi.md §18.2 п.2: each strength card is "короткая формулировка +
 # одно предложение объяснения со ссылкой на ответы ребёнка" — the
@@ -192,6 +205,20 @@ def _thinking_style_notes(context: ReportNarrativeContext, age_group: AgeGroup) 
     cues = " ".join(item.text for item in items)
     impact = _join_ru([THINKING_STYLE_IMPACT[key] for key in keys])
     description = f"{cues} Люди с таким складом ума часто умеют {impact}."
+
+    # New synthesis with one personality trait, not a repeat of "Твой
+    # характер" (which shows the trait's own note text verbatim) — see
+    # _PERSONALITY_SYNTHESIS_HINT. First high-tier trait found, deterministic
+    # (context.evidence order is already fixed by build_report_narrative_context).
+    personality_item = next((e for e in context.evidence if e.source_type == "personality"), None)
+    if personality_item is not None:
+        trait = personality_item.source_id.split(":", 1)[1]
+        if trait in _PERSONALITY_SYNTHESIS_HINT and trait in PERSONALITY_LABELS:
+            label = PERSONALITY_LABELS[trait]
+            label = label[0].lower() + label[1:]
+            description += f" А твоя {label} помогает {_PERSONALITY_SYNTHESIS_HINT[trait]}."
+            evidence_ids = evidence_ids + [personality_item.source_id]
+
     return [NarrativeCard(title=title, description=description, evidence_ids=evidence_ids)]
 
 
@@ -226,6 +253,45 @@ def _career_narrative(context: ReportNarrativeContext, age_group: AgeGroup) -> l
     ]
 
 
+# Shown once, describing what each section *is for* — never the evidence
+# text itself (that's already been shown, verbatim, in its own section) —
+# so this reads as a synthesis, not a fourth repeat of the same facts.
+_FINAL_ANALYSIS_CLAUSES: dict[str, str] = {
+    "interests": "твои интересы показывают, куда тебя тянет",
+    "personality": "характер — как тебе комфортнее действовать",
+    "thinking_style": "стиль мышления — как тебе легче решать задачи",
+    "motivation": "мотивация — что удерживает тебя в деле надолго",
+}
+
+
+def _final_analysis(context: ReportNarrativeContext, age_group: AgeGroup) -> str:
+    present = []
+    if any(e.source_type in ("riasec_category", "mi_category") for e in context.evidence):
+        present.append(_FINAL_ANALYSIS_CLAUSES["interests"])
+    if any(e.source_type == "personality" for e in context.evidence):
+        present.append(_FINAL_ANALYSIS_CLAUSES["personality"])
+    if any(e.source_type == "thinking_style" for e in context.evidence):
+        present.append(_FINAL_ANALYSIS_CLAUSES["thinking_style"])
+    if any(e.source_type == "motivation" for e in context.evidence):
+        present.append(_FINAL_ANALYSIS_CLAUSES["motivation"])
+
+    if present:
+        first = f"Если сложить всё вместе: {_join_ru(present)}."
+    else:
+        first = "Каждый раздел этого отчёта — отдельный кусочек общей картины."
+
+    if age_group == AgeGroup.junior:
+        return (
+            f"{first} Это не разные истории, а разные стороны одного и того же тебя. "
+            f"Пробуй то, что откликается сильнее всего, и смотри, что получится."
+        )
+    return (
+        f"{first} Это не отдельные разрозненные факты, а разные стороны одного и того же "
+        f"человека — тебя. Используй все эти наблюдения вместе, а не по одному, когда будешь "
+        f"решать, что попробовать в первую очередь."
+    )
+
+
 def build_fallback_narrative(context: ReportNarrativeContext) -> ReportNarrativeOutput:
     age_group = AgeGroup(context.age_group)
     return ReportNarrativeOutput(
@@ -235,4 +301,5 @@ def build_fallback_narrative(context: ReportNarrativeContext) -> ReportNarrative
         thinking_style_notes=_thinking_style_notes(context, age_group),
         motivation_narrative=_motivation_narrative(context),
         career_narrative=_career_narrative(context, age_group),
+        final_analysis=_final_analysis(context, age_group),
     )
