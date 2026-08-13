@@ -1,6 +1,5 @@
 """Template-based roadmap generation. Interface is LLM-ready: swap build_roadmap body only."""
 
-import hashlib
 import json
 import logging
 import uuid
@@ -20,6 +19,7 @@ from app.models.direction_roadmap import DirectionRoadmap
 from app.models.profile import AgeGroup, Profile
 from app.models.program import Program
 from app.models.roadmap import Roadmap
+from app.models.university import University
 from app.prompts import direction_roadmap as direction_prompt
 from app.prompts import roadmap as roadmap_prompt
 from app.schemas.roadmap import (
@@ -27,10 +27,12 @@ from app.schemas.roadmap import (
     DirectionRoadmapResponse,
     DirectionStage,
     GrowthFocus,
+    ProgramGrant,
     RoadmapMilestone,
     RoadmapResponse,
     RoadmapTarget,
     RoadmapTask,
+    UniversityRequirement,
     UniversityTrack,
 )
 from app.schemas.student_context import StudentContext
@@ -69,9 +71,12 @@ def _get_redis() -> aioredis.Redis:
 
 
 def _cache_key(assessment_id: uuid.UUID, program_id: uuid.UUID | None) -> str:
-    raw = f"{assessment_id}:{program_id or ''}"
-    h = hashlib.sha256(raw.encode()).hexdigest()[:24]
-    return f"roadmap:{h}"
+    # Plain, not hashed — a retake needs to invalidate every cached variant of
+    # this assessment's goal roadmap (one per program_id ever requested), and
+    # that's only possible via a pattern scan (`roadmap:{assessment_id}:*`,
+    # see assessment_shared.invalidate_goal_roadmap) if the assessment_id is
+    # readable in the key, not buried inside a hash.
+    return f"roadmap:{assessment_id}:{program_id or 'none'}"
 
 
 def _parse_directions(directions_jsonb: list) -> list[_DirectionSummary]:
@@ -442,10 +447,87 @@ class _DirectionPlan:
     skills_to_build: list[str]
     subjects_to_focus: list[str]
     university_track: UniversityTrack
+    # Backend-populated, never the model's decision — see _university_requirements_for.
+    # Empty for every goal except "university".
+    university_requirements: list[UniversityRequirement]
 
 
 def direction_cache_key(assessment_id: uuid.UUID, slug: str) -> str:
     return f"droadmap:{assessment_id}:{slug}"
+
+
+# ─── University facts (backend-only; goal == "university" only) ─────────────────
+
+# Program.requirements keys as actually seeded. scripts/seed_universities.py
+# (12 hand-picked universities with a richer structured shape: min_gpa/exams/
+# min_ielts/etc.) was removed 2026-08-13 — university-data/*.py via
+# scripts/seed_kz_universities.py is now the single source of truth, and it
+# seeds a sparser {"notes": [...]} shape with empty deadlines/grants. This
+# mapping already treats missing keys as "no data" (None), never "not
+# required" (False), so the sparser shape simply yields fewer populated
+# fields below, not an error.
+_DOCUMENT_LABELS: dict[str, str] = {
+    "needs_essay": "Мотивационное эссе",
+    "needs_recommendations": "Рекомендательные письма",
+    "needs_interview": "Собеседование",
+}
+
+
+def _map_program_requirement(program: Program, university: University) -> UniversityRequirement:
+    """Pure mapping, no I/O — kept separate from the query so it's unit-testable
+    without a database. `None` means "no data", never "not required": e.g.
+    `needs_portfolio: false` in the seed data must map to `portfolio_needed=False`,
+    not to `None` — `dict.get` already gives us exactly that distinction."""
+    requirements: dict = program.requirements or {}
+    deadlines: dict = program.deadlines or {}
+    grants_raw: list = program.grants or []
+
+    min_ielts = requirements.get("min_ielts")
+    language_level = f"IELTS {min_ielts}" if min_ielts is not None else None
+
+    required_documents: list[str] | None = None
+    if any(key in requirements for key in _DOCUMENT_LABELS):
+        required_documents = [
+            label for key, label in _DOCUMENT_LABELS.items() if requirements.get(key)
+        ]
+
+    return UniversityRequirement(
+        program_name=program.name,
+        university_name=university.name,
+        city=university.city,
+        exams=list(requirements.get("exams") or []),
+        application_deadline=deadlines.get("application_close"),
+        grants=[
+            ProgramGrant(
+                name=g.get("name", ""),
+                amount=g.get("amount"),
+                conditions=g.get("conditions"),
+            )
+            for g in grants_raw
+        ],
+        language_level=language_level,
+        portfolio_needed=requirements.get("needs_portfolio"),
+        required_documents=required_documents,
+    )
+
+
+async def _university_requirements_for(slug: str, db: AsyncSession) -> list[UniversityRequirement]:
+    """Real Program/University facts for this direction — never asked of the LLM.
+    Only called for goal == "university"; every other goal gets [].
+
+    Matches via `Program.profession_slugs` (direct hand-mapped list of
+    `Direction.slug` values a program prepares someone for) — the old
+    `Program.direction_slug` category-bridge field was dropped in migration
+    0033 for producing false matches; see that migration's docstring and
+    `app/services/university_service.py` for the same containment pattern."""
+    rows = (
+        await db.execute(
+            select(Program, University)
+            .join(University, Program.university_id == University.id)
+            .where(Program.profession_slugs.contains([slug]))
+        )
+    ).all()
+    return [_map_program_requirement(program, university) for program, university in rows]
 
 
 _MIN_STEPS_PER_STAGE = 3
@@ -476,8 +558,14 @@ def _valid_stages(stages: list[DirectionStage]) -> bool:
 async def _require_direction_roadmap_access(
     assessment_id: uuid.UUID, slug: str, db: AsyncSession
 ) -> tuple[Assessment, object]:
-    """Enforce the feature's preconditions: not junior, not the university goal,
-    and the student has actually gone through the AI inquiry for this direction."""
+    """Enforce the feature's preconditions: not junior, and the student has
+    actually gone through the AI inquiry for this direction.
+
+    `university` used to be excluded here entirely (it had its own, poorer
+    branch — see goal roadmap's `_build_university`). It now goes through the
+    same direction-roadmap pipeline as every other goal; the only thing that
+    still varies by goal is the prompt emphasis and the backend-populated
+    `university_requirements` (see `_university_requirements_for`)."""
     assessment = (
         await db.execute(select(Assessment).where(Assessment.id == assessment_id))
     ).scalar_one_or_none()
@@ -494,11 +582,6 @@ async def _require_direction_roadmap_access(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Эта возможность доступна с 10 лет",
-        )
-    if assessment.goal == AssessmentGoal.university:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Для цели «поступление» используется план по программе университета",
         )
 
     inquiry = await direction_inquiry_service.get_inquiry(assessment_id, slug, db)
@@ -518,12 +601,22 @@ async def _require_direction_roadmap_access(
 _MAX_PLAN_ATTEMPTS = 2  # 1 initial + 1 corrective retry
 
 
-async def _generate_plan(context: StudentContext, direction) -> _DirectionPlan | None:
+async def _generate_plan(
+    context: StudentContext,
+    direction,
+    university_requirements: list[UniversityRequirement],
+) -> _DirectionPlan | None:
     """Ask the LLM for a plan, retrying once if it breaks the structural rules.
 
     The model is inconsistent about "every stage needs a growth step", so one
-    corrective pass beats failing the whole request on the first slip."""
-    messages = direction_prompt.build_messages(context, direction)
+    corrective pass beats failing the whole request on the first slip.
+
+    `university_requirements` is backend-computed (see `_university_requirements_for`)
+    and never part of the LLM's JSON schema — it is only surfaced to the model as
+    reference facts (via `build_messages`) and stapled onto the validated plan
+    afterwards, same as `skills_to_build`/`university_track` are the model's call
+    but this field never is."""
+    messages = direction_prompt.build_messages(context, direction, university_requirements)
 
     for attempt in range(1, _MAX_PLAN_ATTEMPTS + 1):
         try:
@@ -543,6 +636,7 @@ async def _generate_plan(context: StudentContext, direction) -> _DirectionPlan |
                 university_track=UniversityTrack.model_validate(
                     raw.get("university_track", {})
                 ),
+                university_requirements=university_requirements,
             )
         except (llm_client.LLMError, ValidationError, TypeError) as exc:
             logger.warning("Direction roadmap generation failed: %s", exc)
@@ -580,7 +674,13 @@ async def generate_direction_roadmap(
     if context is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
 
-    plan = await _generate_plan(context, direction)
+    # Backend-only university facts — never the model's job, and never asked of
+    # it for any goal other than "university" (see docs, Область 8).
+    university_requirements: list[UniversityRequirement] = []
+    if assessment.goal == AssessmentGoal.university:
+        university_requirements = await _university_requirements_for(slug, db)
+
+    plan = await _generate_plan(context, direction, university_requirements)
     if plan is None:
         raise _AI_UNAVAILABLE
 
@@ -627,6 +727,7 @@ async def _upsert_direction_roadmap(
     roadmap.skills_to_build = plan.skills_to_build
     roadmap.subjects_to_focus = plan.subjects_to_focus
     roadmap.university_track = plan.university_track.model_dump()
+    roadmap.university_requirements = [r.model_dump() for r in plan.university_requirements]
     return roadmap
 
 

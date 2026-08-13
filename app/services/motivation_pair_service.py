@@ -16,7 +16,6 @@ from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.motivation_pair import MotivationIntensity, MotivationPair, MotivationPairResponse, PairSide
 from app.schemas.motivation_pair import MotivationPairItem, PairIntensityAnswer, SubmitMotivationPairResponse
@@ -119,16 +118,8 @@ async def submit_pair_answers(
     if is_retake:
         assessment.status = AssessmentStatus.in_progress
         assessment.completed_at = None
-
-        old_result = await db.execute(
-            select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
-        )
-        old_analysis = old_result.scalar_one_or_none()
-        if old_analysis is not None:
-            await db.delete(old_analysis)
         redis = assessment_shared.get_redis()
-        await redis.delete(f"report:{assessment_id}")
-        await assessment_shared.invalidate_direction_flow(assessment, db, redis)
+        await assessment_shared.invalidate_retake(assessment, db, redis)
 
     mot_answered = await answered_count(assessment_id, db)
     mot_total = await total_pairs(db)

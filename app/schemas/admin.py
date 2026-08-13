@@ -3,9 +3,9 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from app.schemas.admin_result import AdminAnalysisResultResponse
 from app.schemas.artifact import ArtifactItem
 from app.schemas.profile import ProfileResponse
-from app.schemas.result import AnalysisResultResponse
 from app.schemas.roadmap import RoadmapResponse
 
 
@@ -88,7 +88,7 @@ class AdminAssessmentDetailResponse(BaseModel):
     completed_at: datetime | None = None
     responses: list[AdminResponseItem] = []
     motivation_responses: list[AdminMotivationResponseItem] = []
-    analysis_result: AnalysisResultResponse | None = None
+    analysis_result: AdminAnalysisResultResponse | None = None
     roadmap: RoadmapResponse | None = None
 
 

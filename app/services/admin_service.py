@@ -23,7 +23,7 @@ from app.schemas.admin import (
 )
 from app.schemas.artifact import ArtifactItem
 from app.schemas.profile import ProfileResponse
-from app.schemas.result import AnalysisResultResponse
+from app.schemas.admin_result import AdminAnalysisResultResponse
 from app.schemas.roadmap import RoadmapResponse
 from app.services import bigfive_content, motivation_service
 from app.services.age_tiers import visible_tiers
@@ -300,7 +300,7 @@ async def get_assessment_detail(
     )
     analysis = analysis_row.scalar_one_or_none()
     if analysis:
-        analysis_result = AnalysisResultResponse.model_validate(analysis)
+        analysis_result = AdminAnalysisResultResponse.model_validate(analysis)
 
     roadmap_result = None
     roadmap_row = await db.execute(select(Roadmap).where(Roadmap.assessment_id == assessment.id))

@@ -4,6 +4,7 @@ needs motivation's totals for AssessmentResponse; motivation needs
 assessment's Likert totals + retake-invalidation to decide when the whole
 test — not just its own phase — is complete)."""
 
+import logging
 import uuid
 
 import redis.asyncio as aioredis
@@ -11,15 +12,30 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment
 from app.models.direction_inquiry import DirectionInquiry
 from app.models.direction_roadmap import DirectionRoadmap
 from app.models.profile import AgeGroup, Profile
 from app.models.question import Question, QuestionInstrument
+from app.models.roadmap import Roadmap
 from app.models.user_response import UserResponse
 from app.services.age_tiers import visible_tiers
 
+logger = logging.getLogger(__name__)
+
 _redis: aioredis.Redis | None = None
+
+# Single source of truth for the report cache key — report_service.py reads/
+# writes this, invalidate_retake() below must delete the exact same key.
+# Versioned (v2, was bare "report:{id}") so a pre-rollout v1-shaped payload
+# can never be read back as v2: the old prefix is simply never addressed
+# again by any code path, not filtered out at read time.
+REPORT_CACHE_KEY_PREFIX = "report:v2"
+
+
+def report_cache_key(assessment_id: uuid.UUID) -> str:
+    return f"{REPORT_CACHE_KEY_PREFIX}:{assessment_id}"
 
 
 def get_redis() -> aioredis.Redis:
@@ -27,6 +43,27 @@ def get_redis() -> aioredis.Redis:
     if _redis is None:
         _redis = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
     return _redis
+
+
+async def safe_redis_delete(redis: aioredis.Redis, *keys: str) -> None:
+    """Best-effort cache invalidation: the DB row this cache mirrors is
+    deleted/updated in the same transaction by the caller regardless, so a
+    Redis outage here means the cache goes stale until its TTL expires —
+    not a lost write and not a reason to fail the whole request."""
+    if not keys:
+        return
+    try:
+        await redis.delete(*keys)
+    except aioredis.RedisError:
+        logger.warning("redis delete failed for keys=%s", keys, exc_info=True)
+
+
+async def safe_redis_scan(redis: aioredis.Redis, pattern: str) -> list[str]:
+    try:
+        return [key async for key in redis.scan_iter(match=pattern)]
+    except aioredis.RedisError:
+        logger.warning("redis scan failed for pattern=%s", pattern, exc_info=True)
+        return []
 
 
 async def invalidate_direction_flow(
@@ -50,7 +87,49 @@ async def invalidate_direction_flow(
     assessment.selected_direction_slug = None
 
     for slug in slugs:
-        await redis.delete(f"droadmap:{assessment_id}:{slug}", f"dq:{assessment_id}:{slug}")
+        await safe_redis_delete(redis, f"droadmap:{assessment_id}:{slug}", f"dq:{assessment_id}:{slug}")
+
+
+async def invalidate_goal_roadmap(
+    assessment_id: uuid.UUID, db: AsyncSession, redis: aioredis.Redis
+) -> None:
+    """Drop the goal roadmap (roadmap_builder.generate_roadmap/get_roadmap):
+    the DB row plus every cached variant for this assessment, including the
+    program-specific ones from the university gap-analysis path. Cache keys
+    are a plain `roadmap:{assessment_id}:{program_id|"none"}` (see
+    roadmap_builder._cache_key — deliberately not hashed) so every variant
+    can be found via a scan, not just the one program_id this call happens
+    to know about. Takes the bare id (not the `Assessment` object, unlike
+    `invalidate_direction_flow`) — see tests/integration/
+    test_goal_roadmap_retake_invalidation.py for the contract this matches."""
+    pattern = f"roadmap:{assessment_id}:*"
+    stale_keys = await safe_redis_scan(redis, pattern)
+    await safe_redis_delete(redis, *stale_keys)
+    await db.execute(Roadmap.__table__.delete().where(Roadmap.assessment_id == assessment_id))
+
+
+async def invalidate_retake(
+    assessment: Assessment, db: AsyncSession, redis: aioredis.Redis
+) -> None:
+    """Full retake reset, shared by every submit-answers entrypoint (ordinary
+    Likert, question pairs, senior motivation triplets, Harter motivation
+    pairs): drop the stale report, the direction flow and the goal roadmap so
+    a completed retake never leaves old-data artifacts behind for the next
+    GET. Caller is still responsible for flipping `assessment.status` back to
+    `in_progress` — that's entrypoint-specific (some flip it unconditionally,
+    the motivation ones only after checking the other phase)."""
+    assessment_id = assessment.id
+
+    old_result = await db.execute(
+        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+    )
+    old_analysis = old_result.scalar_one_or_none()
+    if old_analysis is not None:
+        await db.delete(old_analysis)
+
+    await safe_redis_delete(redis, report_cache_key(assessment_id))
+    await invalidate_direction_flow(assessment, db, redis)
+    await invalidate_goal_roadmap(assessment_id, db, redis)
 
 
 async def get_profile_age_group(profile_id: uuid.UUID, db: AsyncSession) -> AgeGroup:

@@ -91,6 +91,32 @@ class UniversityTrack(BaseModel):
     prepare: list[str]
 
 
+class ProgramGrant(BaseModel):
+    name: str
+    amount: str | None = None
+    conditions: str | None = None
+
+
+class UniversityRequirement(BaseModel):
+    """Backend-populated, per-program facts from `Program`/`University` — never
+    asked of the LLM and not part of `DIRECTION_ROADMAP_SCHEMA`. Populated only
+    when `context.goal == "university"`; every other goal gets an empty list.
+
+    `None` means "no data for this field" — it is never used to mean "not
+    required". `portfolio_needed=False` is a real, known fact and must stay
+    distinguishable from "we don't know" (`None`)."""
+
+    program_name: str
+    university_name: str
+    city: str
+    exams: list[str]
+    application_deadline: str | None = None
+    grants: list[ProgramGrant] = []
+    language_level: str | None = None
+    portfolio_needed: bool | None = None
+    required_documents: list[str] | None = None
+
+
 class DirectionRoadmapResponse(BaseModel):
     id: uuid.UUID
     assessment_id: uuid.UUID
@@ -102,6 +128,7 @@ class DirectionRoadmapResponse(BaseModel):
     skills_to_build: list[str]
     subjects_to_focus: list[str]
     university_track: UniversityTrack
+    university_requirements: list[UniversityRequirement] = []
 
     model_config = {"from_attributes": True}
 
