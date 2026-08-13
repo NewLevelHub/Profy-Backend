@@ -15,7 +15,7 @@ from app.models.profile import AgeGroup
 from app.schemas.report_narrative import ReportNarrativeOutput
 from app.schemas.report_narrative_context import ReportNarrativeContext
 from app.services.mi_content import MI_LABELS
-from app.services.report_narrative_context import unknown_source_ids
+from app.services.report_narrative_context import STRENGTH_CARD_EXCLUDED_SOURCE_TYPES, unknown_source_ids
 from app.services.riasec_content import RIASEC_LABELS
 
 # Приложение C, В.1 — verbatim phrases, matched as lowercase substrings.
@@ -57,11 +57,18 @@ _MAX_CAREER_CARDS = 3
 # generation without rejecting normal evidence-derived sentences.
 _SUMMARY_MAX_LEN = {AgeGroup.junior: 350, AgeGroup.middle: 550, AgeGroup.senior: 750}
 _CARD_DESC_MAX_LEN = {AgeGroup.junior: 160, AgeGroup.middle: 240, AgeGroup.senior: 320}
+# thinking_style_notes gets its own, larger budget: it's now one card
+# merging up to 2 signals (cue + example each) plus, for middle/senior, a
+# real-world-relevance sentence — more genuine content than a single
+# strength/career card ever carries, not padding.
+_THINKING_STYLE_DESC_MAX_LEN = {AgeGroup.junior: 220, AgeGroup.middle: 380, AgeGroup.senior: 460}
 
 _CYRILLIC_RE = re.compile(r"[а-яё]", re.IGNORECASE)
 _LATIN_RE = re.compile(r"[a-z]", re.IGNORECASE)
 _DIGIT_OR_PERCENT_RE = re.compile(r"[\d%]")
 _MIN_CYRILLIC_RATIO = 0.85
+_SENTENCE_END_RE = re.compile(r"[.!?]+(?=\s|$)")
+_MIN_SUMMARY_SENTENCES = 3
 
 
 @dataclass(frozen=True)
@@ -155,21 +162,67 @@ def _check_interests(output: ReportNarrativeOutput, context: ReportNarrativeCont
 
 
 def _check_thinking_style_count(output: ReportNarrativeOutput, context: ReportNarrativeContext) -> list[ValidationIssue]:
-    expected = sum(1 for e in context.evidence if e.source_type == "thinking_style")
-    if len(output.thinking_style_notes) != expected:
+    """1 or 2 real thinking_style signals must land in exactly ONE merged
+    card, not one card each (2 separate, identically-titled cards read as
+    duplicated — user feedback). The card must cite every thinking_style
+    source_id that exists, not just one of two."""
+    thinking_style_ids = {e.source_id for e in context.evidence if e.source_type == "thinking_style"}
+    expected_cards = 1 if thinking_style_ids else 0
+    if len(output.thinking_style_notes) != expected_cards:
         return [ValidationIssue(
-            "thinking_style_count", f"expected {expected}, got {len(output.thinking_style_notes)}",
+            "thinking_style_count", f"expected {expected_cards} card(s), got {len(output.thinking_style_notes)}",
         )]
+    if expected_cards == 1:
+        cited = set(output.thinking_style_notes[0].evidence_ids)
+        if not thinking_style_ids <= cited:
+            return [ValidationIssue(
+                "thinking_style_incomplete",
+                f"card must cite all of {sorted(thinking_style_ids)}, cited {sorted(cited)}",
+            )]
     return []
 
 
 def _check_strength_card_count(output: ReportNarrativeOutput, context: ReportNarrativeContext) -> list[ValidationIssue]:
-    available = len(context.evidence)
+    # thinking_style evidence doesn't count here — it's reserved for
+    # thinking_style_notes (see _check_strength_card_sources below), so it
+    # can't inflate the pool this cardinality is measured against.
+    available = sum(1 for e in context.evidence if e.source_type not in STRENGTH_CARD_EXCLUDED_SOURCE_TYPES)
     lo, hi = min(5, available), min(7, available)
     count = len(output.strength_cards)
     if not (lo <= count <= hi):
         return [ValidationIssue("strength_card_count", f"expected {lo}-{hi}, got {count}")]
     return []
+
+
+def _check_strength_card_sources(output: ReportNarrativeOutput, context: ReportNarrativeContext) -> list[ValidationIssue]:
+    """TZ_Profi.md §18.2 п.2 vs п.4: "Сильные стороны" and "Стиль мышления"
+    are two different sections — a strength_card citing thinking_style
+    evidence would duplicate thinking_style_notes verbatim, so this is
+    rejected structurally rather than left to prompt-following alone."""
+    excluded_ids = {e.source_id for e in context.evidence if e.source_type in STRENGTH_CARD_EXCLUDED_SOURCE_TYPES}
+    issues: list[ValidationIssue] = []
+    for card in output.strength_cards:
+        leaked = excluded_ids & set(card.evidence_ids)
+        if leaked:
+            issues.append(ValidationIssue("strength_card_excluded_source_leak", card.title))
+    return issues
+
+
+def _check_strength_card_duplicate_evidence(output: ReportNarrativeOutput) -> list[ValidationIssue]:
+    """_check_strength_card_count only bounds the total number of cards — it
+    never stops the model from citing the same source_id from more than one
+    card, paraphrased differently each time. Measured live: with a small
+    evidence pool, gpt-4o-mini did exactly this (one real fact turned into
+    2-3 "different" strength cards) — the student sees the same observation
+    repeated in different words, which reads as duplication/padding."""
+    seen: set[str] = set()
+    issues: list[ValidationIssue] = []
+    for card in output.strength_cards:
+        for source_id in card.evidence_ids:
+            if source_id in seen:
+                issues.append(ValidationIssue("strength_card_duplicate_evidence", source_id))
+            seen.add(source_id)
+    return issues
 
 
 def _check_career_narrative(
@@ -199,6 +252,16 @@ def _check_motivation_grounding(output: ReportNarrativeOutput, context: ReportNa
     return []
 
 
+def _check_summary_sentence_count(output: ReportNarrativeOutput) -> list[ValidationIssue]:
+    """TZ_Profi.md §18.2 п.1's summary read as too thin at 2 sentences (the
+    story sentence + the mandatory frame phrase, nothing else) — user
+    feedback across all three age groups asked for a minimum of 3."""
+    count = len(_SENTENCE_END_RE.findall(output.summary.strip()))
+    if count < _MIN_SUMMARY_SENTENCES:
+        return [ValidationIssue("summary_too_short", f"expected >= {_MIN_SUMMARY_SENTENCES} sentences, got {count}")]
+    return []
+
+
 def _check_lengths(output: ReportNarrativeOutput, age_group: AgeGroup) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     summary_max = _SUMMARY_MAX_LEN[age_group]
@@ -206,10 +269,15 @@ def _check_lengths(output: ReportNarrativeOutput, age_group: AgeGroup) -> list[V
         issues.append(ValidationIssue("summary_length", f"len={len(output.summary)}, max={summary_max}"))
 
     desc_max = _CARD_DESC_MAX_LEN[age_group]
-    all_cards = output.strength_cards + output.thinking_style_notes + output.career_narrative + [output.motivation_narrative]
+    all_cards = output.strength_cards + output.career_narrative + [output.motivation_narrative]
     for card in all_cards:
         if not (5 <= len(card.description) <= desc_max):
             issues.append(ValidationIssue("card_length", f"{card.title!r} len={len(card.description)}, max={desc_max}"))
+
+    ts_max = _THINKING_STYLE_DESC_MAX_LEN[age_group]
+    for card in output.thinking_style_notes:
+        if not (5 <= len(card.description) <= ts_max):
+            issues.append(ValidationIssue("card_length", f"{card.title!r} len={len(card.description)}, max={ts_max}"))
     return issues
 
 
@@ -230,7 +298,10 @@ def validate(
     issues += _check_interests(output, context)
     issues += _check_thinking_style_count(output, context)
     issues += _check_strength_card_count(output, context)
+    issues += _check_strength_card_sources(output, context)
+    issues += _check_strength_card_duplicate_evidence(output)
     issues += _check_career_narrative(output, context, age_group)
     issues += _check_motivation_grounding(output, context)
+    issues += _check_summary_sentence_count(output)
     issues += _check_lengths(output, age_group)
     return issues

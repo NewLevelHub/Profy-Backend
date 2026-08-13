@@ -34,6 +34,21 @@ DISCLAIMER = (
     "картина может измениться, и это нормально."
 )
 
+# Closing encouragement under junior's "Что можно попробовать" list — same
+# pattern as DISCLAIMER: fixed, server-authored framing, not LLM text, so it
+# can't be dropped/mangled by a bad generation. A *default*, not a required
+# field, so an already-cached response serialized before this field existed
+# still deserializes cleanly (ResultV2Adapter.validate_json in
+# report_service.py) instead of raising on a missing key. Present on both
+# branches (mirrors exploration_activities itself) even though it's only
+# ever meaningful for junior — the frontend component already no-ops when
+# exploration_activities is empty, which it always is for riasec.
+EXPLORATION_CLOSING_NOTE = (
+    "Не обязательно пробовать всё сразу — начни с того, что откликается "
+    "больше всего. Даже маленький шаг сегодня помогает лучше понять, что "
+    "тебе действительно нравится."
+)
+
 _MI_INTEREST_COUNT = 8  # len(mi_content.MI_LABELS) — every MI category, always
 _RIASEC_INTEREST_COUNT = 6  # len(riasec_content.RIASEC_LABELS) — every Holland letter, always
 _MAX_CAREERS = 5
@@ -72,7 +87,6 @@ class StudentCareer(BaseModel):
     description: str | None = None
     skills_needed: list[str] = []
     subjects_to_develop: list[str] = []
-    first_steps: list[str] = []
     model_config = _model_config
 
 
@@ -85,6 +99,7 @@ class _ResultResponseBase(BaseModel):
     thinking_style_notes: list[StudentThinkingStyleNote]
     motivation_highlights: list[str]
     is_flat_profile: bool
+    exploration_note: str = EXPLORATION_CLOSING_NOTE
     created_at: datetime
     model_config = _model_config
 

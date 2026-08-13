@@ -44,8 +44,17 @@ RIASEC_STRENGTH_PHRASES: dict[str, str] = {
 
 # Deterministic fallback "why" for a matched career/direction when no
 # specific evidence overlaps its Holland code — never leaves `why` empty
-# (TZ_Profi.md §18.2: every shown direction needs an explanation).
-NEUTRAL_CAREER_WHY = "Это направление хорошо сочетается с тем, что уже проявилось в твоих ответах."
+# (TZ_Profi.md §18.2: every shown direction needs an explanation). Named
+# honestly rather than papering over the gap: this direction was ranked by
+# the interest test's overall pattern, not by a specific evidenced strength
+# the student can point to — saying so plainly reads more trustworthy than
+# a vague "matches what you've shown" that implies a specific link that
+# doesn't actually exist (result-quality-fixes.md §3, variant A).
+NEUTRAL_CAREER_WHY = (
+    "Это направление подобрано по общей картине теста интересов, а не по "
+    "одной конкретной сильной стороне — иногда так тоже бывает, и это "
+    "нормально: стоит попробовать и посмотреть, откликается ли."
+)
 
 # Same idea for `try_now` (StudentCareer.try_now, app/schemas/result_v2.py):
 # a Direction row with no first_steps in the DB must never leave the field

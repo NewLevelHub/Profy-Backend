@@ -7,11 +7,6 @@
         "string"
       ]
     },
-    "first_steps": {
-      "default": [],
-      "items": "string",
-      "type": "array"
-    },
     "matched_strengths": {
       "default": [],
       "items": "string",

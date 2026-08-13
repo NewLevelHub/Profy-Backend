@@ -120,6 +120,34 @@ async def test_llm_error_on_every_attempt_falls_back_without_raising(monkeypatch
     assert validate(output, context) == []
 
 
+async def test_retry_feeds_the_previous_failure_back_to_the_model(monkeypatch):
+    """A blind retry (identical prompt) can't fix a systematic mistake — this
+    was measured live against the real model (docs/rs-progress-notes.md:
+    career_narrative's evidence_ids came back empty on all 3 attempts,
+    every time, because nothing told the model what it got wrong). The
+    retry must grow the conversation with the failed output + what to fix,
+    not just resend the original messages."""
+    monkeypatch.setattr(llm_client, "is_enabled", lambda: True)
+    context = _senior_context()
+    good_payload = build_fallback_narrative(context).model_dump()
+    bad_payload = build_fallback_narrative(context).model_dump()
+    bad_payload["summary"] = "У тебя низкий результат, но не переживай"
+    seen_messages: list[list[dict]] = []
+
+    async def _fake(messages, schema, schema_name, *, timeout=None, max_tokens=None):
+        seen_messages.append(messages)
+        return bad_payload if len(seen_messages) == 1 else good_payload
+
+    monkeypatch.setattr(llm_client, "complete_json", _fake)
+
+    output, is_ai = await service.generate_report_narrative(context)
+
+    assert is_ai is True
+    assert len(seen_messages[1]) > len(seen_messages[0]), "second attempt must carry more context than the first"
+    correction = seen_messages[1][-1]["content"]
+    assert "banned_phrase" in correction
+
+
 async def test_logging_never_leaks_the_matched_banned_phrase_or_raw_llm_error_text(monkeypatch, caplog):
     monkeypatch.setattr(llm_client, "is_enabled", lambda: True)
     context = _senior_context()

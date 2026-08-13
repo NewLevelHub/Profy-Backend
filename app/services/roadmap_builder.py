@@ -458,11 +458,14 @@ def direction_cache_key(assessment_id: uuid.UUID, slug: str) -> str:
 
 # ─── University facts (backend-only; goal == "university" only) ─────────────────
 
-# Program.requirements keys as actually seeded (verified against
-# scripts/seed_universities.py — 50 hand-written programs with this rich shape;
-# scripts/seed_kz_universities.py's 55-university scrape seeds a much sparser
-# {"notes": [...]} shape with empty deadlines/grants, which simply yields fewer
-# populated fields below, not an error).
+# Program.requirements keys as actually seeded. scripts/seed_universities.py
+# (12 hand-picked universities with a richer structured shape: min_gpa/exams/
+# min_ielts/etc.) was removed 2026-08-13 — university-data/*.py via
+# scripts/seed_kz_universities.py is now the single source of truth, and it
+# seeds a sparser {"notes": [...]} shape with empty deadlines/grants. This
+# mapping already treats missing keys as "no data" (None), never "not
+# required" (False), so the sparser shape simply yields fewer populated
+# fields below, not an error.
 _DOCUMENT_LABELS: dict[str, str] = {
     "needs_essay": "Мотивационное эссе",
     "needs_recommendations": "Рекомендательные письма",

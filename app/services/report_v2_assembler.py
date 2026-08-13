@@ -54,6 +54,24 @@ _LEVEL_MEDIUM_MIN = 50.0
 _FLAT_PROFILE_CAREER_COUNT = 3
 _GOOD_TIER_MAX_RANK = 3
 
+# Career matching (career_match_score, riasec_service.py) runs purely on the
+# RIASEC top-3 code — it has no way to know about subjects/artifacts, and a
+# flat profile means that top-3 is itself close to noise (the difference
+# between rank 3 and rank 4 might be a single point). Found live: a student
+# with clear self-reported programming/robotics interest, but a flat RIASEC
+# profile (differentiation 11.5), got Архивариус/Аудитор/Бухгалтер — three
+# clerical directions with zero connection to what they'd actually told the
+# app about themselves. Redesigning career_match_score to weigh non-RIASEC
+# evidence is a real methodology change (result-quality-fixes.md §3, variant
+# C) — not done here. This is the honest, scoped mitigation: say so plainly
+# instead of silently presenting a noisy top-3 as confident fact.
+_FLAT_PROFILE_ARTIFACT_NOTE = (
+    " Отдельно ты рассказал(а) о своих увлечениях в профиле — когда баллы "
+    "по разным сферам близки друг к другу, как сейчас, эти увлечения могут "
+    "точнее говорить о твоих склонностях, чем сам тест. Стоит присмотреться "
+    "и к направлениям, связанным с ними, даже если их нет в списке ниже."
+)
+
 
 def is_flat_profile(differentiation: float) -> bool:
     return differentiation < _FLAT_PROFILE_THRESHOLD
@@ -147,6 +165,10 @@ def build_riasec_careers(
             if matched_strengths
             else NEUTRAL_CAREER_WHY
         )
+        # Direction.first_steps may hold several catalog entries, but the
+        # student only ever sees one, as `try_now` — a separate "3 first
+        # steps" list read as pointless filler on top of it (product
+        # decision, result-quality-fixes.md §4).
         first_steps = list(career.get("first_steps") or [])
         result.append(StudentCareer(
             slug=career.get("slug", ""),
@@ -159,7 +181,6 @@ def build_riasec_careers(
             description=career.get("description") or None,
             skills_needed=list(career.get("skills_needed") or []),
             subjects_to_develop=list(career.get("subjects_to_develop") or []),
-            first_steps=first_steps,
         ))
     return result
 
@@ -205,6 +226,9 @@ def assemble_result_v2(
             interest_map=build_interest_map(age_group, profile_scores),
             exploration_activities=build_exploration_activities(context),
         )
+
+    if flat and any(e.source_type == "artifact" for e in context.evidence):
+        common["summary"] = common["summary"] + _FLAT_PROFILE_ARTIFACT_NOTE
 
     return RiasecResultResponse(
         **common,

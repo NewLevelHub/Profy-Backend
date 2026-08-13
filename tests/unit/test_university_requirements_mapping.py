@@ -2,10 +2,16 @@
 
 Pure mapping, no DB/session needed — Program/University are plain objects
 here, never flushed. Verifies the "null means no data, never 'not required'"
-discipline against the *real* `Program.requirements` key names seeded by
-scripts/seed_universities.py (min_gpa/exams/min_ielts/min_sat/needs_portfolio/
-needs_essay/needs_recommendations/needs_interview), not the old pre-RIASEC
-design doc's guessed names.
+discipline against this richer `Program.requirements` key shape (min_gpa/
+exams/min_ielts/min_sat/needs_portfolio/needs_essay/needs_recommendations/
+needs_interview), not the old pre-RIASEC design doc's guessed names.
+
+scripts/seed_universities.py, which used to seed this richer shape, was
+removed 2026-08-13 (scripts/seed_kz_universities.py / university-data/*.py
+is the single source of truth now, seeding a sparser {"notes": [...]}
+shape instead) — this test still pins the mapping's correct behavior for
+this key shape, since _map_program_requirement must keep handling it
+correctly if it's ever the input.
 """
 from app.models.program import Program
 from app.models.university import University

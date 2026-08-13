@@ -54,6 +54,26 @@ def test_structurally_valid_but_banned_phrase_is_rejected():
     assert any(i.code == "banned_phrase" for i in issues)
 
 
+def test_summary_with_fewer_than_three_sentences_is_rejected():
+    context = _senior_context()
+    output = build_fallback_narrative(context)
+    output.summary = "Коротко о тебе. Это не окончательный выбор."
+
+    issues = validate(output, context)
+
+    assert any(i.code == "summary_too_short" for i in issues)
+
+
+def test_summary_with_three_sentences_is_accepted():
+    context = _senior_context()
+    output = build_fallback_narrative(context)
+    output.summary = "Коротко о тебе. Ты интересуешься многим. Это не окончательный выбор."
+
+    issues = validate(output, context)
+
+    assert not any(i.code == "summary_too_short" for i in issues)
+
+
 def test_junior_career_narrative_is_rejected():
     context = _junior_context()
     output = build_fallback_narrative(context)
@@ -127,6 +147,45 @@ def test_unknown_evidence_id_is_rejected():
     assert any(i.code == "unknown_evidence_id" and i.detail == "made_up:thing" for i in issues)
 
 
+def test_strength_card_citing_thinking_style_evidence_is_rejected():
+    """A strength_card that cites a thinking_style source_id would duplicate
+    thinking_style_notes verbatim (TZ_Profi.md §18.2 п.2 vs п.4 are separate
+    sections with separate formulations) — must be rejected even though the
+    evidence_id itself is real and known, not made up."""
+    context = _senior_context()  # includes thinking_style:creative_think
+    output = build_fallback_narrative(context)
+    output.strength_cards.append(
+        NarrativeCard(
+            title="Как тебе легче думать",
+            description="Генерация идей",
+            evidence_ids=["thinking_style:creative_think"],
+        )
+    )
+
+    issues = validate(output, context)
+
+    assert any(i.code == "strength_card_excluded_source_leak" for i in issues)
+
+
+def test_strength_card_citing_motivation_evidence_is_rejected():
+    """Same rule as the thinking_style leak above, for motivation: a
+    strength_card citing a motivation source_id would duplicate the
+    dedicated "Что тебя драйвит" section verbatim."""
+    context = _senior_context()  # includes motivation:interest
+    output = build_fallback_narrative(context)
+    output.strength_cards.append(
+        NarrativeCard(
+            title="Что тебя драйвит",
+            description="Тебя драйвит интерес",
+            evidence_ids=["motivation:interest"],
+        )
+    )
+
+    issues = validate(output, context)
+
+    assert any(i.code == "strength_card_excluded_source_leak" for i in issues)
+
+
 def test_thinking_style_count_must_match_real_signal_count():
     context = _junior_context()  # no thinking_style evidence at all
     output = build_fallback_narrative(context)
@@ -140,8 +199,44 @@ def test_thinking_style_count_must_match_real_signal_count():
     assert any(i.code == "thinking_style_count" for i in issues)
 
 
+def _context_with_two_thinking_style_signals() -> ReportNarrativeContext:
+    return _context(AgeGroup.senior, "riasec", [
+        EvidenceItem(source_id="thinking_style:creative_think", source_type="thinking_style", text="Генерация идей"),
+        EvidenceItem(source_id="thinking_style:strategic", source_type="thinking_style", text="Планирование"),
+    ])
+
+
+def test_thinking_style_two_separate_cards_is_rejected():
+    """Two signals must merge into ONE card, not two separate ones — this
+    was the actual shape before the merge (found duplicated/boring by the
+    user), so the validator must actively reject it now."""
+    context = _context_with_two_thinking_style_signals()
+    output = build_fallback_narrative(context)
+    assert len(output.thinking_style_notes) == 1  # sanity: fallback already merges
+    output.thinking_style_notes = [
+        NarrativeCard(title="Как тебе легче думать", description="a", evidence_ids=["thinking_style:creative_think"]),
+        NarrativeCard(title="Как тебе легче думать", description="b", evidence_ids=["thinking_style:strategic"]),
+    ]
+
+    issues = validate(output, context)
+
+    assert any(i.code == "thinking_style_count" for i in issues)
+
+
+def test_thinking_style_card_missing_one_signal_is_rejected():
+    context = _context_with_two_thinking_style_signals()
+    output = build_fallback_narrative(context)
+    output.thinking_style_notes = [
+        NarrativeCard(title="Тебе близко творческое мышление", description="a", evidence_ids=["thinking_style:creative_think"]),
+    ]
+
+    issues = validate(output, context)
+
+    assert any(i.code == "thinking_style_incomplete" for i in issues)
+
+
 def test_strength_card_count_below_minimum_is_rejected():
-    context = _senior_context()  # 6 evidence items -> expects min(5,6)=5
+    context = _senior_context()  # 4 strength-eligible items (thinking_style + motivation excluded) -> expects min(5,4)=4
     output = build_fallback_narrative(context)
     output.strength_cards = output.strength_cards[:2]
 
@@ -151,15 +246,57 @@ def test_strength_card_count_below_minimum_is_rejected():
 
 
 def test_strength_card_count_matches_sparse_evidence_exactly():
-    """With only 2 evidence items available, exactly 2 cards is correct —
-    the validator must not demand 5 cards out of thin air."""
-    context = _junior_context()  # 3 evidence items total
+    """With only 2 strength-eligible facts available (motivation is its own
+    section, excluded here), exactly 2 cards is correct — the validator must
+    not demand 5 cards out of thin air."""
+    context = _junior_context()  # 2 mi_category + 1 motivation (excluded)
     output = build_fallback_narrative(context)
 
     issues = validate(output, context)
 
-    assert len(output.strength_cards) == 3
+    assert len(output.strength_cards) == 2
     assert not any(i.code == "strength_card_count" for i in issues)
+
+
+def test_strength_card_citing_the_same_evidence_as_another_card_is_rejected():
+    """_check_strength_card_count only bounds the total number of cards — it
+    doesn't stop the model from citing one real fact from two different
+    cards, paraphrased differently each time. Measured live: gpt-4o-mini did
+    exactly this with a small evidence pool (one subject_easy fact turned
+    into 3 "different" strength cards) — the student sees the same
+    observation repeated in different words."""
+    context = _senior_context()  # includes riasec:R once
+    output = build_fallback_narrative(context)
+    output.strength_cards.append(
+        NarrativeCard(
+            title="Ты любишь работать руками",
+            description="Тебе нравится доводить дело до реального результата",
+            evidence_ids=["riasec:R"],
+        )
+    )
+
+    issues = validate(output, context)
+
+    assert any(i.code == "strength_card_duplicate_evidence" and i.detail == "riasec:R" for i in issues)
+
+
+def test_strength_card_with_multiple_distinct_evidence_ids_is_not_flagged():
+    """A single card citing 2+ *different* source_ids (e.g. combining two
+    related facts into one observation) is legitimate — only a source_id
+    reused ACROSS cards is the problem."""
+    context = _senior_context()  # riasec:R and riasec:I are both present
+    output = build_fallback_narrative(context)
+    output.strength_cards = [
+        NarrativeCard(
+            title="Любишь и разбираться, и делать руками",
+            description="Совпадает с тем, что у тебя выражено",
+            evidence_ids=["riasec:R", "riasec:I"],
+        )
+    ]
+
+    issues = validate(output, context)
+
+    assert not any(i.code == "strength_card_duplicate_evidence" for i in issues)
 
 
 def test_career_narrative_cannot_exceed_three_cards_for_senior():

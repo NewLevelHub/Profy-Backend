@@ -374,7 +374,7 @@ async def test_senior_full_flow_same_motivation_shape_and_harter_rows_ignored(
     assert dominant_item.level == "high"
     assert response.motivation_highlights
     assert all(isinstance(h, str) and h for h in response.motivation_highlights)
-    joined_highlights = " ".join(response.motivation_highlights)
+    joined_highlights = " ".join(response.motivation_highlights).lower()
     assert "создава" in joined_highlights, "the triplet-sourced 'creation' category must be reflected"
     assert "материальн" not in joined_highlights, (
         "the Harter-pair-sourced 'money' category must never leak into a senior report"

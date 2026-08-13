@@ -54,7 +54,19 @@ async def create_assessment(
     )
     existing = existing_result.scalar_one_or_none()
     if existing is not None:
-        existing.status = AssessmentStatus.completed
+        # Discard, don't relabel: stamping an abandoned, possibly-incomplete
+        # attempt as `completed` made that status lie — everything else in
+        # the codebase (_assert_assessment_complete, /result/generate,
+        # get_current_assessment's fallback query) treats `completed` as
+        # "this assessment was actually fully answered and can be reported
+        # on". An abandoned attempt with e.g. Likert done but motivation
+        # never touched isn't that, and previously got stuck exactly there:
+        # status said completed, but no AnalysisResult could ever be built.
+        # Deleting cascades to its UserResponse/MotivationPairResponse/
+        # MotivationResponse rows (all FK ondelete="CASCADE") — same
+        # "discard stale artifacts on a fresh start" pattern retake
+        # invalidation already uses elsewhere in this codebase.
+        await db.delete(existing)
         await db.commit()
 
     assessment = Assessment(

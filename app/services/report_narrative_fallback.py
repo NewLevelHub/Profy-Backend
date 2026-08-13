@@ -19,22 +19,77 @@ from app.schemas.report_narrative import (
 )
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
 from app.services.mi_content import MI_LABELS
+from app.services.report_narrative_context import STRENGTH_CARD_EXCLUDED_SOURCE_TYPES
 from app.services.riasec_content import RIASEC_LABELS
+from app.services.thinking_style_content import (
+    THINKING_STYLE_ADJ,
+    THINKING_STYLE_CUE_SHORT,
+    THINKING_STYLE_IMPACT,
+)
 
 # TZ_Profi.md §17.5 point 7 / Приложение C В.2 — required framing, reused
 # verbatim by both this fallback and instructed identically to the LLM.
 _FRAME_PHRASE = "Это не окончательный выбор, а карта возможных направлений."
 
-_STRENGTH_CARD_TITLES: dict[str, str] = {
-    "mi_category": "Тебе интересно",
-    "riasec_category": "Тебе интересно",
-    "personality": "Твой характер",
-    "motivation": "Что тебя драйвит",
-    "thinking_style": "Как тебе легче думать",
-    "subject_liked": "Любимый предмет",
-    "subject_easy": "Даётся легко",
-    "artifact": "Твой опыт",
+# TZ_Profi.md §18.2 п.2: each strength card is "короткая формулировка +
+# одно предложение объяснения со ссылкой на ответы ребёнка" — the
+# formulation (item.text, e.g. "Любишь докапываться до сути и разбираться,
+# как всё устроено") is specific enough to BE the title on its own; this
+# dict supplies the second sentence, grounding it in how it was observed.
+# Previously the card used a generic bucket label ("Тебе интересно"/"Твой
+# характер"/...) as the title and the specific phrase as the description —
+# backwards from what the LLM path already does, and the reason every
+# card of the same source_type looked identically titled.
+
+# Several variants per source_type, cycled deterministically (not random —
+# same input always produces the same output) so that 2-3 cards of the same
+# source_type (e.g. a student with 3 evidenced RIASEC letters) don't all get
+# the literal same explanation sentence — that read as copy-pasted (found
+# live: a middle-schooler's report had "Это заметно по тому, какие ответы ты
+# выбирал(а) в тесте." verbatim on every riasec_category card).
+_STRENGTH_CARD_EXPLANATION_VARIANTS: dict[str, list[str]] = {
+    "mi_category": [
+        "Это заметно по тому, какие ответы ты выбирал(а) в тесте.",
+        "Ты сам(а) показал(а) это своими ответами в тесте.",
+        "Это видно из того, как ты отвечал(а) на вопросы теста.",
+    ],
+    "riasec_category": [
+        "Это заметно по тому, какие ответы ты выбирал(а) в тесте.",
+        "Ты сам(а) показал(а) это своими ответами в тесте.",
+        "Это видно из того, как ты отвечал(а) на вопросы теста.",
+    ],
+    "personality": [
+        "Это видно по тому, как ты отвечаешь на вопросы о себе.",
+        "Ты сам(а) описал(а) себя именно так.",
+    ],
+    # subject_liked/subject_easy/artifact are self-reported at onboarding,
+    # not measured by the test (report_narrative_context.
+    # ONBOARDING_SOURCE_TYPES) — the explanation says so plainly, so this
+    # card doesn't read as if it were part of "what the test found" (that's
+    # what also grounds the suggested careers below — mixing them in
+    # silently is what made "programming" and "accountant" look like they
+    # came from the same evidence when they didn't, user feedback).
+    "subject_liked": [
+        "Это не из теста — ты сам(а) отметил(а) этот предмет как один из любимых. Можно развивать это отдельно, параллельно.",
+        "Ты сам(а) выбрал(а) этот предмет среди тех, что нравятся — само по себе, не как часть теста.",
+    ],
+    "subject_easy": [
+        "Это не из теста — ты сам(а) отметил(а), что этот предмет даётся легко. Стоит развивать это параллельно.",
+        "Ты сам(а) сказал(а), что здесь всё получается легко — отдельно от результатов теста.",
+    ],
+    "artifact": [
+        "Это не из теста — ты сам(а) рассказал(а) об этом в своём профиле. Можно развивать это параллельно.",
+        "Это ты сам(а) указал(а) в своём профиле — отдельный интерес, не из результатов теста.",
+    ],
 }
+_DEFAULT_STRENGTH_EXPLANATION = "Это видно по твоим ответам."
+
+
+def _strength_card_explanation(source_type: str, index_within_type: int) -> str:
+    variants = _STRENGTH_CARD_EXPLANATION_VARIANTS.get(source_type)
+    if not variants:
+        return _DEFAULT_STRENGTH_EXPLANATION
+    return variants[index_within_type % len(variants)]
 
 # Приложение C В.2 style ("вместо слабой стороны — проверяемое действие") —
 # never framed as a deficiency, just quieter than the evidenced categories.
@@ -51,25 +106,48 @@ _CAREER_CARD_DESCRIPTION = (
 )
 
 
+def _join_ru(items: list[str]) -> str:
+    if not items:
+        return ""
+    if len(items) == 1:
+        return items[0]
+    return ", ".join(items[:-1]) + " и " + items[-1]
+
+
 def _summary(age_group: AgeGroup) -> str:
+    # TZ_Profi.md §18.2 п.1 wants a short but real summary — 2 sentences
+    # (story sentence + the mandatory frame phrase) read as too thin; a
+    # third, bridging sentence pointing at the rest of the report is genuine
+    # content, not padding.
     if age_group == AgeGroup.junior:
-        return f"Ты попробовал разные задания, и по ответам видно, чем тебе интересно заниматься. {_FRAME_PHRASE}"
+        return (
+            f"Ты попробовал разные задания, и по ответам видно, чем тебе интересно заниматься. "
+            f"Дальше в отчёте — что у тебя получается лучше всего и что можно попробовать. {_FRAME_PHRASE}"
+        )
     return (
         f"По твоим ответам заметно, что тебе интересны определённые сферы и есть сильные стороны, на "
-        f"которые стоит опереться. {_FRAME_PHRASE}"
+        f"которые стоит опереться. Дальше в отчёте — подробнее о них и о том, что стоит попробовать. "
+        f"{_FRAME_PHRASE}"
     )
 
 
 def _strength_cards(context: ReportNarrativeContext) -> list[NarrativeCard]:
-    count = min(7, len(context.evidence))
-    return [
-        NarrativeCard(
-            title=_STRENGTH_CARD_TITLES.get(item.source_type, "Сильная сторона"),
-            description=item.text,
+    # thinking_style/motivation evidence are reserved for their own sections
+    # below — excluded here so the same fact never appears twice with
+    # identical text.
+    pool = [e for e in context.evidence if e.source_type not in STRENGTH_CARD_EXCLUDED_SOURCE_TYPES]
+    count = min(7, len(pool))
+    type_counters: dict[str, int] = {}
+    cards = []
+    for item in pool[:count]:
+        index_within_type = type_counters.get(item.source_type, 0)
+        type_counters[item.source_type] = index_within_type + 1
+        cards.append(NarrativeCard(
+            title=item.text,
+            description=_strength_card_explanation(item.source_type, index_within_type),
             evidence_ids=[item.source_id],
-        )
-        for item in context.evidence[:count]
-    ]
+        ))
+    return cards
 
 
 def _interests(context: ReportNarrativeContext) -> list[InterestCard]:
@@ -88,21 +166,47 @@ def _interests(context: ReportNarrativeContext) -> list[InterestCard]:
     return cards
 
 
-def _thinking_style_notes(context: ReportNarrativeContext) -> list[NarrativeCard]:
-    return [
-        NarrativeCard(title="Как тебе легче думать", description=e.text, evidence_ids=[e.source_id])
-        for e in context.evidence
-        if e.source_type == "thinking_style"
-    ]
+def _thinking_style_notes(context: ReportNarrativeContext, age_group: AgeGroup) -> list[NarrativeCard]:
+    """One merged card, not one per style — 2 separate cards both titled
+    generically "Как тебе легче думать" read as a duplicated/boring section
+    (user feedback). Junior gets no abstract style labels or career-adjacent
+    "where this shows up" framing (TZ_Profi.md §4.1); middle/senior get a
+    named title plus a short real-world-relevance sentence."""
+    items = [e for e in context.evidence if e.source_type == "thinking_style"]
+    if not items:
+        return []
+    keys = [e.source_id.split(":", 1)[1] for e in items]
+    evidence_ids = [e.source_id for e in items]
+
+    if age_group == AgeGroup.junior:
+        clauses = [THINKING_STYLE_CUE_SHORT[key] for key in keys]
+        description = _join_ru(clauses) + "."
+        description = description[0].upper() + description[1:]
+        return [NarrativeCard(title="Как тебе легче думать", description=description, evidence_ids=evidence_ids)]
+
+    verb = "близко" if len(keys) == 1 else "близки"
+    adjectives = _join_ru([THINKING_STYLE_ADJ[key] for key in keys])
+    title = f"Тебе {verb} {adjectives} мышление"
+
+    cues = " ".join(item.text for item in items)
+    impact = _join_ru([THINKING_STYLE_IMPACT[key] for key in keys])
+    description = f"{cues} Люди с таким складом ума часто умеют {impact}."
+    return [NarrativeCard(title=title, description=description, evidence_ids=evidence_ids)]
 
 
 def _motivation_narrative(context: ReportNarrativeContext) -> MotivationNarrative:
     items = [e for e in context.evidence if e.source_type == "motivation"]
     if not items:
-        return MotivationNarrative(title="Что тебя драйвит", description=_NO_MOTIVATION_SIGNAL, evidence_ids=[])
+        return MotivationNarrative(title="Что тебя мотивирует", description=_NO_MOTIVATION_SIGNAL, evidence_ids=[])
+    # e.text is now a bare phrase, e.g. "Заниматься тем, что по-настоящему
+    # интересно" (motivation_content.highlight_phrases no longer prefixes
+    # each one) — lowercase joins into one readable sentence instead of
+    # several capitalized fragments run together.
+    phrases = [items[0].text] + [e.text[0].lower() + e.text[1:] for e in items[1:]]
+    description = _join_ru(phrases) + "."
     return MotivationNarrative(
-        title="Что тебя драйвит",
-        description=" ".join(e.text for e in items),
+        title="Что тебя мотивирует",
+        description=description,
         evidence_ids=[e.source_id for e in items],
     )
 
@@ -127,7 +231,7 @@ def build_fallback_narrative(context: ReportNarrativeContext) -> ReportNarrative
         summary=_summary(age_group),
         strength_cards=_strength_cards(context),
         interests=_interests(context),
-        thinking_style_notes=_thinking_style_notes(context),
+        thinking_style_notes=_thinking_style_notes(context, age_group),
         motivation_narrative=_motivation_narrative(context),
         career_narrative=_career_narrative(context, age_group),
     )

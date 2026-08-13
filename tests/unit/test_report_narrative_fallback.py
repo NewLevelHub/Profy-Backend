@@ -95,3 +95,133 @@ def test_strength_card_count_never_exceeds_available_evidence():
     ])
     output = build_fallback_narrative(context)
     assert len(output.strength_cards) == 1
+
+
+def test_thinking_style_and_motivation_evidence_never_leak_into_strength_cards_even_when_sparse():
+    """With only 1 non-excluded fact available, a naive "first N of the
+    whole evidence list" implementation would pad strength_cards out with
+    thinking_style/motivation items too — duplicating them verbatim against
+    thinking_style_notes / the "Что тебя драйвит" motivation section
+    (TZ_Profi.md §18.2 п.2 vs п.4/п.5 are three separate sections). Confirms
+    that doesn't happen even in this sparse case."""
+    context = _context(AgeGroup.senior, "riasec", [
+        EvidenceItem(source_id="riasec:R", source_type="riasec_category", text="Реалистичный"),
+        EvidenceItem(source_id="thinking_style:creative_think", source_type="thinking_style", text="Генерация идей"),
+        EvidenceItem(source_id="thinking_style:systematic", source_type="thinking_style", text="Порядок и система"),
+        EvidenceItem(source_id="motivation:interest", source_type="motivation", text="Тебя драйвит интерес"),
+    ])
+    output = build_fallback_narrative(context)
+
+    assert len(output.strength_cards) == 1
+    assert output.strength_cards[0].evidence_ids == ["riasec:R"]
+    # Both thinking_style signals merge into one card (not one each) —
+    # see test_thinking_style_notes_merge_two_signals_into_one_card below.
+    assert len(output.thinking_style_notes) == 1
+    assert set(output.thinking_style_notes[0].evidence_ids) == {
+        "thinking_style:creative_think", "thinking_style:systematic",
+    }
+    assert output.motivation_narrative.evidence_ids == ["motivation:interest"]
+    strength_card_evidence_ids = {sid for card in output.strength_cards for sid in card.evidence_ids}
+    assert not strength_card_evidence_ids & {
+        "thinking_style:creative_think", "thinking_style:systematic", "motivation:interest",
+    }
+
+
+def test_thinking_style_notes_merge_two_signals_into_one_card_for_senior():
+    """Two separate cards, both titled generically "Как тебе легче думать",
+    read as a duplicated section (user feedback) — must merge into one card
+    naming both styles, citing both source_ids."""
+    context = _context(AgeGroup.senior, "riasec", [
+        EvidenceItem(source_id="thinking_style:creative_think", source_type="thinking_style", text="x"),
+        EvidenceItem(source_id="thinking_style:strategic", source_type="thinking_style", text="y"),
+    ])
+    output = build_fallback_narrative(context)
+
+    assert len(output.thinking_style_notes) == 1
+    card = output.thinking_style_notes[0]
+    assert set(card.evidence_ids) == {"thinking_style:creative_think", "thinking_style:strategic"}
+    assert "творческое" in card.title and "стратегическое" in card.title
+
+
+def test_thinking_style_notes_single_signal_names_that_one_style_for_senior():
+    context = _context(AgeGroup.senior, "riasec", [
+        EvidenceItem(source_id="thinking_style:practical", source_type="thinking_style", text="x"),
+    ])
+    output = build_fallback_narrative(context)
+
+    assert len(output.thinking_style_notes) == 1
+    assert output.thinking_style_notes[0].title == "Тебе близко практическое мышление"
+
+
+def test_thinking_style_notes_junior_has_no_style_labels_or_career_language():
+    """TZ_Profi.md §4.1: junior gets no abstract typology labels and no
+    career/work-adjacent framing anywhere — thinking_style_notes must stay
+    purely behavioral even when merging two signals into one card."""
+    context = _context(AgeGroup.junior, "mi", [
+        EvidenceItem(source_id="thinking_style:creative_think", source_type="thinking_style", text="x"),
+        EvidenceItem(source_id="thinking_style:systematic", source_type="thinking_style", text="y"),
+    ])
+    output = build_fallback_narrative(context)
+
+    assert len(output.thinking_style_notes) == 1
+    card = output.thinking_style_notes[0]
+    assert card.title == "Как тебе легче думать"
+    for banned in ("творческое", "системное", "мышление", "работ", "роль", "карьер"):
+        assert banned not in card.description.lower()
+    assert validate(output, context) == []
+
+
+def test_strength_card_title_is_the_specific_observation_not_a_generic_bucket_label():
+    """TZ_Profi.md §18.2 п.2 wants each card's own short formulation as the
+    headline (e.g. "Ты замечаешь, когда что-то не работает и хочешь
+    разобраться почему"), not a repeated category label like "Тебе
+    интересно" — otherwise every interest-derived card looks identically
+    titled. The evidence text (already a specific, human formulation) is
+    the title; the description grounds it in how it was observed."""
+    context = _context(AgeGroup.senior, "riasec", [
+        EvidenceItem(source_id="riasec:R", source_type="riasec_category", text="Любишь работать руками"),
+    ])
+    output = build_fallback_narrative(context)
+
+    card = output.strength_cards[0]
+    assert card.title == "Любишь работать руками"
+    assert card.description != card.title
+    assert card.description
+
+
+def test_motivation_narrative_joins_multiple_drivers_into_one_readable_sentence():
+    """motivation_content.highlight_phrases() no longer prefixes every driver
+    phrase with the same lead-in (fixed alongside this) — the fallback must
+    not naively space-join the bare phrases either, or the description reads
+    as several capitalized sentence fragments run together with no
+    punctuation between them."""
+    context = _context(AgeGroup.senior, "riasec", [
+        EvidenceItem(source_id="motivation:interest", source_type="motivation",
+                     text="Заниматься тем, что по-настоящему интересно"),
+        EvidenceItem(source_id="motivation:creation", source_type="motivation",
+                     text="Создавать что-то своё"),
+    ])
+    output = build_fallback_narrative(context)
+
+    description = output.motivation_narrative.description
+    assert description == "Заниматься тем, что по-настоящему интересно и создавать что-то своё."
+    # No two capital letters starting a word right after "и " / ", " — that
+    # would mean two fragments got glued without being turned into one flowing
+    # sentence.
+    assert "интересно Создавать" not in description
+
+
+def test_onboarding_sourced_strength_cards_are_explicitly_marked_as_not_from_the_test():
+    """subject_liked/subject_easy/artifact are self-reported at onboarding,
+    not measured by the test — the card must say so plainly, so a reader
+    doesn't mistake it for part of what the test (and therefore the shown
+    careers) actually found. User feedback: seeing a "programming" card
+    next to an "accountant" suggestion read as if the app didn't know what
+    it was talking about."""
+    for source_type in ("subject_liked", "subject_easy", "artifact"):
+        context = _context(AgeGroup.senior, "riasec", [
+            EvidenceItem(source_id=f"{source_type}:x", source_type=source_type, text="Программирование"),
+        ])
+        output = build_fallback_narrative(context)
+        assert len(output.strength_cards) == 1
+        assert "не из теста" in output.strength_cards[0].description.lower()

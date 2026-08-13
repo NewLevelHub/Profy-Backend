@@ -132,6 +132,90 @@ def test_flat_profile_gives_exactly_three_worth_trying_careers() -> None:
     assert all(c.tier == "worth_trying" for c in response.careers)
 
 
+def test_flat_profile_with_artifact_evidence_gets_an_honest_summary_note() -> None:
+    """career_match_score only ever looks at the RIASEC top-3 code — on a
+    flat profile that top-3 is close to noise, and it never sees
+    subject/artifact evidence at all. Found live: a student with clear
+    self-reported programming/robotics interest got three clerical
+    directions with zero connection to it. The scoped mitigation is telling
+    the reader honestly, not silently presenting a noisy top-3 as fact."""
+    context = _context(age_group="senior", evidence=[
+        EvidenceItem(source_id="artifact:1", source_type="artifact", text="Программирование"),
+    ])
+    careers = [_direction(f"d{i}", "RIA", 5 - i) for i in range(5)]
+    response = report_v2_assembler.assemble_result_v2(
+        assessment_id=uuid.uuid4(),
+        age_group=AgeGroup.senior,
+        context=context,
+        narrative=_narrative(),
+        profile_scores={k: 50.0 for k in HOLLAND_ORDER},
+        differentiation=5.0,
+        careers=careers,
+        created_at=_NOW,
+    )
+
+    assert response.is_flat_profile is True
+    assert "увлечения" in response.summary
+
+
+def test_flat_profile_without_artifact_evidence_gets_no_note() -> None:
+    context = _context(age_group="senior", evidence=[])
+    careers = [_direction(f"d{i}", "RIA", 5 - i) for i in range(5)]
+    response = report_v2_assembler.assemble_result_v2(
+        assessment_id=uuid.uuid4(),
+        age_group=AgeGroup.senior,
+        context=context,
+        narrative=_narrative(),
+        profile_scores={k: 50.0 for k in HOLLAND_ORDER},
+        differentiation=5.0,
+        careers=careers,
+        created_at=_NOW,
+    )
+
+    assert response.summary == _narrative().summary
+
+
+def test_non_flat_profile_with_artifact_evidence_gets_no_note() -> None:
+    context = _context(age_group="senior", evidence=[
+        EvidenceItem(source_id="artifact:1", source_type="artifact", text="Программирование"),
+    ])
+    careers = [_direction(f"d{i}", "RIA", 5 - i) for i in range(5)]
+    response = report_v2_assembler.assemble_result_v2(
+        assessment_id=uuid.uuid4(),
+        age_group=AgeGroup.senior,
+        context=context,
+        narrative=_narrative(),
+        profile_scores={"R": 90.0, "I": 10.0, "A": 10.0, "S": 10.0, "E": 10.0, "C": 10.0},
+        differentiation=80.0,
+        careers=careers,
+        created_at=_NOW,
+    )
+
+    assert response.is_flat_profile is False
+    assert response.summary == _narrative().summary
+
+
+def test_junior_never_gets_the_flat_profile_artifact_note() -> None:
+    """MiResultResponse has no careers at all — the note references
+    "направления... в списке ниже", which doesn't exist for junior."""
+    context = _context(age_group="junior", evidence=[
+        EvidenceItem(source_id="artifact:1", source_type="artifact", text="Программирование"),
+    ])
+    response = report_v2_assembler.assemble_result_v2(
+        assessment_id=uuid.uuid4(),
+        age_group=AgeGroup.junior,
+        context=context,
+        narrative=_narrative(),
+        profile_scores={k: 50.0 for k in MI_ORDER},
+        differentiation=5.0,
+        careers=[],
+        created_at=_NOW,
+    )
+
+    assert response.is_flat_profile is True
+    assert response.summary == _narrative().summary
+
+
 def test_non_flat_profile_tiers_are_strong_good_worth_trying_by_rank() -> None:
     context = _context(age_group="senior", evidence=[])
     careers = [_direction(f"d{i}", "RIA", 5 - i) for i in range(5)]

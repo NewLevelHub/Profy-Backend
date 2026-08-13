@@ -14,6 +14,7 @@ from app.services.report_narrative_context import (
     build_report_narrative_context,
     unknown_source_ids,
 )
+from app.services.report_narrative_context import _artifact_evidence, ONBOARDING_SOURCE_TYPES
 
 _HAS_DIGIT = re.compile(r"\d")
 
@@ -225,3 +226,66 @@ def test_evidence_contains_no_raw_numbers_or_percent_signs() -> None:
     for item in derived_items:
         assert "%" not in item.text
         assert not _HAS_DIGIT.search(item.text), f"evidence text looks numeric: {item.text!r}"
+
+
+def test_near_duplicate_artifacts_merge_into_one_evidence_item() -> None:
+    """Found live: a student entered "Программирование" (hobby),
+    "IT/программирование" (club) and "Робототехника" (hobby) as three
+    separate artifacts — left ungrouped, each became its own strength card,
+    reading as the same fact repeated three times. The first two share the
+    word "программирование" and must merge; "Робототехника" shares no
+    significant word with either and must stay separate."""
+    artifacts = [
+        _artifact("Программирование"),
+        _artifact("Робототехника"),
+        _artifact("IT/программирование"),
+    ]
+
+    evidence = _artifact_evidence(artifacts)
+
+    assert len(evidence) == 2
+    combined = next(e for e in evidence if ";" in e.text)
+    assert "Программирование" in combined.text and "IT/программирование" in combined.text
+    solo = next(e for e in evidence if e is not combined)
+    assert solo.text == "Робототехника"
+
+
+def test_unrelated_artifacts_are_never_merged() -> None:
+    artifacts = [_artifact("Робототехника"), _artifact("Рисование"), _artifact("Волейбол")]
+
+    evidence = _artifact_evidence(artifacts)
+
+    assert len(evidence) == 3
+    assert {e.text for e in evidence} == {"Робототехника", "Рисование", "Волейбол"}
+
+
+def test_single_artifact_is_unaffected_by_grouping() -> None:
+    evidence = _artifact_evidence([_artifact("Шахматы")])
+    assert len(evidence) == 1
+    assert evidence[0].text == "Шахматы"
+
+
+def test_onboarding_evidence_is_capped_but_test_derived_evidence_is_not() -> None:
+    """Found live: a student with 3 onboarding artifacts (all about
+    programming/robotics) and only 1 RIASEC + 2 personality facts ended up
+    with HALF their strength_cards about onboarding hobbies — and the
+    careers shown (driven only by the RIASEC test) had nothing to do with
+    those hobbies. Onboarding evidence (self-reported, not measured by the
+    test) must never outnumber/crowd out what the test actually found."""
+    context = build_report_narrative_context(
+        age_group=AgeGroup.senior,
+        strengths=["R", "I", "C"],  # 3 riasec_category items, never capped
+        personality_profile={"openness": 70.0, "conscientiousness": 65.0},
+        personality_notes={"openness": "Тебе интересно новое", "conscientiousness": "Ты организован"},
+        thinking_style={},
+        motivation_top=[], motivation_highlights=[],
+        subjects_liked=["Физика", "Химия"],
+        subjects_easy=["Информатика"],
+        artifacts=[_artifact("Программирование"), _artifact("Робототехника"), _artifact("Шахматы")],
+    )
+
+    onboarding_items = [e for e in context.evidence if e.source_type in ONBOARDING_SOURCE_TYPES]
+    test_items = [e for e in context.evidence if e.source_type in ("riasec_category", "personality")]
+
+    assert len(onboarding_items) == 2, "capped even though 5 onboarding facts were provided"
+    assert len(test_items) == 5, "test-derived evidence (3 riasec + 2 personality) must never be capped"

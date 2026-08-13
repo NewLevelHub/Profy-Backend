@@ -3,7 +3,6 @@
   "careers": [
     {
       "description": null,
-      "first_steps": [],
       "matched_strengths": [],
       "name": "Направление",
       "rank": 1,
@@ -16,7 +15,6 @@
     },
     {
       "description": null,
-      "first_steps": [],
       "matched_strengths": [],
       "name": "Направление",
       "rank": 1,
@@ -29,7 +27,6 @@
     },
     {
       "description": null,
-      "first_steps": [],
       "matched_strengths": [],
       "name": "Направление",
       "rank": 1,
@@ -44,6 +41,7 @@
   "created_at": "2026-01-01T00:00:00Z",
   "disclaimer": "Это не окончательный выбор, а карта возможных направлений — со временем картина может измениться, и это нормально.",
   "exploration_activities": [],
+  "exploration_note": "Не обязательно пробовать всё сразу — начни с того, что откликается больше всего. Даже маленький шаг сегодня помогает лучше понять, что тебе действительно нравится.",
   "interest_instrument": "riasec",
   "interest_map": [
     {

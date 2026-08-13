@@ -90,6 +90,11 @@ def test_system_prompt_requires_evidence_backed_claims_and_bans_numbers():
     assert "Никогда не цитируй числа" in system
 
 
+def test_system_prompt_forbids_thinking_style_evidence_in_strength_cards():
+    system = prompt._system_prompt(_senior_context())
+    assert 'НЕ используй здесь evidence с source_type "thinking_style"' in system
+
+
 def test_system_prompt_embeds_the_evidence_catalog_as_json():
     context = _senior_context()
     system = prompt._system_prompt(context)

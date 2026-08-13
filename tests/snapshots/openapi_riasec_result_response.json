@@ -21,6 +21,10 @@
       "maxItems": 0,
       "type": "array"
     },
+    "exploration_note": {
+      "default": "Не обязательно пробовать всё сразу — начни с того, что откликается больше всего. Даже маленький шаг сегодня помогает лучше понять, что тебе действительно нравится.",
+      "type": "string"
+    },
     "interest_instrument": {
       "const": "riasec",
       "default": "riasec",
