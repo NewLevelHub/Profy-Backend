@@ -215,10 +215,15 @@ jobs:
               fi
               if [ -f "$DEV_CERT_DIR/fullchain.pem" ]; then
                 cd "$EDGE_DEPLOY_PATH"
-                if [ -f nginx.prod.conf ]; then
-                  cp nginx.prod.conf nginx.conf
-                fi
-                docker compose --env-file .env.production -f docker-compose.prod.yml up -d --force-recreate nginx
+                # main's cd.yml writes to the same server-side nginx.conf and restarts
+                # the same shared profi_nginx_prod container — flock-guard to avoid the
+                # two pipelines interleaving when both land close together.
+                flock /tmp/profi-edge-nginx.lock -c '
+                  if [ -f nginx.prod.conf ]; then
+                    cp nginx.prod.conf nginx.conf
+                  fi
+                  docker compose --env-file .env.production -f docker-compose.prod.yml up -d --force-recreate nginx
+                '
               else
                 echo "WARN: no cert at $DEV_CERT_DIR - edge nginx not reloaded"
               fi
