@@ -1,0 +1,68 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: profi_db_dev
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    # Pass credentials via env_file (literal) — avoid ${} interpolation of passwords
+    env_file:
+      - .env.development
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - profi_network_dev
+
+  redis:
+    image: redis:7-alpine
+    container_name: profi_redis_dev
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - profi_network_dev
+
+  # Service name api_dev (not "api") so joining the prod edge network
+  # does not steal DNS name "api" / "db" from production.
+  api_dev:
+    image: ${API_IMAGE}
+    container_name: profi_api_dev
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    env_file:
+      - .env.development
+    environment:
+      # Unique container DNS names — NEVER "db"/"redis" (those resolve to PROD on edge net)
+      POSTGRES_HOST: profi_db_dev
+      POSTGRES_PORT: "5432"
+      REDIS_URL: redis://profi_redis_dev:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    expose:
+      - "8000"
+    restart: always
+    networks:
+      - profi_network_dev
+      - profi_edge
+
+volumes:
+  postgres_data_dev:
+    driver: local
+
+networks:
+  profi_network_dev:
+    name: profi_network_dev
+    driver: bridge
+  profi_edge:
+    external: true
+    name: ${PROFI_EDGE_NETWORK_NAME:-profi-backend_profi_network}

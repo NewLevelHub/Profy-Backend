@@ -1,0 +1,240 @@
+name: Profi Backend CD (dev)
+
+on:
+  push:
+    branches: [dev]
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+
+jobs:
+  build_and_push:
+    name: Build and push dev image
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image reference
+        id: image_meta
+        run: |
+          IMAGE_PATH="$IMAGE_REPOSITORY"
+          if [[ "$IMAGE_PATH" != */* ]]; then
+            IMAGE_PATH="${DOCKER_USERNAME}/${IMAGE_PATH}"
+          fi
+
+          SHORT_SHA="${GITHUB_SHA::7}"
+          IMAGE_NAME="${{ secrets.DOCKER_REGISTRY }}/${IMAGE_PATH}"
+
+          # Do not overwrite prod :latest — tags always contain "dev"
+          echo "image_dev=${IMAGE_NAME}:dev" >> "$GITHUB_OUTPUT"
+          echo "image_sha=${IMAGE_NAME}:dev-sha-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to Docker registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ steps.image_meta.outputs.image_dev }}
+            ${{ steps.image_meta.outputs.image_sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy_development:
+    name: Deploy to development
+    needs: build_and_push
+    runs-on: ubuntu-latest
+    environment: development
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy compose file to development server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          source: "docker-compose.dev.yml"
+          target: ${{ secrets.DEPLOY_PATH_DEV }}
+
+      - name: Copy edge nginx.prod.conf to production deploy path
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          source: "nginx.prod.conf"
+          target: ${{ secrets.DEPLOY_PATH }}
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          DOCKER_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_DEV }}
+          EDGE_DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          COMMIT_SHA: ${{ github.sha }}
+          PROFI_EDGE_NETWORK_NAME: ${{ secrets.PROFI_EDGE_NETWORK_NAME }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          envs: DOCKER_REGISTRY,DOCKER_USERNAME,DOCKER_PASSWORD,DOCKER_REPOSITORY,DEPLOY_PATH,EDGE_DEPLOY_PATH,COMMIT_SHA,PROFI_EDGE_NETWORK_NAME
+          script: |
+            set -e
+
+            DEPLOY_PATH="$(printf '%s' "$DEPLOY_PATH" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+            EDGE_DEPLOY_PATH="$(printf '%s' "$EDGE_DEPLOY_PATH" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+            PROFI_EDGE_NETWORK_NAME="$(printf '%s' "${PROFI_EDGE_NETWORK_NAME:-profi-backend_profi_network}" | tr -d '\r\n')"
+
+            echo "$DOCKER_PASSWORD" | docker login "$DOCKER_REGISTRY" -u "$DOCKER_USERNAME" --password-stdin
+            unset DOCKER_PASSWORD
+            cd "$DEPLOY_PATH"
+
+            IMAGE_PATH="$DOCKER_REPOSITORY"
+            if [[ "$IMAGE_PATH" != */* ]]; then
+              IMAGE_PATH="${DOCKER_USERNAME}/${IMAGE_PATH}"
+            fi
+            SHORT_SHA="${COMMIT_SHA::7}"
+            export API_IMAGE="${DOCKER_REGISTRY}/${IMAGE_PATH}:dev-sha-${SHORT_SHA}"
+            export PROFI_EDGE_NETWORK_NAME
+
+            if [ ! -f ".env.development" ]; then
+              echo "ERROR: .env.development not found in $DEPLOY_PATH"
+              exit 1
+            fi
+            if ! grep -Eq '^POSTGRES_DB=.+' .env.development || \
+               ! grep -Eq '^POSTGRES_USER=.+' .env.development || \
+               ! grep -Eq '^POSTGRES_PASSWORD=.+' .env.development || \
+               ! grep -Eq '^SECRET_KEY=.+' .env.development; then
+              echo "ERROR: POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD and SECRET_KEY must be set in .env.development"
+              exit 1
+            fi
+
+            if ! docker network inspect "$PROFI_EDGE_NETWORK_NAME" >/dev/null 2>&1; then
+              echo "ERROR: edge network '$PROFI_EDGE_NETWORK_NAME' not found — is prod stack running?"
+              exit 1
+            fi
+
+            {
+              grep -vE '^(API_IMAGE|PROFI_EDGE_NETWORK_NAME)=' .env.development || true
+              echo "API_IMAGE=${API_IMAGE}"
+              echo "PROFI_EDGE_NETWORK_NAME=${PROFI_EDGE_NETWORK_NAME}"
+            } > .env.development.tmp
+            mv .env.development.tmp .env.development
+
+            docker pull "$API_IMAGE"
+
+            docker rm -f profi_api_dev 2>/dev/null || true
+
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev up -d db redis
+
+            echo "Waiting for PostgreSQL to become healthy..."
+            for i in $(seq 1 60); do
+              if docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T db pg_isready -U "$(grep '^POSTGRES_USER=' .env.development | cut -d= -f2-)" -d "$(grep '^POSTGRES_DB=' .env.development | cut -d= -f2-)" >/dev/null 2>&1; then
+                echo "PostgreSQL is ready after ${i}s"
+                break
+              fi
+              if [ "$i" -eq 60 ]; then
+                echo "ERROR: PostgreSQL did not become ready within 60s"
+                docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev logs db | tail -40
+                exit 1
+              fi
+              sleep 1
+            done
+
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev up -d --force-recreate --remove-orphans api_dev
+
+            echo "Waiting for API container to finish migrations + uvicorn startup..."
+            for i in $(seq 1 60); do
+              if docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python -c "import socket; s=socket.socket(); s.settimeout(1); s.connect(('127.0.0.1', 8000)); s.close()" >/dev/null 2>&1; then
+                echo "API is ready after ${i}s"
+                break
+              fi
+              if [ "$i" -eq 60 ]; then
+                echo "ERROR: API did not become ready within 60s"
+                docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev logs api_dev | tail -40
+                exit 1
+              fi
+              sleep 1
+            done
+
+            echo "Running seed scripts..."
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_riasec_questions.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_bigfive_questions.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_mi_questions.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_question_pairs.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_motivation_pairs.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_motivation_statements.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_riasec_directions.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_kz_universities.py
+
+            # Reload edge nginx (prod path) so Host:dev.profy.newlevelhub.kz is routed.
+            # Certs under /etc/letsencrypt need root - write via docker volume mount.
+            # Do not fail the whole deploy if edge nginx reload cannot run.
+            if [ -n "$EDGE_DEPLOY_PATH" ] && [ -f "$EDGE_DEPLOY_PATH/docker-compose.prod.yml" ]; then
+              echo "Reloading edge nginx from $EDGE_DEPLOY_PATH ..."
+              DEV_CERT_DIR="/etc/letsencrypt/live/dev.profy.newlevelhub.kz"
+              if [ ! -f "$DEV_CERT_DIR/fullchain.pem" ]; then
+                echo "Creating temporary self-signed cert via docker..."
+                if docker run --rm -v /etc/letsencrypt:/etc/letsencrypt alpine:3.20 sh -c '
+                  apk add --no-cache openssl >/dev/null
+                  mkdir -p /etc/letsencrypt/live/dev.profy.newlevelhub.kz
+                  openssl req -x509 -nodes -newkey rsa:2048 -days 30 \
+                    -keyout /etc/letsencrypt/live/dev.profy.newlevelhub.kz/privkey.pem \
+                    -out /etc/letsencrypt/live/dev.profy.newlevelhub.kz/fullchain.pem \
+                    -subj /CN=dev.profy.newlevelhub.kz
+                  chmod 755 /etc/letsencrypt /etc/letsencrypt/live /etc/letsencrypt/live/dev.profy.newlevelhub.kz || true
+                  chmod 644 /etc/letsencrypt/live/dev.profy.newlevelhub.kz/fullchain.pem || true
+                  chmod 600 /etc/letsencrypt/live/dev.profy.newlevelhub.kz/privkey.pem || true
+                '; then
+                  echo "Self-signed cert created. Replace later with:"
+                  echo "  certbot certonly --webroot -w $EDGE_DEPLOY_PATH/certbot/www -d dev.profy.newlevelhub.kz"
+                else
+                  echo "WARN: could not create cert - skipping nginx reload"
+                fi
+              fi
+              if [ -f "$DEV_CERT_DIR/fullchain.pem" ]; then
+                cd "$EDGE_DEPLOY_PATH"
+                # main's cd.yml writes to the same server-side nginx.conf and restarts
+                # the same shared profi_nginx_prod container — flock-guard to avoid the
+                # two pipelines interleaving when both land close together.
+                flock /tmp/profi-edge-nginx.lock -c '
+                  if [ -f nginx.prod.conf ]; then
+                    cp nginx.prod.conf nginx.conf
+                  fi
+                  docker compose --env-file .env.production -f docker-compose.prod.yml up -d --force-recreate nginx
+                '
+              else
+                echo "WARN: no cert at $DEV_CERT_DIR - edge nginx not reloaded"
+              fi
+            else
+              echo "WARN: EDGE_DEPLOY_PATH not set or compose missing - skip edge nginx reload"
+            fi
+
+            echo "=== Development deploy complete ==="
+            echo "Image: $API_IMAGE"
+            cd "$DEPLOY_PATH"
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev ps
