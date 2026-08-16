@@ -1,0 +1,48 @@
+import uuid
+from typing import Literal, Union, Optional
+from pydantic import BaseModel
+from app.models.assessment import AssessmentGoal
+from app.schemas.gap import GapAnalysisResponse
+
+
+class ScenarioAData(BaseModel):
+    top_spheres: list[str]
+    roadmap_summary: str
+    roadmap_id: Optional[uuid.UUID] = None
+
+
+class BridgeScenario(BaseModel):
+    what_works: list[str]
+    what_to_check: list[str]
+
+
+class ScenarioBData(BaseModel):
+    target_selected: bool
+    selected_target_name: Optional[str] = None
+    alignment: Optional[Literal["strong", "good", "worth_trying"]] = None
+    match_explanation: Optional[str] = None
+    bridge_scenario: Optional[BridgeScenario] = None
+    adjacent_directions: list[str] = []
+    top_directions: list[str] = []
+
+
+class ScenarioCData(BaseModel):
+    target_selected: bool
+    selected_program_id: Optional[uuid.UUID] = None
+    selected_program_name: Optional[str] = None
+    selected_university_name: Optional[str] = None
+    gap_analysis: Optional[GapAnalysisResponse] = None
+    admission_roadmap_ref: Optional[uuid.UUID] = None
+
+
+class GoalOverlayResponse(BaseModel):
+    assessment_id: uuid.UUID
+    primary_goal: AssessmentGoal
+    effective_goal: AssessmentGoal
+    scenario: Literal["A", "B", "C"]
+    secondary_goals: list[AssessmentGoal] = []
+    redirected: bool = False
+    admission_info_note: Optional[str] = None
+    overlay_data: Union[ScenarioAData, ScenarioBData, ScenarioCData]
+
+    model_config = {"from_attributes": True}

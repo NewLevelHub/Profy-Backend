@@ -188,3 +188,27 @@ async def get_total_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[s
     raw = await riasec_service.raw_scores(assessment_id, db, age_group)
     counts = await riasec_service.question_counts(db, age_group)
     return riasec_service.normalize(raw, counts)
+
+
+async def update_assessment_goal(
+    assessment_id: uuid.UUID,
+    goal: AssessmentGoal,
+    current_profile_id: uuid.UUID,
+    db: AsyncSession,
+) -> AssessmentResponse:
+    row_result = await db.execute(select(Assessment).where(Assessment.id == assessment_id))
+    assessment = row_result.scalar_one_or_none()
+    if assessment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+
+    if assessment.profile_id != current_profile_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    assessment.goal = goal
+
+    from app.services.goal_overlay_service import invalidate_goal_overlay_cache
+    await invalidate_goal_overlay_cache(assessment_id)
+
+    await db.commit()
+    return await _to_response(assessment, db)
+
