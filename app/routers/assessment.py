@@ -60,6 +60,7 @@ async def submit_answers(
 
 class UpdateGoalRequest(BaseModel):
     goal: AssessmentGoal
+    secondary_goals: list[AssessmentGoal] = []
 
 
 @router.patch("/{assessment_id}/goal", response_model=AssessmentResponse)
@@ -71,6 +72,6 @@ async def update_goal(
 ) -> AssessmentResponse:
     profile_id = await _require_profile_id(current_user, db)
     return await assessment_service.update_assessment_goal(
-        assessment_id, data.goal, profile_id, db
+        assessment_id, data.goal, data.secondary_goals, profile_id, db
     )
 

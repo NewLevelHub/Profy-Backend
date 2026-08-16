@@ -19,5 +19,7 @@ class AssessmentResponse(BaseModel):
     motivation_answered_count: int
     motivation_total: int
     created_at: datetime
+    secondary_goals: list[AssessmentGoal] = []
+    goal_changed_count: int = 0
 
     model_config = {"from_attributes": True}

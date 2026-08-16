@@ -127,6 +127,16 @@ async def invalidate_retake(
     if old_analysis is not None:
         await db.delete(old_analysis)
 
+    # Reset goal changed count and secondary goals
+    assessment.goal_changed_count = 0
+    assessment.secondary_goals = []
+
+    # Clean up goal overlays and their caches
+    from app.models.goal_overlay import GoalOverlay
+    from app.services.goal_overlay_service import invalidate_goal_overlay_cache
+    await db.execute(GoalOverlay.__table__.delete().where(GoalOverlay.assessment_id == assessment_id))
+    await invalidate_goal_overlay_cache(assessment_id, db)
+
     await safe_redis_delete(redis, report_cache_key(assessment_id))
     await invalidate_direction_flow(assessment, db, redis)
     await invalidate_goal_roadmap(assessment_id, db, redis)

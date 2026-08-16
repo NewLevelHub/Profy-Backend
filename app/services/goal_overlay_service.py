@@ -66,9 +66,11 @@ async def set_cached_overlay(assessment_id: uuid.UUID, goal: AssessmentGoal, ove
         logger.warning("Failed to cache goal overlay for %s: %s", key, exc)
 
 
-async def invalidate_goal_overlay_cache(assessment_id: uuid.UUID) -> None:
+async def invalidate_goal_overlay_cache(assessment_id: uuid.UUID, db: AsyncSession) -> None:
     redis = _get_redis()
     try:
+        # Delete from DB
+        await db.execute(GoalOverlay.__table__.delete().where(GoalOverlay.assessment_id == assessment_id))
         # Scan and delete keys matching the assessment
         pattern = f"goal_context:{assessment_id}:*"
         keys = []
@@ -131,6 +133,53 @@ async def _stored_interest_instrument(analysis: AnalysisResult) -> str:
     return "riasec" if any(key in "RIASEC" for key in getattr(analysis, "profile", {})) else "mi"
 
 
+def _build_alignment_evidence(
+    user_code: list[str],
+    direction_code: str,
+) -> BridgeScenario:
+    holland_descriptions = {
+        "R": "практические навыки и интерес к технике/материальным объектам",
+        "I": "аналитическое мышление, склонность к исследованиям и решению сложных задач",
+        "A": "творческое воображение, нестандартный подход и самовыражение",
+        "S": "стремление помогать людям, развитые навыки коммуникации и работы в команде",
+        "E": "лидерские качества, инициативность и организаторские способности",
+        "C": "внимание к деталям, умение работать со структурированной информацией",
+    }
+    
+    holland_actions = {
+        "R": "Пройти практическую профессиональную пробу (например, собрать прототип устройства или выполнить чертеж).",
+        "I": "Решить прикладную аналитическую задачу в этой сфере или изучить научное исследование по теме.",
+        "A": "Создать творческий концепт, эскиз или сценарий, связанный с этой специальностью.",
+        "S": "Поучаствовать в волонтерском проекте или провести интервью с практикующим специалистом.",
+        "E": "Разработать мини-план продвижения или попробовать организовать командное мероприятие.",
+        "C": "Составить детальный чек-лист требований или систематизировать данные по проекту.",
+    }
+    
+    direction_letters = set(direction_code or "")
+    user_letters = set(user_code)
+    overlapping_letters = direction_letters.intersection(user_letters)
+    
+    what_works = []
+    for letter in (direction_code or ""):
+        if letter in overlapping_letters:
+            what_works.append(f"Твой выраженный интерес к сфере: {holland_descriptions.get(letter)}")
+            
+    if not what_works and direction_code:
+        first_letter = direction_code[0]
+        what_works.append(f"Твои общие склонности, хотя сфера требует: {holland_descriptions.get(first_letter)}")
+        
+    what_to_check = []
+    for letter in (direction_code or ""):
+        action = holland_actions.get(letter)
+        if action and action not in what_to_check:
+            what_to_check.append(action)
+            
+    return BridgeScenario(
+        what_works=what_works,
+        what_to_check=what_to_check[:2],
+    )
+
+
 async def get_or_create_goal_overlay(
     assessment_id: uuid.UUID,
     db: AsyncSession,
@@ -145,7 +194,7 @@ async def get_or_create_goal_overlay(
 
     primary_goal = assessment.goal
 
-    # 2. Check cache first (skip cache if program_id is passed, as it forces re-generation of C-data)
+    # 2. Check cache first (skip cache if program_id is passed)
     if not program_id:
         cached = await get_cached_overlay(assessment_id, primary_goal)
         if cached:
@@ -158,17 +207,38 @@ async def get_or_create_goal_overlay(
     if not profile:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
 
+    # 4. Handle unsure goal flow early
+    if primary_goal == AssessmentGoal.unsure:
+        if profile.age_group == AgeGroup.junior:
+            suggested = [AssessmentGoal.explore]
+        elif profile.age_group == AgeGroup.middle:
+            suggested = [AssessmentGoal.explore, AssessmentGoal.profession]
+        else:
+            suggested = [AssessmentGoal.explore, AssessmentGoal.profession, AssessmentGoal.university]
+
+        return GoalOverlayResponse(
+            assessment_id=assessment_id,
+            primary_goal=AssessmentGoal.unsure,
+            effective_goal=None,
+            scenario=None,
+            secondary_goals=list(assessment.secondary_goals or []),
+            redirected=False,
+            admission_info_note=None,
+            needs_goal_selection=True,
+            suggested_goals=suggested,
+            alignment_block=None,
+            overlay_data=None,
+        )
+
     # Re-check completeness (if not completed, raise conflict)
-    # Avoid generating report logic if assessment is incomplete
     from app.services.report_service import _assert_assessment_complete
     await _assert_assessment_complete(assessment_id, profile.age_group, db)
 
-    # 4. Fetch AnalysisResult
+    # 5. Fetch AnalysisResult
     stmt = select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
     res = await db.execute(stmt)
     analysis = res.scalar_one_or_none()
     if not analysis:
-        # If complete but no AnalysisResult exists yet, we generate it first via report_service.build_report
         from app.services.report_service import build_report
         await build_report(assessment_id, db)
         res = await db.execute(stmt)
@@ -179,11 +249,11 @@ async def get_or_create_goal_overlay(
                 detail="Не удалось получить результаты диагностики",
             )
 
-    # 5. Compute matrix rules
+    # 6. Compute matrix rules
     effective_goal, scenario, redirected, admission_info_note = _get_effective_goal_and_scenario(
         profile.age_group, primary_goal
     )
-    secondary_goals = _get_secondary_goals(profile.age_group, effective_goal)
+    secondary_goals = list(assessment.secondary_goals or [])
 
     # Check if DB overlay exists for this primary goal
     stmt = select(GoalOverlay).where(
@@ -195,25 +265,22 @@ async def get_or_create_goal_overlay(
 
     # If overlay exists, and scenario is not C with a new program_id, we can deserialize and return it
     if db_overlay and not (scenario == "C" and program_id):
-        # deserialize saved data
-        overlay_dict = db_overlay.data
-        # Ensure overlay matches expected type shape
         try:
-            response = GoalOverlayResponse.model_validate(overlay_dict)
+            response = GoalOverlayResponse.model_validate(db_overlay.data)
             await set_cached_overlay(assessment_id, primary_goal, response)
             return response
         except Exception as exc:
             logger.warning("Saved GoalOverlay model mismatch: %s. Re-generating.", exc)
 
-    # 6. Generate Scenario Data
+    # 7. Generate Scenario Data and Alignment Block
     overlay_data = None
+    alignment_block = None
 
     if scenario == "A":
         instrument = await _stored_interest_instrument(analysis)
         labels = MI_LABELS if instrument == "mi" else RIASEC_LABELS
         top_spheres = [labels[k] for k in analysis.strengths if k in labels]
         
-        # summary of roadmap
         roadmap_summary = (
             f"Этот маршрут поможет тебе глубже изучить сферы {', '.join(top_spheres[:3])} "
             "через простые практические пробы и онлайн-исследования."
@@ -221,7 +288,6 @@ async def get_or_create_goal_overlay(
             else "Этот маршрут поможет тебе познакомиться с интересными сферами через пробы."
         )
         
-        # Fetch or generate exploratory roadmap
         roadmap = await generate_roadmap(assessment_id, None, db)
         roadmap_id = roadmap.id
 
@@ -232,18 +298,17 @@ async def get_or_create_goal_overlay(
         )
 
     elif scenario == "B":
-        # Scenario B: Choose profession
-        selected_target_name = None
-        alignment = None
-        match_explanation = None
-        bridge_scenario = None
-        adjacent_directions = []
-        target_selected = False
-
         careers = analysis.careers or []
         top_directions = [c.get("name") for c in careers[:3] if c.get("name")]
+        overlay_data = ScenarioBData(top_directions=top_directions)
 
-        # Check if user selected a direction
+        target_selected = False
+        selected_target_name = None
+        alignment = "not_applicable"
+        match_explanation = None
+        bridge_scenario = None
+        adjacent_names = []
+
         if assessment.selected_direction_slug:
             stmt = select(Direction).where(Direction.slug == assessment.selected_direction_slug)
             res = await db.execute(stmt)
@@ -252,62 +317,65 @@ async def get_or_create_goal_overlay(
                 target_selected = True
                 selected_target_name = direction.name
                 
-                # Check match tier
-                matched_career = next((c for c in careers if c.get("slug") == direction.slug), None)
-                if matched_career:
-                    alignment = matched_career.get("tier", "worth_trying")
-                    match_explanation = matched_career.get("why")
-                    
-                    # Bridge scenario if match is weak/moderate or not in top 3
-                    # (Let's check if alignment is not "strong")
-                    if alignment != "strong":
-                        what_works = matched_career.get("matched_strengths", [])
-                        if not what_works:
-                            what_works = ["Сфера частично пересекается с твоими интересами."]
-                        
-                        first_steps = matched_career.get("first_steps", [])
-                        what_to_check = first_steps[:3] if first_steps else ["Попробуй базовые практические задания в этом направлении."]
-                        
-                        bridge_scenario = BridgeScenario(
-                            what_works=what_works,
-                            what_to_check=what_to_check,
-                        )
+                career_index = next((i for i, c in enumerate(careers) if c.get("slug") == direction.slug), None)
+                if career_index is not None:
+                    if career_index <= 2:
+                        alignment = "match"
+                    elif career_index <= 9:
+                        alignment = "partial"
+                    else:
+                        alignment = "bridge"
+                    match_explanation = careers[career_index].get("why")
                 else:
-                    # Selected direction is not in top matched list at all
-                    alignment = "worth_trying"
+                    alignment = "bridge"
                     match_explanation = (
                         f"Направление «{direction.name}» не попало в твои основные рекомендации, "
                         "но это не значит, что оно тебе не подходит — его можно рассмотреть как смежное."
                     )
-                    bridge_scenario = BridgeScenario(
-                        what_works=["Ты проявляешь интерес к этой профессии, что является хорошей стартовой точкой."],
-                        what_to_check=list(direction.first_steps[:3]) if direction.first_steps else ["Изучи первый шаг в этой профессии."],
-                    )
 
-                # Adjacent directions (recommending other top careers excluding the selected one)
-                adjacent_directions = [
-                    c.get("name") for c in careers
-                    if c.get("slug") != direction.slug and c.get("name")
-                ][:3]
+                user_code = analysis.strengths[:3] if analysis.strengths else []
+                bridge_scenario = _build_alignment_evidence(user_code, direction.holland_code)
 
-        overlay_data = ScenarioBData(
+                if alignment == "bridge":
+                    stmt = select(Direction)
+                    res = await db.execute(stmt)
+                    all_directions = res.scalars().all()
+                    
+                    adjacent = []
+                    selected_set = set(direction.holland_code)
+                    for d in all_directions:
+                        if d.slug == direction.slug:
+                            continue
+                        overlap = len(selected_set.intersection(set(d.holland_code)))
+                        if overlap >= 2:
+                            adjacent.append(d)
+                    
+                    adjacent.sort(key=lambda d: (-len(selected_set.intersection(set(d.holland_code))), d.slug))
+                    adjacent_names = [d.name for d in adjacent[:3]]
+
+        from app.schemas.goal_overlay import GoalAlignmentBlock
+        alignment_block = GoalAlignmentBlock(
             target_selected=target_selected,
-            selected_target_name=selected_target_name,
+            target_name=selected_target_name,
             alignment=alignment,
             match_explanation=match_explanation,
             bridge_scenario=bridge_scenario,
-            adjacent_directions=adjacent_directions,
-            top_directions=top_directions,
+            adjacent_directions=adjacent_names,
         )
 
     else:
         # Scenario C: Admission (Senior only)
-        target_selected = False
         selected_program_id = None
         selected_program_name = None
         selected_university_name = None
         gap_analysis = None
         admission_roadmap_ref = None
+
+        target_selected = False
+        alignment = "not_applicable"
+        match_explanation = None
+        bridge_scenario = None
+        adjacent_names = []
 
         if program_id:
             stmt = select(Program).where(Program.id == program_id)
@@ -318,11 +386,9 @@ async def get_or_create_goal_overlay(
                 selected_program_id = program.id
                 selected_program_name = program.name
                 
-                # Fetch university
                 university = program.university
                 selected_university_name = university.name if university else None
                 
-                # Compute Gap Analysis
                 artifacts_stmt = select(Artifact).where(Artifact.profile_id == assessment.profile_id)
                 res = await db.execute(artifacts_stmt)
                 artifacts = list(res.scalars().all())
@@ -330,16 +396,62 @@ async def get_or_create_goal_overlay(
                 from app.services import assessment_service
                 scores = await assessment_service.get_total_scores(assessment_id, db)
                 gap_result = analyze_gap(profile, artifacts, scores, program)
-                
-                # format response
                 gap_analysis = gap_to_response(program_id, gap_result)
                 
-                # Generate admission roadmap
                 roadmap = await generate_roadmap(assessment_id, program_id, db)
                 admission_roadmap_ref = roadmap.id
 
+                careers = analysis.careers or []
+                prof_slugs = program.profession_slugs or []
+                
+                best_index = None
+                best_slug = None
+                for slug in prof_slugs:
+                    idx = next((i for i, c in enumerate(careers) if c.get("slug") == slug), None)
+                    if idx is not None:
+                        if best_index is None or idx < best_index:
+                            best_index = idx
+                            best_slug = slug
+                
+                if best_index is not None:
+                    if best_index <= 2:
+                        alignment = "match"
+                    elif best_index <= 9:
+                        alignment = "partial"
+                    else:
+                        alignment = "bridge"
+                    match_explanation = careers[best_index].get("why")
+                    matched_direction_slug = best_slug
+                else:
+                    alignment = "bridge"
+                    match_explanation = "Данная программа готовит к профессиям за пределами твоих основных рекомендаций."
+                    matched_direction_slug = prof_slugs[0] if prof_slugs else None
+
+                if matched_direction_slug:
+                    stmt = select(Direction).where(Direction.slug == matched_direction_slug)
+                    res = await db.execute(stmt)
+                    direction = res.scalar_one_or_none()
+                    if direction:
+                        user_code = analysis.strengths[:3] if analysis.strengths else []
+                        bridge_scenario = _build_alignment_evidence(user_code, direction.holland_code)
+
+                        if alignment == "bridge":
+                            stmt = select(Direction)
+                            res = await db.execute(stmt)
+                            all_directions = res.scalars().all()
+                            
+                            adjacent = []
+                            selected_set = set(direction.holland_code)
+                            for d in all_directions:
+                                if d.slug == direction.slug:
+                                    continue
+                                overlap = len(selected_set.intersection(set(d.holland_code)))
+                                if overlap >= 2:
+                                    adjacent.append(d)
+                            adjacent.sort(key=lambda d: (-len(selected_set.intersection(set(d.holland_code))), d.slug))
+                            adjacent_names = [d.name for d in adjacent[:3]]
+
         overlay_data = ScenarioCData(
-            target_selected=target_selected,
             selected_program_id=selected_program_id,
             selected_program_name=selected_program_name,
             selected_university_name=selected_university_name,
@@ -347,7 +459,17 @@ async def get_or_create_goal_overlay(
             admission_roadmap_ref=admission_roadmap_ref,
         )
 
-    # 7. Construct response
+        from app.schemas.goal_overlay import GoalAlignmentBlock
+        alignment_block = GoalAlignmentBlock(
+            target_selected=target_selected,
+            target_name=selected_program_name,
+            alignment=alignment,
+            match_explanation=match_explanation,
+            bridge_scenario=bridge_scenario,
+            adjacent_directions=adjacent_names,
+        )
+
+    # 8. Construct response
     response = GoalOverlayResponse(
         assessment_id=assessment_id,
         primary_goal=primary_goal,
@@ -356,12 +478,14 @@ async def get_or_create_goal_overlay(
         secondary_goals=secondary_goals,
         redirected=redirected,
         admission_info_note=admission_info_note,
+        needs_goal_selection=False,
+        suggested_goals=[],
+        alignment_block=alignment_block,
         overlay_data=overlay_data,
     )
 
-    # 8. Save or update DB row
+    # 9. Save or update DB row
     overlay_dict = response.model_dump()
-    # We must convert UUID to string so JSONB serialization works seamlessly
     def _convert_uuids(obj):
         if isinstance(obj, dict):
             return {k: _convert_uuids(v) for k, v in obj.items()}
@@ -387,7 +511,7 @@ async def get_or_create_goal_overlay(
 
     await db.commit()
 
-    # 9. Set cache
+    # 10. Set cache
     await set_cached_overlay(assessment_id, primary_goal, response)
 
     return response

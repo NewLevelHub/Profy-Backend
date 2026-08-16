@@ -17,17 +17,10 @@ class BridgeScenario(BaseModel):
 
 
 class ScenarioBData(BaseModel):
-    target_selected: bool
-    selected_target_name: Optional[str] = None
-    alignment: Optional[Literal["strong", "good", "worth_trying"]] = None
-    match_explanation: Optional[str] = None
-    bridge_scenario: Optional[BridgeScenario] = None
-    adjacent_directions: list[str] = []
     top_directions: list[str] = []
 
 
 class ScenarioCData(BaseModel):
-    target_selected: bool
     selected_program_id: Optional[uuid.UUID] = None
     selected_program_name: Optional[str] = None
     selected_university_name: Optional[str] = None
@@ -35,14 +28,26 @@ class ScenarioCData(BaseModel):
     admission_roadmap_ref: Optional[uuid.UUID] = None
 
 
+class GoalAlignmentBlock(BaseModel):
+    target_selected: bool
+    target_name: Optional[str] = None
+    alignment: Literal["match", "partial", "bridge", "not_applicable"]
+    match_explanation: Optional[str] = None
+    bridge_scenario: Optional[BridgeScenario] = None
+    adjacent_directions: list[str] = []
+
+
 class GoalOverlayResponse(BaseModel):
     assessment_id: uuid.UUID
     primary_goal: AssessmentGoal
-    effective_goal: AssessmentGoal
-    scenario: Literal["A", "B", "C"]
+    effective_goal: Optional[AssessmentGoal] = None  # None if needs_goal_selection is True
+    scenario: Optional[Literal["A", "B", "C"]] = None  # None if needs_goal_selection is True
     secondary_goals: list[AssessmentGoal] = []
     redirected: bool = False
     admission_info_note: Optional[str] = None
-    overlay_data: Union[ScenarioAData, ScenarioBData, ScenarioCData]
+    needs_goal_selection: bool = False
+    suggested_goals: list[AssessmentGoal] = []
+    alignment_block: Optional[GoalAlignmentBlock] = None
+    overlay_data: Optional[Union[ScenarioAData, ScenarioBData, ScenarioCData]] = None
 
     model_config = {"from_attributes": True}
