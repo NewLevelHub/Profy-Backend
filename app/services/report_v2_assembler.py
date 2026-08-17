@@ -242,7 +242,7 @@ def build_riasec_careers(
     THAT direction — its own catalog `skills_needed[0]`, a fact about the
     job, not a claim about the student, so this never overclaims beyond
     vetted evidence the way citing an unconfirmed RIASEC letter would."""
-    top = careers[:_FLAT_PROFILE_CAREER_COUNT] if flat else careers[:5]
+    top = careers[:_FLAT_PROFILE_CAREER_COUNT] if flat else careers[:10]
     result: list[StudentCareer] = []
     seen_evidence: set[tuple[str, ...]] = set()
     for rank, career in enumerate(top, start=1):

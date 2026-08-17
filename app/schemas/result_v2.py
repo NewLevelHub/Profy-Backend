@@ -81,7 +81,7 @@ PERSONALITY_NOTE_FALLBACK = (
 _MI_INTEREST_COUNT = 8  # len(mi_content.MI_LABELS) — every MI category, always
 _RIASEC_INTEREST_COUNT = 6  # len(riasec_content.RIASEC_LABELS) — every Holland letter, always
 _PERSONALITY_TRAIT_COUNT = 5  # len(bigfive_content.PERSONALITY_LABELS) — every Big Five domain, always
-_MAX_CAREERS = 5
+_MAX_CAREERS = 10
 _FLAT_PROFILE_CAREER_COUNT = 3
 
 _model_config = {"extra": "forbid"}
