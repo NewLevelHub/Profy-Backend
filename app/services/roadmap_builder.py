@@ -38,6 +38,7 @@ from app.schemas.roadmap import (
 from app.schemas.student_context import StudentContext
 from app.services import (
     assessment_service,
+    assessment_shared,
     direction_inquiry_service,
     direction_service,
     llm_client,
@@ -298,36 +299,67 @@ def build_roadmap(
     return _build_explore(matched_directions)
 
 
+_MIN_TASKS_PER_MILESTONE = 4
+_MAX_TASKS_PER_MILESTONE = 5
+
+
 def _valid_milestones(milestones: list[RoadmapMilestone]) -> bool:
-    """Structure guard: all 5 horizons present exactly once, each with tasks."""
+    """Structure guard: all 5 horizons present exactly once, each with a dense,
+    bounded set of tasks. Too few and a horizon doesn't fill its real time
+    budget (a month that's "watch one video" isn't a month); too many and it
+    paralyses — TZ §23.6 caps a stage at 5 tasks."""
     if len(milestones) != len(HORIZONS):
         return False
     if {m.horizon for m in milestones} != set(HORIZONS):
         return False
-    return all(m.tasks for m in milestones)
+    return all(
+        _MIN_TASKS_PER_MILESTONE <= len(m.tasks) <= _MAX_TASKS_PER_MILESTONE
+        for m in milestones
+    )
+
+
+_MAX_ROADMAP_ATTEMPTS = 2  # 1 initial + 1 corrective retry
 
 
 async def _build_roadmap_ai(
     context: StudentContext | None,
 ) -> list[RoadmapMilestone] | None:
-    """LLM roadmap. Returns None (→ template fallback) if disabled or anything fails."""
+    """LLM roadmap. Returns None (→ template fallback) if disabled or anything fails.
+
+    Retries once on an invariant miss (density/structure) before giving up —
+    same pattern as `_generate_plan` for the direction roadmap: a corrective
+    pass is cheaper than falling straight back to the much thinner template."""
     if context is None or not llm_client.is_enabled():
         return None
-    try:
-        messages = roadmap_prompt.build_messages(context)
-        raw = await llm_client.complete_json(
-            messages, roadmap_prompt.ROADMAP_JSON_SCHEMA, "roadmap"
+
+    messages = roadmap_prompt.build_messages(context)
+    for attempt in range(1, _MAX_ROADMAP_ATTEMPTS + 1):
+        try:
+            raw = await llm_client.complete_json(
+                messages,
+                roadmap_prompt.ROADMAP_JSON_SCHEMA,
+                "roadmap",
+                timeout=settings.LLM_ROADMAP_TIMEOUT,
+                max_tokens=settings.LLM_ROADMAP_MAX_TOKENS,
+                model=settings.LLM_ROADMAP_MODEL,
+            )
+            milestones = [
+                RoadmapMilestone.model_validate(m) for m in raw.get("milestones", [])
+            ]
+        except (llm_client.LLMError, ValidationError, TypeError) as exc:
+            logger.warning("AI roadmap failed, using template: %s", exc)
+            return None
+
+        if _valid_milestones(milestones):
+            return milestones
+
+        logger.warning(
+            "AI roadmap failed invariant check (attempt %s/%s)",
+            attempt, _MAX_ROADMAP_ATTEMPTS,
         )
-        milestones = [
-            RoadmapMilestone.model_validate(m) for m in raw.get("milestones", [])
-        ]
-    except (llm_client.LLMError, ValidationError, TypeError) as exc:
-        logger.warning("AI roadmap failed, using template: %s", exc)
-        return None
-    if not _valid_milestones(milestones):
-        logger.warning("AI roadmap failed invariant check, using template")
-        return None
-    return milestones
+        messages = [*messages, roadmap_prompt.RETRY_HINT]
+
+    return None
 
 
 # ─── Service layer (DB + cache) ─────────────────────────────────────────────────
@@ -353,6 +385,14 @@ async def generate_roadmap(
     # Load profile
     profile_row = await db.execute(select(Profile).where(Profile.id == assessment.profile_id))
     profile = profile_row.scalar_one_or_none()
+    if profile is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+
+    # ТЗ §10.3 soft downgrade (middle + "university" -> "profession") must hold
+    # for generation too, not just for the goal-overlay banner — see
+    # `assessment_shared.get_effective_goal`. Every branch below uses this,
+    # never the raw `assessment.goal`.
+    effective_goal = assessment_shared.get_effective_goal(profile.age_group, assessment.goal)
 
     # Load matched directions from stored analysis result
     result_row = await db.execute(
@@ -365,7 +405,7 @@ async def generate_roadmap(
     # Gap analysis (university + program_id)
     gap: GapAnalysisResult | None = None
     program: Program | None = None
-    if assessment.goal == AssessmentGoal.university and program_id:
+    if effective_goal == AssessmentGoal.university and program_id:
         prog_row = await db.execute(select(Program).where(Program.id == program_id))
         program = prog_row.scalar_one_or_none()
         if program:
@@ -382,20 +422,20 @@ async def generate_roadmap(
     # Try the LLM first; fall back to deterministic templates on any failure.
     milestones = await _build_roadmap_ai(context)
     if milestones is None:
-        milestones = build_roadmap(profile, assessment.goal, directions, gap, program)
+        milestones = build_roadmap(profile, effective_goal, directions, gap, program)
     milestones_data = [m.model_dump() for m in milestones]
 
     # Upsert roadmap in DB
     existing_row = await db.execute(select(Roadmap).where(Roadmap.assessment_id == assessment_id))
     existing = existing_row.scalar_one_or_none()
     if existing:
-        existing.goal = assessment.goal
+        existing.goal = effective_goal
         existing.milestones = milestones_data
         roadmap = existing
     else:
         roadmap = Roadmap(
             assessment_id=assessment_id,
-            goal=assessment.goal,
+            goal=effective_goal,
             milestones=milestones_data,
         )
         db.add(roadmap)
@@ -452,8 +492,17 @@ class _DirectionPlan:
     university_requirements: list[UniversityRequirement]
 
 
-def direction_cache_key(assessment_id: uuid.UUID, slug: str) -> str:
-    return f"droadmap:{assessment_id}:{slug}"
+def direction_cache_key(
+    assessment_id: uuid.UUID, slug: str, program_id: uuid.UUID | None = None
+) -> str:
+    """`program_id` only matters for the generate-by-program path: without it,
+    regenerating the same direction under a *different* program within the
+    24h TTL would silently return the previous program's cached plan. Plain
+    GET (`get_direction_roadmap`) intentionally omits it — it just reads
+    whatever the single upserted DB row for this direction currently is."""
+    if program_id is None:
+        return f"droadmap:{assessment_id}:{slug}"
+    return f"droadmap:{assessment_id}:{slug}:{program_id}"
 
 
 # ─── University facts (backend-only; goal == "university" only) ─────────────────
@@ -511,6 +560,19 @@ def _map_program_requirement(program: Program, university: University) -> Univer
     )
 
 
+async def _program_and_university(
+    program_id: uuid.UUID, db: AsyncSession
+) -> tuple[Program, University] | None:
+    row = (
+        await db.execute(
+            select(Program, University)
+            .join(University, Program.university_id == University.id)
+            .where(Program.id == program_id)
+        )
+    ).first()
+    return (row[0], row[1]) if row else None
+
+
 async def _university_requirements_for(slug: str, db: AsyncSession) -> list[UniversityRequirement]:
     """Real Program/University facts for this direction — never asked of the LLM.
     Only called for goal == "university"; every other goal gets [].
@@ -555,11 +617,25 @@ def _valid_stages(stages: list[DirectionStage]) -> bool:
     return True
 
 
+# Product decision (2026-08-17): skip the AI-inquiry precondition for every
+# goal, not just "university" — a student now goes straight from a direction
+# card to the plan. The inquiry feature itself (service/router/model/frontend
+# page) is NOT deleted, only unlinked from this entry point: flip this back to
+# True to require it again without touching anything else.
+_INQUIRY_REQUIRED = False
+
+
 async def _require_direction_roadmap_access(
     assessment_id: uuid.UUID, slug: str, db: AsyncSession
 ) -> tuple[Assessment, object]:
-    """Enforce the feature's preconditions: not junior, and the student has
-    actually gone through the AI inquiry for this direction.
+    """Enforce the feature's preconditions: not junior, and — while
+    `_INQUIRY_REQUIRED` is on, and for every goal except "university" — the
+    student has actually gone through the AI inquiry for this direction.
+
+    University always skips the inquiry: picking a specific program and
+    seeing its gap-analysis (see `generate_direction_roadmap_for_program`)
+    already is the "does this fit me" check for that scenario, so requiring
+    the generic inquiry on top would be redundant friction, not extra safety.
 
     `university` used to be excluded here entirely (it had its own, poorer
     branch — see goal roadmap's `_build_university`). It now goes through the
@@ -584,12 +660,15 @@ async def _require_direction_roadmap_access(
             detail="Эта возможность доступна с 10 лет",
         )
 
-    inquiry = await direction_inquiry_service.get_inquiry(assessment_id, slug, db)
-    if inquiry is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Сначала пройди опрос по этому направлению",
-        )
+    if _INQUIRY_REQUIRED:
+        effective_goal = assessment_shared.get_effective_goal(profile.age_group, assessment.goal)
+        if effective_goal != AssessmentGoal.university:
+            inquiry = await direction_inquiry_service.get_inquiry(assessment_id, slug, db)
+            if inquiry is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Сначала пройди опрос по этому направлению",
+                )
 
     direction = await direction_service.get_direction_by_slug(slug, db)
     if direction is None:
@@ -605,6 +684,7 @@ async def _generate_plan(
     context: StudentContext,
     direction,
     university_requirements: list[UniversityRequirement],
+    gap: GapAnalysisResult | None = None,
 ) -> _DirectionPlan | None:
     """Ask the LLM for a plan, retrying once if it breaks the structural rules.
 
@@ -615,8 +695,9 @@ async def _generate_plan(
     and never part of the LLM's JSON schema — it is only surfaced to the model as
     reference facts (via `build_messages`) and stapled onto the validated plan
     afterwards, same as `skills_to_build`/`university_track` are the model's call
-    but this field never is."""
-    messages = direction_prompt.build_messages(context, direction, university_requirements)
+    but this field never is. `gap` is the same kind of backend-only fact block,
+    only ever populated for the generate-by-program university path."""
+    messages = direction_prompt.build_messages(context, direction, university_requirements, gap=gap)
 
     for attempt in range(1, _MAX_PLAN_ATTEMPTS + 1):
         try:
@@ -626,6 +707,7 @@ async def _generate_plan(
                 "direction_roadmap",
                 timeout=settings.LLM_ROADMAP_TIMEOUT,
                 max_tokens=settings.LLM_ROADMAP_MAX_TOKENS,
+                model=settings.LLM_ROADMAP_MODEL,
             )
             plan = _DirectionPlan(
                 target=RoadmapTarget.model_validate(raw.get("target", {})),
@@ -675,9 +757,12 @@ async def generate_direction_roadmap(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
 
     # Backend-only university facts — never the model's job, and never asked of
-    # it for any goal other than "university" (see docs, Область 8).
+    # it for any goal other than "university". Gated on the EFFECTIVE goal
+    # (context.goal, already resolved by build_student_context) — a middle
+    # assessment stored as raw "university" runs as "profession" end to end,
+    # so it must not get university facts sprinkled into its prompt either.
     university_requirements: list[UniversityRequirement] = []
-    if assessment.goal == AssessmentGoal.university:
+    if AssessmentGoal(context.goal) == AssessmentGoal.university:
         university_requirements = await _university_requirements_for(slug, db)
 
     plan = await _generate_plan(context, direction, university_requirements)
@@ -696,12 +781,107 @@ async def generate_direction_roadmap(
     return response
 
 
+async def generate_direction_roadmap_for_program(
+    assessment_id: uuid.UUID, program_id: uuid.UUID, db: AsyncSession
+) -> DirectionRoadmapResponse:
+    """University scenario (C) entry point: same direction-roadmap engine as
+    `generate_direction_roadmap`, but driven by a chosen Program instead of a
+    direction slug, and without the AI-inquiry precondition (see
+    `_require_direction_roadmap_access` — picking a program and seeing its
+    gap-analysis already is this scenario's "does it fit" check).
+
+    The direction is resolved server-side from `program.profession_slugs`
+    against the student's own `careers` (`direction_service.best_matching_slug`)
+    — never trust a client-supplied slug for this. The plan is grounded in the
+    real gap-analysis for this exact program (`analyze_gap`) plus this one
+    program's facts, not every program that happens to prepare for the same
+    direction (contrast `_university_requirements_for`)."""
+    if not llm_client.is_enabled():
+        raise _AI_UNAVAILABLE
+
+    assessment = (
+        await db.execute(select(Assessment).where(Assessment.id == assessment_id))
+    ).scalar_one_or_none()
+    if assessment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+
+    profile = (
+        await db.execute(select(Profile).where(Profile.id == assessment.profile_id))
+    ).scalar_one_or_none()
+    if profile is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+
+    if profile.age_group == AgeGroup.junior:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Эта возможность доступна с 10 лет",
+        )
+
+    program_university = await _program_and_university(program_id, db)
+    if program_university is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Program not found")
+    program, university = program_university
+
+    analysis_row = await db.execute(
+        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+    )
+    analysis = analysis_row.scalar_one_or_none()
+    careers: list = analysis.careers if analysis else []
+    slug = direction_service.best_matching_slug(program.profession_slugs or [], careers)
+    if slug is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Эта программа не связана ни с одним направлением",
+        )
+
+    direction = await direction_service.get_direction_by_slug(slug, db)
+    if direction is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Direction not found")
+
+    redis = _get_redis()
+    key = direction_cache_key(assessment_id, slug, program_id)
+    cached = await redis.get(key)
+    if cached:
+        return DirectionRoadmapResponse.model_validate_json(cached)
+
+    context = await build_student_context(assessment_id, db)
+    if context is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+
+    artifacts_row = await db.execute(
+        select(Artifact).where(Artifact.profile_id == assessment.profile_id)
+    )
+    artifacts = list(artifacts_row.scalars().all())
+    scores = await assessment_service.get_total_scores(assessment_id, db)
+    gap = analyze_gap(profile, artifacts, scores, program)
+    university_requirements = [_map_program_requirement(program, university)]
+
+    plan = await _generate_plan(context, direction, university_requirements, gap=gap)
+    if plan is None:
+        raise _AI_UNAVAILABLE
+
+    roadmap = await _upsert_direction_roadmap(
+        assessment_id, slug, direction.name, plan, db, program_id=program_id
+    )
+    assessment.selected_direction_slug = slug
+    from app.services.goal_overlay_service import invalidate_goal_overlay_cache
+    await invalidate_goal_overlay_cache(assessment_id, db)
+    await db.commit()
+    await db.refresh(roadmap)
+
+    response = DirectionRoadmapResponse.model_validate(roadmap)
+    await redis.setex(key, CACHE_TTL, response.model_dump_json())
+    return response
+
+
 async def _upsert_direction_roadmap(
     assessment_id: uuid.UUID,
     slug: str,
     direction_name: str,
     plan: "_DirectionPlan",
     db: AsyncSession,
+    *,
+    program_id: uuid.UUID | None = None,
 ) -> DirectionRoadmap:
     existing = (
         await db.execute(
@@ -730,6 +910,11 @@ async def _upsert_direction_roadmap(
     roadmap.subjects_to_focus = plan.subjects_to_focus
     roadmap.university_track = plan.university_track.model_dump()
     roadmap.university_requirements = [r.model_dump() for r in plan.university_requirements]
+    # Always set explicitly (including back to None) — a row previously
+    # generated by-program and later regenerated via the plain slug path
+    # must not keep pointing at a program whose facts are no longer what
+    # `university_requirements` above actually reflects.
+    roadmap.program_id = program_id
     return roadmap
 
 

@@ -11,10 +11,14 @@ Structured Outputs (strict mode) forbids minItems/maxItems, so "exactly 4 stages
 caller (`_valid_stages`).
 """
 import json
+from typing import TYPE_CHECKING
 
 from app.models.direction import Direction
 from app.schemas.roadmap import DIRECTION_HORIZONS, STEP_TRACKS, UniversityRequirement
 from app.schemas.student_context import StudentContext
+
+if TYPE_CHECKING:
+    from app.services.gap_analysis_service import GapAnalysisResult
 
 CATEGORIES = [
     "knowledge", "skill", "practice", "project", "portfolio",
@@ -288,18 +292,30 @@ _GOAL_FOCUS: dict[str, str] = {
         "спросить. Смещай упор с «познакомиться» на «научиться делать»."
     ),
     "university": (
-        "ЦЕЛЬ УЧЕНИКА — «ПОСТУПИТЬ» (сценарий C). steps должны звучать как "
-        "ПОДГОТОВКА К ПОСТУПЛЕНИЮ: какие экзамены сдавать и когда начинать "
-        "готовиться, какой язык и какой целевой балл нужен, какое портфолио и какие "
-        "именно проекты собрать, какие документы, олимпиады и достижения усиливают "
-        "заявку, черновик мотивационного письма, финальный список вузов. Ниже может "
-        "быть блок «ДАННЫЕ ПО ВУЗАМ» — это проверенные факты по конкретным "
-        "программам (дедлайны, экзамены, язык, портфолио, гранты). Если он есть и "
-        "непуст — шаги months_9 и months_12 могут честно ссылаться на конкретный "
-        "дедлайн, экзамен или требование ИЗ ЭТИХ ДАННЫХ, не добавляя ничего от себя. "
-        "Если блока нет или он пуст — говори об этом в общем виде («узнай точный "
-        "дедлайн на сайте выбранного вуза»), но НИКОГДА не выдумывай конкретные даты, "
-        "баллы или суммы грантов."
+        "ЦЕЛЬ УЧЕНИКА — «ПОСТУПИТЬ» (сценарий C), план строится под КОНКРЕТНУЮ "
+        "программу и вуз. У этого плана ДВЕ параллельные задачи, и steps в каждом "
+        "этапе должны честно смешивать обе — не превращай план в чистую "
+        "бюрократию:\n"
+        "1) ПОДГОТОВКА К ПОСТУПЛЕНИЮ: какие экзамены сдавать и когда начинать "
+        "готовиться, какой язык и какой целевой балл нужен, какие документы, "
+        "олимпиады и достижения усиливают заявку, черновик мотивационного письма, "
+        "дедлайны подачи;\n"
+        "2) РАЗВИТИЕ В НАПРАВЛЕНИИ: то же самое углубление в профильный навык, что "
+        "и в остальных целях — книги и темы по предмету, конкретные учебные и "
+        "практические проекты, которые заодно станут портфолио для заявки. "
+        "profile-шаги в этом сценарии — это именно материалы/практика по теме "
+        "(тексты, темы для самостоятельного изучения, проекты), а не абстрактное "
+        "'готовься к поступлению'.\n"
+        "Ниже может быть блок «ДАННЫЕ ПО ВУЗАМ» — это проверенные факты по "
+        "конкретной программе (дедлайны, экзамены, язык, портфолио, гранты), и "
+        "блок «ТВОЙ GAP-АНАЛИЗ ПО ЭТОЙ ПРОГРАММЕ» — что у ученика уже закрыто, что "
+        "в процессе, что не начато. Если они есть — months_3 обязан приоритизировать "
+        "то, что помечено «пока не начато» и имеет длинный цикл подготовки (например "
+        "языковой экзамен), а months_9/months_12 могут честно ссылаться на "
+        "конкретный дедлайн, экзамен или требование ИЗ ЭТИХ ДАННЫХ, не добавляя "
+        "ничего от себя. Если блоков нет или они пусты — говори об этом в общем виде "
+        "(«узнай точный дедлайн на сайте выбранного вуза»), но НИКОГДА не выдумывай "
+        "конкретные даты, баллы или суммы грантов."
     ),
 }
 _GOAL_FOCUS["unsure"] = _GOAL_FOCUS["explore"]
@@ -330,10 +346,20 @@ def _direction_brief(direction: Direction) -> dict:
     }
 
 
+def _gap_brief(gap: "GapAnalysisResult") -> dict:
+    return {
+        "уже_есть": [{"требование": i.requirement, "комментарий": i.comment} for i in gap.met],
+        "в_процессе": [{"требование": i.requirement, "комментарий": i.comment} for i in gap.in_progress],
+        "пока_не_начато": [{"требование": i.requirement, "комментарий": i.comment} for i in gap.not_met],
+    }
+
+
 def build_messages(
     context: StudentContext,
     direction: Direction,
     university_requirements: list[UniversityRequirement] | None = None,
+    *,
+    gap: "GapAnalysisResult | None" = None,
 ) -> list[dict[str, str]]:
     allowed = ", ".join(CATEGORIES)
     goal_focus = _GOAL_FOCUS.get(context.goal, "")
@@ -351,6 +377,17 @@ def build_messages(
         user_sections.append(
             "ДАННЫЕ ПО ВУЗАМ (проверенные факты, НЕ придумывай ничего сверх этого):\n"
             f"{json.dumps(reqs_payload, ensure_ascii=False, indent=2)}"
+        )
+    if gap is not None:
+        # Real gap-analysis for the ONE program this plan is built for —
+        # backend-computed (gap_analysis_service.analyze_gap), same
+        # "проверенные факты" principle. Lets months_3/months_6 prioritise
+        # exactly what this student is missing instead of guessing.
+        user_sections.append(
+            "ТВОЙ GAP-АНАЛИЗ ПО ЭТОЙ ПРОГРАММЕ (проверенные факты, НЕ придумывай "
+            "ничего сверх этого — используй, чтобы приоритизировать growth-шаги "
+            "и месяцы months_3/months_6 на то, чего реально не хватает):\n"
+            f"{json.dumps(_gap_brief(gap), ensure_ascii=False, indent=2)}"
         )
     user_sections.append(
         f"Разрешённые значения category: {allowed}.\n\n"

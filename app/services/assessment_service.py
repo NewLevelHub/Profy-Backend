@@ -215,6 +215,20 @@ async def update_assessment_goal(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Для младшей возрастной группы доступна только цель 'исследовать себя'",
             )
+    # Backend mirror of the frontend gate (ASSESSMENT_GOAL_ALLOWED_AGE_GROUPS in
+    # constants.ts): "university" is senior-only. Without this, a direct API
+    # call or a future client could set a middle assessment's raw goal to
+    # "university" — `get_effective_goal` would still downgrade it to
+    # "profession" for generation, but the goal-change UI would misleadingly
+    # show "поступление" as accepted.
+    if age_group == AgeGroup.middle:
+        if goal == AssessmentGoal.university or any(
+            g == AssessmentGoal.university for g in secondary_goals
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Для учеников 5-8 классов поступление пока недоступно как цель",
+            )
 
     # Check limit of changes
     is_primary_changing = (assessment.goal != goal)

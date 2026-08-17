@@ -22,6 +22,7 @@ from app.schemas.goal_overlay import (
     ScenarioBData,
     ScenarioCData,
 )
+from app.services import assessment_shared
 from app.services.gap_analysis_service import analyze_gap
 from app.services.gap_analysis_service import to_response as gap_to_response
 from app.services.mi_content import MI_LABELS
@@ -83,38 +84,37 @@ async def invalidate_goal_overlay_cache(assessment_id: uuid.UUID, db: AsyncSessi
         logger.warning("Failed to invalidate goal overlay caches for %s: %s", assessment_id, exc)
 
 
+_SCENARIO_BY_GOAL: dict[AssessmentGoal, Literal["A", "B", "C"]] = {
+    AssessmentGoal.explore: "A",
+    AssessmentGoal.profession: "B",
+    AssessmentGoal.university: "C",
+}
+
+_MIDDLE_UNIVERSITY_DOWNGRADE_NOTE = (
+    "Для учеников 5-8 классов поступление в вуз еще впереди. "
+    "Сейчас самое время определиться с интересными профессиями и направлениями, "
+    "поэтому мы подготовили для тебя отчёт по выбору профессии."
+)
+
+
 def _get_effective_goal_and_scenario(
     age_group: AgeGroup, primary_goal: AssessmentGoal
 ) -> tuple[AssessmentGoal, Literal["A", "B", "C"], bool, Optional[str]]:
-    # Junior: always explore (A)
+    """Display-layer wrapper around `assessment_shared.get_effective_goal` — the
+    scenario letter and "redirected" banner text shown here must always agree
+    with what roadmap/report generation actually runs under, so the goal
+    mapping itself lives in that one shared function, not here."""
+    effective_goal = assessment_shared.get_effective_goal(age_group, primary_goal)
+    scenario = _SCENARIO_BY_GOAL[effective_goal]
+
     if age_group == AgeGroup.junior:
-        if primary_goal != AssessmentGoal.explore:
-            return AssessmentGoal.explore, "A", True, None
-        return AssessmentGoal.explore, "A", False, None
+        redirected = primary_goal != AssessmentGoal.explore
+        return effective_goal, scenario, redirected, None
 
-    # Middle
-    if age_group == AgeGroup.middle:
-        if primary_goal == AssessmentGoal.university:
-            return (
-                AssessmentGoal.profession,
-                "B",
-                True,
-                "Для учеников 5-8 классов поступление в вуз еще впереди. "
-                "Сейчас самое время определиться с интересными профессиями и направлениями, "
-                "поэтому мы подготовили для тебя отчёт по выбору профессии.",
-            )
-        elif primary_goal in (AssessmentGoal.explore, AssessmentGoal.unsure):
-            return AssessmentGoal.explore, "A", False, None
-        else:
-            return AssessmentGoal.profession, "B", False, None
+    if age_group == AgeGroup.middle and primary_goal == AssessmentGoal.university:
+        return effective_goal, scenario, True, _MIDDLE_UNIVERSITY_DOWNGRADE_NOTE
 
-    # Senior
-    if primary_goal in (AssessmentGoal.explore, AssessmentGoal.unsure):
-        return AssessmentGoal.explore, "A", False, None
-    elif primary_goal == AssessmentGoal.profession:
-        return AssessmentGoal.profession, "B", False, None
-    else:
-        return AssessmentGoal.university, "C", False, None
+    return effective_goal, scenario, False, None
 
 
 def _get_secondary_goals(age_group: AgeGroup, effective_goal: AssessmentGoal) -> list[AssessmentGoal]:

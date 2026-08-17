@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models.analysis_result import AnalysisResult
-from app.models.assessment import Assessment
+from app.models.assessment import Assessment, AssessmentGoal
 from app.models.direction_inquiry import DirectionInquiry
 from app.models.direction_roadmap import DirectionRoadmap
 from app.models.profile import AgeGroup, Profile
@@ -145,6 +145,28 @@ async def invalidate_retake(
 async def get_profile_age_group(profile_id: uuid.UUID, db: AsyncSession) -> AgeGroup:
     result = await db.execute(select(Profile.age_group).where(Profile.id == profile_id))
     return result.scalar_one()
+
+
+def get_effective_goal(age_group: AgeGroup, primary_goal: AssessmentGoal) -> AssessmentGoal:
+    """The goal actually used to pick a scenario/engine — ТЗ §10.3's soft
+    downgrade (middle + "university" -> "profession") applied to the raw
+    stored goal. junior always collapses to explore/A regardless of what was
+    stored (defensive: the only enforced gate today is at goal-selection and
+    goal-change time, not here).
+
+    This is the single source of truth for "which goal does report/roadmap
+    generation actually run under" — `goal_overlay_service` uses it to derive
+    the displayed scenario (A/B/C) and banner text; `roadmap_builder` and
+    `student_context` must use it too so what gets generated always matches
+    what the student was told. Never branch on `assessment.goal` directly for
+    generation — always resolve it through this function first."""
+    if age_group == AgeGroup.junior:
+        return AssessmentGoal.explore
+    if age_group == AgeGroup.middle and primary_goal == AssessmentGoal.university:
+        return AssessmentGoal.profession
+    if primary_goal == AssessmentGoal.unsure:
+        return AssessmentGoal.explore
+    return primary_goal
 
 
 async def likert_total_questions(db: AsyncSession, age_group: AgeGroup) -> int:

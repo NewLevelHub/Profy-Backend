@@ -26,7 +26,19 @@ docker-compose exec api python scripts/seed_motivation_pairs.py
 # Ожидается: Total pairs in bank: 18
 
 docker-compose exec api python scripts/seed_riasec_directions.py
+# Direction description/skills_needed/subjects_to_develop/first_steps — empty
+# by default after the RIASEC migration (see app/models/direction.py).
+# Content already LLM-drafted and human-reviewed into
+# scripts/direction_content_review.json (committed) — this only applies that
+# reviewed file, it does not call the LLM. Idempotent, needs directions'
+# slugs to already exist, so it must run after seed_riasec_directions.py.
+docker-compose exec api python scripts/apply_direction_content.py
+
 # Universities/programs — single source of truth: university-data/*.py
 # (Almaty + Astana, 55 real KZ universities) via specialty_profession_map.py.
 # seed_universities.py (12 hand-picked, duplicate logic) was removed.
 docker-compose exec api python scripts/seed_kz_universities.py
+# 2026-2027 grant/ENT-threshold admission data into Program.requirements —
+# reviewed data from scripts/data/db_updates_2026.json (committed). Idempotent,
+# keyed by program_id, so it must run after seed_kz_universities.py.
+docker-compose exec api python scripts/apply_grant_admission_data_2026.py

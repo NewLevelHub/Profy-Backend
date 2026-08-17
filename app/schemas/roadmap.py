@@ -129,6 +129,9 @@ class DirectionRoadmapResponse(BaseModel):
     subjects_to_focus: list[str]
     university_track: UniversityTrack
     university_requirements: list[UniversityRequirement] = []
+    # Set only when this plan was built from a specific chosen Program
+    # (goal="university" generate-by-program path). None otherwise.
+    program_id: uuid.UUID | None = None
 
     model_config = {"from_attributes": True}
 
@@ -136,3 +139,8 @@ class DirectionRoadmapResponse(BaseModel):
 class GenerateDirectionRoadmapRequest(BaseModel):
     assessment_id: uuid.UUID
     direction_slug: str
+
+
+class GenerateDirectionRoadmapForProgramRequest(BaseModel):
+    assessment_id: uuid.UUID
+    program_id: uuid.UUID

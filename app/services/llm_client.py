@@ -16,9 +16,14 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-# gpt-4o-mini pricing (USD per token) — for cost logging only.
-_COST_PER_INPUT_TOKEN = 0.15 / 1_000_000
-_COST_PER_OUTPUT_TOKEN = 0.60 / 1_000_000
+# USD per token, input/output — for cost logging only. Keep in sync with
+# OpenAI's published pricing; an unlisted model still logs token counts, just
+# without a $ figure, rather than silently reporting someone else's price.
+_PRICING_PER_MODEL: dict[str, tuple[float, float]] = {
+    "gpt-4o-mini": (0.15 / 1_000_000, 0.60 / 1_000_000),
+    "gpt-4.1": (2.00 / 1_000_000, 8.00 / 1_000_000),
+    "gpt-4o": (2.50 / 1_000_000, 10.00 / 1_000_000),
+}
 
 _MAX_ATTEMPTS = 2  # 1 initial + 1 retry
 
@@ -31,15 +36,24 @@ def is_enabled() -> bool:
     return settings.LLM_ENABLED and bool(settings.LLM_API_KEY)
 
 
-def _log_usage(usage: dict[str, Any] | None) -> None:
+def _log_usage(model: str, usage: dict[str, Any] | None) -> None:
     if not usage:
         return
     prompt_tokens = usage.get("prompt_tokens", 0)
     completion_tokens = usage.get("completion_tokens", 0)
-    cost = prompt_tokens * _COST_PER_INPUT_TOKEN + completion_tokens * _COST_PER_OUTPUT_TOKEN
+    pricing = _PRICING_PER_MODEL.get(model)
+    if pricing is None:
+        logger.info(
+            "LLM usage: model=%s prompt=%s completion=%s cost=unknown "
+            "(add %s to _PRICING_PER_MODEL)",
+            model, prompt_tokens, completion_tokens, model,
+        )
+        return
+    cost_per_input, cost_per_output = pricing
+    cost = prompt_tokens * cost_per_input + completion_tokens * cost_per_output
     logger.info(
         "LLM usage: model=%s prompt=%s completion=%s ~$%.5f",
-        settings.LLM_MODEL, prompt_tokens, completion_tokens, cost,
+        model, prompt_tokens, completion_tokens, cost,
     )
 
 
@@ -65,17 +79,22 @@ async def complete_json(
     *,
     timeout: float | None = None,
     max_tokens: int | None = None,
+    model: str | None = None,
 ) -> dict[str, Any]:
     """Return the model's JSON object, constrained to `schema`. Raises LLMError on failure.
 
     `timeout` and `max_tokens` default to the global settings; long generations
-    (the direction roadmap) override them — the defaults are sized for short
-    completions and a big plan simply cannot finish inside them."""
+    (both roadmap generators) override them — the defaults are sized for short
+    completions and a big plan simply cannot finish inside them. `model` likewise
+    defaults to the global cheap model; the roadmap generators pass a stronger
+    one (`settings.LLM_ROADMAP_MODEL`) since they're the densest, highest-value
+    output in the app."""
     if not is_enabled():
         raise LLMError("LLM disabled or API key missing")
 
+    resolved_model = model or settings.LLM_MODEL
     payload = {
-        "model": settings.LLM_MODEL,
+        "model": resolved_model,
         "messages": messages,
         "temperature": settings.LLM_TEMPERATURE,
         "max_tokens": max_tokens or settings.LLM_MAX_TOKENS,
@@ -107,7 +126,7 @@ async def complete_json(
                 raise LLMError(f"status {response.status_code}: {response.text[:300]}")
 
             data = response.json()
-            _log_usage(data.get("usage"))
+            _log_usage(resolved_model, data.get("usage"))
             return _parse_content(data)
 
     raise last_error or LLMError("unknown error")
