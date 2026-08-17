@@ -35,6 +35,8 @@ async def _to_response(assessment: Assessment, db: AsyncSession) -> AssessmentRe
         motivation_answered_count=mot_answered,
         motivation_total=mot_total,
         created_at=assessment.created_at,
+        secondary_goals=list(assessment.secondary_goals or []),
+        goal_changed_count=assessment.goal_changed_count,
     )
 
 
@@ -188,3 +190,54 @@ async def get_total_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[s
     raw = await riasec_service.raw_scores(assessment_id, db, age_group)
     counts = await riasec_service.question_counts(db, age_group)
     return riasec_service.normalize(raw, counts)
+
+
+async def update_assessment_goal(
+    assessment_id: uuid.UUID,
+    goal: AssessmentGoal,
+    secondary_goals: list[AssessmentGoal],
+    current_profile_id: uuid.UUID,
+    db: AsyncSession,
+) -> AssessmentResponse:
+    row_result = await db.execute(select(Assessment).where(Assessment.id == assessment_id))
+    assessment = row_result.scalar_one_or_none()
+    if assessment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+
+    if assessment.profile_id != current_profile_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    # Age validation
+    age_group = await assessment_shared.get_profile_age_group(assessment.profile_id, db)
+    if age_group == AgeGroup.junior:
+        if goal != AssessmentGoal.explore or any(g != AssessmentGoal.explore for g in secondary_goals):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Для младшей возрастной группы доступна только цель 'исследовать себя'",
+            )
+
+    # Check limit of changes
+    is_primary_changing = (assessment.goal != goal)
+    if is_primary_changing and assessment.status == AssessmentStatus.completed:
+        if assessment.goal_changed_count >= 3:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Достигнут лимит смены целей (максимум 3 раза)",
+            )
+        assessment.goal_changed_count += 1
+
+    assessment.goal = goal
+    
+    # Store unique secondary goals, excluding the primary goal
+    unique_secondaries = []
+    for g in secondary_goals:
+        if g not in unique_secondaries and g != goal:
+            unique_secondaries.append(g)
+    assessment.secondary_goals = unique_secondaries
+
+    from app.services.goal_overlay_service import invalidate_goal_overlay_cache
+    await invalidate_goal_overlay_cache(assessment_id, db)
+
+    await db.commit()
+    return await _to_response(assessment, db)
+

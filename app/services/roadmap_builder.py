@@ -686,6 +686,8 @@ async def generate_direction_roadmap(
 
     roadmap = await _upsert_direction_roadmap(assessment_id, slug, direction.name, plan, db)
     assessment.selected_direction_slug = slug
+    from app.services.goal_overlay_service import invalidate_goal_overlay_cache
+    await invalidate_goal_overlay_cache(assessment_id, db)
     await db.commit()
     await db.refresh(roadmap)
 
