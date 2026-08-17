@@ -32,6 +32,7 @@ class RoadmapTask(BaseModel):
 class RoadmapMilestone(BaseModel):
     horizon: str
     title: str
+    outcome: str = ""
     tasks: list[RoadmapTask]
 
 
@@ -40,6 +41,7 @@ class RoadmapResponse(BaseModel):
     assessment_id: uuid.UUID
     goal: str
     milestones: list[RoadmapMilestone]
+    focus_summary: str | None = None
 
     model_config = {"from_attributes": True}
 

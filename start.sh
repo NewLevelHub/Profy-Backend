@@ -42,3 +42,4 @@ docker-compose exec api python scripts/seed_kz_universities.py
 # reviewed data from scripts/data/db_updates_2026.json (committed). Idempotent,
 # keyed by program_id, so it must run after seed_kz_universities.py.
 docker-compose exec api python scripts/apply_grant_admission_data_2026.py
+docker-compose exec api python scripts/backfill_program_source_metadata_2026.py

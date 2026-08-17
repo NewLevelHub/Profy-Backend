@@ -21,17 +21,19 @@ CATEGORIES = [
 ROADMAP_JSON_SCHEMA: dict = {
     "type": "object",
     "additionalProperties": False,
-    "required": ["milestones"],
+    "required": ["milestones", "focus_summary"],
     "properties": {
+        "focus_summary": {"type": "string"},
         "milestones": {
             "type": "array",
             "items": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["horizon", "title", "tasks"],
+                "required": ["horizon", "title", "outcome", "tasks"],
                 "properties": {
                     "horizon": {"type": "string", "enum": HORIZONS},
                     "title": {"type": "string"},
+                    "outcome": {"type": "string"},
                     "tasks": {
                         "type": "array",
                         "items": {
@@ -87,6 +89,14 @@ _SYSTEM_PROMPT = """\
 оставляет ученику решить, ЧТО конкретно делать — шаг не готов, это брак.
 
 Отвечай СТРОГО в JSON по заданной схеме, без текста вне JSON.
+
+ФОКУС И ИТОГИ.
+- В поле focus_summary на корневом уровне напиши 2-3 предложения — краткое саммари, \
+куда ученику стоит посмотреть, без ярлыков и давления с выбором (вместо «твоя цель — X» \
+используй мягкие ориентиры «стоит исследовать...», «попробовать...»).
+- В поле outcome для каждого этапа milestone опиши одной понятной фразой, что у ученика \
+будет на руках или в плане опыта к концу этого горизонта (например: «Понимание своих \
+интересов и первых проб в разных сферах», «Первый практический опыт и сужение круга интересов»).
 
 СТРУКТУРА. Ровно 5 этапов (milestones) — по одному на каждый горизонт: \
 month_1, months_3, months_6, year_1, until_goal. В каждом этапе — от 4 до 5 \
@@ -184,6 +194,7 @@ RETRY_HINT: dict[str, str] = {
     "content": (
         "Твой предыдущий ответ нарушил структуру или требование конкретности. "
         "Исправь строго:\n"
+        "- наличие полей focus_summary (в корне) и outcome (в каждом milestone);\n"
         "- ровно 5 этапов: month_1, months_3, months_6, year_1, until_goal;\n"
         "- в КАЖДОМ этапе от 4 до 5 задач (не меньше 4, не больше 5);\n"
         "- каждая задача (text) называет конкретное действие, а не категорию — "

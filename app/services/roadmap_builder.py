@@ -103,6 +103,7 @@ def _build_explore(directions: list[_DirectionSummary]) -> list[RoadmapMilestone
         RoadmapMilestone(
             horizon="month_1",
             title="Первый шаг: исследование возможностей",
+            outcome="Понимание своих интересов и первые пробы в разных направлениях.",
             tasks=[
                 RoadmapTask(text=f"Узнай подробнее о направлении «{dir_names[0]}»: посмотри видео и статьи", category="explore", priority=1),
                 RoadmapTask(text=f"Изучи, чем занимаются люди в сфере «{dir_names[1] if len(dir_names) > 1 else dir_names[0]}»", category="explore", priority=2),
@@ -112,6 +113,7 @@ def _build_explore(directions: list[_DirectionSummary]) -> list[RoadmapMilestone
         RoadmapMilestone(
             horizon="months_3",
             title="Попробовать что-то руками",
+            outcome="Первый практический опыт выполнения простых задач руками.",
             tasks=[
                 RoadmapTask(text=f"Запишись на пробный урок или кружок по направлению «{dir_names[0]}»", category="explore", priority=1),
                 RoadmapTask(text="Посети одно тематическое мероприятие, фестиваль или открытый урок", category="explore", priority=2),
@@ -121,6 +123,7 @@ def _build_explore(directions: list[_DirectionSummary]) -> list[RoadmapMilestone
         RoadmapMilestone(
             horizon="months_6",
             title="Углубиться в понравившееся",
+            outcome="Выбор 1–2 интересных направлений для регулярных занятий.",
             tasks=[
                 RoadmapTask(text="Выбери 1–2 направления и занимайся ими регулярно (раз в неделю)", category="explore", priority=1),
                 RoadmapTask(text="Найди наставника или ментора в выбранной сфере", category="explore", priority=2),
@@ -130,6 +133,7 @@ def _build_explore(directions: list[_DirectionSummary]) -> list[RoadmapMilestone
         RoadmapMilestone(
             horizon="year_1",
             title="Сделать осознанный выбор",
+            outcome="Осознанный выбор главного направления развития.",
             tasks=[
                 RoadmapTask(text="Определись с 1 основным направлением для дальнейшего развития", category="explore", priority=1),
                 RoadmapTask(text="Составь список навыков, которые хочешь развить в этой сфере", category="planning", priority=2),
@@ -139,6 +143,7 @@ def _build_explore(directions: list[_DirectionSummary]) -> list[RoadmapMilestone
         RoadmapMilestone(
             horizon="until_goal",
             title="Сформировать чёткое видение будущего",
+            outcome="Чёткое представление о будущей сфере и путях обучения.",
             tasks=[
                 RoadmapTask(text="Сформулируй свои профессиональные интересы и цели в письменном виде", category="planning", priority=1),
                 RoadmapTask(text="Исследуй пути обучения и развития по выбранному направлению", category="planning", priority=2),
@@ -158,6 +163,7 @@ def _build_profession(directions: list[_DirectionSummary]) -> list[RoadmapMilest
         RoadmapMilestone(
             horizon="month_1",
             title="Изучить профессии по результатам",
+            outcome="Сформированное понимание ключевых профессий в выбранной сфере.",
             tasks=[
                 RoadmapTask(text=f"Изучи профессии в сфере «{top_name}» и выбери 1–2 наиболее интересных", category="knowledge", priority=1),
                 RoadmapTask(text=f"Посмотри «день из жизни» специалиста в «{top_name}»", category="knowledge", priority=2),
@@ -167,6 +173,7 @@ def _build_profession(directions: list[_DirectionSummary]) -> list[RoadmapMilest
         RoadmapMilestone(
             horizon="months_3",
             title="Начать развивать ключевые навыки",
+            outcome="Освоение базовых теоретических и практических навыков.",
             tasks=[
                 RoadmapTask(text=first_steps[0], category="skill", priority=1),
                 RoadmapTask(text=f"Пройди онлайн-курс по {first_skills[0] if first_skills else 'базовым навыкам направления'}", category="skill", priority=2),
@@ -176,6 +183,7 @@ def _build_profession(directions: list[_DirectionSummary]) -> list[RoadmapMilest
         RoadmapMilestone(
             horizon="months_6",
             title="Первый практический опыт",
+            outcome="Создание первого учебного проекта для портфолио.",
             tasks=[
                 RoadmapTask(text=f"Сделай первый учебный проект в сфере «{top_name}»", category="practice", priority=1),
                 RoadmapTask(text="Ищи возможности для волонтёрства или стажировки по теме", category="practice", priority=2),
@@ -242,16 +250,19 @@ def _build_university(directions: list[_DirectionSummary], gap: GapAnalysisResul
         RoadmapMilestone(
             horizon="month_1",
             title="Закрыть критические пробелы",
+            outcome="План закрытия критических пробелов для поступления.",
             tasks=month1_tasks,
         ),
         RoadmapMilestone(
             horizon="months_3",
             title="Устранить пробелы в процессе",
+            outcome="Устранение пробелов в знаниях и навыках для вуза.",
             tasks=months3_tasks,
         ),
         RoadmapMilestone(
             horizon="months_6",
             title="Подготовить документы к поступлению",
+            outcome="Собранный комплект документов и готовое эссе.",
             tasks=[
                 RoadmapTask(text="Собери все необходимые документы для подачи заявки", category="documents", priority=1),
                 RoadmapTask(text="Напиши мотивационное письмо или вступительное эссе", category="documents", priority=2),
@@ -261,6 +272,7 @@ def _build_university(directions: list[_DirectionSummary], gap: GapAnalysisResul
         RoadmapMilestone(
             horizon="year_1",
             title="Подать заявку",
+            outcome="Поданные заявления в выбранные вузы.",
             tasks=[
                 RoadmapTask(text="Отправь заявку на поступление в университет", category="application", priority=1),
                 RoadmapTask(text="Изучи возможности стипендий и грантов для поступающих", category="finance", priority=2),
@@ -270,6 +282,7 @@ def _build_university(directions: list[_DirectionSummary], gap: GapAnalysisResul
         RoadmapMilestone(
             horizon="until_goal",
             title="Поступление",
+            outcome="Успешное прохождение испытаний и зачисление.",
             tasks=[
                 RoadmapTask(text="Пройди вступительные испытания или собеседование", category="admission", priority=1),
                 RoadmapTask(text="Подпиши оферт о зачислении", category="admission", priority=2),
@@ -287,16 +300,22 @@ def build_roadmap(
     matched_directions: list[_DirectionSummary],
     gap_analysis: GapAnalysisResult | None = None,
     program: Program | None = None,
-) -> list[RoadmapMilestone]:
+) -> tuple[list[RoadmapMilestone], str]:
     """Deterministic template roadmap — the fallback when the LLM is off or fails.
 
     The AI path lives in `_build_roadmap_ai`; `generate_roadmap` tries it first."""
     if goal == AssessmentGoal.university:
-        return _build_university(matched_directions, gap_analysis)
+        milestones = _build_university(matched_directions, gap_analysis)
+        focus = "Этот план сфокусирован на подготовке к поступлению в вуз: закрытии академических пробелов, сборе необходимых документов, подготовке к экзаменам и успешной подаче заявления."
+        return milestones, focus
     if goal == AssessmentGoal.profession:
-        return _build_profession(matched_directions)
+        milestones = _build_profession(matched_directions)
+        focus = "План ориентирован на развитие практических навыков в выбранной профессии, создание первого портфолио проектов и подготовку к старту в профессиональной среде."
+        return milestones, focus
     # explore and unsure ("Пока не знаю") share the exploratory roadmap
-    return _build_explore(matched_directions)
+    milestones = _build_explore(matched_directions)
+    focus = "Этот план поможет тебе исследовать различные направления, попробовать себя в новых ролях и сделать осознанный выбор будущей сферы деятельности без давления и спешки."
+    return milestones, focus
 
 
 _MIN_TASKS_PER_MILESTONE = 4
@@ -313,7 +332,7 @@ def _valid_milestones(milestones: list[RoadmapMilestone]) -> bool:
     if {m.horizon for m in milestones} != set(HORIZONS):
         return False
     return all(
-        _MIN_TASKS_PER_MILESTONE <= len(m.tasks) <= _MAX_TASKS_PER_MILESTONE
+        _MIN_TASKS_PER_MILESTONE <= len(m.tasks) <= _MAX_TASKS_PER_MILESTONE and bool(m.outcome)
         for m in milestones
     )
 
@@ -323,7 +342,7 @@ _MAX_ROADMAP_ATTEMPTS = 2  # 1 initial + 1 corrective retry
 
 async def _build_roadmap_ai(
     context: StudentContext | None,
-) -> list[RoadmapMilestone] | None:
+) -> tuple[list[RoadmapMilestone], str] | None:
     """LLM roadmap. Returns None (→ template fallback) if disabled or anything fails.
 
     Retries once on an invariant miss (density/structure) before giving up —
@@ -346,12 +365,13 @@ async def _build_roadmap_ai(
             milestones = [
                 RoadmapMilestone.model_validate(m) for m in raw.get("milestones", [])
             ]
+            focus_summary = raw.get("focus_summary", "")
         except (llm_client.LLMError, ValidationError, TypeError) as exc:
             logger.warning("AI roadmap failed, using template: %s", exc)
             return None
 
-        if _valid_milestones(milestones):
-            return milestones
+        if _valid_milestones(milestones) and bool(focus_summary):
+            return milestones, focus_summary
 
         logger.warning(
             "AI roadmap failed invariant check (attempt %s/%s)",
@@ -420,9 +440,11 @@ async def generate_roadmap(
     context = await build_student_context(assessment_id, db)
 
     # Try the LLM first; fall back to deterministic templates on any failure.
-    milestones = await _build_roadmap_ai(context)
-    if milestones is None:
-        milestones = build_roadmap(profile, effective_goal, directions, gap, program)
+    ai_res = await _build_roadmap_ai(context)
+    if ai_res is not None:
+        milestones, focus_summary = ai_res
+    else:
+        milestones, focus_summary = build_roadmap(profile, effective_goal, directions, gap, program)
     milestones_data = [m.model_dump() for m in milestones]
 
     # Upsert roadmap in DB
@@ -430,12 +452,14 @@ async def generate_roadmap(
     existing = existing_row.scalar_one_or_none()
     if existing:
         existing.goal = effective_goal
+        existing.focus_summary = focus_summary
         existing.milestones = milestones_data
         roadmap = existing
     else:
         roadmap = Roadmap(
             assessment_id=assessment_id,
             goal=effective_goal,
+            focus_summary=focus_summary,
             milestones=milestones_data,
         )
         db.add(roadmap)

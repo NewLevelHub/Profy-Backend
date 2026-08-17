@@ -365,6 +365,15 @@ async def get_or_create_goal_overlay(
 
     else:
         # Scenario C: Admission (Senior only)
+        if not program_id:
+            from app.models.direction_roadmap import DirectionRoadmap
+            roadmap_stmt = select(DirectionRoadmap.program_id).where(
+                DirectionRoadmap.assessment_id == assessment_id,
+                DirectionRoadmap.program_id.isnot(None),
+            )
+            roadmap_res = await db.execute(roadmap_stmt)
+            program_id = roadmap_res.scalar()
+
         selected_program_id = None
         selected_program_name = None
         selected_university_name = None

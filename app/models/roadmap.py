@@ -22,6 +22,7 @@ class Roadmap(Base):
         index=True,
     )
     goal: Mapped[str] = mapped_column(String(50), nullable=False)
+    focus_summary: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     milestones: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

@@ -80,17 +80,23 @@ async def test_university_goal_still_blocked_for_junior(db_session: AsyncSession
     assert exc_info.value.status_code == 403
 
 
-async def test_university_goal_still_requires_completed_inquiry(db_session: AsyncSession):
-    """No DirectionInquiry row for this slug -> still 400, same as every
-    other goal (not a university-specific rule)."""
-    assessment = await _make_assessment(db_session, AssessmentGoal.university)
-    db_session.add(Direction(name="Test Direction", slug=SLUG, holland_code="RIA"))
-    await db_session.flush()
+async def test_university_goal_skips_inquiry_check(db_session: AsyncSession):
+    """University goal skips the inquiry check, so it passes even with no DirectionInquiry row."""
+    original_required = roadmap_builder._INQUIRY_REQUIRED
+    roadmap_builder._INQUIRY_REQUIRED = True
+    try:
+        assessment = await _make_assessment(db_session, AssessmentGoal.university)
+        direction = Direction(name="Test Direction", slug=SLUG, holland_code="RIA")
+        db_session.add(direction)
+        await db_session.flush()
 
-    with pytest.raises(HTTPException) as exc_info:
-        await roadmap_builder._require_direction_roadmap_access(assessment.id, SLUG, db_session)
-
-    assert exc_info.value.status_code == 400
+        res_assessment, res_direction = await roadmap_builder._require_direction_roadmap_access(
+            assessment.id, SLUG, db_session
+        )
+        assert res_assessment.id == assessment.id
+        assert res_direction.slug == SLUG
+    finally:
+        roadmap_builder._INQUIRY_REQUIRED = original_required
 
 
 async def test_university_requirements_for_real_seeded_rows(db_session: AsyncSession):
