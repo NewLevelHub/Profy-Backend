@@ -250,6 +250,21 @@ def _check_career_narrative(
     return issues
 
 
+def _check_no_source_id_leak(output: ReportNarrativeOutput, context: ReportNarrativeContext) -> list[ValidationIssue]:
+    """evidence_ids (e.g. "riasec:E") are internal citation keys for
+    grounding, never meant for the child to read. Found live: a strength
+    card ending "...организовывать других (riasec:E)." — the model citing
+    its source inline like a footnote instead of using evidence_ids as
+    instructed. _check_language's Cyrillic-ratio check doesn't catch this
+    (the leaked id is a tiny fraction of an otherwise-Russian sentence)."""
+    texts = _all_texts(output)
+    issues: list[ValidationIssue] = []
+    for evidence in context.evidence:
+        if any(evidence.source_id in t for t in texts):
+            issues.append(ValidationIssue("source_id_leak", evidence.source_id))
+    return issues
+
+
 def _check_motivation_grounding(output: ReportNarrativeOutput, context: ReportNarrativeContext) -> list[ValidationIssue]:
     has_motivation_evidence = any(e.source_type == "motivation" for e in context.evidence)
     if has_motivation_evidence and not output.motivation_narrative.evidence_ids:
@@ -353,6 +368,7 @@ def validate(
     issues += _check_strength_card_sources(output, context)
     issues += _check_strength_card_duplicate_evidence(output)
     issues += _check_career_narrative(output, context, age_group)
+    issues += _check_no_source_id_leak(output, context)
     issues += _check_motivation_grounding(output, context)
     issues += _check_summary_sentence_count(output)
     issues += _check_final_analysis_sentence_count(output)

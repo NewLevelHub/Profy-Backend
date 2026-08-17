@@ -402,6 +402,21 @@ def test_numeric_leak_is_rejected():
     assert any(i.code == "numeric_leak" for i in issues)
 
 
+def test_source_id_leaked_into_visible_text_is_rejected():
+    # Found live: a strength card description ending "...организовывать
+    # других (riasec:E)." — the model citing its own evidence_ids value
+    # inline instead of only in the evidence_ids field.
+    context = _senior_context()
+    output = build_fallback_narrative(context)
+    output.strength_cards[0].description = (
+        output.strength_cards[0].description + " (riasec:R)"
+    )
+
+    issues = validate(output, context)
+
+    assert any(i.code == "source_id_leak" and i.detail == "riasec:R" for i in issues)
+
+
 def test_non_russian_text_is_rejected_for_ru_language():
     context = _senior_context()
     output = build_fallback_narrative(context)

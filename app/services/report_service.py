@@ -219,7 +219,7 @@ def _shape_response(analysis: AnalysisResult) -> ResultResponseV2:
 
     return RiasecResultResponse(
         **common,
-        careers=report_v2_assembler.build_riasec_careers(minimal_context, list(analysis.careers), flat),
+        careers=report_v2_assembler.build_riasec_careers(minimal_context, list(analysis.careers)),
     )
 
 

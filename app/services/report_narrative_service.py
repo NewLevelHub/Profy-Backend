@@ -91,6 +91,13 @@ _CORRECTION_HINTS: dict[str, str] = {
         "motivation_narrative.evidence_ids пуст, хотя в каталоге есть evidence "
         "с source_type \"motivation\". Добавь их source_id в evidence_ids."
     ),
+    "source_id_leak": (
+        "В видимом тексте (title/description) буквально встречается "
+        "source_id {detail!r} — так писать нельзя, это внутренний "
+        "идентификатор, а не часть текста для ребёнка. Убери его из текста "
+        "полностью (не заменяй похожей фразой в скобках) — ссылка на этот "
+        "факт должна быть только в поле evidence_ids этой же карточки."
+    ),
     "summary_too_short": (
         "summary состоит из недостаточного числа предложений ({detail}). "
         "Перепиши summary так, чтобы в нём было минимум 3 полных предложения "
