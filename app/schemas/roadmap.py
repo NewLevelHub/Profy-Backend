@@ -190,10 +190,19 @@ class UniversityRequirement(BaseModel):
     portfolio_needed: bool | None = None
     required_documents: list[str] | None = None
     min_ent_threshold: int | None = None
+    min_ent_paid: int | None = None
     min_gpa: float | None = None
     min_sat: int | None = None
     extracurriculars: list[str] = []
     admission_scores_2026: list[str] = []
+    grant_scores: dict[str, str] = {}
+    grants_allocated_count: int | None = None
+    duration_years: float | None = None
+    has_dual_degree: bool | None = None
+    has_dormitory: bool | None = None
+    dormitory_cost_label: str | None = None
+    has_military_department: bool | None = None
+    admissions_contacts: dict[str, str] = {}
     notes: list[str] = []
 
 
