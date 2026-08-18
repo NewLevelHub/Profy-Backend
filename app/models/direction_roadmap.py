@@ -50,6 +50,8 @@ class DirectionRoadmap(Base):
     # Backend-populated only (never from the LLM): Program/University facts for
     # goal="university" — empty list for every other goal. See UniversityRequirement.
     university_requirements: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    # Hand-verified catalogue entries, see app/data/resource_catalog.py.
+    additional_resources: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

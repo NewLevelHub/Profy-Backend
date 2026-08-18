@@ -33,6 +33,19 @@ _redis: aioredis.Redis | None = None
 # again by any code path, not filtered out at read time.
 REPORT_CACHE_KEY_PREFIX = "report:v2"
 
+# Same versioning principle for the goal roadmap cache — bumped 2026-08-18
+# alongside the portrait/recommended_paths prompt rework, so no stale
+# pre-rollout cache entry (old wording) can be served after a deploy.
+# roadmap_builder._cache_key builds the full key from this prefix; this
+# module only needs the prefix to scan-invalidate on retake.
+ROADMAP_CACHE_KEY_PREFIX = "roadmap:v2"
+
+# Same principle for the direction roadmap cache — bumped alongside the
+# subject_focus-by-grade prompt rework. roadmap_builder.direction_cache_key
+# builds the full key from this prefix; this module needs it to delete the
+# exact key on invalidate_direction_flow.
+DIRECTION_ROADMAP_CACHE_KEY_PREFIX = "droadmap:v2"
+
 
 def report_cache_key(assessment_id: uuid.UUID) -> str:
     return f"{REPORT_CACHE_KEY_PREFIX}:{assessment_id}"
@@ -87,7 +100,11 @@ async def invalidate_direction_flow(
     assessment.selected_direction_slug = None
 
     for slug in slugs:
-        await safe_redis_delete(redis, f"droadmap:{assessment_id}:{slug}", f"dq:{assessment_id}:{slug}")
+        await safe_redis_delete(
+            redis,
+            f"{DIRECTION_ROADMAP_CACHE_KEY_PREFIX}:{assessment_id}:{slug}",
+            f"dq:{assessment_id}:{slug}",
+        )
 
 
 async def invalidate_goal_roadmap(
@@ -102,7 +119,7 @@ async def invalidate_goal_roadmap(
     to know about. Takes the bare id (not the `Assessment` object, unlike
     `invalidate_direction_flow`) — see tests/integration/
     test_goal_roadmap_retake_invalidation.py for the contract this matches."""
-    pattern = f"roadmap:{assessment_id}:*"
+    pattern = f"{ROADMAP_CACHE_KEY_PREFIX}:{assessment_id}:*"
     stale_keys = await safe_redis_scan(redis, pattern)
     await safe_redis_delete(redis, *stale_keys)
     await db.execute(Roadmap.__table__.delete().where(Roadmap.assessment_id == assessment_id))

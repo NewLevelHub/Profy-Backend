@@ -102,12 +102,14 @@ async def test_university_goal_skips_inquiry_check(db_session: AsyncSession):
 async def test_university_requirements_for_real_seeded_rows(db_session: AsyncSession):
     university = University(name="Test University", country="Казахстан", city="Алматы")
     db_session.add(university)
+
+    direction = Direction(name="Test Direction", slug=SLUG, holland_code="RIA")
+    db_session.add(direction)
     await db_session.flush()
 
     program = Program(
         university_id=university.id,
         name="Test Program",
-        profession_slugs=[SLUG],
         language="ru",
         requirements={
             "exams": ["ЕНТ"],
@@ -118,6 +120,7 @@ async def test_university_requirements_for_real_seeded_rows(db_session: AsyncSes
         deadlines={"application_close": "2026-12-01"},
         grants=[{"name": "Grant", "amount": "100%", "conditions": "..."}],
     )
+    program.directions = [direction]
     db_session.add(program)
     await db_session.flush()
 

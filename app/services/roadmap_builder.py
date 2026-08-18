@@ -12,9 +12,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.data import resource_catalog
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentGoal
+from app.models.direction import Direction
 from app.models.direction_roadmap import DirectionRoadmap
 from app.models.profile import AgeGroup, Profile
 from app.models.program import Program
@@ -27,7 +29,7 @@ from app.schemas.roadmap import (
     DirectionRoadmapResponse,
     DirectionStage,
     GrowthFocus,
-    ProgramGrant,
+    RecommendedPath,
     RoadmapMilestone,
     RoadmapResponse,
     RoadmapTarget,
@@ -43,6 +45,7 @@ from app.services import (
     direction_service,
     llm_client,
 )
+from app.services import university_requirements as ureq
 from app.services.gap_analysis_service import GapAnalysisResult, analyze_gap
 from app.services.student_context import build_student_context
 
@@ -74,10 +77,14 @@ def _get_redis() -> aioredis.Redis:
 def _cache_key(assessment_id: uuid.UUID, program_id: uuid.UUID | None) -> str:
     # Plain, not hashed — a retake needs to invalidate every cached variant of
     # this assessment's goal roadmap (one per program_id ever requested), and
-    # that's only possible via a pattern scan (`roadmap:{assessment_id}:*`,
-    # see assessment_shared.invalidate_goal_roadmap) if the assessment_id is
+    # that's only possible via a pattern scan (see
+    # assessment_shared.invalidate_goal_roadmap) if the assessment_id is
     # readable in the key, not buried inside a hash.
-    return f"roadmap:{assessment_id}:{program_id or 'none'}"
+    #
+    # Prefix is versioned (assessment_shared.ROADMAP_CACHE_KEY_PREFIX) so
+    # bumping it makes every previously cached response (old prompt wording)
+    # a cache miss on deploy without a manual redis-cli scan/flush.
+    return f"{assessment_shared.ROADMAP_CACHE_KEY_PREFIX}:{assessment_id}:{program_id or 'none'}"
 
 
 def _parse_directions(directions_jsonb: list) -> list[_DirectionSummary]:
@@ -95,62 +102,152 @@ def _parse_directions(directions_jsonb: list) -> list[_DirectionSummary]:
 
 # ─── Template builders per scenario ────────────────────────────────────────────
 
-def _build_explore(directions: list[_DirectionSummary]) -> list[RoadmapMilestone]:
-    top = directions[:3]
-    dir_names = [d.name for d in top] or ["интересующей сфере"]
+def _build_explore(
+    directions: list[_DirectionSummary],
+) -> tuple[list[RoadmapMilestone], list[RecommendedPath]]:
+    """Template fallback for goal=explore/unsure — used when the LLM is off or
+    fails. Mirrors the LLM prompt's portrait+path structure (see
+    app/prompts/roadmap.py) as closely as a static template can: 1-2 leading
+    directions from the top matched careers, tasks tagged by path from
+    months_3 onward. Without the LLM there's no personalised why/future_benefit,
+    so those are generic-but-named-to-the-direction rather than truly personal."""
+    top = directions[:2]
+    paths = [
+        RecommendedPath(
+            key=chr(ord("A") + i),
+            label=d.name,
+            why=f"По результатам теста направление «{d.name}» — один из твоих самых сильных откликов.",
+            future_benefit=f"Развитие в «{d.name}» может привести к кружкам и конкурсам следующего уровня, а дальше — к профессиям в этой сфере.",
+        )
+        for i, d in enumerate(top)
+    ] or [
+        RecommendedPath(
+            key="A",
+            label="интересующей сфере",
+            why="Пока по тесту не выделилось одно явное направление — начни с общей разведки интересов.",
+            future_benefit="Это поможет нащупать, какая сфера откликается сильнее всего.",
+        )
+    ]
+    single = len(paths) == 1
 
-    return [
+    def try_task(path: RecommendedPath, priority: int) -> RoadmapTask:
+        return RoadmapTask(
+            text=f"Узнай подробнее о направлении «{path.label}»: посмотри видео, статьи или пробное занятие",
+            category="explore", priority=priority, path=None,
+        )
+
+    def deepen_task(path: RecommendedPath, priority: int) -> RoadmapTask:
+        return RoadmapTask(
+            text=f"Занимайся направлением «{path.label}» регулярно (раз в неделю) и сделай небольшой проект руками",
+            category="skill", priority=priority, path=path.key,
+        )
+
+    def compete_task(path: RecommendedPath, priority: int) -> RoadmapTask:
+        return RoadmapTask(
+            text=f"Прими участие в конкурсе, соревновании или открытом показе по направлению «{path.label}»",
+            category="portfolio", priority=priority, path=path.key,
+        )
+
+    # Every milestone must land in the 4-5 task band (same rule the LLM path is
+    # held to, _valid_milestones) regardless of whether there are 1 or 2 paths —
+    # so path-specific tasks are topped up with common (path=None) ones.
+    month1_tasks = [try_task(p, i + 1) for i, p in enumerate(paths)]
+    month1_tasks.append(
+        RoadmapTask(text="Сравни впечатления от попробованного и запиши, что понравилось больше", category="planning", priority=len(month1_tasks) + 1, path=None)
+    )
+    month1_tasks.append(
+        RoadmapTask(text="Обсуди с родителями или учителем, что из попробованного откликнулось сильнее", category="planning", priority=len(month1_tasks) + 1, path=None)
+    )
+    if single:
+        month1_tasks.append(
+            RoadmapTask(text="Найди ещё один формат по этому же направлению (видео другого автора, другой кружок) и сравни впечатления", category="explore", priority=len(month1_tasks) + 1, path=None)
+        )
+
+    decide_text = (
+        f"Определись: продолжать «{paths[0].label}» или пробовать несколько направлений параллельно"
+        if single
+        else f"Определись: продолжать одно направление ({' или '.join(p.label for p in paths)}) или оба параллельно"
+    )
+    months3_tasks = [RoadmapTask(text=decide_text, category="planning", priority=1, path=None)]
+    months3_tasks += [
+        RoadmapTask(
+            text=f"Найди регулярный формат (кружок, секция, курс) по направлению «{p.label}» и сходи на первое занятие",
+            category="explore", priority=i + 2, path=p.key,
+        )
+        for i, p in enumerate(paths)
+    ]
+    months3_tasks.append(
+        RoadmapTask(text="Попробуй сделать что-то своё на основе того, что уже пробовал, а не по инструкции", category="skill", priority=len(months3_tasks) + 1, path=None)
+    )
+    if single:
+        months3_tasks.append(
+            RoadmapTask(text="Уточни у руководителя кружка/секции, что нужно для более серьёзных занятий дальше", category="planning", priority=len(months3_tasks) + 1, path=None)
+        )
+
+    months6_tasks = [deepen_task(p, i + 1) for i, p in enumerate(paths)]
+    months6_tasks.append(
+        RoadmapTask(text="Найди наставника или ментора в выбранной сфере", category="explore", priority=len(months6_tasks) + 1, path=None)
+    )
+    months6_tasks.append(
+        RoadmapTask(text="Покажи то, что сделал, кому-то ещё (семье, друзьям, руководителю кружка) и собери отклик", category="practice", priority=len(months6_tasks) + 1, path=None)
+    )
+    if single:
+        months6_tasks.append(
+            RoadmapTask(text="Запиши, что даётся легко, а что пока сложно в этом направлении", category="planning", priority=len(months6_tasks) + 1, path=None)
+        )
+
+    year1_tasks = [compete_task(p, i + 1) for i, p in enumerate(paths)]
+    year1_tasks.append(
+        RoadmapTask(text="Составь список навыков, которые хочешь развить дальше в этой сфере", category="planning", priority=len(year1_tasks) + 1, path=None)
+    )
+    year1_tasks.append(
+        RoadmapTask(text="Найди профессиональное сообщество (онлайн или офлайн) по этой сфере", category="explore", priority=len(year1_tasks) + 1, path=None)
+    )
+    if single:
+        year1_tasks.append(
+            RoadmapTask(text="Обсуди с наставником или родителями цели на следующий год", category="planning", priority=len(year1_tasks) + 1, path=None)
+        )
+
+    until_goal_tasks = [
+        RoadmapTask(text="Сформулируй свои интересы и цели в этой сфере в письменном виде", category="planning", priority=1, path=None),
+        RoadmapTask(text="Исследуй пути дальнейшего обучения и развития по выбранному направлению", category="planning", priority=2, path=None),
+        RoadmapTask(text="Обсуди планы с родителями, учителями или школьным куратором", category="planning", priority=3, path=None),
+        RoadmapTask(text="Составь план на следующий год с конкретными шагами и датами", category="planning", priority=4, path=None),
+    ]
+
+    milestones = [
         RoadmapMilestone(
             horizon="month_1",
-            title="Первый шаг: исследование возможностей",
-            outcome="Понимание своих интересов и первые пробы в разных направлениях.",
-            tasks=[
-                RoadmapTask(text=f"Узнай подробнее о направлении «{dir_names[0]}»: посмотри видео и статьи", category="explore", priority=1),
-                RoadmapTask(text=f"Изучи, чем занимаются люди в сфере «{dir_names[1] if len(dir_names) > 1 else dir_names[0]}»", category="explore", priority=2),
-                RoadmapTask(text="Найди один онлайн-курс по интересной теме и пройди первый урок", category="explore", priority=3),
-            ],
+            title="Первые пробы по ведущим направлениям",
+            outcome="Понимание своих интересов и первые впечатления от каждого предложенного направления.",
+            tasks=month1_tasks,
         ),
         RoadmapMilestone(
             horizon="months_3",
-            title="Попробовать что-то руками",
-            outcome="Первый практический опыт выполнения простых задач руками.",
-            tasks=[
-                RoadmapTask(text=f"Запишись на пробный урок или кружок по направлению «{dir_names[0]}»", category="explore", priority=1),
-                RoadmapTask(text="Посети одно тематическое мероприятие, фестиваль или открытый урок", category="explore", priority=2),
-                RoadmapTask(text="Поговори с 1–2 людьми, которые работают в понравившейся тебе сфере", category="explore", priority=3),
-            ],
+            title="Решение и начало веток",
+            outcome="Осознанное решение — одно направление или оба — и первый регулярный формат занятий.",
+            tasks=months3_tasks,
         ),
         RoadmapMilestone(
             horizon="months_6",
-            title="Углубиться в понравившееся",
-            outcome="Выбор 1–2 интересных направлений для регулярных занятий.",
-            tasks=[
-                RoadmapTask(text="Выбери 1–2 направления и занимайся ими регулярно (раз в неделю)", category="explore", priority=1),
-                RoadmapTask(text="Найди наставника или ментора в выбранной сфере", category="explore", priority=2),
-                RoadmapTask(text="Создай небольшой учебный проект или прими участие в конкурсе", category="explore", priority=3),
-            ],
+            title="Углубление в выбранное направление",
+            outcome="Регулярные занятия и первый самостоятельный проект в выбранном направлении.",
+            tasks=months6_tasks,
         ),
         RoadmapMilestone(
             horizon="year_1",
-            title="Сделать осознанный выбор",
-            outcome="Осознанный выбор главного направления развития.",
-            tasks=[
-                RoadmapTask(text="Определись с 1 основным направлением для дальнейшего развития", category="explore", priority=1),
-                RoadmapTask(text="Составь список навыков, которые хочешь развить в этой сфере", category="planning", priority=2),
-                RoadmapTask(text="Найди профессиональное сообщество онлайн или офлайн", category="explore", priority=3),
-            ],
+            title="Предъявление результата",
+            outcome="Первый публичный результат — участие в конкурсе, соревновании или показе.",
+            tasks=year1_tasks,
         ),
         RoadmapMilestone(
             horizon="until_goal",
             title="Сформировать чёткое видение будущего",
             outcome="Чёткое представление о будущей сфере и путях обучения.",
-            tasks=[
-                RoadmapTask(text="Сформулируй свои профессиональные интересы и цели в письменном виде", category="planning", priority=1),
-                RoadmapTask(text="Исследуй пути обучения и развития по выбранному направлению", category="planning", priority=2),
-                RoadmapTask(text="Обсуди планы с родителями, учителями или школьным куратором", category="planning", priority=3),
-            ],
+            tasks=until_goal_tasks,
         ),
     ]
+    return milestones, paths
 
 
 def _build_profession(directions: list[_DirectionSummary]) -> list[RoadmapMilestone]:
@@ -300,26 +397,30 @@ def build_roadmap(
     matched_directions: list[_DirectionSummary],
     gap_analysis: GapAnalysisResult | None = None,
     program: Program | None = None,
-) -> tuple[list[RoadmapMilestone], str]:
+) -> tuple[list[RoadmapMilestone], str, list[RecommendedPath]]:
     """Deterministic template roadmap — the fallback when the LLM is off or fails.
 
     The AI path lives in `_build_roadmap_ai`; `generate_roadmap` tries it first."""
     if goal == AssessmentGoal.university:
         milestones = _build_university(matched_directions, gap_analysis)
         focus = "Этот план сфокусирован на подготовке к поступлению в вуз: закрытии академических пробелов, сборе необходимых документов, подготовке к экзаменам и успешной подаче заявления."
-        return milestones, focus
+        return milestones, focus, []
     if goal == AssessmentGoal.profession:
         milestones = _build_profession(matched_directions)
         focus = "План ориентирован на развитие практических навыков в выбранной профессии, создание первого портфолио проектов и подготовку к старту в профессиональной среде."
-        return milestones, focus
+        return milestones, focus, []
     # explore and unsure ("Пока не знаю") share the exploratory roadmap
-    milestones = _build_explore(matched_directions)
-    focus = "Этот план поможет тебе исследовать различные направления, попробовать себя в новых ролях и сделать осознанный выбор будущей сферы деятельности без давления и спешки."
-    return milestones, focus
+    milestones, recommended_paths = _build_explore(matched_directions)
+    focus = "Судя по твоим ответам, у тебя есть явные интересы и сильные стороны — этот план поможет попробовать ведущие направления на практике и сделать осознанный выбор без давления и спешки."
+    return milestones, focus, recommended_paths
 
 
 _MIN_TASKS_PER_MILESTONE = 4
 _MAX_TASKS_PER_MILESTONE = 5
+
+
+_MAX_RECOMMENDED_PATHS = 2
+_EXPLORE_GOALS = {"explore", "unsure"}
 
 
 def _valid_milestones(milestones: list[RoadmapMilestone]) -> bool:
@@ -337,12 +438,47 @@ def _valid_milestones(milestones: list[RoadmapMilestone]) -> bool:
     )
 
 
+def _valid_explore_paths(
+    goal: str, milestones: list[RoadmapMilestone], recommended_paths: list[RecommendedPath]
+) -> bool:
+    """For goal in (explore, unsure): recommended_paths must name 1-2 grounded
+    leading directions, month_1 tasks must stay common (decision not made
+    yet), and later horizons must actually use the path(s) named — otherwise
+    recommended_paths is just decoration nobody's tasks refer to.
+
+    For every other goal (profession/university) this is a no-op: the goal
+    already has a single confirmed direction, branching doesn't apply."""
+    if goal not in _EXPLORE_GOALS:
+        return True
+    if not (1 <= len(recommended_paths) <= _MAX_RECOMMENDED_PATHS):
+        return False
+    if not all(p.why and p.future_benefit for p in recommended_paths):
+        return False
+    valid_keys = {p.key for p in recommended_paths}
+
+    by_horizon = {m.horizon: m for m in milestones}
+    month1 = by_horizon.get("month_1")
+    if month1 is not None and any(t.path is not None for t in month1.tasks):
+        return False
+
+    for horizon in ("months_3", "months_6"):
+        stage = by_horizon.get(horizon)
+        if stage is None:
+            continue
+        used_paths = {t.path for t in stage.tasks if t.path is not None}
+        if len(valid_keys) > 1 and not used_paths:
+            return False
+        if not used_paths.issubset(valid_keys):
+            return False
+    return True
+
+
 _MAX_ROADMAP_ATTEMPTS = 2  # 1 initial + 1 corrective retry
 
 
 async def _build_roadmap_ai(
     context: StudentContext | None,
-) -> tuple[list[RoadmapMilestone], str] | None:
+) -> tuple[list[RoadmapMilestone], str, list[RecommendedPath]] | None:
     """LLM roadmap. Returns None (→ template fallback) if disabled or anything fails.
 
     Retries once on an invariant miss (density/structure) before giving up —
@@ -366,12 +502,19 @@ async def _build_roadmap_ai(
                 RoadmapMilestone.model_validate(m) for m in raw.get("milestones", [])
             ]
             focus_summary = raw.get("focus_summary", "")
+            recommended_paths = [
+                RecommendedPath.model_validate(p) for p in raw.get("recommended_paths", [])
+            ]
         except (llm_client.LLMError, ValidationError, TypeError) as exc:
             logger.warning("AI roadmap failed, using template: %s", exc)
             return None
 
-        if _valid_milestones(milestones) and bool(focus_summary):
-            return milestones, focus_summary
+        if (
+            _valid_milestones(milestones)
+            and bool(focus_summary)
+            and _valid_explore_paths(context.goal, milestones, recommended_paths)
+        ):
+            return milestones, focus_summary, recommended_paths
 
         logger.warning(
             "AI roadmap failed invariant check (attempt %s/%s)",
@@ -442,10 +585,31 @@ async def generate_roadmap(
     # Try the LLM first; fall back to deterministic templates on any failure.
     ai_res = await _build_roadmap_ai(context)
     if ai_res is not None:
-        milestones, focus_summary = ai_res
+        milestones, focus_summary, recommended_paths = ai_res
     else:
-        milestones, focus_summary = build_roadmap(profile, effective_goal, directions, gap, program)
+        milestones, focus_summary, recommended_paths = build_roadmap(
+            profile, effective_goal, directions, gap, program
+        )
     milestones_data = [m.model_dump() for m in milestones]
+    recommended_paths_data = [p.model_dump() for p in recommended_paths]
+
+    # Deterministic, non-LLM catalogue match — see app/data/resource_catalog.py.
+    # Prefer the direction the student actually confirmed/selected (set once
+    # a direction roadmap is generated, see _upsert_direction_roadmap) over
+    # the raw #1 RIASEC match: for profession/university goals `directions[0]`
+    # is just the top test-score match and can easily be a different career
+    # than the one the roadmap is actually about (e.g. "Финансовый аналитик"
+    # outscoring the nursing direction the student picked) — the confirmed
+    # slug is a much stronger signal when it exists.
+    match_direction = next(
+        (d for d in directions if d.slug == assessment.selected_direction_slug), None
+    ) or (directions[0] if directions else None)
+    category = (
+        resource_catalog.match_category(match_direction.name, " ".join(match_direction.skills_needed))
+        if match_direction
+        else None
+    )
+    additional_resources_data = resource_catalog.resources_for_category(category)
 
     # Upsert roadmap in DB
     existing_row = await db.execute(select(Roadmap).where(Roadmap.assessment_id == assessment_id))
@@ -454,6 +618,8 @@ async def generate_roadmap(
         existing.goal = effective_goal
         existing.focus_summary = focus_summary
         existing.milestones = milestones_data
+        existing.recommended_paths = recommended_paths_data
+        existing.additional_resources = additional_resources_data
         roadmap = existing
     else:
         roadmap = Roadmap(
@@ -461,6 +627,8 @@ async def generate_roadmap(
             goal=effective_goal,
             focus_summary=focus_summary,
             milestones=milestones_data,
+            recommended_paths=recommended_paths_data,
+            additional_resources=additional_resources_data,
         )
         db.add(roadmap)
 
@@ -524,88 +692,19 @@ def direction_cache_key(
     24h TTL would silently return the previous program's cached plan. Plain
     GET (`get_direction_roadmap`) intentionally omits it — it just reads
     whatever the single upserted DB row for this direction currently is."""
+    prefix = assessment_shared.DIRECTION_ROADMAP_CACHE_KEY_PREFIX
     if program_id is None:
-        return f"droadmap:{assessment_id}:{slug}"
-    return f"droadmap:{assessment_id}:{slug}:{program_id}"
+        return f"{prefix}:{assessment_id}:{slug}"
+    return f"{prefix}:{assessment_id}:{slug}:{program_id}"
 
 
 # ─── University facts (backend-only; goal == "university" only) ─────────────────
-
-# Program.requirements keys as actually seeded. scripts/seed_universities.py
-# (12 hand-picked universities with a richer structured shape: min_gpa/exams/
-# min_ielts/etc.) was removed 2026-08-13 — university-data/*.py via
-# scripts/seed_kz_universities.py is now the single source of truth, and it
-# seeds a sparser {"notes": [...]} shape with empty deadlines/grants. This
-# mapping already treats missing keys as "no data" (None), never "not
-# required" (False), so the sparser shape simply yields fewer populated
-# fields below, not an error.
-_DOCUMENT_LABELS: dict[str, str] = {
-    "needs_essay": "Мотивационное эссе",
-    "needs_recommendations": "Рекомендательные письма",
-    "needs_interview": "Собеседование",
-}
-
-
-def _admission_scores_2026_brief(requirements: dict) -> list[str]:
-    """Human-readable lines from the 2026-2027 grant-competition scores
-    (scripts/apply_grant_admission_data_2026.py) — real min/max scores that
-    won a grant this admission cycle, per quota/specialty. Was previously
-    dropped entirely: `_map_program_requirement` only ever read the older
-    `exams`/`min_ielts`/deadlines/grants shape."""
-    entries = requirements.get("admission_scores_2026") or []
-    briefs = []
-    for e in entries:
-        specialty = e.get("specialty_name", "")
-        quota = e.get("quota", "")
-        min_score = e.get("min_score")
-        max_score = e.get("max_score")
-        year = e.get("year", "")
-        if min_score is None:
-            continue
-        score_range = f"{min_score}–{max_score}" if max_score is not None else str(min_score)
-        briefs.append(f"{specialty} ({quota}, {year}): проходной балл {score_range}")
-    return briefs
-
-
-def _map_program_requirement(program: Program, university: University) -> UniversityRequirement:
-    """Pure mapping, no I/O — kept separate from the query so it's unit-testable
-    without a database. `None` means "no data", never "not required": e.g.
-    `needs_portfolio: false` in the seed data must map to `portfolio_needed=False`,
-    not to `None` — `dict.get` already gives us exactly that distinction."""
-    requirements: dict = program.requirements or {}
-    deadlines: dict = program.deadlines or {}
-    grants_raw: list = program.grants or []
-
-    min_ielts = requirements.get("min_ielts")
-    language_level = f"IELTS {min_ielts}" if min_ielts is not None else None
-
-    required_documents: list[str] | None = None
-    if any(key in requirements for key in _DOCUMENT_LABELS):
-        required_documents = [
-            label for key, label in _DOCUMENT_LABELS.items() if requirements.get(key)
-        ]
-
-    return UniversityRequirement(
-        program_name=program.name,
-        university_name=university.name,
-        city=university.city,
-        exams=list(requirements.get("exams") or []),
-        application_deadline=deadlines.get("application_close"),
-        grants=[
-            ProgramGrant(
-                name=g.get("name", ""),
-                amount=g.get("amount"),
-                conditions=g.get("conditions"),
-            )
-            for g in grants_raw
-        ],
-        language_level=language_level,
-        portfolio_needed=requirements.get("needs_portfolio"),
-        required_documents=required_documents,
-        min_ent_threshold=requirements.get("min_ent_threshold"),
-        admission_scores_2026=_admission_scores_2026_brief(requirements),
-        notes=list(requirements.get("notes") or []),
-    )
+#
+# The requirements->UniversityRequirement mapping itself lives in
+# app/services/university_requirements.py — shared with the plain
+# program-detail screen (ProgramDetail.requirements_summary) so both surfaces
+# render the exact same clean facts instead of each parsing the raw JSON its
+# own way (see that module's docstring for the two seed-source shapes).
 
 
 async def _program_and_university(
@@ -625,19 +724,22 @@ async def _university_requirements_for(slug: str, db: AsyncSession) -> list[Univ
     """Real Program/University facts for this direction — never asked of the LLM.
     Only called for goal == "university"; every other goal gets [].
 
-    Matches via `Program.profession_slugs` (direct hand-mapped list of
-    `Direction.slug` values a program prepares someone for) — the old
-    `Program.direction_slug` category-bridge field was dropped in migration
-    0033 for producing false matches; see that migration's docstring and
-    `app/services/university_service.py` for the same containment pattern."""
+    Matches via the `program_directions` M2M table (direct hand-mapped link
+    between a Program and the Direction(s) it prepares someone for) — the
+    old `Program.direction_slug` category-bridge field was dropped in
+    migration 0033 for producing false matches, and the JSONB
+    `profession_slugs` array that replaced it was itself later replaced by
+    a real FK-backed join table (migration 5f7925c25fbb); see
+    `app/services/university_service.py` for the same join pattern."""
     rows = (
         await db.execute(
             select(Program, University)
             .join(University, Program.university_id == University.id)
-            .where(Program.profession_slugs.contains([slug]))
+            .join(Program.directions)
+            .where(Direction.slug == slug)
         )
     ).all()
-    return [_map_program_requirement(program, university) for program, university in rows]
+    return [ureq.map_program_requirement(program, university) for program, university in rows]
 
 
 _MIN_STEPS_PER_STAGE = 3
@@ -661,6 +763,13 @@ def _valid_stages(stages: list[DirectionStage]) -> bool:
         if not tracks & {"profile", "integration"}:
             return False
         if not tracks & {"growth", "integration"}:
+            return False
+        # Every stage must break subjects down into concrete, grade-tied topics
+        # (not just the root-level subjects_to_focus name list) — this is the
+        # whole point of the subject_focus field, see app/schemas/roadmap.py.
+        if not stage.subject_focus:
+            return False
+        if any(not item.topics for item in stage.subject_focus):
             return False
     return True
 
@@ -828,7 +937,7 @@ async def generate_direction_roadmap(
     if plan is None:
         raise _AI_UNAVAILABLE
 
-    roadmap = await _upsert_direction_roadmap(assessment_id, slug, direction.name, plan, db)
+    roadmap = await _upsert_direction_roadmap(assessment_id, slug, direction, plan, db)
     assessment.selected_direction_slug = slug
     from app.services.goal_overlay_service import invalidate_goal_overlay_cache
     await invalidate_goal_overlay_cache(assessment_id, db)
@@ -913,14 +1022,14 @@ async def generate_direction_roadmap_for_program(
     artifacts = list(artifacts_row.scalars().all())
     scores = await assessment_service.get_total_scores(assessment_id, db)
     gap = analyze_gap(profile, artifacts, scores, program)
-    university_requirements = [_map_program_requirement(program, university)]
+    university_requirements = [ureq.map_program_requirement(program, university)]
 
     plan = await _generate_plan(context, direction, university_requirements, gap=gap)
     if plan is None:
         raise _AI_UNAVAILABLE
 
     roadmap = await _upsert_direction_roadmap(
-        assessment_id, slug, direction.name, plan, db, program_id=program_id
+        assessment_id, slug, direction, plan, db, program_id=program_id
     )
     assessment.selected_direction_slug = slug
     from app.services.goal_overlay_service import invalidate_goal_overlay_cache
@@ -936,12 +1045,13 @@ async def generate_direction_roadmap_for_program(
 async def _upsert_direction_roadmap(
     assessment_id: uuid.UUID,
     slug: str,
-    direction_name: str,
+    direction: Direction,
     plan: "_DirectionPlan",
     db: AsyncSession,
     *,
     program_id: uuid.UUID | None = None,
 ) -> DirectionRoadmap:
+    direction_name = direction.name
     existing = (
         await db.execute(
             select(DirectionRoadmap).where(
@@ -961,6 +1071,15 @@ async def _upsert_direction_roadmap(
     else:
         roadmap = existing
 
+    # Deterministic, non-LLM catalogue match off the direction's own fields —
+    # see app/data/resource_catalog.py.
+    category = resource_catalog.match_category(
+        direction.name,
+        " ".join(direction.skills_needed or []),
+        " ".join(direction.subjects_to_develop or []),
+        direction.holland_code,
+    )
+
     roadmap.direction_name = direction_name
     roadmap.target = plan.target.model_dump()
     roadmap.growth_focus = plan.growth_focus.model_dump()
@@ -969,6 +1088,7 @@ async def _upsert_direction_roadmap(
     roadmap.subjects_to_focus = plan.subjects_to_focus
     roadmap.university_track = plan.university_track.model_dump()
     roadmap.university_requirements = [r.model_dump() for r in plan.university_requirements]
+    roadmap.additional_resources = resource_catalog.resources_for_category(category)
     # Always set explicitly (including back to None) — a row previously
     # generated by-program and later regenerated via the plain slug path
     # must not keep pointing at a program whose facts are no longer what

@@ -18,6 +18,20 @@ class RoadmapResource(BaseModel):
     url: str | None = None
 
 
+class RecommendedPath(BaseModel):
+    """A concrete leading direction offered to an explore/unsure student.
+
+    Goal roadmaps for goal in (explore, unsure) name 1-2 of these instead of
+    listing parallel unrelated tries; tasks from months_3 onward tag which
+    path they belong to via `RoadmapTask.path`. Empty for profession/university
+    goals, which already have a single confirmed direction."""
+
+    key: str                # "A" / "B" — referenced by RoadmapTask.path
+    label: str               # e.g. "Робототехника"
+    why: str                 # why this fits *this* student, grounded in their profile
+    future_benefit: str      # what it concretely leads to later
+
+
 class RoadmapTask(BaseModel):
     text: str
     # What to actually do, where to start, and how to know it's done. The student
@@ -27,6 +41,9 @@ class RoadmapTask(BaseModel):
     category: str
     priority: int
     resources: list[RoadmapResource] = []
+    # Which RecommendedPath.key this task belongs to. None = shared/common task
+    # (always true for month_1, and for goals that don't branch).
+    path: str | None = None
 
 
 class RoadmapMilestone(BaseModel):
@@ -42,6 +59,11 @@ class RoadmapResponse(BaseModel):
     goal: str
     milestones: list[RoadmapMilestone]
     focus_summary: str | None = None
+    recommended_paths: list[RecommendedPath] = []
+    # Hand-verified catalogue entries (app/data/resource_catalog.py), matched
+    # deterministically off the top matched direction — never LLM-picked.
+    # Shown as a single "Дополнительный источник" block at the end.
+    additional_resources: list[RoadmapResource] = []
 
     model_config = {"from_attributes": True}
 
@@ -62,6 +84,19 @@ class RoadmapStep(BaseModel):
     resources: list[RoadmapResource] = []
 
 
+class SubjectFocusItem(BaseModel):
+    """School-subject development for one stage, tied to the student's grade.
+
+    months_3 topics are always base/gap-closing; months_6/9/12 topics track
+    the student's actual grade going forward and must not repeat across
+    stages. Sourced from the LLM's own curriculum knowledge — no curriculum
+    database backs this."""
+
+    subject: str             # e.g. "математика"
+    topics: list[str]        # concrete topic names, not the whole subject
+    why: str = ""             # why this topic matters for this stage/direction
+
+
 class DirectionStage(BaseModel):
     horizon: str
     title: str
@@ -69,6 +104,7 @@ class DirectionStage(BaseModel):
     # towards the target role. Makes the plan explain itself.
     outcome: str = ""
     steps: list[RoadmapStep] = []
+    subject_focus: list[SubjectFocusItem] = []
     # Set from months_9 on, where the profile and growth work converge.
     integration_project: str | None = None
 
@@ -112,21 +148,40 @@ class UniversityRequirement(BaseModel):
     source (scripts/apply_grant_admission_data_2026.py): a program gets EITHER
     a `min_ent_threshold` (no 2026-2027 grant-competition data exists) OR
     `admission_scores_2026` entries (this year's real grant-winning scores),
-    rarely both. `notes` (subject-pair hints per specialty) can appear either
-    way. All three were previously silently dropped by `_map_program_requirement`
+    rarely both. Both represent the state grant-competition eligibility bar
+    (MES RK reference data), not a generic "minimum to enrol at all" —
+    labelled accordingly in the UI, not as a plain admission minimum.
+    `notes` (subject-pair hints per specialty) can appear either way. All
+    three were previously silently dropped by `_map_program_requirement`
     — programs seeded only with the newer shape reached the LLM with an
     almost-empty requirement block despite having real admission data."""
 
     program_name: str
     university_name: str
     city: str
+    country: str
+    website: str | None = None
+    # Actual language of instruction (Program.language, e.g. "Английский,
+    # немецкий") — always set. Distinct from `language_level` below (a
+    # required IELTS/TOEFL band), which is sparse/optional.
+    program_language: str
     exams: list[str]
+    # Set only when `exams` came back empty AND a general university note
+    # keyword-matched this program's own name (see
+    # university_requirements._note_hint_for_program) — an inferred hint, not
+    # a confirmed per-program fact, and the frontend must label it as such.
+    exam_hint_from_notes: str | None = None
     application_deadline: str | None = None
     grants: list[ProgramGrant] = []
+    # Required IELTS/TOEFL band (requirements["min_ielts"]) — sparse/optional,
+    # NOT the language of instruction (see `program_language` above).
     language_level: str | None = None
     portfolio_needed: bool | None = None
     required_documents: list[str] | None = None
     min_ent_threshold: int | None = None
+    min_gpa: float | None = None
+    min_sat: int | None = None
+    extracurriculars: list[str] = []
     admission_scores_2026: list[str] = []
     notes: list[str] = []
 
@@ -143,6 +198,10 @@ class DirectionRoadmapResponse(BaseModel):
     subjects_to_focus: list[str]
     university_track: UniversityTrack
     university_requirements: list[UniversityRequirement] = []
+    # Hand-verified catalogue entries (app/data/resource_catalog.py), matched
+    # deterministically off this direction's own name/skills/subjects — never
+    # LLM-picked. Shown as a single "Дополнительный источник" block at the end.
+    additional_resources: list[RoadmapResource] = []
     # Set only when this plan was built from a specific chosen Program
     # (goal="university" generate-by-program path). None otherwise.
     program_id: uuid.UUID | None = None

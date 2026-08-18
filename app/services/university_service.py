@@ -5,8 +5,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.models.direction import Direction
 from app.models.program import Program
 from app.models.university import University
+from app.schemas.university import ProgramDetail, UniversityBrief
+from app.services import university_requirements as ureq
 
 
 async def search_programs(
@@ -19,7 +22,8 @@ async def search_programs(
         select(Program)
         .options(selectinload(Program.university))
         .join(Program.university)
-        .where(Program.profession_slugs.contains([profession_slug]))
+        .join(Program.directions)
+        .where(Direction.slug == profession_slug)
     )
     if country is not None:
         query = query.where(University.country.ilike(country))
@@ -38,3 +42,29 @@ async def get_program_by_id(db: AsyncSession, program_id: uuid.UUID) -> Program:
     if program is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Program not found")
     return program
+
+
+async def get_program_detail(db: AsyncSession, program_id: uuid.UUID) -> ProgramDetail:
+    """`ProgramDetail`, ready for the client — `requirements_summary` is the
+    same clean, typed mapping the direction-roadmap prompt uses
+    (app/services/university_requirements.py), not a re-derivation. Separate
+    from `get_program_by_id` because that one returns the raw ORM `Program`
+    for callers that need it as-is (gap-analysis)."""
+    program = await get_program_by_id(db, program_id)
+    return ProgramDetail(
+        id=program.id,
+        name=program.name,
+        profession_slugs=program.profession_slugs,
+        language=program.language,
+        cost_per_year=program.cost_per_year,
+        cost_label=program.cost_label,
+        description=program.description,
+        who_its_for=program.who_its_for,
+        career_options=program.career_options,
+        requirements=program.requirements,
+        deadlines=program.deadlines,
+        grants=program.grants,
+        created_at=program.created_at,
+        university=UniversityBrief.model_validate(program.university),
+        requirements_summary=ureq.map_program_requirement(program, program.university),
+    )

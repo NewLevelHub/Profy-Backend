@@ -50,6 +50,8 @@ async def list_universities(
                 city=u.city,
                 country=u.country,
                 ranking=u.ranking,
+                uniranks_kz_rank=u.uniranks_kz_rank,
+                uniranks_note=u.uniranks_note,
                 updated_at=u.updated_at,
                 programs_count=count,
             )
