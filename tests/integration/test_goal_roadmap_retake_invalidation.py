@@ -62,10 +62,11 @@ async def test_invalidate_goal_roadmap_clears_every_cached_program_id_variant(
     assessment = await _make_assessment(db_session)
     redis = assessment_shared.get_redis()
 
-    no_program_key = f"roadmap:{assessment.id}:none"
-    program_a_key = f"roadmap:{assessment.id}:{uuid.uuid4()}"
-    program_b_key = f"roadmap:{assessment.id}:{uuid.uuid4()}"
-    other_assessment_key = f"roadmap:{uuid.uuid4()}:none"
+    prefix = assessment_shared.ROADMAP_CACHE_KEY_PREFIX
+    no_program_key = f"{prefix}:{assessment.id}:none"
+    program_a_key = f"{prefix}:{assessment.id}:{uuid.uuid4()}"
+    program_b_key = f"{prefix}:{assessment.id}:{uuid.uuid4()}"
+    other_assessment_key = f"{prefix}:{uuid.uuid4()}:none"
 
     for key in (no_program_key, program_a_key, program_b_key, other_assessment_key):
         await redis.set(key, "{}")
@@ -92,6 +93,7 @@ async def test_cache_key_is_plain_and_scannable():
 
     assessment_id = uuid.uuid4()
     program_id = uuid.uuid4()
+    prefix = assessment_shared.ROADMAP_CACHE_KEY_PREFIX
 
-    assert _cache_key(assessment_id, None) == f"roadmap:{assessment_id}:none"
-    assert _cache_key(assessment_id, program_id) == f"roadmap:{assessment_id}:{program_id}"
+    assert _cache_key(assessment_id, None) == f"{prefix}:{assessment_id}:none"
+    assert _cache_key(assessment_id, program_id) == f"{prefix}:{assessment_id}:{program_id}"

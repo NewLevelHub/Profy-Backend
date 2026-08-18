@@ -76,6 +76,19 @@ def test_schema_is_identical_regardless_of_goal():
     }
 
 
+def test_stage_schema_requires_subject_focus():
+    stage_schema = direction_prompt._STAGE_SCHEMA
+    assert "subject_focus" in stage_schema["required"]
+    subject_item_schema = stage_schema["properties"]["subject_focus"]["items"]
+    assert set(subject_item_schema["required"]) == {"subject", "topics", "why"}
+
+
+def test_system_prompt_ties_subject_focus_to_grade_and_bases_month3_in_gaps():
+    system = direction_prompt._SYSTEM_PROMPT
+    assert "subject_focus" in system
+    assert "months_3 — ВСЕГДА база" in system
+
+
 def test_university_requirements_block_omitted_when_empty():
     _, user_message = direction_prompt.build_messages(_context("university"), _DIRECTION, [])
     assert "ДАННЫЕ ПО ВУЗАМ" not in user_message["content"]

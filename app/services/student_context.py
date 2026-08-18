@@ -23,6 +23,7 @@ from app.schemas.student_context import (
     ContextInquiry,
     StudentContext,
 )
+from app.services import assessment_shared
 
 # Likert index (0-4) at or below which an answer reads as "not me" — and at or
 # above which it reads as "that's me".
@@ -123,6 +124,13 @@ async def build_student_context(
             )
         ).scalar_one_or_none()
 
+    # ТЗ §10.3 soft downgrade (middle + "university" -> "profession") must
+    # hold for generation, not just the goal-overlay banner — see
+    # `assessment_shared.get_effective_goal`. Every prompt reading
+    # `StudentContext.goal` (goal-roadmap, direction-roadmap, direction
+    # inquiry) sees the effective goal, never the raw stored one.
+    effective_goal = assessment_shared.get_effective_goal(profile.age_group, assessment.goal)
+
     return StudentContext(
         name=profile.name,
         age=profile.age,
@@ -136,7 +144,7 @@ async def build_student_context(
         subjects_easy=list(profile.subjects_easy or []),
         subjects_hard=list(profile.subjects_hard or []),
         artifacts=artifacts,
-        goal=assessment.goal.value,
+        goal=effective_goal.value,
         summary=analysis.summary if analysis else "",
         profile=dict(analysis.profile) if analysis else {},
         code=list(analysis.code) if analysis else [],

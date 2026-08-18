@@ -1,0 +1,2766 @@
+[
+  {
+    "university_slug": "australian-national-university",
+    "university_name": "Australian National University",
+    "program_ids": [
+      "37326945-83b8-4a4f-8a3c-5d4576ed05bf",
+      "dcdf2460-4a64-45da-9f6d-29e98ec60f1a",
+      "dc8f216e-4310-4ea0-9bf8-e2903dc558b2",
+      "81809f4c-1cf8-4d91-a8d4-7c3e49404ba7",
+      "aba22994-1784-46f4-b9d5-9c3024feb5a6",
+      "b8cbc6e0-4a39-4b4c-9e9f-38156267d3c3"
+    ],
+    "notes_text": "Диплом бакалавра, академическая справка, мотивационное письмо, IELTS от 6.5–7.0 или эквивалент, для отдельных магистерских программ — опыт работы",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "berklee-college-of-music",
+    "university_name": "Berklee College of Music",
+    "program_ids": [
+      "9f41ee41-b1bd-4bd3-a179-c1ff1762f257",
+      "bb3094da-3b91-43ff-9b25-ad798b87024a",
+      "963b649e-5e9f-488a-9085-0a2ea42de0c0",
+      "423ebc68-ba92-4dca-beb1-05ee185928fd",
+      "c739ca38-9d90-4167-b603-8fa7fd8420c2",
+      "9e9c104c-fa7d-4911-ac3e-08c484dc6560",
+      "701a2b30-e4b4-46e5-9f44-fb878bc03687",
+      "051f6dd6-2062-4fc1-a97f-f31423db0f56",
+      "0318a0d3-fbf5-4add-87db-3b0dd16520b5",
+      "c02c409d-7a5b-4d92-bca6-64588965ffa2",
+      "02c0fd95-f7e2-44d0-be6e-49bfe793f9f4",
+      "4ab87de7-649f-4fba-8a3a-34a765a606e5",
+      "9afbec35-3acd-4729-9fe0-4380c0c92a5d",
+      "ff79d415-41b4-4e71-8e54-d754cd91fb27"
+    ],
+    "notes_text": "живое прослушивание и собеседование (очно или по видеосвязи), аттестат о среднем образовании, подтверждение владения английским языком (TOEFL/IELTS), портфолио музыкальных работ",
+    "exams": [],
+    "needs_portfolio": true,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": true,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "bocconi-university",
+    "university_name": "Bocconi University",
+    "program_ids": [
+      "ffc78fb5-5caa-4958-9ca8-0c38aac3c522",
+      "2ab089ba-57a8-4697-be6a-824728e9a6f2",
+      "7f3bef67-9079-4095-b35a-8b778e654937",
+      "bd6b0ba7-bfb9-418f-8e52-74a74ef4bdd9",
+      "54d62955-c5ab-422a-bbd4-361bfea47746"
+    ],
+    "notes_text": "диплом бакалавра, вступительный тест Bocconi (Bocconi Test/GMAT), английский язык не ниже B2/C1, эссе и резюме",
+    "exams": [
+      "Bocconi Test",
+      "GMAT"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "bocconi-university",
+    "university_name": "Bocconi University",
+    "program_ids": [
+      "ef3dd8ef-88bb-4c48-bfac-0b2a806734f6",
+      "c4c708e4-f3d4-4362-9cdf-a3a1348f63fa",
+      "40c7e1e5-aa6c-40a9-872b-1dc9550da8c1",
+      "ef366680-5f3c-47c0-8a6e-155c3a1c8fa7",
+      "8c7361e7-a890-4a05-9083-df950836d2e8",
+      "0bfa1707-8824-450a-91a8-f574135c20b2",
+      "702dbdb3-47c2-42d2-9c98-a615fa9e950f",
+      "7f86b1f0-aa00-4c0a-8b5b-0d8cb1492370"
+    ],
+    "notes_text": "Диплом с отличными оценками; сдача сложнейшего внутреннего экзамена Bocconi Test (или высокие баллы SAT/ACT); IELTS 6.0+.",
+    "exams": [
+      "Bocconi Test",
+      "SAT",
+      "ACT",
+      "IELTS"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "carnegie-mellon-university",
+    "university_name": "Carnegie Mellon University (CMU)",
+    "program_ids": [
+      "7233a21b-d0c3-4ff4-aeab-6f187783cf02",
+      "510e1fa4-8132-4416-95a5-f3d96a05dbcd",
+      "0b554ba9-037e-4936-b182-5e9a16de5dea",
+      "bbf95898-b59d-4b6e-b065-d5cca98bd5ae",
+      "bbcee91e-75aa-49d2-bf60-f9c6008b8ce1",
+      "7d3c8bd3-04dd-4d21-8a1f-8dbaaa75fa7a",
+      "b2651595-a565-40a2-93c7-447df413f21f"
+    ],
+    "notes_text": "Аттестат о среднем образовании с высоким средним баллом, результаты SAT/ACT, TOEFL iBT от 102 или IELTS от 7.5, эссе, рекомендательные письма; для инженерных и CS-программ дополнительно учитываются олимпиады по математике и информатике",
+    "exams": [
+      "SAT",
+      "ACT",
+      "TOEFL iBT",
+      "IELTS"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "charles-university-prague",
+    "university_name": "Charles University",
+    "program_ids": [
+      "eee135e2-e443-432f-8cbb-da0e176d823e",
+      "6195935c-9d25-417c-9faf-f8e98898d948",
+      "2007f46a-e35a-4455-a07a-04d16c05a000",
+      "9849b166-b13b-4593-bd91-3afbe5e7896a",
+      "0ce234fe-8253-4376-ba6a-1e3514f5817b",
+      "ddc1fd7a-53e1-4df8-8eeb-884e715b420d",
+      "28ccf355-c0be-4405-8c90-c49835eea9c5",
+      "378e511b-5fe5-4ae3-99f5-c0f59da7eb0c",
+      "f7849fe5-9c8c-41bf-9f3d-d3eaee229c32",
+      "ae74ce48-4bdf-4454-a10c-cf70faf35cba",
+      "a0c212ce-3662-4b1c-91fc-dc63fda09865"
+    ],
+    "notes_text": "Нострификация школьного аттестата; языковой сертификат (B2 чешский или IELTS 6.5+); письменные внутренние экзамены по профилю.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "charles-university-prague",
+    "university_name": "Charles University",
+    "program_ids": [
+      "82d87e0c-27e8-4c3e-803f-d669a40c3e87",
+      "d750f4fe-4cf2-47bc-87f1-f1ec5b162882",
+      "0e179bf5-394d-4560-9c5c-ff57d95bfc78",
+      "448a960d-5057-4298-b78c-a965a5d88790",
+      "455e7866-ad28-4807-b25e-2d31bda385a0"
+    ],
+    "notes_text": "Нострификация аттестата. Сертификат B2 (чешский) или IELTS 6.5+. Успешная сдача профильных письменных экзаменов по наукам.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "charles-university-prague",
+    "university_name": "Charles University",
+    "program_ids": [
+      "096a7991-e023-4213-862f-d88b34b439cb",
+      "d08f3ff0-59db-47e8-8917-8b89bce32820",
+      "0acef590-98c4-47e5-8e41-e538dae06f71",
+      "51ab4713-d7fd-4aa8-ba24-57141a1ef2f1",
+      "652d6df3-a58d-4320-b3c7-6fed983202c8",
+      "3d4367aa-32c5-4c5e-a4bb-40e4248f8045",
+      "071e42ca-3663-46ef-8b6e-5e7ca443604b"
+    ],
+    "notes_text": "полное среднее образование, вступительные письменные экзамены по биологии, химии и физике, второй этап — устное собеседование (MMI); сертификат английского языка (IELTS/TOEFL) для англоязычной программы",
+    "exams": [
+      "Биология",
+      "Химия",
+      "Физика"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": true,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "china-agricultural-university",
+    "university_name": "China Agricultural University",
+    "program_ids": [
+      "c4921b3c-08c1-4681-904e-cf58ac885042",
+      "2d08ac8d-2361-48dd-abc0-0362e1d49dcc",
+      "a8c0c368-d3e3-4071-a245-71725f21d3e5",
+      "3ed98ea9-5c1b-4c26-a380-a1ccd74516cd",
+      "0110d719-a98b-43b8-a5d7-9f5b338625e7",
+      "9e96b7c3-a1bf-43ea-ae79-0917baa30770",
+      "bca96bd5-cf6f-4290-ac8a-152fd47cbf18"
+    ],
+    "notes_text": "диплом бакалавра, английский язык — IELTS от 6.0 (для программ на английском), рекомендательные письма, для отдельных программ — вступительные экзамены университета",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "china-university-of-petroleum-beijing",
+    "university_name": "China University of Petroleum, Beijing",
+    "program_ids": [
+      "13ff4831-f89d-4b89-a782-70e6ff80f01e",
+      "eb4713fa-fff5-47a7-b658-80409d90ab13",
+      "dcdc7186-d32b-430c-b549-be016f6e205f",
+      "fa54ae14-208d-4d8b-8e6b-537ee00b3106",
+      "4481e902-220e-47f1-b8b9-e73b132b0345"
+    ],
+    "notes_text": "аттестат о среднем образовании, сертификат китайского языка (HSK) для программ на китайском либо английского языка (IELTS/TOEFL) для программ на английском, вступительные экзамены по профильным предметам",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "colorado-school-of-mines",
+    "university_name": "Colorado School of Mines",
+    "program_ids": [
+      "387a4124-9ade-4991-9d5a-58891a4c4545",
+      "a394ddc3-3c21-426c-87c7-bf1ebdd4ea4b",
+      "99da1b5d-100b-4664-abc8-48f08aefface",
+      "798c65e5-e32c-4e1e-aee8-cc5a1de997a9",
+      "a8636af2-5be5-4d0e-aebf-0cd221803be3"
+    ],
+    "notes_text": "Высокий GPA, отличные знания математики и физики (AP/IB уровни). Высокие результаты SAT или ACT; IELTS 6.5+ / TOEFL 79+.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "columbia-journalism-school",
+    "university_name": "Columbia University Graduate School of Journalism",
+    "program_ids": [
+      "5a71f5f5-af8a-43f8-bce5-c38895c0c993",
+      "da2ec2d2-5f20-4a7c-9ae0-c70ce894fce8",
+      "2aa12409-e527-4039-b7ff-9867d66fac59",
+      "39e1f549-07a3-4614-9b95-d9ed40df84e0",
+      "f3bc34e4-ce3d-4a2c-9a13-e6b2ed33a44f",
+      "e825ba6d-916d-4d52-9128-58623815851d"
+    ],
+    "notes_text": "Диплом бакалавра, портфолио текстов/публикаций, эссе, рекомендательные письма, TOEFL/IELTS для иностранных абитуриентов, собеседование",
+    "exams": [],
+    "needs_portfolio": true,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": true,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "copenhagen-business-school",
+    "university_name": "Copenhagen Business School (CBS)",
+    "program_ids": [
+      "dd2c44a3-a3f1-471e-849d-a5ddadf84d7a",
+      "1f922af6-2231-4fbd-ad8a-8c7d0dda6c82",
+      "c9fec32f-ac6f-458a-b4e8-f5141b99410b",
+      "89254723-3f0a-48cc-a068-acfb14b9650c",
+      "7b065cf7-6ad5-4672-98d1-c4d92f4a5cbc",
+      "c35a8208-abd5-44f0-a973-fc8ca9796b04",
+      "f1f26a61-b203-472c-a411-6adce8fec672"
+    ],
+    "notes_text": "Отличные оценки в дипломе об окончании средней школы (особый упор на математику). Сертификат IELTS 7.0+ (или эквивалент TOEFL).",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "cornell-ilr-school",
+    "university_name": "Cornell University — ILR School (School of Industrial and Labor Relations)",
+    "program_ids": [
+      "fa11193e-9f7b-408d-8ab5-3829b46017d1",
+      "658173c1-f89a-495b-b984-4773039f2d8f",
+      "9b1fabd0-b951-4fc7-8cbc-14d1cabd497f",
+      "b0a6d1e5-4edb-4c95-bbf3-70682800e526",
+      "250fa812-38f2-4d1d-95bf-dedaad79b3d6"
+    ],
+    "notes_text": "диплом бакалавра, эссе, рекомендательные письма, резюме, TOEFL/IELTS для не носителей языка, для отдельных программ — опыт работы",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "cranfield-university",
+    "university_name": "Cranfield University",
+    "program_ids": [
+      "91d3fd4e-c812-48f8-9047-8bb365be2145",
+      "8d455c74-e917-4cf9-a003-1779048df039",
+      "861ec40e-ce3b-4b6c-b68b-bd905e9dacfe",
+      "f0e59456-0e5c-4475-9dd8-55491b61beb6"
+    ],
+    "notes_text": "Диплом бакалавра с высоким средним баллом в смежной области. Сертификат IELTS 6.5+ (минимум 6.0 в каждом компоненте).",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "tu-delft",
+    "university_name": "Delft University of Technology (TU Delft)",
+    "program_ids": [
+      "458f1928-4a09-4733-880a-3a9f79a8f4cd",
+      "bc4bee98-609c-4b60-9079-446f94789560",
+      "796c5995-6a09-4e78-9677-0f2bfafc6f67",
+      "4dac3d0a-e122-4e0e-9323-8d7d2e33c216",
+      "ba305664-8c81-4aa6-887f-9d65f46f70b5"
+    ],
+    "notes_text": "Эквивалент диплома VWO с высочайшими оценками по профильной математике и физике. Сертификаты IELTS 6.5+ / TOEFL 90+.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "tu-delft",
+    "university_name": "Delft University of Technology (TU Delft)",
+    "program_ids": [
+      "50ae5421-6893-4b3e-9488-88146592e195",
+      "0388f412-57fd-49e3-9117-9d69d142259d",
+      "2eb88a62-d2ad-4a24-952d-c2bf0cf96e61",
+      "b5682376-acec-426e-9ad0-993e920e95f0",
+      "2c77a2e2-dfd5-45bd-bb01-852126c790e9"
+    ],
+    "notes_text": "диплом бакалавра по смежной инженерной или естественнонаучной специальности, конкурсный отбор, сертификат английского языка (IELTS от 6.5 или TOEFL от 90)",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "german-sport-university-cologne",
+    "university_name": "Deutsche Sporthochschule Köln",
+    "program_ids": [
+      "da9620e9-ceb2-435a-b2b4-7b4824b5e521",
+      "49ca9753-44c0-4d8a-8f1d-f596a56622c4",
+      "39c4b966-0c05-4c04-af63-b77d220763b7",
+      "97317c31-6471-4df8-91c5-5d24c1fd80f4",
+      "e020fbb9-46c7-4ee9-a58f-bf1dff413ea7",
+      "bd8a41ed-2f77-47ab-8938-8038ae8f7148",
+      "0da7077a-e11d-45fb-a626-74ae28636aff",
+      "ca4b4279-6b42-41b8-aea7-1f166c1a3ab8",
+      "c6c6b71d-0d18-49b0-a9e8-969974178752",
+      "a9dd938c-0bf6-4774-a622-0030b5c52ede",
+      "ddc0179e-d1ea-4ab9-8bac-ebcb498c7bb9",
+      "b2e96911-c078-4933-ac04-c0dd90ca4b55",
+      "3391f9e0-ff91-46dc-96c0-89c4716b9369",
+      "13c6c887-e715-4a1e-bff7-e2e295fc326f"
+    ],
+    "notes_text": "аттестат о среднем образовании, эквивалентный немецкому Abitur, сертификат владения немецким языком (TestDaF/DSH) для немецкоязычных программ или IELTS от 6.5 для англоязычных, вступительные спортивно-нормативные испытания",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "ehl-hospitality-business-school",
+    "university_name": "EHL Hospitality Business School",
+    "program_ids": [
+      "005faf79-7edb-4108-be32-d487739a85fa",
+      "c60324e0-9b6f-4545-a699-566b55d78592",
+      "25889d0e-94b1-448f-859b-f6c389bf9320",
+      "1d7dcec8-fc75-4fb0-96c8-3498f5fb9107",
+      "6c8fd27d-d88d-4ea4-95f6-e00238adc497",
+      "3436b6b6-3235-47f7-bb78-246f6d13d1fc"
+    ],
+    "notes_text": "Диплом средней школы (высокие баллы); IELTS 6.0+ / TOEFL 80+. Прохождение серии строгих отборочных интервью и оценочных тестов.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": true,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "eth-zurich",
+    "university_name": "ETH Zurich",
+    "program_ids": [
+      "29c2f863-5279-4645-98a5-954e1a4e246f",
+      "2895a5f7-3709-4355-bf19-c7e5a0a4fb78",
+      "1e7ccc84-8113-463a-9377-0438d21ae394",
+      "543a3331-26e8-464e-a859-705bdc2cbae9",
+      "c32d9bd3-88f9-4df3-ac8c-e88c58396d41",
+      "5321812f-6e0a-42cf-8e0e-2e90144ef226",
+      "242d0465-f255-4317-ae41-a95afa8fffb4"
+    ],
+    "notes_text": "Эквивалент швейцарского Matura; зачастую требуется сложный комплексный вступительный экзамен ETH. Языковой сертификат C1.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "eth-zurich",
+    "university_name": "ETH Zurich",
+    "program_ids": [
+      "54ed9b5e-0a42-48e8-b667-530b9da2f8d1",
+      "f7900712-11c0-4dd1-8a37-96d28d557c03",
+      "ddab539d-c8d6-480e-a394-7b150ccf7872",
+      "1b1c8307-1a5b-4cf1-875a-1fc9959da816",
+      "2470f4cc-ce3f-4605-8fba-75a1fcd7fdab"
+    ],
+    "notes_text": "аттестат о среднем образовании, вступительный экзамен или эквивалент швейцарской матуры, для магистратуры — профильный бакалавриат и подтверждённое владение немецким или английским языком (в зависимости от программы)",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "eberhard-karls-universitat-tubingen",
+    "university_name": "Eberhard Karls Universität Tübingen",
+    "program_ids": [
+      "93229da1-9667-48c5-96e1-15664d3ce9ed",
+      "1f2d0138-bfd3-4431-8cf2-a8b5ad34b8a8",
+      "8ffbee2c-c738-46d8-b614-ee229b92898b",
+      "1a97bd3d-a9b9-4dc3-ab9c-8bfac346edf1",
+      "f452f49f-3573-4eac-b98d-d955881abcf3",
+      "363c53c3-19ad-44f0-a23d-ce2b72d8ab4e",
+      "5a6c02d8-2ec7-4db8-92ec-de1a3dafb3d7",
+      "84fb2274-b59e-44bb-a274-f2e4df96887d",
+      "efc0f589-31d2-46da-9066-4e66d1b572ac",
+      "9339244c-9f52-4f0a-84fa-6849bf9158ee",
+      "06dff859-5a02-4bb7-a8b4-8915ac75fc1b"
+    ],
+    "notes_text": "Диплом бакалавра по профильному направлению, немецкий язык уровня B2–C1 (для программ на немецком) или английский IELTS от 6.5 (для международных магистратур), мотивационное письмо, иногда вступительное собеседование",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "embry-riddle-aeronautical-university",
+    "university_name": "Embry-Riddle Aeronautical University",
+    "program_ids": [
+      "71b30e44-c290-4c3b-b485-f10b6cbfcb50",
+      "58f2aeaf-6703-4845-bf4d-0c5b57e4415c",
+      "ffefc60d-3651-4845-8c75-d54d445bc275",
+      "9de0e801-5b5d-40ca-a07b-e4a5be451366"
+    ],
+    "notes_text": "аттестат о среднем образовании, средний балл GPA от 3.5, результаты SAT (1120–1360) или ACT (23–29), IELTS от 6.0 или TOEFL iBT от 79; для лётных специальностей — медицинская справка класса 1",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "erasmus-university-rotterdam",
+    "university_name": "Erasmus University Rotterdam",
+    "program_ids": [
+      "40e4067f-4ace-4b64-90c4-512d1ecb4c2f",
+      "2fd047f0-9f7f-45e2-96d1-787bcdcfd850",
+      "cdf7f5c9-1142-4e08-b847-21463ccdf85f",
+      "bbb237dc-3a5b-4c5d-b69d-8c24eea54b8d",
+      "5ea30d90-47e9-4ce6-8e70-a3049ac40030",
+      "2f7c8ab9-31f1-49e8-8b32-5b0926437c04",
+      "07f2b514-d66e-4abe-a814-76a56e143d02",
+      "8592380d-8741-4036-9a2f-3d6573c471ed"
+    ],
+    "notes_text": "Эквивалент голландского VWO; высшие баллы по профильной математике (SAT Math / OMPT-A); IELTS 7.0+ / TOEFL 100+.",
+    "exams": [
+      "SAT Math",
+      "OMPT-A"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "esalq-usp-sao-paulo",
+    "university_name": "Escola Superior de Agricultura \"Luiz de Queiroz\", Universidade de São Paulo",
+    "program_ids": [
+      "441177da-3000-4477-86bd-3a7005351737",
+      "6a2ce741-b82f-4c2e-a0fb-85996171a6e5",
+      "db614609-51b6-4dcd-9069-50ec4a0c9f67",
+      "682ac8e3-0c1f-4624-956b-ffd41b20ef53",
+      "34d70744-1b03-412e-94ed-c571059cfa2f",
+      "e16d1b15-b98a-448a-ad00-9985e8c2250c",
+      "ce448e7a-f5db-47c3-9a96-32fa08c83f63"
+    ],
+    "notes_text": "для бакалавриата — участие в отборочных процедурах для иностранцев (PEC-G) или экзамен ENEM/вступительный экзамен USP; для магистратуры — диплом бакалавра, знание португальского или английского в зависимости от программы",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "fgv-eaesp",
+    "university_name": "Escola de Administração de Empresas de São Paulo, Fundação Getulio Vargas",
+    "program_ids": [
+      "c4583991-884d-473b-9f34-c45cd033d1e0",
+      "44079258-8493-4e3b-b642-7d8a38cc7f5b",
+      "a678dd95-0241-4049-86b2-fe2ac46f2790",
+      "a98c26db-06e9-4eeb-b319-fa542623992b",
+      "0ccee038-724e-4e86-b102-c934f1e7a7b1"
+    ],
+    "notes_text": "диплом бакалавра, опыт работы (для MBA-программ), английский язык, вступительное тестирование, эссе и рекомендации",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "fgv-eaesp",
+    "university_name": "Escola de Administração de Empresas de São Paulo, Fundação Getulio Vargas",
+    "program_ids": [
+      "dd06a7ff-25bf-49d7-a408-797013669db6",
+      "4e76d174-9b75-4a1f-b1c5-5dabb61f3a61",
+      "6ed4846e-d2a7-43a3-9563-e43cded2d16c",
+      "7b5b0117-2306-414a-8f90-49e4e4b5f1d8",
+      "7cc84756-2c88-4cc3-863e-faa44dfdf07a",
+      "99a95af8-504c-4cbc-90a8-2cce0c6a0e1e",
+      "0aff9558-df75-4e37-993f-34998ea0ee55"
+    ],
+    "notes_text": "диплом бакалавра, портфолио академических достижений, для программ на английском — подтверждение владения английским языком (TOEFL/IELTS), для отдельных программ — GMAT/GRE и собеседование",
+    "exams": [],
+    "needs_portfolio": true,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "georgia-institute-of-technology",
+    "university_name": "Georgia Institute of Technology",
+    "program_ids": [
+      "8cb7d91f-d8f4-4d7d-a7c4-4d1f9bc77d0c",
+      "af483fd6-cfca-4454-9815-aad36bb345a6",
+      "e4a7f541-e777-4553-97af-0988891a8441",
+      "4cb467c1-a1a8-4eab-9380-64b66c7a97b5",
+      "38d44e83-5790-4d81-bbc4-eb1526736540"
+    ],
+    "notes_text": "аттестат о среднем образовании с профильными оценками, результаты SAT/ACT, TOEFL/IELTS, эссе и рекомендательные письма",
+    "exams": [
+      "SAT",
+      "ACT",
+      "TOEFL",
+      "IELTS"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "glion-institute",
+    "university_name": "Glion Institute of Higher Education",
+    "program_ids": [
+      "48a8cca4-968c-437e-82a8-7327bdedfff4",
+      "ddf24ab6-d536-470b-8f27-c3ac51065c36",
+      "7c9ce929-f30e-4da4-8d1b-30e52652b0ca",
+      "20ba228c-f9d7-4143-9454-0a1061fedd5e",
+      "b3445b64-2be3-4cd3-99ac-6a3951cffeb2",
+      "8eec4b65-7841-4564-8561-d9ef1ec0a5f8"
+    ],
+    "notes_text": "Аттестат с хорошими оценками; IELTS 5.5-6.0; обязательное успешное прохождение личного интервью с приемной комиссией.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": true,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "geneva-graduate-institute",
+    "university_name": "Graduate Institute of International and Development Studies (Geneva Graduate Institute)",
+    "program_ids": [
+      "937b82fd-509e-4298-b069-1aa857b1bc7f",
+      "a617d9e4-c027-47c2-a391-98ee5d6dd31f",
+      "becb4667-8fa0-4846-a5d3-f8b98fb0fc28",
+      "8729d13a-8599-4fb5-9e32-32584507c8bf",
+      "6eea79d5-086c-489b-aed7-a9fed83084ab",
+      "6e3d6d01-4ac4-404e-a2bb-72a08d7dff38"
+    ],
+    "notes_text": "Диплом бакалавра с высоким средним баллом, мотивационное письмо, два рекомендательных письма, TOEFL/IELTS, для докторантуры — исследовательское предложение",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "griffith-university-aviation",
+    "university_name": "Griffith University",
+    "program_ids": [
+      "f0b2a5e1-8e6e-4553-a7f5-3e2d13783dbf",
+      "cc5a328e-191a-44ae-98b6-f251d5bc427b",
+      "77cb14cf-6e38-4dc7-b0af-f54345a79668",
+      "2b19b334-78e1-4966-80b3-5da4b2ab7590"
+    ],
+    "notes_text": "аттестат о среднем образовании с профильными предметами (математика, физика), IELTS от 6.0 (не ниже 6.0 по каждому разделу), медицинская справка класса 1 для лётного трека",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "hec-paris-finance",
+    "university_name": "HEC Paris",
+    "program_ids": [
+      "7b947e72-13a7-4cf7-bb14-4d1f8f4142de",
+      "2c710e97-afe5-476b-8afa-9c1d29f5ef0d",
+      "f3901b12-61c8-4cce-b415-7a1ef3468085",
+      "f93b6831-90fd-4931-96c2-b4834b337422",
+      "c7dba745-22fe-42b2-b2ca-7836218d14f4",
+      "16c2e18c-adba-411e-8128-2e3a038a9123",
+      "5e619b1a-f627-437a-ba18-13080279359f",
+      "c1f21762-f212-47b1-b0f3-2a68d93f8cf8"
+    ],
+    "notes_text": "диплом бакалавра, официальные транскрипты, результат GMAT/GRE (медианный GMAT около 715) или Tage Mage, эссе, рекомендации, подтверждение уровня английского (TOEFL/IELTS/Cambridge)",
+    "exams": [
+      "GMAT",
+      "GRE",
+      "Tage Mage"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "hec-paris",
+    "university_name": "HEC Paris",
+    "program_ids": [
+      "ad923532-7bff-44bb-b2da-6b9841dd9187",
+      "c49daae4-e8b0-47a5-b367-a05c7fad66ec",
+      "d5316b5f-7689-43e6-ac97-65c9536bf9e9",
+      "ae5a7334-9b74-4553-9557-4d0323eede2e",
+      "3a6934b0-f7e6-45d1-bb57-ff3f36373822",
+      "867622cc-a72c-4103-95bf-e587b95b660b",
+      "8c59651c-34e9-4634-bafd-05f5a723ab58"
+    ],
+    "notes_text": "Степень бакалавра (для магистратуры) или диплом строгих подготовительных классов; высокие баллы GMAT/GRE; IELTS 7.0+.",
+    "exams": [
+      "GMAT",
+      "GRE",
+      "IELTS"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "harvard-kennedy-school",
+    "university_name": "Harvard Kennedy School, Harvard University",
+    "program_ids": [
+      "f9fe6b03-ab99-4ce3-ae96-ce9c87c414b0",
+      "564fccb8-66c0-47c7-9d91-cc5d408b858c",
+      "cdf9419c-2c23-4a2d-a7ea-20998ce2901f",
+      "cd991c89-765f-4aa4-a813-68d48235c105",
+      "d66b5c97-1ea5-4acd-b9bf-cf6b69ffaa78",
+      "5123c8f3-8b6f-49e8-abbb-e82316e98799"
+    ],
+    "notes_text": "Диплом бакалавра, эссе о мотивации, рекомендательные письма, резюме, опыт работы в госсекторе или НКО приветствуется, TOEFL/IELTS для не носителей языка, для части программ — GRE/GMAT",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "ie-business-school",
+    "university_name": "IE Business School",
+    "program_ids": [
+      "5fb60e34-6e59-47e7-b577-619be4ff5b33",
+      "48e692ad-3de0-48f0-8a5d-75f5c8c80c84",
+      "a33105f8-c77e-4b3c-88c4-d474df509dbd",
+      "d8a8d62a-a754-4f27-9689-226f76e76888",
+      "971b5abc-0f9f-4d13-97e4-dac0302f1ff0",
+      "c0e895ba-a2e7-4da1-ba2d-d57dd8a798f8",
+      "29a227d1-2186-46b1-b8e0-053e0a546806"
+    ],
+    "notes_text": "диплом бакалавра (для магистерских программ), для MBA — опыт работы, результаты GMAT/GRE, эссе, собеседование, подтверждение владения английским языком (TOEFL/IELTS)",
+    "exams": [
+      "GMAT",
+      "GRE",
+      "TOEFL",
+      "IELTS"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": true,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "ie-university",
+    "university_name": "IE University",
+    "program_ids": [
+      "0bd17ed9-88c5-46f2-9008-b6d2c0b419dc",
+      "4a2c46ff-39cc-4574-96c7-4802aa08b62d",
+      "b4bef039-a07a-4435-a16b-f11a4935cdbe",
+      "33fe1a4e-652e-47cb-abfd-296c9be793ec",
+      "335851fb-4570-4515-a2d5-f2d1514e6fea"
+    ],
+    "notes_text": "Аттестат с отличием; сдача вступительного теста IE (IEGAT) или результаты SAT/ACT; IELTS 7.0+.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "john-jay-college",
+    "university_name": "John Jay College of Criminal Justice",
+    "program_ids": [
+      "419de0af-5bf4-43a8-ae3c-8a45e7a74ebb",
+      "3f6fe158-6bd7-4050-a458-1ff27f16faa7",
+      "f2f96069-85da-480a-9593-9500ad19ceef",
+      "cbe0f76c-6ac3-45b4-9b09-3fe40830ba64",
+      "03870660-f402-4c77-8fb7-b8ab21cdb48c",
+      "15badca3-cc87-42ce-94f5-5bdf5cacb184"
+    ],
+    "notes_text": "Аттестат о среднем образовании; сертификаты IELTS 6.0+ / TOEFL 61+ / Duolingo; рекомендательные письма и мотивационное эссе.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "karolinska-institutet",
+    "university_name": "Karolinska Institutet",
+    "program_ids": [
+      "fcdf8b0f-a587-488e-888a-0423f5d659fd",
+      "fb6e310f-bb67-4770-a09a-3cafe60741c6",
+      "16b12b58-e4e4-4a70-957d-ab9056022a52",
+      "0ddf560d-634c-458b-8dbe-23c702329530",
+      "efce7117-0efb-4fd5-99dd-f10bcdec85e0",
+      "776f1fe0-a8ac-40b2-923c-f04b5dbb3b7a",
+      "6c1bb628-2178-495f-9ea2-6aea422ed1aa"
+    ],
+    "notes_text": "Эквивалент шведского аттестата (высшие оценки по биологии, химии, математике); IELTS 6.5+; знание шведского языка для базовых программ.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "kfupm-dhahran",
+    "university_name": "King Fahd University of Petroleum and Minerals",
+    "program_ids": [
+      "24c77de4-bb20-4d97-b2ce-8f2a7f533bad",
+      "258ede93-430a-46bd-beff-12d85371c455",
+      "a7877a87-9967-487e-8a48-4a706a7e5160",
+      "409f879f-91d5-43ec-a2e2-b8c9b672b766",
+      "acffbcdf-fe08-4da7-81c9-3838364e014f"
+    ],
+    "notes_text": "бакалавриат — SAT от 1350 баллов, профиль естественных наук, вступительный тест по математике; магистратура — диплом бакалавра по инженерии/науке с GPA не ниже 3.0 из 4.0, сертификат английского языка",
+    "exams": [
+      "SAT",
+      "Математика"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-copenhagen-food-science",
+    "university_name": "Københavns Universitet (University of Copenhagen), Faculty of Science",
+    "program_ids": [
+      "058943cd-4849-4d0e-8037-707c54fea5b9",
+      "2d3973d4-fe06-42c3-989c-fc5b0981a8fe",
+      "d2a3f7fa-6a46-47e1-9d57-4118bc5c7040",
+      "cec98e3d-dd99-4d27-82cb-8e6a76b990d0",
+      "a36efc0b-7aa3-45b7-9a59-0ae6d15afc10",
+      "242cf818-e5da-4741-8d9b-19edbd4ad10c",
+      "a1d9267e-3b38-4c67-8a22-6b0054ce147f"
+    ],
+    "notes_text": "диплом бакалавра в смежной области (пищевая химия, биология, агрономия), английский язык — IELTS от 6.5 или TOEFL, конкурсный отбор по среднему баллу",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "kuehne-logistics-university",
+    "university_name": "Kühne Logistics University",
+    "program_ids": [
+      "f507d6d1-d8d2-47fd-a536-0cdc6f809498",
+      "216a272f-e625-40bf-a953-5d947729ddb0",
+      "b03a5757-8e2c-4119-9111-3b3c2a0c6d6b",
+      "b5b2c448-81df-4170-a9e0-8790ea5f82ff"
+    ],
+    "notes_text": "диплом бакалавра (желательно в экономике, инженерии или логистике), результаты GMAT/GRE (опционально), IELTS от 6.5 или TOEFL iBT от 90, мотивационное эссе и собеседование",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": true,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "les-roches-global-hospitality",
+    "university_name": "Les Roches Global Hospitality",
+    "program_ids": [
+      "1f0a1c28-5a1c-4efb-a830-82f4c37aecf2",
+      "fef6b65c-7b7c-45a0-87fc-6d6e952c01e1",
+      "dfb39967-4d40-4fad-9492-a588a094c629",
+      "d6a99051-b158-4c86-aaf1-1c5f49af9eff",
+      "065261fe-df4d-4eb5-ac9f-9767aa92ecc5",
+      "210fa569-7636-4c9e-9c71-c0f074d5d220"
+    ],
+    "notes_text": "Оконченное среднее образование; возраст от 17.5 лет; IELTS 5.5 (или эквивалент); личное собеседование с приемной комиссией.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": true,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "lse-london",
+    "university_name": "London School of Economics (LSE)",
+    "program_ids": [
+      "98d27b89-aa9d-4573-9c94-ba42e3d52cc2",
+      "b9872727-a377-4c8c-a410-e7a5123f1fbe",
+      "0e26af5c-eabf-401d-bcb2-41fcac1f7e7c",
+      "d109db7f-df57-433c-9faa-240c164b6103",
+      "5d800faa-72a7-4e3c-959f-75d83ebcbbc0",
+      "226da2ce-a79d-4800-a53d-9aabd0fdbfd7",
+      "1f2d5806-d730-49bb-9cc6-6ef1e154dc09",
+      "277df93e-1cfb-4c4a-bf2e-647243373ae0"
+    ],
+    "notes_text": "Блистательные результаты A-Levels (или эквивалент, часто требуется Foundation); высшая математика; IELTS 7.5+ (с высокими баллами во всех секциях).",
+    "exams": [
+      "A-Levels",
+      "Высшая математика",
+      "IELTS"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "loughborough-university",
+    "university_name": "Loughborough University",
+    "program_ids": [
+      "1e5a0f79-99d1-40ba-8bf5-57818e345a07",
+      "26dcbd9c-c041-468e-b9a2-be453d7ad15d",
+      "e40a44c6-65ab-47f4-9d23-d00ffe0403b2",
+      "fe212a7d-5ed2-43be-ae71-cf11bb641b1d",
+      "d9bba94c-92a6-4b48-86e0-ab9937e83eb5",
+      "6bc49477-8b78-4e94-b799-3567454c4662",
+      "3faf6ba4-ca26-4792-ad23-235f901d9dab",
+      "a6e07fc3-8142-46bf-89b5-a9733f93faaf",
+      "ffe7015b-483a-4425-85bc-159719a0e412",
+      "9ed84310-fc01-4621-82e1-5d124b435176",
+      "0662215f-b4d0-45f4-8cec-6f0afda33021",
+      "c9844de4-865c-4e2a-bab1-36cb14303a8c",
+      "49d63b35-a3dd-4cfd-b073-b1be7a029ef3",
+      "a563dbce-0b15-45c9-889e-5695a1cb1700"
+    ],
+    "notes_text": "Хорошие школьные оценки (особенно по биологии); IELTS 6.5+; подтвержденный опыт в спорте или тренерской деятельности.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "melbourne-business-school",
+    "university_name": "Melbourne Business School, University of Melbourne",
+    "program_ids": [
+      "59c0fb21-3ed5-4336-9a8c-229b6c91c67a",
+      "43c3b7fc-af5c-49a6-8064-eb63970f91bb",
+      "98e20991-edf3-40d0-89f6-174bf62a42cf",
+      "c4339cca-98ba-45b9-82b6-09810db6ab86",
+      "265ae68d-3351-4c2e-9bbf-8fdd32c4e74c",
+      "d14387f5-344c-46e7-9681-1190d6c9afcc",
+      "6343cd92-da94-4982-ba34-56a7e29d63ef"
+    ],
+    "notes_text": "диплом бакалавра, для MBA — опыт работы и результаты GMAT/GRE, эссе, собеседование, подтверждение владения английским языком (IELTS/TOEFL)",
+    "exams": [
+      "GMAT",
+      "GRE"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": true,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "middlebury-institute-monterey-translation",
+    "university_name": "Middlebury Institute of International Studies at Monterey — Translation, Interpretation and Localization Management",
+    "program_ids": [
+      "40d7407e-520c-4fb6-9479-3137627a43e7",
+      "83f79e3b-13b0-45ba-872c-5a8422a874bc",
+      "8d241148-1c86-4b3c-8dd3-ed5df693d740",
+      "f890f5c6-02f0-4a03-81ad-72056710a5f8",
+      "95e0dd56-4944-473e-93f2-44c6c33aa8f8",
+      "7c79ec32-3761-4dec-a59a-c55551189ded"
+    ],
+    "notes_text": "Диплом бакалавра, продвинутое владение английским и минимум одним иностранным языком, вступительное тестирование по переводу, TOEFL/IELTS для не носителей английского",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "ntu-singapore",
+    "university_name": "Nanyang Technological University (NTU)",
+    "program_ids": [
+      "1f71f2ba-0dcb-42d4-94b5-e28bb14bf45d",
+      "f071356b-f182-4a76-9018-9367793bc59e",
+      "67e5b5ed-a187-4e28-9bc9-6994c13476fe",
+      "162c73c5-c141-4182-95fe-4abaddf85f4b",
+      "5d213d4a-6373-4632-8ae7-ba8dc5e23a33",
+      "b1ce0f00-d907-4a91-92e5-e78504a648dd",
+      "ef3b6302-a487-40e0-b4dd-ad9be2ffbd60"
+    ],
+    "notes_text": "Аттестат с идеальными оценками (GPA ~5.0). Высокие баллы SAT/ACT или эквивалентов AP. Сертификат IELTS 6.5+ или TOEFL 90+.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "nida-national-institute-dramatic-art",
+    "university_name": "National Institute of Dramatic Art",
+    "program_ids": [
+      "80023ae4-860c-4e27-b2b4-c218debe5429",
+      "0d4e4410-dc86-47e8-bbf4-9a6ca9f7f962",
+      "fe0518b3-c52f-48a3-9775-c3ddb45aaedf",
+      "002e835b-e0d8-44e3-90ca-3bb663046c0d",
+      "c8a8fc21-cea5-456a-8c2a-8c7fd4793099",
+      "34341c23-e140-42c3-ad25-8b68f18e792d",
+      "d07e2e77-f0ef-4d6f-ab26-3430cb18da64",
+      "5cd9e46f-3813-4a00-8368-b4d95a9c1397",
+      "341bf945-322f-4885-9c9f-6888174f67ee",
+      "9cc838c4-31f5-4b45-974a-bb8ee7871a01",
+      "0f4c1c7e-19bf-45f7-8a03-8ab698992dbf",
+      "3a9b1b64-68bd-4ec9-b7b8-2e766b6804fb",
+      "7cdd8ec9-0542-44bc-8c2a-2c0098501fa0",
+      "e80b8f4e-45df-4a27-a13c-8fefbd1825de"
+    ],
+    "notes_text": "очное прослушивание/собеседование в Австралии (для актёрских программ) или видео-интервью для других направлений, аттестат о среднем образовании, IELTS от 8.0 для актёрских программ (для прочих — ниже), портфолио для программ дизайна и костюма",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": true,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "national-university-of-singapore",
+    "university_name": "National University of Singapore",
+    "program_ids": [
+      "2b82ba39-2848-4392-8710-a0fb6c9cc2c8",
+      "fa1ddc48-76b7-4ffc-93db-ce1dc4df4536",
+      "09f4998c-d8b3-4971-b0ba-762df20967b2",
+      "97d7908a-3010-493b-a931-690caf2af6da",
+      "5124965d-3cbc-4470-930f-5d3eb26d1ff8"
+    ],
+    "notes_text": "аттестат о среднем образовании с высокими баллами по математике и физике, результаты SAT/A-Level или эквивалент, для иностранных абитуриентов — вступительные тесты и мотивационное эссе",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "nus-business-school",
+    "university_name": "National University of Singapore — NUS Business School",
+    "program_ids": [
+      "8717caca-9c6f-4e65-9cf3-52c00089bcca",
+      "28e8ac73-3816-4327-89f8-a9f30dba8358",
+      "f0f9c085-7ea0-4f93-9437-31740494376f",
+      "efb5051f-f49a-452b-a914-6ab12863309f",
+      "276b7aac-7376-41f2-962e-c61c5af81e47"
+    ],
+    "notes_text": "диплом бакалавра, GMAT/GRE (для части программ), IELTS/TOEFL, резюме, рекомендательные письма",
+    "exams": [
+      "GMAT",
+      "GRE",
+      "IELTS",
+      "TOEFL"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "nus-business-school",
+    "university_name": "National University of Singapore — NUS Business School",
+    "program_ids": [
+      "9515dbd9-3d08-4248-acd7-7f70abf12100",
+      "334063ff-ada7-4337-b703-8e3490d256f1",
+      "7933d3ba-3332-4e60-b53e-3ab02d014bf1",
+      "ce916e9d-b93a-40d9-84f6-18e72467b35e",
+      "9ab05f17-079f-4ed2-8345-67cbd3850505",
+      "d6f6e862-e25d-4a52-b665-d4b701c56a47",
+      "3f4b4930-0b5a-4568-b3de-ebe5604b30ec",
+      "1802d0d2-a31f-4de7-8064-ed800040592d"
+    ],
+    "notes_text": "аттестат/диплом с высокими баллами, вступительные тесты (SAT/A-level/IB), TOEFL от 85 или IELTS от 6.0, для магистратуры — GMAT/GRE и опыт работы приветствуется",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "nus-business-school",
+    "university_name": "National University of Singapore — NUS Business School",
+    "program_ids": [
+      "2840b438-505e-45ce-9433-3aaa35c0b710",
+      "2cae3c22-cfa0-43de-8311-1e3c9932ee8b",
+      "11e34caa-0089-4b7c-bf5d-5355289da2d2",
+      "6a9c87e3-b21d-49e6-a3ae-25531b1c468a",
+      "fbfdaae2-e077-43e4-876d-f40928a25c05",
+      "01a63992-8089-4d23-945d-a81f7b9daa5c",
+      "33cf68c9-2ac7-451d-98c2-0ce91ccc8707"
+    ],
+    "notes_text": "аттестат/диплом с высокими академическими показателями, результаты SAT или A-level (бакалавриат) либо GMAT/GRE и опыт работы (магистратура/MBA), сертификат английского языка (IELTS/TOEFL), эссе и рекомендации",
+    "exams": [
+      "SAT",
+      "A-level",
+      "GMAT",
+      "GRE",
+      "IELTS",
+      "TOEFL"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "national-university-of-singapore-scm",
+    "university_name": "National University of Singapore — Supply Chain Management",
+    "program_ids": [
+      "2339f416-21db-406a-8082-acf6b8c5701d",
+      "8001edea-967d-4ad6-bb8c-b3e4903f1423",
+      "9d4bcf96-04e3-44a5-8ab1-3305d8fffba6",
+      "3c0e2b68-84ce-4f61-9dd1-e896a5c0d95e"
+    ],
+    "notes_text": "диплом бакалавра в области инженерии, математики, информатики или бизнес-администрирования, IELTS от 6.0 или TOEFL от 85, желателен опыт работы",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "national-university-of-singapore-biological-sciences",
+    "university_name": "National University of Singapore, Department of Biological Sciences",
+    "program_ids": [
+      "44bcb229-a32e-4dc1-ae1d-df3448d3679a",
+      "48e475c1-2f3b-4901-9e23-fee6eafbfd1a",
+      "4edcddec-297f-43d0-ba04-b58d6ed424ff",
+      "c01ad809-140c-4369-a730-e11502012a61",
+      "edc1489b-58fd-4e28-b003-0e1908e1c449",
+      "c0da190d-00aa-4a84-8874-78d267fcfcfb",
+      "cea8f1f8-ffee-415b-9d4a-6e69337cd9fd"
+    ],
+    "notes_text": "диплом бакалавра по профильному направлению, английский язык — IELTS от 6.5 или TOEFL, конкурсный отбор по академическим результатам и опыту исследовательской работы",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "nus-faculty-of-law",
+    "university_name": "National University of Singapore, Faculty of Law",
+    "program_ids": [
+      "961a7ecc-af62-4d4c-bce2-2c34136894bd",
+      "c5e84960-1a45-4cba-a1f8-79038328de51",
+      "d7b38345-f068-4d2c-a87e-2aeeb672634d",
+      "b5de78e7-45e1-47d9-9cde-c432001c6659",
+      "98b15c54-fe3c-46bb-bf1d-b68786d9591d",
+      "1b75d15c-f257-4cec-ae07-fc9f6516bca7"
+    ],
+    "notes_text": "Аттестат/диплом с высокими оценками, вступительные эссе, для магистратуры (LLM) — диплом юриста, TOEFL/IELTS, рекомендательные письма",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "nus-yong-loo-lin-medicine",
+    "university_name": "National University of Singapore, Yong Loo Lin School of Medicine",
+    "program_ids": [
+      "ad6f15c1-9eb3-40c9-9cfe-aa3422c505ac",
+      "4486e52d-83a0-4b1a-9771-1cc37dad7227",
+      "3754116d-03dd-4a99-997e-870bccaefade",
+      "2efc77ce-7dff-4dbb-b411-dcc68f220db5",
+      "f4217db3-75c1-4727-9b3d-cc6900ee0a96",
+      "3fad2061-94d0-4ea2-ad2a-928be5d37471",
+      "b6d22317-f52c-4bf4-b844-24509b5cda06"
+    ],
+    "notes_text": "сильный аттестат/A-level или IB с профильными предметами (биология, химия), вступительные тесты (BMAT/аналог), собеседование; конкурс — один из самых высоких в Азии",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": true,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "ntnu-trondheim",
+    "university_name": "Norwegian University of Science and Technology",
+    "program_ids": [
+      "f938270c-77e7-4f28-b493-0854571156e1",
+      "a9ddfff7-414a-4dc0-8082-edc7311f2e68",
+      "023bd7b4-6534-41a0-a1ad-62513861300f",
+      "297d961a-efc3-4484-8529-30b6f8921c6e",
+      "b2a9728c-091c-4263-9691-b8b252735fb3"
+    ],
+    "notes_text": "диплом бакалавра по смежной инженерной или естественнонаучной специальности, конкурсный отбор, сертификат английского (IELTS/TOEFL), для отдельных программ — портфолио или мотивационное письмо",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "parsons-school-of-design",
+    "university_name": "Parsons School of Design",
+    "program_ids": [
+      "7e763f89-1f3b-4928-9f40-beaaee92b07c",
+      "88872ae0-efbb-4886-b04b-22877a8773d5",
+      "c27c1757-d934-4784-97fa-4d9771ebffd2",
+      "c6aef6c2-0ee6-4403-ac8c-4db7be3b15e2",
+      "c8d317f1-083b-49d3-a870-7aa1173f21f4",
+      "8e7e8995-2696-4bbc-a88d-29baefca399f",
+      "f5961c78-df4e-44c9-8580-fc90b35d3790",
+      "b3ff1725-f672-4581-a678-95becdbc6e2c",
+      "fd186df9-a37a-4aeb-b377-8168246e97cb",
+      "3c7b089c-743b-433b-b411-6ebb3fa3c1bd",
+      "791c3df9-7019-41f7-b368-b3e3fe5c8625",
+      "76f66dd4-51d2-46a0-9975-a8434dd83131",
+      "d3cf0a03-842d-4242-a0ff-0a95c0a08847",
+      "50575624-b06f-473c-a9e8-84cf80a76b9c"
+    ],
+    "notes_text": "Аттестат с хорошими оценками; IELTS 7.0+ / TOEFL 92+; мощнейшее портфолио (The Parsons Challenge) и развернутое мотивационное эссе.",
+    "exams": [],
+    "needs_portfolio": true,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "politecnico-di-milano",
+    "university_name": "Politecnico di Milano",
+    "program_ids": [
+      "c3ba7354-fbb0-48f2-8251-9a823eab0011",
+      "352175ab-dda9-4144-bef9-f564943e4547",
+      "892d7204-a147-438a-8810-d0f9353d7a56",
+      "46b374b6-5bd1-4c88-8c68-040c93694d56",
+      "51254d34-0d5f-49fd-a8da-12f31e47bb2d"
+    ],
+    "notes_text": "Эквивалент диплома; успешная сдача вступительного экзамена (TOL или Архитектурный тест). IELTS 6.0+ / B1 итальянский.",
+    "exams": [
+      "TOL",
+      "Архитектурный тест"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "politecnico-di-milano-design",
+    "university_name": "Politecnico di Milano — Scuola del Design",
+    "program_ids": [
+      "1b98d9c0-15c5-4fff-b748-ae9d451daf0f",
+      "0cbb4226-29ab-4a3a-bfc5-51f70e04f4c0",
+      "241790b3-eac2-43ee-b4f3-4ac721b54850",
+      "99766cb6-1ac8-4bbc-9bad-cc9317a0c6cd",
+      "a6b84fae-ffd8-4537-a75c-dd6ade480c22",
+      "ed28e75a-0901-410e-b89c-dbac2cdd7467",
+      "6cec5f44-83df-42ff-921d-af6f7043f127",
+      "ad336427-758a-4667-b1fd-f044d52444ea",
+      "6cbb4588-a924-4069-827c-d664b22136bd",
+      "2b5b7515-f61f-4021-9bdd-3383d78ebae8",
+      "a157b2ad-8585-4fb4-83d2-bd9a117c128d",
+      "d4340444-e7b1-4d93-89ee-030ca5cf0e98",
+      "77f7a56a-5af1-44fb-a1e6-5e49b2b5129d",
+      "9ec55488-2d48-45b1-8b04-49db3a69e968"
+    ],
+    "notes_text": "аттестат о среднем образовании, вступительный тест TOLC-I для бакалавриата или портфолио и мотивационное письмо для магистратуры, подтверждение владения английским или итальянским языком (в зависимости от программы)",
+    "exams": [
+      "TOLC-I"
+    ],
+    "needs_portfolio": true,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "pontificia-universidad-catolica-de-chile",
+    "university_name": "Pontificia Universidad Católica de Chile (UC Chile)",
+    "program_ids": [
+      "6c164192-f7d8-469d-b3b0-876dddff0482",
+      "28aa1993-e3a8-4099-ae01-d0a3d46d0790",
+      "f75c5f84-4d2b-45c1-a8b6-989f47921256",
+      "e9ad864c-ae22-4267-979f-a231bc3d3dc8",
+      "3013249c-110e-4847-90ab-1aa97496f5ef",
+      "504ea9cb-e7d7-4a52-9dd5-be6fbe1aa57c",
+      "f9dfb730-e85e-4174-b630-02652950a2e1"
+    ],
+    "notes_text": "Аттестат о среднем образовании, результаты национального вступительного экзамена (PAES) или его международный эквивалент, знание испанского языка на уровне B2 (для программ на испанском) или английского для отдельных магистерских программ, мотивационное письмо",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "pontificia-universidad-catolica-de-chile",
+    "university_name": "Pontificia Universidad Católica de Chile (UC Chile)",
+    "program_ids": [
+      "bbdf022c-c6ca-4eff-9b7e-9e198f1264ae",
+      "2ce50944-7823-49f2-ae50-fb09554e25ff",
+      "f285fcfb-9b91-481d-a9cb-fcac99ffe6df",
+      "f492171b-e8eb-4e5c-8bd2-fd91ea2d1d2e",
+      "74ad9e7c-9cf9-4756-a5f6-09db9d4faa15",
+      "f9adb078-9c24-45e4-985a-ec3d9aecc8b1",
+      "65cd3751-d035-4b63-ae9c-cdff6d082c74",
+      "442b39e8-8f88-4c36-b063-7597336c1b22",
+      "cb799f3e-9cce-4a9d-9d3e-bb61a275c640",
+      "616f5e2c-dac9-43b2-acbf-c906a95f5d93",
+      "ed26d2e9-722f-4fac-bafd-62c6f021f5d6"
+    ],
+    "notes_text": "Диплом бакалавра, испанский язык на уровне B2+ (для большинства программ), мотивационное письмо, рекомендательные письма, для психологии — иногда вступительное собеседование",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "purdue-university",
+    "university_name": "Purdue University",
+    "program_ids": [
+      "5b700f6d-57da-4619-a358-8bb45938253f",
+      "9a4fa439-eedc-49ae-8252-7c599017fbb0",
+      "5dd96b9f-8f50-42b9-b2c7-8fad9d78cf04",
+      "da9e4e09-5b85-433f-a90b-3e501a4bbe12",
+      "2d40532f-9c03-4e1b-9deb-04a63e2a48c4"
+    ],
+    "notes_text": "Аттестат с отличием; высокие баллы SAT/ACT; IELTS 6.5+ / TOEFL 88+.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "rmit-university",
+    "university_name": "RMIT University",
+    "program_ids": [
+      "db5a1409-5abb-4a02-bb40-e6b0e4be5c15",
+      "8a1988e1-d7f1-4464-907a-7ab0cc12e821",
+      "05236fac-61e0-4131-aa0b-cc565b218689",
+      "ff96cff5-b81a-45ec-98f7-3adb875caf69",
+      "b367e84b-5244-4b81-b203-8338d58a5751"
+    ],
+    "notes_text": "Эквивалент австралийского ATAR с хорошими показателями. Уровень языка IELTS 6.5+. Портфолио (для некоторых креативных специализаций).",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "ritsumeikan-apu-tourism-hospitality",
+    "university_name": "Ritsumeikan Asia Pacific University — College of Asia Pacific Management (Tourism and Hospitality)",
+    "program_ids": [
+      "589027d2-c985-41a3-8d11-66fef184ae1a",
+      "281b03ca-6c78-4c15-9d65-1d12798a4cf6",
+      "7da92b8b-6ec6-4b6e-9b46-959c27a10bd8",
+      "e9d24fec-6939-4378-a292-f667b33c2417",
+      "c6419ca7-d6da-45fe-b2db-d67a9b864b30",
+      "0b0b8b2c-a517-4786-b8f8-475b74368199"
+    ],
+    "notes_text": "Полное среднее образование (12 лет), для англоязычных программ — TOEFL/IELTS, вступительные эссе и собеседование, японский язык не обязателен",
+    "exams": [
+      "TOEFL",
+      "IELTS"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": true,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "rotman-school-of-management",
+    "university_name": "Rotman School of Management, University of Toronto",
+    "program_ids": [
+      "37ee5d07-80aa-4477-93c1-59398b06ca03",
+      "17b1a82a-e49b-4cac-87cc-2c631b51ee42",
+      "2f74ab00-75c7-4471-a934-e006e3249363",
+      "fcf39a06-6501-4381-bcd1-b73d488db81e",
+      "b2552671-df52-4933-944b-6f8044a6481c",
+      "86da26bd-dc57-4030-8ba7-e80852c14c14",
+      "35965d79-7d5d-4a42-9ed3-6689506becd7"
+    ],
+    "notes_text": "диплом бакалавра, результаты GMAT/GRE, опыт работы, эссе, собеседование, подтверждение владения английским языком (TOEFL/IELTS)",
+    "exams": [
+      "GMAT",
+      "GRE",
+      "TOEFL",
+      "IELTS"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": true,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "sciences-po-paris",
+    "university_name": "Sciences Po",
+    "program_ids": [
+      "98f46df9-9ded-4617-a324-8f2b902a9c69",
+      "7d653c00-6590-4c39-8cd0-2ac9dc89ba19",
+      "4db91fa1-37fb-4a6d-b658-1db36e173fb8",
+      "b6339716-a6c3-4299-8172-89cb505995e1",
+      "28c6875f-0286-496f-9a57-277376c41c83",
+      "285a112f-4b10-4a69-b882-b04aa759e6ae"
+    ],
+    "notes_text": "Блистательный школьный аттестат; IELTS 7.0+ / DALF C1. Многоступенчатый письменный и устный конкурсный экзамен.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "semmelweis-university",
+    "university_name": "Semmelweis University",
+    "program_ids": [
+      "6807e434-1d86-43e5-a33d-42675ce80803",
+      "61855042-47bb-4299-b6da-b29b34b1568c",
+      "17a09291-a83e-4bf6-a561-2f406a73ded5",
+      "de055433-7a92-495b-8143-397cb6a210cd",
+      "b735915a-2b64-4ab9-8611-d0e77f51c189",
+      "9df7129a-0365-4e3a-963d-9d9b86bd4911",
+      "b07a9447-d807-4686-8ab6-95620ee42222"
+    ],
+    "notes_text": "Аттестат; обязательная сдача сложных вступительных экзаменов по биологии, химии и медицинскому английскому.",
+    "exams": [
+      "Биология",
+      "Химия",
+      "Медицинский английский"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "seoul-national-university",
+    "university_name": "Seoul National University",
+    "program_ids": [
+      "64080557-94df-4932-b113-28b03840dc28",
+      "ac6fc290-2a6a-42ae-8cc3-2757206434e7",
+      "2d1dc565-b986-429f-91d7-61f732b5e8af",
+      "795b6047-8055-4750-bfe6-c1f4d8f157ee",
+      "fd17c97e-d1c1-4842-97df-960e1a6d24da",
+      "b9eac231-6d6b-418a-b540-c19e4f1291a7",
+      "bbd96cc0-61a9-4f14-b963-d9ad309dcdfe",
+      "a9a5542d-02fa-44eb-9831-cea13d079484",
+      "28af708f-aa3f-48e2-92e9-f374f80b3242",
+      "cfeec20e-53ba-49fa-96d8-74e950d40aba",
+      "cf104de6-714e-4640-93d4-7d7200d9f0d5"
+    ],
+    "notes_text": "Диплом бакалавра, TOPIK 3+ (для программ на корейском) или TOEFL iBT 80–90+/IELTS 6.0–7.0 (для англоязычных программ), рекомендательные письма, вступительное эссе",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "southwest-jiaotong-university",
+    "university_name": "Southwest Jiaotong University",
+    "program_ids": [
+      "ad48fb6e-7e02-4a24-9c97-f5378f83850f",
+      "11fecf42-96a5-4021-91d7-7929303f4448",
+      "ba74ffca-ba7e-4181-bba2-450c3467e2d2",
+      "7826f649-9c2e-4d2f-8a3c-28f7df9db4c0"
+    ],
+    "notes_text": "Хороший средний балл аттестата. Сертификаты HSK (уровень 4-5) для китайского или IELTS 6.0+ для английского.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "stellenbosch-university-logistics",
+    "university_name": "Stellenbosch University — Department of Logistics",
+    "program_ids": [
+      "f6d49aa1-ce71-4800-b7fe-eb2cdf82efba",
+      "59e47ea5-d341-4bd8-a293-7329d8f9746e",
+      "ec40749f-dfb8-4222-b410-7423c196a48e",
+      "08ff70df-b665-4237-ada5-e8ec052627a1"
+    ],
+    "notes_text": "диплом бакалавра в смежной области (экономика, инженерия, логистика), подтверждение владения английским языком, оценка эквивалентности иностранного диплома",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "slu-swedish-university-agricultural-sciences",
+    "university_name": "Sveriges lantbruksuniversitet (Swedish University of Agricultural Sciences)",
+    "program_ids": [
+      "c4f57eb2-52ca-46ed-a077-aed1bc5a1312",
+      "465c10bf-49f2-467c-8593-74a42fdcf6df",
+      "f37bc9c2-d1f2-470c-aaf6-9adfed625c22",
+      "a1412522-f8c3-4ef4-aca9-1fa43637c46f",
+      "dd11b3eb-4be4-4593-9ddd-79f90f618d1c",
+      "d26d82dd-3f49-4a0e-b9a6-da1d43d7cc35",
+      "e33b7384-6e6b-4ca3-a113-6cc742727893"
+    ],
+    "notes_text": "диплом бакалавра по профильному направлению, английский язык — IELTS от 6.5, мотивационное письмо; для шведоязычных программ — знание шведского",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "tu-munich",
+    "university_name": "Technical University of Munich (TUM)",
+    "program_ids": [
+      "b4f35cfd-4448-4972-a431-fd5d2c02782f",
+      "f7ea7373-16c4-4c6d-813e-4725e9a16933",
+      "fd5eae81-3f76-4a4c-a58c-a5f5f86124d5",
+      "87aa8781-2e83-461a-8ee7-68334130b90e",
+      "ee6ff5e7-17ae-4011-81b7-114b8022ea9f",
+      "612bb163-4a6b-44bc-bd01-cbb8cc581c84",
+      "cd746e71-c5c7-476d-8fb7-50aafae29619"
+    ],
+    "notes_text": "Эквивалент немецкого Abitur (или Studienkolleg). Подтверждение языка: IELTS 6.5+ / TOEFL 90+ или TestDaF TDN 4.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "polyu-school-hotel-tourism-management",
+    "university_name": "The Hong Kong Polytechnic University — School of Hotel and Tourism Management",
+    "program_ids": [
+      "20ebca91-1d05-473d-a3ac-efcc1debae42",
+      "5a7821fd-78ff-4e9e-a825-0f4e03ebd6ec",
+      "f46804a1-2bf9-4940-8f1e-6e7b046bafe1",
+      "9988186d-deeb-475c-a732-603b8403c079",
+      "241a2857-e726-4bf1-944d-60d327b415eb",
+      "29fe0cfb-b5f6-4d78-a69d-8cf715f394a1"
+    ],
+    "notes_text": "Аттестат о среднем образовании с высокими баллами, IELTS от 6.5, для магистратуры — профильный бакалаврский диплом и опыт в индустрии приветствуется",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-hong-kong-business-school",
+    "university_name": "The University of Hong Kong — HKU Business School",
+    "program_ids": [
+      "10e89ccb-1ac4-40d0-9900-53a36c0e9c9a",
+      "65937e22-ada2-4a14-bed0-4d81e5c78391",
+      "d0f23be7-c31b-44c8-89ee-28aaffed49f2",
+      "a245d57f-af91-48df-bc2e-d0c3c874a79b",
+      "671568fd-a209-4d00-8efc-41db5b6e2ee9",
+      "92ff9922-836f-4c98-8694-75644c9360f2",
+      "b007adcf-5be3-45cf-a947-976d226be728",
+      "a7c18ffd-1b57-4117-ad4e-a5725018f522"
+    ],
+    "notes_text": "аттестат о среднем образовании с высокими баллами, вступительные экзамены (A-level/IB/SAT), IELTS от 6.5 или TOEFL от 80, для магистерских программ — диплом бакалавра и GMAT/GRE",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "alliance-manchester-business-school",
+    "university_name": "The University of Manchester — Alliance Manchester Business School",
+    "program_ids": [
+      "cdb9bdc1-5b82-425b-9c60-0b24843e7f60",
+      "b76b672f-44b0-4a62-935a-bccc25c1a296",
+      "e38fd57a-0e3b-4a96-b8e1-248acdf95d6a",
+      "c7b2d5a9-fa76-414c-8e79-e04ac0e6b22c",
+      "7c5d67a9-4537-4f49-8190-d36384e05eec"
+    ],
+    "notes_text": "диплом бакалавра с отличием (2:1 или эквивалент), IELTS от 6.5–7.0, мотивационное письмо, резюме",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "tokyo-university-of-the-arts",
+    "university_name": "Tokyo University of the Arts (Geidai)",
+    "program_ids": [
+      "096ddc4b-fb0e-41fa-bbc5-1272c4e769b1",
+      "a83f9d54-7e42-4020-9f28-496406f1b2fa",
+      "d48e8e0c-6011-420e-87ad-e52f75faec0f",
+      "85fe1e03-b2f3-4624-b010-e4e0543fc4d3",
+      "9df5c905-3e3b-4acc-84c3-6646966194eb",
+      "4c0466e1-49d1-4f7e-97d0-9f88e31c1f9d",
+      "b1452305-8dea-4e87-8646-db006ebfca20",
+      "ec27bda4-b815-42ba-af37-0aa915c51e6e",
+      "21c0926d-80ef-403c-b3c8-e187a614ea38",
+      "29877f2d-3941-4d58-b1fc-be12a50cdd2e",
+      "6394b81d-5bbc-4a2e-b3b5-ab9f9829c062",
+      "aab7b6b7-f59e-412f-8c73-e9aa5293ad88",
+      "ab904813-81ec-4aac-8484-02ff71ef8c31",
+      "579b0332-871c-4ab4-a494-3c2e1146c92b"
+    ],
+    "notes_text": "экзамен по рисунку/практическое испытание по специальности, сертификат японского языка (JLPT N1-N2 для большинства программ), портфолио работ, для некоторых магистерских программ — собеседование на английском",
+    "exams": [
+      "Рисунок",
+      "Практическое испытание по специальности"
+    ],
+    "needs_portfolio": true,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "tsinghua-university",
+    "university_name": "Tsinghua University",
+    "program_ids": [
+      "03e56c89-68dc-4bea-97e4-678c10a11682",
+      "ccd069e4-dff2-4a6f-bc57-e8ca69d80482",
+      "1b599c69-ff65-4705-a4dd-2484283eed48",
+      "094631b7-75a5-4ca9-984d-464d04f05ac7",
+      "92b00b08-8e4d-4d5f-84ee-265800f2f292",
+      "65a3fd6f-e2cd-4dcc-87d8-382d70c2119c",
+      "399258fc-a3a6-4c74-83ac-4d56db69db28"
+    ],
+    "notes_text": "Аттестат о среднем образовании, результаты SAT/ACT, A-Level или IB, для программ на китайском — HSK 4–5 уровня, для англоязычных программ — IELTS от 6.0 или TOEFL iBT от 80, мотивационное письмо и рекомендательные письма",
+    "exams": [
+      "SAT",
+      "ACT",
+      "A-Level",
+      "IB",
+      "HSK",
+      "IELTS",
+      "TOEFL iBT"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "uc-davis",
+    "university_name": "UC Davis",
+    "program_ids": [
+      "cc8af61d-a6b1-42ef-acdb-bb97d5a5ec3c",
+      "55db55d7-57ad-44f2-8bd7-51161f78503c",
+      "c67f64ea-4958-4b38-9e73-6ab5253ecef9",
+      "c503a576-aad0-4b82-9dec-d3dd4b1f7e9a",
+      "75312938-884d-413c-ac9a-993f9f9e0935",
+      "5ba0bcc3-36ff-4e02-8fb2-4d5bfe985bb3",
+      "2dbcdc4b-eef7-49a4-8a97-c9dac1dfd8ff"
+    ],
+    "notes_text": "Отличный школьный аттестат (высокий GPA по естественно-научным предметам); IELTS 7.0+ / TOEFL 80+.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "ucl-london",
+    "university_name": "UCL (University College London)",
+    "program_ids": [
+      "396984af-39f5-4c9a-a0ae-8abbfb33dcb6",
+      "bb928251-e85b-4d83-b099-dc65f2af47f3",
+      "7a09c3ad-bbe1-458c-9880-070447f2755e",
+      "1a6112e6-b40a-46ea-b455-83887ce7bc16",
+      "b88cd40f-e328-4e98-a12c-5f56d2c3626d",
+      "53b17231-3f92-4ab3-8985-0e9788fbe14d",
+      "fec5edc8-17a6-4e26-a937-7473d75bf8f4",
+      "3252e32f-0748-44c8-872e-7e4c502674a9",
+      "53f111a7-08c6-46a1-b1a5-285fd8a6f3fa",
+      "2ec167a9-bdd8-4450-b84a-3d0ecaf26c42",
+      "d95482f8-a0f1-43a9-aaf6-c35b14ea9672"
+    ],
+    "notes_text": "Выдающиеся оценки A-Levels или эквивалент; IELTS 7.0-7.5+; сильное мотивационное письмо (Personal Statement) и академические рекомендации.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "univ-veterinary-medicine-budapest",
+    "university_name": "Univ. of Veterinary Medicine Budapest",
+    "program_ids": [
+      "9aa90120-3e18-48f2-921b-945553cdb50a",
+      "89a1cfbf-a460-454d-ac4a-34db12d0cbec",
+      "d83598ec-a862-405d-8974-fbc4c6ff4523",
+      "ec20a599-9858-43ca-9dc7-85db6b049601",
+      "cbe4c82e-8c1a-400c-8d3c-0b490ce1a158",
+      "56bac094-c54e-42e0-b4d8-ffac740f635f",
+      "10f9decd-0206-4114-94cf-6d38db4144b9"
+    ],
+    "notes_text": "Сильные оценки в аттестате; письменный экзамен по биологии, химии и английскому, а также успешное устное собеседование.",
+    "exams": [
+      "Биология",
+      "Химия",
+      "Английский"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": true,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "unam-veterinaria-mexico",
+    "university_name": "Universidad Nacional Autónoma de México, Facultad de Medicina Veterinaria y Zootecnia",
+    "program_ids": [
+      "e4d3b4cd-b258-45aa-8f0d-2636d99aab62",
+      "10c2b8e6-6d24-4579-8746-68e25fe98cae",
+      "25258799-ab28-4de5-8f9d-5c9102e5dddf",
+      "0110d4a4-5d6d-49ea-b353-ac66d0470ce5",
+      "9e869b20-e35f-4cba-b01e-f8403fd3cf95",
+      "f3138029-d715-4612-9e55-92403cc9f044",
+      "a919a043-ca0a-4440-b5ca-862f5916671f"
+    ],
+    "notes_text": "аттестат о среднем образовании, вступительный экзамен UNAM (Examen Único de Ingreso) или процедура признания иностранного диплома через revalidación, подтверждённое владение испанским языком",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "universidade-de-sao-paulo",
+    "university_name": "Universidade de São Paulo — Escola Politécnica",
+    "program_ids": [
+      "87e5632a-cd71-492e-9cc6-b43f191e716f",
+      "00ec675f-84cc-483c-a457-43ea8e77ac46",
+      "6f604346-f17a-41e2-a0b0-afbbe2775211",
+      "cb1a98ed-485c-4469-8ad1-802fccd65995",
+      "0def5fff-682d-4f81-8be0-371bc22e0b12"
+    ],
+    "notes_text": "аттестат о среднем образовании, для прямого поступления — экзамен FUVEST (высококонкурентный) либо зачисление через партнёрскую программу обмена/международное соглашение, подтверждение владения португальским языком",
+    "exams": [
+      "FUVEST"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "universidade-de-sao-paulo-direito",
+    "university_name": "Universidade de São Paulo, Faculdade de Direito",
+    "program_ids": [
+      "d327b4bc-d836-4f0d-9940-ed1c7cbfb0d1",
+      "14d0ae24-214a-4b34-8493-4e2a716c4157",
+      "100834c2-a38b-4b1d-8571-4428d5caae2e",
+      "92f32e5a-c3a5-4ae2-ab13-4f01f1bdac65",
+      "cbccb546-ee4d-480c-8a48-7fa699610dc3",
+      "6bfb9876-12be-413a-9ad2-0b8037332c32"
+    ],
+    "notes_text": "Для иностранных студентов — экзамен Vestibular или программы двусторонних соглашений/обмена между университетами, подтверждённое владение португальским языком (тест Celpe-Bras)",
+    "exams": [
+      "Vestibular",
+      "Celpe-Bras"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-alberta",
+    "university_name": "University of Alberta",
+    "program_ids": [
+      "4fbf8540-2dea-4964-a72a-6686fc474b57",
+      "c8f4f1e7-df71-4c84-9bfd-8be1c78353d3",
+      "488e3716-d0b5-4475-b741-a46140c77a4c",
+      "4952e2c7-9432-49f9-adc2-8f64f3fffaf8",
+      "1be58be9-d97b-4fb8-9c20-e2d751940b31"
+    ],
+    "notes_text": "аттестат/диплом с профильными предметами (математика, физика, химия), сертификат английского языка (IELTS от 6.5), для магистратуры — диплом бакалавра по инженерии или естественным наукам",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-birmingham-bcrre",
+    "university_name": "University of Birmingham — Birmingham Centre for Railway Research and Education",
+    "program_ids": [
+      "b96e7705-3781-4970-a2c3-8305d6c961a4",
+      "7862baa0-d127-4a77-99d8-c08cbaa2235b",
+      "9998d36d-fd19-4806-b727-f328da7fd5a4",
+      "8cf3396a-8c26-46ad-8156-756213fe04a7"
+    ],
+    "notes_text": "диплом бакалавра в области инженерии, физики или смежных технических дисциплин (эквивалент британского 2:1), IELTS от 6.5 (не ниже 6.0 по каждому разделу)",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-cape-town",
+    "university_name": "University of Cape Town (UCT)",
+    "program_ids": [
+      "c8b0a333-6290-4ad2-ae9c-11e11555c486",
+      "15b64060-5376-45d9-9926-3c83b71fea39",
+      "9ca78591-51d9-48fa-83be-1ff07f79c6d9",
+      "8c5f3e31-351e-44d2-bb13-76173de617c0",
+      "941eb89f-5bdd-47b5-a5de-ed8d778a244d",
+      "7beaa58a-ef43-4f1f-a866-ca735cfde47e",
+      "c4ee5e5c-5646-46ab-a5ae-85da3b1c8e8e"
+    ],
+    "notes_text": "Аттестат о среднем образовании с профильными оценками по математике и естественным наукам, IELTS Academic от 6.5 или TOEFL iBT от 90, национальный вступительный тест NBT (National Benchmark Test) для отдельных программ",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-cape-town",
+    "university_name": "University of Cape Town (UCT)",
+    "program_ids": [
+      "80bd5cf1-7552-404a-883a-b13937e83d9e",
+      "85a8f33e-9f6b-41f0-a629-1d0f6ac371a6",
+      "228a353c-abdb-4675-9e57-9c189535978a",
+      "4f61478f-e101-4498-a319-1207b9daef63",
+      "299bcf7d-3461-46d7-adf9-a7ec4da93a4b",
+      "13b35681-ee87-42bf-a239-21e537cbd5f1",
+      "e1e06186-46ae-4dd4-8400-8b29b93a2299",
+      "e4ffc7fb-23fc-4164-9766-43f21ac0665a",
+      "fd7b4192-8256-48f6-91bf-181d0ff5a389",
+      "03a1104c-8a35-4b0e-ad16-29b105364041",
+      "7959ddaa-0029-43c3-9de1-f04b4d6ac7b2"
+    ],
+    "notes_text": "Диплом бакалавра со средним баллом не ниже установленного порога, IELTS от 6.5 или TOEFL от 90, мотивационное письмо, рекомендательные письма",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-cape-town",
+    "university_name": "University of Cape Town (UCT)",
+    "program_ids": [
+      "04e2072f-7d33-4789-a4f0-9a7b71553c5c",
+      "97604c22-5db8-4c5c-a7ca-3d5ed8ad9868",
+      "38d75337-7844-464b-bf11-608105fb3bb3",
+      "57d8b8a1-c0d8-485e-9fc2-63e104a59cc9",
+      "93055d63-f58c-4c21-98f8-5dd03a5d0493"
+    ],
+    "notes_text": "аттестат о среднем образовании с профильными баллами по математике и физике, результаты национального теста NBT (National Benchmark Test) или эквивалента, подтверждение уровня английского языка",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-cape-town",
+    "university_name": "University of Cape Town (UCT)",
+    "program_ids": [
+      "05ca70d1-d94b-463e-b8d2-c9c23d2e1810",
+      "888687d8-cb4d-4851-ad86-6263c82a78d9",
+      "8103ca2b-9a9b-4898-a17f-0c3bf8104737",
+      "9975977f-3f16-4a14-bf4d-4507e857aea2",
+      "fd7f5314-ada9-4ee6-aa52-e4a37ce0a062",
+      "9623ea6d-5d59-4aa9-9d96-017614f4c62c",
+      "4fcf6f88-9300-459f-b676-104d99af9d46"
+    ],
+    "notes_text": "аттестат о среднем образовании с профильными предметами (биология, химия, физика, математика), вступительный тест National Benchmark Test (NBT), конкурсный отбор по среднему баллу, для иностранцев — подтверждение эквивалентности диплома",
+    "exams": [
+      "Биология",
+      "Химия",
+      "Физика",
+      "Математика",
+      "National Benchmark Test (NBT)"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "uct-graduate-school-of-business",
+    "university_name": "University of Cape Town Graduate School of Business",
+    "program_ids": [
+      "49a5ae2f-7d16-49e3-a01f-7252551b67bb",
+      "1d988acf-8e7f-4974-8398-adb3d7408e65",
+      "3c316f4c-9f5e-4621-9f36-334f3eb058ff",
+      "f9b5c8fe-417f-4d0b-8fa2-0e1cd1f0677c",
+      "1d4375ad-9d34-477b-879b-1e83c7dbca1f"
+    ],
+    "notes_text": "диплом бакалавра, опыт работы (для MBA), GMAT, IELTS/TOEFL/PTE, эссе и рекомендации",
+    "exams": [
+      "GMAT",
+      "IELTS",
+      "TOEFL",
+      "PTE"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "uct-graduate-school-of-business",
+    "university_name": "University of Cape Town Graduate School of Business",
+    "program_ids": [
+      "17d64ef9-5ffd-4732-a48f-c9d0d39a1935",
+      "4c0a055c-b8a2-433a-a6f7-8b7732c0934e",
+      "b7891298-2b47-4d1b-9d4d-06009fc643fb",
+      "83064e95-b640-4ab0-beda-6c0dab6b23a2",
+      "94863a30-4b4e-4fb9-9b0e-fbef88e11846",
+      "7eff69aa-67d7-47fe-bce0-6cb36463c11b",
+      "a0efa57f-d644-440a-8abd-9ca47c39a921"
+    ],
+    "notes_text": "диплом бакалавра, опыт работы (для MBA от 3 лет), результаты GMAT/GRE или внутреннего теста школы, эссе, собеседование, подтверждение владения английским языком",
+    "exams": [
+      "GMAT",
+      "GRE"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": true,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-cape-town-michaelis",
+    "university_name": "University of Cape Town — Michaelis School of Fine Art",
+    "program_ids": [
+      "c9109cd1-0d4f-4a1d-ae62-977e6ffb7eb2",
+      "ee583055-0eba-4579-995c-982fd39a0192",
+      "7209ee2e-440b-4662-9f91-790d170c0900",
+      "2d7aedcf-e38e-4550-b0eb-dab0d2639572",
+      "d4853a37-b08f-4c00-a457-6dc6fd5cd9e5",
+      "a0c6f375-008d-4d34-a40f-adc774d802a6",
+      "ab67f24f-020b-499c-8243-05240ad623d4",
+      "c412d6df-f881-4590-9e7c-c924308d2178",
+      "e78ad92d-448c-4ea6-97f7-9644365118f0",
+      "544971b3-749d-4e37-8898-2c0a1e3b54b5",
+      "032b8108-e6a2-4de9-b7a5-9cba16f357cc",
+      "0b6e7bf5-593b-4725-8481-e5b91a2a35be",
+      "fa32c16b-c61c-424f-8190-cc87da837cf5",
+      "a88bd8ce-353b-42fe-a800-ec2f7b47a34a"
+    ],
+    "notes_text": "портфолио творческих работ, аттестат о среднем образовании, письменное эссе о мотивации, для иностранных студентов — подтверждение владения английским языком и оформление через International Academic Programmes Office UCT",
+    "exams": [],
+    "needs_portfolio": true,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-cape-town-law",
+    "university_name": "University of Cape Town, Faculty of Law",
+    "program_ids": [
+      "e6e549b1-2fb0-49e0-9d42-b559e400d268",
+      "22a3abc3-23d9-452b-aa34-5c236dbde9d9",
+      "5a0f093e-77ca-4ff2-af37-d99eb895e824",
+      "b5b07d09-ac49-44ce-bd20-4d75c982813a",
+      "1dcb55aa-9147-41d0-8a54-5384bb6842fc",
+      "dd38f5e9-b1dc-42cf-8a41-cb18d683a980"
+    ],
+    "notes_text": "Аттестат о среднем образовании с высокими баллами (эквивалент NSC), мотивационное письмо, для отдельных программ — вступительные тесты, IELTS/TOEFL для не англоязычных стран",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "uclan-preston",
+    "university_name": "University of Central Lancashire (UCLan)",
+    "program_ids": [
+      "5a4e6cf4-7a0b-4d77-8c40-88da559b56e7",
+      "8bed959a-257e-473a-976d-b65c761113bc",
+      "c7131df3-2a98-4932-bad0-a96af661a5ff",
+      "87764c66-3737-417b-8d7b-3a20767bad2a",
+      "ca95a26e-da30-4a1b-80b6-b9632b7f42ca",
+      "3d679133-090f-4c08-ba15-bc0fc00a5671"
+    ],
+    "notes_text": "Аттестат (часто через Foundation Year); IELTS 6.0+; отличная физическая и психологическая подготовка для натурных модулей.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-edinburgh",
+    "university_name": "University of Edinburgh",
+    "program_ids": [
+      "45197a61-dc59-4090-a722-799b72c155b2",
+      "f4d88fa4-71ee-4070-8e0c-449471e72efc",
+      "b69b49ff-99f1-40c4-921e-d389e7cd6942",
+      "882e3298-5c7b-489f-82a5-f9c589145bd0",
+      "6f212ff5-9016-459e-b36d-62a964fd92cb",
+      "1487b8b6-7a64-4405-87ae-3ba91dbea9b8",
+      "50f9c891-8184-4278-89d0-fddc71a67601"
+    ],
+    "notes_text": "Аттестат о среднем образовании (или A-Level/IB эквивалент) с высокими оценками по математике и информатике, IELTS Academic от 6.5–7.0 (или эквивалент TOEFL), вступительное эссе (personal statement), для отдельных программ — вступительные тесты по математике",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-helsinki",
+    "university_name": "University of Helsinki",
+    "program_ids": [
+      "56bd00fb-00ea-4106-9866-ce02041d11d7",
+      "0fa54bf6-d591-4695-833f-2f0a5e9b0486",
+      "b5332551-6f81-4257-98a8-eae51a2da1c5",
+      "956bb0f9-74b2-4500-ae50-e565d60221a6",
+      "cb5e6a70-89a9-4df1-accd-c393fae5bfd7",
+      "1bddd1e7-678e-417f-8939-0c0c03fdd80a",
+      "28015bb8-52ad-4dce-a308-95a6995f1f31",
+      "311f20e8-6c67-40a0-8089-a3a5833c25ca",
+      "e3d57077-8bbc-409a-94b3-ad6bf9c286ac",
+      "64941351-24b0-4e66-b1d2-0536b3a8967c",
+      "871acef1-3275-46b5-8c3e-405507853642"
+    ],
+    "notes_text": "Школьный аттестат; IELTS 6.5+; прохождение вступительных академических тестов и оценка склонности к педагогической деятельности.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-illinois-gies-college-of-business",
+    "university_name": "University of Illinois Urbana-Champaign — Gies College of Business",
+    "program_ids": [
+      "f060b0aa-c7b0-4bbc-b4c2-b5b2d1ad5cab",
+      "b50c2f05-add6-452f-8408-accf829a3814",
+      "12379fc1-02c8-4cef-b930-2aa5a1534353",
+      "8fc02b17-7a68-412c-96ea-4fd1d6c3f507",
+      "cdf7334a-8a21-4080-8c1d-d153f8b712b6",
+      "87226279-0395-4e68-9401-afcfe8e37322",
+      "e0627a62-37e8-4469-8da5-bcc70031c527",
+      "d3fee756-367d-4199-9d9f-5b6fc1d42b6c"
+    ],
+    "notes_text": "аттестат/диплом с высоким средним баллом, эссе, результаты TOEFL/IELTS (TOEFL от 79–102 в зависимости от программы), рекомендации; для магистратуры — GMAT/GRE опционален по ряду треков",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-melbourne",
+    "university_name": "University of Melbourne",
+    "program_ids": [
+      "c917c036-cbdb-4b4c-8c67-e9968b5108d4",
+      "2cd9aa15-b403-431d-a59e-7b392bf16537",
+      "4482de7b-bdac-4b26-8895-efd46c7389ea",
+      "8c39ac99-d06a-4d25-8a1d-f369c87153e2",
+      "4e2aa7fc-1125-43e4-be48-c55f7d50ec45",
+      "099e2431-8745-4243-93ed-931ca47d47a6",
+      "a19cddaf-7ec5-471e-83f9-74a025ee158a"
+    ],
+    "notes_text": "Аттестат о среднем образовании с высоким баллом по математике, IELTS Academic от 6.5 (не ниже 6.0 по компонентам) или TOEFL iBT от 79, вступительное эссе, для отдельных программ — портфолио или дополнительные тесты",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-melbourne",
+    "university_name": "University of Melbourne",
+    "program_ids": [
+      "2f02ec3b-ffbf-4e6a-ae67-a5e7bd342ce2",
+      "273781a2-e56c-4611-9ebc-89213cb7ff20",
+      "3486ad08-f078-4ca6-afb7-2db12f2b6953",
+      "22e5632b-1a50-4b96-a13f-9644ed37c06f",
+      "c9215f40-7711-4b8c-af73-cd8ce1259a3f",
+      "85109dc2-1ab5-44f8-9ba1-0a874e306149",
+      "e586ea01-5d93-4171-8548-d6badd163522",
+      "6c342a0a-3000-4dbd-9b0e-6a6871aebc8c",
+      "7a80e2a4-cc98-48c7-b234-48b7b1eae083",
+      "1ed78002-ebb7-418b-828e-f0446aa870c5",
+      "36cc55f8-6ec7-4aa3-a660-4c05776618ed"
+    ],
+    "notes_text": "Диплом бакалавра со средним баллом WAM 65+ (для магистратуры — выше), IELTS от 6.5–7.0 или TOEFL от 79–94, портфолио для отдельных программ",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-melbourne",
+    "university_name": "University of Melbourne",
+    "program_ids": [
+      "19a01e98-4516-47b6-8356-352cb68e7e79",
+      "7786ea84-3447-4a48-9247-ce7a6461443f",
+      "194dd479-6bb5-49e3-af4f-e4d312b42859",
+      "c9b4cb90-3ee5-46e5-aebb-dabfea8e81d4",
+      "79b61d7c-3bf5-465e-aa00-11006e50f0b1"
+    ],
+    "notes_text": "аттестат о среднем образовании с профильными оценками по математике и физике, результаты IELTS/TOEFL, для отдельных программ — портфолио (архитектура)",
+    "exams": [],
+    "needs_portfolio": true,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-melbourne",
+    "university_name": "University of Melbourne",
+    "program_ids": [
+      "af7c066c-d046-48fd-a631-d743ab524661",
+      "c3d56cda-c61e-4e0d-86ba-80db19f48f4b",
+      "7c90606f-f49b-4b7b-b5d6-8d3ba78367e8",
+      "e267aab6-727d-407d-b81c-3e43831566d8",
+      "5fd85e48-7f72-4a71-a8e1-f5b0ef722cec",
+      "c0a55848-70e0-478a-bed6-310b0f583400",
+      "b368189f-5e05-4345-9bdc-796e988dd11f"
+    ],
+    "notes_text": "оконченный бакалавриат (медицина и стоматология в Австралии — graduate-entry программы), вступительный тест (GAMSAT для медицины, CASPer/интервью), высокий средний балл (GPA), сертификат английского языка",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "unsw-sydney-actuarial-studies",
+    "university_name": "University of New South Wales — UNSW Business School",
+    "program_ids": [
+      "59026c6b-9014-4cbb-8f93-772880fbb587",
+      "76718af4-f602-4619-8472-5f963f3bc515",
+      "0459ed4f-b64a-4158-98cd-2351e7891266",
+      "1099b0fb-0921-436f-a3a7-31bc11cf21b0",
+      "d34ded4f-fc2d-4d30-9962-d2a824a9fdcc",
+      "94bd6b9f-5d2c-43dd-a4bf-c6a6fba70e58",
+      "7728292b-a36c-4f77-9906-63325c1a5a41",
+      "fc9704a4-0606-4904-8318-378189b83916"
+    ],
+    "notes_text": "высокие результаты школьного аттестата (IB от 40 баллов или эквивалент A-level A*AA), IELTS от 6.5 (не ниже 6.0 по компонентам) или TOEFL от 90",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-pretoria-agriculture",
+    "university_name": "University of Pretoria, Faculty of Natural and Agricultural Sciences",
+    "program_ids": [
+      "a68db4dd-0a8e-4fac-9e6b-0926ebfb5bca",
+      "8553c97b-5a4c-4bdb-95e0-db31dea88ea9",
+      "a0f7617e-2d46-4e33-89d6-73c7525e157b",
+      "8d4fb130-e1e3-4e00-b5fd-7785568faf8d",
+      "6fb04f1e-39d3-4abb-984c-17591d129084",
+      "56f6a9b1-a4fc-4888-9c20-6def5a78e287",
+      "1f929551-e9cf-4667-ba6c-e4bb88d5822f"
+    ],
+    "notes_text": "аттестат/диплом, соответствующий требованиям NSC или международным эквивалентам (IB, A-level), английский язык — IELTS от 6.0, для отдельных программ — вступительный балл APS",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-queensland",
+    "university_name": "University of Queensland",
+    "program_ids": [
+      "7e2a1185-f94a-4088-8348-58b1db974d13",
+      "ed989087-7c00-4704-bfcd-913e51e9ad05",
+      "5451b78c-4a12-4f12-a5aa-f69570e26203",
+      "7407c01d-d393-4761-87e5-b311ede34262",
+      "5f9f8182-a311-460e-9663-3cbe55a8a7b4",
+      "e4558ca8-5de3-4374-bbc3-d537f3c24c91",
+      "45d434e5-c2e3-49b0-bbba-c6d3045f3944"
+    ],
+    "notes_text": "Успешное завершение 12-летнего обучения (ATAR или аналог); отличные оценки по химии и биологии; IELTS 6.5+.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-reading",
+    "university_name": "University of Reading",
+    "program_ids": [
+      "f0b86197-9a8c-4917-abb7-07605bbdfd65",
+      "0498f6e8-a330-4fb6-abfc-a8da8e24c156",
+      "097e29ba-6264-4e6b-b3af-33d94d59811c",
+      "1a8beb78-8eef-44ab-8479-a319e8e76010",
+      "b870edeb-6e39-46fe-a745-d0ead91213ba"
+    ],
+    "notes_text": "аттестат о среднем образовании с высокими баллами по математике и физике, сертификат английского языка (IELTS от 6.5), для магистратуры — диплом бакалавра по естественным наукам",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-st-gallen",
+    "university_name": "University of St. Gallen (HSG)",
+    "program_ids": [
+      "821ee269-6fda-4401-a737-b8ec196042c0",
+      "11cc7ced-dd76-4d49-9e0b-c752e96b7873",
+      "d7cc081c-7c87-44e5-8e88-0cfb6f0c232c",
+      "794625dd-c542-48e2-99db-6bd147db7664",
+      "05245a8c-d26d-4dea-a468-8e6980e10545",
+      "7d2e4af3-fe53-4849-a227-93d623845ee4",
+      "c3d5bb51-7808-40d2-a34e-61c8c1e484e9"
+    ],
+    "notes_text": "Швейцарский Matura или эквивалент с высочайшими оценками. Иностранцы сдают сложный внутренний экзамен HSG; знание немецкого и английского.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-surrey-hospitality-tourism",
+    "university_name": "University of Surrey — School of Hospitality and Tourism Management",
+    "program_ids": [
+      "456c64d5-faab-4fee-9274-b7afe97bb106",
+      "8aac3f25-c438-4b82-9498-7d46cc3a5cf2",
+      "d6e37c3a-527f-4ec3-8504-257b8f13d44a",
+      "2b30839b-a974-4c03-8145-2ccb15220670",
+      "7cb300ec-950f-459b-9567-30c89ab4e319",
+      "c7b9eeb5-c443-4d89-b12d-778f562ea349"
+    ],
+    "notes_text": "Аттестат/диплом с высокими баллами, IELTS от 6.5 (не ниже 6.0 по каждому разделу), для магистратуры — профильный бакалаврский диплом, мотивационное письмо",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-toronto",
+    "university_name": "University of Toronto, Temerty Faculty of Medicine",
+    "program_ids": [
+      "a310a4dc-8a2f-48b4-af05-7c86a388864a",
+      "08cf8a4b-e70d-4ba2-a7d6-3a55ea50376a",
+      "e3b1ecaf-b0fe-4813-8931-8d8bf9cea2c5",
+      "a4b53806-322d-43d3-86da-2abc6eb0d245",
+      "3840841b-7b9e-4bc3-87a5-6d527098be17",
+      "16f51554-3d33-487a-993c-327c394c2744",
+      "0d9c3c83-433f-4e8e-af5e-041050d2e952",
+      "f5566cda-5867-4b2a-b8fb-6017e9e2ad19",
+      "fd01da62-81b6-4e9b-9191-23c1c1c34a74",
+      "6eaa7b1a-6050-4f24-92b7-7211c1f5553c",
+      "70c0f586-f436-46e4-8e76-74da60e72bf2"
+    ],
+    "notes_text": "Диплом бакалавра с высоким средним баллом, IELTS от 6.5–7.0 или TOEFL от 93–100, мотивационное письмо, рекомендательные письма, для ряда программ — портфолио или собеседование",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-toronto",
+    "university_name": "University of Toronto, Temerty Faculty of Medicine",
+    "program_ids": [
+      "3ebc2032-2967-4841-ad7b-65bfb383c3aa",
+      "c0eade05-7ff8-485d-9111-5058b27d38b1",
+      "b3afd876-2dfa-408f-9201-52dadcd0c1f5",
+      "2e9e6d6d-d803-4a73-93c5-2bc0223a341c",
+      "22bcb1de-f7be-4193-b1e6-bb1187594dc7",
+      "cf6ab4cd-a95e-4c2c-8e1f-ef88b96e8d49",
+      "3d9f1cc7-7ea4-4b4b-832d-4a466f2d1132"
+    ],
+    "notes_text": "бакалаврская подготовка по естественным наукам, тест MCAT (для медицины) или соответствующие профильные экзамены, эссе, рекомендательные письма, собеседование; для сестринского дела и реабилитационных наук — конкурс аттестатов и мотивационное эссе",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": true,
+    "needs_recommendations": true,
+    "needs_interview": true,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-warwick",
+    "university_name": "University of Warwick",
+    "program_ids": [
+      "a628087e-4615-4d20-a88b-a75693550949",
+      "6c531030-0a88-483a-bb64-9d807bcef7a0",
+      "580e3ce1-76fa-48d7-8b03-6355e3b0aef8",
+      "5874aa2c-1e9c-4920-a3c8-f0a0d7313266",
+      "21dd16b3-23d2-4cf4-8fb5-01395c43c682"
+    ],
+    "notes_text": "Высокие результаты A-Levels (или IB); IELTS 7.0+ (минимум 6.5 в каждом блоке).",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-waterloo-actuarial-science",
+    "university_name": "University of Waterloo",
+    "program_ids": [
+      "30113753-aeb0-4e77-914e-092bbd996f56",
+      "2c68cfcc-b2ae-4f5c-9198-dda86118fad4",
+      "dd3172f2-1b99-4f47-9685-fcdae0b1f887",
+      "d0eee572-3ac2-415d-b887-f82b609d7d0e",
+      "eacf03c7-8422-4d19-b345-d47e1ff76e28",
+      "96f38ef8-0a95-4c70-8aa4-1ecd4a69ad69",
+      "8ad38835-c3c5-411e-af5c-7bf59d1ca015",
+      "c6b67d15-7334-44dd-bb30-922f47eb77bf"
+    ],
+    "notes_text": "высокие оценки по математике в школьном аттестате, вступительные тесты университета, IELTS от 7.0 (по компонентам не ниже 6.5) или TOEFL от 90",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "university-of-western-australia",
+    "university_name": "University of Western Australia",
+    "program_ids": [
+      "1f08d682-273f-49ee-b109-efbad31374ef",
+      "46952aa7-5b18-419a-a119-c34fee3644c1",
+      "45e28f4c-2528-4f0b-94b9-85be9e44d695",
+      "96142997-b58d-46dd-8e58-868fa9792e8d",
+      "d5fb4455-37bd-4ada-b2ec-b780a0578795"
+    ],
+    "notes_text": "Эквивалент ATAR с высокими показателями. Знание точных наук. Сертификат IELTS 6.5+ (без баллов ниже 6.0).",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "ual-london",
+    "university_name": "University of the Arts London (UAL)",
+    "program_ids": [
+      "867b26a1-96ec-4a7e-9966-fe4651bcd959",
+      "f0851357-3216-4704-8a2c-4cb728ea2153",
+      "dc013f45-4c0f-4d43-a0dd-d30e06bac343",
+      "54f3088f-1778-4850-8ec3-6f601e24a5fb",
+      "ed47ba1e-e487-4181-8833-4707b948e0f4",
+      "9836fd93-6b2e-4e15-9071-93d60baa0fc2",
+      "c88ec1ff-dfc9-44db-a70e-81d1b80fa8d5",
+      "8333cbba-a8d6-4911-91fd-7166e2c693ae",
+      "423f5a40-186c-45e8-9a1d-a7efe0117bd9",
+      "73b5593a-8e56-4ee7-9039-844df2958a46",
+      "49bb36d6-d923-4aaa-8eae-1b069a1eb199",
+      "549b66d9-b2b8-4c09-8a9f-b30931c98af1",
+      "aacdc4b6-7110-4266-8e16-8182a2f3673a",
+      "ee36c89f-42f7-498d-8e66-a58578623bc0"
+    ],
+    "notes_text": "Эквивалент британских квалификаций (часто требуется год Foundation); IELTS 6.0-6.5+; глубоко проработанное творческое портфолио.",
+    "exams": [],
+    "needs_portfolio": true,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "wageningen-university",
+    "university_name": "Wageningen University & Research",
+    "program_ids": [
+      "53730fc1-05f3-4df4-8022-8c3f8bcb239c",
+      "fe84e89e-51eb-454e-9fa9-f219f58ad4de",
+      "d6380633-04ae-4337-a758-a2ece4c71e21",
+      "70e5c2d4-db78-41f5-af83-627f464e2beb",
+      "29711368-d9ad-46fc-b320-c759e5fa3a21",
+      "d5f98759-7b13-49ad-822f-0e2c6435949d",
+      "c76afae7-0ada-4931-98f4-8999c325b1c8"
+    ],
+    "notes_text": "Эквивалент VWO; строгие требования к знаниям математики, химии и биологии. Языковой сертификат IELTS 6.5+ / TOEFL 90+.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "yessenov-university",
+    "university_name": "Yessenov University (Каспийский государственный университет технологий и инжиниринга им. Ш. Есенова)",
+    "program_ids": [
+      "d9949988-d2d0-433b-8682-a7fa111a2cdf",
+      "661cc4d0-b994-4129-ae94-dfcae1fff5d3",
+      "7fe7a5c9-9d7a-4415-b1ea-076cf307d601",
+      "3169ebbc-c2e3-46be-80c3-952480415edf",
+      "d3772109-3b35-41d5-b386-765b05e37e95",
+      "88bc7001-b049-47ed-ba4f-364bf0ba15a5"
+    ],
+    "notes_text": "Аттестат; баллы ЕНТ (Иностранный язык + Всемирная история / География). Для журналистов и переводчиков — профильные испытания.",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история",
+      "География"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "yessenov-university",
+    "university_name": "Yessenov University (Каспийский государственный университет технологий и инжиниринга им. Ш. Есенова)",
+    "program_ids": [
+      "a929216a-a754-4951-864d-a6c13164bef7",
+      "16a32a8a-b079-43c6-93c8-ee06a097b86e",
+      "563549ec-48fa-4695-a706-8d75cb74e4df",
+      "374d254c-ec92-47c1-849c-651309e603fc",
+      "3d22453b-6fd8-4387-913b-9063a62aeadd",
+      "27dfbeaa-e68b-4ffb-b878-854c14639bc9",
+      "872d8e1b-c0ee-48df-821a-ee7235381010"
+    ],
+    "notes_text": "Аттестат; баллы ЕНТ (с профильными комбинациями: Математика + География / Всемирная история) выше пороговых.",
+    "exams": [
+      "Математика",
+      "География",
+      "Всемирная история"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "enac-toulouse",
+    "university_name": "École Nationale de l'Aviation Civile (ENAC)",
+    "program_ids": [
+      "bcff9f9f-4cdb-43d9-9283-3a5a5ada6d31",
+      "92e61fd1-6162-42b5-88ad-f68f45bd8729",
+      "a781aade-28d2-47e0-a251-99287b275dc0",
+      "063cb8f8-eb40-400e-bda6-ba78df2b87a7"
+    ],
+    "notes_text": "Диплом; языковые сертификаты IELTS 6.0-6.5+ / TOEFL 80+. Для пилотов и диспетчеров — строгие медицинские тесты EASA.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "esit-sorbonne-nouvelle",
+    "university_name": "École Supérieure d'Interprètes et de Traducteurs, Université Sorbonne Nouvelle",
+    "program_ids": [
+      "0c5698c6-9612-421d-b5ce-a03edd14b7a7",
+      "87e8a741-e8c0-43de-a936-794a8db04b02",
+      "9c3dc075-fd2d-416d-b17c-c00b8821e4fc",
+      "3db57ab4-090b-4e67-b446-5a1a1848f5b0",
+      "4aaa3e33-b92a-4ae6-964e-38d61e89dd5f",
+      "8436f3e5-8364-4359-b4de-ead3527d0a8a"
+    ],
+    "notes_text": "Диплом бакалавра, свободное владение французским и минимум двумя иностранными языками, вступительные экзамены по переводу и собеседование",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": true,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "voenny-institut-sil-vozdushnoy-oborony",
+    "university_name": "Военный ин-т Сил воздушной обороны",
+    "program_ids": [
+      "a8e02b56-8cfe-45d0-8cb7-12f4595b078a",
+      "feb5a110-e6b9-4f40-824e-2f65ec1f909a",
+      "8012bc55-5ab3-437b-9c7a-e8051be732a9",
+      "321a6581-b2f0-4c29-850b-9bf34d5e46f4"
+    ],
+    "notes_text": "Аттестат; баллы ЕНТ (Математика + Физика). Жесткая врачебно-летная экспертная комиссия (ВЛЭК) и психотбор.",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "vktu-ust-kamenogorsk",
+    "university_name": "Восточно-Казахстанский технический университет",
+    "program_ids": [
+      "1bb009b3-f203-4284-872a-4d79df7f05b3",
+      "028b39d1-a355-45e6-9c8b-a3676c7328a9",
+      "3e39bd17-64a5-46e6-b760-0d9fe154fb31",
+      "8a5f6a36-b686-48d2-86bb-eed375304520",
+      "87df20f3-e34a-4e85-af66-0934e5b670d9"
+    ],
+    "notes_text": "Документ о среднем образовании; баллы ЕНТ с необходимыми профильными предметами (например, География + Математика).",
+    "exams": [
+      "География",
+      "Математика"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "mvd-academy-karaganda",
+    "university_name": "Карагандинская академия МВД РК",
+    "program_ids": [
+      "44561fa2-6089-4747-833c-e568134ccc34",
+      "52218878-749c-45a7-be4f-de7fe17ed459",
+      "16582ded-b604-4056-8cb1-361c00288fb1",
+      "fb33dbfb-b35e-4504-a26f-b6473b02ca00",
+      "674bae74-e620-4ad8-8acb-fa46205ec6ab",
+      "079ad1ad-5176-48f9-bd22-4d498fc5bc7e"
+    ],
+    "notes_text": "Аттестат; результаты ЕНТ (Всемирная история + Основы права); строгая медкомиссия, психологический отбор и физ. нормативы.",
+    "exams": [
+      "Всемирная история",
+      "Основы права"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "kartu-karaganda",
+    "university_name": "Карагандинский технический университет (КарТУ)",
+    "program_ids": [
+      "ce555215-3a44-41e3-aa73-f33f0e553413",
+      "48992529-ca54-44da-8579-03738fafaa3b",
+      "07e6055c-b90c-4a46-b9a2-79f6eb32fa9f",
+      "e01b94ed-63ee-43eb-b5ee-e3e97676955c",
+      "a1c3b7e1-8cf4-4bcb-8865-164a3d148eb4"
+    ],
+    "notes_text": "Аттестат о среднем образовании. Результаты ЕНТ по связке профильных предметов (Математика + Физика/Черчение).",
+    "exams": [
+      "Математика",
+      "Физика",
+      "Черчение"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "karsu-buketova",
+    "university_name": "Карагандинский университет имени академика Е.А. Букетова",
+    "program_ids": [
+      "c8aa6d15-370a-417e-a486-bdd7ee2b3b1f",
+      "57302520-a023-4cfe-a65c-37746ad87629",
+      "14c49bed-a089-4621-9ee1-42b5fb45f88c",
+      "6d09197d-b462-49ba-b1c4-2e47201b7561",
+      "35f41c66-2f52-4a2d-8b32-cfaddc052d66",
+      "fe357642-3c64-42ca-8be5-cd72db3e9604",
+      "cb1d5500-0a6b-49fc-9cf8-558fc0699e12",
+      "954aad3f-5d54-4ad8-b2ea-72180f2645a8"
+    ],
+    "notes_text": "Аттестат о среднем образовании; баллы ЕНТ (Математика + География) значительно выше порогового минимума.",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "karsu-buketova",
+    "university_name": "Карагандинский университет имени академика Е.А. Букетова",
+    "program_ids": [
+      "bd4b5cfe-bfe5-44d4-8507-9545feb9f651",
+      "e7565550-26e1-42fa-85e8-3adc91740806",
+      "be15e899-b9a6-4071-9266-2d5d992ffc5e",
+      "240b7f53-d80b-4938-ba67-812069558329",
+      "8054b21f-4bea-496e-9b17-201ad5668381",
+      "e525004e-4d90-4136-94e2-41be1eda8603",
+      "449dde64-8cf9-49c7-ad62-7b0e5d5f926a",
+      "b8151eea-122e-43ce-8221-2af441a91128",
+      "ed501b6c-49d2-4468-ab07-18da89cd4f2c",
+      "2fd6c443-5349-46c9-b00e-7a62b842f654",
+      "55c6d9bc-ed8a-4904-8182-df8305b08a3a"
+    ],
+    "notes_text": "Аттестат; баллы ЕНТ по гуманитарным или точным предметам. Для будущих педагогов — специальный психометрический тест.",
+    "exams": [],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "kostanay-regional-university",
+    "university_name": "Костанайский региональный университет",
+    "program_ids": [
+      "86ad5351-3835-4a37-95a6-23b96ed60dad",
+      "0c3ff18e-2b4d-4ba7-8349-c93d299a868d",
+      "9d90a339-3a50-4060-abaf-fde816c23282",
+      "b8c0b1bb-07fd-4cad-953c-5188aeff1e8d",
+      "8361fa7e-ba41-4624-83fa-5caa4eb3f5e6",
+      "b1c5d6e0-cbd4-4a4d-8be0-3874cd29d20f",
+      "c096e1e6-9332-4d96-a308-9d89f44430d2"
+    ],
+    "notes_text": "Аттестат; результаты ЕНТ (комбинация зависит от профиля, например Биология + Химия для биологов и агрономов).",
+    "exams": [
+      "Биология",
+      "Химия"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "medical-university-karaganda",
+    "university_name": "Медицинский университет Караганды",
+    "program_ids": [
+      "5b9e487a-eab7-4ba1-a631-818d261e30df",
+      "61a91dfc-581b-418c-b112-c4fb806cabcf",
+      "ebfbaae7-ed7b-4447-a726-02536e2c286e",
+      "157d71ef-cd6c-44c8-9dff-c4b6f6b2d78e",
+      "d9582b65-f44b-4c4f-abad-c58e9675f548",
+      "ea756f54-6a98-40fc-82ff-e033126fa19a",
+      "badd2ed0-7e4b-413d-90c0-ffac444f0fc8"
+    ],
+    "notes_text": "Аттестат; высокие баллы ЕНТ (Биология + Химия); обязательное прохождение специализированного психометрического тестирования.",
+    "exams": [
+      "Биология",
+      "Химия"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "toraigyrov-university",
+    "university_name": "Торайгыров Университет (ToU)",
+    "program_ids": [
+      "23f3acc7-c6d1-436a-9c83-7cd06933fa92",
+      "b8e00571-770d-4b24-bf94-3eda5dee2e3a",
+      "42948779-3fc0-4b2a-b703-ec23218007ff",
+      "14938ff6-e0a4-45c2-a03f-48cc488c73f0",
+      "9b91f8c2-ad08-439c-a722-146a48c93724"
+    ],
+    "notes_text": "Аттестат; результаты ЕНТ (Математика + География / Иностранный язык).",
+    "exams": [
+      "Математика",
+      "География",
+      "Иностранный язык"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "toraigyrov-university",
+    "university_name": "Торайгыров Университет (ToU)",
+    "program_ids": [
+      "bffa81c0-9326-4f4c-8850-47965c3e1858",
+      "b8eb9239-6157-4b6c-b130-98d66691b97a",
+      "b6a0fce0-4392-4a4a-903c-605a778d8c16",
+      "6b745630-7b14-4d4a-adc6-2f5f363e3371",
+      "a6c09f2d-19c4-4f0b-ad02-c1f3829915bb",
+      "50841805-c894-4199-967d-940c6f8f7e5f",
+      "6e1e359e-961a-4121-8db6-9d4cde33beaf"
+    ],
+    "notes_text": "Аттестат о среднем образовании. Результаты ЕНТ с профильными предметами (Математика + Информатика/Физика) выше порога.",
+    "exams": [
+      "Математика",
+      "Информатика",
+      "Физика"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  },
+  {
+    "university_slug": "toraigyrov-university",
+    "university_name": "Торайгыров Университет (ToU)",
+    "program_ids": [
+      "261e8a75-735e-4f94-859e-b255e0d1f549",
+      "ffe13c8e-a601-4ef4-a9b4-9fec870a4d49",
+      "5922812d-bbc6-4795-95ee-5202fae76dea",
+      "bf49d0ec-0e09-49e3-9e8b-fa8475bc78f8",
+      "ae54fb82-f804-4339-82c8-1fcc2bbfb1fb",
+      "5e87246d-853d-4b71-9da0-1b1171c4389e",
+      "64a42c73-92c1-4b59-85b2-64e4d2c9d5aa",
+      "df168bde-5d44-40f0-ba19-8d374826600f",
+      "efe94bd4-413d-4514-b46a-e7fb40e695fd",
+      "195142df-db68-4449-80ae-3d4b35638237",
+      "f3233793-a41b-41a6-9c94-fe16bf946667",
+      "5f9a533b-55fa-4de1-aa2a-e0a9bc08cbb2",
+      "4e34c936-30b3-4c9e-8e11-12d434e3ea16",
+      "0cc03fd6-ecc9-403b-9867-4ffd9ffdd93b"
+    ],
+    "notes_text": "Аттестат; обязательная сдача двух профильных творческих экзаменов (рисунок, черчение, или исполнительское/музыкальное мастерство).",
+    "exams": [
+      "рисунок",
+      "черчение",
+      "исполнительское мастерство",
+      "музыкальное мастерство"
+    ],
+    "needs_portfolio": null,
+    "needs_essay": null,
+    "needs_recommendations": null,
+    "needs_interview": null,
+    "application_deadline": null
+  }
+]

@@ -33,6 +33,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session
+from app.models.direction import Direction
 from app.models.program import Program
 from app.models.university import University
 from scripts.specialty_profession_map import GARBAGE_SPECIALTIES, SPECIALTY_TO_PROFESSIONS
@@ -108,9 +109,14 @@ def _cleanup_legacy_group_names(record: dict) -> set[str]:
 
 async def main() -> None:
     async with async_session() as db:
+        directions_by_slug = {
+            d.slug: d for d in (await db.execute(select(Direction))).scalars().all()
+        }
+
         uni_inserted = uni_updated = uni_skipped = 0
         prog_inserted = prog_updated = prog_skipped = prog_deleted = 0
         unmapped: list[str] = []
+        missing_direction_rows: set[str] = set()
 
         for record in ALL_UNIVERSITIES:
             existing_uni = await _find_university(db, record)
@@ -119,6 +125,9 @@ async def main() -> None:
                 existing_uni = University(
                     name=record["name"],
                     slug=record["slug"],
+                    short_name=record.get("short_name") or None,
+                    aliases=record.get("aliases") or [],
+                    location=record.get("location") or None,
                     country=record["country"],
                     city=record["city"],
                     website=record.get("website"),
@@ -135,6 +144,15 @@ async def main() -> None:
                     changed = True
                 if not existing_uni.description and record.get("specialties_summary"):
                     existing_uni.description = record["specialties_summary"]
+                    changed = True
+                if not existing_uni.short_name and record.get("short_name"):
+                    existing_uni.short_name = record["short_name"]
+                    changed = True
+                if not existing_uni.aliases and record.get("aliases"):
+                    existing_uni.aliases = record["aliases"]
+                    changed = True
+                if not existing_uni.location and record.get("location"):
+                    existing_uni.location = record["location"]
                     changed = True
                 if changed:
                     uni_updated += 1
@@ -173,9 +191,16 @@ async def main() -> None:
                     profession_slugs = SPECIALTY_TO_PROFESSIONS.get(specialty_name, [])
                     if not profession_slugs:
                         unmapped.append(f"{record['name']} / {group_name} / {specialty_name}")
+                    missing_direction_rows.update(
+                        slug for slug in profession_slugs if slug not in directions_by_slug
+                    )
+                    new_directions = [
+                        directions_by_slug[slug]
+                        for slug in profession_slugs
+                        if slug in directions_by_slug
+                    ]
 
                     prog_data = {
-                        "profession_slugs": profession_slugs,
                         "language": "Казахский/Русский",
                         "cost_per_year": None,
                         "description": group_name,
@@ -195,7 +220,9 @@ async def main() -> None:
                     existing_prog = result.scalar_one_or_none()
 
                     if existing_prog is None:
-                        db.add(Program(university_id=existing_uni.id, name=specialty_name, **prog_data))
+                        new_prog = Program(university_id=existing_uni.id, name=specialty_name, **prog_data)
+                        new_prog.directions = new_directions
+                        db.add(new_prog)
                         prog_inserted += 1
                     else:
                         changed = False
@@ -203,6 +230,9 @@ async def main() -> None:
                             if getattr(existing_prog, field) != value:
                                 setattr(existing_prog, field, value)
                                 changed = True
+                        if {d.slug for d in existing_prog.directions} != set(profession_slugs):
+                            existing_prog.directions = new_directions
+                            changed = True
                         if changed:
                             prog_updated += 1
                         else:
@@ -226,6 +256,14 @@ async def main() -> None:
         )
         for name in unmapped:
             print(f"  - {name}")
+    if missing_direction_rows:
+        print(
+            f"\n{len(missing_direction_rows)} profession slug(s) mapped in "
+            f"specialty_profession_map.py have no matching Direction row in "
+            f"the DB, so they were skipped instead of linked:"
+        )
+        for slug in sorted(missing_direction_rows):
+            print(f"  - {slug}")
 
 
 if __name__ == "__main__":

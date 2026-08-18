@@ -101,7 +101,9 @@ def _middle_fixture(**overrides) -> RiasecResultResponse:
 
 
 def _senior_fixture(**overrides) -> RiasecResultResponse:
-    """schema fixture — senior (RIASEC, flat profile → exactly 3 worth_trying)."""
+    """schema fixture — senior (RIASEC, flat profile). Flat profiles are no
+    longer bound to exactly 3 worth_trying careers (product decision,
+    2026-08-17) — same ranked top-10 as everyone else."""
     kwargs = dict(
         assessment_id=uuid.uuid4(),
         summary="У тебя ровный профиль без явного перевеса одной сферы.",
@@ -110,7 +112,7 @@ def _senior_fixture(**overrides) -> RiasecResultResponse:
         thinking_style_notes=[_thinking_note()],
         personality_notes=_personality_notes(),
         motivation_highlights=["Тебе важно пробовать разное"],
-        careers=[_career(f"d{i}", tier="worth_trying") for i in range(3)],
+        careers=[_career("d0"), _career("d1", tier="good"), _career("d2", tier="worth_trying")],
         is_flat_profile=True,
         created_at=_NOW,
     )
@@ -133,7 +135,7 @@ def test_middle_fixture_is_valid():
 def test_senior_flat_profile_fixture_is_valid():
     response = _senior_fixture()
     assert response.is_flat_profile is True
-    assert len(response.careers) == 3
+    assert len(response.careers) == 3  # this fixture's own choice, not a schema constraint
 
 
 def test_disclaimer_defaults_to_the_fixed_server_text():
@@ -167,9 +169,9 @@ def test_riasec_interest_map_must_have_exactly_six_items():
         _middle_fixture(interest_map=_interest_items(_RIASEC_CODES[:5]))
 
 
-def test_riasec_careers_cannot_exceed_five():
+def test_riasec_careers_cannot_exceed_ten():
     with pytest.raises(ValidationError):
-        _middle_fixture(careers=[_career(f"d{i}") for i in range(6)])
+        _middle_fixture(careers=[_career(f"d{i}") for i in range(11)])
 
 
 def test_riasec_exploration_activities_must_be_empty():
@@ -187,21 +189,16 @@ def test_riasec_career_try_now_cannot_be_empty():
         StudentCareer(slug="x", name="Y", rank=1, tier="strong", why="ok", try_now="")
 
 
-def test_flat_profile_wrong_career_count_is_rejected():
-    with pytest.raises(ValidationError):
-        _senior_fixture(careers=[_career(f"d{i}", tier="worth_trying") for i in range(2)])
+def test_flat_profile_is_not_bound_by_any_fixed_career_count_or_tier():
+    # Product decision, 2026-08-17: a flat profile is no longer forced to
+    # exactly 3 uniform-tier careers — it gets the same ranked list as any
+    # other profile, only bounded by the general max=10 (below).
+    response = _senior_fixture(careers=[_career(f"d{i}", tier="strong") for i in range(2)])
+    assert len(response.careers) == 2
+    assert all(c.tier == "strong" for c in response.careers)
 
 
-def test_flat_profile_wrong_tier_is_rejected():
-    with pytest.raises(ValidationError):
-        _senior_fixture(careers=[
-            _career("d0", tier="worth_trying"),
-            _career("d1", tier="worth_trying"),
-            _career("d2", tier="strong"),  # flat profile must never rank one career above another
-        ])
-
-
-def test_non_flat_profile_is_not_bound_by_the_three_careers_rule():
+def test_non_flat_profile_is_not_bound_by_a_three_careers_rule():
     response = _middle_fixture(is_flat_profile=False, careers=[_career(f"d{i}") for i in range(5)])
     assert len(response.careers) == 5
 

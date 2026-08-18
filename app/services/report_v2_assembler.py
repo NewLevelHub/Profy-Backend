@@ -53,7 +53,6 @@ _FLAT_PROFILE_THRESHOLD = 25.0
 _LEVEL_HIGH_MIN = 70.0
 _LEVEL_MEDIUM_MIN = 50.0
 
-_FLAT_PROFILE_CAREER_COUNT = 3
 _GOOD_TIER_MAX_RANK = 3
 
 # Career matching (career_match_score, riasec_service.py) runs purely on the
@@ -65,8 +64,10 @@ _GOOD_TIER_MAX_RANK = 3
 # clerical directions with zero connection to what they'd actually told the
 # app about themselves. Redesigning career_match_score to weigh non-RIASEC
 # evidence is a real methodology change (result-quality-fixes.md §3, variant
-# C) — not done here. This is the honest, scoped mitigation: say so plainly
-# instead of silently presenting a noisy top-3 as confident fact.
+# C) — not done here. The mitigation is the honest disclaimer below, not a
+# shortened/uniform-tier career list (product decision, 2026-08-17): the
+# ranking itself is still real RIASEC-derived signal even when it's a close
+# call, so a flat profile shows the same ranked top-10 as everyone else.
 _FLAT_PROFILE_ARTIFACT_NOTE = (
     " Отдельно ты рассказал(а) о своих увлечениях в профиле — когда баллы "
     "по разным сферам близки друг к другу, как сейчас, эти увлечения могут "
@@ -220,18 +221,18 @@ def _tier_for_rank(rank: int) -> Literal["strong", "good", "worth_trying"]:
 def build_riasec_careers(
     context: ReportNarrativeContext,
     careers: list[dict],
-    flat: bool,
 ) -> list[StudentCareer]:
     """`careers` is the raw list report_service already builds
     (riasec_service.matched_careers + report_service._career_dict, or the
     same shape read back from AnalysisResult.careers) — already sorted by
     match_score, so this only ever slices/labels, never re-ranks or re-sorts.
 
-    Flat profile: exactly 3, all `worth_trying` (TZ_Profi.md §16.6). `why`
-    is always non-empty: the direction's own Holland-code overlap with
-    vetted RIASEC evidence when there is one, otherwise the neutral
-    product-approved fallback — never blank, never invented beyond what's
-    in `context`.
+    Same top-10, ranked strong/good/worth_trying by rank for every profile,
+    flat or not (product decision, 2026-08-17 — see the module-level comment
+    above `_GOOD_TIER_MAX_RANK`). `why` is always non-empty: the direction's
+    own Holland-code overlap with vetted RIASEC evidence when there is one,
+    otherwise the neutral product-approved fallback — never blank, never
+    invented beyond what's in `context`.
 
     Two shown directions can still be equally well-supported by the exact
     same confirmed evidence — e.g. codes "CSI" and "CSR" differ only in a
@@ -242,7 +243,7 @@ def build_riasec_careers(
     THAT direction — its own catalog `skills_needed[0]`, a fact about the
     job, not a claim about the student, so this never overclaims beyond
     vetted evidence the way citing an unconfirmed RIASEC letter would."""
-    top = careers[:_FLAT_PROFILE_CAREER_COUNT] if flat else careers[:10]
+    top = careers[:10]
     result: list[StudentCareer] = []
     seen_evidence: set[tuple[str, ...]] = set()
     for rank, career in enumerate(top, start=1):
@@ -267,7 +268,7 @@ def build_riasec_careers(
             slug=career.get("slug", ""),
             name=career.get("name", ""),
             rank=rank,
-            tier="worth_trying" if flat else _tier_for_rank(rank),
+            tier=_tier_for_rank(rank),
             why=why,
             matched_strengths=matched_strengths,
             try_now=first_steps[0] if first_steps else NEUTRAL_TRY_NOW,
@@ -332,5 +333,5 @@ def assemble_result_v2(
     return RiasecResultResponse(
         **common,
         interest_map=interest_map,
-        careers=build_riasec_careers(context, careers, flat),
+        careers=build_riasec_careers(context, careers),
     )

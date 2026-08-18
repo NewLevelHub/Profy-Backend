@@ -6,7 +6,7 @@
     },
     "careers": {
       "items": "StudentCareer",
-      "maxItems": 5,
+      "maxItems": 10,
       "type": "array"
     },
     "created_at": {
