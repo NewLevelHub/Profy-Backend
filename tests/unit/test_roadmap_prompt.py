@@ -23,8 +23,21 @@ def test_task_schema_requires_description():
 
 def test_task_schema_still_requires_the_original_fields():
     # Область 9 only adds description — text/category/priority must stay.
+    # `path` was added for the explore/unsure recommended_paths rework.
     task_schema = _task_schema()
-    assert set(task_schema["required"]) == {"text", "description", "category", "priority"}
+    assert set(task_schema["required"]) == {"text", "description", "category", "priority", "path"}
+
+
+def test_root_schema_requires_recommended_paths():
+    assert "recommended_paths" in roadmap_prompt.ROADMAP_JSON_SCHEMA["required"]
+    path_schema = roadmap_prompt.ROADMAP_JSON_SCHEMA["properties"]["recommended_paths"]["items"]
+    assert set(path_schema["required"]) == {"key", "label", "why", "future_benefit"}
+
+
+def test_system_prompt_explains_recommended_paths_for_explore_unsure():
+    system = roadmap_prompt._SYSTEM_PROMPT
+    assert "recommended_paths" in system
+    assert "explore/unsure" in system
 
 
 def test_system_prompt_gives_a_qualitative_criterion_not_a_bare_sentence_count():

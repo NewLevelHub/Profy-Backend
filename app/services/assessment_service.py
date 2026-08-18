@@ -215,6 +215,20 @@ async def update_assessment_goal(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Для младшей возрастной группы доступна только цель 'исследовать себя'",
             )
+    # Backend mirror of the frontend gate (ASSESSMENT_GOAL_ALLOWED_AGE_GROUPS in
+    # constants.ts): "university" is senior-only. Without this, a direct API
+    # call or a future client could set a middle assessment's raw goal to
+    # "university" — `get_effective_goal` would still downgrade it to
+    # "profession" for generation, but the goal-change UI would misleadingly
+    # show "поступление" as accepted.
+    if age_group == AgeGroup.middle:
+        if goal == AssessmentGoal.university or any(
+            g == AssessmentGoal.university for g in secondary_goals
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Для учеников 5-8 классов поступление пока недоступно как цель",
+            )
 
     # Check limit of changes
     is_primary_changing = (assessment.goal != goal)
@@ -237,6 +251,18 @@ async def update_assessment_goal(
 
     from app.services.goal_overlay_service import invalidate_goal_overlay_cache
     await invalidate_goal_overlay_cache(assessment_id, db)
+
+    # ТЗ §10.5: смена цели обязана перегенерировать роадмап (и, при
+    # необходимости, университетский блок) — диагностика не пересчитывается,
+    # но план, построенный под старую цель, больше не имеет смысла и не
+    # должен продолжать показываться. Without this, a goal change from
+    # "explore" to "university" left the previously auto-generated explore
+    # roadmap (and any confirmed direction/its plan) untouched — the student
+    # saw a plan with no relation to their actual goal.
+    if is_primary_changing:
+        redis = assessment_shared.get_redis()
+        await assessment_shared.invalidate_goal_roadmap(assessment_id, db, redis)
+        await assessment_shared.invalidate_direction_flow(assessment, db, redis)
 
     await db.commit()
     return await _to_response(assessment, db)

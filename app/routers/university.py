@@ -18,7 +18,7 @@ from app.schemas.university import ProgramBrief, ProgramDetail
 from app.services import assessment_service
 from app.services.artifact_service import get_artifacts
 from app.services.gap_analysis_service import analyze_gap, to_response
-from app.services.university_service import get_program_by_id, search_programs
+from app.services.university_service import get_program_by_id, get_program_detail, search_programs
 
 GAP_CACHE_TTL = 60 * 60  # 1 hour
 
@@ -50,7 +50,7 @@ async def get_program(
     program_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ) -> ProgramDetail:
-    return await get_program_by_id(db, program_id)
+    return await get_program_detail(db, program_id)
 
 
 @router.get("/programs/{program_id}/gap-analysis", response_model=GapAnalysisResponse)

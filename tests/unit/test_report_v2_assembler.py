@@ -193,7 +193,10 @@ def test_careers_with_identical_evidence_after_reordering_get_a_skills_needed_di
     assert "Техническая грамотность" not in first.why
 
 
-def test_flat_profile_gives_exactly_three_worth_trying_careers() -> None:
+def test_flat_profile_still_gets_the_full_ranked_career_list() -> None:
+    # Product decision, 2026-08-17: is_flat_profile no longer shortens or
+    # flattens the tiers of the career list — that's the same top-10, ranked
+    # strong/good/worth_trying by rank, as a non-flat profile gets.
     context = _context(age_group="senior", evidence=[])
     careers = [_direction(f"d{i}", "RIA", 5 - i) for i in range(5)]
     response = report_v2_assembler.assemble_result_v2(
@@ -209,8 +212,8 @@ def test_flat_profile_gives_exactly_three_worth_trying_careers() -> None:
     )
 
     assert response.is_flat_profile is True
-    assert len(response.careers) == 3
-    assert all(c.tier == "worth_trying" for c in response.careers)
+    tiers = [c.tier for c in response.careers]
+    assert tiers == ["strong", "good", "good", "worth_trying", "worth_trying"]
 
 
 def test_flat_profile_with_artifact_evidence_gets_an_honest_summary_note() -> None:

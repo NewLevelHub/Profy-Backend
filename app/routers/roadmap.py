@@ -13,6 +13,7 @@ from app.models.program import Program
 from app.models.user import User
 from app.schemas.roadmap import (
     DirectionRoadmapResponse,
+    GenerateDirectionRoadmapForProgramRequest,
     GenerateDirectionRoadmapRequest,
     RoadmapResponse,
 )
@@ -78,6 +79,20 @@ async def generate_direction_roadmap(
             )
     return await roadmap_builder.generate_direction_roadmap(
         data.assessment_id, data.direction_slug, db, data.program_id
+    )
+
+
+@router.post("/direction/by-program", response_model=DirectionRoadmapResponse)
+async def generate_direction_roadmap_for_program(
+    data: GenerateDirectionRoadmapForProgramRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> DirectionRoadmapResponse:
+    """University scenario (C): build the plan for a chosen program directly —
+    no AI-inquiry step, direction resolved server-side from the program."""
+    await _require_assessment_access(data.assessment_id, current_user, db)
+    return await roadmap_builder.generate_direction_roadmap_for_program(
+        data.assessment_id, data.program_id, db
     )
 
 

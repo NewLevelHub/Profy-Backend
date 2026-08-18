@@ -97,9 +97,9 @@ async def _seed_stale_artifacts(assessment: Assessment, db_session: AsyncSession
     redis = assessment_shared.get_redis()
     keys = {
         "report": assessment_shared.report_cache_key(assessment.id),
-        "droadmap": f"droadmap:{assessment.id}:{_DIRECTION_SLUG}",
+        "droadmap": f"{assessment_shared.DIRECTION_ROADMAP_CACHE_KEY_PREFIX}:{assessment.id}:{_DIRECTION_SLUG}",
         "dq": f"dq:{assessment.id}:{_DIRECTION_SLUG}",
-        "goal_roadmap": f"roadmap:{assessment.id}:none",
+        "goal_roadmap": f"{assessment_shared.ROADMAP_CACHE_KEY_PREFIX}:{assessment.id}:none",
     }
     for key in keys.values():
         await redis.set(key, "stale")

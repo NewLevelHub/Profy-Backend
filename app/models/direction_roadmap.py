@@ -29,14 +29,18 @@ class DirectionRoadmap(Base):
         nullable=False,
         index=True,
     )
+    direction_slug: Mapped[str] = mapped_column(String(100), nullable=False)
+    direction_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Set only for goal="university" plans generated from a specific chosen
+    # program (see roadmap_builder.generate_direction_roadmap). Null for
+    # every other goal, and for university plans built from a bare direction
+    # without a program (existing `_university_requirements_for(slug, ...)`
+    # path, kept for backward compatibility).
     program_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("programs.id", ondelete="SET NULL"),
         nullable=True,
-        index=True,
     )
-    direction_slug: Mapped[str] = mapped_column(String(100), nullable=False)
-    direction_name: Mapped[str] = mapped_column(String(255), nullable=False)
     target: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     growth_focus: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     stages: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
@@ -50,6 +54,8 @@ class DirectionRoadmap(Base):
     # the roadmap row so subsequent GETs can return the same program-aware result
     # without regenerating the whole plan.
     program_fit: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    # Hand-verified catalogue entries, see app/data/resource_catalog.py.
+    additional_resources: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

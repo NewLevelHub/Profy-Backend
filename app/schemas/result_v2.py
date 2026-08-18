@@ -21,7 +21,7 @@ import uuid
 from datetime import datetime
 from typing import Annotated, Literal, Union
 
-from pydantic import BaseModel, Field, TypeAdapter, model_validator
+from pydantic import BaseModel, Field, TypeAdapter
 
 # TZ_Profi.md §17.5 point 7 / Приложение C В.2: every report must carry this
 # framing, verbatim and unconditionally — server-authored, not LLM text, so
@@ -82,7 +82,6 @@ _MI_INTEREST_COUNT = 8  # len(mi_content.MI_LABELS) — every MI category, alway
 _RIASEC_INTEREST_COUNT = 6  # len(riasec_content.RIASEC_LABELS) — every Holland letter, always
 _PERSONALITY_TRAIT_COUNT = 5  # len(bigfive_content.PERSONALITY_LABELS) — every Big Five domain, always
 _MAX_CAREERS = 10
-_FLAT_PROFILE_CAREER_COUNT = 3
 
 _model_config = {"extra": "forbid"}
 
@@ -185,10 +184,10 @@ class MiResultResponse(_ResultResponseBase):
 
 
 class RiasecResultResponse(_ResultResponseBase):
-    """middle/senior. Flat profile (TZ_Profi.md §16.6) forces exactly 3
-    careers, all tier="worth_trying" — enforced here, not just by whatever
-    report_v2_assembler.py happens to build, so a future assembler bug
-    can't silently ship 2 or 4."""
+    """middle/senior. `is_flat_profile` (TZ_Profi.md §16.6) no longer bounds
+    `careers` — a flat profile gets the same ranked top-10 as everyone else
+    (product decision, 2026-08-17); the honest disclaimer lives in `summary`
+    instead, not in a shortened/uniform-tier career list."""
 
     interest_instrument: Literal["riasec"] = "riasec"
     interest_map: list[StudentInterestMapItem] = Field(
@@ -196,17 +195,6 @@ class RiasecResultResponse(_ResultResponseBase):
     )
     careers: list[StudentCareer] = Field(max_length=_MAX_CAREERS)
     exploration_activities: list[str] = Field(default_factory=list, max_length=0)
-
-    @model_validator(mode="after")
-    def _flat_profile_has_exactly_three_worth_trying_careers(self) -> "RiasecResultResponse":
-        if not self.is_flat_profile:
-            return self
-        if len(self.careers) != _FLAT_PROFILE_CAREER_COUNT or any(c.tier != "worth_trying" for c in self.careers):
-            raise ValueError(
-                f"flat profile must have exactly {_FLAT_PROFILE_CAREER_COUNT} worth_trying careers, "
-                f"got {[(c.slug, c.tier) for c in self.careers]}"
-            )
-        return self
 
 
 ResultResponseV2 = Union[MiResultResponse, RiasecResultResponse]

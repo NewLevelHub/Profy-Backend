@@ -15,7 +15,7 @@ correctly if it's ever the input.
 """
 from app.models.program import Program
 from app.models.university import University
-from app.services.roadmap_builder import _map_program_requirement
+from app.services.university_requirements import map_program_requirement as _map_program_requirement
 
 _UNIVERSITY = University(name="Nazarbayev University", country="Казахстан", city="Астана")
 
@@ -23,7 +23,6 @@ _UNIVERSITY = University(name="Nazarbayev University", country="Казахста
 def _program(**overrides) -> Program:
     defaults = dict(
         name="Компьютерные науки (бакалавр)",
-        profession_slugs=["it-development"],
         language="Английский",
         requirements={},
         deadlines={},
