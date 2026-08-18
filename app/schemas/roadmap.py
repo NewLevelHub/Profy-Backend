@@ -1,4 +1,5 @@
 import uuid
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -117,6 +118,20 @@ class UniversityRequirement(BaseModel):
     required_documents: list[str] | None = None
 
 
+class SubjectFit(BaseModel):
+    subject: str
+    status: Literal["strength", "needs_work", "unclear"]
+    note: str
+
+
+class ProgramFit(BaseModel):
+    program_id: uuid.UUID
+    program_name: str
+    university_name: str
+    subjects: list[SubjectFit]
+    summary: str
+
+
 class DirectionRoadmapResponse(BaseModel):
     id: uuid.UUID
     assessment_id: uuid.UUID
@@ -129,6 +144,7 @@ class DirectionRoadmapResponse(BaseModel):
     subjects_to_focus: list[str]
     university_track: UniversityTrack
     university_requirements: list[UniversityRequirement] = []
+    program_fit: ProgramFit | None = None
 
     model_config = {"from_attributes": True}
 
@@ -136,3 +152,4 @@ class DirectionRoadmapResponse(BaseModel):
 class GenerateDirectionRoadmapRequest(BaseModel):
     assessment_id: uuid.UUID
     direction_slug: str
+    program_id: uuid.UUID | None = None

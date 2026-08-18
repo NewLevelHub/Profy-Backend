@@ -29,6 +29,12 @@ class DirectionRoadmap(Base):
         nullable=False,
         index=True,
     )
+    program_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("programs.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     direction_slug: Mapped[str] = mapped_column(String(100), nullable=False)
     direction_name: Mapped[str] = mapped_column(String(255), nullable=False)
     target: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
@@ -40,6 +46,10 @@ class DirectionRoadmap(Base):
     # Backend-populated only (never from the LLM): Program/University facts for
     # goal="university" — empty list for every other goal. See UniversityRequirement.
     university_requirements: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    # Optional LLM-derived fit summary for one concrete chosen program. Kept on
+    # the roadmap row so subsequent GETs can return the same program-aware result
+    # without regenerating the whole plan.
+    program_fit: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

@@ -27,11 +27,13 @@ from app.schemas.roadmap import (
     DirectionRoadmapResponse,
     DirectionStage,
     GrowthFocus,
+    ProgramFit,
     ProgramGrant,
     RoadmapMilestone,
     RoadmapResponse,
     RoadmapTarget,
     RoadmapTask,
+    SubjectFit,
     UniversityRequirement,
     UniversityTrack,
 )
@@ -450,6 +452,8 @@ class _DirectionPlan:
     # Backend-populated, never the model's decision — see _university_requirements_for.
     # Empty for every goal except "university".
     university_requirements: list[UniversityRequirement]
+    # Optional LLM-derived fit summary for one concrete selected program.
+    program_fit: ProgramFit | None
 
 
 def direction_cache_key(assessment_id: uuid.UUID, slug: str) -> str:
@@ -530,6 +534,42 @@ async def _university_requirements_for(slug: str, db: AsyncSession) -> list[Univ
     return [_map_program_requirement(program, university) for program, university in rows]
 
 
+async def _program_row_for_direction(
+    program_id: uuid.UUID,
+    slug: str,
+    db: AsyncSession,
+) -> tuple[Program, University]:
+    row = (
+        await db.execute(
+            select(Program, University)
+            .join(University, Program.university_id == University.id)
+            .where(Program.id == program_id)
+        )
+    ).one_or_none()
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Program not found",
+        )
+
+    program, university = row
+    if slug not in (program.profession_slugs or []):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Program does not belong to this direction",
+        )
+    return program, university
+
+
+def _selected_program_context(program: Program, university: University) -> dict:
+    return {
+        "program_id": str(program.id),
+        "program_name": program.name,
+        "university_name": university.name,
+        "requirements": program.requirements or {},
+    }
+
+
 _MIN_STEPS_PER_STAGE = 3
 
 
@@ -605,6 +645,7 @@ async def _generate_plan(
     context: StudentContext,
     direction,
     university_requirements: list[UniversityRequirement],
+    selected_program: dict | None,
 ) -> _DirectionPlan | None:
     """Ask the LLM for a plan, retrying once if it breaks the structural rules.
 
@@ -616,7 +657,12 @@ async def _generate_plan(
     reference facts (via `build_messages`) and stapled onto the validated plan
     afterwards, same as `skills_to_build`/`university_track` are the model's call
     but this field never is."""
-    messages = direction_prompt.build_messages(context, direction, university_requirements)
+    messages = direction_prompt.build_messages(
+        context,
+        direction,
+        university_requirements,
+        selected_program,
+    )
 
     for attempt in range(1, _MAX_PLAN_ATTEMPTS + 1):
         try:
@@ -637,6 +683,9 @@ async def _generate_plan(
                     raw.get("university_track", {})
                 ),
                 university_requirements=university_requirements,
+                program_fit=ProgramFit.model_validate(raw["program_fit"])
+                if raw.get("program_fit") is not None
+                else None,
             )
         except (llm_client.LLMError, ValidationError, TypeError) as exc:
             logger.warning("Direction roadmap generation failed: %s", exc)
@@ -655,7 +704,10 @@ async def _generate_plan(
 
 
 async def generate_direction_roadmap(
-    assessment_id: uuid.UUID, slug: str, db: AsyncSession
+    assessment_id: uuid.UUID,
+    slug: str,
+    db: AsyncSession,
+    program_id: uuid.UUID | None = None,
 ) -> DirectionRoadmapResponse:
     """Build the in-direction development plan. Confirming a direction happens here:
     generating its roadmap is what marks it as the student's chosen path."""
@@ -664,9 +716,6 @@ async def generate_direction_roadmap(
 
     redis = _get_redis()
     key = direction_cache_key(assessment_id, slug)
-    cached = await redis.get(key)
-    if cached:
-        return DirectionRoadmapResponse.model_validate_json(cached)
 
     assessment, direction = await _require_direction_roadmap_access(assessment_id, slug, db)
 
@@ -680,11 +729,28 @@ async def generate_direction_roadmap(
     if assessment.goal == AssessmentGoal.university:
         university_requirements = await _university_requirements_for(slug, db)
 
-    plan = await _generate_plan(context, direction, university_requirements)
+    selected_program: dict | None = None
+    if program_id is not None:
+        program, university = await _program_row_for_direction(program_id, slug, db)
+        selected_program = _selected_program_context(program, university)
+
+    plan = await _generate_plan(
+        context,
+        direction,
+        university_requirements,
+        selected_program,
+    )
     if plan is None:
         raise _AI_UNAVAILABLE
 
-    roadmap = await _upsert_direction_roadmap(assessment_id, slug, direction.name, plan, db)
+    roadmap = await _upsert_direction_roadmap(
+        assessment_id,
+        slug,
+        direction.name,
+        plan,
+        db,
+        program_id,
+    )
     assessment.selected_direction_slug = slug
     from app.services.goal_overlay_service import invalidate_goal_overlay_cache
     await invalidate_goal_overlay_cache(assessment_id, db)
@@ -702,6 +768,7 @@ async def _upsert_direction_roadmap(
     direction_name: str,
     plan: "_DirectionPlan",
     db: AsyncSession,
+    program_id: uuid.UUID | None,
 ) -> DirectionRoadmap:
     existing = (
         await db.execute(
@@ -723,6 +790,7 @@ async def _upsert_direction_roadmap(
         roadmap = existing
 
     roadmap.direction_name = direction_name
+    roadmap.program_id = program_id
     roadmap.target = plan.target.model_dump()
     roadmap.growth_focus = plan.growth_focus.model_dump()
     roadmap.stages = [s.model_dump() for s in plan.stages]
@@ -730,6 +798,9 @@ async def _upsert_direction_roadmap(
     roadmap.subjects_to_focus = plan.subjects_to_focus
     roadmap.university_track = plan.university_track.model_dump()
     roadmap.university_requirements = [r.model_dump() for r in plan.university_requirements]
+    roadmap.program_fit = (
+        plan.program_fit.model_dump() if plan.program_fit is not None else None
+    )
     return roadmap
 
 

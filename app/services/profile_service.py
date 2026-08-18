@@ -7,18 +7,38 @@ from app.models.profile import Profile, compute_age_group
 from app.schemas.profile import ProfileCreateRequest, ProfileUpdateRequest
 
 
-async def create_profile(user_id: uuid.UUID, data: ProfileCreateRequest, db: AsyncSession) -> Profile:
+async def create_profile(
+    user_id: uuid.UUID,
+    data: ProfileCreateRequest,
+    db: AsyncSession,
+    *,
+    commit: bool = True,
+) -> Profile:
+    """Create the Profile row for `user_id`.
+
+    `commit=False` lets a caller (e.g. the combined profile+artifacts create
+    endpoint) flush the insert without ending the transaction, so it can be
+    combined atomically with other writes and committed once at the end.
+    Standalone callers keep the default `commit=True`, which is exactly the
+    previous behavior.
+    """
     existing = await db.execute(select(Profile).where(Profile.user_id == user_id))
     if existing.scalar_one_or_none() is not None:
         raise ValueError("Profile already exists for this user")
 
+    # `artifacts` (if present) is handled by the caller via artifact_service,
+    # not a Profile column — exclude it before spreading onto the model.
+    profile_fields = data.model_dump(exclude={"artifacts"})
     profile = Profile(
         user_id=user_id,
         age_group=compute_age_group(data.age),
-        **data.model_dump(),
+        **profile_fields,
     )
     db.add(profile)
-    await db.commit()
+    if commit:
+        await db.commit()
+    else:
+        await db.flush()
     await db.refresh(profile)
     return profile
 

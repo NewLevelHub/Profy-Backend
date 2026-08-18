@@ -1,6 +1,7 @@
 """
-Promote an existing Profy user to admin.
+Grant or revoke admin access for an existing Profy user.
 Run: docker-compose exec api python scripts/make_admin.py user@example.com
+     docker-compose exec api python scripts/make_admin.py user@example.com --revoke
 """
 import asyncio
 import os
@@ -16,10 +17,11 @@ from app.models.user import User
 
 async def main() -> None:
     if len(sys.argv) < 2:
-        print("Usage: python scripts/make_admin.py <email>")
+        print("Usage: python scripts/make_admin.py <email> [--revoke]")
         sys.exit(1)
 
     email = sys.argv[1].strip().lower()
+    grant = "--revoke" not in sys.argv[2:]
 
     async with async_session() as db:
         result = await db.execute(select(User).where(User.email == email))
@@ -28,9 +30,9 @@ async def main() -> None:
             print(f"User not found: {email}")
             sys.exit(1)
 
-        user.is_admin = True
+        user.is_admin = grant
         await db.commit()
-        print(f"Admin access granted to {email}")
+        print(f"Admin access {'granted to' if grant else 'revoked from'} {email}")
 
 
 if __name__ == "__main__":

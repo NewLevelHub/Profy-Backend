@@ -72,7 +72,7 @@ def test_schema_is_identical_regardless_of_goal():
     assert "university_requirements" not in direction_prompt.DIRECTION_ROADMAP_SCHEMA["properties"]
     assert set(direction_prompt.DIRECTION_ROADMAP_SCHEMA["required"]) == {
         "target", "growth_focus", "stages", "skills_to_build",
-        "subjects_to_focus", "university_track",
+        "subjects_to_focus", "university_track", "program_fit",
     }
 
 
@@ -156,3 +156,33 @@ def test_university_requirements_block_never_shown_for_non_university_goals():
     ]
     _, user_message = direction_prompt.build_messages(_context("explore"), _DIRECTION, reqs)
     assert "ДАННЫЕ ПО ВУЗАМ" in user_message["content"]
+
+
+def test_selected_program_block_omitted_when_no_program():
+    _, user_message = direction_prompt.build_messages(_context("profession"), _DIRECTION, [])
+    assert "ВЫБРАННАЯ ПРОГРАММА" not in user_message["content"]
+
+
+def test_selected_program_block_present_when_program_is_selected():
+    selected_program = {
+        "program_id": "5f9c58e3-8fdc-4ca9-8c4d-5dc0334d6595",
+        "program_name": "Computer Science",
+        "university_name": "Test University",
+        "requirements": {"notes": ["IT/математика: Математика + Информатика."]},
+    }
+    _, user_message = direction_prompt.build_messages(
+        _context("profession"),
+        _DIRECTION,
+        [],
+        selected_program,
+    )
+    content = user_message["content"]
+    assert "ВЫБРАННАЯ ПРОГРАММА" in content
+    assert "Computer Science" in content
+    assert "Математика + Информатика" in content
+
+
+def test_program_fit_instructions_explicitly_forbid_inventing_subjects():
+    system = direction_prompt._SYSTEM_PROMPT
+    assert "НЕ называй предмет, если его нет в тексте требований программы" in system
+    assert "НЕ подставляй «типичные» предметы" in system
