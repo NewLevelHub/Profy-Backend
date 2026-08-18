@@ -252,6 +252,18 @@ async def update_assessment_goal(
     from app.services.goal_overlay_service import invalidate_goal_overlay_cache
     await invalidate_goal_overlay_cache(assessment_id, db)
 
+    # ТЗ §10.5: смена цели обязана перегенерировать роадмап (и, при
+    # необходимости, университетский блок) — диагностика не пересчитывается,
+    # но план, построенный под старую цель, больше не имеет смысла и не
+    # должен продолжать показываться. Without this, a goal change from
+    # "explore" to "university" left the previously auto-generated explore
+    # roadmap (and any confirmed direction/its plan) untouched — the student
+    # saw a plan with no relation to their actual goal.
+    if is_primary_changing:
+        redis = assessment_shared.get_redis()
+        await assessment_shared.invalidate_goal_roadmap(assessment_id, db, redis)
+        await assessment_shared.invalidate_direction_flow(assessment, db, redis)
+
     await db.commit()
     return await _to_response(assessment, db)
 

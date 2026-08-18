@@ -106,7 +106,16 @@ class UniversityRequirement(BaseModel):
 
     `None` means "no data for this field" — it is never used to mean "not
     required". `portfolio_needed=False` is a real, known fact and must stay
-    distinguishable from "we don't know" (`None`)."""
+    distinguishable from "we don't know" (`None`).
+
+    `min_ent_threshold`/`admission_scores_2026`/`notes` are disjoint by seed
+    source (scripts/apply_grant_admission_data_2026.py): a program gets EITHER
+    a `min_ent_threshold` (no 2026-2027 grant-competition data exists) OR
+    `admission_scores_2026` entries (this year's real grant-winning scores),
+    rarely both. `notes` (subject-pair hints per specialty) can appear either
+    way. All three were previously silently dropped by `_map_program_requirement`
+    — programs seeded only with the newer shape reached the LLM with an
+    almost-empty requirement block despite having real admission data."""
 
     program_name: str
     university_name: str
@@ -117,6 +126,9 @@ class UniversityRequirement(BaseModel):
     language_level: str | None = None
     portfolio_needed: bool | None = None
     required_documents: list[str] | None = None
+    min_ent_threshold: int | None = None
+    admission_scores_2026: list[str] = []
+    notes: list[str] = []
 
 
 class DirectionRoadmapResponse(BaseModel):

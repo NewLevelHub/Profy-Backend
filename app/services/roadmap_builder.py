@@ -546,6 +546,27 @@ _DOCUMENT_LABELS: dict[str, str] = {
 }
 
 
+def _admission_scores_2026_brief(requirements: dict) -> list[str]:
+    """Human-readable lines from the 2026-2027 grant-competition scores
+    (scripts/apply_grant_admission_data_2026.py) — real min/max scores that
+    won a grant this admission cycle, per quota/specialty. Was previously
+    dropped entirely: `_map_program_requirement` only ever read the older
+    `exams`/`min_ielts`/deadlines/grants shape."""
+    entries = requirements.get("admission_scores_2026") or []
+    briefs = []
+    for e in entries:
+        specialty = e.get("specialty_name", "")
+        quota = e.get("quota", "")
+        min_score = e.get("min_score")
+        max_score = e.get("max_score")
+        year = e.get("year", "")
+        if min_score is None:
+            continue
+        score_range = f"{min_score}–{max_score}" if max_score is not None else str(min_score)
+        briefs.append(f"{specialty} ({quota}, {year}): проходной балл {score_range}")
+    return briefs
+
+
 def _map_program_requirement(program: Program, university: University) -> UniversityRequirement:
     """Pure mapping, no I/O — kept separate from the query so it's unit-testable
     without a database. `None` means "no data", never "not required": e.g.
@@ -581,6 +602,9 @@ def _map_program_requirement(program: Program, university: University) -> Univer
         language_level=language_level,
         portfolio_needed=requirements.get("needs_portfolio"),
         required_documents=required_documents,
+        min_ent_threshold=requirements.get("min_ent_threshold"),
+        admission_scores_2026=_admission_scores_2026_brief(requirements),
+        notes=list(requirements.get("notes") or []),
     )
 
 
@@ -639,6 +663,17 @@ def _valid_stages(stages: list[DirectionStage]) -> bool:
         if not tracks & {"growth", "integration"}:
             return False
     return True
+
+
+def _valid_plan(plan: "_DirectionPlan") -> bool:
+    """Structure guard for the whole plan, not just the stages — a technically
+    well-shaped stage list is still a broken plan if `subjects_to_focus` or
+    `skills_to_build` came back empty: the student is left with steps but no
+    answer to "what school subjects should I actually focus on", which is
+    exactly the concrete, checkable payoff this feature exists for."""
+    if not _valid_stages(plan.stages):
+        return False
+    return bool(plan.subjects_to_focus) and bool(plan.skills_to_build)
 
 
 # Product decision (2026-08-17): skip the AI-inquiry precondition for every
@@ -748,7 +783,7 @@ async def _generate_plan(
             logger.warning("Direction roadmap generation failed: %s", exc)
             return None
 
-        if _valid_stages(plan.stages):
+        if _valid_plan(plan):
             return plan
 
         logger.warning(
