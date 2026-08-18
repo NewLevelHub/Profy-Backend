@@ -102,17 +102,15 @@ def _parse_directions(directions_jsonb: list) -> list[_DirectionSummary]:
 
 # ─── Template builders per scenario ────────────────────────────────────────────
 
-def _build_explore(
-    directions: list[_DirectionSummary],
-) -> tuple[list[RoadmapMilestone], list[RecommendedPath]]:
-    """Template fallback for goal=explore/unsure — used when the LLM is off or
-    fails. Mirrors the LLM prompt's portrait+path structure (see
-    app/prompts/roadmap.py) as closely as a static template can: 1-2 leading
-    directions from the top matched careers, tasks tagged by path from
-    months_3 onward. Without the LLM there's no personalised why/future_benefit,
-    so those are generic-but-named-to-the-direction rather than truly personal."""
+def _decide_explore_paths(directions: list[_DirectionSummary]) -> list[RecommendedPath]:
+    """Deterministic fallback direction-decision for goal=explore/unsure —
+    used when the LLM is off or fails. 1-2 leading directions from the top
+    matched careers; `milestones` is filled in separately, once per path, by
+    `_build_explore_track` (product decision 2026-08-18: two directions get
+    two complete, independent plans, not one shared list — see
+    app/prompts/roadmap.py's module docstring)."""
     top = directions[:2]
-    paths = [
+    return [
         RecommendedPath(
             key=chr(ord("A") + i),
             label=d.name,
@@ -128,110 +126,70 @@ def _build_explore(
             future_benefit="Это поможет нащупать, какая сфера откликается сильнее всего.",
         )
     ]
-    single = len(paths) == 1
 
-    def try_task(path: RecommendedPath, priority: int) -> RoadmapTask:
-        return RoadmapTask(
-            text=f"Узнай подробнее о направлении «{path.label}»: посмотри видео, статьи или пробное занятие",
-            category="explore", priority=priority, path=None,
-        )
 
-    def deepen_task(path: RecommendedPath, priority: int) -> RoadmapTask:
-        return RoadmapTask(
-            text=f"Занимайся направлением «{path.label}» регулярно (раз в неделю) и сделай небольшой проект руками",
-            category="skill", priority=priority, path=path.key,
-        )
+def _build_explore_track(path: RecommendedPath) -> list[RoadmapMilestone]:
+    """Template fallback for ONE fully independent explore track — used both
+    when goal=explore/unsure resolves to a single direction, and once per
+    direction when it resolves to two. No parallel-path tasks, no "decide
+    between X and Y" step: this direction is the whole plan, exactly like
+    `_build_profession`'s single-direction shape."""
 
-    def compete_task(path: RecommendedPath, priority: int) -> RoadmapTask:
-        return RoadmapTask(
-            text=f"Прими участие в конкурсе, соревновании или открытом показе по направлению «{path.label}»",
-            category="portfolio", priority=priority, path=path.key,
-        )
+    def task(text: str, category: str, priority: int) -> RoadmapTask:
+        return RoadmapTask(text=text, category=category, priority=priority)
 
-    # Every milestone must land in the 4-5 task band (same rule the LLM path is
-    # held to, _valid_milestones) regardless of whether there are 1 or 2 paths —
-    # so path-specific tasks are topped up with common (path=None) ones.
-    month1_tasks = [try_task(p, i + 1) for i, p in enumerate(paths)]
-    month1_tasks.append(
-        RoadmapTask(text="Сравни впечатления от попробованного и запиши, что понравилось больше", category="planning", priority=len(month1_tasks) + 1, path=None)
-    )
-    month1_tasks.append(
-        RoadmapTask(text="Обсуди с родителями или учителем, что из попробованного откликнулось сильнее", category="planning", priority=len(month1_tasks) + 1, path=None)
-    )
-    if single:
-        month1_tasks.append(
-            RoadmapTask(text="Найди ещё один формат по этому же направлению (видео другого автора, другой кружок) и сравни впечатления", category="explore", priority=len(month1_tasks) + 1, path=None)
-        )
-
-    decide_text = (
-        f"Определись: продолжать «{paths[0].label}» или пробовать несколько направлений параллельно"
-        if single
-        else f"Определись: продолжать одно направление ({' или '.join(p.label for p in paths)}) или оба параллельно"
-    )
-    months3_tasks = [RoadmapTask(text=decide_text, category="planning", priority=1, path=None)]
-    months3_tasks += [
-        RoadmapTask(
-            text=f"Найди регулярный формат (кружок, секция, курс) по направлению «{p.label}» и сходи на первое занятие",
-            category="explore", priority=i + 2, path=p.key,
-        )
-        for i, p in enumerate(paths)
+    month1_tasks = [
+        task(f"Узнай подробнее о направлении «{path.label}»: посмотри видео, статьи или пробное занятие", "explore", 1),
+        task("Сравни впечатления от попробованного и запиши, что понравилось больше всего", "planning", 2),
+        task("Обсуди с родителями или учителем, что из попробованного откликнулось сильнее", "planning", 3),
+        task("Найди ещё один формат по этому же направлению (видео другого автора, другой кружок) и сравни впечатления", "explore", 4),
     ]
-    months3_tasks.append(
-        RoadmapTask(text="Попробуй сделать что-то своё на основе того, что уже пробовал, а не по инструкции", category="skill", priority=len(months3_tasks) + 1, path=None)
-    )
-    if single:
-        months3_tasks.append(
-            RoadmapTask(text="Уточни у руководителя кружка/секции, что нужно для более серьёзных занятий дальше", category="planning", priority=len(months3_tasks) + 1, path=None)
-        )
 
-    months6_tasks = [deepen_task(p, i + 1) for i, p in enumerate(paths)]
-    months6_tasks.append(
-        RoadmapTask(text="Найди наставника или ментора в выбранной сфере", category="explore", priority=len(months6_tasks) + 1, path=None)
-    )
-    months6_tasks.append(
-        RoadmapTask(text="Покажи то, что сделал, кому-то ещё (семье, друзьям, руководителю кружка) и собери отклик", category="practice", priority=len(months6_tasks) + 1, path=None)
-    )
-    if single:
-        months6_tasks.append(
-            RoadmapTask(text="Запиши, что даётся легко, а что пока сложно в этом направлении", category="planning", priority=len(months6_tasks) + 1, path=None)
-        )
+    months3_tasks = [
+        task(f"Найди регулярный формат (кружок, секция, курс) по направлению «{path.label}» и сходи на первое занятие", "explore", 1),
+        task("Попробуй сделать что-то своё на основе того, что уже пробовал, а не по инструкции", "skill", 2),
+        task("Уточни у руководителя кружка/секции, что нужно для более серьёзных занятий дальше", "planning", 3),
+        task("Составь список того, что хочешь попробовать сделать сам(а) в следующий раз", "planning", 4),
+    ]
 
-    year1_tasks = [compete_task(p, i + 1) for i, p in enumerate(paths)]
-    year1_tasks.append(
-        RoadmapTask(text="Составь список навыков, которые хочешь развить дальше в этой сфере", category="planning", priority=len(year1_tasks) + 1, path=None)
-    )
-    year1_tasks.append(
-        RoadmapTask(text="Найди профессиональное сообщество (онлайн или офлайн) по этой сфере", category="explore", priority=len(year1_tasks) + 1, path=None)
-    )
-    if single:
-        year1_tasks.append(
-            RoadmapTask(text="Обсуди с наставником или родителями цели на следующий год", category="planning", priority=len(year1_tasks) + 1, path=None)
-        )
+    months6_tasks = [
+        task(f"Занимайся направлением «{path.label}» регулярно (раз в неделю) и сделай небольшой проект руками", "skill", 1),
+        task("Найди наставника или ментора в выбранной сфере", "explore", 2),
+        task("Покажи то, что сделал, кому-то ещё (семье, друзьям, руководителю кружка) и собери отклик", "practice", 3),
+        task("Запиши, что даётся легко, а что пока сложно в этом направлении", "planning", 4),
+    ]
+
+    year1_tasks = [
+        task(f"Прими участие в конкурсе, соревновании или открытом показе по направлению «{path.label}»", "portfolio", 1),
+        task("Составь список навыков, которые хочешь развить дальше в этой сфере", "planning", 2),
+        task("Найди профессиональное сообщество (онлайн или офлайн) по этой сфере", "explore", 3),
+        task("Обсуди с наставником или родителями цели на следующий год", "planning", 4),
+    ]
 
     until_goal_tasks = [
-        RoadmapTask(text="Сформулируй свои интересы и цели в этой сфере в письменном виде", category="planning", priority=1, path=None),
-        RoadmapTask(text="Исследуй пути дальнейшего обучения и развития по выбранному направлению", category="planning", priority=2, path=None),
-        RoadmapTask(text="Обсуди планы с родителями, учителями или школьным куратором", category="planning", priority=3, path=None),
-        RoadmapTask(text="Составь план на следующий год с конкретными шагами и датами", category="planning", priority=4, path=None),
+        task("Сформулируй свои интересы и цели в этой сфере в письменном виде", "planning", 1),
+        task("Исследуй пути дальнейшего обучения и развития по выбранному направлению", "planning", 2),
+        task("Обсуди планы с родителями, учителями или школьным куратором", "planning", 3),
+        task("Составь план на следующий год с конкретными шагами и датами", "planning", 4),
     ]
 
-    milestones = [
+    return [
         RoadmapMilestone(
             horizon="month_1",
-            title="Первые пробы по ведущим направлениям",
-            outcome="Понимание своих интересов и первые впечатления от каждого предложенного направления.",
+            title="Первые пробы",
+            outcome=f"Понимание, откликается ли направление «{path.label}».",
             tasks=month1_tasks,
         ),
         RoadmapMilestone(
             horizon="months_3",
-            title="Решение и начало веток",
-            outcome="Осознанное решение — одно направление или оба — и первый регулярный формат занятий.",
+            title="Регулярный формат",
+            outcome="Первый регулярный формат занятий и самостоятельная попытка.",
             tasks=months3_tasks,
         ),
         RoadmapMilestone(
             horizon="months_6",
-            title="Углубление в выбранное направление",
-            outcome="Регулярные занятия и первый самостоятельный проект в выбранном направлении.",
+            title="Углубление",
+            outcome="Регулярные занятия и первый самостоятельный проект.",
             tasks=months6_tasks,
         ),
         RoadmapMilestone(
@@ -242,12 +200,11 @@ def _build_explore(
         ),
         RoadmapMilestone(
             horizon="until_goal",
-            title="Сформировать чёткое видение будущего",
-            outcome="Чёткое представление о будущей сфере и путях обучения.",
+            title="Чёткое видение будущего",
+            outcome="Чёткое представление о сфере и путях дальнейшего обучения.",
             tasks=until_goal_tasks,
         ),
     ]
-    return milestones, paths
 
 
 def _build_profession(directions: list[_DirectionSummary]) -> list[RoadmapMilestone]:
@@ -410,9 +367,11 @@ def build_roadmap(
         focus = "План ориентирован на развитие практических навыков в выбранной профессии, создание первого портфолио проектов и подготовку к старту в профессиональной среде."
         return milestones, focus, []
     # explore and unsure ("Пока не знаю") share the exploratory roadmap
-    milestones, recommended_paths = _build_explore(matched_directions)
+    recommended_paths = _decide_explore_paths(matched_directions)
+    for path in recommended_paths:
+        path.milestones = _build_explore_track(path)
     focus = "Судя по твоим ответам, у тебя есть явные интересы и сильные стороны — этот план поможет попробовать ведущие направления на практике и сделать осознанный выбор без давления и спешки."
-    return milestones, focus, recommended_paths
+    return recommended_paths[0].milestones, focus, recommended_paths
 
 
 _MIN_TASKS_PER_MILESTONE = 4
@@ -420,7 +379,6 @@ _MAX_TASKS_PER_MILESTONE = 5
 
 
 _MAX_RECOMMENDED_PATHS = 2
-_EXPLORE_GOALS = {"explore", "unsure"}
 
 
 def _valid_milestones(milestones: list[RoadmapMilestone]) -> bool:
@@ -438,42 +396,58 @@ def _valid_milestones(milestones: list[RoadmapMilestone]) -> bool:
     )
 
 
-def _valid_explore_paths(
-    goal: str, milestones: list[RoadmapMilestone], recommended_paths: list[RecommendedPath]
-) -> bool:
-    """For goal in (explore, unsure): recommended_paths must name 1-2 grounded
-    leading directions, month_1 tasks must stay common (decision not made
-    yet), and later horizons must actually use the path(s) named — otherwise
-    recommended_paths is just decoration nobody's tasks refer to.
-
-    For every other goal (profession/university) this is a no-op: the goal
-    already has a single confirmed direction, branching doesn't apply."""
-    if goal not in _EXPLORE_GOALS:
-        return True
-    if not (1 <= len(recommended_paths) <= _MAX_RECOMMENDED_PATHS):
+def _valid_recommended_paths(recommended_paths: list[RecommendedPath]) -> bool:
+    """recommended_paths must be at most 2, and every one grounded (non-empty
+    why/future_benefit) — for profession/university this is a trivial pass
+    (the model is told to return [] there). Task-level path-tagging is gone
+    (product decision 2026-08-18): each path now carries its own independent
+    `milestones`, generated by a separate follow-up call — see
+    `_build_roadmap_ai` and app/prompts/roadmap.py's module docstring — so
+    there's nothing cross-referential left to validate here."""
+    if len(recommended_paths) > _MAX_RECOMMENDED_PATHS:
         return False
-    if not all(p.why and p.future_benefit for p in recommended_paths):
-        return False
-    valid_keys = {p.key for p in recommended_paths}
-
-    by_horizon = {m.horizon: m for m in milestones}
-    month1 = by_horizon.get("month_1")
-    if month1 is not None and any(t.path is not None for t in month1.tasks):
-        return False
-
-    for horizon in ("months_3", "months_6"):
-        stage = by_horizon.get(horizon)
-        if stage is None:
-            continue
-        used_paths = {t.path for t in stage.tasks if t.path is not None}
-        if len(valid_keys) > 1 and not used_paths:
-            return False
-        if not used_paths.issubset(valid_keys):
-            return False
-    return True
+    return all(p.label and p.why and p.future_benefit for p in recommended_paths)
 
 
 _MAX_ROADMAP_ATTEMPTS = 2  # 1 initial + 1 corrective retry
+
+
+async def _build_track_ai(
+    context: StudentContext, path: RecommendedPath,
+) -> list[RoadmapMilestone] | None:
+    """Follow-up call building ONE recommended_path's full, independent plan.
+    Returns None (→ caller falls back to `_build_explore_track` for just
+    this one path) on repeated failure."""
+    messages = roadmap_prompt.build_track_messages(
+        context, path.label, path.why, path.future_benefit,
+    )
+    for attempt in range(1, _MAX_ROADMAP_ATTEMPTS + 1):
+        try:
+            raw = await llm_client.complete_json(
+                messages,
+                roadmap_prompt.TRACK_JSON_SCHEMA,
+                "roadmap_track",
+                timeout=settings.LLM_ROADMAP_TIMEOUT,
+                max_tokens=settings.LLM_ROADMAP_MAX_TOKENS,
+                model=settings.LLM_ROADMAP_MODEL,
+            )
+            milestones = [
+                RoadmapMilestone.model_validate(m) for m in raw.get("milestones", [])
+            ]
+        except (llm_client.LLMError, ValidationError, TypeError) as exc:
+            logger.warning("AI roadmap track '%s' failed: %s", path.key, exc)
+            return None
+
+        if _valid_milestones(milestones):
+            return milestones
+
+        logger.warning(
+            "AI roadmap track '%s' failed invariant check (attempt %s/%s)",
+            path.key, attempt, _MAX_ROADMAP_ATTEMPTS,
+        )
+        messages = [*messages, roadmap_prompt.RETRY_HINT]
+
+    return None
 
 
 async def _build_roadmap_ai(
@@ -481,13 +455,26 @@ async def _build_roadmap_ai(
 ) -> tuple[list[RoadmapMilestone], str, list[RecommendedPath]] | None:
     """LLM roadmap. Returns None (→ template fallback) if disabled or anything fails.
 
-    Retries once on an invariant miss (density/structure) before giving up —
-    same pattern as `_generate_plan` for the direction roadmap: a corrective
-    pass is cheaper than falling straight back to the much thinner template."""
+    Two phases (product decision 2026-08-18 — see app/prompts/roadmap.py's
+    module docstring for why):
+    1. Decide: one call gets focus_summary + recommended_paths (grounded in
+       the student's full evidence) + a milestones set. For profession/
+       university, and for explore/unsure when only one direction is real,
+       that milestones set already IS the plan — done, zero extra calls.
+    2. Build tracks: only when exactly 2 recommended_paths came back, their
+       shared milestones from step 1 are discarded and replaced by one
+       independent 5-milestone plan PER path (`_build_track_ai`), so the two
+       directions never mix tasks in one list again. A path whose own call
+       fails falls back to the deterministic single-track template just for
+       that path, not the whole roadmap."""
     if context is None or not llm_client.is_enabled():
         return None
 
     messages = roadmap_prompt.build_messages(context)
+    milestones: list[RoadmapMilestone] = []
+    focus_summary = ""
+    recommended_paths: list[RecommendedPath] = []
+    decided = False
     for attempt in range(1, _MAX_ROADMAP_ATTEMPTS + 1):
         try:
             raw = await llm_client.complete_json(
@@ -506,23 +493,37 @@ async def _build_roadmap_ai(
                 RecommendedPath.model_validate(p) for p in raw.get("recommended_paths", [])
             ]
         except (llm_client.LLMError, ValidationError, TypeError) as exc:
-            logger.warning("AI roadmap failed, using template: %s", exc)
+            logger.warning("AI roadmap decision failed, using template: %s", exc)
             return None
 
         if (
             _valid_milestones(milestones)
             and bool(focus_summary)
-            and _valid_explore_paths(context.goal, milestones, recommended_paths)
+            and _valid_recommended_paths(recommended_paths)
         ):
-            return milestones, focus_summary, recommended_paths
+            decided = True
+            break
 
         logger.warning(
-            "AI roadmap failed invariant check (attempt %s/%s)",
+            "AI roadmap decision failed invariant check (attempt %s/%s)",
             attempt, _MAX_ROADMAP_ATTEMPTS,
         )
-        messages = [*messages, roadmap_prompt.RETRY_HINT]
+        messages = [*messages, roadmap_prompt.DECISION_RETRY_HINT]
 
-    return None
+    if not decided:
+        return None
+
+    if len(recommended_paths) <= 1:
+        if recommended_paths:
+            recommended_paths[0].milestones = milestones
+        return milestones, focus_summary, recommended_paths
+
+    # Exactly 2 directions — build each one's own independent plan.
+    for path in recommended_paths:
+        track = await _build_track_ai(context, path)
+        path.milestones = track if track is not None else _build_explore_track(path)
+
+    return recommended_paths[0].milestones, focus_summary, recommended_paths
 
 
 # ─── Service layer (DB + cache) ─────────────────────────────────────────────────

@@ -18,20 +18,6 @@ class RoadmapResource(BaseModel):
     url: str | None = None
 
 
-class RecommendedPath(BaseModel):
-    """A concrete leading direction offered to an explore/unsure student.
-
-    Goal roadmaps for goal in (explore, unsure) name 1-2 of these instead of
-    listing parallel unrelated tries; tasks from months_3 onward tag which
-    path they belong to via `RoadmapTask.path`. Empty for profession/university
-    goals, which already have a single confirmed direction."""
-
-    key: str                # "A" / "B" — referenced by RoadmapTask.path
-    label: str               # e.g. "Робототехника"
-    why: str                 # why this fits *this* student, grounded in their profile
-    future_benefit: str      # what it concretely leads to later
-
-
 class RoadmapTask(BaseModel):
     text: str
     # What to actually do, where to start, and how to know it's done. The student
@@ -41,8 +27,12 @@ class RoadmapTask(BaseModel):
     category: str
     priority: int
     resources: list[RoadmapResource] = []
-    # Which RecommendedPath.key this task belongs to. None = shared/common task
-    # (always true for month_1, and for goals that don't branch).
+    # Legacy field from when a single milestone list mixed multiple
+    # directions' tasks together, tagged by which RecommendedPath.key they
+    # belonged to. Superseded 2026-08-18 by RecommendedPath.milestones (each
+    # path now carries its own fully independent milestone list, so nothing
+    # needs tagging any more) — kept only so old stored rows still parse.
+    # Always null on anything generated going forward.
     path: str | None = None
 
 
@@ -53,10 +43,31 @@ class RoadmapMilestone(BaseModel):
     tasks: list[RoadmapTask]
 
 
+class RecommendedPath(BaseModel):
+    """A concrete leading direction offered to an explore/unsure student —
+    entirely self-contained: its own 5 milestones, not mixed with any other
+    path's tasks (product decision 2026-08-18 — mixing them in one list read
+    as an incoherent plan with no clear goal). 1-2 of these for goal in
+    (explore, unsure); empty for profession/university, which already have a
+    single confirmed direction (that plan stays in RoadmapResponse.milestones)."""
+
+    key: str                 # "A" / "B" — stable id, no longer referenced by tasks
+    label: str                # e.g. "Робототехника"
+    why: str                  # why this fits *this* student, grounded in their profile
+    future_benefit: str       # what it concretely leads to later
+    milestones: list[RoadmapMilestone] = []
+
+
 class RoadmapResponse(BaseModel):
     id: uuid.UUID
     assessment_id: uuid.UUID
     goal: str
+    # The plan itself when there's one direction (profession/university, or
+    # explore/unsure with a single clear winner). When recommended_paths has
+    # 2 entries, this mirrors recommended_paths[0].milestones so any caller
+    # that only reads .milestones still gets one complete, coherent plan —
+    # the real UI should switch to rendering recommended_paths[*].milestones
+    # as separate tabs once there's more than one.
     milestones: list[RoadmapMilestone]
     focus_summary: str | None = None
     recommended_paths: list[RecommendedPath] = []

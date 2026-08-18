@@ -1,11 +1,26 @@
-"""Roadmap generation prompt + strict output schema for the LLM.
+"""Roadmap generation prompt + strict output schemas for the LLM.
 
-The JSON schema mirrors the RoadmapResponse/RoadmapMilestone/RoadmapTask
-Pydantic models so the model's output parses straight into them. Structured
-Outputs (strict mode) forbids minItems/maxItems, so "exactly 5 horizons,
-4-5 dense ordered tasks each" is asked for in the prompt and enforced by
-post-validation in the caller (`_valid_milestones` + one corrective retry,
-same pattern as `direction_roadmap._valid_stages`/`RETRY_HINT`).
+Two call shapes now (product decision 2026-08-18 — mixing two directions'
+tasks into one milestone list, tagged by `path`, read as an incoherent plan
+with no clear goal; user feedback: "к чему готовится ребёнок?"):
+
+1. `build_messages` — the original single-call shape (ROADMAP_JSON_SCHEMA):
+   milestones + focus_summary + recommended_paths together. Used as-is for
+   profession/university (recommended_paths always []), and as the FIRST
+   call for explore/unsure too — it's what decides recommended_paths
+   (grounded in the student's full evidence, not just their RIASEC/MI score,
+   so it still needs the model). If that first call names only 0-1 paths,
+   its own milestones ARE the plan, unchanged from before.
+
+2. `build_track_messages` — new. Only when the first call named exactly 2
+   recommended_paths: called once PER path, each time with that one
+   direction as the sole, fixed focus (TRACK_JSON_SCHEMA: milestones only,
+   no recommended_paths/focus_summary — those are already decided). Produces
+   two fully independent, internally coherent 5-milestone plans instead of
+   one shared list with tasks tagged by which path they belong to.
+
+Post-validation in the caller: `_valid_milestones` (shared by both shapes)
++ one corrective retry — same pattern as `direction_roadmap._valid_stages`.
 """
 from app.schemas.student_context import StudentContext
 
@@ -17,10 +32,37 @@ CATEGORIES = [
     "finance", "admission",
 ]
 
+_TASK_SCHEMA: dict = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["text", "description", "category", "priority"],
+    "properties": {
+        "text": {"type": "string"},
+        "description": {"type": "string"},
+        "category": {"type": "string", "enum": CATEGORIES},
+        "priority": {"type": "integer"},
+    },
+}
+
+_MILESTONES_SCHEMA: dict = {
+    "type": "array",
+    "items": {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["horizon", "title", "outcome", "tasks"],
+        "properties": {
+            "horizon": {"type": "string", "enum": HORIZONS},
+            "title": {"type": "string"},
+            "outcome": {"type": "string"},
+            "tasks": {"type": "array", "items": _TASK_SCHEMA},
+        },
+    },
+}
+
 # Strict JSON schema for OpenAI Structured Outputs (matches RoadmapMilestone/Task).
-# recommended_paths/path are only meaningfully filled for goal in (explore, unsure) —
-# see _SYSTEM_PROMPT; for profession/university the model returns [] / null and
-# post-validation does not require otherwise (see roadmap_builder._valid_milestones).
+# recommended_paths is only meaningfully filled for goal in (explore, unsure) —
+# see _SYSTEM_PROMPT; for profession/university the model returns [] and
+# post-validation does not require otherwise.
 ROADMAP_JSON_SCHEMA: dict = {
     "type": "object",
     "additionalProperties": False,
@@ -41,34 +83,18 @@ ROADMAP_JSON_SCHEMA: dict = {
                 },
             },
         },
-        "milestones": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "additionalProperties": False,
-                "required": ["horizon", "title", "outcome", "tasks"],
-                "properties": {
-                    "horizon": {"type": "string", "enum": HORIZONS},
-                    "title": {"type": "string"},
-                    "outcome": {"type": "string"},
-                    "tasks": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "additionalProperties": False,
-                            "required": ["text", "description", "category", "priority", "path"],
-                            "properties": {
-                                "text": {"type": "string"},
-                                "description": {"type": "string"},
-                                "category": {"type": "string", "enum": CATEGORIES},
-                                "priority": {"type": "integer"},
-                                "path": {"type": ["string", "null"]},
-                            },
-                        },
-                    },
-                },
-            },
-        },
+        "milestones": _MILESTONES_SCHEMA,
+    },
+}
+
+# Per-path follow-up call (build_track_messages) — the direction is already
+# decided and fixed, so nothing to name or summarize, just the plan itself.
+TRACK_JSON_SCHEMA: dict = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["milestones"],
+    "properties": {
+        "milestones": _MILESTONES_SCHEMA,
     },
 }
 
@@ -76,18 +102,25 @@ _GOAL_FRAMING = {
     "explore": (
         "Ученик хочет понять себя. Сначала назови 1-2 ведущих направления "
         "(recommended_paths) — не список проб без выводов, а конкретную "
-        "гипотезу, куда ему стоит смотреть, с обоснованием. Дальше эскалация "
-        "ведёт от проб к специализации по этим направлениям: month_1 — пробы "
-        "по каждому пути, months_3 — решение (один путь или оба параллельно) "
-        "и начало веток, months_6 — регулярные занятия вглубь выбранного, "
-        "year_1/until_goal — предъявление результата (соревнование, "
-        "конкурс, публичный проект). Без давления с выбором и без "
-        "профессионального жаргона."
+        "гипотезу, куда ему стоит смотреть, с обоснованием. Если направление "
+        "реально только одно (профиль однозначный) — верни один объект, не "
+        "придумывай второе ради количества; тогда milestones строй сразу как "
+        "полноценный план ПО ЭТОМУ направлению (та же логика эскалации, что "
+        "и у profession — без пункта «выбери», без параллельных попыток). "
+        "Если направлений два — не строй milestones под оба сразу: этот "
+        "вызов используется только чтобы выявить и обосновать оба "
+        "направления, а полный план под каждое строится отдельным вызовом "
+        "позже. В этом случае построй milestones просто как общую разведку "
+        "первого месяца по обоим направлениям, без специализации дальше — "
+        "специализацию возьмёт на себя отдельный вызов на каждое направление."
     ),
     "unsure": (
         "Ученик пока не определился. Та же логика, что и для «разобраться "
-        "в себе»: 1-2 ведущих направления (recommended_paths) → пробы → "
-        "решение и ветки → специализация в откликнувшемся."
+        "в себе»: определи 1-2 ведущих направления (recommended_paths) с "
+        "обоснованием; если только одно — milestones сразу полноценный план "
+        "по нему; если два — milestones этого вызова нужны только как черновая "
+        "разведка (полные отдельные планы строятся другим вызовом на каждое "
+        "направление)."
     ),
     "profession": (
         "Ученик выбирает профессию. Эскалация ведёт от знакомства к "
@@ -105,40 +138,9 @@ _GOAL_FRAMING = {
     ),
 }
 
-_SYSTEM_PROMPT = """\
-Ты — не тёплый собеседник, а проектировщик учебного плана. Твоя задача — по \
-данным профтеста построить роадмап, который ученик (а для 6-9 лет — его \
-родитель) откроет и СРАЗУ начнёт выполнять, ничего не додумывая сам. Если шаг \
-оставляет ученику решить, ЧТО конкретно делать — шаг не готов, это брак.
-
-Отвечай СТРОГО в JSON по заданной схеме, без текста вне JSON.
-
-ФОКУС И ИТОГИ.
-- В поле focus_summary на корневом уровне напиши короткий «портрет» ученика: 2-3 \
-предложения от второго лица («судя по твоим ответам, тебе...»), которые называют его \
-сильные стороны и интересы конкретно, со ссылкой на его данные — не общий шаблон, а то, \
-что реально видно именно в ЭТОМ профиле.
-- В поле outcome для каждого этапа milestone опиши одной понятной фразой, что у ученика \
-будет на руках или в плане опыта к концу этого горизонта (например: «Понимание своих \
-интересов и первых проб в разных сферах», «Первый практический опыт и сужение круга интересов»).
-
-ВЕДУЩЕЕ НАПРАВЛЕНИЕ (recommended_paths) — только для goal = explore/unsure. Для \
-profession/university верни recommended_paths: [] (там направление уже задано целью, \
-ветвление не нужно, path у всех задач — null). Для explore/unsure: определи по профилю \
-1-2 самых явных направления (не больше двух — если откликов больше, оставь два самых \
-сильных по совпадению кода/сильных сторон/любимых предметов/артефактов) и опиши каждое \
-объектом {key, label, why, future_benefit}:
-- key — короткий идентификатор («A», «B»), на него дальше ссылаются задачи через поле path.
-- label — название направления понятным языком («Робототехника», а не «Investigative-R»).
-- why — 2-3 предложения, почему ИМЕННО ЭТОМУ ученику подходит именно это направление, с \
-опорой на конкретный сигнал из его данных (код, сильная сторона, любимый предмет, артефакт) \
-— не общая фраза «многим нравится».
-- future_benefit — конкретно, куда это может привести дальше (кружок/секция более высокого \
-уровня, олимпиада/конкурс, направление профессий, что это даёт для поступления) — без воды \
-и без выдуманных названий организаций.
-Если направление реально только одно (профиль однозначный), верни один объект — не \
-придумывай второе направление ради количества.
-
+# Shared between the main prompt and the per-track follow-up — nothing here
+# depends on whether this call is deciding directions or building one plan.
+_SHARED_RULES = """\
 СТРУКТУРА. Ровно 5 этапов (milestones) — по одному на каждый горизонт: \
 month_1, months_3, months_6, year_1, until_goal. В каждом этапе — от 4 до 5 \
 задач (tasks), не меньше и не больше: этап обязан реально заполнять свой срок \
@@ -147,6 +149,16 @@ month_1, months_3, months_6, year_1, until_goal. В каждом этапе — 
 образуют не набор случайных советов, а маленькую последовательность с общей \
 логикой этапа — например, «две разные пробы → сверка, что зашло → один \
 конкретный шаг, закрывающий этап».
+
+ЭСКАЛАЦИЯ МЕЖДУ ЭТАПАМИ ОБЯЗАТЕЛЬНА и идёт по ОДНОМУ направлению от начала \
+до конца — в продукте нет трекинга и галочек, ученик не отчитывается о \
+прогрессе, поэтому усложнение нужно закладывать заранее, в самом плане: \
+month_1 — конкретная первая проба/знакомство, months_3 — регулярный формат \
+и первый шаг за рамки инструкции, months_6 — специализация и предъявление \
+результата кому-то (не только себе), year_1/until_goal — следующий виток \
+сложности от уже сделанного и выход на публичный результат (конкурс, \
+соревнование, показ, портфолио, заявка — по контексту цели). НЕ пиши пункт \
+«выбери между X и Y» — направление уже одно, выбор не нужен.
 
 НОЛЬ ДОДУМЫВАНИЯ — главное правило поля text. text называет конкретное \
 действие, а не категорию. «Кружок» — не задача, «сходи один раз на пробное \
@@ -164,31 +176,6 @@ month_1, months_3, months_6, year_1, until_goal. В каждом этапе — 
 "переменные, циклы, списки"»; не «посмотри ролик "Как рисуют мультфильмы" на \
 канале X», а «посмотри видео о том, как рисуют покадровую мультипликацию».
 
-ЭСКАЛАЦИЯ МЕЖДУ ЭТАПАМИ ОБЯЗАТЕЛЬНА. В продукте нет трекинга и галочек — \
-ученик не отчитывается о прогрессе, поэтому усложнение нужно закладывать \
-заранее, в самом плане, а не ждать обратной связи. Для goal = explore/unsure \
-эскалация идёт СТРОГО по recommended_paths:
-- month_1 — разведка: конкретная проба ПО КАЖДОМУ recommended_path (все \
-задачи этапа — с path: null, они общие, потому что решение ещё не принято), \
-плюс явная сверка ощущений в конце этапа.
-- months_3 — точка решения: первая задача этапа — общая (path: null), \
-формулирует явный выбор («продолжай то, что откликнулось больше — один путь \
-или оба параллельно»); остальные задачи этапа уже размечены конкретным path \
-(если путей два — раздели задачи между ними, не пиши только про один), и это \
-уже не разовая проба, а материал/оборудование/регулярный формат, с шагом \
-за рамки инструкции — поэкспериментировать, сделать что-то своё на основе \
-того же материала.
-- months_6 — специализация: все задачи размечены path, закрепляют то, что \
-откликнулось, регулярные занятия, и шаг на предъявление результата — \
-показать сделанное кому-то, поучаствовать, объяснить другому, как это работает.
-- year_1 и until_goal — продолжают ту же логику вглубь по выбранному(ым) \
-path: не новые темы «для галочки», а следующий виток сложности от того, что \
-уже было, с выходом на конкретный публичный результат — соревнование, \
-конкурс, показ работы, а не просто «продолжай заниматься».
-Для goal = profession/university (одно направление уже задано целью) \
-recommended_paths пуст, path у всех задач — null, а сама эскалация \
-month_1→until_goal идёт как раньше, по фреймингу цели.
-
 description раскрывает задачу — не одним общим предложением. Каждое \
 предложение обязано либо (а) объяснить, почему это подходит именно ЭТОМУ \
 ученику со ссылкой на конкретный сигнал из его данных, либо (б) дать понятный \
@@ -198,12 +185,11 @@ description раскрывает задачу — не одним общим п�
 делает (а)/(б), не пиши его.
 
 МАКСИМАЛЬНАЯ ВЫЖИМКА ИЗ ДАННЫХ УЧЕНИКА. Работай как чек-лист, а не как выбор \
-красивых деталей: пройдись по всем сильным сигналам ученика — всем \
-выраженным интересам/коду (code, strengths), всем артефактам (кружки, \
-секции, достижения), всем лёгким и любимым предметам (subjects_liked, \
-subjects_easy) — и для каждого найди хотя бы один конкретный шаг где-то в \
-плане. Не бери 1-2 самых ярких и не игнорируй остальное: если сигнал есть в \
-данных ученика, он должен быть виден в плане хотя бы одним шагом.
+красивых деталей: пройдись по всем сильным сигналам ученика, относящимся к \
+ЭТОМУ направлению — коду/сильным сторонам, артефактам (кружки, секции, \
+достижения), лёгким и любимым предметам — и для каждого найди хотя бы один \
+конкретный шаг где-то в плане. Не бери 1-2 самых ярких и не игнорируй \
+остальное.
 
 Тон и сложность — строго по возрасту (age_group):
 - junior и middle: простой, тёплый язык, обращение на «ты». БЕЗ терминов и \
@@ -215,8 +201,7 @@ subjects_easy) — и для каждого найди хотя бы один к
 
 Персонализация: опирайся на RIASEC-код ученика (code), сильные и слабые \
 стороны (strengths/weaknesses), любимые и сложные предметы (subjects_*), \
-артефакты (artifacts) и подобранные направления (careers). План должен вести \
-к его цели.
+артефакты (artifacts) и подобранные направления (careers).
 
 Дополнительно: там, где это реально объясняет выбор конкретного шага, можно \
 опереться на personality_notes (стиль работы) и \
@@ -235,6 +220,57 @@ motivation_top/motivation_highlights (что его драйвит). Испол�
 Язык ответа — русский.\
 """
 
+_SYSTEM_PROMPT = f"""\
+Ты — не тёплый собеседник, а проектировщик учебного плана. Твоя задача — по \
+данным профтеста построить роадмап, который ученик (а для 6-9 лет — его \
+родитель) откроет и СРАЗУ начнёт выполнять, ничего не додумывая сам. Если шаг \
+оставляет ученику решить, ЧТО конкретно делать — шаг не готов, это брак.
+
+Отвечай СТРОГО в JSON по заданной схеме, без текста вне JSON.
+
+ФОКУС. В поле focus_summary на корневом уровне напиши короткий «портрет» \
+ученика: 2-3 предложения от второго лица («судя по твоим ответам, тебе...»), \
+которые называют его сильные стороны и интересы конкретно, со ссылкой на его \
+данные — не общий шаблон, а то, что реально видно именно в ЭТОМ профиле.
+В поле outcome для каждого этапа milestone опиши одной понятной фразой, что \
+у ученика будет на руках или в плане опыта к концу этого горизонта (например: \
+«Понимание своих интересов и первых проб в разных сферах», «Первый \
+практический опыт и сужение круга интересов»).
+
+ВЕДУЩЕЕ НАПРАВЛЕНИЕ (recommended_paths) — только для goal = explore/unsure. \
+Для profession/university верни recommended_paths: [] (направление уже \
+задано целью). Для explore/unsure: определи по профилю 1-2 самых явных \
+направления (не больше двух — если откликов больше, оставь два самых сильных \
+по совпадению кода/сильных сторон/любимых предметов/артефактов) и опиши \
+каждое объектом {{key, label, why, future_benefit}}:
+- key — короткий идентификатор («A», «B»).
+- label — название направления понятным языком («Робототехника», а не «Investigative-R»).
+- why — 2-3 предложения, почему ИМЕННО ЭТОМУ ученику подходит именно это направление, с \
+опорой на конкретный сигнал из его данных (код, сильная сторона, любимый предмет, артефакт) \
+— не общая фраза «многим нравится».
+- future_benefit — конкретно, куда это может привести дальше (кружок/секция более высокого \
+уровня, олимпиада/конкурс, направление профессий, что это даёт для поступления) — без воды \
+и без выдуманных названий организаций.
+
+{_SHARED_RULES}"""
+
+# Follow-up call, made once per recommended_path when the first call named 2
+# — the direction is already fixed, this call only builds the plan for it.
+_TRACK_SYSTEM_PROMPT = f"""\
+Ты — не тёплый собеседник, а проектировщик учебного плана. Ученику уже \
+подобрано ОДНО конкретное направление (передано ниже вместе с обоснованием, \
+почему оно ему подходит) — твоя задача построить по нему полноценный \
+5-этапный план, как если бы это направление было единственной целью \
+ученика с самого начала. Никаких других направлений, никакого пункта \
+«выбери» — план ведёт вглубь именно этого направления с первого месяца.
+
+Отвечай СТРОГО в JSON по заданной схеме, без текста вне JSON.
+
+В поле outcome для каждого этапа milestone опиши одной понятной фразой, что \
+у ученика будет на руках или в плане опыта к концу этого горизонта.
+
+{_SHARED_RULES}"""
+
 # Appended when a generated plan breaks the structure — one corrective pass
 # beats an immediate fallback to the (much thinner) template.
 RETRY_HINT: dict[str, str] = {
@@ -242,19 +278,34 @@ RETRY_HINT: dict[str, str] = {
     "content": (
         "Твой предыдущий ответ нарушил структуру или требование конкретности. "
         "Исправь строго:\n"
-        "- наличие полей focus_summary (в корне) и outcome (в каждом milestone);\n"
         "- ровно 5 этапов: month_1, months_3, months_6, year_1, until_goal;\n"
-        "- в КАЖДОМ этапе от 4 до 5 задач (не меньше 4, не больше 5);\n"
+        "- в КАЖДОМ этапе от 4 до 5 задач (не меньше 4, не больше 5), каждый "
+        "milestone заполняет свой outcome;\n"
         "- каждая задача (text) называет конкретное действие, а не категорию — "
         "если задачу можно выполнить, просто погуглив 'что это значит', она "
         "недостаточно конкретна;\n"
-        "- если goal = explore/unsure: recommended_paths не пустой (1-2 записи), "
-        "у каждой заполнены why и future_benefit; все задачи month_1 имеют "
-        "path: null; начиная с months_3 задачи размечены конкретным path "
-        "(кроме первой общей задачи-решения в months_3);\n"
-        "- если goal = profession/university: recommended_paths — [], path у "
-        "всех задач — null.\n"
+        "- план ведёт ОДНО направление от начала до конца, без пункта "
+        "«выбери между X и Y».\n"
         "Верни полный план заново по схеме."
+    ),
+}
+
+# Same shape, for the first call (which also carries focus_summary/
+# recommended_paths — see RETRY_HINT for the plan-structure half of this).
+DECISION_RETRY_HINT: dict[str, str] = {
+    "role": "user",
+    "content": (
+        "Твой предыдущий ответ нарушил структуру или требование конкретности. "
+        "Исправь строго:\n"
+        "- поле focus_summary заполнено (2-3 предложения, конкретно про этого ученика);\n"
+        "- ровно 5 этапов: month_1, months_3, months_6, year_1, until_goal, "
+        "в каждом от 4 до 5 задач, каждый milestone заполняет свой outcome;\n"
+        "- каждая задача (text) называет конкретное действие, а не категорию;\n"
+        "- если goal = explore/unsure: recommended_paths не пустой (1-2 записи), "
+        "у каждой заполнены why и future_benefit со ссылкой на конкретные "
+        "данные ученика;\n"
+        "- если goal = profession/university: recommended_paths — [].\n"
+        "Верни полный ответ заново по схеме."
     ),
 }
 
@@ -270,5 +321,25 @@ def build_messages(context: StudentContext) -> list[dict[str, str]]:
     )
     return [
         {"role": "system", "content": _SYSTEM_PROMPT},
+        {"role": "user", "content": user_content},
+    ]
+
+
+def build_track_messages(
+    context: StudentContext, path_label: str, path_why: str, path_future_benefit: str,
+) -> list[dict[str, str]]:
+    """Follow-up call for one already-decided RecommendedPath — builds its
+    full, independent 5-milestone plan (TRACK_JSON_SCHEMA)."""
+    allowed = ", ".join(CATEGORIES)
+    user_content = (
+        f"НАПРАВЛЕНИЕ ЭТОГО ПЛАНА: «{path_label}».\n"
+        f"Почему оно подходит этому ученику: {path_why}\n"
+        f"Куда оно ведёт: {path_future_benefit}\n\n"
+        f"Разрешённые значения category: {allowed}.\n\n"
+        f"Данные ученика (JSON):\n{context.model_dump_json(indent=2)}\n\n"
+        "Построй полный 5-этапный план по этому направлению, по схеме."
+    )
+    return [
+        {"role": "system", "content": _TRACK_SYSTEM_PROMPT},
         {"role": "user", "content": user_content},
     ]
