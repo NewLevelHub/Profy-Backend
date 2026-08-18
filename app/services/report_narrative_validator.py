@@ -54,8 +54,11 @@ _MAX_CAREER_CARDS = 3
 # Not exact TZ numbers (the TZ gives relative guidance — "объём в 2-3 раза
 # меньше" — not char counts): a generous per-age ceiling that still keeps
 # junior meaningfully shorter than senior, catching a runaway/rambling
-# generation without rejecting normal evidence-derived sentences.
-_SUMMARY_MAX_LEN = {AgeGroup.junior: 350, AgeGroup.middle: 550, AgeGroup.senior: 750}
+# generation without rejecting normal evidence-derived sentences. Raised
+# 2026-08-17 alongside the 3->5-6 sentence bump (product decision) — must
+# stay above report_narrative_fallback._summary()'s own length for every
+# age group, or the fallback would fail its own validator.
+_SUMMARY_MAX_LEN = {AgeGroup.junior: 550, AgeGroup.middle: 800, AgeGroup.senior: 1000}
 _CARD_DESC_MAX_LEN = {AgeGroup.junior: 160, AgeGroup.middle: 240, AgeGroup.senior: 320}
 # thinking_style_notes gets its own, larger budget: it's now one card
 # merging up to 2 signals (cue + example each) plus, for middle/senior, a
@@ -72,7 +75,12 @@ _LATIN_RE = re.compile(r"[a-z]", re.IGNORECASE)
 _DIGIT_OR_PERCENT_RE = re.compile(r"[\d%]")
 _MIN_CYRILLIC_RATIO = 0.85
 _SENTENCE_END_RE = re.compile(r"[.!?]+(?=\s|$)")
-_MIN_SUMMARY_SENTENCES = 3
+# Product decision, 2026-08-17: summary must be 5-6 sentences, not the
+# earlier 3-5 — each new sentence must add real framing (see
+# report_narrative_fallback._summary's own docstring), not pad toward the
+# count, so the range is enforced both ways rather than just a floor.
+_MIN_SUMMARY_SENTENCES = 5
+_MAX_SUMMARY_SENTENCES = 6
 _MIN_FINAL_ANALYSIS_SENTENCES = 3
 
 
@@ -302,12 +310,15 @@ def _check_no_disclaimer_duplicate(output: ReportNarrativeOutput) -> list[Valida
 
 
 def _check_summary_sentence_count(output: ReportNarrativeOutput) -> list[ValidationIssue]:
-    """TZ_Profi.md §18.2 п.1's summary read as too thin at 2 sentences (the
-    story sentence + the mandatory frame phrase, nothing else) — user
-    feedback across all three age groups asked for a minimum of 3."""
+    """TZ_Profi.md §18.2 п.1's summary read as too thin at 2-3 sentences —
+    user feedback (2026-08-17) asked for exactly 5-6, enforced as a range
+    (not just a floor) so the model can't pad past 6 with filler either."""
     count = len(_SENTENCE_END_RE.findall(output.summary.strip()))
-    if count < _MIN_SUMMARY_SENTENCES:
-        return [ValidationIssue("summary_too_short", f"expected >= {_MIN_SUMMARY_SENTENCES} sentences, got {count}")]
+    if count < _MIN_SUMMARY_SENTENCES or count > _MAX_SUMMARY_SENTENCES:
+        return [ValidationIssue(
+            "summary_wrong_length",
+            f"expected {_MIN_SUMMARY_SENTENCES}-{_MAX_SUMMARY_SENTENCES} sentences, got {count}",
+        )]
     return []
 
 

@@ -54,24 +54,39 @@ def test_structurally_valid_but_banned_phrase_is_rejected():
     assert any(i.code == "banned_phrase" for i in issues)
 
 
-def test_summary_with_fewer_than_three_sentences_is_rejected():
-    context = _senior_context()
-    output = build_fallback_narrative(context)
-    output.summary = "Коротко о тебе. Ты интересуешься многим."
-
-    issues = validate(output, context)
-
-    assert any(i.code == "summary_too_short" for i in issues)
-
-
-def test_summary_with_three_sentences_is_accepted():
+def test_summary_with_fewer_than_five_sentences_is_rejected():
     context = _senior_context()
     output = build_fallback_narrative(context)
     output.summary = "Коротко о тебе. Ты интересуешься многим. Это заметно по твоим ответам."
 
     issues = validate(output, context)
 
-    assert not any(i.code == "summary_too_short" for i in issues)
+    assert any(i.code == "summary_wrong_length" for i in issues)
+
+
+def test_summary_with_more_than_six_sentences_is_rejected():
+    context = _senior_context()
+    output = build_fallback_narrative(context)
+    output.summary = (
+        "Раз. Два. Три. Четыре. Пять. Шесть. Семь."
+    )
+
+    issues = validate(output, context)
+
+    assert any(i.code == "summary_wrong_length" for i in issues)
+
+
+def test_summary_with_five_to_six_sentences_is_accepted():
+    context = _senior_context()
+    output = build_fallback_narrative(context)
+    output.summary = (
+        "Коротко о тебе. Ты интересуешься многим. Это заметно по твоим ответам. "
+        "Дальше в отчёте — подробности. Пробуй разное на практике."
+    )
+
+    issues = validate(output, context)
+
+    assert not any(i.code == "summary_wrong_length" for i in issues)
 
 
 def test_summary_repeating_the_disclaimer_framing_is_rejected():

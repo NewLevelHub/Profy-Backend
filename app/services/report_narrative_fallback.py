@@ -124,24 +124,36 @@ def _join_ru(items: list[str]) -> str:
 
 
 def _summary(age_group: AgeGroup) -> str:
-    # TZ_Profi.md §18.2 п.1 wants a short but real summary — 2 sentences
-    # read as too thin, so a third, genuinely new sentence is needed. That
-    # third sentence used to be the "не окончательный выбор" frame phrase,
-    # but `disclaimer` (app/schemas/result_v2.py, DISCLAIMER) already says
-    # almost the same thing right next to summary on the page — repeating
-    # it here just duplicated that line (user feedback). Closes on a
-    # forward-looking, actionable note instead, which says something the
-    # disclaimer doesn't.
+    # TZ_Profi.md §18.2 п.1 wants a short but real summary — 5-6 sentences
+    # (product decision, 2026-08-17, up from 3), each adding genuinely new
+    # framing rather than repeating a specific claim that already has its
+    # own section (strength_cards/interest_map/thinking_style/motivation) —
+    # this is the first thing read, so it orients, it doesn't pre-empt.
+    # None of these sentences repeat the "не окончательный выбор / карта
+    # возможных направлений" idea either — `disclaimer` (app/schemas/
+    # result_v2.py, DISCLAIMER) already says that right next to summary on
+    # the page (user feedback: repeating it here duplicated that line).
     if age_group == AgeGroup.junior:
         return (
             f"Ты попробовал разные задания, и по ответам видно, чем тебе интересно заниматься. "
+            f"Тут не было правильных или неправильных ответов — ты отвечал так, как тебе кажется, "
+            f"и это здорово. "
             f"Дальше в отчёте — что у тебя получается лучше всего и что можно попробовать. "
-            f"Пробуй разное и смотри, что нравится тебе больше всего."
+            f"Всё это про тебя, а не про кого-то другого — здесь только твои собственные ответы. "
+            f"Пробуй разное и смотри, что нравится тебе больше всего. "
+            f"Если что-то откликается — смело занимайся этим ещё больше."
         )
     return (
         f"По твоим ответам заметно, что тебе интересны определённые сферы и есть сильные стороны, на "
-        f"которые стоит опереться. Дальше в отчёте — подробнее о них и о том, что стоит попробовать. "
-        f"Обращай внимание на то, что откликается сильнее всего, и пробуй это на практике."
+        f"которые стоит опереться. "
+        f"В тесте не было правильных или неправильных ответов — ты отвечал так, как чувствуешь, и уже "
+        f"это само по себе ценная информация о тебе. "
+        f"Дальше в отчёте подробно разобрано, что у тебя получается, как ты обычно подходишь к задачам "
+        f"и что тебя по-настоящему увлекает. "
+        f"Всё это построено на твоих собственных ответах, а не на общих шаблонах — читай это как разговор "
+        f"о тебе, а не готовый вердикт. "
+        f"Обращай внимание на то, что откликается сильнее всего, и пробуй это на практике. "
+        f"Используй отчёт как отправную точку, чтобы самому решить, что хочется исследовать дальше."
     )
 
 
