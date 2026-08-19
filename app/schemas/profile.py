@@ -39,9 +39,21 @@ class ProfileUpdateRequest(BaseModel):
     subjects_disliked: list[str] | None = None
     subjects_easy: list[str] | None = None
     subjects_hard: list[str] | None = None
+    # Optional, same semantics as ProfileCreateRequest.artifacts: `None` means
+    # "caller isn't managing artifacts here, leave them untouched"; any list
+    # (including `[]`) replaces the profile's artifacts wholesale via the
+    # same delete-then-insert as the standalone POST /profile/artifacts.
+    artifacts: list[ArtifactItem] | None = None
 
 
 class ProfileResponse(BaseModel):
+    """Returned by GET, POST, and PUT /api/v1/profile alike — `artifacts` is
+    always present (empty list if none exist) so no client needs a
+    follow-up GET /profile/artifacts just to render the profile page.
+    Callers populate it explicitly (there's no ORM relationship backing it);
+    see app/routers/profile.py.
+    """
+
     id: uuid.UUID
     user_id: uuid.UUID
     name: str
@@ -57,22 +69,6 @@ class ProfileResponse(BaseModel):
     age_group: str
     created_at: datetime
     updated_at: datetime
+    artifacts: list[ArtifactItem] = []
 
     model_config = {"from_attributes": True}
-
-
-class ProfileCreateResponse(ProfileResponse):
-    """Response for the combined create endpoint only (`POST /api/v1/profile`).
-
-    Superset of `ProfileResponse` (adds `artifacts`), so it stays a strict
-    additive change for existing clients parsing the response as JSON.
-    `GET`/`PUT /api/v1/profile` intentionally keep returning plain
-    `ProfileResponse` — they don't query artifacts, so echoing an
-    `artifacts` field there would either be an extra join on every read or a
-    misleading always-empty list. Combined-create is the one place the
-    saved artifacts are already in hand from the same request, so it's free
-    to return them and save the frontend a follow-up `GET
-    /profile/artifacts` call.
-    """
-
-    artifacts: list[ArtifactItem] = []

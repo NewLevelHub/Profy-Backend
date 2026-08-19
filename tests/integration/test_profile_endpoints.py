@@ -141,3 +141,65 @@ async def test_combined_create_conflict_when_profile_already_exists(
 
     get_response = await client.get("/api/v1/profile/artifacts", headers=auth_headers)
     assert [item["value"] for item in get_response.json()["items"]] == ["Шахматы"]
+
+
+async def test_get_profile_embeds_artifacts(
+    client: httpx.AsyncClient, auth_headers: dict[str, str]
+) -> None:
+    """GET /profile must echo the caller's artifacts inline (no follow-up
+    GET /profile/artifacts needed to render the profile page)."""
+    payload = {**_BASE_PAYLOAD, "artifacts": [{"type": "hobby", "value": "Шахматы"}]}
+    create_response = await client.post("/api/v1/profile", json=payload, headers=auth_headers)
+    assert create_response.status_code == 201
+
+    get_response = await client.get("/api/v1/profile", headers=auth_headers)
+    assert get_response.status_code == 200
+    assert [item["value"] for item in get_response.json()["artifacts"]] == ["Шахматы"]
+
+
+async def test_update_profile_with_artifacts_replaces_them_atomically(
+    client: httpx.AsyncClient, auth_headers: dict[str, str], db_session: AsyncSession
+) -> None:
+    """PUT /profile with an `artifacts` payload must replace the existing
+    set (delete-then-insert, same as POST /profile/artifacts) in the same
+    transaction as the profile field update, and echo the new set in the
+    response — mirroring the combined-create contract."""
+    create_payload = {**_BASE_PAYLOAD, "artifacts": [{"type": "hobby", "value": "Шахматы"}]}
+    create_response = await client.post("/api/v1/profile", json=create_payload, headers=auth_headers)
+    assert create_response.status_code == 201
+    profile_id = create_response.json()["id"]
+
+    update_payload = {
+        "name": "Айгерим",
+        "artifacts": [{"type": "hobby", "value": "Плавание"}, {"type": "goal", "value": "Стать врачом"}],
+    }
+    update_response = await client.put("/api/v1/profile", json=update_payload, headers=auth_headers)
+    assert update_response.status_code == 200
+    body = update_response.json()
+    assert body["name"] == "Айгерим"
+    assert {(item["type"], item["value"]) for item in body["artifacts"]} == {
+        ("hobby", "Плавание"),
+        ("goal", "Стать врачом"),
+    }
+
+    result = await db_session.execute(select(Artifact).where(Artifact.profile_id == profile_id))
+    assert {(a.type.value, a.value) for a in result.scalars().all()} == {
+        ("hobby", "Плавание"),
+        ("goal", "Стать врачом"),
+    }
+
+
+async def test_update_profile_without_artifacts_leaves_them_untouched(
+    client: httpx.AsyncClient, auth_headers: dict[str, str]
+) -> None:
+    """Omitting `artifacts` on PUT must leave existing artifacts alone —
+    the response still echoes the current (unchanged) set, same as GET."""
+    create_payload = {**_BASE_PAYLOAD, "artifacts": [{"type": "hobby", "value": "Шахматы"}]}
+    create_response = await client.post("/api/v1/profile", json=create_payload, headers=auth_headers)
+    assert create_response.status_code == 201
+
+    update_response = await client.put("/api/v1/profile", json={"name": "Айгерим"}, headers=auth_headers)
+    assert update_response.status_code == 200
+    body = update_response.json()
+    assert body["name"] == "Айгерим"
+    assert [item["value"] for item in body["artifacts"]] == ["Шахматы"]

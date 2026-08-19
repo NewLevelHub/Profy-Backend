@@ -4,11 +4,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.artifact import Artifact
+from app.models.profile import Profile
 from app.models.user import User
 from app.schemas.artifact import ArtifactItem
 from app.schemas.profile import (
     ProfileCreateRequest,
-    ProfileCreateResponse,
     ProfileResponse,
     ProfileUpdateRequest,
 )
@@ -17,12 +17,18 @@ from app.services import artifact_service, profile_service
 router = APIRouter(tags=["profile"])
 
 
-@router.post("", response_model=ProfileCreateResponse, status_code=status.HTTP_201_CREATED)
+def _to_response(profile: Profile, artifacts: list[Artifact]) -> ProfileResponse:
+    return ProfileResponse.model_validate(profile).model_copy(
+        update={"artifacts": [ArtifactItem(type=a.type, value=a.value) for a in artifacts]}
+    )
+
+
+@router.post("", response_model=ProfileResponse, status_code=status.HTTP_201_CREATED)
 async def create_profile(
     data: ProfileCreateRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> ProfileCreateResponse:
+) -> ProfileResponse:
     """Create the caller's Profile, optionally saving their artifact
     selections in the same request/transaction (`data.artifacts`).
 
@@ -46,10 +52,7 @@ async def create_profile(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
-    return ProfileCreateResponse(
-        **ProfileResponse.model_validate(profile).model_dump(),
-        artifacts=[ArtifactItem(type=a.type, value=a.value) for a in saved_artifacts],
-    )
+    return _to_response(profile, saved_artifacts)
 
 
 @router.get("", response_model=ProfileResponse)
@@ -60,7 +63,8 @@ async def get_profile(
     profile = await profile_service.get_profile(current_user.id, db)
     if profile is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
-    return profile
+    artifacts = await artifact_service.get_artifacts(profile.id, db)
+    return _to_response(profile, artifacts)
 
 
 @router.put("", response_model=ProfileResponse)
@@ -69,8 +73,13 @@ async def update_profile(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> ProfileResponse:
+    """Update the caller's Profile, optionally replacing their artifacts in
+    the same request/transaction (`data.artifacts`) — same combined-write
+    contract as POST. Omitting `artifacts` leaves them untouched; the
+    response still echoes the current set either way.
+    """
     try:
-        profile = await profile_service.update_profile(current_user.id, data, db)
+        profile, artifacts = await profile_service.update_profile(current_user.id, data, db)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-    return profile
+    return _to_response(profile, artifacts)

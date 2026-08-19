@@ -3,8 +3,10 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.artifact import Artifact
 from app.models.profile import Profile, compute_age_group
 from app.schemas.profile import ProfileCreateRequest, ProfileUpdateRequest
+from app.services import artifact_service
 
 
 async def create_profile(
@@ -48,19 +50,32 @@ async def get_profile(user_id: uuid.UUID, db: AsyncSession) -> Profile | None:
     return result.scalar_one_or_none()
 
 
-async def update_profile(user_id: uuid.UUID, data: ProfileUpdateRequest, db: AsyncSession) -> Profile:
+async def update_profile(
+    user_id: uuid.UUID, data: ProfileUpdateRequest, db: AsyncSession
+) -> tuple[Profile, list[Artifact]]:
+    """Update the caller's Profile, optionally replacing their artifacts in
+    the same transaction (`data.artifacts`) — mirrors `create_profile`'s
+    combined-write contract. `data.artifacts is None` means "leave artifacts
+    untouched"; the current set is still fetched so the response can embed
+    it (see `ProfileResponse.artifacts`), same as GET.
+    """
     result = await db.execute(select(Profile).where(Profile.user_id == user_id))
     profile = result.scalar_one_or_none()
     if profile is None:
         raise ValueError("Profile not found")
 
-    updates = data.model_dump(exclude_none=True)
+    updates = data.model_dump(exclude={"artifacts"}, exclude_none=True)
     for key, value in updates.items():
         setattr(profile, key, value)
 
     if "age" in updates:
         profile.age_group = compute_age_group(updates["age"])
 
+    if data.artifacts is not None:
+        artifacts = await artifact_service.save_artifacts(profile.id, data.artifacts, db, commit=False)
+    else:
+        artifacts = await artifact_service.get_artifacts(profile.id, db)
+
     await db.commit()
     await db.refresh(profile)
-    return profile
+    return profile, artifacts
