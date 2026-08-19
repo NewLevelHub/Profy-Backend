@@ -39,7 +39,7 @@ def admission_scores_2026_brief(requirements: dict) -> list[str]:
         year = e.get("year", "")
         if min_score is None:
             continue
-        score_range = f"{min_score}–{max_score}" if max_score is not None else str(min_score)
+        score_range = f"{min_score}–{max_score}" if max_score is not None and max_score != min_score else str(min_score)
         briefs.append(f"{specialty} ({quota}, {year}): проходной балл {score_range}")
     return briefs
 

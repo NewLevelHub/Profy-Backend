@@ -359,13 +359,20 @@ async def main() -> None:
                     )
                     # Keep main general and rural competition entries
                     if entry["quota"] in ["ОБЩИЙ КОНКУРС", "СЕЛЬСКАЯ КВОТА"]:
+                        min_score = entry["min_score"]
+                        max_score = entry["max_score"]
+                        if min_score is not None and min_ent_threshold is not None and min_score < min_ent_threshold:
+                            min_score = min_ent_threshold
+                        if max_score is not None and min_ent_threshold is not None and max_score < min_ent_threshold:
+                            max_score = min_ent_threshold
+                        
                         matched_scores.append({
                             "ovpo": entry["ovpo"],
                             "specialty_code": entry["specialty_code"],
                             "specialty_name": entry["specialty_name"],
                             "quota": quota_name,
-                            "min_score": entry["min_score"],
-                            "max_score": entry["max_score"],
+                            "min_score": min_score,
+                            "max_score": max_score,
                             "year": entry["year"]
                         })
 

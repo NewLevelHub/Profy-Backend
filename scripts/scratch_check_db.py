@@ -1,7 +1,6 @@
 import asyncio
 import os
 import sys
-import json
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _ROOT)
@@ -14,20 +13,21 @@ from app.models.university import University
 
 async def main():
     async with async_session() as db:
-        res = await db.execute(select(Program).options(joinedload(Program.university)).where(Program.requirements != None))
+        res = await db.execute(
+            select(Program)
+            .options(joinedload(Program.university))
+            .join(University)
+            .where(University.name.like('%Туран%'))
+        )
         programs = res.scalars().all()
-        count = 0
         for p in programs:
-            if 'admission_scores_2026' in p.requirements:
-                print(f"Program: {p.name} (University: {p.university.name}, OVPO: {p.university.ovpo_code})")
-                print("Requirements:")
-                print(json.dumps(p.requirements, indent=2, ensure_ascii=False))
-                print("Fact Sources:")
-                print(json.dumps(p.fact_sources, indent=2, ensure_ascii=False))
-                print("-" * 50)
-                count += 1
-                if count >= 3:
-                    break
+            print(f"Program: {p.name} (University: {p.university.name})")
+            print(f"  Cost Per Year: {p.cost_per_year}")
+            print(f"  Cost Label: {p.cost_label}")
+            print(f"  Cost Per Year Min: {p.cost_per_year_min}")
+            print(f"  Cost Per Year Max: {p.cost_per_year_max}")
+            print(f"  Description: {p.description}")
+            print("-" * 50)
 
 if __name__ == '__main__':
     asyncio.run(main())
