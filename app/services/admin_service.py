@@ -5,9 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
-from app.models.assessment import Assessment
+from app.models.assessment import Assessment, AssessmentStatus
 from app.models.motivation import MotivationResponse
-from app.models.profile import Profile
+from app.models.product_feedback import ProductFeedback
+from app.models.profile import AgeGroup, Profile
 from app.models.roadmap import Roadmap
 from app.models.question import Question, QuestionInstrument
 from app.models.user import User
@@ -15,11 +16,15 @@ from app.models.user_response import UserResponse
 from app.schemas.admin import (
     AdminAssessmentDetailResponse,
     AdminAssessmentSummary,
+    AdminFeedbackListItem,
+    AdminFeedbackListResponse,
+    AdminFeedbackStatsResponse,
     AdminMotivationResponseItem,
     AdminResponseItem,
     AdminUserDetailResponse,
     AdminUserListItem,
     AdminUserListResponse,
+    FeedbackBreakdownItem,
 )
 from app.schemas.artifact import ArtifactItem
 from app.schemas.profile import ProfileResponse
@@ -27,6 +32,7 @@ from app.schemas.admin_result import AdminAnalysisResultResponse
 from app.schemas.roadmap import RoadmapResponse
 from app.services import bigfive_content, motivation_service
 from app.services.age_tiers import visible_tiers
+from app.services.goal_overlay_service import _get_effective_goal_and_scenario
 from app.services.riasec_content import LIKERT_LABELS as RIASEC_LIKERT_LABELS
 
 
@@ -77,11 +83,43 @@ async def list_users(
         for assessment in assessments_result.scalars().all():
             assessments_by_profile[assessment.profile_id].append(assessment)
 
+    # Admin-only raw percentages (TZ_Profi.md §18.3) for the results columns
+    # in the users table — sourced from each profile's latest COMPLETED
+    # assessment (assessments are already sorted desc per profile above, so
+    # the first `completed` one found is the latest). One batch fetch of
+    # AnalysisResult keyed by assessment_id, same pattern as the assessments
+    # batch fetch above.
+    completed_assessment_ids = [
+        assessment.id
+        for assessments in assessments_by_profile.values()
+        for assessment in assessments
+        if assessment.status == AssessmentStatus.completed
+    ]
+    analysis_by_assessment: dict[uuid.UUID, AnalysisResult] = {}
+    if completed_assessment_ids:
+        analysis_result = await db.execute(
+            select(AnalysisResult).where(AnalysisResult.assessment_id.in_(completed_assessment_ids))
+        )
+        for analysis in analysis_result.scalars().all():
+            analysis_by_assessment[analysis.assessment_id] = analysis
+
     items: list[AdminUserListItem] = []
     for user in users:
         profile = profiles_by_user.get(user.id)
         assessments = assessments_by_profile.get(profile.id, []) if profile else []
         latest = assessments[0] if assessments else None
+
+        latest_completed = next((a for a in assessments if a.status == AssessmentStatus.completed), None)
+        latest_analysis = analysis_by_assessment.get(latest_completed.id) if latest_completed else None
+        # RIASEC is only meaningful for middle/senior — junior's instrument
+        # is MI, deliberately left blank here rather than mixing shapes.
+        riasec = (
+            dict(latest_analysis.profile)
+            if latest_analysis and profile and profile.age_group != AgeGroup.junior
+            else None
+        )
+        big_five = dict(latest_analysis.big_five) if latest_analysis else None
+
         items.append(
             AdminUserListItem(
                 id=user.id,
@@ -94,6 +132,8 @@ async def list_users(
                 profile_name=profile.name if profile else None,
                 assessments_count=len(assessments),
                 latest_assessment_status=latest.status.value if latest else None,
+                riasec=riasec,
+                big_five=big_five,
             )
         )
 
@@ -330,4 +370,136 @@ async def get_assessment_detail(
         motivation_responses=motivation_responses,
         analysis_result=analysis_result,
         roadmap=roadmap_result,
+    )
+
+
+async def _enrich_feedback_rows(
+    db: AsyncSession, feedback_rows: list[ProductFeedback]
+) -> list[AdminFeedbackListItem]:
+    """Shared join/enrichment for both `list_feedback` (one page) and
+    `get_feedback_stats` (all rows) — attaches user + assessment context
+    (age_group, effective scenario, top matched direction) to each raw
+    ProductFeedback row. `scenario` reuses goal_overlay_service's own
+    age_group×goal matrix rather than re-deriving it, so it always agrees
+    with what the student's actual results page showed them."""
+    if not feedback_rows:
+        return []
+
+    user_ids = {f.user_id for f in feedback_rows}
+    users_result = await db.execute(select(User).where(User.id.in_(user_ids)))
+    users_by_id = {u.id: u for u in users_result.scalars().all()}
+
+    assessment_ids = [f.assessment_id for f in feedback_rows if f.assessment_id]
+    assessments_by_id: dict[uuid.UUID, Assessment] = {}
+    profiles_by_id: dict[uuid.UUID, Profile] = {}
+    analysis_by_assessment: dict[uuid.UUID, AnalysisResult] = {}
+    if assessment_ids:
+        assessments_result = await db.execute(select(Assessment).where(Assessment.id.in_(assessment_ids)))
+        assessments = list(assessments_result.scalars().all())
+        assessments_by_id = {a.id: a for a in assessments}
+
+        profile_ids = {a.profile_id for a in assessments}
+        if profile_ids:
+            profiles_result = await db.execute(select(Profile).where(Profile.id.in_(profile_ids)))
+            profiles_by_id = {p.id: p for p in profiles_result.scalars().all()}
+
+        analysis_result = await db.execute(
+            select(AnalysisResult).where(AnalysisResult.assessment_id.in_(assessment_ids))
+        )
+        analysis_by_assessment = {a.assessment_id: a for a in analysis_result.scalars().all()}
+
+    items: list[AdminFeedbackListItem] = []
+    for fb in feedback_rows:
+        user = users_by_id.get(fb.user_id)
+        assessment = assessments_by_id.get(fb.assessment_id) if fb.assessment_id else None
+        profile = profiles_by_id.get(assessment.profile_id) if assessment else None
+        analysis = analysis_by_assessment.get(fb.assessment_id) if fb.assessment_id else None
+
+        scenario = None
+        if profile and assessment:
+            _, scenario, _, _ = _get_effective_goal_and_scenario(profile.age_group, assessment.goal)
+
+        top_direction_name = None
+        if analysis and analysis.careers:
+            top_direction_name = analysis.careers[0].get("name")
+
+        items.append(
+            AdminFeedbackListItem(
+                id=fb.id,
+                user_id=fb.user_id,
+                user_email=user.email if user else "",
+                profile_name=profile.name if profile else None,
+                assessment_id=fb.assessment_id,
+                age_group=profile.age_group.value if profile else None,
+                scenario=scenario,
+                top_direction_name=top_direction_name,
+                relevance_score=fb.relevance_score,
+                helpful_sections=list(fb.helpful_sections),
+                comment=fb.comment,
+                created_at=fb.created_at,
+            )
+        )
+    return items
+
+
+async def list_feedback(
+    db: AsyncSession,
+    *,
+    page: int = 1,
+    limit: int = 20,
+) -> AdminFeedbackListResponse:
+    total_result = await db.execute(select(func.count()).select_from(ProductFeedback))
+    total = total_result.scalar_one()
+
+    feedback_result = await db.execute(
+        select(ProductFeedback)
+        .order_by(ProductFeedback.created_at.desc())
+        .offset((page - 1) * limit)
+        .limit(limit)
+    )
+    feedback_rows = list(feedback_result.scalars().all())
+    items = await _enrich_feedback_rows(db, feedback_rows)
+
+    return AdminFeedbackListResponse(items=items, total=total, page=page, limit=limit)
+
+
+def _breakdown(items: list[AdminFeedbackListItem], key_fn) -> list[FeedbackBreakdownItem]:
+    groups: dict[str, list[int]] = {}
+    for item in items:
+        key = key_fn(item)
+        if key is None:
+            continue
+        groups.setdefault(key, []).append(item.relevance_score)
+    return [
+        FeedbackBreakdownItem(key=key, count=len(scores), avg_relevance_score=round(sum(scores) / len(scores), 2))
+        for key, scores in sorted(groups.items())
+    ]
+
+
+async def get_feedback_stats(db: AsyncSession) -> AdminFeedbackStatsResponse:
+    """TZ_Profi.md §28.4: aggregate by age group / scenario / top direction.
+    Feedback volume is admin-only, low-traffic data — in-Python aggregation
+    over all rows (via the same enrichment `list_feedback` uses) is simpler
+    and more honest than a raw SQL GROUP BY, since `scenario` isn't a stored
+    column, it's derived the same way the student's own results page derives
+    it."""
+    feedback_result = await db.execute(select(ProductFeedback))
+    feedback_rows = list(feedback_result.scalars().all())
+    if not feedback_rows:
+        return AdminFeedbackStatsResponse(total=0)
+
+    items = await _enrich_feedback_rows(db, feedback_rows)
+
+    section_counts: dict[str, int] = {}
+    for item in items:
+        for section in item.helpful_sections:
+            section_counts[section] = section_counts.get(section, 0) + 1
+
+    return AdminFeedbackStatsResponse(
+        total=len(items),
+        avg_relevance_score=round(sum(i.relevance_score for i in items) / len(items), 2),
+        by_age_group=_breakdown(items, lambda i: i.age_group),
+        by_scenario=_breakdown(items, lambda i: i.scenario),
+        by_top_direction=_breakdown(items, lambda i: i.top_direction_name),
+        helpful_section_counts=section_counts,
     )

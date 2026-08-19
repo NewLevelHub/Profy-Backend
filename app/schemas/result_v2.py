@@ -109,6 +109,12 @@ class StudentPersonalityNote(BaseModel):
     trait: str  # "openness" | "conscientiousness" | "extraversion" | "agreeableness" | "emotional_stability"
     label: str  # "Открытость новому" — for display
     description: str
+    # Default (not required), same reasoning as EXPLORATION_CLOSING_NOTE
+    # above: an already-cached response serialized before this field existed
+    # must still deserialize cleanly (ResultV2Adapter.validate_json in
+    # report_service.py) rather than raising. bigfive_content.personality_level()
+    # always populates a real value on every freshly-assembled response.
+    level: Literal["low", "medium", "high"] = "medium"
     model_config = _model_config
 
 

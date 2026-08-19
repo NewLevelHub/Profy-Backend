@@ -215,6 +215,24 @@ def test_personality_notes_present_on_both_branches():
     assert {n.trait for n in senior.personality_notes} == set(PERSONALITY_LABELS)
 
 
+def test_personality_note_level_defaults_to_medium_for_cache_compat():
+    """A cached response serialized before `level` existed must still
+    deserialize — see the default-field precedent comments in result_v2.py
+    (EXPLORATION_CLOSING_NOTE etc.)."""
+    note = StudentPersonalityNote(trait="openness", label="Открытость новому", description="x")
+    assert note.level == "medium"
+
+
+def test_personality_note_level_accepts_an_explicit_value():
+    note = StudentPersonalityNote(trait="openness", label="Открытость новому", description="x", level="high")
+    assert note.level == "high"
+
+
+def test_personality_note_level_rejects_an_invalid_value():
+    with pytest.raises(ValidationError):
+        StudentPersonalityNote(trait="openness", label="Открытость новому", description="x", level="not_a_level")
+
+
 def test_adapter_picks_the_mi_branch_from_a_plain_dict():
     data = _junior_fixture().model_dump(mode="json")
     parsed = ResultV2Adapter.validate_python(data)

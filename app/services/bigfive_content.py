@@ -1,6 +1,7 @@
 """
 Big Five methodology reference tables — mirrors riasec_content.py's role.
 """
+from typing import Literal
 
 # Russian domain labels — admin/debug use only. Raw Big Five percentages are
 # never shown to the student directly (TZ_Profi.md §18.3: numbers are
@@ -150,6 +151,19 @@ def is_high_tier(value: float) -> bool:
     filter to only strongly-evidenced traits without duplicating the magic
     number or re-deriving the tier from scratch."""
     return value >= _STRONG
+
+
+def personality_level(value: float) -> Literal["low", "medium", "high"]:
+    """Same tier boundary personality_notes_for_age()/build_personality_profile()
+    use to pick description text — level and description always agree for a
+    trait. Mirrors report_v2_assembler._level()'s shape (low/medium/high) for
+    the interest map, but on Big Five's own _STRONG/_LOW cutoffs, not
+    RIASEC's different thresholds."""
+    if value >= _STRONG:
+        return "high"
+    if value <= _LOW:
+        return "low"
+    return "medium"
 
 
 def build_personality_profile(
