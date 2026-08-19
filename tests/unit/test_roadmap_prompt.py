@@ -23,15 +23,45 @@ def test_task_schema_requires_description():
 
 def test_task_schema_still_requires_the_original_fields():
     # Область 9 only adds description — text/category/priority must stay.
-    # `path` was added for the explore/unsure recommended_paths rework.
+    # `path` (task-level tagging) was retired 2026-08-18: each recommended_path
+    # now carries its own independent milestones instead of one shared list
+    # with tasks tagged by which direction they belonged to.
     task_schema = _task_schema()
-    assert set(task_schema["required"]) == {"text", "description", "category", "priority", "path"}
+    assert set(task_schema["required"]) == {"text", "description", "category", "priority"}
 
 
 def test_root_schema_requires_recommended_paths():
     assert "recommended_paths" in roadmap_prompt.ROADMAP_JSON_SCHEMA["required"]
     path_schema = roadmap_prompt.ROADMAP_JSON_SCHEMA["properties"]["recommended_paths"]["items"]
     assert set(path_schema["required"]) == {"key", "label", "why", "future_benefit"}
+
+
+def test_track_schema_only_requires_milestones():
+    # The per-path follow-up call (build_track_messages) already knows the
+    # direction — nothing to name or summarize, just the plan itself.
+    assert set(roadmap_prompt.TRACK_JSON_SCHEMA["required"]) == {"milestones"}
+    track_task_schema = roadmap_prompt.TRACK_JSON_SCHEMA["properties"]["milestones"]["items"][
+        "properties"
+    ]["tasks"]["items"]
+    assert set(track_task_schema["required"]) == {"text", "description", "category", "priority"}
+
+
+def test_build_track_messages_names_the_fixed_direction():
+    from app.schemas.student_context import StudentContext
+
+    context = StudentContext(
+        name="Аружан", age=8, age_group="junior", grade=2, city="Алматы", country="Казахстан",
+        language="ru", goal="explore",
+    )
+    messages = roadmap_prompt.build_track_messages(
+        context, "Робототехника", "Тебе нравится собирать конструкторы.", "Кружки и олимпиады.",
+    )
+    user = messages[-1]["content"]
+    assert "Робототехника" in user
+    assert "Тебе нравится собирать конструкторы." in user
+    # The direction is already fixed — this call has nothing to decide or
+    # name, unlike the main build_messages() prompt.
+    assert "recommended_paths" not in messages[0]["content"]
 
 
 def test_system_prompt_explains_recommended_paths_for_explore_unsure():

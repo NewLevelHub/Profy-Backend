@@ -45,5 +45,7 @@ class University(Base):
     )
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     source_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    contacts: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    facilities: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
     programs: Mapped[list["Program"]] = relationship("Program", back_populates="university", lazy="selectin")
