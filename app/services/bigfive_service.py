@@ -55,10 +55,12 @@ async def raw_scores(assessment_id: uuid.UUID, db: AsyncSession, age_group: AgeG
 
 
 def normalize(raw: dict[str, int], counts: dict[str, int]) -> dict[str, float]:
-    """% of the MAXIMUM POSSIBLE score for that domain (count * 5) — same shape
-    as riasec_service.normalize()."""
+    """% between the MINIMUM and MAXIMUM possible score for that domain. Each
+    item is answered on a 1-5 scale (never 0), so the true floor is count*1,
+    not 0 — using 0 as the floor compresses/shifts the whole range toward the
+    top. min-max: (raw - count) / (count*4) * 100."""
     return {
-        d: round(raw.get(d, 0) / (counts[d] * 5) * 100, 1) if counts.get(d) else 0.0
+        d: round((raw.get(d, 0) - counts[d]) / (counts[d] * 4) * 100, 1) if counts.get(d) else 0.0
         for d in BIGFIVE_ORDER
     }
 
@@ -94,7 +96,8 @@ async def facet_counts(db: AsyncSession, age_group: AgeGroup) -> dict[tuple[str,
 def facet_normalize(
     raw: dict[tuple[str, int], int], counts: dict[tuple[str, int], int]
 ) -> dict[tuple[str, int], float]:
+    """min-max, see normalize() above for why the floor is count*1, not 0."""
     return {
-        key: round(raw.get(key, 0) / (count * 5) * 100, 1) if count else 0.0
+        key: round((raw.get(key, 0) - count) / (count * 4) * 100, 1) if count else 0.0
         for key, count in counts.items()
     }

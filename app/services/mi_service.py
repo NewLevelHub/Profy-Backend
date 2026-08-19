@@ -13,6 +13,7 @@ from app.models.question import Question, QuestionInstrument
 from app.models.user_response import UserResponse
 from app.services.age_tiers import visible_tiers
 from app.services.mi_content import MI_ACTIVITIES
+from app.services.scoring_levels import LEVEL_HIGH_MIN, LEVEL_LOW_MAX
 
 MI_ORDER: list[str] = [
     "verbal", "logical", "musical", "visual", "bodily",
@@ -118,25 +119,31 @@ def strengths_weaknesses(
     counts: dict[str, int],
     limit: int = 3,
 ) -> tuple[list[str], list[str]]:
+    """See riasec_service.strengths_weaknesses's matching docstring — same
+    fix, same reason: a category only counts as a strength once it clears
+    LEVEL_HIGH_MIN (the same bar interest_map uses for "high"), not just by
+    ranking in the top-N regardless of how close it is to the rest."""
     ranked = sorted(MI_ORDER, key=lambda t: (-normalized.get(t, 0.0), MI_ORDER.index(t)))
+    qualifying_strengths = [t for t in ranked if normalized.get(t, 0.0) >= LEVEL_HIGH_MIN]
 
     strengths = [
-        t for t in ranked
+        t for t in qualifying_strengths
         if _aversion_ratio(t, aversion_counts, counts) < _AVERSION_DISQUALIFY_RATIO
     ][:limit]
-    if len(strengths) < limit:
-        # See riasec_service.strengths_weaknesses's matching comment — a
-        # strict aversion filter can leave too few (even zero) categories,
-        # collapsing "Сильные стороны" to near-empty/empty. top_code above
-        # already ignores aversion entirely; pad with the next best-scoring
-        # categories regardless, up to `limit`.
-        for t in ranked:
+    if len(strengths) < min(limit, len(qualifying_strengths)):
+        # A strict aversion filter can leave too few (even zero) categories
+        # despite real signal existing, collapsing "Сильные стороны" to
+        # near-empty/empty. top_code above already ignores aversion
+        # entirely; pad with the next best-scoring *qualifying* categories
+        # regardless of aversion, up to `limit` — but never below the score
+        # bar, aversion only waives the disqualification.
+        for t in qualifying_strengths:
             if len(strengths) >= limit:
                 break
             if t not in strengths:
                 strengths.append(t)
 
-    weaknesses = list(reversed(ranked))[:limit]
+    weaknesses = [t for t in reversed(ranked) if normalized.get(t, 0.0) <= LEVEL_LOW_MAX][:limit]
 
     return strengths, weaknesses
 

@@ -41,6 +41,7 @@ from app.services.mi_content import MI_ACTIVITIES, MI_LABELS
 from app.services.mi_service import MI_ORDER
 from app.services.riasec_content import NEUTRAL_CAREER_WHY, NEUTRAL_TRY_NOW, RIASEC_LABELS
 from app.services.riasec_service import HOLLAND_ORDER, direction_letter_weight
+from app.services.scoring_levels import LEVEL_HIGH_MIN, LEVEL_MEDIUM_MIN
 
 # TZ_Profi.md §16.6: "разброс между максимальной и минимальной категорией
 # меньше 25 пунктов" — a provisional default. §16.4 wants matrix/threshold
@@ -48,10 +49,12 @@ from app.services.riasec_service import HOLLAND_ORDER, direction_letter_weight
 # ad hoc at every call site either.
 _FLAT_PROFILE_THRESHOLD = 25.0
 
-# result-report-redesign-plan.md's recommended starting thresholds for the
-# 0-100 normalized scale.
-_LEVEL_HIGH_MIN = 70.0
-_LEVEL_MEDIUM_MIN = 50.0
+# Same 0-100 scale, same flatness convention as RIASEC/MI's
+# _FLAT_PROFILE_THRESHOLD above — used by build_personality_note to decide
+# whether the 5-trait Big Five profile has a real spread worth describing,
+# instead of the old "are high traits a minority" heuristic (see that
+# function's docstring for why that broke on a genuinely polarized profile).
+_PERSONALITY_FLAT_THRESHOLD = 25.0
 
 _GOOD_TIER_MAX_RANK = 3
 
@@ -81,9 +84,9 @@ def is_flat_profile(differentiation: float) -> bool:
 
 
 def _level(value: float) -> Literal["low", "medium", "high"]:
-    if value >= _LEVEL_HIGH_MIN:
+    if value >= LEVEL_HIGH_MIN:
         return "high"
-    if value >= _LEVEL_MEDIUM_MIN:
+    if value >= LEVEL_MEDIUM_MIN:
         return "medium"
     return "low"
 
@@ -152,15 +155,27 @@ def build_personality_note(personality_profile: dict[str, float]) -> str:
     """1-2 sentences of synthesis on top of the 5 static tiered cards
     `build_personality_notes` renders — the cards alone read as a plain
     lookup table with "no analysis" (reported live), same gap
-    build_interest_map_note already closes for the interest map. Same
-    minority guard as build_interest_map_note: naming traits only reads as
-    a highlight if it's not most of them."""
+    build_interest_map_note already closes for the interest map.
+
+    Gated on actual spread (max-min across the 5 traits), not on how many
+    traits happen to cross the "high" bar — found live: a profile of
+    O=100/C=100/emotional_stability=100/E=0/A=0 (spread=100, about as
+    polarized as this scale gets) still hit the old "count high traits,
+    call it balanced unless they're a minority" rule, because 3 of 5 traits
+    being high isn't "a minority" — so the report told the student their
+    character was "balanced, no trait sharply dominant" while the numbers
+    said the opposite. Spread is the actual thing "balanced" claims about,
+    so gate on that directly. `len(high) == len(LABELS)` stays excluded
+    even when spread clears the bar — naming literally every trait as a
+    highlight isn't a highlight, it's the whole list."""
+    values = list(personality_profile.values())
+    spread = (max(values) - min(values)) if values else 0.0
     high = [
         label
         for trait, label in bigfive_content.PERSONALITY_LABELS.items()
         if bigfive_content.is_high_tier(personality_profile.get(trait, 0.0))
     ]
-    if high and len(high) < len(bigfive_content.PERSONALITY_LABELS) / 2:
+    if high and spread >= _PERSONALITY_FLAT_THRESHOLD and len(high) < len(bigfive_content.PERSONALITY_LABELS):
         return (
             f"Ярко выражено: {_join_ru(high)} — это то, что тебе, скорее всего, "
             f"даётся естественнее всего."
