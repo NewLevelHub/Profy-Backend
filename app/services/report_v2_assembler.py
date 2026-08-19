@@ -39,7 +39,7 @@ from app.schemas.result_v2 import (
 from app.services import bigfive_content
 from app.services.mi_content import MI_ACTIVITIES, MI_LABELS
 from app.services.mi_service import MI_ORDER
-from app.services.riasec_content import NEUTRAL_CAREER_WHY, NEUTRAL_TRY_NOW, RIASEC_LABELS
+from app.services.riasec_content import NEUTRAL_CAREER_WHY_VARIANTS, NEUTRAL_TRY_NOW, RIASEC_LABELS
 from app.services.riasec_service import HOLLAND_ORDER, direction_letter_weight
 from app.services.scoring_levels import LEVEL_HIGH_MIN, LEVEL_MEDIUM_MIN
 
@@ -48,13 +48,6 @@ from app.services.scoring_levels import LEVEL_HIGH_MIN, LEVEL_MEDIUM_MIN
 # tuning admin-configurable eventually; not built here, just not re-derived
 # ad hoc at every call site either.
 _FLAT_PROFILE_THRESHOLD = 25.0
-
-# Same 0-100 scale, same flatness convention as RIASEC/MI's
-# _FLAT_PROFILE_THRESHOLD above — used by build_personality_note to decide
-# whether the 5-trait Big Five profile has a real spread worth describing,
-# instead of the old "are high traits a minority" heuristic (see that
-# function's docstring for why that broke on a genuinely polarized profile).
-_PERSONALITY_FLAT_THRESHOLD = 25.0
 
 _GOOD_TIER_MAX_RANK = 3
 
@@ -157,29 +150,48 @@ def build_personality_note(personality_profile: dict[str, float]) -> str:
     lookup table with "no analysis" (reported live), same gap
     build_interest_map_note already closes for the interest map.
 
-    Gated on actual spread (max-min across the 5 traits), not on how many
-    traits happen to cross the "high" bar — found live: a profile of
-    O=100/C=100/emotional_stability=100/E=0/A=0 (spread=100, about as
-    polarized as this scale gets) still hit the old "count high traits,
-    call it balanced unless they're a minority" rule, because 3 of 5 traits
-    being high isn't "a minority" — so the report told the student their
-    character was "balanced, no trait sharply dominant" while the numbers
-    said the opposite. Spread is the actual thing "balanced" claims about,
-    so gate on that directly. `len(high) == len(LABELS)` stays excluded
-    even when spread clears the bar — naming literally every trait as a
-    highlight isn't a highlight, it's the whole list."""
-    values = list(personality_profile.values())
-    spread = (max(values) - min(values)) if values else 0.0
+    Names genuinely low traits too, but ONLY the ones from
+    `bigfive_content.GROWTH_ELIGIBLE_TRAITS` (openness, conscientiousness,
+    emotional_stability — the same 3 domains `strength_phrases()` already
+    treats as "skill-like", per the product decision recorded there).
+    Extraversion/agreeableness are deliberately excluded from this
+    low-side callout even when they cross the low band: this report is for
+    a student to understand themselves and recognize genuine strengths —
+    being introverted or being direct isn't a flaw to "fix", it's
+    temperament, and naming it next to "стоит подтянуть" would frame a
+    normal personality style as a deficiency. High-side naming keeps all 5
+    traits (a genuinely high trait is worth naming as something that comes
+    naturally, regardless of domain) — only the low/growth side is scoped
+    down.
+
+    High and low are reported independently (a profile can have both,
+    either, or neither) — each is skipped if it would name literally every
+    eligible trait (that's the whole list, not a highlight).
+
+    Superseded the old "spread >= threshold" gate: gating on the per-trait
+    high/low bands directly is itself already a meaningful-outlier check
+    (the 40-60 mid band is the buffer), so a separate spread check was
+    redundant."""
+    labels = bigfive_content.PERSONALITY_LABELS
     high = [
-        label
-        for trait, label in bigfive_content.PERSONALITY_LABELS.items()
+        label for trait, label in labels.items()
         if bigfive_content.is_high_tier(personality_profile.get(trait, 0.0))
     ]
-    if high and spread >= _PERSONALITY_FLAT_THRESHOLD and len(high) < len(bigfive_content.PERSONALITY_LABELS):
-        return (
+    low = [
+        label for trait, label in labels.items()
+        if trait in bigfive_content.GROWTH_ELIGIBLE_TRAITS
+        and bigfive_content.is_low_tier(personality_profile.get(trait, 0.0))
+    ]
+    sentences = []
+    if high and len(high) < len(labels):
+        sentences.append(
             f"Ярко выражено: {_join_ru(high)} — это то, что тебе, скорее всего, "
             f"даётся естественнее всего."
         )
+    if low and len(low) < len(bigfive_content.GROWTH_ELIGIBLE_TRAITS):
+        sentences.append(f"Есть, над чем интересно поработать: {_join_ru(low)}.")
+    if sentences:
+        return " ".join(sentences)
     return (
         "Черты характера выражены сбалансированно, без одной резко доминирующей — "
         "и это нормально, у характера не обязательно должна быть одна главная черта."
@@ -257,23 +269,33 @@ def build_riasec_careers(
     later) such card gets one extra clause naming something specific to
     THAT direction — its own catalog `skills_needed[0]`, a fact about the
     job, not a claim about the student, so this never overclaims beyond
-    vetted evidence the way citing an unconfirmed RIASEC letter would."""
+    vetted evidence the way citing an unconfirmed RIASEC letter would.
+
+    A flat profile can push most/all of the 10 cards into the no-overlap
+    fallback branch — cycling through NEUTRAL_CAREER_WHY_VARIANTS (rather
+    than repeating one sentence) keeps those cards from reading as
+    copy-pasted; once every variant has been used once, later cards also
+    get the same skills_needed[0] clause as the matched-evidence dedup
+    above, so a 6th+ fallback card still reads distinct from the 1st."""
     top = careers[:10]
     result: list[StudentCareer] = []
     seen_evidence: set[tuple[str, ...]] = set()
+    fallback_uses = 0
     for rank, career in enumerate(top, start=1):
         holland_code = career.get("holland_code", "")
         matched_strengths = _matched_strengths_for(holland_code, context)
-        why = (
-            f"Совпадает с тем, что у тебя выражено: {_join_ru(matched_strengths)}."
-            if matched_strengths
-            else NEUTRAL_CAREER_WHY
-        )
-        evidence_key = tuple(matched_strengths)
         skills_needed = list(career.get("skills_needed") or [])
-        if evidence_key and evidence_key in seen_evidence and skills_needed:
-            why += f" Именно здесь особенно пригодится: {skills_needed[0]}."
-        seen_evidence.add(evidence_key)
+        if matched_strengths:
+            why = f"Совпадает с тем, что у тебя выражено: {_join_ru(matched_strengths)}."
+            evidence_key = tuple(matched_strengths)
+            if evidence_key in seen_evidence and skills_needed:
+                why += f" Именно здесь особенно пригодится: {skills_needed[0]}."
+            seen_evidence.add(evidence_key)
+        else:
+            why = NEUTRAL_CAREER_WHY_VARIANTS[fallback_uses % len(NEUTRAL_CAREER_WHY_VARIANTS)]
+            if fallback_uses >= len(NEUTRAL_CAREER_WHY_VARIANTS) and skills_needed:
+                why += f" В этой сфере особенно ценится: {skills_needed[0]}."
+            fallback_uses += 1
         # Direction.first_steps may hold several catalog entries, but the
         # student only ever sees one, as `try_now` — a separate "3 first
         # steps" list read as pointless filler on top of it (product

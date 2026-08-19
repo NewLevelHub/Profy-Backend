@@ -229,7 +229,19 @@ async def main() -> None:
                     prog_data = {
                         "language": "Казахский/Русский",
                         "cost_per_year": None,
-                        "description": group_name,
+                        # Deliberately left null, not group_name (e.g. "Школа
+                        # медицины и педиатрии") — group_name is a
+                        # faculty/specialty-group category label, not a real
+                        # per-program description, and writing it here made
+                        # ProgramListSection.tsx's frontend fallback to
+                        # university.description (which only kicks in when
+                        # program.description.length <= 40) skip long group
+                        # labels that read as if they were real descriptions.
+                        # See university-cards-ux-fix-plan.md §7 and
+                        # scripts/backfill_kz_program_description.py, which
+                        # nulls out already-seeded rows carrying this same
+                        # stale value.
+                        "description": None,
                         "who_its_for": None,
                         "career_options": [],
                         "requirements": {"notes": admission_notes},

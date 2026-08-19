@@ -16,7 +16,7 @@ from app.schemas.report_narrative import (
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
 from app.services import report_v2_assembler
 from app.services.mi_service import MI_ORDER
-from app.services.riasec_content import NEUTRAL_CAREER_WHY
+from app.services.riasec_content import NEUTRAL_CAREER_WHY_VARIANTS
 from app.services.riasec_service import HOLLAND_ORDER
 
 _NOW = datetime.now(timezone.utc)
@@ -115,9 +115,9 @@ def test_middle_senior_get_six_riasec_items_and_valid_career_explanations() -> N
     swe = next(c for c in response.careers if c.slug == "swe")
     assert "Любишь работать руками" in swe.why
     assert swe.try_now == "Собери первый проект"
-    # The one with no overlapping evidence still gets the neutral fallback, never blank.
+    # The one with no overlapping evidence still gets a neutral fallback, never blank.
     other = next(c for c in response.careers if c.slug == "other")
-    assert other.why == NEUTRAL_CAREER_WHY
+    assert other.why == NEUTRAL_CAREER_WHY_VARIANTS[0]
 
 
 def test_careers_sharing_the_same_letters_in_a_different_order_get_different_why_text() -> None:
@@ -191,6 +191,37 @@ def test_careers_with_identical_evidence_after_reordering_get_a_skills_needed_di
     assert first.why != second.why
     assert "Техническая грамотность" in second.why
     assert "Техническая грамотность" not in first.why
+
+
+def test_ten_careers_with_no_overlapping_evidence_get_varied_why_text() -> None:
+    """Found live 2026-08-19: a flat profile put all 10 shown careers into
+    the no-overlap fallback branch, and every single one showed the exact
+    same byte-identical `why` sentence. NEUTRAL_CAREER_WHY_VARIANTS must be
+    cycled through (and, once exhausted, differentiated by skills_needed)
+    so 10 unrelated careers never read as copy-pasted."""
+    context = _context(age_group="senior", evidence=[])
+    careers = []
+    for i in range(10):
+        d = _direction(f"d{i}", "RIA", 10 - i)
+        d["skills_needed"] = [f"Навык {i}"]
+        careers.append(d)
+    response = report_v2_assembler.assemble_result_v2(
+        assessment_id=uuid.uuid4(),
+        age_group=AgeGroup.senior,
+        context=context,
+        narrative=_narrative(),
+        profile_scores={k: 50.0 for k in HOLLAND_ORDER},
+        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
+        differentiation=5.0,
+        careers=careers,
+        created_at=_NOW,
+    )
+
+    whys = [c.why for c in response.careers]
+    assert len(whys) == 10
+    assert len(set(whys)) == 10  # no two of the ten cards read identical
+    for why in whys:
+        assert why  # never empty
 
 
 def test_flat_profile_still_gets_the_full_ranked_career_list() -> None:
@@ -501,6 +532,55 @@ def test_build_personality_note_falls_back_when_a_majority_of_traits_are_high() 
     note = report_v2_assembler.build_personality_note(profile)
 
     assert "Ярко выражено" not in note
+
+
+def test_build_personality_note_names_a_minority_of_low_growth_eligible_traits() -> None:
+    """A student who is honestly weak on a couple of skill-like traits
+    (everything else mid) must be told so, not falsely called "balanced" —
+    the whole point of this feature."""
+    profile = {**_DEFAULT_PERSONALITY_PROFILE, "openness": 0.0, "conscientiousness": 0.0}
+
+    note = report_v2_assembler.build_personality_note(profile)
+
+    assert "Ярко выражено" not in note
+    assert "над чем интересно поработать" in note
+    assert "Открытость новому" in note
+    assert "Организованность" in note
+
+
+def test_build_personality_note_never_names_extraversion_or_agreeableness_as_low() -> None:
+    """Introversion/directness are temperament, not a deficiency to "work
+    on" — low E/A must never appear in the growth callout, even when they
+    genuinely cross the low band and nothing else does (which would
+    otherwise fall back to the honest "balanced" message instead of
+    inventing something to say)."""
+    profile = {**_DEFAULT_PERSONALITY_PROFILE, "extraversion": 0.0, "agreeableness": 0.0}
+
+    note = report_v2_assembler.build_personality_note(profile)
+
+    assert "над чем интересно поработать" not in note
+    assert "Общительность" not in note
+    assert "Доброжелательность" not in note
+
+
+def test_build_personality_note_reports_both_high_and_low_traits_together() -> None:
+    profile = {**_DEFAULT_PERSONALITY_PROFILE, "openness": 90.0, "conscientiousness": 5.0}
+
+    note = report_v2_assembler.build_personality_note(profile)
+
+    assert "Ярко выражено: Открытость новому" in note
+    assert "над чем интересно поработать: Организованность" in note
+
+
+def test_build_personality_note_falls_back_when_all_growth_eligible_traits_are_low() -> None:
+    profile = {
+        **_DEFAULT_PERSONALITY_PROFILE,
+        "openness": 10.0, "conscientiousness": 10.0, "emotional_stability": 10.0,
+    }
+
+    note = report_v2_assembler.build_personality_note(profile)
+
+    assert "над чем интересно поработать" not in note
 
 
 def test_assemble_result_v2_includes_personality_notes_for_junior_and_senior() -> None:

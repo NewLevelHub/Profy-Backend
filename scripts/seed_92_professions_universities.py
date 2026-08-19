@@ -33,28 +33,60 @@ from app.models.program import Program
 from app.models.university import University
 from scripts.data.universities_92_professions import CLUSTERS
 
-def parse_ranking(label: str) -> int | None:
-    # 1. Prioritize global QS/THE World rank over subject/local ranks
-    WORLD_RANK_RE = re.compile(r"(\d+)\+?\s*\((?:QS|THE)\s+World", re.IGNORECASE)
-    m = WORLD_RANK_RE.search(label)
-    if m:
-        return int(m.group(1))
+# A ranking_label routinely packs a global rank together with a
+# subject/national/regional one in the same string, comma- or
+# semicolon-separated (e.g. "#4 инженерных школ США (US News 2026), #32
+# среди национальных университетов США" — both numbers are real, neither is
+# a world rank). `ranking` feeds cross-university sorting on the frontend
+# (university-cards-ux-fix-plan.md §1), so it must only ever hold a number
+# that's actually comparable across every university — i.e. an explicit
+# global/world-scope rank. A subject-specific or national number must never
+# leak in just because it happened to be the first digit in the string, or
+# sorting silently compares incomparable scales (this is exactly what
+# produced Georgia Tech's #4 US-News-engineering-schools ranking outranking
+# ETH Zurich's #7 QS World in the unified list).
+#
+# QS only, deliberately — product decision: the unified cross-university
+# rank must come from one single system, not "whichever global-sounding
+# number happens to be in the label" (QS and THE use different
+# methodologies and aren't on the same scale either, even though both are
+# "world" rankings). Only 2 of 148 labels rely on THE with no QS number at
+# all (ENAC Toulouse, Semmelweis University) — both correctly fall back to
+# "no unified rank" (sorts last) rather than mixing in a THE number.
+_WORLD_SCOPE_RE = re.compile(
+    r"QS\s+World|World\s+University\s+Rankings",
+    re.IGNORECASE,
+)
+# "QS World" also shows up in QS's *subject* rankings (e.g. "QS World -
+# Petroleum Engineering", "QS World Medicine 2025", "QS World University
+# Rankings by Subject — Law") — these are just as real as the overall list,
+# but they're a different, non-comparable scale from a different university's
+# overall QS World position, so a clause naming a specific subject/field must
+# not be accepted as the unified rank either, even though it also says
+# "World". Only a bare/overall QS World Rankings clause counts.
+_SUBJECT_QUALIFIED_WORLD_RE = re.compile(
+    r"by\s+Subject|Subject\s*[:—-]|"
+    r"World\s*[-–—]\s*\w|"
+    r"World\s+(?:Medicine|Law\s+Rank|Ranking\s+Business)|"
+    r"по\s+направлению|"
+    r"в\s+(?:сельскохозяйственных|агрономии)",
+    re.IGNORECASE,
+)
+_NUMBER_RE = re.compile(r"(\d+)")
 
-    # 2. Match leading/embedded #N or №N
-    m = re.search(r"[#№](\d+)", label)
-    if m:
-        return int(m.group(1))
-        
-    # 3. Match "топ-N" or "top-N" (case-insensitive)
-    m = re.search(r"(?:топ|top)\-?(\d+)", label, re.IGNORECASE)
-    if m:
-        return int(m.group(1))
-        
-    # 4. Match leading digits (e.g. "1201+ ...")
-    m = re.match(r"^(\d+)\+?", label)
-    if m:
-        return int(m.group(1))
-        
+
+def parse_ranking(label: str) -> int | None:
+    # Only trust a clause that explicitly claims global/world scope *and*
+    # isn't itself qualified down to one subject; take the first number
+    # *within that clause*. Any other clause (subject-specific, national,
+    # regional) is ignored entirely rather than falling back to "first
+    # number anywhere in the label" — no unified rank is safer than a wrong
+    # one (see docstring above and university-cards-ux-fix-plan.md §1).
+    for clause in re.split(r"[,;]", label):
+        if _WORLD_SCOPE_RE.search(clause) and not _SUBJECT_QUALIFIED_WORLD_RE.search(clause):
+            m = _NUMBER_RE.search(clause)
+            if m:
+                return int(m.group(1))
     return None
 
 
