@@ -18,6 +18,20 @@ class University(Base):
     # seed_universities.py predate this column; those get backfilled by slug
     # via the LEGACY_NAME_BY_SLUG alias map when seed_kz_universities.py runs.
     slug: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True, index=True)
+    # Canonical external ID from the Research Organization Registry (ror.org).
+    # Populated for foreign universities looked up via scripts/find_ror_id.py
+    # before they're added to a seed data file — lets seed scripts dedup on a
+    # stable ID instead of `slug` (which is derived from name and drifts
+    # across spelling variants of the same institution). See docs/university-module-fix-plan.md B1.
+    ror_id: Mapped[str | None] = mapped_column(String(50), nullable=True, unique=True, index=True)
+    # Official 3-digit code from the MES RK grant-competition registry
+    # (scripts/data/ovpo_registry_2026.json, transcribed from the "Список
+    # обладателей образовательных грантов" PDF appendix). Canonical
+    # identifier for reconciling a University row against that PDF's
+    # admission-score data — replaces fuzzy name matching (LEGACY_NAME_BY_SLUG),
+    # which is why ~27 of 64 KZ universities never got grant-score data despite
+    # the PDF actually covering them (see docs/ovpo-registry-gap-analysis.md).
+    ovpo_code: Mapped[str | None] = mapped_column(String(10), nullable=True, unique=True, index=True)
     # Already present in university-data/*.py source records but previously
     # discarded by seed_kz_universities.py — restored so the researched data
     # (abbreviation, name variants, campus address) isn't thrown away.
@@ -47,5 +61,11 @@ class University(Base):
     source_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     contacts: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     facilities: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    # Per-fact provenance, same shape/rationale as Program.fact_sources —
+    # {field_name: {"url": str, "checked_at": "YYYY-MM-DD"}}. See that
+    # column's docstring; kept as two separate columns (not shared) since
+    # University and Program facts are checked independently and at
+    # different times.
+    fact_sources: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
     programs: Mapped[list["Program"]] = relationship("Program", back_populates="university", lazy="selectin")

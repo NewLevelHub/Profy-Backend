@@ -1,0 +1,1652 @@
+[
+  {
+    "specialty_code": "B058",
+    "specialty_name": "Информационная безопасность",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "019",
+    "min_score": 63,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 120
+  },
+  {
+    "specialty_code": "B058",
+    "specialty_name": "Информационная безопасность",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "053",
+    "min_score": 63,
+    "max_score": 63,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B058",
+    "specialty_name": "Информационная безопасность",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "522",
+    "min_score": 93,
+    "max_score": 134,
+    "year": "2026-2027",
+    "recipient_count": 559
+  },
+  {
+    "specialty_code": "B058",
+    "specialty_name": "Информационная безопасность",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "190",
+    "min_score": 79,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 717
+  },
+  {
+    "specialty_code": "B058",
+    "specialty_name": "Информационная безопасность",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 110,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 14
+  },
+  {
+    "specialty_code": "B058",
+    "specialty_name": "Информационная безопасность",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 100,
+    "max_score": 121,
+    "year": "2026-2027",
+    "recipient_count": 19
+  },
+  {
+    "specialty_code": "B058",
+    "specialty_name": "Информационная безопасность",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "057",
+    "min_score": 79,
+    "max_score": 117,
+    "year": "2026-2027",
+    "recipient_count": 266
+  },
+  {
+    "specialty_code": "B058",
+    "specialty_name": "Информационная безопасность",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "021",
+    "min_score": 100,
+    "max_score": 115,
+    "year": "2026-2027",
+    "recipient_count": 79
+  },
+  {
+    "specialty_code": "B058",
+    "specialty_name": "Информационная безопасность",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "029",
+    "min_score": 100,
+    "max_score": 112,
+    "year": "2026-2027",
+    "recipient_count": 17
+  },
+  {
+    "specialty_code": "B058",
+    "specialty_name": "Информационная безопасность",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "032",
+    "min_score": 79,
+    "max_score": 102,
+    "year": "2026-2027",
+    "recipient_count": 106
+  },
+  {
+    "specialty_code": "B058",
+    "specialty_name": "Информационная безопасность",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "009",
+    "min_score": 80,
+    "max_score": 96,
+    "year": "2026-2027",
+    "recipient_count": 16
+  },
+  {
+    "specialty_code": "B058",
+    "specialty_name": "Информационная безопасность",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "034",
+    "min_score": 80,
+    "max_score": 94,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "190",
+    "min_score": 77,
+    "max_score": 109,
+    "year": "2026-2027",
+    "recipient_count": 26
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "032",
+    "min_score": 78,
+    "max_score": 101,
+    "year": "2026-2027",
+    "recipient_count": 19
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "019",
+    "min_score": 77,
+    "max_score": 89,
+    "year": "2026-2027",
+    "recipient_count": 14
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "057",
+    "min_score": 77,
+    "max_score": 103,
+    "year": "2026-2027",
+    "recipient_count": 63
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "522",
+    "min_score": 85,
+    "max_score": 134,
+    "year": "2026-2027",
+    "recipient_count": 139
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "012",
+    "min_score": 79,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 95,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 42
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 80,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 62
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "045",
+    "min_score": 77,
+    "max_score": 108,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "002",
+    "min_score": 77,
+    "max_score": 105,
+    "year": "2026-2027",
+    "recipient_count": 129
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "038",
+    "min_score": 92,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "029",
+    "min_score": 80,
+    "max_score": 99,
+    "year": "2026-2027",
+    "recipient_count": 44
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "031",
+    "min_score": 79,
+    "max_score": 89,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "043",
+    "min_score": 82,
+    "max_score": 86,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "022",
+    "min_score": 77,
+    "max_score": 85,
+    "year": "2026-2027",
+    "recipient_count": 42
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "093",
+    "min_score": 78,
+    "max_score": 83,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "049",
+    "min_score": 77,
+    "max_score": 81,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "040",
+    "min_score": 78,
+    "max_score": 81,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "162",
+    "min_score": 79,
+    "max_score": 79,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "199",
+    "min_score": 77,
+    "max_score": 77,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "057",
+    "min_score": 66,
+    "max_score": 77,
+    "year": "2026-2027",
+    "recipient_count": 61
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "002",
+    "min_score": 66,
+    "max_score": 77,
+    "year": "2026-2027",
+    "recipient_count": 87
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "022",
+    "min_score": 66,
+    "max_score": 77,
+    "year": "2026-2027",
+    "recipient_count": 65
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "040",
+    "min_score": 66,
+    "max_score": 77,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "190",
+    "min_score": 66,
+    "max_score": 77,
+    "year": "2026-2027",
+    "recipient_count": 22
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "032",
+    "min_score": 67,
+    "max_score": 77,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "049",
+    "min_score": 66,
+    "max_score": 76,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "019",
+    "min_score": 66,
+    "max_score": 76,
+    "year": "2026-2027",
+    "recipient_count": 49
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "031",
+    "min_score": 71,
+    "max_score": 74,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "045",
+    "min_score": 66,
+    "max_score": 73,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "093",
+    "min_score": 67,
+    "max_score": 73,
+    "year": "2026-2027",
+    "recipient_count": 10
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "043",
+    "min_score": 71,
+    "max_score": 71,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "038",
+    "min_score": 69,
+    "max_score": 69,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B059",
+    "specialty_name": "Коммуникации и коммуникационные технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "012",
+    "min_score": 67,
+    "max_score": 69,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "019",
+    "min_score": 65,
+    "max_score": 66,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "057",
+    "min_score": 65,
+    "max_score": 66,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "002",
+    "min_score": 65,
+    "max_score": 66,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "031",
+    "min_score": 65,
+    "max_score": 66,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "022",
+    "min_score": 65,
+    "max_score": 66,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "190",
+    "min_score": 65,
+    "max_score": 66,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "032",
+    "min_score": 65,
+    "max_score": 66,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "012",
+    "min_score": 65,
+    "max_score": 65,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "162",
+    "min_score": 65,
+    "max_score": 65,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "093",
+    "min_score": 65,
+    "max_score": 65,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "045",
+    "min_score": 65,
+    "max_score": 65,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "421",
+    "min_score": 85,
+    "max_score": 139,
+    "year": "2026-2027",
+    "recipient_count": 207
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "040",
+    "min_score": 88,
+    "max_score": 134,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 84,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 149
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "182",
+    "min_score": 84,
+    "max_score": 119,
+    "year": "2026-2027",
+    "recipient_count": 53
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "029",
+    "min_score": 84,
+    "max_score": 117,
+    "year": "2026-2027",
+    "recipient_count": 53
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "501",
+    "min_score": 88,
+    "max_score": 102,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "146",
+    "min_score": 85,
+    "max_score": 95,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "049",
+    "min_score": 85,
+    "max_score": 90,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B060",
+    "specialty_name": "Химическая инженерия и процессы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "053",
+    "min_score": 85,
+    "max_score": 89,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B061",
+    "specialty_name": "Материаловедение и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "029",
+    "min_score": 80,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 21
+  },
+  {
+    "specialty_code": "B061",
+    "specialty_name": "Материаловедение и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "182",
+    "min_score": 83,
+    "max_score": 84,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B061",
+    "specialty_name": "Материаловедение и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 74,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 73
+  },
+  {
+    "specialty_code": "B061",
+    "specialty_name": "Материаловедение и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "049",
+    "min_score": 83,
+    "max_score": 84,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B061",
+    "specialty_name": "Материаловедение и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "053",
+    "min_score": 83,
+    "max_score": 83,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B061",
+    "specialty_name": "Материаловедение и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "421",
+    "min_score": 75,
+    "max_score": 137,
+    "year": "2026-2027",
+    "recipient_count": 124
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 95,
+    "max_score": 139,
+    "year": "2026-2027",
+    "recipient_count": 183
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "082",
+    "min_score": 89,
+    "max_score": 137,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "029",
+    "min_score": 88,
+    "max_score": 134,
+    "year": "2026-2027",
+    "recipient_count": 147
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "522",
+    "min_score": 88,
+    "max_score": 134,
+    "year": "2026-2027",
+    "recipient_count": 74
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "057",
+    "min_score": 88,
+    "max_score": 134,
+    "year": "2026-2027",
+    "recipient_count": 46
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 90,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 34
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "040",
+    "min_score": 92,
+    "max_score": 103,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "501",
+    "min_score": 98,
+    "max_score": 98,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "019",
+    "min_score": 97,
+    "max_score": 97,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "529",
+    "min_score": 95,
+    "max_score": 95,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "002",
+    "min_score": 88,
+    "max_score": 94,
+    "year": "2026-2027",
+    "recipient_count": 19
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "182",
+    "min_score": 94,
+    "max_score": 94,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "160",
+    "min_score": 92,
+    "max_score": 92,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "147",
+    "min_score": 92,
+    "max_score": 92,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 88,
+    "max_score": 88,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "057",
+    "min_score": 72,
+    "max_score": 88,
+    "year": "2026-2027",
+    "recipient_count": 95
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "002",
+    "min_score": 73,
+    "max_score": 88,
+    "year": "2026-2027",
+    "recipient_count": 77
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "029",
+    "min_score": 80,
+    "max_score": 88,
+    "year": "2026-2027",
+    "recipient_count": 43
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "522",
+    "min_score": 76,
+    "max_score": 88,
+    "year": "2026-2027",
+    "recipient_count": 11
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "037",
+    "min_score": 87,
+    "max_score": 87,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "501",
+    "min_score": 73,
+    "max_score": 86,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "019",
+    "min_score": 73,
+    "max_score": 85,
+    "year": "2026-2027",
+    "recipient_count": 15
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "198",
+    "min_score": 76,
+    "max_score": 83,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "182",
+    "min_score": 75,
+    "max_score": 83,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "040",
+    "min_score": 75,
+    "max_score": 83,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "024",
+    "min_score": 73,
+    "max_score": 81,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "053",
+    "min_score": 73,
+    "max_score": 79,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "049",
+    "min_score": 73,
+    "max_score": 78,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "160",
+    "min_score": 76,
+    "max_score": 76,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "005",
+    "min_score": 72,
+    "max_score": 74,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "032",
+    "min_score": 74,
+    "max_score": 74,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B062",
+    "specialty_name": "Электротехника и электроэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "082",
+    "min_score": 73,
+    "max_score": 73,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B063",
+    "specialty_name": "Электротехника и автоматизация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "053",
+    "min_score": 72,
+    "max_score": 72,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B063",
+    "specialty_name": "Электротехника и автоматизация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "057",
+    "min_score": 71,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 22
+  },
+  {
+    "specialty_code": "B063",
+    "specialty_name": "Электротехника и автоматизация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "019",
+    "min_score": 71,
+    "max_score": 72,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B063",
+    "specialty_name": "Электротехника и автоматизация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "160",
+    "min_score": 72,
+    "max_score": 72,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B063",
+    "specialty_name": "Электротехника и автоматизация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "032",
+    "min_score": 72,
+    "max_score": 72,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B063",
+    "specialty_name": "Электротехника и автоматизация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "082",
+    "min_score": 71,
+    "max_score": 72,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B063",
+    "specialty_name": "Электротехника и автоматизация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "002",
+    "min_score": 71,
+    "max_score": 71,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B063",
+    "specialty_name": "Электротехника и автоматизация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "421",
+    "min_score": 110,
+    "max_score": 139,
+    "year": "2026-2027",
+    "recipient_count": 422
+  },
+  {
+    "specialty_code": "B063",
+    "specialty_name": "Электротехника и автоматизация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "522",
+    "min_score": 104,
+    "max_score": 137,
+    "year": "2026-2027",
+    "recipient_count": 99
+  },
+  {
+    "specialty_code": "B063",
+    "specialty_name": "Электротехника и автоматизация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "029",
+    "min_score": 105,
+    "max_score": 135,
+    "year": "2026-2027",
+    "recipient_count": 44
+  },
+  {
+    "specialty_code": "B063",
+    "specialty_name": "Электротехника и автоматизация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 104,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 142
+  },
+  {
+    "specialty_code": "B063",
+    "specialty_name": "Электротехника и автоматизация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 105,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 13
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 103,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 19
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "029",
+    "min_score": 80,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 103
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "522",
+    "min_score": 103,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "057",
+    "min_score": 65,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 195
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 103,
+    "max_score": 103,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "501",
+    "min_score": 66,
+    "max_score": 108,
+    "year": "2026-2027",
+    "recipient_count": 32
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "040",
+    "min_score": 66,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 17
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "182",
+    "min_score": 65,
+    "max_score": 100,
+    "year": "2026-2027",
+    "recipient_count": 82
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "002",
+    "min_score": 65,
+    "max_score": 89,
+    "year": "2026-2027",
+    "recipient_count": 242
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "019",
+    "min_score": 65,
+    "max_score": 88,
+    "year": "2026-2027",
+    "recipient_count": 60
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "053",
+    "min_score": 66,
+    "max_score": 83,
+    "year": "2026-2027",
+    "recipient_count": 63
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "529",
+    "min_score": 68,
+    "max_score": 83,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "160",
+    "min_score": 67,
+    "max_score": 82,
+    "year": "2026-2027",
+    "recipient_count": 9
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 67,
+    "max_score": 79,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "140",
+    "min_score": 76,
+    "max_score": 79,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "024",
+    "min_score": 67,
+    "max_score": 76,
+    "year": "2026-2027",
+    "recipient_count": 12
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "049",
+    "min_score": 65,
+    "max_score": 76,
+    "year": "2026-2027",
+    "recipient_count": 29
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "036",
+    "min_score": 66,
+    "max_score": 73,
+    "year": "2026-2027",
+    "recipient_count": 18
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "032",
+    "min_score": 66,
+    "max_score": 73,
+    "year": "2026-2027",
+    "recipient_count": 35
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "045",
+    "min_score": 65,
+    "max_score": 67,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "198",
+    "min_score": 66,
+    "max_score": 67,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "014",
+    "min_score": 67,
+    "max_score": 67,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B064",
+    "specialty_name": "Механика и металлообработка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "162",
+    "min_score": 66,
+    "max_score": 66,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "160",
+    "min_score": 65,
+    "max_score": 72,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "002",
+    "min_score": 65,
+    "max_score": 89,
+    "year": "2026-2027",
+    "recipient_count": 147
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 91,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 27
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "029",
+    "min_score": 80,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 37
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "040",
+    "min_score": 68,
+    "max_score": 103,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "019",
+    "min_score": 68,
+    "max_score": 98,
+    "year": "2026-2027",
+    "recipient_count": 105
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "198",
+    "min_score": 92,
+    "max_score": 92,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "501",
+    "min_score": 68,
+    "max_score": 83,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "024",
+    "min_score": 69,
+    "max_score": 81,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "529",
+    "min_score": 77,
+    "max_score": 77,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "012",
+    "min_score": 69,
+    "max_score": 72,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "162",
+    "min_score": 68,
+    "max_score": 72,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "199",
+    "min_score": 71,
+    "max_score": 71,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "005",
+    "min_score": 68,
+    "max_score": 71,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "147",
+    "min_score": 69,
+    "max_score": 69,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "032",
+    "min_score": 68,
+    "max_score": 69,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "078",
+    "min_score": 68,
+    "max_score": 68,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "032",
+    "min_score": 68,
+    "max_score": 68,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "019",
+    "min_score": 64,
+    "max_score": 68,
+    "year": "2026-2027",
+    "recipient_count": 24
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "002",
+    "min_score": 64,
+    "max_score": 68,
+    "year": "2026-2027",
+    "recipient_count": 15
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "005",
+    "min_score": 64,
+    "max_score": 68,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "078",
+    "min_score": 67,
+    "max_score": 67,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "140",
+    "min_score": 67,
+    "max_score": 67,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "501",
+    "min_score": 65,
+    "max_score": 65,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "160",
+    "min_score": 64,
+    "max_score": 64,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B065",
+    "specialty_name": "Транспортная техника и технологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "040",
+    "min_score": 64,
+    "max_score": 64,
+    "year": "2026-2027",
+    "recipient_count": 1
+  }
+]

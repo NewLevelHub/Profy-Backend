@@ -35,14 +35,16 @@ docker-compose exec api python scripts/seed_riasec_directions.py
 docker-compose exec api python scripts/apply_direction_content.py
 
 # Universities/programs — single source of truth: university-data/*.py
-# (Almaty + Astana, 55 real KZ universities) via specialty_profession_map.py.
-# seed_universities.py (12 hand-picked, duplicate logic) was removed.
+# (Almaty + Astana + the 48 regional/branch universities from
+# missing_kz_universities_data.py, 103 real KZ universities total) via
+# specialty_profession_map.py. seed_universities.py (12 hand-picked,
+# duplicate logic) was removed.
 docker-compose exec api python scripts/seed_kz_universities.py
 # 92-profession cluster report ("Университеты для 92 профессий.txt") — 1 KZ
-# regional university + 3-4 world universities per cluster, one Program per
-# (university, profession) pair. Idempotent, keyed by (university slug) /
-# (university_id, program name); reviewed data in
-# scripts/data/universities_92_professions.py (committed).
+# regional university + up to 13 world universities per cluster (expanded
+# 2026-08-19, was 3-4), one Program per (university, profession) pair.
+# Idempotent, keyed by (university slug) / (university_id, program name);
+# reviewed data in scripts/data/universities_92_professions.py (committed).
 docker-compose exec api python scripts/seed_92_professions_universities.py
 # The script above used to smash cost + admission-requirements text into one
 # Program.requirements["notes"] string (and as a bare string, not list[str] —
@@ -77,3 +79,20 @@ docker-compose exec api python scripts/apply_program_requirements_content_2027.p
 # keyed by program_id, so it must run after seed_kz_universities.py.
 docker-compose exec api python scripts/apply_grant_admission_data_2026.py
 docker-compose exec api python scripts/backfill_program_source_metadata_2026.py
+
+# ovpo_code — canonical MES RK grant-registry key (A1), replaces name-based
+# matching; also merges 2 confirmed duplicate University rows. Idempotent,
+# keyed by slug — must run after both seed scripts above.
+docker-compose exec api python scripts/apply_ovpo_codes.py
+# One-time dedup for Program rows created identically by two different seed
+# pipelines (e.g. "Биология" vs "Биология (бакалавр)") — needed before the
+# (university_id, name_normalized) unique index can hold on a reseed. No-op
+# once already merged.
+docker-compose exec api python scripts/merge_duplicate_programs.py
+# Numeric ranking backfill for QS/THE World labels the seed script's regex
+# didn't parse before the A5 fix (national/subject-specific labels stay NULL
+# on purpose — see script docstring).
+docker-compose exec api python scripts/backfill_world_ranking.py
+# Numeric cost_per_year_min/max/currency from cost_label text (A6) —
+# conservative parser, only fills unambiguous single-figure labels.
+docker-compose exec api python scripts/backfill_cost_range.py

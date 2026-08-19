@@ -1,10 +1,15 @@
 """
 Seed script: populate universities/programs from the university-data/*.py
-scrape (55 real KZ universities: Almaty + Astana).
+scrape (55 real KZ universities: Almaty + Astana) plus the 48 regional/branch
+universities researched to close the gap documented in
+docs/ovpo-registry-gap-analysis.md (university-data/missing_kz_universities_data.py,
+see docs/university-module-fix-plan.md A3).
 
 Run inside Docker: docker-compose exec api python scripts/seed_kz_universities.py
 
-Idempotent: upserts University by slug (already present in the source data).
+Idempotent: upserts University by ovpo_code when the data entry has one (the
+canonical key per docs/university-module-fix-plan.md A1 — official MOН РК
+registry identifier, doesn't drift the way names do), falling back to slug.
 A dozen of these universities are already seeded by scripts/seed_universities.py
 under a different, hand-written English name — LEGACY_NAME_BY_SLUG reconciles
 those so re-running this script attaches the richer specialty data to the
@@ -40,8 +45,9 @@ from scripts.specialty_profession_map import GARBAGE_SPECIALTIES, SPECIALTY_TO_P
 
 from almaty_universities_data import ALMATY_UNIVERSITIES
 from astana_universities_data import ASTANA_UNIVERSITIES
+from missing_kz_universities_data import MISSING_KZ_UNIVERSITIES
 
-ALL_UNIVERSITIES: list[dict] = ALMATY_UNIVERSITIES + ASTANA_UNIVERSITIES
+ALL_UNIVERSITIES: list[dict] = ALMATY_UNIVERSITIES + ASTANA_UNIVERSITIES + MISSING_KZ_UNIVERSITIES
 
 # slug (from university-data/*.py) -> exact University.name already seeded by
 # scripts/seed_universities.py. Prevents duplicating universities both scripts
@@ -65,6 +71,13 @@ LEGACY_NAME_BY_SLUG: dict[str, str] = {
 
 
 async def _find_university(db: AsyncSession, record: dict) -> University | None:
+    ovpo_code = record.get("ovpo_code")
+    if ovpo_code:
+        result = await db.execute(select(University).where(University.ovpo_code == ovpo_code))
+        existing = result.scalar_one_or_none()
+        if existing is not None:
+            return existing
+
     result = await db.execute(select(University).where(University.slug == record["slug"]))
     existing = result.scalar_one_or_none()
     if existing is not None:
@@ -125,6 +138,7 @@ async def main() -> None:
                 existing_uni = University(
                     name=record["name"],
                     slug=record["slug"],
+                    ovpo_code=record.get("ovpo_code") or None,
                     short_name=record.get("short_name") or None,
                     aliases=record.get("aliases") or [],
                     location=record.get("location") or None,
@@ -141,6 +155,9 @@ async def main() -> None:
                 changed = False
                 if not existing_uni.slug:
                     existing_uni.slug = record["slug"]
+                    changed = True
+                if not existing_uni.ovpo_code and record.get("ovpo_code"):
+                    existing_uni.ovpo_code = record["ovpo_code"]
                     changed = True
                 if not existing_uni.description and record.get("specialties_summary"):
                     existing_uni.description = record["specialties_summary"]
@@ -182,11 +199,20 @@ async def main() -> None:
 
             admission_notes = record.get("admission_requirements", [])
 
+            seen_specialty_names: set[str] = set()
             for group in record.get("specialties", []):
                 group_name = group["group"]
                 for specialty_name in group["programs"]:
                     if specialty_name in GARBAGE_SPECIALTIES:
                         continue
+                    normalized_name = specialty_name.strip().lower()
+                    if normalized_name in seen_specialty_names:
+                        # Same specialty listed under two groups in the source data
+                        # (a research artifact, not a real second program) — the
+                        # (university_id, name_normalized) unique index would reject
+                        # the second insert anyway, so skip it here up front.
+                        continue
+                    seen_specialty_names.add(normalized_name)
 
                     profession_slugs = SPECIALTY_TO_PROFESSIONS.get(specialty_name, [])
                     if not profession_slugs:
@@ -211,10 +237,16 @@ async def main() -> None:
                         "grants": [],
                     }
 
+                    # Matched by name_normalized, not exact name — that's the
+                    # actual (university_id, name_normalized) unique constraint
+                    # this has to respect. An exact-name check misses e.g. an
+                    # incoming plain "Биология" against an existing "Биология
+                    # (бакалавр)" row, which normalize to the same value and
+                    # would otherwise 500 on the unique-constraint violation.
                     result = await db.execute(
                         select(Program).where(
                             Program.university_id == existing_uni.id,
-                            Program.name == specialty_name,
+                            Program.name_normalized == specialty_name.strip().lower(),
                         )
                     )
                     existing_prog = result.scalar_one_or_none()

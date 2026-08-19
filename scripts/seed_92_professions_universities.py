@@ -5,10 +5,13 @@ Seeds University + Program rows from scripts/data/universities_92_professions.py
 every profession/Direction in that cluster via a dedicated Program row.
 
 Idempotent:
-  - University upserted by slug — an existing row is left untouched (a
-    university recurring across clusters keeps whichever cluster's write-up
-    it was first created with; the per-cluster text always survives on
-    Program.description instead).
+  - University upserted by ror_id when the data entry has one (canonical key,
+    see docs/university-module-fix-plan.md B1 — look one up with
+    scripts/find_ror_id.py before adding a new foreign university), falling
+    back to slug otherwise. An existing row is left untouched (a university
+    recurring across clusters keeps whichever cluster's write-up it was first
+    created with; the per-cluster text always survives on Program.description
+    instead).
   - Program matched by (university_id, name) — reruns don't duplicate.
 
 Run inside the api container:
@@ -30,12 +33,29 @@ from app.models.program import Program
 from app.models.university import University
 from scripts.data.universities_92_professions import CLUSTERS
 
-RANK_RE = re.compile(r"#(\d+)")
-
-
 def parse_ranking(label: str) -> int | None:
-    m = RANK_RE.search(label)
-    return int(m.group(1)) if m else None
+    # 1. Prioritize global QS/THE World rank over subject/local ranks
+    WORLD_RANK_RE = re.compile(r"(\d+)\+?\s*\((?:QS|THE)\s+World", re.IGNORECASE)
+    m = WORLD_RANK_RE.search(label)
+    if m:
+        return int(m.group(1))
+
+    # 2. Match leading/embedded #N or №N
+    m = re.search(r"[#№](\d+)", label)
+    if m:
+        return int(m.group(1))
+        
+    # 3. Match "топ-N" or "top-N" (case-insensitive)
+    m = re.search(r"(?:топ|top)\-?(\d+)", label, re.IGNORECASE)
+    if m:
+        return int(m.group(1))
+        
+    # 4. Match leading digits (e.g. "1201+ ...")
+    m = re.match(r"^(\d+)\+?", label)
+    if m:
+        return int(m.group(1))
+        
+    return None
 
 
 async def main() -> None:
@@ -43,7 +63,12 @@ async def main() -> None:
 
     async with async_session() as db:
         directions_by_slug = {d.slug: d for d in (await db.execute(select(Direction))).scalars().all()}
-        universities_by_slug = {u.slug: u for u in (await db.execute(select(University))).scalars().all()}
+        all_universities = (await db.execute(select(University))).scalars().all()
+        universities_by_slug = {u.slug: u for u in all_universities}
+        # Canonical dedup key for foreign universities (docs/university-module-fix-plan.md B1) —
+        # checked ahead of slug so a ror_id match wins even if the data file's slug
+        # for the same institution ever drifts from what's already in the DB.
+        universities_by_ror_id = {u.ror_id: u for u in all_universities if u.ror_id}
 
         universities_created = 0
         universities_existing = 0
@@ -62,7 +87,8 @@ async def main() -> None:
 
             for uni_data in cluster["universities"]:
                 slug = uni_data["slug"]
-                university = universities_by_slug.get(slug)
+                ror_id = uni_data.get("ror_id")
+                university = (universities_by_ror_id.get(ror_id) if ror_id else None) or universities_by_slug.get(slug)
 
                 if university is None:
                     universities_created += 1
@@ -72,12 +98,13 @@ async def main() -> None:
                         university = University(
                             name=uni_data["name"],
                             slug=slug,
+                            ror_id=ror_id,
                             short_name=uni_data.get("short_name"),
                             aliases=[],
                             location=None,
                             country=uni_data["country"],
                             city=uni_data["city"],
-                            website=None,
+                            website=uni_data.get("website"),
                             ranking=parse_ranking(uni_data["ranking_label"]),
                             ranking_label=uni_data["ranking_label"],
                             description=uni_data["description"],
@@ -85,6 +112,8 @@ async def main() -> None:
                         db.add(university)
                         await db.flush()
                         universities_by_slug[slug] = university
+                        if ror_id:
+                            universities_by_ror_id[ror_id] = university
                 else:
                     universities_existing += 1
 

@@ -1,12 +1,17 @@
 """
-Idempotent update: fills in University.website (and, where researched,
-city/location/short_name) for the ~47 universities that were seeded via
+Idempotent update: fills in University.website/ror_id (and, where researched,
+city/location/short_name) for universities that were seeded via
 seed_92_professions_universities.py without these fields (that script only
 ever populated ranking/ranking_label/description — see its docstring).
 
-Source: scripts/data/university_enrichment_2027.json, hand-researched via web
-search against each institution's own site (foreign universities) or 2GIS /
-Wikipedia / the institution's own domain (Kazakhstani regional universities).
+Source: scripts/data/university_enrichment_2027.json. Original ~47 entries were
+hand-researched via web search. The remaining 62 (foreign universities missing
+`website`, per docs/university-module-fix-plan.md A4) were resolved via
+scripts/find_ror_id.py against the ROR API and include `ror_id` alongside
+`website` -- see docs/university-module-fix-plan.md B1 for why ror_id matters
+as the canonical dedup key. One of the 62 (National Institute of Dramatic Art)
+has no ROR entry, so it only carries `website`, confirmed directly against the
+institution's own site.
 
 Run inside the api container:
   docker exec profi-backend-api-1 python scripts/apply_university_enrichment_2027.py [--dry-run]
@@ -26,7 +31,7 @@ from app.models.university import University
 
 DATA_PATH = os.path.join(_ROOT, "scripts", "data", "university_enrichment_2027.json")
 
-FIELDS = ("website", "city", "location", "short_name")
+FIELDS = ("website", "city", "location", "short_name", "ror_id")
 
 
 async def main() -> None:

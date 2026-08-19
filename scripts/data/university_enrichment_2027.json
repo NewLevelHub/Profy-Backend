@@ -1,50 +1,394 @@
 {
-  "rmit-university": {"website": "https://www.rmit.edu.au"},
-  "university-of-western-australia": {"website": "https://www.uwa.edu.au"},
-  "university-of-queensland": {"website": "https://www.uq.edu.au"},
-  "university-of-warwick": {"website": "https://warwick.ac.uk"},
-  "ual-london": {"website": "https://www.arts.ac.uk"},
-  "ucl-london": {"website": "https://www.ucl.ac.uk"},
-  "cranfield-university": {"website": "https://www.cranfield.ac.uk"},
-  "loughborough-university": {"website": "https://www.lboro.ac.uk"},
-  "uclan-preston": {"website": "https://www.uclan.ac.uk"},
-  "lse-london": {"website": "https://www.lse.ac.uk"},
-  "semmelweis-university": {"website": "https://semmelweis.hu/english/"},
-  "univ-veterinary-medicine-budapest": {"website": "https://univet.hu/en/"},
-  "tu-munich": {"website": "https://www.tum.de/en/"},
-  "copenhagen-business-school": {"website": "https://www.cbs.dk/en"},
-  "ie-university": {"website": "https://www.ie.edu"},
-  "les-roches-global-hospitality": {"website": "https://www.lesroches.edu"},
-  "bocconi-university": {"website": "https://www.unibocconi.it/en"},
-  "politecnico-di-milano": {"website": "https://www.polimi.it/en/"},
-  "southwest-jiaotong-university": {"website": "https://en.swjtu.edu.cn/"},
-  "tu-delft": {"website": "https://www.tudelft.nl/en"},
-  "erasmus-university-rotterdam": {"website": "https://www.eur.nl/en"},
-  "wageningen-university": {"website": "https://www.wur.nl/en.htm"},
-  "uc-davis": {"website": "https://www.ucdavis.edu", "city": "Дэвис"},
-  "purdue-university": {"website": "https://www.purdue.edu", "city": "Уэст-Лафайет"},
-  "colorado-school-of-mines": {"website": "https://www.mines.edu", "city": "Голден"},
-  "john-jay-college": {"website": "https://www.jjay.cuny.edu"},
-  "parsons-school-of-design": {"website": "https://www.newschool.edu/parsons/"},
-  "ntu-singapore": {"website": "https://www.ntu.edu.sg"},
-  "university-of-helsinki": {"website": "https://www.helsinki.fi/en"},
-  "enac-toulouse": {"website": "https://www.enac.fr/en"},
-  "hec-paris": {"website": "https://www.hec.edu/en"},
-  "sciences-po-paris": {"website": "https://www.sciencespo.fr/en/"},
-  "charles-university-prague": {"website": "https://cuni.cz/UKEN-1.html"},
-  "glion-institute": {"website": "https://www.glion.edu"},
-  "ehl-hospitality-business-school": {"website": "https://www.ehl.edu"},
-  "eth-zurich": {"website": "https://ethz.ch/en.html"},
-  "university-of-st-gallen": {"website": "https://www.unisg.ch/en/"},
-  "karolinska-institutet": {"website": "https://ki.se/en"},
-
-  "kartu-karaganda": {"website": "https://www.kstu.kz/?lang=ru", "location": "Караганда, проспект Нурсултана Назарбаева, 56"},
-  "karsu-buketova": {"website": "https://buketov.edu.kz/ru/", "location": "Караганда, улица Университетская, 28"},
-  "medical-university-karaganda": {"website": "https://qmu.edu.kz/ru", "location": "Караганда, улица Гоголя, 40", "short_name": "МУК"},
-  "mvd-academy-karaganda": {"website": "https://kpa.edu.kz/", "location": "Караганда, улица Ермекова, 124", "short_name": "Академия МВД"},
-  "kostanay-regional-university": {"website": "https://ksu.edu.kz/ru/", "location": "Костанай, улица А. Байтурсынова, 47", "short_name": "КРУ"},
-  "toraigyrov-university": {"website": "https://tou.edu.kz/ru/", "location": "Павлодар, улица Ломова, 64"},
-  "yessenov-university": {"website": "https://yu.edu.kz/", "location": "Актау, 32-й микрорайон"},
-  "vktu-ust-kamenogorsk": {"website": "https://www.ektu.kz/?lang=ru", "location": "Усть-Каменогорск, улица Серикбаева, 19"},
-  "voenny-institut-sil-vozdushnoy-oborony": {"website": "http://visvo.mil.kz/", "location": "Актобе, проспект Алии Молдагуловой, 39", "short_name": "ВИСВО"}
+  "alliance-manchester-business-school": {
+    "ror_id": "027m9bs27",
+    "website": "http://www.manchester.ac.uk/"
+  },
+  "australian-national-university": {
+    "ror_id": "019wvm592",
+    "website": "https://www.anu.edu.au"
+  },
+  "berklee-college-of-music": {
+    "ror_id": "05k9wtr55",
+    "website": "https://www.berklee.edu/"
+  },
+  "bocconi-university": {
+    "website": "https://www.unibocconi.it/en"
+  },
+  "carnegie-mellon-university": {
+    "ror_id": "05x2bcf33",
+    "website": "https://www.cmu.edu"
+  },
+  "charles-university-prague": {
+    "website": "https://cuni.cz/UKEN-1.html"
+  },
+  "china-agricultural-university": {
+    "ror_id": "04v3ywz14",
+    "website": "http://english.cau.edu.cn/"
+  },
+  "china-university-of-petroleum-beijing": {
+    "ror_id": "041qf4r12",
+    "website": "http://www.cup.edu.cn/internationaloffice/en/"
+  },
+  "colorado-school-of-mines": {
+    "city": "Голден",
+    "website": "https://www.mines.edu"
+  },
+  "columbia-journalism-school": {
+    "ror_id": "00hj8s172",
+    "website": "https://www.columbia.edu"
+  },
+  "copenhagen-business-school": {
+    "website": "https://www.cbs.dk/en"
+  },
+  "cornell-ilr-school": {
+    "ror_id": "05bnh6r87",
+    "website": "https://www.cornell.edu"
+  },
+  "cranfield-university": {
+    "website": "https://www.cranfield.ac.uk"
+  },
+  "eberhard-karls-universitat-tubingen": {
+    "ror_id": "03a1kwz48",
+    "website": "https://www.uni-tuebingen.de"
+  },
+  "ehl-hospitality-business-school": {
+    "website": "https://www.ehl.edu"
+  },
+  "embry-riddle-aeronautical-university": {
+    "ror_id": "010jskt71",
+    "website": "http://www.erau.edu/"
+  },
+  "enac-toulouse": {
+    "website": "https://www.enac.fr/en"
+  },
+  "erasmus-university-rotterdam": {
+    "website": "https://www.eur.nl/en"
+  },
+  "esalq-usp-sao-paulo": {
+    "website": "https://www5.usp.br"
+  },
+  "esit-sorbonne-nouvelle": {
+    "ror_id": "03z6jp965",
+    "website": "http://www.univ-paris3.fr/"
+  },
+  "eth-zurich": {
+    "website": "https://ethz.ch/en.html"
+  },
+  "fgv-eaesp": {
+    "ror_id": "01evzkn27",
+    "website": "http://portal.fgv.br/en"
+  },
+  "geneva-graduate-institute": {
+    "ror_id": "007ygn379",
+    "website": "https://www.graduateinstitute.ch"
+  },
+  "georgia-institute-of-technology": {
+    "ror_id": "01zkghx44",
+    "website": "https://www.gatech.edu"
+  },
+  "german-sport-university-cologne": {
+    "ror_id": "0189raq88",
+    "website": "https://www.dshs-koeln.de"
+  },
+  "glion-institute": {
+    "website": "https://www.glion.edu"
+  },
+  "griffith-university-aviation": {
+    "ror_id": "02sc3r913",
+    "website": "https://www.griffith.edu.au"
+  },
+  "harvard-kennedy-school": {
+    "ror_id": "03vek6s52",
+    "website": "https://www.harvard.edu"
+  },
+  "hec-paris": {
+    "website": "https://www.hec.edu/en"
+  },
+  "hec-paris-finance": {
+    "ror_id": "0423jsj19",
+    "website": "https://www.hec.edu"
+  },
+  "ie-business-school": {
+    "ror_id": "02jjdwm75",
+    "website": "https://www.ie.edu"
+  },
+  "ie-university": {
+    "website": "https://www.ie.edu"
+  },
+  "john-jay-college": {
+    "website": "https://www.jjay.cuny.edu"
+  },
+  "karolinska-institutet": {
+    "website": "https://ki.se/en"
+  },
+  "karsu-buketova": {
+    "location": "Караганда, улица Университетская, 28",
+    "website": "https://buketov.edu.kz/ru/"
+  },
+  "kartu-karaganda": {
+    "location": "Караганда, проспект Нурсултана Назарбаева, 56",
+    "website": "https://www.kstu.kz/?lang=ru"
+  },
+  "kfupm-dhahran": {
+    "ror_id": "03yez3163",
+    "website": "https://www.kfupm.edu.sa"
+  },
+  "kostanay-regional-university": {
+    "location": "Костанай, улица А. Байтурсынова, 47",
+    "short_name": "КРУ",
+    "website": "https://ksu.edu.kz/ru/"
+  },
+  "kuehne-logistics-university": {
+    "ror_id": "00z9cn431",
+    "website": "https://www.the-klu.org/"
+  },
+  "les-roches-global-hospitality": {
+    "website": "https://www.lesroches.edu"
+  },
+  "loughborough-university": {
+    "website": "https://www.lboro.ac.uk"
+  },
+  "lse-london": {
+    "website": "https://www.lse.ac.uk"
+  },
+  "medical-university-karaganda": {
+    "location": "Караганда, улица Гоголя, 40",
+    "short_name": "МУК",
+    "website": "https://qmu.edu.kz/ru"
+  },
+  "melbourne-business-school": {
+    "website": "https://www.unimelb.edu.au"
+  },
+  "middlebury-institute-monterey-translation": {
+    "ror_id": "05d1z6q04",
+    "website": "https://www.middlebury.edu/institute"
+  },
+  "mvd-academy-karaganda": {
+    "location": "Караганда, улица Ермекова, 124",
+    "short_name": "Академия МВД",
+    "website": "https://kpa.edu.kz/"
+  },
+  "national-university-of-singapore": {
+    "ror_id": "01tgyzw49",
+    "website": "http://www.nus.edu.sg/"
+  },
+  "national-university-of-singapore-biological-sciences": {
+    "website": "http://www.nus.edu.sg/"
+  },
+  "national-university-of-singapore-scm": {
+    "website": "http://www.nus.edu.sg/"
+  },
+  "nida-national-institute-dramatic-art": {
+    "website": "https://www.nida.edu.au"
+  },
+  "ntnu-trondheim": {
+    "ror_id": "05xg72x27",
+    "website": "https://www.ntnu.edu"
+  },
+  "ntu-singapore": {
+    "website": "https://www.ntu.edu.sg"
+  },
+  "nus-business-school": {
+    "website": "http://www.nus.edu.sg/"
+  },
+  "nus-faculty-of-law": {
+    "website": "http://www.nus.edu.sg/"
+  },
+  "nus-yong-loo-lin-medicine": {
+    "website": "http://www.nus.edu.sg/"
+  },
+  "parsons-school-of-design": {
+    "website": "https://www.newschool.edu/parsons/"
+  },
+  "politecnico-di-milano": {
+    "website": "https://www.polimi.it/en/"
+  },
+  "politecnico-di-milano-design": {
+    "ror_id": "01nffqt88",
+    "website": "https://polimi.it"
+  },
+  "polyu-school-hotel-tourism-management": {
+    "ror_id": "0030zas98",
+    "website": "http://www.polyu.edu.hk/web/en/home/index.html"
+  },
+  "pontificia-universidad-catolica-de-chile": {
+    "ror_id": "04teye511",
+    "website": "http://www.uc.cl/"
+  },
+  "purdue-university": {
+    "city": "Уэст-Лафайет",
+    "website": "https://www.purdue.edu"
+  },
+  "ritsumeikan-apu-tourism-hospitality": {
+    "ror_id": "03ynn1n59",
+    "website": "http://www.apu.ac.jp/home/"
+  },
+  "rmit-university": {
+    "website": "https://www.rmit.edu.au"
+  },
+  "rotman-school-of-management": {
+    "website": "https://www.utoronto.ca"
+  },
+  "sciences-po-paris": {
+    "website": "https://www.sciencespo.fr/en/"
+  },
+  "semmelweis-university": {
+    "website": "https://semmelweis.hu/english/"
+  },
+  "seoul-national-university": {
+    "ror_id": "04h9pn542",
+    "website": "https://www.snu.ac.kr"
+  },
+  "slu-swedish-university-agricultural-sciences": {
+    "ror_id": "02yy8x990",
+    "website": "http://www.slu.se/en/"
+  },
+  "southwest-jiaotong-university": {
+    "website": "https://en.swjtu.edu.cn/"
+  },
+  "stellenbosch-university-logistics": {
+    "ror_id": "05bk57929",
+    "website": "https://www.sun.ac.za"
+  },
+  "tokyo-university-of-the-arts": {
+    "ror_id": "00y809n33",
+    "website": "https://www.geidai.ac.jp/"
+  },
+  "toraigyrov-university": {
+    "location": "Павлодар, улица Ломова, 64",
+    "website": "https://tou.edu.kz/ru/"
+  },
+  "tsinghua-university": {
+    "ror_id": "03cve4549",
+    "website": "https://www.tsinghua.edu.cn"
+  },
+  "tu-delft": {
+    "website": "https://www.tudelft.nl/en"
+  },
+  "tu-munich": {
+    "website": "https://www.tum.de/en/"
+  },
+  "ual-london": {
+    "website": "https://www.arts.ac.uk"
+  },
+  "uc-davis": {
+    "city": "Дэвис",
+    "website": "https://www.ucdavis.edu"
+  },
+  "ucl-london": {
+    "website": "https://www.ucl.ac.uk"
+  },
+  "uclan-preston": {
+    "website": "https://www.uclan.ac.uk"
+  },
+  "uct-graduate-school-of-business": {
+    "website": "https://uct.ac.za"
+  },
+  "unam-veterinaria-mexico": {
+    "ror_id": "01tmp8f25",
+    "website": "http://www.unam.mx"
+  },
+  "univ-veterinary-medicine-budapest": {
+    "website": "https://univet.hu/en/"
+  },
+  "universidade-de-sao-paulo": {
+    "ror_id": "036rp1748",
+    "website": "https://www5.usp.br"
+  },
+  "universidade-de-sao-paulo-direito": {
+    "website": "https://www5.usp.br"
+  },
+  "university-of-alberta": {
+    "ror_id": "0160cpw27",
+    "website": "https://www.ualberta.ca"
+  },
+  "university-of-birmingham-bcrre": {
+    "ror_id": "03angcq70",
+    "website": "http://www.birmingham.ac.uk/index.aspx"
+  },
+  "university-of-cape-town": {
+    "ror_id": "03p74gp79",
+    "website": "https://uct.ac.za"
+  },
+  "university-of-cape-town-law": {
+    "website": "https://uct.ac.za"
+  },
+  "university-of-cape-town-michaelis": {
+    "website": "https://uct.ac.za"
+  },
+  "university-of-copenhagen-food-science": {
+    "ror_id": "035b05819",
+    "website": "https://www.ku.dk"
+  },
+  "university-of-edinburgh": {
+    "ror_id": "01nrxwf90",
+    "website": "https://www.ed.ac.uk"
+  },
+  "university-of-helsinki": {
+    "website": "https://www.helsinki.fi/en"
+  },
+  "university-of-hong-kong-business-school": {
+    "ror_id": "02zhqgq86",
+    "website": "https://www.hku.hk"
+  },
+  "university-of-illinois-gies-college-of-business": {
+    "ror_id": "047426m28",
+    "website": "https://illinois.edu"
+  },
+  "university-of-melbourne": {
+    "ror_id": "01ej9dk98",
+    "website": "https://www.unimelb.edu.au"
+  },
+  "university-of-pretoria-agriculture": {
+    "ror_id": "00g0p6g84",
+    "website": "https://www.up.ac.za"
+  },
+  "university-of-queensland": {
+    "website": "https://www.uq.edu.au"
+  },
+  "university-of-reading": {
+    "ror_id": "05v62cm79",
+    "website": "https://www.reading.ac.uk"
+  },
+  "university-of-st-gallen": {
+    "website": "https://www.unisg.ch/en/"
+  },
+  "university-of-surrey-hospitality-tourism": {
+    "ror_id": "00ks66431",
+    "website": "https://www.surrey.ac.uk"
+  },
+  "university-of-toronto": {
+    "ror_id": "03dbr7087",
+    "website": "https://www.utoronto.ca"
+  },
+  "university-of-warwick": {
+    "website": "https://warwick.ac.uk"
+  },
+  "university-of-waterloo-actuarial-science": {
+    "ror_id": "01aff2v68",
+    "website": "https://uwaterloo.ca/"
+  },
+  "university-of-western-australia": {
+    "website": "https://www.uwa.edu.au"
+  },
+  "unsw-sydney-actuarial-studies": {
+    "ror_id": "03r8z3t63",
+    "website": "https://www.unsw.edu.au/"
+  },
+  "vktu-ust-kamenogorsk": {
+    "location": "Усть-Каменогорск, улица Серикбаева, 19",
+    "website": "https://www.ektu.kz/?lang=ru"
+  },
+  "voenny-institut-sil-vozdushnoy-oborony": {
+    "location": "Актобе, проспект Алии Молдагуловой, 39",
+    "short_name": "ВИСВО",
+    "website": "http://visvo.mil.kz/"
+  },
+  "wageningen-university": {
+    "website": "https://www.wur.nl/en.htm"
+  },
+  "yessenov-university": {
+    "location": "Актау, 32-й микрорайон",
+    "website": "https://yu.edu.kz/"
+  }
 }
