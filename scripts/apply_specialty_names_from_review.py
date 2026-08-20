@@ -131,11 +131,16 @@ async def main() -> None:
                 )
                 # More than one row can carry the same (university, direction)
                 # link if an earlier partial/duplicate seed run left stragglers
-                # — pick the first deterministically rather than erroring, the
-                # rest just won't get a `matched` entry of their own here.
-                rows = result.scalars().all()
-                if rows:
-                    matched.append((d, rows[0]))
+                # (e.g. a rerun of seed_92_professions_universities.py after
+                # this script already renamed the "real" survivor — the
+                # dedup-by-name check in that seeder no longer matches, so it
+                # creates a fresh generic-named row for the same direction).
+                # ALL of them must enter `matched`, not just the first —
+                # otherwise a straggler keeps its own direction link forever,
+                # invisible to the merge below, and the same profession ends
+                # up pointing at two different programs at once.
+                for row in result.scalars().all():
+                    matched.append((d, row))
 
             if not matched:
                 skipped_already_fixed += 1

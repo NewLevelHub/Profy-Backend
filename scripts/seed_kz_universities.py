@@ -278,7 +278,24 @@ async def main() -> None:
                         prog_inserted += 1
                     else:
                         changed = False
+                        # `requirements` is handled separately from the generic
+                        # per-field diff below: this scrape only ever knows
+                        # about `notes`, but later pipeline steps (grant/ENT
+                        # backfills) add exams/min_ent_threshold/
+                        # admission_scores_2026/needs_* into the SAME dict.
+                        # Comparing/overwriting the whole dict against a
+                        # source that only has `notes` made a rerun of this
+                        # script wipe all of that enrichment on every existing
+                        # row (found via a live full-reseed test — every KZ
+                        # program's requirements collapsed back down to just
+                        # {"notes": [...]}). Merge instead: only touch the
+                        # `notes` key, leave every other key whatever it is.
+                        if existing_prog.requirements.get("notes") != admission_notes:
+                            existing_prog.requirements = {**existing_prog.requirements, "notes": admission_notes}
+                            changed = True
                         for field, value in prog_data.items():
+                            if field == "requirements":
+                                continue
                             if getattr(existing_prog, field) != value:
                                 setattr(existing_prog, field, value)
                                 changed = True

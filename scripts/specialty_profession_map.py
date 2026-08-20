@@ -61,7 +61,7 @@ SPECIALTY_TO_PROFESSIONS: dict[str, list[str]] = {
     "Ecology and nature management": ["inzhener-ekolog"],
     "Агрономия": ["agronom"],
     "Ветеринарная санитария": ["veterinar"],
-    "Факультет ветеринарии и технологии животноводства": ["veterinar"],
+    "Ветеринарная безопасность": ["veterinar"],
     "Технология производства продуктов животноводства": ["upravlyayuschiy-fermerskim-hozyaystvom", "veterinar"],
     "Биология": ["biolog"],
     "Биотехнология": ["issledovatel-v-oblasti-biotehnologiy"],
@@ -385,6 +385,7 @@ SPECIALTY_TO_PROFESSIONS: dict[str, list[str]] = {
     "Компьютерные науки": ["razrabotchik-programmnogo-obespecheniya"],
     "Информатика (Computer science)": ["razrabotchik-programmnogo-obespecheniya"],
     "Информатика": ["razrabotchik-programmnogo-obespecheniya"],
+    "Информационные системы и IT-решения по отраслям": ["razrabotchik-programmnogo-obespecheniya"],
     "Computer technology and software": ["razrabotchik-programmnogo-obespecheniya"],
     "Cybersecurity": ["sistemnyy-administrator"],
     "Кибербезопасность": ["sistemnyy-administrator"],
@@ -432,6 +433,7 @@ SPECIALTY_TO_PROFESSIONS: dict[str, list[str]] = {
     "Civil and Environmental Engineering": ["inzhener-stroitel"],
     "Архитектура": ["arhitektor"],
     "Архитектурно-строительный": ["inzhener-stroitel"],
+    "Промышленное и гражданское строительство": ["inzhener-stroitel"],
     "Строительство": ["inzhener-stroitel", "geodezist"],
     "Технология промышленного и гражданского строительства": ["inzhener-stroitel"],
     "Строительство автомобильных дорог и аэродромов": ["inzhener-stroitel"],
@@ -461,7 +463,7 @@ SPECIALTY_TO_PROFESSIONS: dict[str, list[str]] = {
     "Process Engineering": ["inzhener-mehanik"],
     "Безопасность жизнедеятельности": ["spasatel-mchs"],
     "Безопасность жизнедеятельности и защита окружающей среды": ["spasatel-mchs", "inzhener-ekolog"],
-    "Приоритетные направления — сельскохозяйственное машиностроение и производство пищевых продуктов": ["tehnolog-pischevogo-proizvodstva", "inzhener-mehanik"],
+    "Агроинженерия": ["inzhener-mehanik"],
     "Механическая инженерия": ["inzhener-mehanik"],
 
     # --- Electrical / power engineering ---
@@ -542,6 +544,7 @@ SPECIALTY_TO_PROFESSIONS: dict[str, list[str]] = {
 
     # --- Production technology (food / textile / materials) ---
     "Технология продовольственных продуктов": ["tehnolog-pischevogo-proizvodstva"],
+    "Технология пищевых продуктов": ["tehnolog-pischevogo-proizvodstva"],
     "Технология продовольственных продуктов (по отраслям)": ["tehnolog-pischevogo-proizvodstva"],
     "Технология перерабатывающих производств (по отраслям)": ["tehnolog-pischevogo-proizvodstva"],
     "Нанотехнология текстиля": ["modeler"],

@@ -73,11 +73,11 @@ NUMERIC: dict[tuple[str, str], tuple[str, float, float]] = {
     ("Technical University of Munich (TUM)", "€2000–€3000 за семестр (бакалавриат) для студентов вне ЕС"): ("EUR", 4000, 6000),
     ("Tokyo Institute of Technology", "~535 800 JPY (~3 746 USD) в год; возможны стипендии для отличных студентов"): ("USD", 3746, 3746),
     ("Imperial College London", "£38 000–£43 300 в год для программ бакалавриата (инженерия)"): ("GBP", 38000, 43300),
-    ("University of Toronto", "$70 060–$72 860 в год для международных студентов бакалавриата"): ("USD", 70060, 72860),
+    ("University of Toronto, Temerty Faculty of Medicine", "$70 060–$72 860 в год для международных студентов бакалавриата"): ("USD", 70060, 72860),
     ("Toronto Metropolitan University", "~CAD 30,000-44,000 в год для иностранных студентов (в зависимости от программы: бакалавриат дороже, магистратура ~CAD 30,000)"): ("CAD", 30000, 44000),
     ("University of Reading", "£16 450—22 550 в год для бакалавриата; £30 650 в год для программ по агрономии"): ("GBP", 16450, 22550),
     ("Charles University", "≈19 400–21 000 евро в год (программа General Medicine, 6 лет); Второй медицинский факультет — около 460 000 CZK в год (≈20 000 USD)"): ("EUR", 19400, 21000),
-    ("University of Toronto", "≈CAD 60 000–95 000 в год для иностранных студентов в зависимости от программы (медицина, стоматология значительно дороже сестринского дела и реабилитационных наук)"): ("CAD", 60000, 95000),
+    ("University of Toronto, Temerty Faculty of Medicine", "≈CAD 60 000–95 000 в год для иностранных студентов в зависимости от программы (медицина, стоматология значительно дороже сестринского дела и реабилитационных наук)"): ("CAD", 60000, 95000),
     ("National University of Singapore, Yong Loo Lin School of Medicine", "≈SGD 30 000–33 000 в год при получении Tuition Grant (с трёхлетним обязательством отработки в Сингапуре); без гранта — от SGD 80 000 в год"): ("SGD", 80000, 80000),
     ("University of Melbourne", "Doctor of Medicine — ≈AUD 112 000 за первый год; Doctor of Clinical Dentistry — ≈AUD 59 000 в год; Doctor of Dental Surgery — ≈AUD 98 500 в год"): ("AUD", 112000, 112000),
     ("University of Cape Town (UCT)", "≈R108 800 (≈USD 6 000) в год за обучение по программе MBChB; с учётом проживания и прочих расходов общий бюджет ≈USD 11 000–23 000 в год"): ("USD", 6000, 6000),
@@ -87,10 +87,10 @@ NUMERIC: dict[tuple[str, str], tuple[str, float, float]] = {
     ("University of Padua", "€2,500–€3,000 в год (зависит от семейного дохода)"): ("EUR", 2500, 3000),
     ("University of Warwick", "~24 000 – 30 000 GBP в год"): ("GBP", 24000, 30000),
     ("Erasmus University Rotterdam", "10 000 – 18 000 EUR в год (для граждан вне ЕЭЗ)"): ("EUR", 10000, 18000),
-    ("University of St. Gallen", "~730 CHF в семестр (швейцарские студенты), ~2400 CHF для иностранцев"): ("CHF", 4800, 4800),
+    ("University of St. Gallen (HSG)", "~730 CHF в семестр (швейцарские студенты), ~2400 CHF для иностранцев"): ("CHF", 4800, 4800),
     ("University of Mannheim", "~175 EUR в семестр (сбор, обучение фактически бесплатное в Германии)"): ("EUR", 350, 350),
     ("HEC Paris", "~30 000 – 45 000 EUR в год (зависит от уровня программы)"): ("EUR", 30000, 45000),
-    ("University of St. Gallen", "~3 100 CHF в семестр для иностранных студентов"): ("CHF", 6200, 6200),
+    ("University of St. Gallen (HSG)", "~3 100 CHF в семестр для иностранных студентов"): ("CHF", 6200, 6200),
     ("Wharton School of the University of Pennsylvania", "~$76,500 в год за MBA"): ("USD", 76500, 76500),
     ("WHU – Otto Beisheim School of Management", "~€20,000-24,000 в год за MBA"): ("EUR", 20000, 24000),
     ("RMIT University", "~35 000 – 40 000 AUD в год"): ("AUD", 35000, 40000),
@@ -110,7 +110,7 @@ NUMERIC: dict[tuple[str, str], tuple[str, float, float]] = {
     ("McGill University", "~CAD 30,000-40,000 в год для международных студентов"): ("CAD", 30000, 40000),
     ("Tsinghua University", "~26,000 CNY в год для китайцев; ~35,000-50,000 CNY для иностранцев"): ("CNY", 35000, 50000),
     ("Charles University", "3 000 – 15 000 EUR в год (на английском языке)"): ("EUR", 3000, 15000),
-    ("University of Toronto", "От 10 000 до 58 000 CAD в год в зависимости от программы (магистратура OISE — около 10 000–20 000 CAD/год, профессиональные программы дороже)"): ("CAD", 10000, 58000),
+    ("University of Toronto, Temerty Faculty of Medicine", "От 10 000 до 58 000 CAD в год в зависимости от программы (магистратура OISE — около 10 000–20 000 CAD/год, профессиональные программы дороже)"): ("CAD", 10000, 58000),
     ("Eberhard Karls Universität Tübingen", "Около 1500 EUR за семестр (в основном взносы за услуги, обучение бесплатное для большинства программ)"): ("EUR", 3000, 3000),
     ("Seoul National University", "Около 4–7 млн вон (примерно 3000–5000 USD) за семестр в зависимости от факультета"): ("USD", 6000, 10000),
     ("University of Cape Town (UCT)", "Около 4500–8300 USD за семестр для международных студентов в зависимости от программы"): ("USD", 9000, 16600),
@@ -132,7 +132,7 @@ NUMERIC: dict[tuple[str, str], tuple[str, float, float]] = {
     ("Georgia Institute of Technology", "около 31 370 USD в год за обучение на бакалавриате для иностранных студентов (плюс сборы)"): ("USD", 31370, 31370),
     ("National University of Singapore — NUS Business School", "около 40 000–50 000 SGD в год для иностранных студентов бакалавриата"): ("SGD", 40000, 50000),
     ("University of Waterloo", "около 45 500–48 000 CAD за первый год бакалавриата для иностранных студентов"): ("CAD", 45500, 48000),
-    ("University of Toronto", "55 000 – 75 000 CAD в год (бакалавриат)"): ("CAD", 55000, 75000),
+    ("University of Toronto, Temerty Faculty of Medicine", "55 000 – 75 000 CAD в год (бакалавриат); 20 000 – 35 000 CAD в год (магистратура)"): ("CAD", 55000, 75000),
     ("John Jay College of Criminal Justice", "14 880 – 18 600 USD в год (для международных бакалавров)"): ("USD", 14880, 18600),
     ("Australian National University", "от 46 680 до 62 440 австралийских долларов в год в зависимости от программы"): ("AUD", 46680, 62440),
     ("University of Queensland", "~45 000 – 50 000 AUD в год"): ("AUD", 45000, 50000),
@@ -172,7 +172,7 @@ NUMERIC: dict[tuple[str, str], tuple[str, float, float]] = {
     ("University of Pretoria, Faculty of Natural and Agricultural Sciences", "для иностранных студентов не из региона SADC — двойная местная стоимость обучения плюс международный сбор ≈ 4 725 южноафриканских рэндов (ZAR) в год; итоговая стоимость программы от 90 000 до 180 000 ZAR в год"): ("ZAR", 90000, 180000),
     ("Middlebury Institute of International Studies at Monterey — Translation, Interpretation and Localization Management", "≈49 870 USD в год (обучение), без учёта проживания"): ("USD", 49870, 49870),
     ("Bocconi University", "~14 000 – 16 000 EUR в год"): ("EUR", 14000, 16000),
-    ("HEC Paris", "около 45 000–55 000 EUR в год для магистерских программ (полная стоимость)"): ("EUR", 45000, 55000),
+    ("HEC Paris", "около 48 913–59 783EUR в год для магистерских программ (полная стоимость)"): ("USD", 48913, 59783),
     ("The Hong Kong Polytechnic University — School of Hotel and Tourism Management", "160 000–180 000 гонконгских долларов в год (≈20 500–23 000 USD) для иностранных студентов"): ("USD", 20500, 23000),
     ("National University of Singapore, Faculty of Law", "около 38 000–45 000 сингапурских долларов в год для иностранных студентов на бакалавриате"): ("SGD", 38000, 45000),
     ("EHL Hospitality Business School", "~35 000 – 40 000 CHF в год"): ("CHF", 35000, 40000),
@@ -211,6 +211,7 @@ async def main() -> None:
     async with async_session() as db:
         numeric_changed = 0
         text_changed = 0
+        already_applied = 0
         not_found = []
 
         for (uni_name, old_label), (currency, cmin, cmax) in NUMERIC.items():
@@ -226,7 +227,26 @@ async def main() -> None:
                 )
             ).scalars().all()
             if not progs:
-                not_found.append(f"program not found (already changed?): {uni_name!r} / {old_label[:60]!r}")
+                # Not necessarily missing -- a later pipeline step (e.g.
+                # backfill_strip_masters_domestic_cost.py, which runs before
+                # this script) can rewrite cost_label first, so the OLD text
+                # this rule keys on may simply no longer exist because the
+                # row already got its numeric fields filled by this exact
+                # rule on an earlier run. Check for that before reporting it
+                # as a failure.
+                already = (
+                    await db.execute(
+                        select(Program).where(
+                            Program.university_id.in_([u.id for u in unis]),
+                            Program.cost_per_year_min == cmin,
+                            Program.cost_per_year_max == cmax,
+                        )
+                    )
+                ).scalars().first()
+                if already is not None:
+                    already_applied += 1
+                else:
+                    not_found.append(f"program not found (already changed?): {uni_name!r} / {old_label[:60]!r}")
                 continue
             for prog in progs:
                 if prog.cost_per_year_min is not None:
@@ -252,7 +272,17 @@ async def main() -> None:
                 )
             ).scalars().all()
             if not progs:
-                not_found.append(f"program not found (already changed?): {uni_name!r} / {old_label[:60]!r}")
+                already = (
+                    await db.execute(
+                        select(Program).where(
+                            Program.university_id.in_([u.id for u in unis]), Program.cost_label == new_label
+                        )
+                    )
+                ).scalars().first()
+                if already is not None:
+                    already_applied += 1
+                else:
+                    not_found.append(f"program not found (already changed?): {uni_name!r} / {old_label[:60]!r}")
                 continue
             for prog in progs:
                 tag = "[updating]" if apply else "[would update]"
@@ -261,7 +291,10 @@ async def main() -> None:
                     prog.cost_label = new_label
                 text_changed += 1
 
-        print(f"\n{numeric_changed} programs get numeric cost_per_year_min/max, {text_changed} get a cleaned text-only label.")
+        print(
+            f"\n{numeric_changed} programs get numeric cost_per_year_min/max, {text_changed} get a cleaned text-only label "
+            f"({already_applied} rule(s) already applied on an earlier run, not re-counted)."
+        )
         if not_found:
             print(f"\n{len(not_found)} lookups failed:")
             for msg in not_found[:50]:
