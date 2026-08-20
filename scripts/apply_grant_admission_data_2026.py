@@ -109,7 +109,23 @@ CLASSIFIER_CODE_TO_EXAMS = {
     "B265": ["Математика", "Физика"]
 }
 
-def get_min_ent_threshold(code: str) -> int:
+# Real, university-specific competitive thresholds that are higher than the
+# classifier's category default (e.g. these 4 programs' actual admission
+# threshold is well above the generic 50) -- keyed by Program.id so this
+# survives a rerun of this script instead of being silently overwritten back
+# to the classifier default every time. See university-module-fix-plan.md /
+# the min_ent vs min_ent_threshold legacy-field cleanup.
+MIN_ENT_THRESHOLD_OVERRIDES: dict[str, int] = {
+    "069660c3-20f7-4106-957b-4ce84c1f9df2": 83,  # Narxoz — Менеджмент (Управление проектами)
+    "1339069f-8f62-47b6-a0df-f0702a21f5a9": 87,  # Almaty Management University — Маркетинг
+    "c76c82f2-db3c-4d23-9d22-bdfd1a18d67b": 100,  # Astana IT University — Анализ больших данных
+    "eecef525-d7c2-4294-bdcb-13e2e903498e": 97,  # Abai KazNPU — Психология (практический психолог)
+}
+
+
+def get_min_ent_threshold(code: str, program_id: str | None = None) -> int:
+    if program_id in MIN_ENT_THRESHOLD_OVERRIDES:
+        return MIN_ENT_THRESHOLD_OVERRIDES[program_id]
     if code.startswith("B00") or code.startswith("B01") or code == "B020":
         return 75  # Педагогика
     if code == "B049":
@@ -329,7 +345,7 @@ async def main() -> None:
 
             # 1. Update exams and min threshold
             exams = CLASSIFIER_CODE_TO_EXAMS.get(code)
-            min_ent_threshold = get_min_ent_threshold(code)
+            min_ent_threshold = get_min_ent_threshold(code, str(program.id))
 
             if exams and requirements.get("exams") != exams:
                 requirements["exams"] = exams
