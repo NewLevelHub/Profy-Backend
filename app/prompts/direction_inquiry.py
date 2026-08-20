@@ -87,8 +87,9 @@ def _student_brief(context: StudentContext) -> dict:
         "subjects_liked": context.subjects_liked,
         "subjects_hard": context.subjects_hard,
         "clubs_sections": [a.value for a in context.artifacts],
+        "riasec_code": "".join(context.code),
         "strengths": context.strengths,
-        "interests_map": context.interests_map,
+        "riasec_profile": context.profile,
     }
 
 

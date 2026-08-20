@@ -22,7 +22,7 @@ from app.schemas.direction_inquiry import (
 )
 from app.schemas.student_context import StudentContext
 from app.services import direction_service, llm_client
-from app.services.scoring_service import LIKERT_LABELS
+from app.services.riasec_content import LIKERT_LABELS
 from app.services.student_context import build_student_context
 
 CACHE_TTL = 60 * 60  # 1 hour
@@ -57,7 +57,7 @@ async def _load_context_and_direction(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Эта возможность доступна с 10 лет",
         )
-    if slug not in {d.slug for d in context.directions}:
+    if slug not in {d.slug for d in context.careers}:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Это направление не входит в твои результаты",

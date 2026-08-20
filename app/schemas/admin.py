@@ -1,12 +1,11 @@
 import uuid
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.schemas.admin_result import AdminAnalysisResultResponse
 from app.schemas.artifact import ArtifactItem
 from app.schemas.profile import ProfileResponse
-from app.schemas.result import AnalysisResultResponse
 from app.schemas.roadmap import RoadmapResponse
 
 
@@ -21,6 +20,15 @@ class AdminUserListItem(BaseModel):
     profile_name: str | None = None
     assessments_count: int = 0
     latest_assessment_status: str | None = None
+    # From the profile's latest COMPLETED assessment's AnalysisResult, admin-
+    # only raw percentages (TZ_Profi.md §18.3). `riasec` is None for junior
+    # (whose instrument is MI, not RIASEC — deliberately not shown here) and
+    # for users with no completed assessment yet. `big_five` is the raw
+    # N/E/O/A/C dict (AnalysisResult.big_five), not the student-facing
+    # flipped/relabeled `personality_profile` — admin sees true raw numbers,
+    # same convention DiagnosticSummaryBlock already uses for RIASEC.
+    riasec: dict[str, float] | None = None
+    big_five: dict[str, float] | None = None
 
 
 class AdminUserListResponse(BaseModel):
@@ -34,7 +42,8 @@ class AdminAssessmentSummary(BaseModel):
     id: uuid.UUID
     goal: str
     status: str
-    current_block: int
+    answered_count: int
+    total_questions: int
     created_at: datetime
     completed_at: datetime | None = None
     has_result: bool = False
@@ -55,12 +64,23 @@ class AdminUserDetailResponse(BaseModel):
 
 class AdminResponseItem(BaseModel):
     question_id: uuid.UUID
-    block: str
+    instrument: str
+    category: str  # riasec_type letter or bigfive_domain letter, disambiguated by `instrument`
     question_text: str
     question_order: int
-    selected_option_index: int
+    answer_value: int
     selected_answer_text: str
-    scores: dict[str, Any]
+    created_at: datetime
+
+
+class AdminMotivationResponseItem(BaseModel):
+    triplet_index: int
+    most_text: str
+    most_category: str
+    least_text: str
+    least_category: str
+    neutral_text: str
+    neutral_category: str
     created_at: datetime
 
 
@@ -71,11 +91,13 @@ class AdminAssessmentDetailResponse(BaseModel):
     profile_name: str | None = None
     goal: str
     status: str
-    current_block: int
+    answered_count: int
+    total_questions: int
     created_at: datetime
     completed_at: datetime | None = None
     responses: list[AdminResponseItem] = []
-    analysis_result: AnalysisResultResponse | None = None
+    motivation_responses: list[AdminMotivationResponseItem] = []
+    analysis_result: AdminAnalysisResultResponse | None = None
     roadmap: RoadmapResponse | None = None
 
 
@@ -83,3 +105,49 @@ class AdminListParams(BaseModel):
     page: int = Field(default=1, ge=1)
     limit: int = Field(default=20, ge=1, le=100)
     search: str | None = None
+
+
+class AdminFeedbackListItem(BaseModel):
+    """Feedback row alongside the submitting user's context — TZ_Profi.md
+    §28.4. `assessment_id`/`age_group`/`scenario`/`top_direction_name` are
+    all nullable: `assessment_id` is SET NULL if the assessment was deleted
+    (feedback itself is never deleted with it), and the rest are only
+    derivable when the assessment still exists and has a stored result."""
+
+    id: uuid.UUID
+    user_id: uuid.UUID
+    user_email: str
+    profile_name: str | None = None
+    assessment_id: uuid.UUID | None = None
+    age_group: str | None = None
+    scenario: str | None = None  # effective scenario A/B/C, see goal_overlay_service
+    top_direction_name: str | None = None
+    relevance_score: int
+    helpful_sections: list[str]
+    comment: str | None = None
+    created_at: datetime
+
+
+class AdminFeedbackListResponse(BaseModel):
+    items: list[AdminFeedbackListItem]
+    total: int
+    page: int
+    limit: int
+
+
+class FeedbackBreakdownItem(BaseModel):
+    key: str
+    count: int
+    avg_relevance_score: float
+
+
+class AdminFeedbackStatsResponse(BaseModel):
+    """TZ_Profi.md §28.4: "Результаты агрегируются в админке с разбивкой по
+    возрасту, сценарию и топ-направлению." """
+
+    total: int
+    avg_relevance_score: float | None = None
+    by_age_group: list[FeedbackBreakdownItem] = []
+    by_scenario: list[FeedbackBreakdownItem] = []
+    by_top_direction: list[FeedbackBreakdownItem] = []
+    helpful_section_counts: dict[str, int] = {}

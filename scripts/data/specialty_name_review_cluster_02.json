@@ -1,0 +1,162 @@
+[
+  {
+    "university_slug": "voenny-institut-sil-vozdushnoy-oborony",
+    "university_name": "Военный институт Сил воздушной обороны имени дважды Героя Советского Союза Т.Я. Бегельдинова",
+    "cluster_professions": ["Пилот гражданской авиации"],
+    "current_wrong_name": "Пилот гражданской авиации",
+    "proposed_name": "Эксплуатация летательных аппаратов (командная тактическая, фронтовой/армейской авиации)",
+    "source_url": "https://univery.kz/voennyj-institut-sil-vozdushnoj-oborony-aktobe.html",
+    "needs_manual_review": true,
+    "note": "This is a military academy training officer-pilots for the Air Defence Forces, NOT civil aviation pilots — the 'Пилот гражданской авиации' profession tag is a mismatch of register (military vs civil). Official site visvo.mil.kz was unreachable during research, so this is sourced from a secondary aggregator, not the institute's own domain — recommend manual verification."
+  },
+  {
+    "university_slug": "enac-toulouse",
+    "university_name": "École Nationale de l'Aviation Civile (ENAC)",
+    "cluster_professions": ["Пилот гражданской авиации"],
+    "current_wrong_name": "Пилот гражданской авиации",
+    "proposed_name": "Élève Pilote de Ligne (EPL)",
+    "source_url": "https://www.enac.fr/fr/les-formations-au-pilotage",
+    "needs_manual_review": false,
+    "note": "Integrated ~24-month airline pilot program (grade licence, bac+3), leading to CPL(A)/IR(multi-engine)/MCC."
+  },
+  {
+    "university_slug": "enac-toulouse",
+    "university_name": "École Nationale de l'Aviation Civile (ENAC)",
+    "cluster_professions": ["Авиадиспетчер"],
+    "current_wrong_name": "Авиадиспетчер",
+    "proposed_name": "Ingénieur du Contrôle de la Navigation Aérienne (ICNA) — Master en Management et Contrôle du Trafic Aérien (MCTA)",
+    "source_url": "https://formations.enac.fr/fr/formations/feuilleter-le-catalogue/sciences-technologies-sante-STS/diplome-vise-niveau-bac-5-grade-master-RA/mcta-icna-management-et-controle-du-trafic-aerien-47530.html",
+    "needs_manual_review": false,
+    "note": "3-year salaried civil-servant training program producing DGAC air traffic controllers; diploma confers Master grade in MCTA."
+  },
+  {
+    "university_slug": "cranfield-university",
+    "university_name": "Cranfield University",
+    "cluster_professions": ["Пилот гражданской авиации", "Авиадиспетчер"],
+    "current_wrong_name": "Пилот гражданской авиации, Авиадиспетчер",
+    "proposed_name": "Air Transport Management MSc",
+    "source_url": "https://www.cranfield.ac.uk/courses/taught/air-transport-management",
+    "needs_manual_review": true,
+    "note": "Cranfield does NOT provide flight/pilot training or ATC-controller certification — the only degree-level aviation program is management-focused. Fit is weak/indirect for both professions; recommend human review of whether Cranfield belongs in this cluster at all."
+  },
+  {
+    "university_slug": "embry-riddle-aeronautical-university",
+    "university_name": "Embry-Riddle Aeronautical University",
+    "cluster_professions": ["Пилот гражданской авиации"],
+    "current_wrong_name": "Пилот гражданской авиации",
+    "proposed_name": "Bachelor of Science in Aeronautical Science (Flight)",
+    "source_url": "https://erau.edu/degrees/bachelor/aeronautical-science-flight",
+    "needs_manual_review": false,
+    "note": "Combines 4-year degree with FAA multi-engine instrument-rated commercial pilot certification, AABI-accredited."
+  },
+  {
+    "university_slug": "embry-riddle-aeronautical-university",
+    "university_name": "Embry-Riddle Aeronautical University",
+    "cluster_professions": ["Авиадиспетчер"],
+    "current_wrong_name": "Авиадиспетчер",
+    "proposed_name": "Bachelor of Science in Air Traffic Management",
+    "source_url": "https://erau.edu/degrees/bachelor/air-traffic-management",
+    "needs_manual_review": false,
+    "note": "FAA Collegiate Training Initiative (CTI) designated school; 120 semester-hour program."
+  },
+  {
+    "university_slug": "griffith-university-aviation",
+    "university_name": "Griffith University",
+    "cluster_professions": ["Пилот гражданской авиации", "Авиадиспетчер"],
+    "current_wrong_name": "Пилот гражданской авиации, Авиадиспетчер",
+    "proposed_name": "Bachelor of Aviation",
+    "source_url": "https://www.griffith.edu.au/study/degrees/bachelor-of-aviation-1517",
+    "needs_manual_review": true,
+    "note": "Direct fetch of griffith.edu.au returned HTTP 403, corroborated via secondary sources only. Flight training toward an actual licence happens via a partner provider, not in-house. Recommend manual re-verification."
+  },
+  {
+    "university_slug": "southwest-jiaotong-university",
+    "university_name": "Southwest Jiaotong University",
+    "cluster_professions": ["Машинист локомотива"],
+    "current_wrong_name": "Машинист локомотива",
+    "proposed_name": "Transportation Engineering (交通运输)",
+    "source_url": "https://ctten.swjtu.edu.cn/English2020/Admissions/Undergraduate.htm",
+    "needs_manual_review": false,
+    "note": "School of Transportation and Logistics Engineering's own English subdomain; national-characteristic undergraduate major (code 081801) with roots in railway education."
+  },
+  {
+    "university_slug": "university-of-birmingham-bcrre",
+    "university_name": "University of Birmingham (BCRRE)",
+    "cluster_professions": ["Машинист локомотива"],
+    "current_wrong_name": "Машинист локомотива",
+    "proposed_name": "Railway Systems Engineering and Integration MSc",
+    "source_url": "https://www.birmingham.ac.uk/study/postgraduate/subjects/railway-engineering-courses/railway-systems-engineering-integration-msc",
+    "needs_manual_review": false,
+    "note": "Confirmed live and currently open for 2026/27 entry directly on birmingham.ac.uk."
+  },
+  {
+    "university_slug": "kuehne-logistics-university",
+    "university_name": "Kühne Logistics University (KLU)",
+    "cluster_professions": ["Директор по логистике"],
+    "current_wrong_name": "Директор по логистике",
+    "proposed_name": "Global Logistics & Supply Chain Management (MSc)",
+    "source_url": "https://www.klu.org/programs",
+    "needs_manual_review": false,
+    "note": "KLU also offers a BSc with a Supply Chain Management specialization; the MSc is the most direct match for a director-level logistics career."
+  },
+  {
+    "university_slug": "national-university-of-singapore-scm",
+    "university_name": "National University of Singapore",
+    "cluster_professions": ["Директор по логистике"],
+    "current_wrong_name": "Директор по логистике",
+    "proposed_name": "Master of Science (Supply Chain Management)",
+    "source_url": "https://cde.nus.edu.sg/isem/graduate/coursework/masters-of-science-supply-chain-management-programme/",
+    "needs_manual_review": false,
+    "note": "Jointly hosted by ISEM, The Logistics Institute-Asia Pacific, and NUS Business School."
+  },
+  {
+    "university_slug": "stellenbosch-university-logistics",
+    "university_name": "Stellenbosch University",
+    "cluster_professions": ["Директор по логистике"],
+    "current_wrong_name": "Директор по логистике",
+    "proposed_name": "BCom (Logistics Management)",
+    "source_url": "https://www.su.ac.za/en/faculties/economy/departments/logistics",
+    "needs_manual_review": false,
+    "note": "Confirmed on su.ac.za; a postgraduate BComHons (Logistics Management) also exists for a stronger director-level match."
+  },
+  {
+    "university_slug": "delft-university-technology",
+    "university_name": "Delft University of Technology (TU Delft)",
+    "cluster_professions": ["Директор по логистике"],
+    "current_wrong_name": "Директор по логистике",
+    "proposed_name": "MSc Transport, Infrastructure and Logistics",
+    "source_url": "https://www.tudelft.nl/en/education/programmes/masters/til/msc-transport-infrastructure-and-logistics",
+    "needs_manual_review": false,
+    "note": "2-year, 120 ECTS interdisciplinary MSc across TU Delft faculties."
+  },
+  {
+    "university_slug": "politecnico-di-milano",
+    "university_name": "Politecnico di Milano",
+    "cluster_professions": ["Директор по логистике"],
+    "current_wrong_name": "Директор по логистике",
+    "proposed_name": "Laurea Magistrale in Management Engineering (Ingegneria Gestionale) — Supply Chain Management major",
+    "source_url": "https://management-eng.polimi.it/en/master-of-science/major/",
+    "needs_manual_review": false,
+    "note": "Supply Chain Management is one of 14 official second-year majors within the MSc Management Engineering degree."
+  },
+  {
+    "university_slug": "kth-stockholm",
+    "university_name": "KTH Royal Institute of Technology",
+    "cluster_professions": ["Директор по логистике"],
+    "current_wrong_name": "Директор по логистике",
+    "proposed_name": "MSc Industrial Management (specialization in Supply Chain)",
+    "source_url": "https://www.kth.se/en/studies/master/industrial-management/msc-industrial-management-1.48816",
+    "needs_manual_review": false,
+    "note": "KTH's older dedicated 'Applied Logistics' programme appears discontinued; this is the current active match."
+  },
+  {
+    "university_slug": "toronto-metropolitan-university",
+    "university_name": "Toronto Metropolitan University",
+    "cluster_professions": ["Директор по логистике"],
+    "current_wrong_name": "Директор по логистике",
+    "proposed_name": "Bachelor of Commerce — Business Management, Global Management Studies Major (Purchasing & Supply Chain Management stream)",
+    "source_url": "https://www.torontomu.ca/calendar/2026-2027/programs/trsm/business_mgt/global_management_studies_major/",
+    "needs_manual_review": false,
+    "note": "No standalone 'Supply Chain Management' major exists; this is the closest verified official program."
+  }
+]

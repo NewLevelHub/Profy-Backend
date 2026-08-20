@@ -31,12 +31,31 @@ class DirectionRoadmap(Base):
     )
     direction_slug: Mapped[str] = mapped_column(String(100), nullable=False)
     direction_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Set only for goal="university" plans generated from a specific chosen
+    # program (see roadmap_builder.generate_direction_roadmap). Null for
+    # every other goal, and for university plans built from a bare direction
+    # without a program (existing `_university_requirements_for(slug, ...)`
+    # path, kept for backward compatibility).
+    program_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("programs.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     target: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     growth_focus: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     stages: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     skills_to_build: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     subjects_to_focus: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     university_track: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    # Backend-populated only (never from the LLM): Program/University facts for
+    # goal="university" — empty list for every other goal. See UniversityRequirement.
+    university_requirements: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    # Optional LLM-derived fit summary for one concrete chosen program. Kept on
+    # the roadmap row so subsequent GETs can return the same program-aware result
+    # without regenerating the whole plan.
+    program_fit: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    # Hand-verified catalogue entries, see app/data/resource_catalog.py.
+    additional_resources: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

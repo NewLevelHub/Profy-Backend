@@ -15,13 +15,17 @@ class Direction(Base):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     slug: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
-    description: Mapped[str] = mapped_column(Text, nullable=False)
-    # Age groups this direction is offered to. Keeps adult/"heavy" directions
-    # (AI, Data Science, …) out of junior/middle results, and keeps the broad
-    # kid-friendly "family" directions out of senior results.
-    age_groups: Mapped[list] = mapped_column(JSONB, nullable=False, default=lambda: ["senior"])
-    required_scores: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    bonus_scores: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    # 3-letter Holland code (e.g. "RIS") — sole basis for career matching
+    # (riasec_service.career_match_score). Replaces the old required_scores/
+    # bonus_scores threshold scoring entirely.
+    holland_code: Mapped[str] = mapped_column(String(3), nullable=False, index=True)
+    # Descriptive fields kept for downstream consumers (report_service,
+    # roadmap_builder, direction_inquiry_service, frontend DirectionDetailPage)
+    # that predate this migration. The new profession catalog (seeded from
+    # scripts/riasec_professions.py) only has name+code, so these are empty
+    # by default until a future content pass fills them in — see
+    # TICKET-riasec-migration.md / plan Context for the accepted trade-off.
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     professions: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     skills_needed: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     subjects_to_develop: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)

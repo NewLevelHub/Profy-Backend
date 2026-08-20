@@ -1,0 +1,59 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "description": {
+      "anyOf": [
+        "null",
+        "string"
+      ]
+    },
+    "matched_strengths": {
+      "default": [],
+      "items": "string",
+      "type": "array"
+    },
+    "name": {
+      "type": "string"
+    },
+    "rank": {
+      "type": "integer"
+    },
+    "skills_needed": {
+      "default": [],
+      "items": "string",
+      "type": "array"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "subjects_to_develop": {
+      "default": [],
+      "items": "string",
+      "type": "array"
+    },
+    "tier": {
+      "enum": [
+        "strong",
+        "good",
+        "worth_trying"
+      ],
+      "type": "string"
+    },
+    "try_now": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "why": {
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "rank",
+    "slug",
+    "tier",
+    "try_now",
+    "why"
+  ]
+}

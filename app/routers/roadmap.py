@@ -9,9 +9,11 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.assessment import Assessment
 from app.models.profile import Profile
+from app.models.program import Program
 from app.models.user import User
 from app.schemas.roadmap import (
     DirectionRoadmapResponse,
+    GenerateDirectionRoadmapForProgramRequest,
     GenerateDirectionRoadmapRequest,
     RoadmapResponse,
 )
@@ -61,8 +63,36 @@ async def generate_direction_roadmap(
 ) -> DirectionRoadmapResponse:
     """Confirm a direction after the AI inquiry and build the in-direction plan."""
     await _require_assessment_access(data.assessment_id, current_user, db)
+    if data.program_id is not None:
+        program = (
+            await db.execute(select(Program).where(Program.id == data.program_id))
+        ).scalar_one_or_none()
+        if program is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Program not found",
+            )
+        if data.direction_slug not in (program.profession_slugs or []):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Program does not belong to this direction",
+            )
     return await roadmap_builder.generate_direction_roadmap(
-        data.assessment_id, data.direction_slug, db
+        data.assessment_id, data.direction_slug, db, data.program_id
+    )
+
+
+@router.post("/direction/by-program", response_model=DirectionRoadmapResponse)
+async def generate_direction_roadmap_for_program(
+    data: GenerateDirectionRoadmapForProgramRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> DirectionRoadmapResponse:
+    """University scenario (C): build the plan for a chosen program directly —
+    no AI-inquiry step, direction resolved server-side from the program."""
+    await _require_assessment_access(data.assessment_id, current_user, db)
+    return await roadmap_builder.generate_direction_roadmap_for_program(
+        data.assessment_id, data.program_id, db
     )
 
 

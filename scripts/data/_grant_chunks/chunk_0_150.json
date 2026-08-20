@@ -1,0 +1,4452 @@
+[
+  {
+    "specialty_code": "B001",
+    "specialty_name": "Педагогика и психология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 100,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 67
+  },
+  {
+    "specialty_code": "B001",
+    "specialty_name": "Педагогика и психология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 99,
+    "max_score": 118,
+    "year": "2026-2027",
+    "recipient_count": 12
+  },
+  {
+    "specialty_code": "B001",
+    "specialty_name": "Педагогика и психология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 99,
+    "max_score": 116,
+    "year": "2026-2027",
+    "recipient_count": 26
+  },
+  {
+    "specialty_code": "B001",
+    "specialty_name": "Педагогика и психология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "302",
+    "min_score": 99,
+    "max_score": 116,
+    "year": "2026-2027",
+    "recipient_count": 16
+  },
+  {
+    "specialty_code": "B001",
+    "specialty_name": "Педагогика и психология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "015",
+    "min_score": 108,
+    "max_score": 108,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B001",
+    "specialty_name": "Педагогика и психология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "185",
+    "min_score": 99,
+    "max_score": 102,
+    "year": "2026-2027",
+    "recipient_count": 9
+  },
+  {
+    "specialty_code": "B001",
+    "specialty_name": "Педагогика и психология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "223",
+    "min_score": 101,
+    "max_score": 101,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B001",
+    "specialty_name": "Педагогика и психология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 89,
+    "max_score": 99,
+    "year": "2026-2027",
+    "recipient_count": 32
+  },
+  {
+    "specialty_code": "B001",
+    "specialty_name": "Педагогика и психология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "185",
+    "min_score": 89,
+    "max_score": 99,
+    "year": "2026-2027",
+    "recipient_count": 24
+  },
+  {
+    "specialty_code": "B001",
+    "specialty_name": "Педагогика и психология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "302",
+    "min_score": 90,
+    "max_score": 98,
+    "year": "2026-2027",
+    "recipient_count": 14
+  },
+  {
+    "specialty_code": "B001",
+    "specialty_name": "Педагогика и психология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 90,
+    "max_score": 98,
+    "year": "2026-2027",
+    "recipient_count": 14
+  },
+  {
+    "specialty_code": "B001",
+    "specialty_name": "Педагогика и психология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "034",
+    "min_score": 96,
+    "max_score": 96,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B001",
+    "specialty_name": "Педагогика и психология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "047",
+    "min_score": 93,
+    "max_score": 93,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B001",
+    "specialty_name": "Педагогика и психология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "158",
+    "min_score": 92,
+    "max_score": 92,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B001",
+    "specialty_name": "Педагогика и психология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "015",
+    "min_score": 92,
+    "max_score": 92,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B001",
+    "specialty_name": "Педагогика и психология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "035",
+    "min_score": 89,
+    "max_score": 89,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B002",
+    "specialty_name": "Дошкольное обучение и воспитание",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 87,
+    "max_score": 96,
+    "year": "2026-2027",
+    "recipient_count": 51
+  },
+  {
+    "specialty_code": "B002",
+    "specialty_name": "Дошкольное обучение и воспитание",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "185",
+    "min_score": 87,
+    "max_score": 91,
+    "year": "2026-2027",
+    "recipient_count": 28
+  },
+  {
+    "specialty_code": "B002",
+    "specialty_name": "Дошкольное обучение и воспитание",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 87,
+    "max_score": 96,
+    "year": "2026-2027",
+    "recipient_count": 28
+  },
+  {
+    "specialty_code": "B002",
+    "specialty_name": "Дошкольное обучение и воспитание",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 90,
+    "max_score": 95,
+    "year": "2026-2027",
+    "recipient_count": 13
+  },
+  {
+    "specialty_code": "B002",
+    "specialty_name": "Дошкольное обучение и воспитание",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "015",
+    "min_score": 87,
+    "max_score": 92,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B002",
+    "specialty_name": "Дошкольное обучение и воспитание",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "047",
+    "min_score": 92,
+    "max_score": 92,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B002",
+    "specialty_name": "Дошкольное обучение и воспитание",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "196",
+    "min_score": 87,
+    "max_score": 87,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B002",
+    "specialty_name": "Дошкольное обучение и воспитание",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "185",
+    "min_score": 81,
+    "max_score": 87,
+    "year": "2026-2027",
+    "recipient_count": 13
+  },
+  {
+    "specialty_code": "B002",
+    "specialty_name": "Дошкольное обучение и воспитание",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 80,
+    "max_score": 86,
+    "year": "2026-2027",
+    "recipient_count": 19
+  },
+  {
+    "specialty_code": "B002",
+    "specialty_name": "Дошкольное обучение и воспитание",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "416",
+    "min_score": 86,
+    "max_score": 86,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B002",
+    "specialty_name": "Дошкольное обучение и воспитание",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 81,
+    "max_score": 86,
+    "year": "2026-2027",
+    "recipient_count": 36
+  },
+  {
+    "specialty_code": "B002",
+    "specialty_name": "Дошкольное обучение и воспитание",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "196",
+    "min_score": 81,
+    "max_score": 86,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B002",
+    "specialty_name": "Дошкольное обучение и воспитание",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "015",
+    "min_score": 81,
+    "max_score": 86,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B002",
+    "specialty_name": "Дошкольное обучение и воспитание",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "047",
+    "min_score": 83,
+    "max_score": 85,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B002",
+    "specialty_name": "Дошкольное обучение и воспитание",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "037",
+    "min_score": 80,
+    "max_score": 80,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B002",
+    "specialty_name": "Дошкольное обучение и воспитание",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "143",
+    "min_score": 80,
+    "max_score": 80,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B002",
+    "specialty_name": "Дошкольное обучение и воспитание",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "036",
+    "min_score": 80,
+    "max_score": 80,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "302",
+    "min_score": 99,
+    "max_score": 132,
+    "year": "2026-2027",
+    "recipient_count": 15
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 98,
+    "max_score": 131,
+    "year": "2026-2027",
+    "recipient_count": 111
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 98,
+    "max_score": 116,
+    "year": "2026-2027",
+    "recipient_count": 22
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "185",
+    "min_score": 98,
+    "max_score": 107,
+    "year": "2026-2027",
+    "recipient_count": 15
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "047",
+    "min_score": 106,
+    "max_score": 106,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 98,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "015",
+    "min_score": 99,
+    "max_score": 102,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "196",
+    "min_score": 100,
+    "max_score": 102,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "223",
+    "min_score": 100,
+    "max_score": 101,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "005",
+    "min_score": 98,
+    "max_score": 98,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 90,
+    "max_score": 98,
+    "year": "2026-2027",
+    "recipient_count": 73
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 91,
+    "max_score": 98,
+    "year": "2026-2027",
+    "recipient_count": 20
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "037",
+    "min_score": 91,
+    "max_score": 98,
+    "year": "2026-2027",
+    "recipient_count": 13
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "185",
+    "min_score": 90,
+    "max_score": 98,
+    "year": "2026-2027",
+    "recipient_count": 18
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "196",
+    "min_score": 91,
+    "max_score": 97,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "302",
+    "min_score": 91,
+    "max_score": 97,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "015",
+    "min_score": 93,
+    "max_score": 96,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "158",
+    "min_score": 91,
+    "max_score": 91,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B003",
+    "specialty_name": "Педагогика и методика начального обучения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "005",
+    "min_score": 91,
+    "max_score": 91,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B004",
+    "specialty_name": "Подготовка учителей начальной военной подготовки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "302",
+    "min_score": 90,
+    "max_score": 90,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B004",
+    "specialty_name": "Подготовка учителей начальной военной подготовки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "185",
+    "min_score": 89,
+    "max_score": 90,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B004",
+    "specialty_name": "Подготовка учителей начальной военной подготовки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 89,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 9
+  },
+  {
+    "specialty_code": "B004",
+    "specialty_name": "Подготовка учителей начальной военной подготовки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 89,
+    "max_score": 90,
+    "year": "2026-2027",
+    "recipient_count": 14
+  },
+  {
+    "specialty_code": "B004",
+    "specialty_name": "Подготовка учителей начальной военной подготовки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "005",
+    "min_score": 90,
+    "max_score": 90,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B004",
+    "specialty_name": "Подготовка учителей начальной военной подготовки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "034",
+    "min_score": 89,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B004",
+    "specialty_name": "Подготовка учителей начальной военной подготовки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "036",
+    "min_score": 128,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B004",
+    "specialty_name": "Подготовка учителей начальной военной подготовки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "016",
+    "min_score": 124,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B004",
+    "specialty_name": "Подготовка учителей начальной военной подготовки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "501",
+    "min_score": 123,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B004",
+    "specialty_name": "Подготовка учителей начальной военной подготовки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 124,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B004",
+    "specialty_name": "Подготовка учителей начальной военной подготовки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "010",
+    "min_score": 125,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B004",
+    "specialty_name": "Подготовка учителей начальной военной подготовки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "043",
+    "min_score": 124,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "305",
+    "min_score": 123,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "501",
+    "min_score": 123,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 123,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 13
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "196",
+    "min_score": 123,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 11
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 123,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 10
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "031",
+    "min_score": 123,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "031",
+    "min_score": 122,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "501",
+    "min_score": 122,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "037",
+    "min_score": 123,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "034",
+    "min_score": 122,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 10
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "043",
+    "min_score": 122,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 122,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "196",
+    "min_score": 122,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 13
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "016",
+    "min_score": 122,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "020",
+    "min_score": 126,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 27
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 126,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 11
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "517",
+    "min_score": 126,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "040",
+    "min_score": 129,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "010",
+    "min_score": 129,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 127,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "016",
+    "min_score": 126,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 9
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "034",
+    "min_score": 126,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 12
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "011",
+    "min_score": 127,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "042",
+    "min_score": 128,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "043",
+    "min_score": 127,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "223",
+    "min_score": 127,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "158",
+    "min_score": 127,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "015",
+    "min_score": 126,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "036",
+    "min_score": 126,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "015",
+    "min_score": 126,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "153",
+    "min_score": 126,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "010",
+    "min_score": 125,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 124,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "223",
+    "min_score": 125,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "528",
+    "min_score": 126,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "020",
+    "min_score": 124,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 24
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "143",
+    "min_score": 124,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "013",
+    "min_score": 124,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "036",
+    "min_score": 126,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "011",
+    "min_score": 125,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "040",
+    "min_score": 125,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "035",
+    "min_score": 125,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "158",
+    "min_score": 125,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "003",
+    "min_score": 125,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B005",
+    "specialty_name": "Подготовка учителей физической культуры",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "042",
+    "min_score": 125,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "196",
+    "min_score": 122,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 124,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "501",
+    "min_score": 124,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "016",
+    "min_score": 122,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 122,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "020",
+    "min_score": 124,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "035",
+    "min_score": 124,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "517",
+    "min_score": 122,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 122,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 20
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "015",
+    "min_score": 124,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 122,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 15
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "036",
+    "min_score": 124,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "045",
+    "min_score": 122,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 12
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "185",
+    "min_score": 122,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "034",
+    "min_score": 122,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "143",
+    "min_score": 122,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 121,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "034",
+    "min_score": 120,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "185",
+    "min_score": 120,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "517",
+    "min_score": 119,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "045",
+    "min_score": 120,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 9
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 119,
+    "max_score": 121,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "043",
+    "min_score": 120,
+    "max_score": 121,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "016",
+    "min_score": 120,
+    "max_score": 121,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "143",
+    "min_score": 120,
+    "max_score": 121,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "037",
+    "min_score": 120,
+    "max_score": 121,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B006",
+    "specialty_name": "Подготовка учителей музыки",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "196",
+    "min_score": 120,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 123,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 10
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "045",
+    "min_score": 123,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 123,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 123,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "143",
+    "min_score": 123,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "196",
+    "min_score": 123,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "016",
+    "min_score": 123,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "223",
+    "min_score": 123,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "158",
+    "min_score": 123,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "005",
+    "min_score": 123,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "036",
+    "min_score": 123,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "045",
+    "min_score": 121,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "196",
+    "min_score": 121,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 10
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "034",
+    "min_score": 123,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 121,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "016",
+    "min_score": 122,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "185",
+    "min_score": 123,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "143",
+    "min_score": 121,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "037",
+    "min_score": 121,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "005",
+    "min_score": 121,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B007",
+    "specialty_name": "Подготовка учителей художественного труда и черчения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 121,
+    "max_score": 121,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B008",
+    "specialty_name": "Подготовка учителей основы права и экономики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "045",
+    "min_score": 120,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B008",
+    "specialty_name": "Подготовка учителей основы права и экономики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 101,
+    "max_score": 116,
+    "year": "2026-2027",
+    "recipient_count": 24
+  },
+  {
+    "specialty_code": "B008",
+    "specialty_name": "Подготовка учителей основы права и экономики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 101,
+    "max_score": 107,
+    "year": "2026-2027",
+    "recipient_count": 10
+  },
+  {
+    "specialty_code": "B008",
+    "specialty_name": "Подготовка учителей основы права и экономики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "031",
+    "min_score": 103,
+    "max_score": 105,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B008",
+    "specialty_name": "Подготовка учителей основы права и экономики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "196",
+    "min_score": 102,
+    "max_score": 103,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 100,
+    "max_score": 131,
+    "year": "2026-2027",
+    "recipient_count": 201
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 100,
+    "max_score": 137,
+    "year": "2026-2027",
+    "recipient_count": 132
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 84,
+    "max_score": 100,
+    "year": "2026-2027",
+    "recipient_count": 109
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 90,
+    "max_score": 100,
+    "year": "2026-2027",
+    "recipient_count": 95
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "031",
+    "min_score": 99,
+    "max_score": 100,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 125,
+    "max_score": 138,
+    "year": "2026-2027",
+    "recipient_count": 52
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "302",
+    "min_score": 127,
+    "max_score": 137,
+    "year": "2026-2027",
+    "recipient_count": 34
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "185",
+    "min_score": 100,
+    "max_score": 119,
+    "year": "2026-2027",
+    "recipient_count": 95
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "015",
+    "min_score": 101,
+    "max_score": 109,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 102,
+    "max_score": 106,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "031",
+    "min_score": 103,
+    "max_score": 103,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "517",
+    "min_score": 101,
+    "max_score": 102,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "034",
+    "min_score": 101,
+    "max_score": 101,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "185",
+    "min_score": 85,
+    "max_score": 100,
+    "year": "2026-2027",
+    "recipient_count": 78
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "223",
+    "min_score": 100,
+    "max_score": 100,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "196",
+    "min_score": 86,
+    "max_score": 100,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "173",
+    "min_score": 86,
+    "max_score": 93,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "015",
+    "min_score": 85,
+    "max_score": 92,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "034",
+    "min_score": 86,
+    "max_score": 90,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "305",
+    "min_score": 85,
+    "max_score": 85,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B009",
+    "specialty_name": "Подготовка учителей математики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "003",
+    "min_score": 85,
+    "max_score": 85,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "196",
+    "min_score": 83,
+    "max_score": 84,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "185",
+    "min_score": 83,
+    "max_score": 100,
+    "year": "2026-2027",
+    "recipient_count": 33
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 82,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 46
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "173",
+    "min_score": 83,
+    "max_score": 84,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "003",
+    "min_score": 83,
+    "max_score": 84,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "034",
+    "min_score": 84,
+    "max_score": 84,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "517",
+    "min_score": 84,
+    "max_score": 84,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "031",
+    "min_score": 82,
+    "max_score": 93,
+    "year": "2026-2027",
+    "recipient_count": 9
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 83,
+    "max_score": 98,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 110,
+    "max_score": 138,
+    "year": "2026-2027",
+    "recipient_count": 58
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "302",
+    "min_score": 118,
+    "max_score": 135,
+    "year": "2026-2027",
+    "recipient_count": 31
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 91,
+    "max_score": 116,
+    "year": "2026-2027",
+    "recipient_count": 29
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "005",
+    "min_score": 92,
+    "max_score": 95,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "015",
+    "min_score": 92,
+    "max_score": 93,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "042",
+    "min_score": 92,
+    "max_score": 92,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 80,
+    "max_score": 88,
+    "year": "2026-2027",
+    "recipient_count": 29
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "042",
+    "min_score": 85,
+    "max_score": 88,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "005",
+    "min_score": 80,
+    "max_score": 88,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "185",
+    "min_score": 81,
+    "max_score": 88,
+    "year": "2026-2027",
+    "recipient_count": 29
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "037",
+    "min_score": 87,
+    "max_score": 88,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "015",
+    "min_score": 76,
+    "max_score": 87,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "031",
+    "min_score": 78,
+    "max_score": 87,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "034",
+    "min_score": 86,
+    "max_score": 86,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "223",
+    "min_score": 85,
+    "max_score": 86,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "196",
+    "min_score": 75,
+    "max_score": 85,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "016",
+    "min_score": 75,
+    "max_score": 75,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B010",
+    "specialty_name": "Подготовка учителей физики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "517",
+    "min_score": 75,
+    "max_score": 75,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 115,
+    "max_score": 135,
+    "year": "2026-2027",
+    "recipient_count": 10
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "302",
+    "min_score": 110,
+    "max_score": 135,
+    "year": "2026-2027",
+    "recipient_count": 20
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 82,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 72
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "015",
+    "min_score": 89,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 82,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 79
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "185",
+    "min_score": 82,
+    "max_score": 103,
+    "year": "2026-2027",
+    "recipient_count": 144
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "173",
+    "min_score": 82,
+    "max_score": 96,
+    "year": "2026-2027",
+    "recipient_count": 9
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "223",
+    "min_score": 83,
+    "max_score": 96,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 84,
+    "max_score": 93,
+    "year": "2026-2027",
+    "recipient_count": 11
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "035",
+    "min_score": 83,
+    "max_score": 90,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "196",
+    "min_score": 85,
+    "max_score": 90,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "036",
+    "min_score": 83,
+    "max_score": 86,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 79,
+    "max_score": 82,
+    "year": "2026-2027",
+    "recipient_count": 11
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "196",
+    "min_score": 82,
+    "max_score": 82,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "185",
+    "min_score": 80,
+    "max_score": 82,
+    "year": "2026-2027",
+    "recipient_count": 17
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 79,
+    "max_score": 82,
+    "year": "2026-2027",
+    "recipient_count": 11
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "173",
+    "min_score": 79,
+    "max_score": 81,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "035",
+    "min_score": 81,
+    "max_score": 81,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B011",
+    "specialty_name": "Подготовка учителей информатики",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "037",
+    "min_score": 80,
+    "max_score": 81,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B012",
+    "specialty_name": "Подготовка учителей химии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 75,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 50
+  },
+  {
+    "specialty_code": "B012",
+    "specialty_name": "Подготовка учителей химии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 75,
+    "max_score": 138,
+    "year": "2026-2027",
+    "recipient_count": 62
+  },
+  {
+    "specialty_code": "B012",
+    "specialty_name": "Подготовка учителей химии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "173",
+    "min_score": 77,
+    "max_score": 79,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B012",
+    "specialty_name": "Подготовка учителей химии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 75,
+    "max_score": 111,
+    "year": "2026-2027",
+    "recipient_count": 9
+  },
+  {
+    "specialty_code": "B012",
+    "specialty_name": "Подготовка учителей химии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "302",
+    "min_score": 115,
+    "max_score": 138,
+    "year": "2026-2027",
+    "recipient_count": 25
+  },
+  {
+    "specialty_code": "B012",
+    "specialty_name": "Подготовка учителей химии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "185",
+    "min_score": 105,
+    "max_score": 111,
+    "year": "2026-2027",
+    "recipient_count": 24
+  },
+  {
+    "specialty_code": "B012",
+    "specialty_name": "Подготовка учителей химии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "040",
+    "min_score": 107,
+    "max_score": 107,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B012",
+    "specialty_name": "Подготовка учителей химии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "037",
+    "min_score": 100,
+    "max_score": 105,
+    "year": "2026-2027",
+    "recipient_count": 10
+  },
+  {
+    "specialty_code": "B012",
+    "specialty_name": "Подготовка учителей химии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 98,
+    "max_score": 105,
+    "year": "2026-2027",
+    "recipient_count": 33
+  },
+  {
+    "specialty_code": "B012",
+    "specialty_name": "Подготовка учителей химии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "185",
+    "min_score": 98,
+    "max_score": 105,
+    "year": "2026-2027",
+    "recipient_count": 20
+  },
+  {
+    "specialty_code": "B012",
+    "specialty_name": "Подготовка учителей химии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 98,
+    "max_score": 105,
+    "year": "2026-2027",
+    "recipient_count": 27
+  },
+  {
+    "specialty_code": "B013",
+    "specialty_name": "Подготовка учителей биологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 97,
+    "max_score": 117,
+    "year": "2026-2027",
+    "recipient_count": 33
+  },
+  {
+    "specialty_code": "B013",
+    "specialty_name": "Подготовка учителей биологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 97,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 58
+  },
+  {
+    "specialty_code": "B013",
+    "specialty_name": "Подготовка учителей биологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "185",
+    "min_score": 97,
+    "max_score": 115,
+    "year": "2026-2027",
+    "recipient_count": 23
+  },
+  {
+    "specialty_code": "B013",
+    "specialty_name": "Подготовка учителей биологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "040",
+    "min_score": 98,
+    "max_score": 98,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B013",
+    "specialty_name": "Подготовка учителей биологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "302",
+    "min_score": 115,
+    "max_score": 133,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B013",
+    "specialty_name": "Подготовка учителей биологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "005",
+    "min_score": 105,
+    "max_score": 108,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B013",
+    "specialty_name": "Подготовка учителей биологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 105,
+    "max_score": 105,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B013",
+    "specialty_name": "Подготовка учителей биологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "037",
+    "min_score": 100,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B013",
+    "specialty_name": "Подготовка учителей биологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 99,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 43
+  },
+  {
+    "specialty_code": "B013",
+    "specialty_name": "Подготовка учителей биологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 98,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 27
+  },
+  {
+    "specialty_code": "B013",
+    "specialty_name": "Подготовка учителей биологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "185",
+    "min_score": 99,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 15
+  },
+  {
+    "specialty_code": "B013",
+    "specialty_name": "Подготовка учителей биологии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "005",
+    "min_score": 104,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B014",
+    "specialty_name": "Подготовка учителей географии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 98,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 31
+  },
+  {
+    "specialty_code": "B014",
+    "specialty_name": "Подготовка учителей географии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 98,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 39
+  },
+  {
+    "specialty_code": "B014",
+    "specialty_name": "Подготовка учителей географии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "185",
+    "min_score": 98,
+    "max_score": 110,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B014",
+    "specialty_name": "Подготовка учителей географии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 115,
+    "max_score": 135,
+    "year": "2026-2027",
+    "recipient_count": 50
+  },
+  {
+    "specialty_code": "B014",
+    "specialty_name": "Подготовка учителей географии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 105,
+    "max_score": 108,
+    "year": "2026-2027",
+    "recipient_count": 19
+  },
+  {
+    "specialty_code": "B014",
+    "specialty_name": "Подготовка учителей географии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "015",
+    "min_score": 108,
+    "max_score": 108,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B014",
+    "specialty_name": "Подготовка учителей географии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "185",
+    "min_score": 105,
+    "max_score": 108,
+    "year": "2026-2027",
+    "recipient_count": 11
+  },
+  {
+    "specialty_code": "B014",
+    "specialty_name": "Подготовка учителей географии",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 105,
+    "max_score": 107,
+    "year": "2026-2027",
+    "recipient_count": 16
+  },
+  {
+    "specialty_code": "B015",
+    "specialty_name": "Подготовка учителей по гуманитарным предметам",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 103,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 25
+  },
+  {
+    "specialty_code": "B015",
+    "specialty_name": "Подготовка учителей по гуманитарным предметам",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 103,
+    "max_score": 135,
+    "year": "2026-2027",
+    "recipient_count": 45
+  },
+  {
+    "specialty_code": "B015",
+    "specialty_name": "Подготовка учителей по гуманитарным предметам",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "185",
+    "min_score": 103,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 10
+  },
+  {
+    "specialty_code": "B015",
+    "specialty_name": "Подготовка учителей по гуманитарным предметам",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "302",
+    "min_score": 120,
+    "max_score": 138,
+    "year": "2026-2027",
+    "recipient_count": 57
+  },
+  {
+    "specialty_code": "B015",
+    "specialty_name": "Подготовка учителей по гуманитарным предметам",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 115,
+    "max_score": 119,
+    "year": "2026-2027",
+    "recipient_count": 23
+  },
+  {
+    "specialty_code": "B015",
+    "specialty_name": "Подготовка учителей по гуманитарным предметам",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "185",
+    "min_score": 114,
+    "max_score": 119,
+    "year": "2026-2027",
+    "recipient_count": 10
+  },
+  {
+    "specialty_code": "B015",
+    "specialty_name": "Подготовка учителей по гуманитарным предметам",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 113,
+    "max_score": 117,
+    "year": "2026-2027",
+    "recipient_count": 13
+  },
+  {
+    "specialty_code": "B015",
+    "specialty_name": "Подготовка учителей по гуманитарным предметам",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "015",
+    "min_score": 114,
+    "max_score": 114,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B016",
+    "specialty_name": "Подготовка учителей казахского языка и литературы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 109,
+    "max_score": 137,
+    "year": "2026-2027",
+    "recipient_count": 42
+  },
+  {
+    "specialty_code": "B016",
+    "specialty_name": "Подготовка учителей казахского языка и литературы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 108,
+    "max_score": 138,
+    "year": "2026-2027",
+    "recipient_count": 44
+  },
+  {
+    "specialty_code": "B016",
+    "specialty_name": "Подготовка учителей казахского языка и литературы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "185",
+    "min_score": 108,
+    "max_score": 112,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B016",
+    "specialty_name": "Подготовка учителей казахского языка и литературы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "015",
+    "min_score": 110,
+    "max_score": 133,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B016",
+    "specialty_name": "Подготовка учителей казахского языка и литературы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "302",
+    "min_score": 130,
+    "max_score": 140,
+    "year": "2026-2027",
+    "recipient_count": 34
+  },
+  {
+    "specialty_code": "B016",
+    "specialty_name": "Подготовка учителей казахского языка и литературы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 128,
+    "max_score": 139,
+    "year": "2026-2027",
+    "recipient_count": 97
+  },
+  {
+    "specialty_code": "B016",
+    "specialty_name": "Подготовка учителей казахского языка и литературы",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 123,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 63
+  },
+  {
+    "specialty_code": "B016",
+    "specialty_name": "Подготовка учителей казахского языка и литературы",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 123,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 25
+  },
+  {
+    "specialty_code": "B016",
+    "specialty_name": "Подготовка учителей казахского языка и литературы",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "013",
+    "min_score": 123,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 51
+  },
+  {
+    "specialty_code": "B016",
+    "specialty_name": "Подготовка учителей казахского языка и литературы",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "015",
+    "min_score": 123,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 104,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 66
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 115,
+    "max_score": 136,
+    "year": "2026-2027",
+    "recipient_count": 30
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 104,
+    "max_score": 133,
+    "year": "2026-2027",
+    "recipient_count": 29
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "302",
+    "min_score": 105,
+    "max_score": 131,
+    "year": "2026-2027",
+    "recipient_count": 19
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "185",
+    "min_score": 104,
+    "max_score": 112,
+    "year": "2026-2027",
+    "recipient_count": 23
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "015",
+    "min_score": 107,
+    "max_score": 110,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "034",
+    "min_score": 109,
+    "max_score": 109,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "031",
+    "min_score": 106,
+    "max_score": 106,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "143",
+    "min_score": 105,
+    "max_score": 105,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "036",
+    "min_score": 105,
+    "max_score": 105,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 104,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "031",
+    "min_score": 101,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "302",
+    "min_score": 95,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 92,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 66
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "153",
+    "min_score": 103,
+    "max_score": 103,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "143",
+    "min_score": 103,
+    "max_score": 103,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "036",
+    "min_score": 103,
+    "max_score": 103,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "185",
+    "min_score": 92,
+    "max_score": 103,
+    "year": "2026-2027",
+    "recipient_count": 34
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 93,
+    "max_score": 102,
+    "year": "2026-2027",
+    "recipient_count": 14
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "034",
+    "min_score": 102,
+    "max_score": 102,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B017",
+    "specialty_name": "Подготовка учителей русского языка и литературы",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "015",
+    "min_score": 94,
+    "max_score": 94,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B018",
+    "specialty_name": "Подготовка учителей иностранного языка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "185",
+    "min_score": 91,
+    "max_score": 92,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B018",
+    "specialty_name": "Подготовка учителей иностранного языка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 90,
+    "max_score": 136,
+    "year": "2026-2027",
+    "recipient_count": 18
+  },
+  {
+    "specialty_code": "B018",
+    "specialty_name": "Подготовка учителей иностранного языка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 91,
+    "max_score": 132,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B018",
+    "specialty_name": "Подготовка учителей иностранного языка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 91,
+    "max_score": 91,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B018",
+    "specialty_name": "Подготовка учителей иностранного языка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "011",
+    "min_score": 91,
+    "max_score": 91,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B018",
+    "specialty_name": "Подготовка учителей иностранного языка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "302",
+    "min_score": 133,
+    "max_score": 140,
+    "year": "2026-2027",
+    "recipient_count": 73
+  },
+  {
+    "specialty_code": "B018",
+    "specialty_name": "Подготовка учителей иностранного языка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 131,
+    "max_score": 140,
+    "year": "2026-2027",
+    "recipient_count": 58
+  },
+  {
+    "specialty_code": "B018",
+    "specialty_name": "Подготовка учителей иностранного языка",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "023",
+    "min_score": 131,
+    "max_score": 133,
+    "year": "2026-2027",
+    "recipient_count": 11
+  },
+  {
+    "specialty_code": "B018",
+    "specialty_name": "Подготовка учителей иностранного языка",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 127,
+    "max_score": 131,
+    "year": "2026-2027",
+    "recipient_count": 13
+  },
+  {
+    "specialty_code": "B018",
+    "specialty_name": "Подготовка учителей иностранного языка",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "023",
+    "min_score": 127,
+    "max_score": 131,
+    "year": "2026-2027",
+    "recipient_count": 16
+  },
+  {
+    "specialty_code": "B018",
+    "specialty_name": "Подготовка учителей иностранного языка",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "013",
+    "min_score": 127,
+    "max_score": 131,
+    "year": "2026-2027",
+    "recipient_count": 56
+  },
+  {
+    "specialty_code": "B018",
+    "specialty_name": "Подготовка учителей иностранного языка",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 127,
+    "max_score": 131,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B019",
+    "specialty_name": "Подготовка социальных педагогов",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 90,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 34
+  },
+  {
+    "specialty_code": "B019",
+    "specialty_name": "Подготовка социальных педагогов",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 81,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 112
+  },
+  {
+    "specialty_code": "B019",
+    "specialty_name": "Подготовка социальных педагогов",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "023",
+    "min_score": 125,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B019",
+    "specialty_name": "Подготовка социальных педагогов",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 81,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 56
+  },
+  {
+    "specialty_code": "B019",
+    "specialty_name": "Подготовка социальных педагогов",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "185",
+    "min_score": 125,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B019",
+    "specialty_name": "Подготовка социальных педагогов",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "047",
+    "min_score": 125,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B019",
+    "specialty_name": "Подготовка социальных педагогов",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "158",
+    "min_score": 86,
+    "max_score": 86,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B019",
+    "specialty_name": "Подготовка социальных педагогов",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "196",
+    "min_score": 81,
+    "max_score": 85,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B019",
+    "specialty_name": "Подготовка социальных педагогов",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "031",
+    "min_score": 82,
+    "max_score": 83,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B019",
+    "specialty_name": "Подготовка социальных педагогов",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "035",
+    "min_score": 82,
+    "max_score": 82,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B019",
+    "specialty_name": "Подготовка социальных педагогов",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "043",
+    "min_score": 81,
+    "max_score": 81,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B019",
+    "specialty_name": "Подготовка социальных педагогов",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 77,
+    "max_score": 81,
+    "year": "2026-2027",
+    "recipient_count": 33
+  },
+  {
+    "specialty_code": "B019",
+    "specialty_name": "Подготовка социальных педагогов",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 77,
+    "max_score": 81,
+    "year": "2026-2027",
+    "recipient_count": 51
+  },
+  {
+    "specialty_code": "B019",
+    "specialty_name": "Подготовка социальных педагогов",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "196",
+    "min_score": 77,
+    "max_score": 80,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B019",
+    "specialty_name": "Подготовка социальных педагогов",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "031",
+    "min_score": 78,
+    "max_score": 79,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B020",
+    "specialty_name": "Специальная педагогика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 77,
+    "max_score": 133,
+    "year": "2026-2027",
+    "recipient_count": 308
+  },
+  {
+    "specialty_code": "B020",
+    "specialty_name": "Специальная педагогика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 77,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 140
+  },
+  {
+    "specialty_code": "B020",
+    "specialty_name": "Специальная педагогика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "015",
+    "min_score": 92,
+    "max_score": 111,
+    "year": "2026-2027",
+    "recipient_count": 11
+  },
+  {
+    "specialty_code": "B020",
+    "specialty_name": "Специальная педагогика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "010",
+    "min_score": 93,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B020",
+    "specialty_name": "Специальная педагогика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "305",
+    "min_score": 95,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B020",
+    "specialty_name": "Специальная педагогика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "196",
+    "min_score": 92,
+    "max_score": 101,
+    "year": "2026-2027",
+    "recipient_count": 26
+  },
+  {
+    "specialty_code": "B020",
+    "specialty_name": "Специальная педагогика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "005",
+    "min_score": 92,
+    "max_score": 98,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B020",
+    "specialty_name": "Специальная педагогика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "011",
+    "min_score": 94,
+    "max_score": 96,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B020",
+    "specialty_name": "Специальная педагогика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "517",
+    "min_score": 94,
+    "max_score": 95,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B020",
+    "specialty_name": "Специальная педагогика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "043",
+    "min_score": 94,
+    "max_score": 94,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B020",
+    "specialty_name": "Специальная педагогика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 84,
+    "max_score": 92,
+    "year": "2026-2027",
+    "recipient_count": 164
+  },
+  {
+    "specialty_code": "B020",
+    "specialty_name": "Специальная педагогика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "005",
+    "min_score": 84,
+    "max_score": 92,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B020",
+    "specialty_name": "Специальная педагогика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 84,
+    "max_score": 92,
+    "year": "2026-2027",
+    "recipient_count": 83
+  },
+  {
+    "specialty_code": "B020",
+    "specialty_name": "Специальная педагогика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "010",
+    "min_score": 84,
+    "max_score": 89,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B020",
+    "specialty_name": "Специальная педагогика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "011",
+    "min_score": 84,
+    "max_score": 88,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B020",
+    "specialty_name": "Специальная педагогика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "196",
+    "min_score": 84,
+    "max_score": 88,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B020",
+    "specialty_name": "Специальная педагогика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "015",
+    "min_score": 84,
+    "max_score": 87,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B020",
+    "specialty_name": "Специальная педагогика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "031",
+    "min_score": 84,
+    "max_score": 85,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B021",
+    "specialty_name": "Исполнительское искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 83,
+    "max_score": 83,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B021",
+    "specialty_name": "Исполнительское искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 83,
+    "max_score": 83,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B021",
+    "specialty_name": "Исполнительское искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "196",
+    "min_score": 83,
+    "max_score": 83,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B021",
+    "specialty_name": "Исполнительское искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "011",
+    "min_score": 83,
+    "max_score": 83,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B021",
+    "specialty_name": "Исполнительское искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "010",
+    "min_score": 123,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B021",
+    "specialty_name": "Исполнительское искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "034",
+    "min_score": 123,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B021",
+    "specialty_name": "Исполнительское искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 123,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B021",
+    "specialty_name": "Исполнительское искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "016",
+    "min_score": 123,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B021",
+    "specialty_name": "Исполнительское искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "038",
+    "min_score": 124,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B023",
+    "specialty_name": "Режиссура, арт-менеджмент",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "038",
+    "min_score": 121,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B023",
+    "specialty_name": "Режиссура, арт-менеджмент",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "034",
+    "min_score": 122,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B023",
+    "specialty_name": "Режиссура, арт-менеджмент",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "016",
+    "min_score": 121,
+    "max_score": 121,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B023",
+    "specialty_name": "Режиссура, арт-менеджмент",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "093",
+    "min_score": 121,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 24
+  },
+  {
+    "specialty_code": "B023",
+    "specialty_name": "Режиссура, арт-менеджмент",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "184",
+    "min_score": 121,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 9
+  },
+  {
+    "specialty_code": "B023",
+    "specialty_name": "Режиссура, арт-менеджмент",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "083",
+    "min_score": 121,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B027",
+    "specialty_name": "Театральное искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "184",
+    "min_score": 117,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 13
+  },
+  {
+    "specialty_code": "B027",
+    "specialty_name": "Театральное искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "083",
+    "min_score": 116,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 9
+  },
+  {
+    "specialty_code": "B027",
+    "specialty_name": "Театральное искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "093",
+    "min_score": 116,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 13
+  },
+  {
+    "specialty_code": "B027",
+    "specialty_name": "Театральное искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "016",
+    "min_score": 126,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B027",
+    "specialty_name": "Театральное искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 127,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B027",
+    "specialty_name": "Театральное искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "045",
+    "min_score": 127,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B028",
+    "specialty_name": "Хореография",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "093",
+    "min_score": 124,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B028",
+    "specialty_name": "Хореография",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "045",
+    "min_score": 123,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 12
+  },
+  {
+    "specialty_code": "B028",
+    "specialty_name": "Хореография",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 123,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B028",
+    "specialty_name": "Хореография",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "016",
+    "min_score": 124,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B028",
+    "specialty_name": "Хореография",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 125,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 14
+  },
+  {
+    "specialty_code": "B028",
+    "specialty_name": "Хореография",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "043",
+    "min_score": 128,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B028",
+    "specialty_name": "Хореография",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 126,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B028",
+    "specialty_name": "Хореография",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "034",
+    "min_score": 125,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B029",
+    "specialty_name": "Аудиовизуальные средства и медиа производство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "045",
+    "min_score": 123,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B029",
+    "specialty_name": "Аудиовизуальные средства и медиа производство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "043",
+    "min_score": 123,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B029",
+    "specialty_name": "Аудиовизуальные средства и медиа производство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 123,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 13
+  },
+  {
+    "specialty_code": "B029",
+    "specialty_name": "Аудиовизуальные средства и медиа производство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 123,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B029",
+    "specialty_name": "Аудиовизуальные средства и медиа производство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "034",
+    "min_score": 123,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B029",
+    "specialty_name": "Аудиовизуальные средства и медиа производство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 125,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 25
+  },
+  {
+    "specialty_code": "B029",
+    "specialty_name": "Аудиовизуальные средства и медиа производство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 125,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 34
+  },
+  {
+    "specialty_code": "B030",
+    "specialty_name": "Изобразительное искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 124,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 15
+  },
+  {
+    "specialty_code": "B030",
+    "specialty_name": "Изобразительное искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "093",
+    "min_score": 125,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B030",
+    "specialty_name": "Изобразительное искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 124,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 16
+  },
+  {
+    "specialty_code": "B030",
+    "specialty_name": "Изобразительное искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 121,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B030",
+    "specialty_name": "Изобразительное искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "031",
+    "min_score": 124,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B030",
+    "specialty_name": "Изобразительное искусство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "045",
+    "min_score": 122,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "045",
+    "min_score": 116,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 22
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 116,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 22
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "031",
+    "min_score": 118,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 9
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "022",
+    "min_score": 125,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 56
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 125,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 52
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "182",
+    "min_score": 125,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 12
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "034",
+    "min_score": 126,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "038",
+    "min_score": 129,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "185",
+    "min_score": 125,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 15
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 126,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "053",
+    "min_score": 125,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 126,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "042",
+    "min_score": 128,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "029",
+    "min_score": 125,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "015",
+    "min_score": 126,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "035",
+    "min_score": 125,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "143",
+    "min_score": 127,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "016",
+    "min_score": 125,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "005",
+    "min_score": 125,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "079",
+    "min_score": 126,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "040",
+    "min_score": 125,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "184",
+    "min_score": 126,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B031",
+    "specialty_name": "Мода, дизайн",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "043",
+    "min_score": 126,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B032",
+    "specialty_name": "Философия и этика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 98,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 44
+  },
+  {
+    "specialty_code": "B032",
+    "specialty_name": "Философия и этика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 98,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B032",
+    "specialty_name": "Философия и этика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "022",
+    "min_score": 125,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B032",
+    "specialty_name": "Философия и этика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "031",
+    "min_score": 99,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B032",
+    "specialty_name": "Философия и этика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 98,
+    "max_score": 107,
+    "year": "2026-2027",
+    "recipient_count": 14
+  },
+  {
+    "specialty_code": "B032",
+    "specialty_name": "Философия и этика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 98,
+    "max_score": 106,
+    "year": "2026-2027",
+    "recipient_count": 20
+  },
+  {
+    "specialty_code": "B032",
+    "specialty_name": "Философия и этика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "045",
+    "min_score": 101,
+    "max_score": 101,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B033",
+    "specialty_name": "Религия и теология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 96,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B033",
+    "specialty_name": "Религия и теология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 97,
+    "max_score": 98,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B033",
+    "specialty_name": "Религия и теология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 97,
+    "max_score": 98,
+    "year": "2026-2027",
+    "recipient_count": 9
+  },
+  {
+    "specialty_code": "B033",
+    "specialty_name": "Религия и теология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 97,
+    "max_score": 98,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B033",
+    "specialty_name": "Религия и теология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "031",
+    "min_score": 97,
+    "max_score": 97,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B033",
+    "specialty_name": "Религия и теология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "503",
+    "min_score": 128,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 56
+  },
+  {
+    "specialty_code": "B033",
+    "specialty_name": "Религия и теология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "503",
+    "min_score": 124,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 72
+  },
+  {
+    "specialty_code": "B033",
+    "specialty_name": "Религия и теология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 124,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B033",
+    "specialty_name": "Религия и теология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "037",
+    "min_score": 124,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B033",
+    "specialty_name": "Религия и теология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "013",
+    "min_score": 125,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B033",
+    "specialty_name": "Религия и теология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "035",
+    "min_score": 125,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B033",
+    "specialty_name": "Религия и теология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "027",
+    "min_score": 124,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B034",
+    "specialty_name": "История",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 112,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 59
+  },
+  {
+    "specialty_code": "B034",
+    "specialty_name": "История",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 113,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 25
+  },
+  {
+    "specialty_code": "B034",
+    "specialty_name": "История",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "031",
+    "min_score": 120,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B034",
+    "specialty_name": "История",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 117,
+    "max_score": 117,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B034",
+    "specialty_name": "История",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 112,
+    "max_score": 112,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B034",
+    "specialty_name": "История",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "005",
+    "min_score": 112,
+    "max_score": 112,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B035",
+    "specialty_name": "Тюркология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 107,
+    "max_score": 132,
+    "year": "2026-2027",
+    "recipient_count": 30
+  },
+  {
+    "specialty_code": "B035",
+    "specialty_name": "Тюркология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "031",
+    "min_score": 112,
+    "max_score": 112,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B035",
+    "specialty_name": "Тюркология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 107,
+    "max_score": 112,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B035",
+    "specialty_name": "Тюркология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 108,
+    "max_score": 110,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B035",
+    "specialty_name": "Тюркология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "043",
+    "min_score": 109,
+    "max_score": 109,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B035",
+    "specialty_name": "Тюркология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "036",
+    "min_score": 108,
+    "max_score": 108,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B036",
+    "specialty_name": "Переводческое дело",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 125,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B036",
+    "specialty_name": "Переводческое дело",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "037",
+    "min_score": 127,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B036",
+    "specialty_name": "Переводческое дело",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 125,
+    "max_score": 139,
+    "year": "2026-2027",
+    "recipient_count": 30
+  },
+  {
+    "specialty_code": "B036",
+    "specialty_name": "Переводческое дело",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "174",
+    "min_score": 134,
+    "max_score": 140,
+    "year": "2026-2027",
+    "recipient_count": 52
+  },
+  {
+    "specialty_code": "B036",
+    "specialty_name": "Переводческое дело",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "005",
+    "min_score": 135,
+    "max_score": 135,
+    "year": "2026-2027",
+    "recipient_count": 1
+  }
+]

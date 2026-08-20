@@ -1,0 +1,94 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "assessment_id": {
+      "type": "string"
+    },
+    "careers": {
+      "items": "StudentCareer",
+      "maxItems": 0,
+      "type": "array"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "disclaimer": {
+      "default": "Это не окончательный выбор, а карта возможных направлений — со временем картина может измениться, и это нормально.",
+      "type": "string"
+    },
+    "exploration_activities": {
+      "items": "string",
+      "minItems": 1,
+      "type": "array"
+    },
+    "exploration_note": {
+      "default": "Не обязательно пробовать всё сразу — начни с того, что откликается больше всего. Даже маленький шаг сегодня помогает лучше понять, что тебе действительно нравится.",
+      "type": "string"
+    },
+    "final_analysis": {
+      "default": "Каждый раздел этого отчёта — отдельный кусочек общей картины: не разрозненные факты, а разные стороны одного и того же человека. Используй их вместе, а не по одному, когда будешь решать, что попробовать дальше.",
+      "type": "string"
+    },
+    "interest_instrument": {
+      "const": "mi",
+      "default": "mi",
+      "type": "string"
+    },
+    "interest_map": {
+      "items": "StudentInterestMapItem",
+      "maxItems": 8,
+      "minItems": 8,
+      "type": "array"
+    },
+    "interest_map_note": {
+      "default": "Карта показывает, какие сферы проявляются ярче, а какие — тише. Это не оценка, а просто снимок текущего состояния.",
+      "type": "string"
+    },
+    "is_flat_profile": {
+      "type": "boolean"
+    },
+    "motivation_highlights": {
+      "items": "string",
+      "type": "array"
+    },
+    "personality_note": {
+      "default": "Каждая черта характера проявляется по-своему — вместе они складываются в общую картину того, как тебе комфортнее действовать и общаться.",
+      "type": "string"
+    },
+    "personality_notes": {
+      "items": "StudentPersonalityNote",
+      "maxItems": 5,
+      "minItems": 5,
+      "type": "array"
+    },
+    "report_version": {
+      "const": 2,
+      "default": 2,
+      "type": "integer"
+    },
+    "strength_cards": {
+      "items": "StudentStrengthCard",
+      "type": "array"
+    },
+    "summary": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "thinking_style_notes": {
+      "items": "StudentThinkingStyleNote",
+      "type": "array"
+    }
+  },
+  "required": [
+    "assessment_id",
+    "created_at",
+    "exploration_activities",
+    "interest_map",
+    "is_flat_profile",
+    "motivation_highlights",
+    "personality_notes",
+    "strength_cards",
+    "summary",
+    "thinking_style_notes"
+  ]
+}

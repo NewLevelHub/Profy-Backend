@@ -1,0 +1,3 @@
+[
+  {"university_slug": "harvard-kennedy-school", "university_name": "Harvard Kennedy School", "cluster_professions": ["Государственный служащий", "Дипломат"], "current_wrong_name": "Государственный служащий, Дипломат", "proposed_name": "Master in Public Policy (MPP)", "source_url": "https://www.hks.harvard.edu/educational-programs/masters-programs/master-public-policy", "needs_manual_review": false, "note": "Основной академический трек. Для специалистов с опытом также есть Master in Public Administration (MPA)."}
+]

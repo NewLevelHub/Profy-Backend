@@ -1,0 +1,6020 @@
+{
+  "a7681d14-c1a6-47d3-8aae-b1ac68f647dc": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "Адаптивная физическая культура и спорт",
+    "admission_scores_2026": [
+      {
+        "ovpo": "007",
+        "specialty_code": "B005",
+        "specialty_name": "Подготовка учителей физической культуры",
+        "quota": "Общий конкурс",
+        "min_score": 106,
+        "max_score": 129,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "8a794ec6-2a72-4783-92b6-20292b66c693": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "Биология",
+    "admission_scores_2026": [
+      {
+        "ovpo": "007",
+        "specialty_code": "B013",
+        "specialty_name": "Подготовка учителей биологии",
+        "quota": "Общий конкурс",
+        "min_score": 91,
+        "max_score": 117,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "2a0ccdfa-6c4b-4d3b-a769-92504a927ae9": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "Дошкольное обучение и воспитание",
+    "admission_scores_2026": [
+      {
+        "ovpo": "007",
+        "specialty_code": "B002",
+        "specialty_name": "Дошкольное обучение и воспитание",
+        "quota": "Общий конкурс",
+        "min_score": 75,
+        "max_score": 96,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "556f5021-cb97-436d-b38d-21c4f7f1396e": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "Иностранные языки",
+    "admission_scores_2026": [
+      {
+        "ovpo": "007",
+        "specialty_code": "B018",
+        "specialty_name": "Подготовка учителей иностранного языка",
+        "quota": "Общий конкурс",
+        "min_score": 105,
+        "max_score": 132,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "ec72ef36-cd7c-4ccc-bbfb-a9c596f3f36e": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "Информатика",
+    "admission_scores_2026": [
+      {
+        "ovpo": "007",
+        "specialty_code": "B011",
+        "specialty_name": "Подготовка учителей информатики",
+        "quota": "Общий конкурс",
+        "min_score": 76,
+        "max_score": 122,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "43e23a64-10da-4aea-bad9-2d6b73427031": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "Казахский язык и литература",
+    "admission_scores_2026": [
+      {
+        "ovpo": "007",
+        "specialty_code": "B016",
+        "specialty_name": "Подготовка учителей казахского языка и литературы",
+        "quota": "Общий конкурс",
+        "min_score": 112,
+        "max_score": 138,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "91d58411-d38f-4159-adff-7b784cefba2f": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "Математика",
+    "admission_scores_2026": [
+      {
+        "ovpo": "007",
+        "specialty_code": "B009",
+        "specialty_name": "Подготовка учителей математики",
+        "quota": "Общий конкурс",
+        "min_score": 94,
+        "max_score": 131,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "f3ad6446-df4c-49f2-b5dc-59f9da13a0bb": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "Начальное образование",
+    "admission_scores_2026": [
+      {
+        "ovpo": "007",
+        "specialty_code": "B003",
+        "specialty_name": "Педагогика и методика начального обучения",
+        "quota": "Общий конкурс",
+        "min_score": 80,
+        "max_score": 116,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "b4edcd86-1430-4570-b314-8d8d13b33169": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "Начальное образование на английском языке",
+    "admission_scores_2026": [
+      {
+        "ovpo": "007",
+        "specialty_code": "B003",
+        "specialty_name": "Педагогика и методика начального обучения",
+        "quota": "Общий конкурс",
+        "min_score": 80,
+        "max_score": 116,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "43ceebc2-54f9-4195-b2d8-fa82abf432dc": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "Начальное образование с информационно-коммуникационными технологиями",
+    "admission_scores_2026": [
+      {
+        "ovpo": "007",
+        "specialty_code": "B003",
+        "specialty_name": "Педагогика и методика начального обучения",
+        "quota": "Общий конкурс",
+        "min_score": 80,
+        "max_score": 116,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "3629b07b-8608-459d-aeeb-072d3096b822": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "Педагогика и психология",
+    "admission_scores_2026": [
+      {
+        "ovpo": "007",
+        "specialty_code": "B001",
+        "specialty_name": "Педагогика и психология",
+        "quota": "Общий конкурс",
+        "min_score": 81,
+        "max_score": 118,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "198bcf6b-9879-4b89-bda8-1a62f7fa05a3": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "Педагогика и психология с полиязычием",
+    "admission_scores_2026": [
+      {
+        "ovpo": "007",
+        "specialty_code": "B001",
+        "specialty_name": "Педагогика и психология",
+        "quota": "Общий конкурс",
+        "min_score": 81,
+        "max_score": 118,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "eecef525-d7c2-4294-bdcb-13e2e903498e": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "Психология (бакалавр, практический психолог)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "007",
+        "specialty_code": "B041",
+        "specialty_name": "Психология",
+        "quota": "Общий конкурс",
+        "min_score": 104,
+        "max_score": 110,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "76d87e85-7311-43eb-88a7-42a82f9ac910": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "Русский язык и литература",
+    "admission_scores_2026": [
+      {
+        "ovpo": "007",
+        "specialty_code": "B017",
+        "specialty_name": "Подготовка учителей русского языка и литературы",
+        "quota": "Общий конкурс",
+        "min_score": 81,
+        "max_score": 133,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "760c278f-c9e1-4980-b640-20c043f86a8a": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "Физика",
+    "admission_scores_2026": [
+      {
+        "ovpo": "007",
+        "specialty_code": "B010",
+        "specialty_name": "Подготовка учителей физики",
+        "quota": "Общий конкурс",
+        "min_score": 91,
+        "max_score": 116,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "f51d37bf-75e5-4604-89f5-50cdcdd99701": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "Физическая культура и спорт",
+    "admission_scores_2026": [
+      {
+        "ovpo": "007",
+        "specialty_code": "B005",
+        "specialty_name": "Подготовка учителей физической культуры",
+        "quota": "Общий конкурс",
+        "min_score": 106,
+        "max_score": 129,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "968ba269-79dc-4c81-9d04-9a5478cea556": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "Химия",
+    "admission_scores_2026": [
+      {
+        "ovpo": "007",
+        "specialty_code": "B012",
+        "specialty_name": "Подготовка учителей химии",
+        "quota": "Общий конкурс",
+        "min_score": 90,
+        "max_score": 138,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "e783f089-ca94-4460-bdb0-264b5148930c": {
+    "slug": "aiu",
+    "name": "Computer technology and software",
+    "admission_scores_2026": [
+      {
+        "ovpo": "185",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 118,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "0760cc85-3046-4a79-a7ac-926d70a1277e": {
+    "slug": "aiu",
+    "name": "Data Science",
+    "admission_scores_2026": [
+      {
+        "ovpo": "185",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 118,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "eaaa3db0-1d08-4721-8df4-224440e23af1": {
+    "slug": "aiu",
+    "name": "Fashion design",
+    "admission_scores_2026": [
+      {
+        "ovpo": "185",
+        "specialty_code": "B031",
+        "specialty_name": "Мода, дизайн",
+        "quota": "Общий конкурс",
+        "min_score": 125,
+        "max_score": 129,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "6b4e9074-47a1-4def-b3bb-bc3a479570cb": {
+    "slug": "aiu",
+    "name": "Graphic design",
+    "admission_scores_2026": [
+      {
+        "ovpo": "185",
+        "specialty_code": "B031",
+        "specialty_name": "Мода, дизайн",
+        "quota": "Общий конкурс",
+        "min_score": 125,
+        "max_score": 129,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "df09b262-ec9e-4b4d-9acd-93caaef16ae2": {
+    "slug": "aiu",
+    "name": "Учитель информатики/математики и др.",
+    "admission_scores_2026": [
+      {
+        "ovpo": "185",
+        "specialty_code": "B011",
+        "specialty_name": "Подготовка учителей информатики",
+        "quota": "Общий конкурс",
+        "min_score": 81,
+        "max_score": 103,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "db8ef2e9-5e30-47fe-9601-b26cd02b04f7": {
+    "slug": "akademiya-grazhdanskoj-aviaczii",
+    "name": "Летная эксплуатация гражданских вертолётов (пилот)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "157",
+        "specialty_code": "B167",
+        "specialty_name": "Летная эксплуатация летательных аппаратов и двигателей",
+        "quota": "Общий конкурс",
+        "min_score": 86,
+        "max_score": 133,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "3cdd6548-0d99-4292-bd94-dda0e97ea718": {
+    "slug": "akademiya-grazhdanskoj-aviaczii",
+    "name": "Летная эксплуатация гражданских самолётов (пилот)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "157",
+        "specialty_code": "B167",
+        "specialty_name": "Летная эксплуатация летательных аппаратов и двигателей",
+        "quota": "Общий конкурс",
+        "min_score": 86,
+        "max_score": 133,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "555d7260-efc3-45ad-bd43-48e7ab793208": {
+    "slug": "akademiya-grazhdanskoj-aviaczii",
+    "name": "Лётная эксплуатация воздушного транспорта (пилот)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "157",
+        "specialty_code": "B167",
+        "specialty_name": "Летная эксплуатация летательных аппаратов и двигателей",
+        "quota": "Общий конкурс",
+        "min_score": 86,
+        "max_score": 133,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "21b6bca6-8260-4ebc-94a8-86c30bddf633": {
+    "slug": "akademiya-grazhdanskoj-aviaczii",
+    "name": "Обеспечение авиационной безопасности",
+    "admission_scores_2026": [
+      {
+        "ovpo": "157",
+        "specialty_code": "B067",
+        "specialty_name": "Воздушный транспорт и технологии",
+        "quota": "Общий конкурс",
+        "min_score": 65,
+        "max_score": 137,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "13df3c1b-b190-4aa0-8360-c1ff6e3b112b": {
+    "slug": "akademiya-grazhdanskoj-aviaczii",
+    "name": "Обслуживание воздушного движения и аэронавигационное обеспечение полетов",
+    "admission_scores_2026": [
+      {
+        "ovpo": "157",
+        "specialty_code": "B067",
+        "specialty_name": "Воздушный транспорт и технологии",
+        "quota": "Общий конкурс",
+        "min_score": 65,
+        "max_score": 137,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "592f5e6c-2d1f-4895-9514-46422378685f": {
+    "slug": "akademiya-grazhdanskoj-aviaczii",
+    "name": "Обслуживание наземного радиоэлектронного оборудования аэропортов",
+    "admission_scores_2026": [
+      {
+        "ovpo": "157",
+        "specialty_code": "B067",
+        "specialty_name": "Воздушный транспорт и технологии",
+        "quota": "Общий конкурс",
+        "min_score": 65,
+        "max_score": 137,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "200fcd5d-54cc-4377-b0cb-4e9915bbef54": {
+    "slug": "akademiya-grazhdanskoj-aviaczii",
+    "name": "Организация авиационных перевозок",
+    "admission_scores_2026": [
+      {
+        "ovpo": "157",
+        "specialty_code": "B067",
+        "specialty_name": "Воздушный транспорт и технологии",
+        "quota": "Общий конкурс",
+        "min_score": 65,
+        "max_score": 137,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "a3aabd59-0835-4616-b307-c49b62e84722": {
+    "slug": "akademiya-grazhdanskoj-aviaczii",
+    "name": "Организация авиационных перевозок и логистика",
+    "admission_scores_2026": [
+      {
+        "ovpo": "157",
+        "specialty_code": "B067",
+        "specialty_name": "Воздушный транспорт и технологии",
+        "quota": "Общий конкурс",
+        "min_score": 65,
+        "max_score": 137,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "2be3ae2e-3f0b-4a72-824d-8f375b883090": {
+    "slug": "akademiya-grazhdanskoj-aviaczii",
+    "name": "Организация аэропортовой деятельности",
+    "admission_scores_2026": [
+      {
+        "ovpo": "157",
+        "specialty_code": "B067",
+        "specialty_name": "Воздушный транспорт и технологии",
+        "quota": "Общий конкурс",
+        "min_score": 65,
+        "max_score": 137,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "de302ae7-81de-416a-a6f5-71a1d7107b9a": {
+    "slug": "akademiya-logistiki-i-transporta",
+    "name": "Инженерия подвижного состава",
+    "admission_scores_2026": [
+      {
+        "ovpo": "019",
+        "specialty_code": "B265",
+        "specialty_name": "Железнодорожный транспорт и технологии",
+        "quota": "Общий конкурс",
+        "min_score": 73,
+        "max_score": 119,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "e4e9ef93-8ac6-4f0d-92ed-266649d798fe": {
+    "slug": "akademiya-logistiki-i-transporta",
+    "name": "Кибербезопасность цифровых систем",
+    "admission_scores_2026": [
+      {
+        "ovpo": "019",
+        "specialty_code": "B058",
+        "specialty_name": "Информационная безопасность",
+        "quota": "Общий конкурс",
+        "min_score": 79,
+        "max_score": 104,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "3471d6a0-f275-4641-b5f8-25db5fc1bc4b": {
+    "slug": "akademiya-logistiki-i-transporta",
+    "name": "Машиностроение",
+    "admission_scores_2026": [
+      {
+        "ovpo": "019",
+        "specialty_code": "B064",
+        "specialty_name": "Механика и металлообработка",
+        "quota": "Общий конкурс",
+        "min_score": 65,
+        "max_score": 88,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "c932a9a6-76be-4880-b83f-24e314edd1dc": {
+    "slug": "akademiya-logistiki-i-transporta",
+    "name": "Телекоммуникационные системы и сети ж.д.связи",
+    "admission_scores_2026": [
+      {
+        "ovpo": "019",
+        "specialty_code": "B059",
+        "specialty_name": "Коммуникации и коммуникационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 77,
+        "max_score": 89,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "f1b5b289-939e-4ec9-8279-9e0337fa2c8b": {
+    "slug": "akademiya-logistiki-i-transporta",
+    "name": "Электроэнергетика",
+    "admission_scores_2026": [
+      {
+        "ovpo": "019",
+        "specialty_code": "B062",
+        "specialty_name": "Электротехника и электроэнергетика",
+        "quota": "Общий конкурс",
+        "min_score": 97,
+        "max_score": 97,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "bf31be5d-5f22-42e7-98b1-f6c86ef8e524": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Астрофизика",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B054",
+        "specialty_name": "Физика",
+        "quota": "Общий конкурс",
+        "min_score": 80,
+        "max_score": 137,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "f15aa78a-9784-4386-b993-0b0fe8e8e29b": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Биология (бакалавр)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B050",
+        "specialty_name": "Биологические и смежные науки",
+        "quota": "Общий конкурс",
+        "min_score": 91,
+        "max_score": 139,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "bddae0f3-476c-45da-89c9-4ae6bf229ee6": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Биофизика",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B054",
+        "specialty_name": "Физика",
+        "quota": "Общий конкурс",
+        "min_score": 80,
+        "max_score": 137,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "68680696-c91e-496d-bfe4-30d2e737fae0": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Высоконагруженные информационные системы с искусственным интеллектом",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 118,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "9bd1270b-0228-4374-94a7-fcb4f42711f9": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Вычислительная инженерия",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 118,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "62651106-35f9-4e4a-8ae3-b19d245a277c": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Журналистика",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B042",
+        "specialty_name": "Журналистика и репортерское дело",
+        "quota": "Общий конкурс",
+        "min_score": 127,
+        "max_score": 130,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "fd170cad-4e8f-4e98-bdab-3948b27227ee": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Информационные системы",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 118,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "6cc5a5a0-2e70-4b74-bc55-a64b3e5d6b56": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "История",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B034",
+        "specialty_name": "История",
+        "quota": "Общий конкурс",
+        "min_score": 107,
+        "max_score": 126,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "48a96e42-4ae8-45fc-a85c-5eeb681d1fdb": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Компьютерная инженерия",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 118,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "66a9bef0-b5ac-4a48-90e3-61a3dd43cd04": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Компьютерные науки",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 118,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "7772dcdc-baaf-459a-a966-44d579d0cfb0": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Криптология",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B158",
+        "specialty_name": "Криптология",
+        "quota": "Общий конкурс",
+        "min_score": 101,
+        "max_score": 114,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "881983fd-2684-4d30-9119-cff4eb194a40": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Маркетинг",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B047",
+        "specialty_name": "Маркетинг и реклама",
+        "quota": "Общий конкурс",
+        "min_score": 119,
+        "max_score": 127,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "f277abde-a334-4b69-a639-e00c532482a0": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Математика",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B055",
+        "specialty_name": "Математика и статистика",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 136,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "ba382c3b-1902-45b8-a46e-348fa5830ae9": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Медиакоммуникации",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B029",
+        "specialty_name": "Аудиовизуальные средства и медиа производство",
+        "quota": "Общий конкурс",
+        "min_score": 124,
+        "max_score": 130,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "4f78fa42-c45c-4fd7-9587-e0efe3cf4d49": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Медицинская биология",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B050",
+        "specialty_name": "Биологические и смежные науки",
+        "quota": "Общий конкурс",
+        "min_score": 91,
+        "max_score": 139,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "fd1aa807-8241-4e71-9e00-6b6e97323940": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Международная журналистика",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B042",
+        "specialty_name": "Журналистика и репортерское дело",
+        "quota": "Общий конкурс",
+        "min_score": 127,
+        "max_score": 130,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "1f993af0-008a-4f80-9abc-5fb77809b4db": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Международное право",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B049",
+        "specialty_name": "Право",
+        "quota": "Общий конкурс",
+        "min_score": 126,
+        "max_score": 136,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "a17c3fc7-8f43-42e7-8dc5-9c362cd8ba85": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Менеджмент",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B044",
+        "specialty_name": "Менеджмент и управление",
+        "quota": "Общий конкурс",
+        "min_score": 125,
+        "max_score": 128,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "311ac178-1ef7-4181-b4c7-323e154e62dc": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Переводческое дело (восточные языки)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B036",
+        "specialty_name": "Переводческое дело",
+        "quota": "Общий конкурс",
+        "min_score": 133,
+        "max_score": 133,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "9bfb05ad-3412-4739-9db5-51daa502eada": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Переводческое дело (западные языки)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B036",
+        "specialty_name": "Переводческое дело",
+        "quota": "Общий конкурс",
+        "min_score": 133,
+        "max_score": 133,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "df08d1d4-d59b-4bd9-91c7-9bd1bb4e0091": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Политология",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B040",
+        "specialty_name": "Политология",
+        "quota": "Общий конкурс",
+        "min_score": 127,
+        "max_score": 132,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "24ba76d2-3220-4c52-94c8-690939514b08": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Прикладная математика",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B055",
+        "specialty_name": "Математика и статистика",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 136,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "dfee19a7-df1e-4db2-abc4-a2c7a97cc437": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Психология",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B041",
+        "specialty_name": "Психология",
+        "quota": "Общий конкурс",
+        "min_score": 104,
+        "max_score": 127,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "791f1dc2-f16e-43f0-9060-0eebb54a1f1a": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Разработка программного обеспечения (бакалавр)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 118,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "01d420b3-e062-40b0-bb30-8af528020c6a": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Связи с общественностью",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B142",
+        "specialty_name": "Связь с общественностью",
+        "quota": "Общий конкурс",
+        "min_score": 125,
+        "max_score": 130,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "3b65027c-73f5-43eb-b75a-c4d0730dcfcf": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Системы информационной безопасности",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B058",
+        "specialty_name": "Информационная безопасность",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 121,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "8622ddfb-c174-4baa-bd9c-a31a379af747": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Социология",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B038",
+        "specialty_name": "Социология",
+        "quota": "Общий конкурс",
+        "min_score": 108,
+        "max_score": 121,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "977fe8a2-af21-4e23-9ebf-fc324787f521": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Физика (бакалавр)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B054",
+        "specialty_name": "Физика",
+        "quota": "Общий конкурс",
+        "min_score": 80,
+        "max_score": 137,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "72f470d4-c20a-4534-8801-3e65153dd5c3": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Философия",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B032",
+        "specialty_name": "Философия и этика",
+        "quota": "Общий конкурс",
+        "min_score": 97,
+        "max_score": 106,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "1a1950fb-bcb6-4b75-80b8-5b4b398e78a2": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Химия",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B053",
+        "specialty_name": "Химия",
+        "quota": "Общий конкурс",
+        "min_score": 90,
+        "max_score": 135,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "26525764-c98b-4b4c-aa9c-445c188dcb4d": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Экология",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B051",
+        "specialty_name": "Окружающая среда",
+        "quota": "Общий конкурс",
+        "min_score": 80,
+        "max_score": 112,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "b7642c49-5b5e-4b23-b932-a43e1b5516fe": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Юриспруденция",
+    "admission_scores_2026": [
+      {
+        "ovpo": "027",
+        "specialty_code": "B049",
+        "specialty_name": "Право",
+        "quota": "Общий конкурс",
+        "min_score": 126,
+        "max_score": 136,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "a85adceb-bb42-4d83-b799-e442712d5742": {
+    "slug": "almatinskij-tehnologicheskij-universitet",
+    "name": "Вычислительная техника и программное обеспечение",
+    "admission_scores_2026": [
+      {
+        "ovpo": "053",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 103,
+        "max_score": 103,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "c6870f61-5e9c-49f7-9e48-87b95b6252cf": {
+    "slug": "almatinskij-tehnologicheskij-universitet",
+    "name": "Информационные системы",
+    "admission_scores_2026": [
+      {
+        "ovpo": "053",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 103,
+        "max_score": 103,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "d922af2c-8e8c-441b-ada1-03a7755ae995": {
+    "slug": "almatinskij-tehnologicheskij-universitet",
+    "name": "Нанотехнология текстиля",
+    "admission_scores_2026": [
+      {
+        "ovpo": "053",
+        "specialty_code": "B070",
+        "specialty_name": "Текстиль: одежда, обувь и кожаные изделия",
+        "quota": "Общий конкурс",
+        "min_score": 50,
+        "max_score": 94,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "81032768-f9d9-4915-ac11-a33099f5173d": {
+    "slug": "almatinskij-tehnologicheskij-universitet",
+    "name": "Программная инженерия",
+    "admission_scores_2026": [
+      {
+        "ovpo": "053",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 103,
+        "max_score": 103,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "eaabff8d-f21a-42ec-9207-13e36abe329c": {
+    "slug": "almatinskij-tehnologicheskij-universitet",
+    "name": "Ресторанное дело и гостиничный бизнес",
+    "admission_scores_2026": [
+      {
+        "ovpo": "053",
+        "specialty_code": "B093",
+        "specialty_name": "Ресторанное дело и гостиничный бизнес",
+        "quota": "Общий конкурс",
+        "min_score": 120,
+        "max_score": 120,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "32229cdc-7042-4d47-8553-d9fa4b4aa1e8": {
+    "slug": "almatinskij-tehnologicheskij-universitet",
+    "name": "Стандартизация, метрология и сертификация (по пищевой отрасли)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "053",
+        "specialty_code": "B076",
+        "specialty_name": "Стандартизация, сертификация и метрология (по отраслям)",
+        "quota": "Общий конкурс",
+        "min_score": 81,
+        "max_score": 81,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "3771a302-2637-4520-8176-77cc888cdacc": {
+    "slug": "almatinskij-tehnologicheskij-universitet",
+    "name": "Технология и конструирование изделий легкой промышленности",
+    "admission_scores_2026": [
+      {
+        "ovpo": "053",
+        "specialty_code": "B070",
+        "specialty_name": "Текстиль: одежда, обувь и кожаные изделия",
+        "quota": "Общий конкурс",
+        "min_score": 50,
+        "max_score": 94,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "1d0efdb4-e2cd-4d9c-9980-a2cea88c7cfb": {
+    "slug": "almatinskij-tehnologicheskij-universitet",
+    "name": "Технология продовольственных продуктов",
+    "admission_scores_2026": [
+      {
+        "ovpo": "053",
+        "specialty_code": "B068",
+        "specialty_name": "Производство продуктов питания",
+        "quota": "Общий конкурс",
+        "min_score": 74,
+        "max_score": 95,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "6de4d31f-56fe-4959-ad57-8e951ad88afb": {
+    "slug": "almatinskij-universitet-energetiki-i-svyazi",
+    "name": "IT Энергетика",
+    "admission_scores_2026": [
+      {
+        "ovpo": "057",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 102,
+        "max_score": 120,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "d474c84f-8c38-4f44-9da0-1b492a94e463": {
+    "slug": "almatinskij-universitet-energetiki-i-svyazi",
+    "name": "Автоматизация и управление",
+    "admission_scores_2026": [
+      {
+        "ovpo": "057",
+        "specialty_code": "B063",
+        "specialty_name": "Электротехника и автоматизация",
+        "quota": "Общий конкурс",
+        "min_score": 103,
+        "max_score": 127,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "7a8f198b-7ec6-47f5-bf6b-43a6f206bd36": {
+    "slug": "almatinskij-universitet-energetiki-i-svyazi",
+    "name": "Вычислительная техника и программное обеспечение",
+    "admission_scores_2026": [
+      {
+        "ovpo": "057",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 102,
+        "max_score": 120,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "39da2181-dc6e-41cc-8cf3-84a44a5014e4": {
+    "slug": "almatinskij-universitet-energetiki-i-svyazi",
+    "name": "Информатика (Computer science)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "057",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 102,
+        "max_score": 120,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "6937944b-a61d-4c3a-a499-a2036fc12b5d": {
+    "slug": "almatinskij-universitet-energetiki-i-svyazi",
+    "name": "Информационные системы",
+    "admission_scores_2026": [
+      {
+        "ovpo": "057",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 102,
+        "max_score": 120,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "32f79e06-ca9e-466d-b0da-90a0ecc12ae8": {
+    "slug": "almatinskij-universitet-energetiki-i-svyazi",
+    "name": "Искусственный интеллект и анализ данных",
+    "admission_scores_2026": [
+      {
+        "ovpo": "057",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 102,
+        "max_score": 120,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "72b93fdd-e62d-40c6-ae25-0d5f954ebc22": {
+    "slug": "almatinskij-universitet-energetiki-i-svyazi",
+    "name": "Программная инженерия",
+    "admission_scores_2026": [
+      {
+        "ovpo": "057",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 102,
+        "max_score": 120,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "a1c4161a-ea63-4708-be67-b68c0d889d2a": {
+    "slug": "almatinskij-universitet-energetiki-i-svyazi",
+    "name": "Радиотехника, электроника и телекоммуникации",
+    "admission_scores_2026": [
+      {
+        "ovpo": "057",
+        "specialty_code": "B059",
+        "specialty_name": "Коммуникации и коммуникационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 76,
+        "max_score": 103,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "677d2d44-52cd-418f-90b9-ed40b99599be": {
+    "slug": "almatinskij-universitet-energetiki-i-svyazi",
+    "name": "Системы информационной безопасности",
+    "admission_scores_2026": [
+      {
+        "ovpo": "057",
+        "specialty_code": "B058",
+        "specialty_name": "Информационная безопасность",
+        "quota": "Общий конкурс",
+        "min_score": 79,
+        "max_score": 117,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "e7a41a58-4ce0-4df2-bf30-4942d1d5acc7": {
+    "slug": "almatinskij-universitet-energetiki-i-svyazi",
+    "name": "Теплоэнергетика",
+    "admission_scores_2026": [
+      {
+        "ovpo": "057",
+        "specialty_code": "B162",
+        "specialty_name": "Теплоэнергетика",
+        "quota": "Общий конкурс",
+        "min_score": 71,
+        "max_score": 121,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "7d04c154-0725-4184-8f63-fe32511888ec": {
+    "slug": "almatinskij-universitet-energetiki-i-svyazi",
+    "name": "Электроэнергетика",
+    "admission_scores_2026": [
+      {
+        "ovpo": "057",
+        "specialty_code": "B062",
+        "specialty_name": "Электротехника и электроэнергетика",
+        "quota": "Общий конкурс",
+        "min_score": 88,
+        "max_score": 134,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "0d2ac6aa-a72b-40a2-9d8f-f2e94e1df816": {
+    "slug": "almaty-management-university",
+    "name": "Content, Marketing and Data Analysis (Media)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "083",
+        "specialty_code": "B047",
+        "specialty_name": "Маркетинг и реклама",
+        "quota": "Общий конкурс",
+        "min_score": 119,
+        "max_score": 123,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "c9abfafd-92d4-4def-bfbf-f61b85d49e54": {
+    "slug": "almaty-management-university",
+    "name": "Data Science",
+    "admission_scores_2026": [
+      {
+        "ovpo": "083",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 75,
+        "max_score": 126,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "024067f5-76eb-4e9b-9504-e9e815f491d7": {
+    "slug": "almaty-management-university",
+    "name": "Fintech and Artificial Intelligence",
+    "admission_scores_2026": [
+      {
+        "ovpo": "083",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 75,
+        "max_score": 126,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "2d3bd886-ed48-485e-abf4-33c87cec71f0": {
+    "slug": "almaty-management-university",
+    "name": "Travel Management and Data Analysis",
+    "admission_scores_2026": [
+      {
+        "ovpo": "083",
+        "specialty_code": "B091",
+        "specialty_name": "Туризм",
+        "quota": "Общий конкурс",
+        "min_score": 131,
+        "max_score": 131,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "216bc0c5-1949-40dd-8e24-cac7d72a17a3": {
+    "slug": "almaty-management-university",
+    "name": "Глобальный менеджмент",
+    "admission_scores_2026": [
+      {
+        "ovpo": "083",
+        "specialty_code": "B044",
+        "specialty_name": "Менеджмент и управление",
+        "quota": "Общий конкурс",
+        "min_score": 127,
+        "max_score": 127,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "95084dc0-f09c-4dcc-9444-c99c8dac3f10": {
+    "slug": "almaty-management-university",
+    "name": "Инженерия программного обеспечения (Software Engineering)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "083",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 75,
+        "max_score": 126,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "1339069f-8f62-47b6-a0df-f0702a21f5a9": {
+    "slug": "almaty-management-university",
+    "name": "Маркетинг (бакалавр)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "083",
+        "specialty_code": "B047",
+        "specialty_name": "Маркетинг и реклама",
+        "quota": "Общий конкурс",
+        "min_score": 119,
+        "max_score": 123,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "012671b3-539f-4b62-8de1-43a31cec4ce8": {
+    "slug": "almaty-management-university",
+    "name": "Психология",
+    "admission_scores_2026": [
+      {
+        "ovpo": "083",
+        "specialty_code": "B041",
+        "specialty_name": "Психология",
+        "quota": "Общий конкурс",
+        "min_score": 118,
+        "max_score": 118,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "66b0fc84-007c-4f10-818b-130e788a5466": {
+    "slug": "almaty-management-university",
+    "name": "Разработка программного обеспечения и защита информации",
+    "admission_scores_2026": [
+      {
+        "ovpo": "083",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 75,
+        "max_score": 126,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "13f412f5-9445-43b4-b1a4-64760cda6170": {
+    "slug": "astana-it-university",
+    "name": "Big Data Analysis",
+    "admission_scores_2026": [
+      {
+        "ovpo": "522",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 138,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "d1dc777a-f755-418c-860b-67a4d73e00c8": {
+    "slug": "astana-it-university",
+    "name": "Computer Science",
+    "admission_scores_2026": [
+      {
+        "ovpo": "522",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 138,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "579b9062-fbbf-4198-9692-fcf8b06811c8": {
+    "slug": "astana-it-university",
+    "name": "Cybersecurity",
+    "admission_scores_2026": [
+      {
+        "ovpo": "522",
+        "specialty_code": "B058",
+        "specialty_name": "Информационная безопасность",
+        "quota": "Общий конкурс",
+        "min_score": 93,
+        "max_score": 134,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "7778fb5e-8b2c-4ca1-993a-221362176af7": {
+    "slug": "astana-it-university",
+    "name": "Digital Journalism",
+    "admission_scores_2026": [
+      {
+        "ovpo": "522",
+        "specialty_code": "B042",
+        "specialty_name": "Журналистика и репортерское дело",
+        "quota": "Общий конкурс",
+        "min_score": 128,
+        "max_score": 129,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "bedb893b-8d35-4430-bb3a-ff5460d75300": {
+    "slug": "astana-it-university",
+    "name": "IT Entrepreneurship",
+    "admission_scores_2026": [
+      {
+        "ovpo": "522",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 138,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "72c089ba-6f37-45d5-87f1-757549efb5e0": {
+    "slug": "astana-it-university",
+    "name": "Software Engineering",
+    "admission_scores_2026": [
+      {
+        "ovpo": "522",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 138,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "6094901e-c34c-45a8-9ad7-eb8e8ca8b6fc": {
+    "slug": "eagi",
+    "name": "Дошкольное образование и воспитание",
+    "admission_scores_2026": [
+      {
+        "ovpo": "047",
+        "specialty_code": "B002",
+        "specialty_name": "Дошкольное обучение и воспитание",
+        "quota": "Общий конкурс",
+        "min_score": 92,
+        "max_score": 92,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "b519d705-0f89-4b13-bece-4635e9b01de5": {
+    "slug": "eagi",
+    "name": "Педагогика и методика начального обучения",
+    "admission_scores_2026": [
+      {
+        "ovpo": "047",
+        "specialty_code": "B003",
+        "specialty_name": "Педагогика и методика начального обучения",
+        "quota": "Общий конкурс",
+        "min_score": 106,
+        "max_score": 106,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "ecab9071-0d58-47ea-898c-2262d2b0a4c5": {
+    "slug": "egipetskij-universitet-islamskoj-kultury-nur-mubarak",
+    "name": "Исламоведение",
+    "admission_scores_2026": [
+      {
+        "ovpo": "503",
+        "specialty_code": "B033",
+        "specialty_name": "Религия и теология",
+        "quota": "Общий конкурс",
+        "min_score": 127,
+        "max_score": 130,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "17a6a869-6b64-4778-8298-22ad597eb83f": {
+    "slug": "egipetskij-universitet-islamskoj-kultury-nur-mubarak",
+    "name": "Религиоведение",
+    "admission_scores_2026": [
+      {
+        "ovpo": "503",
+        "specialty_code": "B033",
+        "specialty_name": "Религия и теология",
+        "quota": "Общий конкурс",
+        "min_score": 127,
+        "max_score": 130,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "9e4274cf-5c16-424b-8aa1-8057c689b337": {
+    "slug": "egipetskij-universitet-islamskoj-kultury-nur-mubarak",
+    "name": "Теология",
+    "admission_scores_2026": [
+      {
+        "ovpo": "503",
+        "specialty_code": "B033",
+        "specialty_name": "Религия и теология",
+        "quota": "Общий конкурс",
+        "min_score": 127,
+        "max_score": 130,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "4818af2d-5f5c-4ab9-8537-8ec5b5e11bd9": {
+    "slug": "esil-university",
+    "name": "Вычислительная техника и программное обеспечение",
+    "admission_scores_2026": [
+      {
+        "ovpo": "173",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 50,
+        "max_score": 92,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "4c9b0784-e177-4713-b52c-c12e2462a2ec": {
+    "slug": "esil-university",
+    "name": "Информационные системы",
+    "admission_scores_2026": [
+      {
+        "ovpo": "173",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 50,
+        "max_score": 92,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "e2d265d5-af5c-4d20-9c06-54208eb9e467": {
+    "slug": "esil-university",
+    "name": "Информационные технологии и защита данных",
+    "admission_scores_2026": [
+      {
+        "ovpo": "173",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 50,
+        "max_score": 92,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "30ceaa3a-2317-4281-8292-85d3008d7e93": {
+    "slug": "esil-university",
+    "name": "Социальная работа",
+    "admission_scores_2026": [
+      {
+        "ovpo": "173",
+        "specialty_code": "B090",
+        "specialty_name": "Социальная работа",
+        "quota": "Общий конкурс",
+        "min_score": 78,
+        "max_score": 89,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "41c1800d-0350-401f-9087-d69c952c64bf": {
+    "slug": "esil-university",
+    "name": "Статистика",
+    "admission_scores_2026": [
+      {
+        "ovpo": "173",
+        "specialty_code": "B055",
+        "specialty_name": "Математика и статистика",
+        "quota": "Общий конкурс",
+        "min_score": 67,
+        "max_score": 105,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "60d36149-ccaa-43d0-80b5-ddd055574f8d": {
+    "slug": "esil-university",
+    "name": "Учитель информатики",
+    "admission_scores_2026": [
+      {
+        "ovpo": "173",
+        "specialty_code": "B011",
+        "specialty_name": "Подготовка учителей информатики",
+        "quota": "Общий конкурс",
+        "min_score": 81,
+        "max_score": 96,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "cd9da006-9d31-4397-9b8e-b03fbfb8ac23": {
+    "slug": "esil-university",
+    "name": "Учитель математики",
+    "admission_scores_2026": [
+      {
+        "ovpo": "173",
+        "specialty_code": "B009",
+        "specialty_name": "Подготовка учителей математики",
+        "quota": "Общий конкурс",
+        "min_score": 92,
+        "max_score": 95,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "42282b13-a9b9-4eac-8aff-887b4646d2c4": {
+    "slug": "kaspijskij-universitet",
+    "name": "Архитектура",
+    "admission_scores_2026": [
+      {
+        "ovpo": "079",
+        "specialty_code": "B073",
+        "specialty_name": "Архитектура",
+        "quota": "Общий конкурс",
+        "min_score": 122,
+        "max_score": 129,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "ab8ebd45-e50c-472e-9df3-6c68b66afecf": {
+    "slug": "kaspijskij-universitet",
+    "name": "Дизайн",
+    "admission_scores_2026": [
+      {
+        "ovpo": "079",
+        "specialty_code": "B031",
+        "specialty_name": "Мода, дизайн",
+        "quota": "Общий конкурс",
+        "min_score": 126,
+        "max_score": 126,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "791e0f8e-844a-4b0e-8246-715efd79580b": {
+    "slug": "kaspijskij-universitet",
+    "name": "Организационная психология",
+    "admission_scores_2026": [
+      {
+        "ovpo": "079",
+        "specialty_code": "B041",
+        "specialty_name": "Психология",
+        "quota": "Общий конкурс",
+        "min_score": 110,
+        "max_score": 110,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "099b69ef-6a53-4299-a829-8459b91cf9e5": {
+    "slug": "kazahskaya-akademiya-sporta-i-turizma",
+    "name": "Адаптивная физическая культура и спорт",
+    "admission_scores_2026": [
+      {
+        "ovpo": "020",
+        "specialty_code": "B005",
+        "specialty_name": "Подготовка учителей физической культуры",
+        "quota": "Общий конкурс",
+        "min_score": 114,
+        "max_score": 130,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "c3b4f4e5-1bb0-4f3e-b423-c4462d4766bc": {
+    "slug": "kazahskaya-akademiya-sporta-i-turizma",
+    "name": "Подготовка учителя физической культуры и тренера по конным видам спорта",
+    "admission_scores_2026": [
+      {
+        "ovpo": "020",
+        "specialty_code": "B005",
+        "specialty_name": "Подготовка учителей физической культуры",
+        "quota": "Общий конкурс",
+        "min_score": 114,
+        "max_score": 130,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "3ea76096-44b3-4216-b9c8-31d4c0c5409f": {
+    "slug": "kazahskaya-akademiya-sporta-i-turizma",
+    "name": "Физическая культура и спорт",
+    "admission_scores_2026": [
+      {
+        "ovpo": "020",
+        "specialty_code": "B005",
+        "specialty_name": "Подготовка учителей физической культуры",
+        "quota": "Общий конкурс",
+        "min_score": 114,
+        "max_score": 130,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "42983dbf-e8a9-40d3-8187-75cb41b363e6": {
+    "slug": "kazahskaya-avtomobilno-dorozhnaya-akademiya",
+    "name": "Транспорт, транспортная техника и технологии",
+    "admission_scores_2026": [
+      {
+        "ovpo": "078",
+        "specialty_code": "B065",
+        "specialty_name": "Транспортная техника и технологии",
+        "quota": "Общий конкурс",
+        "min_score": 67,
+        "max_score": 68,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "ab9c0f85-2eaf-4d72-878f-975283a2eb3f": {
+    "slug": "kazahskaya-avtomobilno-dorozhnaya-akademiya",
+    "name": "Транспортное строительство",
+    "admission_scores_2026": [
+      {
+        "ovpo": "078",
+        "specialty_code": "B126",
+        "specialty_name": "Транспортное строительство",
+        "quota": "Общий конкурс",
+        "min_score": 61,
+        "max_score": 77,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "db8f22ee-584d-48fc-94d1-961d2cb0d5ea": {
+    "slug": "kazahskij-gosudarstvennyj-zhenskij-pedagogicheskij-universitet",
+    "name": "Библиотечное дело",
+    "admission_scores_2026": [
+      {
+        "ovpo": "025",
+        "specialty_code": "B043",
+        "specialty_name": "Библиотечное дело, обработка информации и архивное дело",
+        "quota": "Общий конкурс",
+        "min_score": 117,
+        "max_score": 124,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "9b9219f0-3646-4fc6-a232-cfdf40033e62": {
+    "slug": "kazahskij-gosudarstvennyj-zhenskij-pedagogicheskij-universitet",
+    "name": "География",
+    "admission_scores_2026": [
+      {
+        "ovpo": "025",
+        "specialty_code": "B014",
+        "specialty_name": "Подготовка учителей географии",
+        "quota": "Общий конкурс",
+        "min_score": 88,
+        "max_score": 120,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "7382ac29-bcc3-47e5-af82-8f3e45239516": {
+    "slug": "kazahskij-gosudarstvennyj-zhenskij-pedagogicheskij-universitet",
+    "name": "География-История",
+    "admission_scores_2026": [
+      {
+        "ovpo": "025",
+        "specialty_code": "B014",
+        "specialty_name": "Подготовка учителей географии",
+        "quota": "Общий конкурс",
+        "min_score": 88,
+        "max_score": 120,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "09c85f99-1813-4aef-a41a-f164a46bd1a7": {
+    "slug": "kazahskij-gosudarstvennyj-zhenskij-pedagogicheskij-universitet",
+    "name": "Дефектология",
+    "admission_scores_2026": [
+      {
+        "ovpo": "025",
+        "specialty_code": "B020",
+        "specialty_name": "Специальная педагогика",
+        "quota": "Общий конкурс",
+        "min_score": 92,
+        "max_score": 133,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "0cf9fb84-33cf-4aaf-b090-72fb18d10dc8": {
+    "slug": "kazahskij-gosudarstvennyj-zhenskij-pedagogicheskij-universitet",
+    "name": "Иностранные языки",
+    "admission_scores_2026": [
+      {
+        "ovpo": "025",
+        "specialty_code": "B018",
+        "specialty_name": "Подготовка учителей иностранного языка",
+        "quota": "Общий конкурс",
+        "min_score": 105,
+        "max_score": 136,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "c8a0f3b3-27e0-4db0-90e9-f68142ce6660": {
+    "slug": "kazahskij-gosudarstvennyj-zhenskij-pedagogicheskij-universitet",
+    "name": "История",
+    "admission_scores_2026": [
+      {
+        "ovpo": "025",
+        "specialty_code": "B034",
+        "specialty_name": "История",
+        "quota": "Общий конкурс",
+        "min_score": 108,
+        "max_score": 112,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "46db66ed-101a-4f1f-8cb9-e2f62c0829fa": {
+    "slug": "kazahskij-gosudarstvennyj-zhenskij-pedagogicheskij-universitet",
+    "name": "Культурно-досуговая работа",
+    "admission_scores_2026": [
+      {
+        "ovpo": "025",
+        "specialty_code": "B092",
+        "specialty_name": "Досуг",
+        "quota": "Общий конкурс",
+        "min_score": 121,
+        "max_score": 127,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "f823bd1c-8794-4db9-9e75-c60d1b9c677d": {
+    "slug": "kazahskij-gosudarstvennyj-zhenskij-pedagogicheskij-universitet",
+    "name": "Русский язык и литература",
+    "admission_scores_2026": [
+      {
+        "ovpo": "025",
+        "specialty_code": "B017",
+        "specialty_name": "Подготовка учителей русского языка и литературы",
+        "quota": "Общий конкурс",
+        "min_score": 81,
+        "max_score": 129,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "08e250cd-3078-498c-937d-ecd9d8670962": {
+    "slug": "kazahskij-gosudarstvennyj-zhenskij-pedagogicheskij-universitet",
+    "name": "Социальная педагогика и самопознание",
+    "admission_scores_2026": [
+      {
+        "ovpo": "025",
+        "specialty_code": "B019",
+        "specialty_name": "Подготовка социальных педагогов",
+        "quota": "Общий конкурс",
+        "min_score": 81,
+        "max_score": 98,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "78e64c4a-f8b6-41b2-8fc5-e24727b5e739": {
+    "slug": "kazahskij-naczionalnyj-agrarnyj-issledovatelskij-universitet",
+    "name": "Аграрная техника и технология",
+    "admission_scores_2026": [
+      {
+        "ovpo": "024",
+        "specialty_code": "B183",
+        "specialty_name": "Агроинженерия",
+        "quota": "Общий конкурс",
+        "min_score": 62,
+        "max_score": 68,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "822a4061-511e-448c-8ecf-128562c3bd52": {
+    "slug": "kazahskij-naczionalnyj-agrarnyj-issledovatelskij-universitet",
+    "name": "Агрономия",
+    "admission_scores_2026": [
+      {
+        "ovpo": "024",
+        "specialty_code": "B077",
+        "specialty_name": "Растениеводство",
+        "quota": "Общий конкурс",
+        "min_score": 68,
+        "max_score": 76,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "db24b836-7e5a-45ff-94d1-7f0d8051c8be": {
+    "slug": "kazahskij-naczionalnyj-agrarnyj-issledovatelskij-universitet",
+    "name": "Ветеринарная санитария",
+    "admission_scores_2026": [
+      {
+        "ovpo": "024",
+        "specialty_code": "B078",
+        "specialty_name": "Животноводство",
+        "quota": "Общий конкурс",
+        "min_score": 59,
+        "max_score": 65,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "51298cee-c5c1-4b15-885b-e34428cee77a": {
+    "slug": "kazahskij-naczionalnyj-agrarnyj-issledovatelskij-universitet",
+    "name": "Водное хозяйство и мелиорация",
+    "admission_scores_2026": [
+      {
+        "ovpo": "024",
+        "specialty_code": "B082",
+        "specialty_name": "Водные ресурсы и водопользования",
+        "quota": "Общий конкурс",
+        "min_score": 62,
+        "max_score": 83,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "27f5d2a0-be81-4930-b12a-215bc11260f6": {
+    "slug": "kazahskij-naczionalnyj-agrarnyj-issledovatelskij-universitet",
+    "name": "Информационные системы",
+    "admission_scores_2026": [
+      {
+        "ovpo": "024",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 67,
+        "max_score": 71,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "705b1c9e-badf-4621-bdee-598f5a0d6fd6": {
+    "slug": "kazahskij-naczionalnyj-agrarnyj-issledovatelskij-universitet",
+    "name": "Машиностроение",
+    "admission_scores_2026": [
+      {
+        "ovpo": "024",
+        "specialty_code": "B064",
+        "specialty_name": "Механика и металлообработка",
+        "quota": "Общий конкурс",
+        "min_score": 67,
+        "max_score": 76,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "ab23bf63-0ba9-4a73-bbbd-7dccc704b9b7": {
+    "slug": "kazahskij-naczionalnyj-agrarnyj-issledovatelskij-universitet",
+    "name": "Наука о растениях и технологии",
+    "admission_scores_2026": [
+      {
+        "ovpo": "024",
+        "specialty_code": "B077",
+        "specialty_name": "Растениеводство",
+        "quota": "Общий конкурс",
+        "min_score": 68,
+        "max_score": 76,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "a60a7b67-b9e6-4cd3-9a41-bbc4816bb708": {
+    "slug": "kazahskij-naczionalnyj-agrarnyj-issledovatelskij-universitet",
+    "name": "Технология производства продуктов животноводства",
+    "admission_scores_2026": [
+      {
+        "ovpo": "024",
+        "specialty_code": "B078",
+        "specialty_name": "Животноводство",
+        "quota": "Общий конкурс",
+        "min_score": 59,
+        "max_score": 65,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "e7a8eeef-7210-4bb5-b340-484fd5ba150f": {
+    "slug": "kazahskij-naczionalnyj-mediczinskij-universitet-im-s-d-asfendiyarova",
+    "name": "Технология фармацевтического производства",
+    "admission_scores_2026": [
+      {
+        "ovpo": "026",
+        "specialty_code": "B072",
+        "specialty_name": "Технология фармацевтического производства",
+        "quota": "Общий конкурс",
+        "min_score": 94,
+        "max_score": 115,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "2990eefe-ad3a-4b04-891d-da10bcb8105b": {
+    "slug": "kazahstansko-britanskij-tehnicheskij-universitet",
+    "name": "Бизнес аналитика и искусственный интеллект",
+    "admission_scores_2026": [
+      {
+        "ovpo": "421",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 110,
+        "max_score": 139,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "fc6ad7fe-94c9-4f5c-8d65-04145175cdc0": {
+    "slug": "kazahstansko-britanskij-tehnicheskij-universitet",
+    "name": "Вычислительная техника и программное обеспечение",
+    "admission_scores_2026": [
+      {
+        "ovpo": "421",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 110,
+        "max_score": 139,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "4488c027-d342-4c1f-8d21-f389a10e77bb": {
+    "slug": "kazahstansko-britanskij-tehnicheskij-universitet",
+    "name": "Информационные системы",
+    "admission_scores_2026": [
+      {
+        "ovpo": "421",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 110,
+        "max_score": 139,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "60fd6f47-e5c8-4291-8217-b619b030f50e": {
+    "slug": "kazahstansko-britanskij-tehnicheskij-universitet",
+    "name": "Информационные системы в бизнесе",
+    "admission_scores_2026": [
+      {
+        "ovpo": "421",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 110,
+        "max_score": 139,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "1ee797e5-2d9f-4eb6-b0e9-d1050c2f88cf": {
+    "slug": "kazahstansko-britanskij-tehnicheskij-universitet",
+    "name": "Судовождение",
+    "admission_scores_2026": [
+      {
+        "ovpo": "421",
+        "specialty_code": "B066",
+        "specialty_name": "Морской транспорт и технологии",
+        "quota": "Общий конкурс",
+        "min_score": 70,
+        "max_score": 124,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "c13934c5-3738-4d48-977d-44d4cbfa6877": {
+    "slug": "kazahstansko-britanskij-tehnicheskij-universitet",
+    "name": "Урановое дело",
+    "admission_scores_2026": [
+      {
+        "ovpo": "421",
+        "specialty_code": "B071",
+        "specialty_name": "Горное дело и добыча полезных ископаемых",
+        "quota": "Общий конкурс",
+        "min_score": 77,
+        "max_score": 140,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "d1fde168-a027-4f06-9ce1-9dc66af0378b": {
+    "slug": "kazahstansko-britanskij-tehnicheskij-universitet",
+    "name": "Финансы и Экономика",
+    "admission_scores_2026": [
+      {
+        "ovpo": "421",
+        "specialty_code": "B046",
+        "specialty_name": "Финансы, экономика, банковское и страховое дело",
+        "quota": "Общий конкурс",
+        "min_score": 128,
+        "max_score": 138,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "40b1c22d-69fd-4c6e-9ea4-705cb6f8a026": {
+    "slug": "kazahstansko-britanskij-tehnicheskij-universitet",
+    "name": "Эксплуатация судовых энергетических установок",
+    "admission_scores_2026": [
+      {
+        "ovpo": "421",
+        "specialty_code": "B066",
+        "specialty_name": "Морской транспорт и технологии",
+        "quota": "Общий конкурс",
+        "min_score": 70,
+        "max_score": 124,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "006fc9b2-b8fc-4f04-9bfc-85aa67511e2e": {
+    "slug": "kazahstansko-nemeczkij-universitet",
+    "name": "Industrial management",
+    "admission_scores_2026": [
+      {
+        "ovpo": "082",
+        "specialty_code": "B044",
+        "specialty_name": "Менеджмент и управление",
+        "quota": "Общий конкурс",
+        "min_score": 126,
+        "max_score": 126,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "94d366d1-6e36-4bf7-bd68-d74b48e37ec6": {
+    "slug": "kazahstansko-nemeczkij-universitet",
+    "name": "Маркетинг",
+    "admission_scores_2026": [
+      {
+        "ovpo": "082",
+        "specialty_code": "B047",
+        "specialty_name": "Маркетинг и реклама",
+        "quota": "Общий конкурс",
+        "min_score": 124,
+        "max_score": 124,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "8ff7e9e4-be6b-4e03-839b-b45cfa5e7c20": {
+    "slug": "kazahstansko-nemeczkij-universitet",
+    "name": "Менеджмент предприятий",
+    "admission_scores_2026": [
+      {
+        "ovpo": "082",
+        "specialty_code": "B044",
+        "specialty_name": "Менеджмент и управление",
+        "quota": "Общий конкурс",
+        "min_score": 126,
+        "max_score": 126,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "25f53da1-e83f-4f57-97a6-9d27dc5fca52": {
+    "slug": "kazahstansko-rossijskij-mediczinskij-universitet",
+    "name": "Фармация",
+    "admission_scores_2026": [
+      {
+        "ovpo": "080",
+        "specialty_code": "B085",
+        "specialty_name": "Фармация",
+        "quota": "Общий конкурс",
+        "min_score": 107,
+        "max_score": 125,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "c0788077-bb19-4f33-871a-13fe202d8580": {
+    "slug": "kazakh-ablai-khan-university-of-international-relations-and-world-languages",
+    "name": "Востоковедение",
+    "admission_scores_2026": [
+      {
+        "ovpo": "023",
+        "specialty_code": "B135",
+        "specialty_name": "Востоковедение",
+        "quota": "Общий конкурс",
+        "min_score": 129,
+        "max_score": 132,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "9b0501f8-4360-4c94-9020-8d0010a59f1e": {
+    "slug": "kazakh-ablai-khan-university-of-international-relations-and-world-languages",
+    "name": "Журналистика (бакалавр)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "023",
+        "specialty_code": "B042",
+        "specialty_name": "Журналистика и репортерское дело",
+        "quota": "Общий конкурс",
+        "min_score": 128,
+        "max_score": 129,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "e030dfff-df08-47c8-a5ad-e3bd19650b75": {
+    "slug": "kazakh-ablai-khan-university-of-international-relations-and-world-languages",
+    "name": "Переводческое дело (английский, французский, испанский, немецкий, китайский, корейский, арабский)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "023",
+        "specialty_code": "B036",
+        "specialty_name": "Переводческое дело",
+        "quota": "Общий конкурс",
+        "min_score": 133,
+        "max_score": 133,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "68959b65-b0dd-4b78-b238-c806f867be11": {
+    "slug": "kazgyuu",
+    "name": "Журналистика: аналитика и расследования",
+    "admission_scores_2026": [
+      {
+        "ovpo": "174",
+        "specialty_code": "B042",
+        "specialty_name": "Журналистика и репортерское дело",
+        "quota": "Общий конкурс",
+        "min_score": 127,
+        "max_score": 130,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "bda3ee52-47cf-47a8-8440-ce14d43eaef7": {
+    "slug": "kazgyuu",
+    "name": "Маркетинг",
+    "admission_scores_2026": [
+      {
+        "ovpo": "174",
+        "specialty_code": "B047",
+        "specialty_name": "Маркетинг и реклама",
+        "quota": "Общий конкурс",
+        "min_score": 120,
+        "max_score": 133,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "3c5db0f9-d72a-40fe-95c6-5e18b51115f5": {
+    "slug": "kazgyuu",
+    "name": "Международное право",
+    "admission_scores_2026": [
+      {
+        "ovpo": "174",
+        "specialty_code": "B049",
+        "specialty_name": "Право",
+        "quota": "Общий конкурс",
+        "min_score": 126,
+        "max_score": 139,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "aca1aede-b5f0-4c30-b752-90540e6b279b": {
+    "slug": "kazgyuu",
+    "name": "Международные отношения",
+    "admission_scores_2026": [
+      {
+        "ovpo": "174",
+        "specialty_code": "B140",
+        "specialty_name": "Международные отношения и дипломатия",
+        "quota": "Общий конкурс",
+        "min_score": 135,
+        "max_score": 140,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "2461d1a9-d229-4a82-9759-646faf0db9c8": {
+    "slug": "kazgyuu",
+    "name": "Менеджмент",
+    "admission_scores_2026": [
+      {
+        "ovpo": "174",
+        "specialty_code": "B044",
+        "specialty_name": "Менеджмент и управление",
+        "quota": "Общий конкурс",
+        "min_score": 125,
+        "max_score": 140,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "b0d466c8-825c-4dbc-9c06-26888bf7cb6d": {
+    "slug": "kazgyuu",
+    "name": "Переводческое дело",
+    "admission_scores_2026": [
+      {
+        "ovpo": "174",
+        "specialty_code": "B036",
+        "specialty_name": "Переводческое дело",
+        "quota": "Общий конкурс",
+        "min_score": 132,
+        "max_score": 140,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "ab473b50-6520-465e-8332-a7604e65ebb3": {
+    "slug": "kazgyuu",
+    "name": "Право и правоохранительная деятельность",
+    "admission_scores_2026": [
+      {
+        "ovpo": "174",
+        "specialty_code": "B049",
+        "specialty_name": "Право",
+        "quota": "Общий конкурс",
+        "min_score": 126,
+        "max_score": 139,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "11f89763-13af-4222-9759-e8db124e08cf": {
+    "slug": "kazgyuu",
+    "name": "Психология",
+    "admission_scores_2026": [
+      {
+        "ovpo": "174",
+        "specialty_code": "B041",
+        "specialty_name": "Психология",
+        "quota": "Общий конкурс",
+        "min_score": 120,
+        "max_score": 136,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "4ac58fa1-d704-4767-ae59-da8221bc7474": {
+    "slug": "kazgyuu",
+    "name": "Туризм",
+    "admission_scores_2026": [
+      {
+        "ovpo": "174",
+        "specialty_code": "B091",
+        "specialty_name": "Туризм",
+        "quota": "Общий конкурс",
+        "min_score": 130,
+        "max_score": 139,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "2b84ed6d-8dd2-48d3-9dab-e9bfe9adea05": {
+    "slug": "kazgyuu",
+    "name": "Учёт и аудит",
+    "admission_scores_2026": [
+      {
+        "ovpo": "174",
+        "specialty_code": "B045",
+        "specialty_name": "Аудит и налогообложение",
+        "quota": "Общий конкурс",
+        "min_score": 126,
+        "max_score": 139,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "2dd58e65-03c4-49b1-a052-2602fae3563e": {
+    "slug": "kazgyuu",
+    "name": "Финансы",
+    "admission_scores_2026": [
+      {
+        "ovpo": "174",
+        "specialty_code": "B046",
+        "specialty_name": "Финансы, экономика, банковское и страховое дело",
+        "quota": "Общий конкурс",
+        "min_score": 130,
+        "max_score": 139,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "195b0002-4927-4870-83e1-c540ecd9108e": {
+    "slug": "kazgyuu",
+    "name": "Экономика и наука о данных",
+    "admission_scores_2026": [
+      {
+        "ovpo": "174",
+        "specialty_code": "B046",
+        "specialty_name": "Финансы, экономика, банковское и страховое дело",
+        "quota": "Общий конкурс",
+        "min_score": 130,
+        "max_score": 139,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "8f68ce56-76f6-4e68-8275-1728a816fe73": {
+    "slug": "kazgyuu",
+    "name": "Юриспруденция",
+    "admission_scores_2026": [
+      {
+        "ovpo": "174",
+        "specialty_code": "B049",
+        "specialty_name": "Право",
+        "quota": "Общий конкурс",
+        "min_score": 126,
+        "max_score": 139,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "dffb6cda-bd4f-471c-8c85-b5d6cfaf5f2f": {
+    "slug": "kazutb",
+    "name": "Fashion-индустрия: технологии и конструирование",
+    "admission_scores_2026": [
+      {
+        "ovpo": "182",
+        "specialty_code": "B070",
+        "specialty_name": "Текстиль: одежда, обувь и кожаные изделия",
+        "quota": "Общий конкурс",
+        "min_score": 50,
+        "max_score": 86,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "8ddffe7d-9dfa-4aaa-91ad-f48b4f756024": {
+    "slug": "kazutb",
+    "name": "IT-технологии в сфере сервиса",
+    "admission_scores_2026": [
+      {
+        "ovpo": "182",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 102,
+        "max_score": 110,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "b4843334-e060-4a61-8cf8-4d95a7dc19dc": {
+    "slug": "kazutb",
+    "name": "Горное дело",
+    "admission_scores_2026": [
+      {
+        "ovpo": "182",
+        "specialty_code": "B071",
+        "specialty_name": "Горное дело и добыча полезных ископаемых",
+        "quota": "Общий конкурс",
+        "min_score": 77,
+        "max_score": 103,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "3dfad789-4de3-45c4-86a5-136741b1c9be": {
+    "slug": "kazutb",
+    "name": "Дизайн",
+    "admission_scores_2026": [
+      {
+        "ovpo": "182",
+        "specialty_code": "B031",
+        "specialty_name": "Мода, дизайн",
+        "quota": "Общий конкурс",
+        "min_score": 125,
+        "max_score": 130,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "b385e12c-ade6-4214-8175-8f325675920c": {
+    "slug": "kazutb",
+    "name": "Информационные системы",
+    "admission_scores_2026": [
+      {
+        "ovpo": "182",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 102,
+        "max_score": 110,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "233189d0-0e72-407b-bcd6-b3ab05c31fa2": {
+    "slug": "kazutb",
+    "name": "Искусственный интеллект",
+    "admission_scores_2026": [
+      {
+        "ovpo": "182",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 102,
+        "max_score": 110,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "188cc773-ea6e-4ce4-b4b4-2160d3e91d22": {
+    "slug": "kazutb",
+    "name": "Ресторанное дело и гостиничный бизнес",
+    "admission_scores_2026": [
+      {
+        "ovpo": "182",
+        "specialty_code": "B093",
+        "specialty_name": "Ресторанное дело и гостиничный бизнес",
+        "quota": "Общий конкурс",
+        "min_score": 120,
+        "max_score": 120,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "5fb7cff4-d4ca-4bf4-bd83-d0155976953d": {
+    "slug": "kazutb",
+    "name": "Стандартизация и сертификация (по отраслям)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "182",
+        "specialty_code": "B076",
+        "specialty_name": "Стандартизация, сертификация и метрология (по отраслям)",
+        "quota": "Общий конкурс",
+        "min_score": 82,
+        "max_score": 87,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "7a2bf8fa-98b5-46aa-adac-7c2aaefc6873": {
+    "slug": "kazutb",
+    "name": "Технология и конструирование изделий лёгкой промышленности",
+    "admission_scores_2026": [
+      {
+        "ovpo": "182",
+        "specialty_code": "B070",
+        "specialty_name": "Текстиль: одежда, обувь и кожаные изделия",
+        "quota": "Общий конкурс",
+        "min_score": 50,
+        "max_score": 86,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "3102cc5d-e00b-4823-b276-4e93d788f4b8": {
+    "slug": "kazutb",
+    "name": "Технология продовольственных продуктов (по отраслям)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "182",
+        "specialty_code": "B068",
+        "specialty_name": "Производство продуктов питания",
+        "quota": "Общий конкурс",
+        "min_score": 74,
+        "max_score": 93,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "dc5763c5-73c2-4e67-96b0-31fb3e539e7c": {
+    "slug": "kazutb",
+    "name": "Экология",
+    "admission_scores_2026": [
+      {
+        "ovpo": "182",
+        "specialty_code": "B051",
+        "specialty_name": "Окружающая среда",
+        "quota": "Общий конкурс",
+        "min_score": 80,
+        "max_score": 100,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "4743719a-1a22-4d01-a4d2-edfbe523e889": {
+    "slug": "mezhdunarodnaya-obrazovatelnaya-korporacziya",
+    "name": "Инженерия строительных материалов и управление качеством",
+    "admission_scores_2026": [
+      {
+        "ovpo": "022",
+        "specialty_code": "B074",
+        "specialty_name": "Градостроительство, строительные работы и гражданское строительство",
+        "quota": "Общий конкурс",
+        "min_score": 86,
+        "max_score": 135,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "a350d691-e310-4441-948a-f33749efed10": {
+    "slug": "mezhdunarodnaya-obrazovatelnaya-korporacziya",
+    "name": "Информационные технологии в строительстве",
+    "admission_scores_2026": [
+      {
+        "ovpo": "022",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 100,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "d61841bf-a5b0-41ec-970c-478e85d87685": {
+    "slug": "mezhdunarodnaya-obrazovatelnaya-korporacziya",
+    "name": "Промышленный дизайн",
+    "admission_scores_2026": [
+      {
+        "ovpo": "022",
+        "specialty_code": "B031",
+        "specialty_name": "Мода, дизайн",
+        "quota": "Общий конкурс",
+        "min_score": 125,
+        "max_score": 130,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "f69cc705-b7ca-4d0e-b932-8c0f2ce20b0f": {
+    "slug": "mezhdunarodnaya-obrazovatelnaya-korporacziya",
+    "name": "Расчет и проектирование зданий и сооружений",
+    "admission_scores_2026": [
+      {
+        "ovpo": "022",
+        "specialty_code": "B074",
+        "specialty_name": "Градостроительство, строительные работы и гражданское строительство",
+        "quota": "Общий конкурс",
+        "min_score": 86,
+        "max_score": 135,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "1a2720f9-5b10-4bc6-9156-701ea44468a2": {
+    "slug": "mezhdunarodnaya-obrazovatelnaya-korporacziya",
+    "name": "Технология промышленного и гражданского строительства",
+    "admission_scores_2026": [
+      {
+        "ovpo": "022",
+        "specialty_code": "B074",
+        "specialty_name": "Градостроительство, строительные работы и гражданское строительство",
+        "quota": "Общий конкурс",
+        "min_score": 86,
+        "max_score": 135,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "2255a9f2-891f-4b2e-92b9-945d5a616095": {
+    "slug": "mezhdunarodnyj-inzhenerno-tehnologicheskij-universitet",
+    "name": "Информационные технологии в электроэнергетике",
+    "admission_scores_2026": [
+      {
+        "ovpo": "049",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 50,
+        "max_score": 83,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "21819f27-3019-4cf5-9a05-051f03674979": {
+    "slug": "mezhdunarodnyj-inzhenerno-tehnologicheskij-universitet",
+    "name": "Плодоовощеводство и агропочвоведение",
+    "admission_scores_2026": [
+      {
+        "ovpo": "049",
+        "specialty_code": "B077",
+        "specialty_name": "Растениеводство",
+        "quota": "Общий конкурс",
+        "min_score": 68,
+        "max_score": 82,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "4b0f2493-c211-4812-90be-7b87f6afc31a": {
+    "slug": "mezhdunarodnyj-inzhenerno-tehnologicheskij-universitet",
+    "name": "Программная инженерия",
+    "admission_scores_2026": [
+      {
+        "ovpo": "049",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 50,
+        "max_score": 83,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "ee360357-266e-4aec-b126-b5675b4178f1": {
+    "slug": "mezhdunarodnyj-inzhenerno-tehnologicheskij-universitet",
+    "name": "Радиотехника, электроника и телекоммуникации",
+    "admission_scores_2026": [
+      {
+        "ovpo": "049",
+        "specialty_code": "B059",
+        "specialty_name": "Коммуникации и коммуникационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 50,
+        "max_score": 81,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "aa86e86d-bea2-4f03-ab73-a4fa40eb624a": {
+    "slug": "mezhdunarodnyj-inzhenerno-tehnologicheskij-universitet",
+    "name": "Стандартизация и сертификация",
+    "admission_scores_2026": [
+      {
+        "ovpo": "049",
+        "specialty_code": "B076",
+        "specialty_name": "Стандартизация, сертификация и метрология (по отраслям)",
+        "quota": "Общий конкурс",
+        "min_score": 84,
+        "max_score": 94,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "57ba13f8-caa6-4985-9908-56a92813a315": {
+    "slug": "mezhdunarodnyj-universitet-informaczionnyh-tehnologij",
+    "name": "Аппаратные средства защиты информации",
+    "admission_scores_2026": [
+      {
+        "ovpo": "190",
+        "specialty_code": "B058",
+        "specialty_name": "Информационная безопасность",
+        "quota": "Общий конкурс",
+        "min_score": 79,
+        "max_score": 128,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "6b4565af-104b-4954-857e-a4d3ae398d50": {
+    "slug": "mezhdunarodnyj-universitet-informaczionnyh-tehnologij",
+    "name": "Вычислительная техника и программное обеспечение",
+    "admission_scores_2026": [
+      {
+        "ovpo": "190",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 135,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "2f676ff4-677a-4d4c-a0fe-9103079f638c": {
+    "slug": "mezhdunarodnyj-universitet-informaczionnyh-tehnologij",
+    "name": "Инновационный менеджмент",
+    "admission_scores_2026": [
+      {
+        "ovpo": "190",
+        "specialty_code": "B044",
+        "specialty_name": "Менеджмент и управление",
+        "quota": "Общий конкурс",
+        "min_score": 127,
+        "max_score": 127,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "c9d737de-0a63-435e-8637-32eadd207293": {
+    "slug": "mezhdunarodnyj-universitet-informaczionnyh-tehnologij",
+    "name": "Компьютерная безопасность",
+    "admission_scores_2026": [
+      {
+        "ovpo": "190",
+        "specialty_code": "B058",
+        "specialty_name": "Информационная безопасность",
+        "quota": "Общий конкурс",
+        "min_score": 79,
+        "max_score": 128,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "c739384a-3335-4976-852c-b6d512e32c11": {
+    "slug": "mezhdunarodnyj-universitet-informaczionnyh-tehnologij",
+    "name": "Компьютерные науки",
+    "admission_scores_2026": [
+      {
+        "ovpo": "190",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 135,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "ac5ed861-0da3-4ed7-a325-eaa4c575f8bd": {
+    "slug": "mezhdunarodnyj-universitet-informaczionnyh-tehnologij",
+    "name": "Математическое и компьютерное моделирование",
+    "admission_scores_2026": [
+      {
+        "ovpo": "190",
+        "specialty_code": "B157",
+        "specialty_name": "Математическое и компьютерное моделирование",
+        "quota": "Общий конкурс",
+        "min_score": 75,
+        "max_score": 109,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "05a34a6f-7cfb-4a8f-9799-cdfbfe67bbea": {
+    "slug": "mezhdunarodnyj-universitet-informaczionnyh-tehnologij",
+    "name": "Программная инженерия",
+    "admission_scores_2026": [
+      {
+        "ovpo": "190",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 135,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "d9504711-911a-46db-bb70-e2e3a8a73ec8": {
+    "slug": "mezhdunarodnyj-universitet-informaczionnyh-tehnologij",
+    "name": "Сетевая безопасность",
+    "admission_scores_2026": [
+      {
+        "ovpo": "190",
+        "specialty_code": "B058",
+        "specialty_name": "Информационная безопасность",
+        "quota": "Общий конкурс",
+        "min_score": 79,
+        "max_score": 128,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "60c4b052-550e-43c3-a70f-7dca52441bbc": {
+    "slug": "mezhdunarodnyj-universitet-informaczionnyh-tehnologij",
+    "name": "Телекоммуникационные системы и сети",
+    "admission_scores_2026": [
+      {
+        "ovpo": "190",
+        "specialty_code": "B059",
+        "specialty_name": "Коммуникации и коммуникационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 77,
+        "max_score": 109,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "f1c24a93-2f51-42ca-b1f3-8c948079147e": {
+    "slug": "narxoz-university",
+    "name": "IT в бизнесе",
+    "admission_scores_2026": [
+      {
+        "ovpo": "021",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 105,
+        "max_score": 134,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "e964bf18-d6bf-4c7a-8d84-474cf9204ec7": {
+    "slug": "narxoz-university",
+    "name": "Государственное управление",
+    "admission_scores_2026": [
+      {
+        "ovpo": "021",
+        "specialty_code": "B044",
+        "specialty_name": "Менеджмент и управление",
+        "quota": "Общий конкурс",
+        "min_score": 126,
+        "max_score": 137,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "6fb58c23-7141-4671-9ec7-53400eba32a4": {
+    "slug": "narxoz-university",
+    "name": "Кибербезопасность",
+    "admission_scores_2026": [
+      {
+        "ovpo": "021",
+        "specialty_code": "B058",
+        "specialty_name": "Информационная безопасность",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 115,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "c2897e2c-8e42-4f95-8a0f-2cefdffe70a2": {
+    "slug": "narxoz-university",
+    "name": "Маркетинг",
+    "admission_scores_2026": [
+      {
+        "ovpo": "021",
+        "specialty_code": "B047",
+        "specialty_name": "Маркетинг и реклама",
+        "quota": "Общий конкурс",
+        "min_score": 118,
+        "max_score": 126,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "099c2b56-dac7-4cbf-89c4-628f9478c29c": {
+    "slug": "narxoz-university",
+    "name": "Менеджмент",
+    "admission_scores_2026": [
+      {
+        "ovpo": "021",
+        "specialty_code": "B044",
+        "specialty_name": "Менеджмент и управление",
+        "quota": "Общий конкурс",
+        "min_score": 126,
+        "max_score": 137,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "069660c3-20f7-4106-957b-4ce84c1f9df2": {
+    "slug": "narxoz-university",
+    "name": "Менеджмент — трек «Управление проектами» (бакалавр, BBA)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "021",
+        "specialty_code": "B044",
+        "specialty_name": "Менеджмент и управление",
+        "quota": "Общий конкурс",
+        "min_score": 126,
+        "max_score": 137,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "badbedfa-d8e0-47c1-9ec9-7757ac052996": {
+    "slug": "narxoz-university",
+    "name": "Окружающая среда и устойчивое развитие",
+    "admission_scores_2026": [
+      {
+        "ovpo": "021",
+        "specialty_code": "B051",
+        "specialty_name": "Окружающая среда",
+        "quota": "Общий конкурс",
+        "min_score": 81,
+        "max_score": 125,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "b941abb5-4cbf-4e18-99d0-94a8b6fdccf8": {
+    "slug": "narxoz-university",
+    "name": "Программная инженерия",
+    "admission_scores_2026": [
+      {
+        "ovpo": "021",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 105,
+        "max_score": 134,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "db0c7b00-5260-402e-be0a-543d065a2b6f": {
+    "slug": "narxoz-university",
+    "name": "Психологическое консультирование",
+    "admission_scores_2026": [
+      {
+        "ovpo": "021",
+        "specialty_code": "B041",
+        "specialty_name": "Психология",
+        "quota": "Общий конкурс",
+        "min_score": 104,
+        "max_score": 125,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "31dd88a7-9af2-42b4-b62a-c59e383f85da": {
+    "slug": "narxoz-university",
+    "name": "Социология",
+    "admission_scores_2026": [
+      {
+        "ovpo": "021",
+        "specialty_code": "B038",
+        "specialty_name": "Социология",
+        "quota": "Общий конкурс",
+        "min_score": 108,
+        "max_score": 120,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "8b2e99d9-ce17-4906-bf56-bbf8c6113d05": {
+    "slug": "narxoz-university",
+    "name": "Туризм и гостеприимство",
+    "admission_scores_2026": [
+      {
+        "ovpo": "021",
+        "specialty_code": "B093",
+        "specialty_name": "Ресторанное дело и гостиничный бизнес",
+        "quota": "Общий конкурс",
+        "min_score": 119,
+        "max_score": 137,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "d8ec3cfd-e91e-4382-84e1-7caf45497de1": {
+    "slug": "narxoz-university",
+    "name": "Экология",
+    "admission_scores_2026": [
+      {
+        "ovpo": "021",
+        "specialty_code": "B051",
+        "specialty_name": "Окружающая среда",
+        "quota": "Общий конкурс",
+        "min_score": 81,
+        "max_score": 125,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "94f41660-b827-4bac-9546-82ce38583d29": {
+    "slug": "qairu",
+    "name": "AI and Machine Learning",
+    "admission_scores_2026": [
+      {
+        "ovpo": "111",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 100,
+        "max_score": 139,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "23baef73-64f9-4c9c-9f6a-77e1834e2a56": {
+    "slug": "satbayev-university",
+    "name": "Computer Science",
+    "admission_scores_2026": [
+      {
+        "ovpo": "029",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 80,
+        "max_score": 123,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "cc7e5d05-51a6-46c4-b31e-d01727d7d7f5": {
+    "slug": "satbayev-university",
+    "name": "Автоматизация и управление",
+    "admission_scores_2026": [
+      {
+        "ovpo": "029",
+        "specialty_code": "B063",
+        "specialty_name": "Электротехника и автоматизация",
+        "quota": "Общий конкурс",
+        "min_score": 80,
+        "max_score": 135,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "c4bc57c9-4b29-4314-8921-1ca4c9f7e073": {
+    "slug": "satbayev-university",
+    "name": "Архитектура (бакалавр)",
+    "admission_scores_2026": [
+      {
+        "ovpo": "029",
+        "specialty_code": "B073",
+        "specialty_name": "Архитектура",
+        "quota": "Общий конкурс",
+        "min_score": 81,
+        "max_score": 129,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "6910b553-334b-438b-a875-36387159ea0c": {
+    "slug": "satbayev-university",
+    "name": "Геология и разведка месторождений",
+    "admission_scores_2026": [
+      {
+        "ovpo": "029",
+        "specialty_code": "B052",
+        "specialty_name": "Наука о земле",
+        "quota": "Общий конкурс",
+        "min_score": 81,
+        "max_score": 114,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "69cb225a-58f6-4b40-950d-fa4a4e185db0": {
+    "slug": "satbayev-university",
+    "name": "Горное дело",
+    "admission_scores_2026": [
+      {
+        "ovpo": "029",
+        "specialty_code": "B071",
+        "specialty_name": "Горное дело и добыча полезных ископаемых",
+        "quota": "Общий конкурс",
+        "min_score": 80,
+        "max_score": 127,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "173968d2-9099-4804-a957-4ef73649bf1d": {
+    "slug": "satbayev-university",
+    "name": "Дизайн",
+    "admission_scores_2026": [
+      {
+        "ovpo": "029",
+        "specialty_code": "B031",
+        "specialty_name": "Мода, дизайн",
+        "quota": "Общий конкурс",
+        "min_score": 125,
+        "max_score": 128,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "fa750ae5-413b-4872-b800-ea82535ff9e3": {
+    "slug": "satbayev-university",
+    "name": "Инженерная экология",
+    "admission_scores_2026": [
+      {
+        "ovpo": "029",
+        "specialty_code": "B051",
+        "specialty_name": "Окружающая среда",
+        "quota": "Общий конкурс",
+        "min_score": 80,
+        "max_score": 102,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "89fbf37d-6503-439e-9143-0a84805d2101": {
+    "slug": "satbayev-university",
+    "name": "Инновационное производство строительных материалов",
+    "admission_scores_2026": [
+      {
+        "ovpo": "029",
+        "specialty_code": "B074",
+        "specialty_name": "Градостроительство, строительные работы и гражданское строительство",
+        "quota": "Общий конкурс",
+        "min_score": 80,
+        "max_score": 132,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "c8a7d05b-b00e-4a31-a25f-3a8e8991cf3a": {
+    "slug": "satbayev-university",
+    "name": "Строительство",
+    "admission_scores_2026": [
+      {
+        "ovpo": "029",
+        "specialty_code": "B074",
+        "specialty_name": "Градостроительство, строительные работы и гражданское строительство",
+        "quota": "Общий конкурс",
+        "min_score": 80,
+        "max_score": 132,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "792f18c5-dda9-48bb-985b-d53629e4aa14": {
+    "slug": "satbayev-university",
+    "name": "Телекоммуникация",
+    "admission_scores_2026": [
+      {
+        "ovpo": "029",
+        "specialty_code": "B059",
+        "specialty_name": "Коммуникации и коммуникационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 80,
+        "max_score": 101,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "cdc2e2ef-baa0-4c1e-b00c-1eea479900df": {
+    "slug": "satbayev-university",
+    "name": "Электроэнергетика",
+    "admission_scores_2026": [
+      {
+        "ovpo": "029",
+        "specialty_code": "B062",
+        "specialty_name": "Электротехника и электроэнергетика",
+        "quota": "Общий конкурс",
+        "min_score": 84,
+        "max_score": 134,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "5d91c259-1692-4bec-8d44-b5a9eb704b27": {
+    "slug": "turan-astana",
+    "name": "Digital-маркетинг",
+    "admission_scores_2026": [
+      {
+        "ovpo": "184",
+        "specialty_code": "B047",
+        "specialty_name": "Маркетинг и реклама",
+        "quota": "Общий конкурс",
+        "min_score": 124,
+        "max_score": 124,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "41fe9032-a372-4df2-851a-f47c4664afae": {
+    "slug": "turan-astana",
+    "name": "Вычислительная техника и программное обеспечение",
+    "admission_scores_2026": [
+      {
+        "ovpo": "184",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 55,
+        "max_score": 102,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "279b77c1-7155-49f3-a12e-0f3cb0ecb037": {
+    "slug": "turan-astana",
+    "name": "Декоративное искусство и этнодизайн",
+    "admission_scores_2026": [
+      {
+        "ovpo": "184",
+        "specialty_code": "B031",
+        "specialty_name": "Мода, дизайн",
+        "quota": "Общий конкурс",
+        "min_score": 126,
+        "max_score": 126,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "d83e334b-0b68-4987-9592-b553bf53ad0b": {
+    "slug": "turan-astana",
+    "name": "Дизайн",
+    "admission_scores_2026": [
+      {
+        "ovpo": "184",
+        "specialty_code": "B031",
+        "specialty_name": "Мода, дизайн",
+        "quota": "Общий конкурс",
+        "min_score": 126,
+        "max_score": 126,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "6ab568ff-0390-4be0-a88a-142e8701ea12": {
+    "slug": "turan-astana",
+    "name": "Дизайн среды и интерьера",
+    "admission_scores_2026": [
+      {
+        "ovpo": "184",
+        "specialty_code": "B031",
+        "specialty_name": "Мода, дизайн",
+        "quota": "Общий конкурс",
+        "min_score": 126,
+        "max_score": 126,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "ec7b228f-8fc3-4dfc-a80f-13338e4a14da": {
+    "slug": "turan-astana",
+    "name": "Информационные системы",
+    "admission_scores_2026": [
+      {
+        "ovpo": "184",
+        "specialty_code": "B057",
+        "specialty_name": "Информационные технологии",
+        "quota": "Общий конкурс",
+        "min_score": 55,
+        "max_score": 102,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "98349580-bd7d-42a7-b4d8-3d8baa957930": {
+    "slug": "turan-astana",
+    "name": "Маркетинг",
+    "admission_scores_2026": [
+      {
+        "ovpo": "184",
+        "specialty_code": "B047",
+        "specialty_name": "Маркетинг и реклама",
+        "quota": "Общий конкурс",
+        "min_score": 124,
+        "max_score": 124,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "059f5368-2677-4958-8bc3-9dfd0de7e14d": {
+    "slug": "turan-astana",
+    "name": "Режиссура",
+    "admission_scores_2026": [
+      {
+        "ovpo": "184",
+        "specialty_code": "B023",
+        "specialty_name": "Режиссура, арт-менеджмент",
+        "quota": "Общий конкурс",
+        "min_score": 117,
+        "max_score": 126,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "9dfe65a1-8891-4953-9131-be97d52883c5": {
+    "slug": "turan-astana",
+    "name": "Ресторанный и гостиничный бизнес",
+    "admission_scores_2026": [
+      {
+        "ovpo": "184",
+        "specialty_code": "B093",
+        "specialty_name": "Ресторанное дело и гостиничный бизнес",
+        "quota": "Общий конкурс",
+        "min_score": 122,
+        "max_score": 122,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "83201186-4c4f-4369-b131-b5440a75989f": {
+    "slug": "universitet-mezhdunarodnogo-biznesa-uib",
+    "name": "Конвергентная журналистика",
+    "admission_scores_2026": [
+      {
+        "ovpo": "069",
+        "specialty_code": "B042",
+        "specialty_name": "Журналистика и репортерское дело",
+        "quota": "Общий конкурс",
+        "min_score": 128,
+        "max_score": 129,
+        "year": "2026-2027"
+      }
+    ]
+  },
+  "4a93bbe4-ee41-4a1d-a047-ab957163acfa": {
+    "slug": "akademiya-logistiki-i-transporta",
+    "name": "Автоматизация и управление",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "a2c8b1be-71f1-4444-87db-89eb29459494": {
+    "slug": "akademiya-logistiki-i-transporta",
+    "name": "Автомобили, путевые и строительные машины",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "2f1aed91-8bac-40e3-8027-45caa7e5d1ad": {
+    "slug": "akademiya-logistiki-i-transporta",
+    "name": "Интеллектуальные технологии транспортных процессов",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "e149ec7d-4762-4669-8d17-bf7826ea3baf": {
+    "slug": "akademiya-logistiki-i-transporta",
+    "name": "Информационные системы",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "dd20b2a0-20a9-4b24-b7b5-88fe26d9dfb1": {
+    "slug": "akademiya-logistiki-i-transporta",
+    "name": "Маркетинг и бизнес аналитика",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "16a863cf-b971-4c1d-b467-d9266be3c104": {
+    "slug": "akademiya-logistiki-i-transporta",
+    "name": "Математическое и компьютерное моделирование",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "ccf378cc-024a-4d27-9ff3-48384f851214": {
+    "slug": "akademiya-logistiki-i-transporta",
+    "name": "Прикладной искусственный интеллект",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "1fb24b84-6ea1-435d-b9e2-4e2920a4e107": {
+    "slug": "akademiya-logistiki-i-transporta",
+    "name": "Программная инженерия",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "1952cdc5-86fd-4dbf-ad11-1b6de1928934": {
+    "slug": "akademiya-logistiki-i-transporta",
+    "name": "Экономика и менеджмент (по отраслям)",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "5b56f0d7-2f14-464b-b0f5-1a7019555c15": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "История",
+    "exams": [
+      "Всемирная история",
+      "География",
+      "Специальный педагогический экзамен"
+    ],
+    "min_ent_threshold": 75
+  },
+  "36e71835-96ed-442f-81a1-f6a2055084bd": {
+    "slug": "abai-kazakh-national-pedagogical-university",
+    "name": "Переводческое дело",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 65
+  },
+  "821f6293-26e5-4f2f-9883-d69a4fea162e": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Биотехнология",
+    "exams": [
+      "Биология",
+      "Химия"
+    ],
+    "min_ent_threshold": 65
+  },
+  "b7013978-7c06-4784-a13b-da2366dccaaf": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Наука о данных",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 65
+  },
+  "e5f8a699-9883-4892-b71e-f7aa3de33318": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Педагогика и психология",
+    "exams": [
+      "Биология",
+      "География",
+      "Специальный педагогический экзамен"
+    ],
+    "min_ent_threshold": 75
+  },
+  "a9e4fe97-8526-4009-a1f5-7323bd36a776": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Социальная педагогика",
+    "exams": [
+      "Биология",
+      "География",
+      "Специальный педагогический экзамен"
+    ],
+    "min_ent_threshold": 75
+  },
+  "d4a4efb7-dc9e-4819-a1e2-711f94afb02f": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Физическая культура и спорт",
+    "exams": [
+      "2 Творческих экзамена"
+    ],
+    "min_ent_threshold": 65
+  },
+  "2ddcf43f-cc45-4ef2-82c0-1ac3cd3b92d3": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Финансы",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 65
+  },
+  "044d9d7d-bff3-4c4f-ad5d-93307df9c1bd": {
+    "slug": "al-farabi-kazakh-national-university",
+    "name": "Экономика",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 65
+  },
+  "392cf6e6-e098-46a8-90f3-5a59655a237a": {
+    "slug": "almaty-management-university",
+    "name": "Новые медиа (New Media)",
+    "exams": [
+      "2 Творческих экзамена"
+    ],
+    "min_ent_threshold": 50
+  },
+  "2d25ba0b-0a15-4a1c-8d2d-71d55936ccc7": {
+    "slug": "almaty-management-university",
+    "name": "Связь с общественностью",
+    "exams": [
+      "2 Творческих экзамена"
+    ],
+    "min_ent_threshold": 50
+  },
+  "03ab4205-3fc5-4d29-b2a4-1321a267640d": {
+    "slug": "almaty-management-university",
+    "name": "Финансы",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "1d117f33-38a8-4f4e-af39-bd3e7a4c4b6f": {
+    "slug": "almaty-management-university",
+    "name": "Цифровая логистика",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "788dea4a-ea0d-416c-b367-fc7e0a807b1c": {
+    "slug": "almaty-management-university",
+    "name": "Цифровое кинопроизводство (Digital Filmmaking)",
+    "exams": [
+      "2 Творческих экзамена"
+    ],
+    "min_ent_threshold": 50
+  },
+  "2e3e9b23-6491-49a5-af45-ab1032b801ec": {
+    "slug": "astana-it-university",
+    "name": "AI Business",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "44c548f8-ad0b-4597-9253-edbc87586dc4": {
+    "slug": "astana-it-university",
+    "name": "Digital Public Administration",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "84cb9097-151b-43e5-90f8-e7d6da177cbf": {
+    "slug": "astana-it-university",
+    "name": "Digital Technologies in Nuclear Power Engineering",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "be0138cc-0094-4c21-9547-9e4795148498": {
+    "slug": "astana-it-university",
+    "name": "Electronic Engineering",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "d4f6037e-f329-4c75-92bd-a3117f22f1a5": {
+    "slug": "astana-it-university",
+    "name": "IT Management",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "a736c31b-ff3a-4501-a31f-9703ccd97a30": {
+    "slug": "astana-it-university",
+    "name": "Industrial Internet of Things",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "aa5a082c-c50b-4833-b96b-29f08d55bec2": {
+    "slug": "astana-it-university",
+    "name": "Mathematical and Computational Science",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "79fb1231-35a1-4027-918d-05332b6fef2b": {
+    "slug": "astana-it-university",
+    "name": "Media Technologies",
+    "exams": [
+      "2 Творческих экзамена"
+    ],
+    "min_ent_threshold": 50
+  },
+  "f70d6f97-c566-4dbb-bfda-6073044c7d46": {
+    "slug": "astana-it-university",
+    "name": "Smart Security Technologies",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "85d56a20-e245-451a-9ae8-0d5940492ff4": {
+    "slug": "astana-it-university",
+    "name": "Smart Technologies",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "c76c82f2-db3c-4d23-9d22-bdfd1a18d67b": {
+    "slug": "astana-it-university",
+    "name": "Анализ больших данных (бакалавр)",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "24704b9c-4d40-4336-a6f3-88d1e3b9cf62": {
+    "slug": "cardiff-kazakhstan",
+    "name": "Business Management/Administration",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "7ada2aad-a920-4284-89bd-3decf6e675b3": {
+    "slug": "cardiff-kazakhstan",
+    "name": "Civil Engineering",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "2d99c25b-aacc-43d6-ba1e-206aa6a3f8aa": {
+    "slug": "cardiff-kazakhstan",
+    "name": "Computer Science",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "a8ce5d46-b7c9-4573-a466-a1c8aa164785": {
+    "slug": "cardiff-kazakhstan",
+    "name": "Geology/Exploration Geology",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "9c32d372-442b-4982-a4bb-75e91f67fd5e": {
+    "slug": "esil-university",
+    "name": "Digital бизнес",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "0e3d0492-ef80-452a-88f9-1c5aacdacd82": {
+    "slug": "esil-university",
+    "name": "Digital маркетинг",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "f398a038-a35e-4493-bd2b-4cee11db3d8a": {
+    "slug": "esil-university",
+    "name": "Бизнес-право",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "b8da122b-9ce7-4670-bfe2-4da13bff5207": {
+    "slug": "esil-university",
+    "name": "Государственное и местное управление",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "9c8543f9-45a0-4738-afb4-4750da5fcc91": {
+    "slug": "esil-university",
+    "name": "Менеджмент",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "49b3a883-e462-4545-bfbb-2771fa67c39e": {
+    "slug": "esil-university",
+    "name": "Мировая экономика",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "cf917b8a-8027-4b45-8786-7ec6af79294d": {
+    "slug": "esil-university",
+    "name": "Правовое обеспечение экономической безопасности",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "4d20fda8-796d-4995-9e18-2afa540be508": {
+    "slug": "esil-university",
+    "name": "Таможенное дело",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "317b848f-df62-4459-bd26-2efef6441a09": {
+    "slug": "esil-university",
+    "name": "Туризм",
+    "exams": [
+      "География",
+      "Иностранный язык"
+    ],
+    "min_ent_threshold": 50
+  },
+  "47ee605b-82ee-4228-ba39-317f1c3a8f3f": {
+    "slug": "esil-university",
+    "name": "Учёт и аудит",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "cbf48db1-e008-4b57-be71-ea1006c5097c": {
+    "slug": "esil-university",
+    "name": "Финансы",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "3bc24265-9474-41da-9c0a-5a70a749ed7c": {
+    "slug": "esil-university",
+    "name": "Экономика",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "6cbc9e84-72ce-432a-8bf6-a605a325d7a5": {
+    "slug": "esil-university",
+    "name": "Юриспруденция",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "f6f8c47f-1fdd-48b9-bfdd-bead0982c883": {
+    "slug": "kazakh-ablai-khan-university-of-international-relations-and-world-languages",
+    "name": "Иностранная филология (восточные языки: китайский, корейский, японский, арабский, турецкий)",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "d77228f5-fde8-4251-b474-7d5c13602572": {
+    "slug": "kazakh-ablai-khan-university-of-international-relations-and-world-languages",
+    "name": "Иностранная филология (европейские языки: английский/французский, испанский, немецкий)",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "5ad3b956-fd55-4190-8532-c4e693d826a7": {
+    "slug": "kazakh-ablai-khan-university-of-international-relations-and-world-languages",
+    "name": "Корпоративное право",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "e34bb722-c575-4e0f-b45f-fdd34c4f4aad": {
+    "slug": "kazakh-ablai-khan-university-of-international-relations-and-world-languages",
+    "name": "Международное право",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "6891056c-d58d-4bc0-8c6d-92e6fd46b581": {
+    "slug": "kazakh-ablai-khan-university-of-international-relations-and-world-languages",
+    "name": "Международные отношения",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "0719472c-4eba-4e88-a0ed-5109c3d9f4ff": {
+    "slug": "kazakh-ablai-khan-university-of-international-relations-and-world-languages",
+    "name": "Международный бизнес",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "74f3c0e2-5517-4afb-aaa1-e40223a0c54e": {
+    "slug": "kazakh-ablai-khan-university-of-international-relations-and-world-languages",
+    "name": "Менеджмент и маркетинг",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "dbcb0796-6be2-4a81-b59d-bc598e991701": {
+    "slug": "kazakh-ablai-khan-university-of-international-relations-and-world-languages",
+    "name": "Регионоведение",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "317af488-f9d0-4123-8078-0df5a8f48eaf": {
+    "slug": "kazakh-ablai-khan-university-of-international-relations-and-world-languages",
+    "name": "Таможенное дело",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "013c1505-2ccd-4b32-a7dc-34d2bce4649a": {
+    "slug": "kazakh-ablai-khan-university-of-international-relations-and-world-languages",
+    "name": "Туризм",
+    "exams": [
+      "География",
+      "Иностранный язык"
+    ],
+    "min_ent_threshold": 50
+  },
+  "2b5b5ca8-8ea5-478b-81e9-9bf85bde2566": {
+    "slug": "kazakh-ablai-khan-university-of-international-relations-and-world-languages",
+    "name": "Тюркология",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "9e17f768-06b0-41b1-a0bc-cc5529eaa8cb": {
+    "slug": "kazakh-ablai-khan-university-of-international-relations-and-world-languages",
+    "name": "Юриспруденция",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "f984a27f-9e71-4b54-a7f4-27dee4698ac5": {
+    "slug": "narxoz-university",
+    "name": "Международное право и безопасность",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "dfb8f7ec-cbcf-482e-b40d-946f6cbb73cc": {
+    "slug": "narxoz-university",
+    "name": "Международные отношения",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "23aacf55-c954-499e-be18-f0c58a3b0a5c": {
+    "slug": "narxoz-university",
+    "name": "Политические массовые коммуникации",
+    "exams": [
+      "2 Творческих экзамена"
+    ],
+    "min_ent_threshold": 50
+  },
+  "1a15a490-2e69-42ff-94d6-b4cc1294fed3": {
+    "slug": "narxoz-university",
+    "name": "Ресторанный и отельный бизнес",
+    "exams": [
+      "География",
+      "Иностранный язык"
+    ],
+    "min_ent_threshold": 50
+  },
+  "8e6e270c-530a-46c1-9df4-fde314ac4c80": {
+    "slug": "qairu",
+    "name": "FinTech AI",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "5c3006a1-0bf1-4ae2-8231-60a6fd89cf80": {
+    "slug": "qairu",
+    "name": "HealthTech AI",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "01bb8985-0977-4bfa-9ab5-1c70751912a6": {
+    "slug": "qairu",
+    "name": "Physical AI",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "1bcf3ddb-6fb7-4e13-a6af-5bfb0927df74": {
+    "slug": "qairu",
+    "name": "Smart City / GovTech AI",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "bcacfdc5-129b-44ca-8258-9600c0bd8da4": {
+    "slug": "qairu",
+    "name": "Аграрный AI",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "6a58f57d-0c1d-4e9f-9763-db3c54d6b2ea": {
+    "slug": "qairu",
+    "name": "Промышленный AI",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "7bd05c07-881a-4787-94a6-add9a12844fe": {
+    "slug": "satbayev-university",
+    "name": "Electronic and Electrical Engineering",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 65
+  },
+  "daf3cb37-25c2-4d5c-83d7-bf31158c2292": {
+    "slug": "satbayev-university",
+    "name": "Безопасность жизнедеятельности",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 65
+  },
+  "1529368a-8b3f-493b-bd9d-98194a8e3670": {
+    "slug": "satbayev-university",
+    "name": "Наземный электрический транспорт и зарядная инфраструктура",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 65
+  },
+  "70b4345b-b080-4c52-a27c-e52493c32f1d": {
+    "slug": "satbayev-university",
+    "name": "Нефтегазовое дело",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 65
+  },
+  "ad53d131-35ea-4d56-9a1b-5b31b55ffe8c": {
+    "slug": "satbayev-university",
+    "name": "Нефтяная инженерия",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 65
+  },
+  "5979d504-939c-427c-b1fe-d207da74939e": {
+    "slug": "satbayev-university",
+    "name": "Приборостроение",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 65
+  },
+  "a8688d29-e862-4cf1-b769-5a44fb5e5e29": {
+    "slug": "satbayev-university",
+    "name": "Сейсмология",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 65
+  },
+  "4e9a7ce6-5826-412b-8082-be4ffcfcd8fc": {
+    "slug": "satbayev-university",
+    "name": "Теплоэнергетика",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 65
+  },
+  "261d8b76-8403-408f-b0d6-1049831eec7f": {
+    "slug": "satbayev-university",
+    "name": "Технология редких и радиоактивных элементов",
+    "exams": [
+      "Химия",
+      "Физика"
+    ],
+    "min_ent_threshold": 65
+  },
+  "9b8563d0-cf77-4bde-b927-3ab76b405039": {
+    "slug": "satbayev-university",
+    "name": "Финансовая аналитика",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 65
+  },
+  "695773cd-6948-43cf-93d2-dd52df4732ff": {
+    "slug": "akademiya-kajnar",
+    "name": "Журналистика",
+    "exams": [
+      "2 Творческих экзамена"
+    ],
+    "min_ent_threshold": 50
+  },
+  "35076e96-d85f-4581-b392-5ed995267aa5": {
+    "slug": "akademiya-kajnar",
+    "name": "Информационно-программные системы",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "f548935d-a0b4-4efd-bb09-8b8d18e74976": {
+    "slug": "akademiya-kajnar",
+    "name": "Менеджмент",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "dadb075b-819b-4cb0-901b-4365d2371935": {
+    "slug": "akademiya-kajnar",
+    "name": "Организация перевозок, движения и эксплуатации транспорта",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "3c6bafa1-cee9-4996-a49d-3a4b06665750": {
+    "slug": "akademiya-kajnar",
+    "name": "Психология",
+    "exams": [
+      "Биология",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "b7821adc-071d-4075-95e8-9eb9f3680a5b": {
+    "slug": "akademiya-kajnar",
+    "name": "Учет и аудит",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "7afb4a74-36fc-419e-b7b3-875eee27d698": {
+    "slug": "akademiya-kajnar",
+    "name": "Финансы",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "b37ad2a9-0ab6-49c2-8a14-f271d6cf0121": {
+    "slug": "akademiya-kajnar",
+    "name": "Экономика",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "2cd8de58-c6f7-4de8-9533-906126b32279": {
+    "slug": "akademiya-kajnar",
+    "name": "Юриспруденция: государственное управление",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "3c845d94-f362-4761-990f-582e24b3c944": {
+    "slug": "akademiya-kajnar",
+    "name": "Юриспруденция: правоохранительная деятельность",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "40e174ce-a3f4-4312-af3c-5a9fe04390d0": {
+    "slug": "akademiya-kajnar",
+    "name": "Юриспруденция: предпринимательское право",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "31c24ced-d573-44db-86ed-b51acb11b3c0": {
+    "slug": "akademiya-grazhdanskoj-aviaczii",
+    "name": "Логистика на транспорте",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "4da5b3c1-75bc-4230-91ec-2a0265c3ff68": {
+    "slug": "akademiya-grazhdanskoj-aviaczii",
+    "name": "Техническая эксплуатация летательных аппаратов и двигателей",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "596c1a5a-5dfe-4cd9-af45-971891f4f4cf": {
+    "slug": "akademiya-grazhdanskoj-aviaczii",
+    "name": "Техническая эксплуатация систем авионики летательных аппаратов",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "860efcef-9286-4009-b176-edec2e05e278": {
+    "slug": "akademiya-grazhdanskoj-aviaczii",
+    "name": "Технология транспортных процессов в авиации",
+    "exams": [
+      "Математика",
+      "Физика",
+      "Прохождение ВЛЭК"
+    ],
+    "min_ent_threshold": 50
+  },
+  "c3c6be49-3589-436f-82f8-08faa9b83d5d": {
+    "slug": "almatinskij-gumanitarno-ekonomicheskij-universitet",
+    "name": "Бизнес право",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "30939901-0d16-4ee3-b6bf-2caa81d62332": {
+    "slug": "almatinskij-gumanitarno-ekonomicheskij-universitet",
+    "name": "Государственное и региональное управление",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "0c7e18d7-b8c0-478c-9068-5713fdad8caf": {
+    "slug": "almatinskij-gumanitarno-ekonomicheskij-universitet",
+    "name": "Декоративное искусство",
+    "exams": [
+      "2 Творческих экзамена"
+    ],
+    "min_ent_threshold": 50
+  },
+  "e096d717-ac3a-4566-9ea7-b39c176184b1": {
+    "slug": "almatinskij-gumanitarno-ekonomicheskij-universitet",
+    "name": "Дизайн",
+    "exams": [
+      "2 Творческих экзамена"
+    ],
+    "min_ent_threshold": 50
+  },
+  "964cba8d-2a2b-424a-ae61-efcaa4237a1f": {
+    "slug": "almatinskij-gumanitarno-ekonomicheskij-universitet",
+    "name": "Изобразительное искусство и черчение",
+    "exams": [
+      "2 Творческих экзамена",
+      "Специальный педагогический экзамен"
+    ],
+    "min_ent_threshold": 75
+  },
+  "8ab7e9d5-6a44-4790-b92f-bdc6bad8d830": {
+    "slug": "almatinskij-gumanitarno-ekonomicheskij-universitet",
+    "name": "Информатика",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "be4964c8-109d-4dcb-a8a8-76cd3547d679": {
+    "slug": "almatinskij-gumanitarno-ekonomicheskij-universitet",
+    "name": "Начальное образование",
+    "exams": [
+      "Биология",
+      "География",
+      "Специальный педагогический экзамен"
+    ],
+    "min_ent_threshold": 75
+  },
+  "977d28c9-080d-4b12-af1b-1dc9fc055d1f": {
+    "slug": "almatinskij-gumanitarno-ekonomicheskij-universitet",
+    "name": "Подготовка учителей биологии",
+    "exams": [
+      "Биология",
+      "Химия",
+      "Специальный педагогический экзамен"
+    ],
+    "min_ent_threshold": 75
+  },
+  "61997983-bd5c-42ff-b401-b3fa45f4923f": {
+    "slug": "almatinskij-gumanitarno-ekonomicheskij-universitet",
+    "name": "Подготовка учителей физической культуры",
+    "exams": [
+      "2 Творческих экзамена",
+      "Специальный педагогический экзамен"
+    ],
+    "min_ent_threshold": 75
+  },
+  "295405ae-86e2-431f-826c-e86a01191939": {
+    "slug": "almatinskij-gumanitarno-ekonomicheskij-universitet",
+    "name": "Профессиональное обучение",
+    "exams": [
+      "Математика",
+      "Физика",
+      "Специальный педагогический экзамен"
+    ],
+    "min_ent_threshold": 75
+  },
+  "d90199f2-1903-4d7e-b527-d2b6cd683949": {
+    "slug": "almatinskij-gumanitarno-ekonomicheskij-universitet",
+    "name": "Сценография",
+    "exams": [
+      "2 Творческих экзамена"
+    ],
+    "min_ent_threshold": 50
+  },
+  "5afa1aa0-1c3c-4e9c-86a1-20dd0967ab46": {
+    "slug": "almatinskij-gumanitarno-ekonomicheskij-universitet",
+    "name": "Учет и аудит",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "e20d715c-26b8-4774-b17f-df687fcafd51": {
+    "slug": "almatinskij-gumanitarno-ekonomicheskij-universitet",
+    "name": "Физическая культура и спорт",
+    "exams": [
+      "2 Творческих экзамена"
+    ],
+    "min_ent_threshold": 50
+  },
+  "ceb822fc-2d35-4c09-8a66-4ef8f8b51fea": {
+    "slug": "almatinskij-gumanitarno-ekonomicheskij-universitet",
+    "name": "Юриспруденция",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "5ebef58a-bedb-433b-9df0-b10142177ccc": {
+    "slug": "almatinskij-tehnologicheskij-universitet",
+    "name": "Биотехнология",
+    "exams": [
+      "Биология",
+      "Химия"
+    ],
+    "min_ent_threshold": 50
+  },
+  "ddd707b7-8ec0-4428-9769-e7e37e75f5dd": {
+    "slug": "almatinskij-tehnologicheskij-universitet",
+    "name": "Технологии искусственного интеллекта",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "6bffb124-6c70-4fa1-92ed-916472559629": {
+    "slug": "almatinskij-tehnologicheskij-universitet",
+    "name": "Технология моды",
+    "exams": [
+      "2 Творческих экзамена"
+    ],
+    "min_ent_threshold": 50
+  },
+  "f3861456-2876-4b5f-89e0-25913563a4b8": {
+    "slug": "almatinskij-tehnologicheskij-universitet",
+    "name": "Химическая технология органических веществ",
+    "exams": [
+      "Химия",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "6b8a39b0-54e7-446c-bd9f-c32f688493d9": {
+    "slug": "almatinskij-tehnologicheskij-universitet",
+    "name": "Экология",
+    "exams": [
+      "Биология",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "c2c77791-174a-4b26-92ef-fdd0ae46d52d": {
+    "slug": "almatinskij-universitet-energetiki-i-svyazi",
+    "name": "Безопасность жизнедеятельности и защита окружающей среды",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "886c6c05-4c34-4202-bd3c-3ff64c1f7f48": {
+    "slug": "almatinskij-universitet-energetiki-i-svyazi",
+    "name": "Дроны и автономные системы",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "c7f18833-2c6d-4c61-8f2e-8d476cf18c9f": {
+    "slug": "almatinskij-universitet-energetiki-i-svyazi",
+    "name": "Контрольно-измерительные приборы и системы в робототехнике",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "6d0a4eba-67fa-4426-933c-27a9ca4f981c": {
+    "slug": "almatinskij-universitet-energetiki-i-svyazi",
+    "name": "Приборостроение",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "00462160-e5c6-44c1-8a53-25f1a4d67c11": {
+    "slug": "almatinskij-universitet-energetiki-i-svyazi",
+    "name": "Энергообеспечение сельского хозяйства",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "9c2fc43b-9dfd-4905-89c5-5e61b063a7b8": {
+    "slug": "eagi",
+    "name": "Иностранный язык: два иностранных языка",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история",
+      "Специальный педагогический экзамен"
+    ],
+    "min_ent_threshold": 75
+  },
+  "af875ec6-f35e-49f5-a507-56938f7b7d29": {
+    "slug": "eagi",
+    "name": "История",
+    "exams": [
+      "Всемирная история",
+      "География",
+      "Специальный педагогический экзамен"
+    ],
+    "min_ent_threshold": 75
+  },
+  "996526cb-f119-4792-8853-9c2b345b0fd1": {
+    "slug": "eagi",
+    "name": "Казахский язык и литература",
+    "exams": [
+      "Казахский язык",
+      "Казахская литература",
+      "Специальный педагогический экзамен"
+    ],
+    "min_ent_threshold": 75
+  },
+  "b08bf8d5-a57c-446c-956b-ecc3612baa8d": {
+    "slug": "eagi",
+    "name": "Педагогика и психология",
+    "exams": [
+      "Биология",
+      "География",
+      "Специальный педагогический экзамен"
+    ],
+    "min_ent_threshold": 75
+  },
+  "a8681a29-8b37-4428-a9ae-2c77245720db": {
+    "slug": "eagi",
+    "name": "Переводческое дело",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "e7b6da1c-aeb4-4eba-bc61-ff945a0f71ce": {
+    "slug": "eagi",
+    "name": "Финансы",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "f5e6abe7-c378-4fee-bfb9-3fb4df8f0dcb": {
+    "slug": "eagi",
+    "name": "Юриспруденция",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "d969b6d6-3e92-4ad3-8a3d-761fed13c7f3": {
+    "slug": "egipetskij-universitet-islamskoj-kultury-nur-mubarak",
+    "name": "Иностранная филология",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "78d42c29-034f-49ae-a6a3-5e87e55f9431": {
+    "slug": "egipetskij-universitet-islamskoj-kultury-nur-mubarak",
+    "name": "Переводческое дело",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "1130d282-cbf5-4bba-b92d-c69949ad49b2": {
+    "slug": "kazahskaya-akademiya-sporta-i-turizma",
+    "name": "Рекреация и спортивно-оздоровительный туризм",
+    "exams": [
+      "2 Творческих экзамена"
+    ],
+    "min_ent_threshold": 50
+  },
+  "2b290c67-aed8-4094-95bc-ea278fd21cf0": {
+    "slug": "kazahskaya-akademiya-sporta-i-turizma",
+    "name": "Ресторанное дело и гостиничный бизнес",
+    "exams": [
+      "География",
+      "Иностранный язык"
+    ],
+    "min_ent_threshold": 50
+  },
+  "8c2bd4b8-2686-4009-8957-96ceaec8613e": {
+    "slug": "kazahskaya-akademiya-sporta-i-turizma",
+    "name": "Туризм",
+    "exams": [
+      "География",
+      "Иностранный язык"
+    ],
+    "min_ent_threshold": 50
+  },
+  "30bd1ee0-b082-4baf-9a45-b15e775d2f85": {
+    "slug": "kazahskaya-akademiya-sporta-i-turizma",
+    "name": "Фитнес и рекреация",
+    "exams": [
+      "2 Творческих экзамена"
+    ],
+    "min_ent_threshold": 50
+  },
+  "357d6b17-5ff0-4d2f-9ab2-e2dcec4f56e2": {
+    "slug": "kazahskij-gosudarstvennyj-zhenskij-pedagogicheskij-universitet",
+    "name": "Переводческое дело",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 65
+  },
+  "8f25b197-a0f9-4728-b0c9-898ad09f719a": {
+    "slug": "kazahskij-gosudarstvennyj-zhenskij-pedagogicheskij-universitet",
+    "name": "Профессиональное обучение",
+    "exams": [
+      "Математика",
+      "Физика",
+      "Специальный педагогический экзамен"
+    ],
+    "min_ent_threshold": 75
+  },
+  "2c405f36-8742-4de5-8f92-9eca34fe9bbd": {
+    "slug": "kazahskij-gosudarstvennyj-zhenskij-pedagogicheskij-universitet",
+    "name": "Туризм",
+    "exams": [
+      "География",
+      "Иностранный язык"
+    ],
+    "min_ent_threshold": 65
+  },
+  "37436856-7764-4ce9-996b-28dd4fd1abe8": {
+    "slug": "kazahskij-naczionalnyj-agrarnyj-issledovatelskij-universitet",
+    "name": "Безопасность жизнедеятельности и защита окружающей среды",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 65
+  },
+  "758c3686-62fc-4dd9-bf86-641903f441ab": {
+    "slug": "kazahskij-naczionalnyj-agrarnyj-issledovatelskij-universitet",
+    "name": "Почвоведение и агрохимия",
+    "exams": [
+      "Биология",
+      "Химия"
+    ],
+    "min_ent_threshold": 60
+  },
+  "4e46dfc9-a278-49a5-86b0-36bb922054a4": {
+    "slug": "kazahskij-naczionalnyj-agrarnyj-issledovatelskij-universitet",
+    "name": "Технологические машины и оборудование",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 65
+  },
+  "1fdd15a5-f830-4f7b-9f58-8bfe1f602cfd": {
+    "slug": "kazahskij-naczionalnyj-agrarnyj-issledovatelskij-universitet",
+    "name": "Технология перерабатывающих производств (по отраслям)",
+    "exams": [
+      "Биология",
+      "Химия"
+    ],
+    "min_ent_threshold": 65
+  },
+  "a3e9b002-8cf8-4203-9ab4-238fe33d1923": {
+    "slug": "kazahskij-naczionalnyj-agrarnyj-issledovatelskij-universitet",
+    "name": "Цифровые технологии в агропромышленном комплексе",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 65
+  },
+  "f95ccdd2-c4a5-4f5d-8819-b7117c10dd39": {
+    "slug": "kazahskij-naczionalnyj-mediczinskij-universitet-im-s-d-asfendiyarova",
+    "name": "Клиническая психология",
+    "exams": [
+      "Биология",
+      "География"
+    ],
+    "min_ent_threshold": 65
+  },
+  "5db39d5a-07a5-468e-bbfd-2144ccf2c3d6": {
+    "slug": "kazahskij-naczionalnyj-mediczinskij-universitet-im-s-d-asfendiyarova",
+    "name": "Общая медицина",
+    "exams": [
+      "Биология",
+      "Химия",
+      "Психометрический тест"
+    ],
+    "min_ent_threshold": 70
+  },
+  "f5e7ac74-932b-4fa3-be94-46966642dbf3": {
+    "slug": "kazahskij-naczionalnyj-mediczinskij-universitet-im-s-d-asfendiyarova",
+    "name": "Общественное здравоохранение",
+    "exams": [
+      "Биология",
+      "Химия",
+      "Психометрический тест"
+    ],
+    "min_ent_threshold": 70
+  },
+  "8da5206a-b49b-4ec1-a70b-e24f40a9a7e7": {
+    "slug": "kazahskij-naczionalnyj-mediczinskij-universitet-im-s-d-asfendiyarova",
+    "name": "Педиатрия",
+    "exams": [
+      "Биология",
+      "Химия",
+      "Психометрический тест"
+    ],
+    "min_ent_threshold": 70
+  },
+  "23f75d08-6509-4fab-81e1-f0bb940194fa": {
+    "slug": "kazahskij-naczionalnyj-mediczinskij-universitet-im-s-d-asfendiyarova",
+    "name": "Сестринское дело",
+    "exams": [
+      "Биология",
+      "Химия",
+      "Психометрический тест"
+    ],
+    "min_ent_threshold": 70
+  },
+  "005d6cbf-7874-4387-932c-57f5a9baf9a4": {
+    "slug": "kazahskij-naczionalnyj-mediczinskij-universitet-im-s-d-asfendiyarova",
+    "name": "Стоматология",
+    "exams": [
+      "Биология",
+      "Химия",
+      "Психометрический тест"
+    ],
+    "min_ent_threshold": 70
+  },
+  "14992182-df91-427e-ac2c-4c4f46bd3611": {
+    "slug": "kazahskij-naczionalnyj-mediczinskij-universitet-im-s-d-asfendiyarova",
+    "name": "Фармация",
+    "exams": [
+      "Биология",
+      "Химия"
+    ],
+    "min_ent_threshold": 65
+  },
+  "b1e24540-9387-4e7b-b65f-b94ed7615d1b": {
+    "slug": "kazutb",
+    "name": "IT-менеджмент",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "5e21d25b-de7a-408e-affb-3cfa2390e94a": {
+    "slug": "kazutb",
+    "name": "Автоматизация и управление",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "b71a13c7-4c28-497f-85c6-a3a2e11731c8": {
+    "slug": "kazutb",
+    "name": "Безопасность жизнедеятельности и защита окружающей среды",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "390e7016-de25-4eee-9fa9-63da045f4129": {
+    "slug": "kazutb",
+    "name": "Биотехнология",
+    "exams": [
+      "Биология",
+      "Химия"
+    ],
+    "min_ent_threshold": 50
+  },
+  "1621095b-09e8-4ad5-a452-55aa24ae927a": {
+    "slug": "kazutb",
+    "name": "Государственное и местное управление",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "9d89ad15-cbb7-4cdf-9294-50fbc4110b60": {
+    "slug": "kazutb",
+    "name": "Международный туризм",
+    "exams": [
+      "География",
+      "Иностранный язык"
+    ],
+    "min_ent_threshold": 50
+  },
+  "8d9125d0-d474-402f-b9d3-b360786b71c6": {
+    "slug": "kazutb",
+    "name": "Менеджмент",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "cda45a2e-7cb9-4207-8a2b-449861c8b8ab": {
+    "slug": "kazutb",
+    "name": "Нефтегазовое дело",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "ebdaa475-4ea7-4386-88c0-b11843dc468c": {
+    "slug": "kazutb",
+    "name": "Технологические машины и оборудование (по отраслям)",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "7ac4e5d0-3136-4956-9c96-16f863770d14": {
+    "slug": "kazutb",
+    "name": "Технология перерабатывающих производств (по отраслям)",
+    "exams": [
+      "Биология",
+      "Химия"
+    ],
+    "min_ent_threshold": 50
+  },
+  "80c0f512-9d3c-4b34-9d28-1c713480b612": {
+    "slug": "kazutb",
+    "name": "Туризм",
+    "exams": [
+      "География",
+      "Иностранный язык"
+    ],
+    "min_ent_threshold": 50
+  },
+  "39e15995-13bd-4c11-a308-58c2a25f0d92": {
+    "slug": "kazutb",
+    "name": "Учёт и аудит",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "aa9397e6-2f3c-43ee-8a06-eebdda905d74": {
+    "slug": "kazutb",
+    "name": "Финансы",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "736b49e9-d225-4d71-97b8-b21fa7ac661d": {
+    "slug": "kazutb",
+    "name": "Химическая технология органических веществ",
+    "exams": [
+      "Химия",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "f34f9473-d512-4d45-b6f6-f1d7326bad7f": {
+    "slug": "kazutb",
+    "name": "Цифровая энергетика",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "9ab1fc9b-8c66-4621-a851-3a9ed12cfed5": {
+    "slug": "kazutb",
+    "name": "Экономика",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "9990578c-1e52-4c6d-8b48-73cd86d50a8b": {
+    "slug": "kazahskaya-avtomobilno-dorozhnaya-akademiya",
+    "name": "Логистика (по отраслям)",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "184c4d01-fef1-4c0d-81e8-02411eb7ebf3": {
+    "slug": "kazahskaya-avtomobilno-dorozhnaya-akademiya",
+    "name": "Организация дорожного движения",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "403e94ba-de25-4a81-be60-bcbab2fd0439": {
+    "slug": "kazahskaya-avtomobilno-dorozhnaya-akademiya",
+    "name": "Организация перевозок и логистика на транспорте",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "cf16d7f7-85e3-4400-9208-ba7a239d5993": {
+    "slug": "kazahskaya-avtomobilno-dorozhnaya-akademiya",
+    "name": "Организация перевозок, движения и эксплуатация транспорта",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "931c4b93-109c-47f9-8a2b-7783845724ef": {
+    "slug": "kazahskaya-avtomobilno-dorozhnaya-akademiya",
+    "name": "Строительство",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "984d0cf9-58ce-4843-84c0-927b0ce50b56": {
+    "slug": "kazahskaya-avtomobilno-dorozhnaya-akademiya",
+    "name": "Строительство автомобильных дорог и аэродромов",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "ecba0a52-c3d1-480d-b52f-99debb26cb14": {
+    "slug": "kazahskaya-avtomobilno-dorozhnaya-akademiya",
+    "name": "Строительство газонефтепроводов и газонефтехранилищ",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "3eb5dc44-f5fb-4930-8835-34be8dbfe3b8": {
+    "slug": "kazahskaya-avtomobilno-dorozhnaya-akademiya",
+    "name": "Строительство мостов и тоннелей",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "3419776b-84b7-4e10-915a-a050d730d354": {
+    "slug": "kazahskaya-avtomobilno-dorozhnaya-akademiya",
+    "name": "Учет и Аудит",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "aea5595e-7ff4-469e-b240-322b3c297772": {
+    "slug": "kazahskaya-avtomobilno-dorozhnaya-akademiya",
+    "name": "Экономика",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "835b6746-841b-497c-8281-8778038fd0e3": {
+    "slug": "kazahstansko-britanskij-tehnicheskij-universitet",
+    "name": "Бизнес администрирование",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "12c30050-862b-4101-85c4-bdeb3e3060b7": {
+    "slug": "kazahstansko-britanskij-tehnicheskij-universitet",
+    "name": "Геология и разведка месторождений полезных ископаемых",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "9ce41d2a-a282-4044-adad-43aa1499716e": {
+    "slug": "kazahstansko-britanskij-tehnicheskij-universitet",
+    "name": "Нефтегазовое дело",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "4657bc8e-4bb2-47a9-bb80-0043b7fc6d73": {
+    "slug": "kazahstansko-britanskij-tehnicheskij-universitet",
+    "name": "Нефтяная инженерия (UPC)",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "bba1ccaf-cd8e-4629-ad0d-3428465beb6c": {
+    "slug": "kazahstansko-britanskij-tehnicheskij-universitet",
+    "name": "Химическая технология органических веществ",
+    "exams": [
+      "Химия",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "40c1f8d2-ae77-44e0-a302-397335b25921": {
+    "slug": "kazahstansko-britanskij-tehnicheskij-universitet",
+    "name": "Экономико-математическое и компьютерное моделирование",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "4e5d3d59-495b-4518-899f-e125a12b1dc7": {
+    "slug": "kazahstansko-nemeczkij-universitet",
+    "name": "Energy and Environmental Engineering (Энергетика и экологическая инженерия)",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "0ed2f649-e5c6-4e89-bb5e-8b08f14b72ea": {
+    "slug": "kazahstansko-nemeczkij-universitet",
+    "name": "Logistics (Логистика)",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "369041b1-a498-43b9-bf6c-e6a06149d7d7": {
+    "slug": "kazahstansko-nemeczkij-universitet",
+    "name": "Mechatronics Робототехника",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "e9d6d5db-842e-4bed-a6ff-e109cd53ec35": {
+    "slug": "kazahstansko-nemeczkij-universitet",
+    "name": "Mobile computing (Мобильные вычисления)",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "005bf7ce-db1b-4ddd-aa5a-56f2ad86505a": {
+    "slug": "kazahstansko-nemeczkij-universitet",
+    "name": "Process Engineering",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "79803975-72cd-435e-8322-733111c38a5a": {
+    "slug": "kazahstansko-nemeczkij-universitet",
+    "name": "Информационный инжиниринг в экономике",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "7117f51c-13b2-4b30-af80-bbc96a6970bd": {
+    "slug": "kazahstansko-nemeczkij-universitet",
+    "name": "Производственная логистика",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "c4cad3e7-545f-40fc-9b68-bc19c63f1293": {
+    "slug": "kazahstansko-nemeczkij-universitet",
+    "name": "Телематика",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "d07c4f93-e685-4bc3-9368-836df997f0b4": {
+    "slug": "kazahstansko-nemeczkij-universitet",
+    "name": "Транспортная логистика",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "2f548242-fe6d-4f73-b417-f46084662009": {
+    "slug": "kazahstansko-nemeczkij-universitet",
+    "name": "Финансы",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "f98ef13f-7ab8-4b48-a272-42753552616f": {
+    "slug": "kazahstansko-nemeczkij-universitet",
+    "name": "Энергетическая и экологическая техника",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "4cada651-d201-4e51-a84f-3c2dd1e6c3ee": {
+    "slug": "kazahstansko-rossijskij-mediczinskij-universitet",
+    "name": "Общественное здоровье",
+    "exams": [
+      "Биология",
+      "Химия",
+      "Психометрический тест"
+    ],
+    "min_ent_threshold": 70
+  },
+  "f7f17067-e646-4f2e-a69b-264544c7114f": {
+    "slug": "kazahstansko-rossijskij-mediczinskij-universitet",
+    "name": "Социальная работа в здравоохранении",
+    "exams": [
+      "Биология",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "80d58b5d-e3c2-49cc-a6a5-d8328879dddb": {
+    "slug": "kaspijskij-universitet",
+    "name": "Геология и разведка ресурсов",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "3ecb4a15-eb9b-479d-a6d3-2d204b9d4d89": {
+    "slug": "kaspijskij-universitet",
+    "name": "Межкультурно-коммуникативный перевод",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "cfbc950f-18a1-4f03-bead-dd33b38d5a9d": {
+    "slug": "kaspijskij-universitet",
+    "name": "Нефтяная техника",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "ec32604f-bc7c-4644-a33e-cb52af4eebdd": {
+    "slug": "kaspijskij-universitet",
+    "name": "Общая медицина",
+    "exams": [
+      "Биология",
+      "Химия",
+      "Психометрический тест"
+    ],
+    "min_ent_threshold": 70
+  },
+  "9c6ff130-88c0-42ac-a13a-ee86ad7dee11": {
+    "slug": "kaspijskij-universitet",
+    "name": "Программная инженерия",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "6c7da69f-dfc1-44e7-a071-d48f05a66338": {
+    "slug": "kaspijskij-universitet",
+    "name": "Сестринское дело",
+    "exams": [
+      "Биология",
+      "Химия",
+      "Психометрический тест"
+    ],
+    "min_ent_threshold": 70
+  },
+  "0e3567de-e49b-47fa-8d17-7f6b889773cb": {
+    "slug": "kaspijskij-universitet",
+    "name": "Строительство",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "efc59db3-e11f-4ac3-b285-607151a2c5c7": {
+    "slug": "kaspijskij-universitet",
+    "name": "Юриспруденция",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "09cbce9d-dbed-47b2-aa0c-b1d9ec44eb50": {
+    "slug": "amu",
+    "name": "Медико-профилактическое дело",
+    "exams": [
+      "Биология",
+      "Химия",
+      "Психометрический тест"
+    ],
+    "min_ent_threshold": 70
+  },
+  "6a4c2da9-c18a-4bb9-8c06-5f41583b55db": {
+    "slug": "amu",
+    "name": "Общая медицина",
+    "exams": [
+      "Биология",
+      "Химия",
+      "Психометрический тест"
+    ],
+    "min_ent_threshold": 70
+  },
+  "8ae89df5-9f7d-4938-abb2-eeae7e0eb097": {
+    "slug": "amu",
+    "name": "Общественное здравоохранение",
+    "exams": [
+      "Биология",
+      "Химия",
+      "Психометрический тест"
+    ],
+    "min_ent_threshold": 70
+  },
+  "7c5411a8-cc35-48a1-bf56-8e3bba4e64f2": {
+    "slug": "amu",
+    "name": "Сестринское дело (включая Кинезитерапию, Эрготерапию)",
+    "exams": [
+      "Биология",
+      "Химия",
+      "Психометрический тест"
+    ],
+    "min_ent_threshold": 70
+  },
+  "ccac3055-4df4-44da-9f39-28f43ee92edc": {
+    "slug": "amu",
+    "name": "Стоматология",
+    "exams": [
+      "Биология",
+      "Химия",
+      "Психометрический тест"
+    ],
+    "min_ent_threshold": 70
+  },
+  "87c2a1b7-cb18-4b4e-b71e-63e22f087623": {
+    "slug": "amu",
+    "name": "Фармация",
+    "exams": [
+      "Биология",
+      "Химия"
+    ],
+    "min_ent_threshold": 70
+  },
+  "d4a2de53-e544-4174-9d46-470f687fc927": {
+    "slug": "mezhdunarodnaya-obrazovatelnaya-korporacziya",
+    "name": "Водоснабжение и канализация",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "4599da36-bc29-4148-9332-568da54d57da": {
+    "slug": "mezhdunarodnaya-obrazovatelnaya-korporacziya",
+    "name": "Журналистика",
+    "exams": [
+      "2 Творческих экзамена"
+    ],
+    "min_ent_threshold": 50
+  },
+  "546ecc66-6ef1-4248-9eb6-2e9ac80afe5f": {
+    "slug": "mezhdunarodnaya-obrazovatelnaya-korporacziya",
+    "name": "Международные отношения",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "5becfe85-cb24-4538-aecd-b1f1343a6992": {
+    "slug": "mezhdunarodnaya-obrazovatelnaya-korporacziya",
+    "name": "Переводческое дело",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "af7ae9ee-e442-42bb-a1c8-aa64bbfdca0c": {
+    "slug": "mezhdunarodnaya-obrazovatelnaya-korporacziya",
+    "name": "Теплогазоснабжение и вентиляция",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "16ddfd9c-fb93-43d0-bbf4-9df6627eedd9": {
+    "slug": "mezhdunarodnaya-obrazovatelnaya-korporacziya",
+    "name": "Туризм",
+    "exams": [
+      "География",
+      "Иностранный язык"
+    ],
+    "min_ent_threshold": 50
+  },
+  "a4d4d693-d005-4c04-8d85-32b47f0c322f": {
+    "slug": "mezhdunarodnaya-obrazovatelnaya-korporacziya",
+    "name": "Учет и аудит",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "33191e55-0c6e-4674-9de8-03999c672549": {
+    "slug": "mezhdunarodnaya-obrazovatelnaya-korporacziya",
+    "name": "Финансы",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "f3404784-07d4-43bf-8a39-d8bba8a20b80": {
+    "slug": "mezhdunarodnaya-obrazovatelnaya-korporacziya",
+    "name": "Экономика",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "b03a10e8-854d-4cce-bf18-a31770cae4ef": {
+    "slug": "mezhdunarodnaya-obrazovatelnaya-korporacziya",
+    "name": "Юриспруденция",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "2c145da8-02b5-42fb-83b7-629d4f445362": {
+    "slug": "mezhdunarodnyj-inzhenerno-tehnologicheskij-universitet",
+    "name": "IT Маркетинг",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "e254fb5a-8351-451e-aa7f-47cf0754a215": {
+    "slug": "mezhdunarodnyj-inzhenerno-tehnologicheskij-universitet",
+    "name": "Автоматизация и управление",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "cd0a6521-79ea-4755-a221-cc6291999471": {
+    "slug": "mezhdunarodnyj-inzhenerno-tehnologicheskij-universitet",
+    "name": "Безопасность жизнедеятельности и защита окружающей среды",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "c9da1627-0019-414d-8d0a-4fce634eb3dd": {
+    "slug": "mezhdunarodnyj-inzhenerno-tehnologicheskij-universitet",
+    "name": "Биоинженерия и биоинформатика",
+    "exams": [
+      "Биология",
+      "Химия"
+    ],
+    "min_ent_threshold": 50
+  },
+  "658b0177-e286-4613-be9a-907280e0868d": {
+    "slug": "mezhdunarodnyj-inzhenerno-tehnologicheskij-universitet",
+    "name": "Биотехнология",
+    "exams": [
+      "Биология",
+      "Химия"
+    ],
+    "min_ent_threshold": 50
+  },
+  "f14f5979-c36a-4bc5-9ed1-6246c77e7651": {
+    "slug": "mezhdunarodnyj-inzhenerno-tehnologicheskij-universitet",
+    "name": "Туризм",
+    "exams": [
+      "География",
+      "Иностранный язык"
+    ],
+    "min_ent_threshold": 50
+  },
+  "1be5a22a-459a-4232-8190-b0a9a526f099": {
+    "slug": "mezhdunarodnyj-inzhenerno-tehnologicheskij-universitet",
+    "name": "Финансы",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "be8cae75-d8e7-4fc8-ba16-5d2c6a93bdff": {
+    "slug": "aiu",
+    "name": "Architectural design",
+    "exams": [
+      "2 Творческих экзамена"
+    ],
+    "min_ent_threshold": 50
+  },
+  "99054ced-3e56-4c6c-b822-e53584355627": {
+    "slug": "aiu",
+    "name": "Ecology and nature management",
+    "exams": [
+      "Биология",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "276be41e-4b2b-45ab-9234-28ccac592d4e": {
+    "slug": "aiu",
+    "name": "Economy",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "c1fa6e91-b27a-488e-af07-b184ddb20181": {
+    "slug": "aiu",
+    "name": "Finance",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "309d4258-9505-47d8-a4e9-dfc2bf07055e": {
+    "slug": "aiu",
+    "name": "International law",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "4331baca-5e8b-4016-a916-ed1cf1b041d0": {
+    "slug": "aiu",
+    "name": "Management",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "779d1eb3-0eca-4ddb-a22f-e1578bebc3f6": {
+    "slug": "aiu",
+    "name": "Pedagogy and methodology of primary education",
+    "exams": [
+      "Биология",
+      "География",
+      "Специальный педагогический экзамен"
+    ],
+    "min_ent_threshold": 75
+  },
+  "df95d3d6-23d3-4379-827d-955f4e9b9e0c": {
+    "slug": "aiu",
+    "name": "Preschool education and upbringing",
+    "exams": [
+      "Биология",
+      "География",
+      "Специальный педагогический экзамен"
+    ],
+    "min_ent_threshold": 75
+  },
+  "da4724c6-e447-4333-8cb5-43c5e9968ab2": {
+    "slug": "aiu",
+    "name": "Переводческое дело (китайский, турецкий)",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "9e5cfe4e-ab57-42bf-9765-24a0395dc6ce": {
+    "slug": "aiu",
+    "name": "Юриспруденция",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "ed1b9a36-1fe1-42a0-aeff-651093a76a2f": {
+    "slug": "mezhdunarodnyj-universitet-informaczionnyh-tehnologij",
+    "name": "Инженерная Математика",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "82263202-5f7e-414c-ab89-afea61f4a66d": {
+    "slug": "mezhdunarodnyj-universitet-informaczionnyh-tehnologij",
+    "name": "Радиотехнические системы передачи информации",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "1209dde7-7dbf-4be9-869b-1cad3257855e": {
+    "slug": "mezhdunarodnyj-universitet-informaczionnyh-tehnologij",
+    "name": "Финансовая Математика",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "51f62c3a-502c-423d-9c45-06090fd0b1e9": {
+    "slug": "mezhdunarodnyj-universitet-informaczionnyh-tehnologij",
+    "name": "Цифровые агросистемы и комплексы",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "97bdac96-2dae-47f3-8eaf-ad8e3968e911": {
+    "slug": "mezhdunarodnyj-universitet-informaczionnyh-tehnologij",
+    "name": "Электронный бизнес",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "2a63f949-5905-49c2-9295-28b2c8bfaf80": {
+    "slug": "turan-astana",
+    "name": "Государственное и местное управление",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "192dbd07-f322-4ea4-8110-15ee9a3bbb11": {
+    "slug": "turan-astana",
+    "name": "Международное право",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "68a9c836-0388-4c99-9ec0-176cf02ae628": {
+    "slug": "turan-astana",
+    "name": "Менеджмент",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "4b2adebc-573d-4607-abe2-6b3256d5aab4": {
+    "slug": "turan-astana",
+    "name": "Переводческое дело",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "6d30a555-4e1f-489b-a1d2-6452ddf059da": {
+    "slug": "turan-astana",
+    "name": "Правовое регулирование экономики",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "a881b73e-62b9-44ad-b5b7-2782b8e688ad": {
+    "slug": "turan-astana",
+    "name": "Психология",
+    "exams": [
+      "Биология",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "d28e2eed-2ca8-4f47-a291-891bd48dbb61": {
+    "slug": "turan-astana",
+    "name": "Туризм",
+    "exams": [
+      "География",
+      "Иностранный язык"
+    ],
+    "min_ent_threshold": 50
+  },
+  "8d4827c6-9ff9-4981-8968-92d2b15af189": {
+    "slug": "turan-astana",
+    "name": "Учёт и аудит",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "0e45559d-f5c4-41fc-9c38-2e94eac4bb72": {
+    "slug": "turan-astana",
+    "name": "Филология",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "056cec5f-f588-4935-bead-6f1584f73ea9": {
+    "slug": "turan-astana",
+    "name": "Финансы",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "f30fdd64-6ff8-488c-9e6e-6e2fbb337ce3": {
+    "slug": "turan-astana",
+    "name": "Цифровая юриспруденция",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "0501302c-bc95-4788-8665-087f2a20b075": {
+    "slug": "turan-astana",
+    "name": "Экономика",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "e90c0a83-fad5-41ff-8d03-923fd47addd1": {
+    "slug": "turan-astana",
+    "name": "Юриспруденция",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "39435a81-a9a1-4290-b542-7b6932a7efd6": {
+    "slug": "universitet-turan",
+    "name": "Вычислительная техника и программное обеспечение",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "3578fe5f-2ddc-4512-aa69-77f9d525d2a7": {
+    "slug": "universitet-turan",
+    "name": "Интеллектуальная робототехника",
+    "exams": [
+      "Математика",
+      "Физика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "c4e047e3-2d3d-40cb-984f-90555cb947dd": {
+    "slug": "universitet-turan",
+    "name": "Информационные системы",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "7def8b8a-88a4-4bd1-bdff-87202c7cf522": {
+    "slug": "universitet-turan",
+    "name": "Международное право",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "8d019532-7b46-44f2-9ac9-b355b3ddf6ef": {
+    "slug": "universitet-turan",
+    "name": "Международные отношения",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "de0e6ed5-6a1e-4714-85c5-378d4c587890": {
+    "slug": "universitet-turan",
+    "name": "Операторское искусство",
+    "exams": [
+      "2 Творческих экзамена"
+    ],
+    "min_ent_threshold": 50
+  },
+  "5914fb6b-3150-421c-8eef-60731337f71d": {
+    "slug": "universitet-turan",
+    "name": "Программная инженерия",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "98d64339-599e-432f-aaa8-2f26dd97f1c3": {
+    "slug": "universitet-turan",
+    "name": "Психология",
+    "exams": [
+      "Биология",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "cadb3d67-b2d3-42a0-bf33-d6d7c138c180": {
+    "slug": "universitet-turan",
+    "name": "Регионоведение",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "6c2ac902-0ca9-4b84-97b4-df995694589e": {
+    "slug": "universitet-turan",
+    "name": "Ресторанное дело и гостиничный бизнес",
+    "exams": [
+      "География",
+      "Иностранный язык"
+    ],
+    "min_ent_threshold": 50
+  },
+  "11d62384-9851-448c-9dcd-2f6d67f9bdfd": {
+    "slug": "universitet-turan",
+    "name": "Туризм",
+    "exams": [
+      "География",
+      "Иностранный язык"
+    ],
+    "min_ent_threshold": 50
+  },
+  "d1e28329-8447-48f6-b94e-e7efc32cdf3a": {
+    "slug": "universitet-turan",
+    "name": "Юриспруденция",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "0289f619-bded-4f8c-9016-9d28de37a21c": {
+    "slug": "kazgyuu",
+    "name": "IT в бизнесе",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "7908c612-0f53-4f58-8383-b4ab82c13047": {
+    "slug": "kazgyuu",
+    "name": "Гостеприимство",
+    "exams": [
+      "География",
+      "Иностранный язык"
+    ],
+    "min_ent_threshold": 50
+  },
+  "3b0bd389-fccc-41e1-b066-9d582fa7f8a5": {
+    "slug": "kazgyuu",
+    "name": "Казахский-английский языки и лингвистика",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "7ada9b89-84f7-4e8d-9edd-17aaaef46d0f": {
+    "slug": "kazgyuu",
+    "name": "Прикладная лингвистика",
+    "exams": [
+      "Иностранный язык",
+      "Всемирная история"
+    ],
+    "min_ent_threshold": 50
+  },
+  "f4cf9a54-3188-4a21-a586-ab6bfe6ead2c": {
+    "slug": "universitet-mezhdunarodnogo-biznesa-uib",
+    "name": "Smart технологии",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "a7c9a663-22b5-4fa6-8451-e5b01edeb9d6": {
+    "slug": "universitet-mezhdunarodnogo-biznesa-uib",
+    "name": "Аналитика Big data",
+    "exams": [
+      "Математика",
+      "Информатика"
+    ],
+    "min_ent_threshold": 50
+  },
+  "edc96015-589e-4fd9-8585-00c50b9d4b57": {
+    "slug": "universitet-mezhdunarodnogo-biznesa-uib",
+    "name": "Корпоративные финансы",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "760823a2-e30e-4c2c-a93f-da3b7e4c5fb4": {
+    "slug": "universitet-mezhdunarodnogo-biznesa-uib",
+    "name": "Международное экономическое право",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "eac1c4eb-6856-4019-92c4-ddacb2d2fb9c": {
+    "slug": "universitet-mezhdunarodnogo-biznesa-uib",
+    "name": "Правовое обеспечение экономической безопасности",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  },
+  "8ba1814c-36ae-4f62-9250-adacf17f1ec5": {
+    "slug": "universitet-mezhdunarodnogo-biznesa-uib",
+    "name": "Психологические особенности развития личности",
+    "exams": [
+      "Биология",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "ca51a7bb-c153-49a8-a44c-b2155b74486d": {
+    "slug": "universitet-mezhdunarodnogo-biznesa-uib",
+    "name": "Реклама и PR",
+    "exams": [
+      "2 Творческих экзамена"
+    ],
+    "min_ent_threshold": 50
+  },
+  "b4b1a202-4eec-4ef3-8eb4-a1b865dc997f": {
+    "slug": "universitet-mezhdunarodnogo-biznesa-uib",
+    "name": "Учет и аудит по ACCA",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "1f0190b1-63ab-4966-adb0-3f011eebc3ab": {
+    "slug": "universitet-mezhdunarodnogo-biznesa-uib",
+    "name": "Финансовые рынки и финансовые институты",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "11db323e-f0e4-4777-ae7f-3851bf13dba3": {
+    "slug": "universitet-mezhdunarodnogo-biznesa-uib",
+    "name": "Экономика и менеджмент",
+    "exams": [
+      "Математика",
+      "География"
+    ],
+    "min_ent_threshold": 50
+  },
+  "96a871ee-747d-4f2c-a81e-dd146b23978a": {
+    "slug": "universitet-mezhdunarodnogo-biznesa-uib",
+    "name": "Юриспруденция",
+    "exams": [
+      "Всемирная история",
+      "Человек.Общество.Право"
+    ],
+    "min_ent_threshold": 75
+  }
+}

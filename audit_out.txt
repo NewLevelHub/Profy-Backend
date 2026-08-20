@@ -1,0 +1,912 @@
+489 unique specialty names in corpus
+
+[medicine-pharmacy] /медицин/ -> 2 match(es)
+    Медицинская биология
+    Общая медицина
+[medicine-pharmacy] /медико/ -> 1 match(es)
+    Медико-профилактическое дело
+[medicine-pharmacy] /стоматолог/ -> 1 match(es)
+    Стоматология
+[medicine-pharmacy] /фармац/ -> 2 match(es)
+    Технология фармацевтического производства
+    Фармация
+[medicine-pharmacy] /здравоохран/ -> 2 match(es)
+    Общественное здравоохранение
+    Социальная работа в здравоохранении
+[medicine-pharmacy] /здоровь/ -> 1 match(es)
+    Общественное здоровье
+[medicine-pharmacy] /сестринск/ -> 2 match(es)
+    Сестринское дело
+    Сестринское дело (включая Кинезитерапию, Эрготерапию)
+[medicine-pharmacy] /педиатр/ -> 1 match(es)
+    Педиатрия
+[medicine-pharmacy] /клиническ/ -> 1 match(es)
+    Клиническая психология
+[medicine-pharmacy] /medicine/ -> 1 match(es)
+    6-летняя программа "Doctor of Medicine" (Undergraduate Medical Program)
+[medicine-pharmacy] /medical/ -> 2 match(es)
+    6-летняя программа "Doctor of Medicine" (Undergraduate Medical Program)
+    Bachelor of Medical Science
+[medicine-pharmacy] /nursing/ -> 1 match(es)
+    Bachelor in Nursing
+[biology-ecology] /биолог/ -> 3 match(es)
+    Биология
+    Медицинская биология
+    Подготовка учителей биологии
+[biology-ecology] /ветеринар/ -> 2 match(es)
+    Ветеринарная санитария
+    Факультет ветеринарии и технологии животноводства
+[biology-ecology] /биотехнолог/ -> 1 match(es)
+    Биотехнология
+[biology-ecology] /биофизик/ -> 1 match(es)
+    Биофизика
+[biology-ecology] /экологи/ -> 5 match(es)
+    Energy and Environmental Engineering (Энергетика и экологическая инженерия)
+    Инженерная экология
+    Экология
+    Экология и природопользование
+    Энергетическая и экологическая техника
+[biology-ecology] /окружающ/ -> 2 match(es)
+    Безопасность жизнедеятельности и защита окружающей среды
+    Окружающая среда и устойчивое развитие
+[biology-ecology] /природопользован/ -> 2 match(es)
+    Природопользование
+    Экология и природопользование
+[biology-ecology] /животновод/ -> 2 match(es)
+    Технология производства продуктов животноводства
+    Факультет ветеринарии и технологии животноводства
+[biology-ecology] /агроном/ -> 1 match(es)
+    Агрономия
+[biology-ecology] /аграрн/ -> 3 match(es)
+    Аграрная техника и технология
+    Аграрный AI
+    Аграрный факультет
+[biology-ecology] /растени/ -> 1 match(es)
+    Наука о растениях и технологии
+[biology-ecology] /мелиораци/ -> 1 match(es)
+    Водное хозяйство и мелиорация
+[biology-ecology] /аквакультур/ -> 1 match(es)
+    Аквакультура и водные биоресурсы
+[biology-ecology] /биоресурс/ -> 1 match(es)
+    Аквакультура и водные биоресурсы
+[biology-ecology] /охотовед/ -> 1 match(es)
+    Охотоведение и звероводство
+[biology-ecology] /зверовод/ -> 1 match(es)
+    Охотоведение и звероводство
+[biology-ecology] /почвовед/ -> 2 match(es)
+    Плодоовощеводство и агропочвоведение
+    Почвоведение и агрохимия
+[biology-ecology] /biolog/ -> 1 match(es)
+    Biological Sciences
+[biology-ecology] /ecology/ -> 1 match(es)
+    Ecology and nature management
+[biology-ecology] /environment/ -> 2 match(es)
+    Civil and Environmental Engineering
+    Energy and Environmental Engineering (Энергетика и экологическая инженерия)
+[biology-ecology] /естественн\S*\s+наук/ -> 1 match(es)
+    Естественных наук
+[sport-physical-education] /физическ/ -> 7 match(es)
+    Адаптивная физическая культура и спорт
+    Подготовка учителей физической культуры
+    Подготовка учителя физической культуры и инструктора-методиста по массовой физкультурно-оздоровительной работе
+    Подготовка учителя физической культуры и тренера по конным видам спорта
+    Подготовка учителя физической культуры и тренера по национальным видам спорта, спортивным играм
+    Учитель физической культуры и тренер по видам спорта
+    Физическая культура и спорт
+[sport-physical-education] /фитнес/ -> 1 match(es)
+    Фитнес и рекреация
+[psychology-pedagogy] /психолог/ -> 7 match(es)
+    Клиническая психология
+    Организационная психология
+    Педагогика и психология
+    Педагогика и психология с полиязычием
+    Психологические особенности развития личности
+    Психологическое консультирование
+    Психология
+[psychology-pedagogy] /педагог/ -> 10 match(es)
+    Педагог — тренер по Qazaq kuresi
+    Педагог — тренер по настольным видам спорта (шахматы)
+    Педагогика и методика начального обучения
+    Педагогика и психология
+    Педагогика и психология с полиязычием
+    Педагогика спортивного бального танца
+    Педагогика хореографии
+    Педагогика хореографического искусства
+    Социальная педагогика
+    Социальная педагогика и самопознание
+[psychology-pedagogy] /дошкольн/ -> 2 match(es)
+    Дошкольное образование и воспитание
+    Дошкольное обучение и воспитание
+[psychology-pedagogy] /начальн/ -> 5 match(es)
+    Начальная военная подготовка
+    Начальное образование
+    Начальное образование на английском языке
+    Начальное образование с информационно-коммуникационными технологиями
+    Педагогика и методика начального обучения
+[psychology-pedagogy] /учитель/ -> 4 match(es)
+    Учитель информатики
+    Учитель информатики/математики и др.
+    Учитель математики
+    Учитель физической культуры и тренер по видам спорта
+[psychology-pedagogy] /дефектолог/ -> 1 match(es)
+    Дефектология
+[psychology-pedagogy] /воспитан/ -> 2 match(es)
+    Дошкольное образование и воспитание
+    Дошкольное обучение и воспитание
+[psychology-pedagogy] /psychology/ -> 1 match(es)
+    Psychology
+[psychology-pedagogy] /pedagog/ -> 1 match(es)
+    Pedagogy and methodology of primary education
+[psychology-pedagogy] /литератур/ -> 2 match(es)
+    Казахский язык и литература
+    Русский язык и литература
+[psychology-pedagogy] /географ/ -> 2 match(es)
+    География
+    География-История
+[psychology-pedagogy] /религиовед/ -> 1 match(es)
+    Религиоведение
+[psychology-pedagogy] /исламовед/ -> 1 match(es)
+    Исламоведение
+[psychology-pedagogy] /теолог/ -> 1 match(es)
+    Теология
+[psychology-pedagogy] /истори/ -> 2 match(es)
+    География-История
+    История
+[psychology-pedagogy] /социолог/ -> 1 match(es)
+    Социология
+[psychology-pedagogy] /философ/ -> 1 match(es)
+    Философия
+[psychology-pedagogy] /иностранн/ -> 6 match(es)
+    Иностранная филология
+    Иностранная филология (восточные языки: китайский, корейский, японский, арабский, турецкий)
+    Иностранная филология (европейские языки: английский/французский, испанский, немецкий)
+    Иностранные языки
+    Иностранный язык: два иностранных языка
+    Международное право, юрист-международник со знанием двух иностранных языков
+[psychology-pedagogy] /лингвист/ -> 2 match(es)
+    Казахский-английский языки и лингвистика
+    Прикладная лингвистика
+[psychology-pedagogy] /когнитивн/ -> 1 match(es)
+    Когнитивные науки
+[psychology-pedagogy] /preschool/ -> 1 match(es)
+    Preschool education and upbringing
+[psychology-pedagogy] /history/ -> 1 match(es)
+    History
+[psychology-pedagogy] /sociolog/ -> 1 match(es)
+    Sociology
+[psychology-pedagogy] /anthropolog/ -> 1 match(es)
+    Anthropology
+[psychology-pedagogy] /linguistic/ -> 2 match(es)
+    Applied Linguistics
+    Linguistics (TESOL) and Translation Technologies
+[psychology-pedagogy] /literature/ -> 1 match(es)
+    World Languages, Literature and Culture
+[psychology-pedagogy] /\blanguage/ -> 1 match(es)
+    World Languages, Literature and Culture
+[psychology-pedagogy] /социальн\S*\s+наук/ -> 1 match(es)
+    Социальных наук
+[psychology-pedagogy] /социальн\S*\s+работ/ -> 2 match(es)
+    Социальная работа
+    Социальная работа в здравоохранении
+[psychology-pedagogy] /профессиональное обучение/ -> 1 match(es)
+    Профессиональное обучение
+[psychology-pedagogy] /культурно-досугов/ -> 1 match(es)
+    Культурно-досуговая работа
+[psychology-pedagogy] /библиотечн/ -> 1 match(es)
+    Библиотечное дело
+[law-public-administration] /юрис/ -> 8 match(es)
+    IT-юрист
+    Law (Юриспруденция)
+    Международное право, юрист-международник со знанием двух иностранных языков
+    Цифровая юриспруденция
+    Юриспруденция
+    Юриспруденция: государственное управление
+    Юриспруденция: правоохранительная деятельность
+    Юриспруденция: предпринимательское право
+[law-public-administration] /юрид/ -> 3 match(es)
+    Юридическая деятельность в сфере защиты прав человека
+    Юридические направления
+    Юридический
+[law-public-administration] /право/ -> 14 match(es)
+    International Law (Международное право)
+    Бизнес право
+    Бизнес-право
+    Корпоративное право
+    Международное право
+    Международное право и безопасность
+    Международное право, юрист-международник со знанием двух иностранных языков
+    Международное экономическое право
+    Право и правоохранительная деятельность
+    Правовое обеспечение экономической безопасности
+    Правовое регулирование экономики
+    Правоохранительная деятельность
+    Юриспруденция: правоохранительная деятельность
+    Юриспруденция: предпринимательское право
+[law-public-administration] /таможен/ -> 2 match(es)
+    Таможенное дело
+    Таможенное оформление и таможенный контроль
+[law-public-administration] /прокур/ -> 1 match(es)
+    Судебно-прокурорская деятельность
+[law-public-administration] /следствен/ -> 1 match(es)
+    Следственно-криминалистическая деятельность
+[law-public-administration] /law/ -> 3 match(es)
+    International Law (Международное право)
+    International law
+    Law (Юриспруденция)
+[law-public-administration] /правоохран/ -> 3 match(es)
+    Право и правоохранительная деятельность
+    Правоохранительная деятельность
+    Юриспруденция: правоохранительная деятельность
+[law-public-administration] /государственное/ -> 4 match(es)
+    Государственное и местное управление
+    Государственное и региональное управление
+    Государственное управление
+    Юриспруденция: государственное управление
+[law-public-administration] /местное управление/ -> 1 match(es)
+    Государственное и местное управление
+[law-public-administration] /public administration/ -> 1 match(es)
+    Digital Public Administration
+[law-public-administration] /регионовед/ -> 1 match(es)
+    Регионоведение
+[law-public-administration] /востоковед/ -> 1 match(es)
+    Востоковедение
+[law-public-administration] /тюрколог/ -> 1 match(es)
+    Тюркология
+[law-public-administration] /филолог/ -> 5 match(es)
+    Иностранная филология
+    Иностранная филология (восточные языки: китайский, корейский, японский, арабский, турецкий)
+    Иностранная филология (европейские языки: английский/французский, испанский, немецкий)
+    Филологический
+    Филология
+[law-public-administration] /перевод/ -> 6 match(es)
+    Межкультурно-коммуникативный перевод
+    Переводческое дело
+    Переводческое дело (английский, французский, испанский, немецкий, китайский, корейский, арабский)
+    Переводческое дело (восточные языки)
+    Переводческое дело (западные языки)
+    Переводческое дело (китайский, турецкий)
+[law-public-administration] /политолог/ -> 2 match(es)
+    Журналистики и политологии
+    Политология
+[law-public-administration] /международн\S*\s+отношен/ -> 2 match(es)
+    Международные отношения
+    Международных отношений
+[law-public-administration] /political science/ -> 1 match(es)
+    Political Science and International Relations
+[law-public-administration] /translation/ -> 2 match(es)
+    Linguistics (TESOL) and Translation Technologies
+    Translation Studies
+[law-public-administration] /international relations/ -> 2 match(es)
+    International Relations
+    Political Science and International Relations
+[finance-economics] /финанс/ -> 8 match(es)
+    Бухгалтерский учет и финансы
+    Корпоративные финансы
+    Финансовая Математика
+    Финансовая аналитика
+    Финансовые рынки и финансовые институты
+    Финансы
+    Финансы и Экономика
+    Финансы и инвестиции
+[finance-economics] /эконом/ -> 14 match(es)
+    Бизнес-экономика
+    Информационный инжиниринг в экономике
+    Международное экономическое право
+    Мировая экономика
+    Правовое обеспечение экономической безопасности
+    Правовое регулирование экономики
+    Финансы и Экономика
+    Экономика
+    Экономика и менеджмент
+    Экономика и менеджмент (по отраслям)
+    Экономика и наука о данных
+    Экономико-математическое и компьютерное моделирование
+    Экономический
+    Экономический факультет
+[finance-economics] /бухгалт/ -> 2 match(es)
+    Бухгалтерский учет и аудит
+    Бухгалтерский учет и финансы
+[finance-economics] /аудит/ -> 5 match(es)
+    Бухгалтерский учет и аудит
+    Учет и Аудит
+    Учет и аудит
+    Учет и аудит по ACCA
+    Учёт и аудит
+[finance-economics] /finance/ -> 1 match(es)
+    Finance
+[finance-economics] /econom/ -> 4 match(es)
+    Economics
+    Economics and Data Science
+    Economy
+    UIBE (University of International Business and Economics)
+[finance-economics] /accounting/ -> 1 match(es)
+    Accounting with AI
+[business-management] /менеджмент/ -> 12 match(es)
+    IT-менеджмент
+    PR-Менеджмент
+    Арт-менеджмент
+    Арт-менеджмент, продюсирование
+    Глобальный менеджмент
+    Инновационный менеджмент
+    Менеджмент
+    Менеджмент и маркетинг
+    Менеджмент предприятий
+    Режиссура, арт-менеджмент
+    Экономика и менеджмент
+    Экономика и менеджмент (по отраслям)
+[business-management] /бизнес/ -> 20 match(es)
+    Digital бизнес
+    IT (Information Technology, бизнес-профиль)
+    IT в бизнесе
+    Аналитика бизнес данных
+    Бизнес администрирование
+    Бизнес аналитика и искусственный интеллект
+    Бизнес и маркетинг
+    Бизнес и управление
+    Бизнес право
+    Бизнес-право
+    Бизнес-предпринимательство и инновации
+    Бизнес-экономика
+    Информационные бизнес-системы
+    Информационные системы в бизнесе
+    Маркетинг и бизнес аналитика
+    Международный бизнес
+    Ресторанное дело и гостиничный бизнес
+    Ресторанный и гостиничный бизнес
+    Ресторанный и отельный бизнес
+    Электронный бизнес
+[business-management] /предпринимат/ -> 2 match(es)
+    Бизнес-предпринимательство и инновации
+    Юриспруденция: предпринимательское право
+[business-management] /логистик/ -> 8 match(es)
+    Logistics (Логистика)
+    Логистика (по отраслям)
+    Логистика на транспорте
+    Организация авиационных перевозок и логистика
+    Организация перевозок и логистика на транспорте
+    Производственная логистика
+    Транспортная логистика
+    Цифровая логистика
+[business-management] /туризм/ -> 4 match(es)
+    Международный туризм
+    Рекреация и спортивно-оздоровительный туризм
+    Туризм
+    Туризм и гостеприимство
+[business-management] /гостепри/ -> 2 match(es)
+    Гостеприимство
+    Туризм и гостеприимство
+[business-management] /гостинич/ -> 2 match(es)
+    Ресторанное дело и гостиничный бизнес
+    Ресторанный и гостиничный бизнес
+[business-management] /ресторанн/ -> 3 match(es)
+    Ресторанное дело и гостиничный бизнес
+    Ресторанный и гостиничный бизнес
+    Ресторанный и отельный бизнес
+[business-management] /management/ -> 7 match(es)
+    Business Management/Administration
+    Ecology and nature management
+    IT Management
+    Industrial management
+    Management
+    Management in Tourism and Hospitality
+    Travel Management and Data Analysis
+[business-management] /business/ -> 5 match(es)
+    AI Business
+    Business Administration (BBA)
+    Business Management/Administration
+    Eurasian Business (двойной диплом с HKUST)
+    UIBE (University of International Business and Economics)
+[business-management] /logistics/ -> 1 match(es)
+    Logistics (Логистика)
+[business-management] /tourism/ -> 2 match(es)
+    Management in Tourism and Hospitality
+    Tourism
+[business-management] /hospitality/ -> 2 match(es)
+    Hospitality
+    Management in Tourism and Hospitality
+[business-management] /администрирован/ -> 1 match(es)
+    Бизнес администрирование
+[media-marketing] /журналист/ -> 5 match(es)
+    Журналистика
+    Журналистика: аналитика и расследования
+    Журналистики и политологии
+    Конвергентная журналистика
+    Международная журналистика
+[media-marketing] /медиа/ -> 3 match(es)
+    Аудиовизуальные устройства и медиапроизводство
+    Медиакоммуникации
+    Новые медиа (New Media)
+[media-marketing] /реклам/ -> 2 match(es)
+    Реклама и PR
+    Реклама и маркетинговые коммуникации
+[media-marketing] /связ[ьи] с общественностью/ -> 2 match(es)
+    Связи с общественностью
+    Связь с общественностью
+[media-marketing] /pr-/ -> 1 match(es)
+    PR-Менеджмент
+[media-marketing] /маркетинг/ -> 8 match(es)
+    Digital маркетинг
+    Digital-маркетинг
+    IT Маркетинг
+    Бизнес и маркетинг
+    Маркетинг
+    Маркетинг и бизнес аналитика
+    Менеджмент и маркетинг
+    Реклама и маркетинговые коммуникации
+[media-marketing] /journalism/ -> 2 match(es)
+    Digital Journalism
+    International Journalism
+[media-marketing] /media/ -> 3 match(es)
+    Content, Marketing and Data Analysis (Media)
+    Media Technologies
+    Новые медиа (New Media)
+[media-marketing] /marketing/ -> 2 match(es)
+    Content, Marketing and Data Analysis (Media)
+    Marketing
+[media-marketing] /(?<!теле)коммуникац/ -> 4 match(es)
+    Медиакоммуникации
+    Начальное образование с информационно-коммуникационными технологиями
+    Политические массовые коммуникации
+    Реклама и маркетинговые коммуникации
+[design-digital-art] /дизайн/ -> 9 match(es)
+    Графический дизайн
+    Графический дизайн (Иллюстрация)
+    Декоративное искусство и этнодизайн
+    Дизайн
+    Дизайн среды и интерьера
+    Ландшафтный дизайн и озеленение
+    Мода, дизайн
+    Промышленный дизайн
+    Факультет управления земельными ресурсами, архитектуры и дизайна
+[design-digital-art] /искусств(?!енн)/ -> 17 match(es)
+    Актерское искусство
+    Балетмейстерское искусство
+    Вокальное искусство
+    Декоративное искусство
+    Декоративное искусство и этнодизайн
+    Изобразительное искусство
+    Изобразительное искусство и черчение
+    Искусствоведение
+    Операторское искусство
+    Операторское искусство и фотоискусство
+    Педагогика хореографического искусства
+    Театральное искусство
+    Традиционное музыкальное искусство
+    Традиционное музыкальное искусство (домбра)
+    Традиционное музыкальное искусство (кобыз и баян)
+    Традиционное музыкальное искусство (народное пение)
+    Эстрадное искусство
+[design-digital-art] /скульптур/ -> 1 match(es)
+    Скульптура
+[design-digital-art] /хореограф/ -> 2 match(es)
+    Педагогика хореографии
+    Педагогика хореографического искусства
+[design-digital-art] /режиссур/ -> 6 match(es)
+    Режиссура
+    Режиссура анимации
+    Режиссура анимационного фильма
+    Режиссура кино и телевидения
+    Режиссура театра
+    Режиссура, арт-менеджмент
+[design-digital-art] /\bактер/ -> 1 match(es)
+    Актерское искусство
+[design-digital-art] /музык/ -> 6 match(es)
+    Музыкальное образование
+    Музыковедение
+    Традиционное музыкальное искусство
+    Традиционное музыкальное искусство (домбра)
+    Традиционное музыкальное искусство (кобыз и баян)
+    Традиционное музыкальное искусство (народное пение)
+[design-digital-art] /вокал/ -> 1 match(es)
+    Вокальное искусство
+[design-digital-art] /кино/ -> 2 match(es)
+    Режиссура кино и телевидения
+    Цифровое кинопроизводство (Digital Filmmaking)
+[design-digital-art] /анимаци/ -> 2 match(es)
+    Режиссура анимации
+    Режиссура анимационного фильма
+[design-digital-art] /оператор/ -> 2 match(es)
+    Операторское искусство
+    Операторское искусство и фотоискусство
+[design-digital-art] /сценограф/ -> 1 match(es)
+    Сценография
+[design-digital-art] /декоративн/ -> 2 match(es)
+    Декоративное искусство
+    Декоративное искусство и этнодизайн
+[design-digital-art] /балет/ -> 2 match(es)
+    Артист балета
+    Балетмейстерское искусство
+[design-digital-art] /танц/ -> 2 match(es)
+    Артист ансамбля танца
+    Педагогика спортивного бального танца
+[design-digital-art] /исполнительств/ -> 5 match(es)
+    Инструментальное исполнительство
+    Инструментальное исполнительство (духовые и ударные инструменты)
+    Инструментальное исполнительство (классическая гитара)
+    Инструментальное исполнительство (струнные инструменты)
+    Инструментальное исполнительство (фортепиано)
+[design-digital-art] /fashion/ -> 2 match(es)
+    Fashion design
+    Fashion-индустрия: технологии и конструирование
+[design-digital-art] /технология моды/ -> 1 match(es)
+    Технология моды
+[design-digital-art] /дирижир/ -> 4 match(es)
+    Дирижирование
+    Дирижирование (оркестровое)
+    Дирижирование (хоровое)
+    Дирижирование военно-духовым оркестром
+[design-digital-art] /композици/ -> 1 match(es)
+    Композиция
+[design-digital-art] /аудио/ -> 2 match(es)
+    Аудиовизуальные устройства и медиапроизводство
+    Аудиопроизводство
+[design-digital-art] /design/ -> 4 match(es)
+    Architectural design
+    Fashion design
+    Graphic design
+    IT Design
+[design-digital-art] /film/ -> 1 match(es)
+    Цифровое кинопроизводство (Digital Filmmaking)
+[data-science-ai] /data science/ -> 2 match(es)
+    Data Science
+    Economics and Data Science
+[data-science-ai] /наук[аи] о данн/ -> 2 match(es)
+    Наука о данных
+    Экономика и наука о данных
+[data-science-ai] /искусственн/ -> 6 match(es)
+    Бизнес аналитика и искусственный интеллект
+    Высоконагруженные информационные системы с искусственным интеллектом
+    Искусственный интеллект
+    Искусственный интеллект и анализ данных
+    Прикладной искусственный интеллект
+    Технологии искусственного интеллекта
+[data-science-ai] /статистик/ -> 1 match(es)
+    Статистика
+[data-science-ai] /machine learning/ -> 1 match(es)
+    AI and Machine Learning
+[data-science-ai] /big data/ -> 2 match(es)
+    Big Data Analysis
+    Аналитика Big data
+[data-science-ai] /artificial intelligence/ -> 2 match(es)
+    Artificial Intelligence and Frontier Systems (AI+X)
+    Fintech and Artificial Intelligence
+[data-science-ai] /data analysis/ -> 3 match(es)
+    Big Data Analysis
+    Content, Marketing and Data Analysis (Media)
+    Travel Management and Data Analysis
+[data-science-ai] /аналитика big data/ -> 1 match(es)
+    Аналитика Big data
+[data-science-ai] /physical ai/ -> 1 match(es)
+    Physical AI
+[data-science-ai] /govtech ai/ -> 1 match(es)
+    Smart City / GovTech AI
+[data-science-ai] /fintech ai/ -> 1 match(es)
+    FinTech AI
+[data-science-ai] /healthtech ai/ -> 1 match(es)
+    HealthTech AI
+[data-science-ai] /аграрный ai/ -> 1 match(es)
+    Аграрный AI
+[engineering-science] /инженер/ -> 15 match(es)
+    Energy and Environmental Engineering (Энергетика и экологическая инженерия)
+    Биоинженерия и биоинформатика
+    Вычислительная инженерия
+    Инженерия подвижного состава
+    Инженерия программного обеспечения (Software Engineering)
+    Инженерия строительных материалов и управление качеством
+    Инженерная Математика
+    Инженерная экология
+    Компьютерная инженерия
+    Механическая инженерия
+    Нефтяная инженерия
+    Нефтяная инженерия (UPC)
+    Программная инженерия
+    Теплоэнергетическая инженерия
+    Электротехническая инженерия
+[engineering-science] /строител/ -> 11 match(es)
+    Автомобили, путевые и строительные машины
+    Архитектурно-строительный
+    Инженерия строительных материалов и управление качеством
+    Инновационное производство строительных материалов
+    Информационные технологии в строительстве
+    Строительство
+    Строительство автомобильных дорог и аэродромов
+    Строительство газонефтепроводов и газонефтехранилищ
+    Строительство мостов и тоннелей
+    Технология промышленного и гражданского строительства
+    Транспортное строительство
+[engineering-science] /архитектур/ -> 3 match(es)
+    Архитектура
+    Архитектурно-строительный
+    Факультет управления земельными ресурсами, архитектуры и дизайна
+[engineering-science] /физика/ -> 3 match(es)
+    Астрофизика
+    Биофизика
+    Физика
+[engineering-science] /математи/ -> 10 match(es)
+    Инженерная Математика
+    Математика
+    Математическое и компьютерное моделирование
+    Механико-математический
+    Прикладная математика
+    Прикладная математика и информатика
+    Учитель информатики/математики и др.
+    Учитель математики
+    Финансовая Математика
+    Экономико-математическое и компьютерное моделирование
+[engineering-science] /хими/ -> 3 match(es)
+    Почвоведение и агрохимия
+    Химическая технология органических веществ
+    Химия
+[engineering-science] /геолог/ -> 3 match(es)
+    Геология и разведка месторождений
+    Геология и разведка месторождений полезных ископаемых
+    Геология и разведка ресурсов
+[engineering-science] /нефт/ -> 5 match(es)
+    Нефтегазовое дело
+    Нефтяная инженерия
+    Нефтяная инженерия (UPC)
+    Нефтяная техника
+    Строительство газонефтепроводов и газонефтехранилищ
+[engineering-science] /горн/ -> 1 match(es)
+    Горное дело
+[engineering-science] /машиностроен/ -> 2 match(es)
+    Машиностроение
+    Приоритетные направления — сельскохозяйственное машиностроение и производство пищевых продуктов
+[engineering-science] /энергет/ -> 10 match(es)
+    Energy and Environmental Engineering (Энергетика и экологическая инженерия)
+    IT Энергетика
+    Информационные технологии в электроэнергетике
+    Теплоэнергетика
+    Теплоэнергетическая инженерия
+    Транспортно-энергетический
+    Цифровая энергетика
+    Эксплуатация судовых энергетических установок
+    Электроэнергетика
+    Энергетическая и экологическая техника
+[engineering-science] /электротехн/ -> 1 match(es)
+    Электротехническая инженерия
+[engineering-science] /робототех/ -> 4 match(es)
+    Mechatronics Робототехника
+    Интеллектуальная робототехника
+    Контрольно-измерительные приборы и системы в робототехнике
+    Робототехника и мехатроника
+[engineering-science] /приборостроен/ -> 1 match(es)
+    Приборостроение
+[engineering-science] /engineering/ -> 15 match(es)
+    Chemical and Materials Engineering
+    Civil Engineering
+    Civil and Environmental Engineering
+    Digital Technologies in Nuclear Power Engineering
+    Electrical and Computer Engineering
+    Electronic Engineering
+    Electronic and Electrical Engineering
+    Energy and Environmental Engineering (Энергетика и экологическая инженерия)
+    Mechanical and Aerospace Engineering
+    Mining and Minerals Engineering
+    Petroleum Engineering
+    Process Engineering
+    Robotics Engineering
+    Software Engineering
+    Инженерия программного обеспечения (Software Engineering)
+[engineering-science] /physics/ -> 1 match(es)
+    Physics
+[engineering-science] /mathematic/ -> 2 match(es)
+    Mathematical and Computational Science
+    Mathematics
+[engineering-science] /chemistry/ -> 1 match(es)
+    Chemistry
+[engineering-science] /mining/ -> 1 match(es)
+    Mining and Minerals Engineering
+[engineering-science] /geology/ -> 2 match(es)
+    Geology
+    Geology/Exploration Geology
+[engineering-science] /petroleum/ -> 1 match(es)
+    Petroleum Engineering
+[engineering-science] /земельн/ -> 1 match(es)
+    Факультет управления земельными ресурсами, архитектуры и дизайна
+[engineering-science] /сельск/ -> 2 match(es)
+    Приоритетные направления — сельскохозяйственное машиностроение и производство пищевых продуктов
+    Энергообеспечение сельского хозяйства
+[engineering-science] /пищев/ -> 2 match(es)
+    Приоритетные направления — сельскохозяйственное машиностроение и производство пищевых продуктов
+    Стандартизация, метрология и сертификация (по пищевой отрасли)
+[engineering-science] /продовольств/ -> 2 match(es)
+    Технология продовольственных продуктов
+    Технология продовольственных продуктов (по отраслям)
+[engineering-science] /перерабатыва/ -> 1 match(es)
+    Технология перерабатывающих производств (по отраслям)
+[engineering-science] /лёгк/ -> 1 match(es)
+    Технология и конструирование изделий лёгкой промышленности
+[engineering-science] /промышленн/ -> 6 match(es)
+    Промышленный AI
+    Промышленный дизайн
+    Технология и конструирование изделий легкой промышленности
+    Технология и конструирование изделий лёгкой промышленности
+    Технология промышленного и гражданского строительства
+    Цифровые технологии в агропромышленном комплексе
+[engineering-science] /нанотехнолог/ -> 1 match(es)
+    Нанотехнология текстиля
+[engineering-science] /текстил/ -> 1 match(es)
+    Нанотехнология текстиля
+[engineering-science] /оборудован/ -> 3 match(es)
+    Обслуживание наземного радиоэлектронного оборудования аэропортов
+    Технологические машины и оборудование
+    Технологические машины и оборудование (по отраслям)
+[engineering-science] /снабжен/ -> 2 match(es)
+    Водоснабжение и канализация
+    Теплогазоснабжение и вентиляция
+[engineering-science] /проектирован/ -> 1 match(es)
+    Расчет и проектирование зданий и сооружений
+[engineering-science] /стандартизац/ -> 4 match(es)
+    Стандартизация и сертификация
+    Стандартизация и сертификация (по отраслям)
+    Стандартизация, метрология и сертификация (по пищевой отрасли)
+    Стандартизация, сертификация и метрология
+[engineering-science] /радиотехн/ -> 3 match(es)
+    Радиотехника и электроника
+    Радиотехника, электроника и телекоммуникации
+    Радиотехнические системы передачи информации
+[engineering-science] /радиоактивн/ -> 1 match(es)
+    Технология редких и радиоактивных элементов
+[engineering-science] /уран/ -> 1 match(es)
+    Урановое дело
+[engineering-science] /судов/ -> 2 match(es)
+    Судовождение
+    Эксплуатация судовых энергетических установок
+[engineering-science] /транспорт/ -> 12 match(es)
+    Интеллектуальные технологии транспортных процессов
+    Логистика на транспорте
+    Лётная эксплуатация воздушного транспорта (пилот)
+    Наземный электрический транспорт и зарядная инфраструктура
+    Организация перевозок и логистика на транспорте
+    Организация перевозок, движения и эксплуатации транспорта
+    Организация перевозок, движения и эксплуатация транспорта
+    Технология транспортных процессов в авиации
+    Транспорт, транспортная техника и технологии
+    Транспортная логистика
+    Транспортно-энергетический
+    Транспортное строительство
+[engineering-science] /дорожн/ -> 2 match(es)
+    Организация дорожного движения
+    Организация и безопасность дорожного движения
+[engineering-science] /л[её]тн/ -> 4 match(es)
+    6-летняя программа "Doctor of Medicine" (Undergraduate Medical Program)
+    Летная эксплуатация гражданских вертолётов (пилот)
+    Летная эксплуатация гражданских самолётов (пилот)
+    Лётная эксплуатация воздушного транспорта (пилот)
+[engineering-science] /авиац/ -> 4 match(es)
+    Обеспечение авиационной безопасности
+    Организация авиационных перевозок
+    Организация авиационных перевозок и логистика
+    Технология транспортных процессов в авиации
+[engineering-science] /аэропорт/ -> 2 match(es)
+    Обслуживание наземного радиоэлектронного оборудования аэропортов
+    Организация аэропортовой деятельности
+[engineering-science] /авиони/ -> 1 match(es)
+    Техническая эксплуатация систем авионики летательных аппаратов
+[engineering-science] /летательн/ -> 2 match(es)
+    Техническая эксплуатация летательных аппаратов и двигателей
+    Техническая эксплуатация систем авионики летательных аппаратов
+[engineering-science] /аэронавигацион/ -> 1 match(es)
+    Обслуживание воздушного движения и аэронавигационное обеспечение полетов
+[engineering-science] /полет/ -> 1 match(es)
+    Обслуживание воздушного движения и аэронавигационное обеспечение полетов
+[engineering-science] /сейсмолог/ -> 1 match(es)
+    Сейсмология
+[engineering-science] /жизнедеятельност/ -> 2 match(es)
+    Безопасность жизнедеятельности
+    Безопасность жизнедеятельности и защита окружающей среды
+[engineering-science] /автоматизац/ -> 1 match(es)
+    Автоматизация и управление
+[engineering-science] /дрон/ -> 1 match(es)
+    Дроны и автономные системы
+[engineering-science] /автономн/ -> 1 match(es)
+    Дроны и автономные системы
+[it-development] /программ(?=н|ирова|ист)/ -> 5 match(es)
+    Вычислительная техника и программное обеспечение
+    Инженерия программного обеспечения (Software Engineering)
+    Информационно-программные системы
+    Программная инженерия
+    Разработка программного обеспечения и защита информации
+[it-development] /software/ -> 3 match(es)
+    Computer technology and software
+    Software Engineering
+    Инженерия программного обеспечения (Software Engineering)
+[it-development] /вычислительн/ -> 2 match(es)
+    Вычислительная инженерия
+    Вычислительная техника и программное обеспечение
+[it-development] /информац/ -> 15 match(es)
+    Аппаратные средства защиты информации
+    Высоконагруженные информационные системы с искусственным интеллектом
+    Информационно-программные системы
+    Информационные бизнес-системы
+    Информационные системы
+    Информационные системы в бизнесе
+    Информационные технологии в строительстве
+    Информационные технологии в электроэнергетике
+    Информационные технологии и защита данных
+    Информационный инжиниринг в экономике
+    Информационных технологий
+    Начальное образование с информационно-коммуникационными технологиями
+    Радиотехнические системы передачи информации
+    Разработка программного обеспечения и защита информации
+    Системы информационной безопасности
+[it-development] /информатик/ -> 6 match(es)
+    Биоинженерия и биоинформатика
+    Информатика
+    Информатика (Computer science)
+    Прикладная математика и информатика
+    Учитель информатики
+    Учитель информатики/математики и др.
+[it-development] /it[ -]/ -> 11 match(es)
+    IT (Information Technology, бизнес-профиль)
+    IT Design
+    IT Entrepreneurship
+    IT Management
+    IT Маркетинг
+    IT Энергетика
+    IT в бизнесе
+    IT-менеджмент
+    IT-направления
+    IT-технологии в сфере сервиса
+    IT-юрист
+[it-development] /кибербезопасн/ -> 2 match(es)
+    Кибербезопасность
+    Кибербезопасность цифровых систем
+[it-development] /кибер\s?безопасн/ -> 3 match(es)
+    Кибер безопасность
+    Кибербезопасность
+    Кибербезопасность цифровых систем
+[it-development] /cybersecurity/ -> 1 match(es)
+    Cybersecurity
+[it-development] /сети и/ -> 1 match(es)
+    Телекоммуникационные сети и системы
+[it-development] /сетев/ -> 1 match(es)
+    Сетевая безопасность
+[it-development] /телекоммуникац/ -> 5 match(es)
+    Радиотехника, электроника и телекоммуникации
+    Телекоммуникационные сети и системы
+    Телекоммуникационные системы и сети
+    Телекоммуникационные системы и сети ж.д.связи
+    Телекоммуникация
+[it-development] /телематик/ -> 1 match(es)
+    Телематика
+[it-development] /internet/ -> 1 match(es)
+    Industrial Internet of Things
+[it-development] /smart/ -> 4 match(es)
+    Smart City / GovTech AI
+    Smart Security Technologies
+    Smart Technologies
+    Smart технологии
+[it-development] /computing/ -> 1 match(es)
+    Mobile computing (Мобильные вычисления)
+[it-development] /компьютерн/ -> 6 match(es)
+    Компьютерная безопасность
+    Компьютерная инженерия
+    Компьютерные науки
+    Математическое и компьютерное моделирование
+    Факультет компьютерных систем и профессионального образования
+    Экономико-математическое и компьютерное моделирование
+[it-development] /computer/ -> 4 match(es)
+    Computer Science
+    Computer technology and software
+    Electrical and Computer Engineering
+    Информатика (Computer science)
+[it-development] /cs / -> 5 match(es)
+    Economics and Data Science
+    Linguistics (TESOL) and Translation Technologies
+    Logistics (Логистика)
+    Mechatronics Робототехника
+    Robotics Engineering
+[it-development] /digital technolog/ -> 1 match(es)
+    Digital Technologies in Nuclear Power Engineering
+[it-development] /криптолог/ -> 1 match(es)
+    Криптология
+[it-development] /цифров/ -> 7 match(es)
+    Кибербезопасность цифровых систем
+    Цифровая логистика
+    Цифровая энергетика
+    Цифровая юриспруденция
+    Цифровое кинопроизводство (Digital Filmmaking)
+    Цифровые агросистемы и комплексы
+    Цифровые технологии в агропромышленном комплексе

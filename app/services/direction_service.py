@@ -2,8 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.direction import Direction
-from app.models.profile import AgeGroup
-from app.schemas.direction import DirectionBase, DirectionDetail, DirectionMatch
+from app.schemas.direction import DirectionBase, DirectionDetail
 
 
 async def get_all_directions(db: AsyncSession) -> list[Direction]:
@@ -16,77 +15,40 @@ async def get_direction_by_slug(slug: str, db: AsyncSession) -> Direction | None
     return result.scalar_one_or_none()
 
 
-def _fits_age(direction: Direction, age_group: AgeGroup | None) -> bool:
-    """Whether a direction is offered to the given age group.
-
-    age_group=None means "no age filtering". An unconfigured/empty age_groups
-    list is treated as available to everyone (defensive)."""
-    if age_group is None:
-        return True
-    groups = direction.age_groups or []
-    if not groups:
-        return True
-    return age_group.value in groups
-
-
-def score_direction(direction: Direction, scores: dict[str, float]) -> int | None:
-    """Match score (0-99) of a direction against normalized scores.
-
-    Returns None for directions without required_scores (unscoreable)."""
-    required: dict[str, float] = direction.required_scores or {}
-    if not required:
-        return None
-    bonus: dict[str, float] = direction.bonus_scores or {}
-
-    req_scores = [
-        min(scores.get(cat, 0) / threshold, 1.2)
-        for cat, threshold in required.items()
-    ]
-    base = sum(req_scores) / len(req_scores)
-    bonus_total = sum(
-        (scores.get(cat, 0) / 100) * weight
-        for cat, weight in bonus.items()
-    )
-    return min(round(base * 75 + bonus_total), 99)
-
-
-async def scored_directions(
-    scores: dict[str, float],
-    db: AsyncSession,
-    *,
-    age_group: AgeGroup | None = None,
-    limit: int = 5,
-) -> list[tuple[Direction, int]]:
-    """Single source of truth for direction matching: filter by age, score, rank."""
-    directions = await get_all_directions(db)
-    scored: list[tuple[Direction, int]] = []
-    for direction in directions:
-        if not _fits_age(direction, age_group):
-            continue
-        match_score = score_direction(direction, scores)
-        if match_score is None:
-            continue
-        scored.append((direction, match_score))
-
-    scored.sort(key=lambda x: x[1], reverse=True)
-    return scored[:limit]
-
-
-async def match_directions(
-    scores: dict[str, float],
-    db: AsyncSession,
-    *,
-    age_group: AgeGroup | None = None,
-) -> list[DirectionMatch]:
-    top = await scored_directions(scores, db, age_group=age_group)
-    return [
-        DirectionMatch(direction=DirectionBase.model_validate(d), match_score=score)
-        for d, score in top
-    ]
-
-
 async def get_direction_details(slug: str, db: AsyncSession) -> DirectionDetail | None:
     direction = await get_direction_by_slug(slug, db)
     if direction is None:
         return None
     return DirectionDetail.model_validate(direction)
+
+
+def best_matching_slug(profession_slugs: list[str], careers: list[dict]) -> str | None:
+    """Which of a program's `profession_slugs` best matches this student.
+
+    "Best" = highest in their `careers` top list (lowest index). Falls back to
+    the first slug in `profession_slugs` if none of them made the student's
+    top list at all — a program still needs *some* direction to build a plan
+    against. Returns None only if `profession_slugs` is itself empty.
+
+    Pure function, no I/O — shared by `goal_overlay_service` (scenario C
+    alignment) and `roadmap_builder` (university direction-roadmap by
+    program), previously duplicated between the two."""
+    best_index: int | None = None
+    best_slug: str | None = None
+    for slug in profession_slugs:
+        idx = next((i for i, c in enumerate(careers) if c.get("slug") == slug), None)
+        if idx is not None and (best_index is None or idx < best_index):
+            best_index = idx
+            best_slug = slug
+    if best_slug is not None:
+        return best_slug
+    return profession_slugs[0] if profession_slugs else None
+
+
+__all__ = [
+    "get_all_directions",
+    "get_direction_by_slug",
+    "get_direction_details",
+    "best_matching_slug",
+    "DirectionBase",
+]

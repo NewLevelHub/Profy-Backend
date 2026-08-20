@@ -1,0 +1,106 @@
+{
+  "assessment_id": "00000000-0000-0000-0000-000000000001",
+  "careers": [],
+  "created_at": "2026-01-01T00:00:00Z",
+  "disclaimer": "Это не окончательный выбор, а карта возможных направлений — со временем картина может измениться, и это нормально.",
+  "exploration_activities": [
+    "Собери конструктор LEGO"
+  ],
+  "exploration_note": "Не обязательно пробовать всё сразу — начни с того, что откликается больше всего. Даже маленький шаг сегодня помогает лучше понять, что тебе действительно нравится.",
+  "final_analysis": "Каждый раздел этого отчёта — отдельный кусочек общей картины: не разрозненные факты, а разные стороны одного и того же человека. Используй их вместе, а не по одному, когда будешь решать, что попробовать дальше.",
+  "interest_instrument": "mi",
+  "interest_map": [
+    {
+      "code": "verbal",
+      "level": "medium",
+      "sphere": "verbal"
+    },
+    {
+      "code": "logical",
+      "level": "medium",
+      "sphere": "logical"
+    },
+    {
+      "code": "musical",
+      "level": "medium",
+      "sphere": "musical"
+    },
+    {
+      "code": "visual",
+      "level": "medium",
+      "sphere": "visual"
+    },
+    {
+      "code": "bodily",
+      "level": "medium",
+      "sphere": "bodily"
+    },
+    {
+      "code": "interpersonal",
+      "level": "medium",
+      "sphere": "interpersonal"
+    },
+    {
+      "code": "intrapersonal",
+      "level": "medium",
+      "sphere": "intrapersonal"
+    },
+    {
+      "code": "naturalistic",
+      "level": "medium",
+      "sphere": "naturalistic"
+    }
+  ],
+  "interest_map_note": "Карта показывает, какие сферы проявляются ярче, а какие — тише. Это не оценка, а просто снимок текущего состояния.",
+  "is_flat_profile": false,
+  "motivation_highlights": [
+    "Тебе важно разбираться в интересном"
+  ],
+  "personality_note": "Каждая черта характера проявляется по-своему — вместе они складываются в общую картину того, как тебе комфортнее действовать и общаться.",
+  "personality_notes": [
+    {
+      "description": "Короткое описание",
+      "label": "Открытость новому",
+      "level": "medium",
+      "trait": "openness"
+    },
+    {
+      "description": "Короткое описание",
+      "label": "Организованность",
+      "level": "medium",
+      "trait": "conscientiousness"
+    },
+    {
+      "description": "Короткое описание",
+      "label": "Общительность",
+      "level": "medium",
+      "trait": "extraversion"
+    },
+    {
+      "description": "Короткое описание",
+      "label": "Доброжелательность",
+      "level": "medium",
+      "trait": "agreeableness"
+    },
+    {
+      "description": "Короткое описание",
+      "label": "Эмоциональная устойчивость",
+      "level": "medium",
+      "trait": "emotional_stability"
+    }
+  ],
+  "report_version": 2,
+  "strength_cards": [
+    {
+      "description": "Короткое описание",
+      "title": "Сильная сторона 0"
+    }
+  ],
+  "summary": "Тебе нравится решать логические задачки.",
+  "thinking_style_notes": [
+    {
+      "description": "Короткое описание",
+      "title": "Стиль 0"
+    }
+  ]
+}

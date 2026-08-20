@@ -18,7 +18,7 @@ from app.schemas.university import ProgramBrief, ProgramDetail
 from app.services import assessment_service
 from app.services.artifact_service import get_artifacts
 from app.services.gap_analysis_service import analyze_gap, to_response
-from app.services.university_service import get_program_by_id, search_programs
+from app.services.university_service import get_program_by_id, get_program_detail, search_programs
 
 GAP_CACHE_TTL = 60 * 60  # 1 hour
 
@@ -37,12 +37,12 @@ router = APIRouter(tags=["universities"])
 
 @router.get("/programs", response_model=list[ProgramBrief])
 async def list_programs(
-    direction: str = Query(..., description="Direction slug, e.g. it-development"),
+    profession: str = Query(..., description="Direction (profession) slug, e.g. arhitektor"),
     country: str | None = Query(None, description="ISO country code or name, e.g. us or Kazakhstan"),
     limit: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ) -> list[ProgramBrief]:
-    return await search_programs(db, direction_slug=direction, country=country, limit=limit)
+    return await search_programs(db, profession_slug=profession, country=country, limit=limit)
 
 
 @router.get("/programs/{program_id}", response_model=ProgramDetail)
@@ -50,7 +50,7 @@ async def get_program(
     program_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ) -> ProgramDetail:
-    return await get_program_by_id(db, program_id)
+    return await get_program_detail(db, program_id)
 
 
 @router.get("/programs/{program_id}/gap-analysis", response_model=GapAnalysisResponse)
@@ -105,8 +105,11 @@ async def get_gap_analysis(
             detail="Generate a report for this assessment before running gap analysis",
         )
 
-    matched_slugs = {d["slug"] for d in analysis.directions if isinstance(d, dict) and "slug" in d}
-    if program.direction_slug not in matched_slugs:
+    # Program.profession_slugs directly lists which professions (Direction
+    # slugs) this specialty prepares someone for — check whether any of the
+    # user's matched professions overlap with it.
+    matched_profession_slugs = {d["slug"] for d in analysis.careers if isinstance(d, dict) and "slug" in d}
+    if not matched_profession_slugs.intersection(program.profession_slugs):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This program's direction does not match your assessment results",

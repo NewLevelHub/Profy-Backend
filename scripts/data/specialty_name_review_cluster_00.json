@@ -1,0 +1,238 @@
+[
+  {
+    "university_slug": "toraigyrov-university",
+    "university_name": "Торайгыров Университет (ToU)",
+    "cluster_professions": [
+      "Разработчик программного обеспечения",
+      "Аналитик данных",
+      "Специалист по искусственному интеллекту",
+      "Администратор баз данных",
+      "Системный администратор",
+      "Системный аналитик",
+      "Специалист технической поддержки"
+    ],
+    "current_wrong_name": "Разработчик программного обеспечения, Аналитик данных, Специалист по искусственному интеллекту, Администратор баз данных, Системный администратор, Системный аналитик, Специалист технической поддержки",
+    "proposed_name": "Информационные системы",
+    "source_url": "https://tou.edu.kz/ru/component/abitur?view=bach",
+    "needs_manual_review": false,
+    "note": "ToU's Faculty of Computer Science also offers 6B06104 'Computer Science' (with specializations such as Big Data и аналитика данных, Интеллектуальные технологии). 'Информационные системы' (6B06102) is the closest single classifier specialty covering the cluster's systems/DB/analyst professions; 6B06104 with its Big Data/AI specializations is an equally defensible alternative for the data-analyst/AI-specialist professions specifically — flagging this alternative for the human reviewer to pick between."
+  },
+  {
+    "university_slug": "tu-munich",
+    "university_name": "Technical University of Munich (TUM)",
+    "cluster_professions": [
+      "Разработчик программного обеспечения",
+      "Аналитик данных",
+      "Специалист по искусственному интеллекту",
+      "Администратор баз данных",
+      "Системный администратор",
+      "Системный аналитик"
+    ],
+    "current_wrong_name": "Разработчик программного обеспечения, Аналитик данных, Специалист по искусственному интеллекту, Администратор баз данных, Системный администратор, Системный аналитик",
+    "proposed_name": "Informatics – Bachelor of Science (B.Sc.)",
+    "source_url": "https://www.tum.de/en/studies/degree-programs/detail/informatics-bachelor-of-science-bsc",
+    "needs_manual_review": false,
+    "note": "Bachelor's program (6 semesters). Covers AI/robotics, databases, systems as third-year specializations. TUM also separately offers an 'Information Systems' B.Sc. (https://www.tum.de/en/studies/degree-programs/detail/information-systems-bachelor-of-science-bsc) which may be a better fit specifically for Системный аналитик/database-oriented professions — noting as an alternative for reviewer."
+  },
+  {
+    "university_slug": "ntu-singapore",
+    "university_name": "Nanyang Technological University (NTU)",
+    "cluster_professions": [
+      "Разработчик программного обеспечения",
+      "Аналитик данных",
+      "Специалист по искусственному интеллекту",
+      "Администратор баз данных",
+      "Системный администратор",
+      "Системный аналитик"
+    ],
+    "current_wrong_name": "Разработчик программного обеспечения, Аналитик данных, Специалист по искусственному интеллекту, Администратор баз данных, Системный администратор, Системный аналитик",
+    "proposed_name": "Bachelor of Computing (Hons) in Computer Science",
+    "source_url": "https://www.ntu.edu.sg/computing/admissions/undergraduate-programmes/detail/bachelor-of-computing-in-computer-science",
+    "needs_manual_review": false,
+    "note": "4-year direct honours degree offered by NTU's College of Computing and Data Science (CCDS). Curriculum covers algorithms, data systems, software design, and AI/data specialization tracks."
+  },
+  {
+    "university_slug": "eth-zurich",
+    "university_name": "ETH Zurich",
+    "cluster_professions": [
+      "Разработчик программного обеспечения",
+      "Аналитик данных",
+      "Специалист по искусственному интеллекту",
+      "Администратор баз данных",
+      "Системный администратор",
+      "Системный аналитик"
+    ],
+    "current_wrong_name": "Разработчик программного обеспечения, Аналитик данных, Специалист по искусственному интеллекту, Администратор баз данных, Системный администратор, Системный аналитик",
+    "proposed_name": "Computer Science, Bachelor's degree programme (BSc)",
+    "source_url": "https://ethz.ch/en/studies/bachelor/bachelors-degree-programmes/engineering-sciences/computer-science.html",
+    "needs_manual_review": false,
+    "note": "Third-year specialization tracks include Systems & Software Engineering and Information & Data Processing, covering most cluster professions."
+  },
+  {
+    "university_slug": "carnegie-mellon-university",
+    "university_name": "Carnegie Mellon University (CMU)",
+    "cluster_professions": [
+      "Разработчик программного обеспечения",
+      "Аналитик данных",
+      "Специалист по искусственному интеллекту",
+      "Администратор баз данных",
+      "Системный администратор",
+      "Системный аналитик"
+    ],
+    "current_wrong_name": "Разработчик программного обеспечения, Аналитик данных, Специалист по искусственному интеллекту, Администратор баз данных, Системный администратор, Системный аналитик",
+    "proposed_name": "Bachelor of Science in Computer Science",
+    "source_url": "https://www.cs.cmu.edu/academics/undergraduate",
+    "needs_manual_review": false,
+    "note": "Offered by CMU's School of Computer Science; also cross-check http://coursecatalog.web.cmu.edu/schools-colleges/schoolofcomputerscience/undergraduatecomputerscience/ (direct connection to this page failed during research but it is the standard course-catalog citation for the same program)."
+  },
+  {
+    "university_slug": "university-of-edinburgh",
+    "university_name": "University of Edinburgh",
+    "cluster_professions": [
+      "Разработчик программного обеспечения",
+      "Аналитик данных",
+      "Специалист по искусственному интеллекту",
+      "Администратор баз данных",
+      "Системный администратор",
+      "Системный аналитик"
+    ],
+    "current_wrong_name": "Разработчик программного обеспечения, Аналитик данных, Специалист по искусственному интеллекту, Администратор баз данных, Системный администратор, Системный аналитик",
+    "proposed_name": "Computer Science BSc (Hons)",
+    "source_url": "https://study.ed.ac.uk/programmes/undergraduate/57-computer-science",
+    "needs_manual_review": false,
+    "note": "Offered by the School of Informatics, UCAS code G400."
+  },
+  {
+    "university_slug": "tsinghua-university",
+    "university_name": "Tsinghua University",
+    "cluster_professions": [
+      "Разработчик программного обеспечения",
+      "Аналитик данных",
+      "Специалист по искусственному интеллекту",
+      "Администратор баз данных",
+      "Системный администратор",
+      "Системный аналитик"
+    ],
+    "current_wrong_name": "Разработчик программного обеспечения, Аналитик данных, Специалист по искусственному интеллекту, Администратор баз данных, Системный администратор, Системный аналитик",
+    "proposed_name": "Computer Science and Technology",
+    "source_url": "https://www.cs.tsinghua.edu.cn/csen/Education1/Undergraduate_Programs_/Curriculum.htm",
+    "needs_manual_review": false,
+    "note": "Undergraduate program of the Department of Computer Science and Technology, requiring 172 credit units."
+  },
+  {
+    "university_slug": "university-of-melbourne",
+    "university_name": "University of Melbourne",
+    "cluster_professions": [
+      "Разработчик программного обеспечения",
+      "Аналитик данных",
+      "Специалист по искусственному интеллекту",
+      "Администратор баз данных",
+      "Системный администратор",
+      "Системный аналитик"
+    ],
+    "current_wrong_name": "Разработчик программного обеспечения, Аналитик данных, Специалист по искусственному интеллекту, Администратор баз данных, Системный администратор, Системный аналитик",
+    "proposed_name": "Computing and Software Systems (major within the Bachelor of Science)",
+    "source_url": "https://handbook.unimelb.edu.au/2026/components/b-sci-major-1/course-structure",
+    "needs_manual_review": false,
+    "note": "Melbourne uses a broad Bachelor of Science with declared majors rather than a standalone 'Computer Science' bachelor's degree; 'Computing and Software Systems' is the most relevant major, with an optional Artificial Intelligence specialisation track."
+  },
+  {
+    "university_slug": "university-of-cape-town",
+    "university_name": "University of Cape Town (UCT)",
+    "cluster_professions": [
+      "Разработчик программного обеспечения",
+      "Аналитик данных",
+      "Специалист по искусственному интеллекту",
+      "Администратор баз данных",
+      "Системный администратор",
+      "Системный аналитик"
+    ],
+    "current_wrong_name": "Разработчик программного обеспечения, Аналитик данных, Специалист по искусственному интеллекту, Администратор баз данных, Системный администратор, Системный аналитик",
+    "proposed_name": "Bachelor of Science in Computer Science (BSc Computer Science)",
+    "source_url": "https://sit.uct.ac.za/bsc-degrees",
+    "needs_manual_review": false,
+    "note": "UCT's Department of Computer Science also offers a BSc Computer Science major with an Artificial Intelligence specialization (more mathematics-heavy), listed on the same page — could be the better fit specifically for 'Специалист по искусственному интеллекту'."
+  },
+  {
+    "university_slug": "pontificia-universidad-catolica-de-chile",
+    "university_name": "Pontificia Universidad Católica de Chile (UC Chile)",
+    "cluster_professions": [
+      "Разработчик программного обеспечения",
+      "Аналитик данных",
+      "Специалист по искусственному интеллекту",
+      "Администратор баз данных",
+      "Системный администратор",
+      "Системный аналитик"
+    ],
+    "current_wrong_name": "Разработчик программного обеспечения, Аналитик данных, Специалист по искусственному интеллекту, Администратор баз данных, Системный администратор, Системный аналитик",
+    "proposed_name": "Licenciatura en Ingeniería en Ciencia de la Computación",
+    "source_url": "https://admision.uc.cl/carreras/licenciatura-en-ingenieria-en-ciencia-de-la-computacion/",
+    "needs_manual_review": false,
+    "note": "Confirmed as belonging to UC Chile's Facultad de Ingeniería (ing.uc.cl). Under the Chilean 'ingeniería civil' system this Licenciatura is the academic (non-professional-title) science/engineering degree stage; students typically continue toward the professional title 'Ingeniero Civil en Computación'. Flagging this structural nuance for the human reviewer since it differs from a simple 4-year Bachelor's."
+  },
+  {
+    "university_slug": "kaist",
+    "university_name": "Korea Advanced Institute of Science and Technology",
+    "cluster_professions": [
+      "Разработчик программного обеспечения",
+      "Аналитик данных",
+      "Специалист по искусственному интеллекту",
+      "Администратор баз данных",
+      "Системный администратор",
+      "Системный аналитик"
+    ],
+    "current_wrong_name": "Разработчик программного обеспечения, Аналитик данных, Специалист по искусственному интеллекту, Администратор баз данных, Системный администратор, Системный аналитик",
+    "proposed_name": "Computer Science (School of Computing) — Bachelor's degree",
+    "source_url": "https://cs.kaist.ac.kr/education/undergraduate",
+    "needs_manual_review": true,
+    "note": "Confirmed KAIST's School of Computing is the real undergraduate department (first BS awarded 1990, ~2,255 bachelor's alumni) and it is the correct destination for this profession cluster, but I could not locate an official English page stating the exact formal conferred degree title verbatim (e.g. whether it is styled 'B.S. in Computer Science' vs 'Computer Science and Engineering'). Recommend a human confirm the precise title via KAIST's academic bulletin/sugang system before use."
+  },
+  {
+    "university_slug": "university-of-toronto",
+    "university_name": "University of Toronto",
+    "cluster_professions": [
+      "Разработчик программного обеспечения",
+      "Аналитик данных",
+      "Специалист по искусственному интеллекту",
+      "Администратор баз данных",
+      "Системный администратор",
+      "Системный аналитик"
+    ],
+    "current_wrong_name": "Разработчик программного обеспечения, Аналитик данных, Специалист по искусственному интеллекту, Администратор баз данных, Системный администратор, Системный аналитик",
+    "proposed_name": "Computer Science Specialist (Science Program) — B.Sc., Faculty of Arts & Science",
+    "source_url": "https://artsci.calendar.utoronto.ca/section/Computer-Science",
+    "needs_manual_review": false,
+    "note": "U of T doesn't admit directly into a 'Computer Science' bachelor's degree name; students are admitted to the Faculty of Arts & Science B.Sc. and then complete a Computer Science Specialist, Major, or Minor POSt. 'Specialist' is proposed as the closest full-depth equivalent to a dedicated CS bachelor's program."
+  },
+  {
+    "university_slug": "technion",
+    "university_name": "Technion – Israel Institute of Technology",
+    "cluster_professions": [
+      "Разработчик программного обеспечения",
+      "Аналитик данных",
+      "Специалист по искусственному интеллекту",
+      "Администратор баз данных",
+      "Системный администратор",
+      "Системный аналитик"
+    ],
+    "current_wrong_name": "Разработчик программного обеспечения, Аналитик данных, Специалист по искусственному интеллекту, Администратор баз данных, Системный администратор, Системный аналитик",
+    "proposed_name": "Bachelor of Science (BSc) in Computer Science",
+    "source_url": "https://undergraduate.cs.technion.ac.il/en/2023-2024-computer-science/",
+    "needs_manual_review": false,
+    "note": "Offered by the Henry and Marilyn Taub Faculty of Computer Science; four-year track covers software/hardware, AI, and theory, with an optional Cyber and Computer Systems Security specialization relevant to sysadmin-type professions."
+  },
+  {
+    "university_slug": "university-of-tokyo",
+    "university_name": "The University of Tokyo",
+    "cluster_professions": [
+      "Разработчик программного обеспечения",
+      "Аналитик данных",
+      "Специалист по искусственному интеллекту"
+    ],
+    "current_wrong_name": "Разработчик программного обеспечения, Аналитик данных, Специалист по искусственному интеллекту",
+    "proposed_name": "Department of Information Science (情報科学科), Faculty of Science",
+    "source_url": "https://www.is.s.u-tokyo.ac.jp/en/",
+    "needs_manual_review": true,
+    "note": "University of Tokyo's undergraduate system has students spend 2 years in general liberal-arts study (at Komaba) before being sorted by grades into a Faculty/Department in year 3-4. The Department of Information Science (Faculty of Science) is a confirmed real undergraduate department covering CS/AI/software, but there are ALSO other plausible undergraduate departments feeding into computing careers (e.g. Department of Mathematical Engineering and Information Physics, Department of Electrical Engineering and Information Systems, Department of Information and Communication Engineering — all Faculty of Engineering) and admission is by whole-university entrance exam + later 'shingaku furiwake' sorting, not direct program application like Western universities. I could not confidently determine which single department best represents 'the' CS program a Kazakhstani student would target, and could not verify database-admin/sysadmin/tech-support alignment specifically. Recommend human review to pick the best-fitting department for this cluster, or note this structural difference explicitly to students."
+  }
+]

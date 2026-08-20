@@ -2,16 +2,15 @@ import uuid
 
 from pydantic import BaseModel
 
-from app.models.question import QuestionBlock
-
-
-class QuestionOption(BaseModel):
-    text: str
-    index: int
+from app.models.question import BigFiveDomain, HollandType, QuestionInstrument
 
 
 class QuestionResponse(BaseModel):
     id: uuid.UUID
-    block: QuestionBlock
+    instrument: QuestionInstrument
+    riasec_type: HollandType | None
+    bigfive_domain: BigFiveDomain | None
     text: str
-    options: list[QuestionOption]
+    order: int
+
+    model_config = {"from_attributes": True}
