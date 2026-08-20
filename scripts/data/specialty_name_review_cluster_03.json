@@ -1,24 +1,268 @@
 [
-  {"university_slug": "vktu-ust-kamenogorsk", "university_name": "Восточно-Казахстанский технический университет", "cluster_professions": ["Геолог"], "current_wrong_name": "Геолог", "proposed_name": "6В07204 - Геология и разведка месторождений полезных ископаемых", "source_url": "https://www.ektu.kz/educationalprograms/educationalprogramdetail.aspx?lang=ru&Code=5894", "needs_manual_review": false, "note": ""},
-  {"university_slug": "vktu-ust-kamenogorsk", "university_name": "Восточно-Казахстанский технический университет", "cluster_professions": ["Специалист по стандартизации и сертификации"], "current_wrong_name": "Специалист по стандартизации и сертификации", "proposed_name": "6В07501 - Стандартизация и сертификация (по отраслям)", "source_url": "https://www.ektu.kz/departments/as_dep/eduproglist/undergraduate/standart_sert.aspx?lang=de", "needs_manual_review": false, "note": "Университет использует немецкий суффикс языка для некоторых страниц бакалавриата на русском, но программа полностью официальная."},
-  {"university_slug": "vktu-ust-kamenogorsk", "university_name": "Восточно-Казахстанский технический университет", "cluster_professions": ["Инженер-эколог"], "current_wrong_name": "Инженер-эколог", "proposed_name": "6B11201 - Безопасность жизнедеятельности и защита окружающей среды", "source_url": "https://www.ektu.kz/educationalprograms/educationalprogramdetail.aspx?lang=ru&Code=5899", "needs_manual_review": false, "note": "Программа готовит специалистов по экологической безопасности и охране окружающей среды (инженеров-экологов)."},
-  {"university_slug": "colorado-school-of-mines", "university_name": "Colorado School of Mines", "cluster_professions": ["Буровой инженер (нефтегазовое дело)"], "current_wrong_name": "Буровой инженер (нефтегазовое дело)", "proposed_name": "Bachelor of Science in Petroleum Engineering", "source_url": "https://www.mines.edu/academics/program/petroleum-engineering-degree/", "needs_manual_review": false, "note": ""},
-  {"university_slug": "colorado-school-of-mines", "university_name": "Colorado School of Mines", "cluster_professions": ["Геолог"], "current_wrong_name": "Геолог", "proposed_name": "Bachelor of Science in Geological Engineering", "source_url": "https://geology.mines.edu/undergraduate-program/", "needs_manual_review": false, "note": ""},
-  {"university_slug": "colorado-school-of-mines", "university_name": "Colorado School of Mines", "cluster_professions": ["Инженер-эколог"], "current_wrong_name": "Инженер-эколог", "proposed_name": "Bachelor of Science in Environmental Engineering", "source_url": "https://cee.mines.edu/bs-environmental-engineering/", "needs_manual_review": false, "note": ""},
-  {"university_slug": "university-of-western-australia", "university_name": "University of Western Australia", "cluster_professions": ["Геолог"], "current_wrong_name": "Геолог", "proposed_name": "Geology (Bachelor of Science Major)", "source_url": "https://www.uwa.edu.au/study/geology", "needs_manual_review": false, "note": ""},
-  {"university_slug": "university-of-western-australia", "university_name": "University of Western Australia", "cluster_professions": ["Инженер-эколог"], "current_wrong_name": "Инженер-эколог", "proposed_name": "Environmental Engineering (Bachelor of Engineering (Honours) Major)", "source_url": "https://www.uwa.edu.au/study/courses/environmental-engineering", "needs_manual_review": false, "note": ""},
-  {"university_slug": "charles-university-prague", "university_name": "Charles University", "cluster_professions": ["Геолог"], "current_wrong_name": "Геолог", "proposed_name": "Master's in Geology (Specialization in Geodynamics)", "source_url": "https://natur.cuni.cz/en/admissions/study-programmes/master-s-studies/geology", "needs_manual_review": false, "note": "Специализация Geodynamics, полностью покрывающая требования к подготовке геологов."},
-  {"university_slug": "charles-university-prague", "university_name": "Charles University", "cluster_professions": ["Инженер-эколог"], "current_wrong_name": "Инженер-эколог", "proposed_name": "Doctoral Program in Environmental Science", "source_url": "https://natur.cuni.cz/en/admissions/study-programmes/doctoral-studies/environmental-science", "needs_manual_review": true, "note": "Подтверждена только англоязычная программа докторантуры (PhD). Бакалавриат/магистратура по экологии преимущественно на чешском — требуется проверка."},
-  {"university_slug": "ntnu-trondheim", "university_name": "Norwegian University of Science and Technology", "cluster_professions": ["Буровой инженер (нефтегазовое дело)", "Геолог"], "current_wrong_name": "Буровой инженер (нефтегазовое дело), Геолог", "proposed_name": "Master of Science in Geoscience and Georesources", "source_url": "https://www.ntnu.edu/studies/msg1/", "needs_manual_review": false, "note": "Официально заменяет старые разрозненные программы MSc in Petroleum Engineering и MSc in Petroleum Geosciences с 2023/24."},
-  {"university_slug": "ntnu-trondheim", "university_name": "Norwegian University of Science and Technology", "cluster_professions": ["Инженер-эколог"], "current_wrong_name": "Инженер-эколог", "proposed_name": "Nordic Master in Environmental Engineering", "source_url": "https://www.ntnu.edu/studies/msenvieng/environmental-engineering", "needs_manual_review": false, "note": ""},
-  {"university_slug": "kfupm-dhahran", "university_name": "King Fahd University of Petroleum and Minerals", "cluster_professions": ["Буровой инженер (нефтегазовое дело)"], "current_wrong_name": "Буровой инженер (нефтегазовое дело)", "proposed_name": "Bachelor of Science in Petroleum Engineering", "source_url": "https://bulletin.kfupm.edu.sa/main/program?program_id=117&title=bachelor-of-science-in-petroleum-engineering", "needs_manual_review": false, "note": ""},
-  {"university_slug": "kfupm-dhahran", "university_name": "King Fahd University of Petroleum and Minerals", "cluster_professions": ["Геолог"], "current_wrong_name": "Геолог", "proposed_name": "Bachelor of Science in Geology", "source_url": "https://cpg.kfupm.edu.sa/program/b-s-in-geology/", "needs_manual_review": false, "note": ""},
-  {"university_slug": "university-of-alberta", "university_name": "University of Alberta", "cluster_professions": ["Буровой инженер (нефтегазовое дело)"], "current_wrong_name": "Буровой инженер (нефтегазовое дело)", "proposed_name": "Bachelor of Science in Petroleum Engineering", "source_url": "https://www.ualberta.ca/en/engineering/programs/undergraduate/petroleum-engineering.html", "needs_manual_review": false, "note": ""},
-  {"university_slug": "university-of-alberta", "university_name": "University of Alberta", "cluster_professions": ["Геолог"], "current_wrong_name": "Геолог", "proposed_name": "Bachelor of Science Specialization in Geology", "source_url": "https://www.ualberta.ca/en/science/programs/undergraduate/degrees/specialization/geology.html", "needs_manual_review": false, "note": ""},
-  {"university_slug": "university-of-alberta", "university_name": "University of Alberta", "cluster_professions": ["Инженер-эколог"], "current_wrong_name": "Инженер-эколог", "proposed_name": "Bachelor of Science in Environmental Engineering", "source_url": "https://www.ualberta.ca/en/engineering/programs/undergraduate/environmental-engineering.html", "needs_manual_review": false, "note": ""},
-  {"university_slug": "tu-delft", "university_name": "Delft University of Technology", "cluster_professions": ["Буровой инженер (нефтегазовое дело)", "Геолог"], "current_wrong_name": "Буровой инженер (нефтегазовое дело), Геолог", "proposed_name": "BSc Applied Earth Sciences", "source_url": "https://www.tudelft.nl/en/education/programmes/bachelors/aes/bsc-applied-earth-sciences/", "needs_manual_review": false, "note": "Программа объединяет геологию, геофизику и основы нефтегазового дела на уровне бакалавриата."},
-  {"university_slug": "tu-delft", "university_name": "Delft University of Technology", "cluster_professions": ["Инженер-эколог"], "current_wrong_name": "Инженер-эколог", "proposed_name": "MSc Environmental Engineering", "source_url": "https://www.tudelft.nl/en/education/programmes/masters/environmental-engineering/msc-environmental-engineering/", "needs_manual_review": false, "note": ""},
-  {"university_slug": "university-of-reading", "university_name": "University of Reading", "cluster_professions": ["Метеоролог"], "current_wrong_name": "Метеоролог", "proposed_name": "BSc Meteorology and Climate", "source_url": "https://www.reading.ac.uk/ready-to-study/study/subject-area/meteorology-and-climate-ug/bsc-meteorology-and-climate", "needs_manual_review": false, "note": ""},
-  {"university_slug": "university-of-reading", "university_name": "University of Reading", "cluster_professions": ["Инженер-эколог"], "current_wrong_name": "Инженер-эколог", "proposed_name": "BSc Environmental Science", "source_url": "https://www.reading.ac.uk/ready-to-study/study/subject-area/environmental-science-ug/bsc-environmental-science", "needs_manual_review": false, "note": ""},
-  {"university_slug": "china-university-of-petroleum-beijing", "university_name": "China University of Petroleum, Beijing", "cluster_professions": ["Буровой инженер (нефтегазовое дело)"], "current_wrong_name": "Буровой инженер (нефтегазовое дело)", "proposed_name": "Bachelor of Science in Petroleum Engineering", "source_url": "https://www.cup.edu.cn/english/Admissions/DegreePrograms/UndergraduatePrograms/index.htm", "needs_manual_review": false, "note": "Официальная программа бакалавриата, преподаваемая на английском языке."}
+  {
+    "university_slug": "vktu-ust-kamenogorsk",
+    "university_name": "Восточно-Казахстанский технический университет",
+    "cluster_professions": [
+      "Геолог"
+    ],
+    "current_wrong_name": "Геолог",
+    "proposed_name": "Геология и разведка месторождений полезных ископаемых",
+    "source_url": "https://www.ektu.kz/educationalprograms/educationalprogramdetail.aspx?lang=ru&Code=5894",
+    "needs_manual_review": false,
+    "note": ""
+  },
+  {
+    "university_slug": "vktu-ust-kamenogorsk",
+    "university_name": "Восточно-Казахстанский технический университет",
+    "cluster_professions": [
+      "Специалист по стандартизации и сертификации"
+    ],
+    "current_wrong_name": "Специалист по стандартизации и сертификации",
+    "proposed_name": "Стандартизация и сертификация (по отраслям)",
+    "source_url": "https://www.ektu.kz/departments/as_dep/eduproglist/undergraduate/standart_sert.aspx?lang=de",
+    "needs_manual_review": false,
+    "note": "Университет использует немецкий суффикс языка для некоторых страниц бакалавриата на русском, но программа полностью официальная."
+  },
+  {
+    "university_slug": "vktu-ust-kamenogorsk",
+    "university_name": "Восточно-Казахстанский технический университет",
+    "cluster_professions": [
+      "Инженер-эколог"
+    ],
+    "current_wrong_name": "Инженер-эколог",
+    "proposed_name": "Безопасность жизнедеятельности и защита окружающей среды",
+    "source_url": "https://www.ektu.kz/educationalprograms/educationalprogramdetail.aspx?lang=ru&Code=5899",
+    "needs_manual_review": false,
+    "note": "Программа готовит специалистов по экологической безопасности и охране окружающей среды (инженеров-экологов)."
+  },
+  {
+    "university_slug": "colorado-school-of-mines",
+    "university_name": "Colorado School of Mines",
+    "cluster_professions": [
+      "Буровой инженер (нефтегазовое дело)"
+    ],
+    "current_wrong_name": "Буровой инженер (нефтегазовое дело)",
+    "proposed_name": "Bachelor of Science in Petroleum Engineering",
+    "source_url": "https://www.mines.edu/academics/program/petroleum-engineering-degree/",
+    "needs_manual_review": false,
+    "note": ""
+  },
+  {
+    "university_slug": "colorado-school-of-mines",
+    "university_name": "Colorado School of Mines",
+    "cluster_professions": [
+      "Геолог"
+    ],
+    "current_wrong_name": "Геолог",
+    "proposed_name": "Bachelor of Science in Geological Engineering",
+    "source_url": "https://geology.mines.edu/undergraduate-program/",
+    "needs_manual_review": false,
+    "note": ""
+  },
+  {
+    "university_slug": "colorado-school-of-mines",
+    "university_name": "Colorado School of Mines",
+    "cluster_professions": [
+      "Инженер-эколог"
+    ],
+    "current_wrong_name": "Инженер-эколог",
+    "proposed_name": "Bachelor of Science in Environmental Engineering",
+    "source_url": "https://cee.mines.edu/bs-environmental-engineering/",
+    "needs_manual_review": false,
+    "note": ""
+  },
+  {
+    "university_slug": "university-of-western-australia",
+    "university_name": "University of Western Australia",
+    "cluster_professions": [
+      "Геолог"
+    ],
+    "current_wrong_name": "Геолог",
+    "proposed_name": "Geology (Bachelor of Science Major)",
+    "source_url": "https://www.uwa.edu.au/study/geology",
+    "needs_manual_review": false,
+    "note": ""
+  },
+  {
+    "university_slug": "university-of-western-australia",
+    "university_name": "University of Western Australia",
+    "cluster_professions": [
+      "Инженер-эколог"
+    ],
+    "current_wrong_name": "Инженер-эколог",
+    "proposed_name": "Environmental Engineering (Bachelor of Engineering (Honours) Major)",
+    "source_url": "https://www.uwa.edu.au/study/courses/environmental-engineering",
+    "needs_manual_review": false,
+    "note": ""
+  },
+  {
+    "university_slug": "charles-university-prague",
+    "university_name": "Charles University",
+    "cluster_professions": [
+      "Геолог"
+    ],
+    "current_wrong_name": "Геолог",
+    "proposed_name": "Master's in Geology (Specialization in Geodynamics)",
+    "source_url": "https://natur.cuni.cz/en/admissions/study-programmes/master-s-studies/geology",
+    "needs_manual_review": false,
+    "note": "Специализация Geodynamics, полностью покрывающая требования к подготовке геологов."
+  },
+  {
+    "university_slug": "charles-university-prague",
+    "university_name": "Charles University",
+    "cluster_professions": [
+      "Инженер-эколог"
+    ],
+    "current_wrong_name": "Инженер-эколог",
+    "proposed_name": "Doctoral Program in Environmental Science",
+    "source_url": "https://natur.cuni.cz/en/admissions/study-programmes/doctoral-studies/environmental-science",
+    "needs_manual_review": true,
+    "note": "Подтверждена только англоязычная программа докторантуры (PhD). Бакалавриат/магистратура по экологии преимущественно на чешском — требуется проверка."
+  },
+  {
+    "university_slug": "ntnu-trondheim",
+    "university_name": "Norwegian University of Science and Technology",
+    "cluster_professions": [
+      "Буровой инженер (нефтегазовое дело)",
+      "Геолог"
+    ],
+    "current_wrong_name": "Буровой инженер (нефтегазовое дело), Геолог",
+    "proposed_name": "Master of Science in Geoscience and Georesources",
+    "source_url": "https://www.ntnu.edu/studies/msg1/",
+    "needs_manual_review": false,
+    "note": "Официально заменяет старые разрозненные программы MSc in Petroleum Engineering и MSc in Petroleum Geosciences с 2023/24."
+  },
+  {
+    "university_slug": "ntnu-trondheim",
+    "university_name": "Norwegian University of Science and Technology",
+    "cluster_professions": [
+      "Инженер-эколог"
+    ],
+    "current_wrong_name": "Инженер-эколог",
+    "proposed_name": "Nordic Master in Environmental Engineering",
+    "source_url": "https://www.ntnu.edu/studies/msenvieng/environmental-engineering",
+    "needs_manual_review": false,
+    "note": ""
+  },
+  {
+    "university_slug": "kfupm-dhahran",
+    "university_name": "King Fahd University of Petroleum and Minerals",
+    "cluster_professions": [
+      "Буровой инженер (нефтегазовое дело)"
+    ],
+    "current_wrong_name": "Буровой инженер (нефтегазовое дело)",
+    "proposed_name": "Bachelor of Science in Petroleum Engineering",
+    "source_url": "https://bulletin.kfupm.edu.sa/main/program?program_id=117&title=bachelor-of-science-in-petroleum-engineering",
+    "needs_manual_review": false,
+    "note": ""
+  },
+  {
+    "university_slug": "kfupm-dhahran",
+    "university_name": "King Fahd University of Petroleum and Minerals",
+    "cluster_professions": [
+      "Геолог"
+    ],
+    "current_wrong_name": "Геолог",
+    "proposed_name": "Bachelor of Science in Geology",
+    "source_url": "https://cpg.kfupm.edu.sa/program/b-s-in-geology/",
+    "needs_manual_review": false,
+    "note": ""
+  },
+  {
+    "university_slug": "university-of-alberta",
+    "university_name": "University of Alberta",
+    "cluster_professions": [
+      "Буровой инженер (нефтегазовое дело)"
+    ],
+    "current_wrong_name": "Буровой инженер (нефтегазовое дело)",
+    "proposed_name": "Bachelor of Science in Petroleum Engineering",
+    "source_url": "https://www.ualberta.ca/en/engineering/programs/undergraduate/petroleum-engineering.html",
+    "needs_manual_review": false,
+    "note": ""
+  },
+  {
+    "university_slug": "university-of-alberta",
+    "university_name": "University of Alberta",
+    "cluster_professions": [
+      "Геолог"
+    ],
+    "current_wrong_name": "Геолог",
+    "proposed_name": "Bachelor of Science Specialization in Geology",
+    "source_url": "https://www.ualberta.ca/en/science/programs/undergraduate/degrees/specialization/geology.html",
+    "needs_manual_review": false,
+    "note": ""
+  },
+  {
+    "university_slug": "university-of-alberta",
+    "university_name": "University of Alberta",
+    "cluster_professions": [
+      "Инженер-эколог"
+    ],
+    "current_wrong_name": "Инженер-эколог",
+    "proposed_name": "Bachelor of Science in Environmental Engineering",
+    "source_url": "https://www.ualberta.ca/en/engineering/programs/undergraduate/environmental-engineering.html",
+    "needs_manual_review": false,
+    "note": ""
+  },
+  {
+    "university_slug": "tu-delft",
+    "university_name": "Delft University of Technology",
+    "cluster_professions": [
+      "Буровой инженер (нефтегазовое дело)",
+      "Геолог"
+    ],
+    "current_wrong_name": "Буровой инженер (нефтегазовое дело), Геолог",
+    "proposed_name": "BSc Applied Earth Sciences",
+    "source_url": "https://www.tudelft.nl/en/education/programmes/bachelors/aes/bsc-applied-earth-sciences/",
+    "needs_manual_review": false,
+    "note": "Программа объединяет геологию, геофизику и основы нефтегазового дела на уровне бакалавриата."
+  },
+  {
+    "university_slug": "tu-delft",
+    "university_name": "Delft University of Technology",
+    "cluster_professions": [
+      "Инженер-эколог"
+    ],
+    "current_wrong_name": "Инженер-эколог",
+    "proposed_name": "MSc Environmental Engineering",
+    "source_url": "https://www.tudelft.nl/en/education/programmes/masters/environmental-engineering/msc-environmental-engineering/",
+    "needs_manual_review": false,
+    "note": ""
+  },
+  {
+    "university_slug": "university-of-reading",
+    "university_name": "University of Reading",
+    "cluster_professions": [
+      "Метеоролог"
+    ],
+    "current_wrong_name": "Метеоролог",
+    "proposed_name": "BSc Meteorology and Climate",
+    "source_url": "https://www.reading.ac.uk/ready-to-study/study/subject-area/meteorology-and-climate-ug/bsc-meteorology-and-climate",
+    "needs_manual_review": false,
+    "note": ""
+  },
+  {
+    "university_slug": "university-of-reading",
+    "university_name": "University of Reading",
+    "cluster_professions": [
+      "Инженер-эколог"
+    ],
+    "current_wrong_name": "Инженер-эколог",
+    "proposed_name": "BSc Environmental Science",
+    "source_url": "https://www.reading.ac.uk/ready-to-study/study/subject-area/environmental-science-ug/bsc-environmental-science",
+    "needs_manual_review": false,
+    "note": ""
+  },
+  {
+    "university_slug": "china-university-of-petroleum-beijing",
+    "university_name": "China University of Petroleum, Beijing",
+    "cluster_professions": [
+      "Буровой инженер (нефтегазовое дело)"
+    ],
+    "current_wrong_name": "Буровой инженер (нефтегазовое дело)",
+    "proposed_name": "Bachelor of Science in Petroleum Engineering",
+    "source_url": "https://www.cup.edu.cn/english/Admissions/DegreePrograms/UndergraduatePrograms/index.htm",
+    "needs_manual_review": false,
+    "note": "Официальная программа бакалавриата, преподаваемая на английском языке."
+  }
 ]

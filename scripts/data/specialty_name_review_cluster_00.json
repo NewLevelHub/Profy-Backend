@@ -12,7 +12,7 @@
       "Специалист технической поддержки"
     ],
     "current_wrong_name": "Разработчик программного обеспечения, Аналитик данных, Специалист по искусственному интеллекту, Администратор баз данных, Системный администратор, Системный аналитик, Специалист технической поддержки",
-    "proposed_name": "6B06102 – Информационные системы",
+    "proposed_name": "Информационные системы",
     "source_url": "https://tou.edu.kz/ru/component/abitur?view=bach",
     "needs_manual_review": false,
     "note": "ToU's Faculty of Computer Science also offers 6B06104 'Computer Science' (with specializations such as Big Data и аналитика данных, Интеллектуальные технологии). 'Информационные системы' (6B06102) is the closest single classifier specialty covering the cluster's systems/DB/analyst professions; 6B06104 with its Big Data/AI specializations is an equally defensible alternative for the data-analyst/AI-specialist professions specifically — flagging this alternative for the human reviewer to pick between."
