@@ -30,9 +30,12 @@ deletes) the other N-1 rows' directions -- they become invisible to
 search_programs() (which joins through Program.directions) without deleting
 any row, so nothing is lost and this is fully reversible.
 
-A Program row is only touched if its current name still equals the direction
-name it's linked to (i.e. it hasn't already been fixed by a previous run or
-by hand) -- safe to re-run.
+A Program row is matched by its (university, direction) link, not by its
+current name -- it's touched as long as its name isn't already the entry's
+proposed_name (i.e. it hasn't already been fixed by a previous run of this
+script). This also means it correctly overrides a placeholder rename applied
+by anything else (e.g. a blanket direction-name -> generic-English-field-name
+pass) with the real, source-verified name -- safe to re-run.
 
 Dry-run by default -- prints every change, writes nothing. Pass --apply to
 commit. Run inside the api container (docker cp this file in first, the API
@@ -50,11 +53,11 @@ import sys
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _ROOT)
 
-from sqlalchemy import select
+from sqlalchemy import delete, insert, select
 
 from app.database import async_session
 from app.models.direction import Direction
-from app.models.program import Program
+from app.models.program import Program, program_directions
 from app.models.university import University
 
 REVIEW_FILES = [
@@ -114,6 +117,8 @@ async def main() -> None:
             if not directions:
                 continue
 
+            new_name = entry["proposed_name"]
+
             matched: list[tuple[Direction, Program]] = []
             for d in directions:
                 result = await db.execute(
@@ -122,20 +127,45 @@ async def main() -> None:
                     .where(
                         Program.university_id == uni.id,
                         Direction.id == d.id,
-                        Program.name == d.name,
                     )
                 )
-                p = result.scalar_one_or_none()
-                if p is not None:
-                    matched.append((d, p))
+                # More than one row can carry the same (university, direction)
+                # link if an earlier partial/duplicate seed run left stragglers
+                # — pick the first deterministically rather than erroring, the
+                # rest just won't get a `matched` entry of their own here.
+                rows = result.scalars().all()
+                if rows:
+                    matched.append((d, rows[0]))
 
             if not matched:
                 skipped_already_fixed += 1
                 continue
 
-            survivor_direction, survivor = matched[0]
-            others = matched[1:]
-            new_name = entry["proposed_name"]
+            # Dedupe by the actual Program each direction currently resolves
+            # to -- once merged, every direction in this entry points to the
+            # SAME survivor row, so `matched` has one (direction, program)
+            # pair per direction but not necessarily one per distinct
+            # program. Grouping first (instead of naively treating
+            # matched[1:] as "other" rows) is what makes this idempotent:
+            # a fully-merged, correctly-named survivor must be recognized as
+            # "nothing left to do" rather than having its own links deleted
+            # as if they belonged to a duplicate.
+            programs_by_id: dict = {}
+            for d, p in matched:
+                programs_by_id.setdefault(p.id, p)
+
+            if len(programs_by_id) == 1:
+                only_program = next(iter(programs_by_id.values()))
+                if only_program.name == new_name:
+                    skipped_already_fixed += 1
+                    continue
+                survivor = only_program
+            else:
+                survivor = next(
+                    (p for p in programs_by_id.values() if p.name == new_name),
+                    next(iter(programs_by_id.values())),
+                )
+            others = [p for pid, p in programs_by_id.items() if pid != survivor.id]
 
             tag = "[updating]" if apply else "[would update]"
             merge_note = f" (merging {len(others)} duplicate row(s))" if others else ""
@@ -143,10 +173,40 @@ async def main() -> None:
 
             if apply:
                 survivor.name = new_name
-                survivor.directions = [d for d, _ in matched]
-                for _, other_prog in others:
-                    other_prog.directions = []
+                # Plain core INSERT/DELETE on the association table instead of
+                # reassigning the ORM `.directions` collection on two objects
+                # in the same flush -- that silently dropped the survivor's
+                # own links in practice (session-level collection-diffing
+                # quirk when two Program objects' collections over the same
+                # secondary table are mutated in one flush), leaving the
+                # survivor with zero directions and the "other" rows
+                # untouched. Explicit statements have no such ambiguity.
+                direction_ids = list({d.id for d, _ in matched})
+                other_program_ids = [p.id for p in others]
                 try:
+                    existing = {
+                        row[0]
+                        for row in (
+                            await db.execute(
+                                select(program_directions.c.direction_id).where(
+                                    program_directions.c.program_id == survivor.id
+                                )
+                            )
+                        ).all()
+                    }
+                    to_add = [did for did in direction_ids if did not in existing]
+                    if to_add:
+                        await db.execute(
+                            insert(program_directions),
+                            [{"program_id": survivor.id, "direction_id": did} for did in to_add],
+                        )
+                    if other_program_ids:
+                        await db.execute(
+                            delete(program_directions).where(
+                                program_directions.c.program_id.in_(other_program_ids),
+                                program_directions.c.direction_id.in_(direction_ids),
+                            )
+                        )
                     await db.flush()
                 except Exception as exc:  # noqa: BLE001 - report and keep going per-row
                     await db.rollback()
