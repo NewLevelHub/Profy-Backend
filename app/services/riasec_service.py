@@ -12,6 +12,7 @@ from app.models.question import HollandType, Question, QuestionInstrument
 from app.models.user_response import UserResponse
 from app.services.age_tiers import visible_tiers
 from app.services.riasec_content import TYPE_ACTIVITIES
+from app.services.scoring_levels import LEVEL_HIGH_MIN, LEVEL_LOW_MAX
 
 HOLLAND_ORDER: list[str] = ["R", "I", "A", "S", "E", "C"]
 
@@ -171,28 +172,44 @@ def strengths_weaknesses(
     counts: dict[str, int],
     limit: int = 3,
 ) -> tuple[list[str], list[str]]:
+    """A type only counts as a strength if it's clearly expressed (>=
+    LEVEL_HIGH_MIN — the same bar interest_map uses to call a sphere
+    "high") — not just "top-N by rank" among whatever six numbers happen to
+    exist. Found live: a profile of I=100/A=100/R=C=E=S=20 (R tied exactly
+    with two of the three "weaknesses") still had R padded into `strengths`
+    by the old blind top-3 — the type then got cited as matched evidence
+    in 7 of the 10 shown careers despite being statistically indistinguishable
+    from what the same report labeled a weakness. Can legitimately return
+    fewer than `limit` (even zero) now when nothing actually clears the
+    bar — an honest "no standout type" beats a manufactured one; the flat
+    profile is already surfaced elsewhere (differentiation/is_flat_profile).
+    Weaknesses get the mirror-image bar (<= LEVEL_LOW_MAX) for the same
+    reason — a mid-pack score isn't a confirmed weakness either."""
     ranked = sorted(HOLLAND_ORDER, key=lambda t: (-normalized.get(t, 0.0), HOLLAND_ORDER.index(t)))
+    qualifying_strengths = [t for t in ranked if normalized.get(t, 0.0) >= LEVEL_HIGH_MIN]
 
     strengths = [
-        t for t in ranked
+        t for t in qualifying_strengths
         if _aversion_ratio(t, aversion_counts, counts) < _AVERSION_DISQUALIFY_RATIO
     ][:limit]
-    if len(strengths) < limit:
+    if len(strengths) < min(limit, len(qualifying_strengths)):
         # A strict aversion filter can leave too few (even zero) categories
-        # — found live: a student with >=30% explicit dislike on 5 of 6
-        # RIASEC types ended up with a near-empty/empty evidence catalog,
-        # so "Сильные стороны" disappeared from the report entirely. That
-        # reads worse than showing the best-available signal. career
-        # matching (top_code, above) already ignores aversion completely —
-        # this just brings the evidence catalog in line with that, padding
-        # with the next best-scoring types regardless of aversion.
-        for t in ranked:
+        # despite real signal existing — found live: a student with >=30%
+        # explicit dislike on otherwise-high-scoring types ended up with a
+        # near-empty/empty evidence catalog, so "Сильные стороны"
+        # disappeared from the report entirely. That reads worse than
+        # showing the best-available *real* signal. career matching
+        # (top_code, above) already ignores aversion completely — this just
+        # brings the evidence catalog in line with that. Still only ever
+        # pads from `qualifying_strengths` — aversion can waive the
+        # disqualification, it can't lower the score bar.
+        for t in qualifying_strengths:
             if len(strengths) >= limit:
                 break
             if t not in strengths:
                 strengths.append(t)
 
-    weaknesses = list(reversed(ranked))[:limit]
+    weaknesses = [t for t in reversed(ranked) if normalized.get(t, 0.0) <= LEVEL_LOW_MAX][:limit]
 
     return strengths, weaknesses
 

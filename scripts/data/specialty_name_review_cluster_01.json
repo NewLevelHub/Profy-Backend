@@ -1,0 +1,272 @@
+[
+  {
+    "university_slug": "kartu-karaganda",
+    "university_name": "Карагандинский технический университет (КарТУ)",
+    "cluster_professions": ["Инженер-механик"],
+    "current_wrong_name": "Инженер-механик",
+    "proposed_name": "Машиностроение",
+    "source_url": "https://www.kstu.kz/obrazovatelnyj-programmy/?lang=ru",
+    "needs_manual_review": false,
+    "note": "KarTU (full name: Карагандинский технический университет имени Абылкаса Сагинова) is a comprehensive Kazakhstani technical university with distinct, verifiable bachelor's programs matching each of the 5 cluster professions separately (unlike the foreign universities, where only 1-2 professions typically match). Listed 5 separate entries for this university accordingly. Program confirmed on the official educational-programs listing page; a deeper per-program URL with admission code (e.g. 6B07... classifier code) was not individually confirmed."
+  },
+  {
+    "university_slug": "kartu-karaganda",
+    "university_name": "Карагандинский технический университет (КарТУ)",
+    "cluster_professions": ["Инженер-электрик"],
+    "current_wrong_name": "Инженер-электрик",
+    "proposed_name": "Электроэнергетика",
+    "source_url": "https://www.kstu.kz/obrazovatelnyj-programmy/?lang=ru",
+    "needs_manual_review": false,
+    "note": "Offered by the Faculty of Energy, Automation and Telecommunications (Факультет энергетики, автоматики и телекоммуникаций). Confirmed via the official educational-programs listing page."
+  },
+  {
+    "university_slug": "kartu-karaganda",
+    "university_name": "Карагандинский технический университет (КарТУ)",
+    "cluster_professions": ["Инженер-строитель"],
+    "current_wrong_name": "Инженер-строитель",
+    "proposed_name": "Строительство",
+    "source_url": "https://www.kstu.kz/obrazovatelnyj-programmy/?lang=ru",
+    "needs_manual_review": false,
+    "note": "Offered by the Архитектурно-строительный факультет (Architectural and Construction Faculty). Confirmed via the official educational-programs listing page."
+  },
+  {
+    "university_slug": "kartu-karaganda",
+    "university_name": "Карагандинский технический университет (КарТУ)",
+    "cluster_professions": ["Архитектор"],
+    "current_wrong_name": "Архитектор",
+    "proposed_name": "Архитектура",
+    "source_url": "https://www.kstu.kz/obrazovatelnyj-programmy/?lang=ru",
+    "needs_manual_review": false,
+    "note": "Offered by the Архитектурно-строительный факультет (department Архитектура и дизайн). Confirmed via the official educational-programs listing page."
+  },
+  {
+    "university_slug": "kartu-karaganda",
+    "university_name": "Карагандинский технический университет (КарТУ)",
+    "cluster_professions": ["Геодезист"],
+    "current_wrong_name": "Геодезист",
+    "proposed_name": "Геодезия и картография",
+    "source_url": "https://www.kstu.kz/obrazovatelnyj-programmy/?lang=ru",
+    "needs_manual_review": false,
+    "note": "KarTU also separately offers 'Маркшейдерское дело' (Mine Surveying) via the Mining Faculty, which is closely related; 'Геодезия и картография' was chosen as the more direct match to the general surveyor/geodesist profession. Confirmed via the official educational-programs listing page."
+  },
+  {
+    "university_slug": "tu-delft",
+    "university_name": "Delft University of Technology (TU Delft)",
+    "cluster_professions": ["Инженер-строитель"],
+    "current_wrong_name": "Инженер-строитель",
+    "proposed_name": "Bachelor Civil Engineering (BSc Civil Engineering)",
+    "source_url": "https://www.tudelft.nl/en/student/ceg-student-portal/education/bachelor/bachelor-civil-engineering",
+    "needs_manual_review": false,
+    "note": "Offered by the Faculty of Civil Engineering & Geosciences. Note the bachelor's program is taught primarily in Dutch."
+  },
+  {
+    "university_slug": "politecnico-di-milano",
+    "university_name": "Politecnico di Milano",
+    "cluster_professions": ["Инженер-строитель"],
+    "current_wrong_name": "Инженер-строитель",
+    "proposed_name": "Civil Engineering (Laurea / BSc in Civil Engineering, degree class L-7)",
+    "source_url": "https://www.polimi.it/en/education/laurea-programmes/programme-detail/civil-engineering",
+    "needs_manual_review": false,
+    "note": "Chosen as the single strongest/most direct match for this cluster. Politecnico di Milano also separately offers a real, verified 'Architectural Design' Bachelor's degree (BSc in Architectural Design, degree class L-17, https://www.polimi.it/en/education/laurea-programmes/programme-detail/architectural-design) which would be the correct proposal if a second row is desired for Архитектор at this university."
+  },
+  {
+    "university_slug": "purdue-university",
+    "university_name": "Purdue University",
+    "cluster_professions": ["Инженер-строитель"],
+    "current_wrong_name": "Инженер-строитель",
+    "proposed_name": "Bachelor of Science in Civil Engineering",
+    "source_url": "https://admissions.purdue.edu/majors/civil-engineering/",
+    "needs_manual_review": false,
+    "note": "Confirmed 'Degree: Bachelor of Science' under Quick Facts on the official admissions major page."
+  },
+  {
+    "university_slug": "purdue-university",
+    "university_name": "Purdue University",
+    "cluster_professions": ["Инженер-механик"],
+    "current_wrong_name": "Инженер-механик",
+    "proposed_name": "Bachelor of Science in Mechanical Engineering",
+    "source_url": "https://admissions.purdue.edu/majors/mechanical-engineering/",
+    "needs_manual_review": false,
+    "note": "Confirmed 'Degree: Bachelor of Science' under Quick Facts on the official admissions major page. Added as a second entry since Purdue has independently verified, equally prominent, distinct real programs for both Civil and Mechanical Engineering."
+  },
+  {
+    "university_slug": "eth-zurich",
+    "university_name": "Eidgenössische Technische Hochschule Zürich",
+    "cluster_professions": ["Инженер-строитель"],
+    "current_wrong_name": "Инженер-строитель",
+    "proposed_name": "Bachelor's degree in Civil Engineering",
+    "source_url": "https://ethz.ch/en/studies/bachelor/bachelors-degree-programmes/architecture-and-civil-engineering/civil-engineering.html",
+    "needs_manual_review": false,
+    "note": "Offered by the Department of Civil, Environmental and Geomatic Engineering (D-BAUG). Main teaching language is German."
+  },
+  {
+    "university_slug": "eth-zurich",
+    "university_name": "Eidgenössische Technische Hochschule Zürich",
+    "cluster_professions": ["Архитектор"],
+    "current_wrong_name": "Архитектор",
+    "proposed_name": "Bachelor of Science ETH in Architecture (BSc ETH Arch)",
+    "source_url": "https://ethz.ch/en/studies/bachelor/bachelors-degree-programmes/architecture-and-civil-engineering/architecture.html",
+    "needs_manual_review": false,
+    "note": "Offered by the Department of Architecture. Includes mandatory 6 months of professional work experience."
+  },
+  {
+    "university_slug": "eth-zurich",
+    "university_name": "Eidgenössische Technische Hochschule Zürich",
+    "cluster_professions": ["Геодезист"],
+    "current_wrong_name": "Геодезист",
+    "proposed_name": "Bachelor Geospatial Engineering (formerly Geomatic Engineering and Planning)",
+    "source_url": "https://ethz.ch/en/studies/bachelor/bachelors-degree-programmes/architecture-and-civil-engineering/geospatial-engineering.html",
+    "needs_manual_review": false,
+    "note": "Also offered by D-BAUG. This is ETH's direct match for the surveyor/geodesist profession (geomatic engineers record and visualise spatial structures using measuring systems, mapping and geospatial data). Program was recently renamed from 'Geomatic Engineering and Planning' to 'Geospatial Engineering'."
+  },
+  {
+    "university_slug": "national-university-of-singapore",
+    "university_name": "National University of Singapore",
+    "cluster_professions": ["Инженер-строитель"],
+    "current_wrong_name": "Инженер-строитель",
+    "proposed_name": "Bachelor of Engineering (Civil Engineering)",
+    "source_url": "https://cde.nus.edu.sg/cee/undergraduate/beng-civil/",
+    "needs_manual_review": false,
+    "note": "Offered by the Department of Civil and Environmental Engineering, College of Design and Engineering. Accredited by the Engineering Accreditation Board (Washington Accord signatory)."
+  },
+  {
+    "university_slug": "university-of-melbourne",
+    "university_name": "The University of Melbourne",
+    "cluster_professions": ["Инженер-строитель"],
+    "current_wrong_name": "Инженер-строитель",
+    "proposed_name": "Civil Engineering Systems (major within the Bachelor of Design), leading to the Master of Civil Engineering",
+    "source_url": "https://study.unimelb.edu.au/find/courses/major/civil-engineering-systems/",
+    "needs_manual_review": false,
+    "note": "Under the 'Melbourne Model', professional engineering accreditation requires completing the Civil Engineering Systems major (Bachelor of Design or Bachelor of Science) followed by the Master of Civil Engineering. Proposed name reflects the actual undergraduate major name; flagging that the profession-qualifying credential is technically the postgraduate Master of Civil Engineering."
+  },
+  {
+    "university_slug": "university-of-melbourne",
+    "university_name": "The University of Melbourne",
+    "cluster_professions": ["Архитектор"],
+    "current_wrong_name": "Архитектор",
+    "proposed_name": "Architecture (major within the Bachelor of Design), leading to the Master of Architecture",
+    "source_url": "https://study.unimelb.edu.au/find/courses/major/architecture/",
+    "needs_manual_review": false,
+    "note": "Same Melbourne Model structure as Civil Engineering Systems: undergraduate Architecture major in the Bachelor of Design guarantees pathway entry into the Master of Architecture, which is the professionally recognised architecture qualification."
+  },
+  {
+    "university_slug": "university-of-cape-town",
+    "university_name": "University of Cape Town",
+    "cluster_professions": ["Инженер-строитель"],
+    "current_wrong_name": "Инженер-строитель",
+    "proposed_name": "Bachelor of Science in Engineering in Civil Engineering",
+    "source_url": "https://ebe.uct.ac.za/department-civil-engineering/bachelor-science-eng-civil-engineering",
+    "needs_manual_review": false,
+    "note": "Offered by the Department of Civil Engineering, Faculty of Engineering & the Built Environment (EBE). 4-year program accredited by the Engineering Council of South Africa."
+  },
+  {
+    "university_slug": "university-of-cape-town",
+    "university_name": "University of Cape Town",
+    "cluster_professions": ["Архитектор"],
+    "current_wrong_name": "Архитектор",
+    "proposed_name": "Bachelor of Architectural Studies",
+    "source_url": "https://www.uct.ac.za/students/study-uct-degrees-diplomas-engineering-built-environment/engineering-built-environment-undergraduate",
+    "needs_manual_review": false,
+    "note": "Offered by the School of Architecture, Planning & Geomatics, within the same EBE faculty as the other UCT entries in this cluster."
+  },
+  {
+    "university_slug": "university-of-cape-town",
+    "university_name": "University of Cape Town",
+    "cluster_professions": ["Инженер-механик"],
+    "current_wrong_name": "Инженер-механик",
+    "proposed_name": "Bachelor of Science in Engineering in Mechanical Engineering",
+    "source_url": "https://www.uct.ac.za/students/study-uct-degrees-diplomas-engineering-built-environment/engineering-built-environment-undergraduate",
+    "needs_manual_review": false,
+    "note": "Department of Mechanical Engineering also separately offers a 'Mechanical & Mechatronics Engineering' variant; 'Mechanical Engineering' chosen as the closer direct match to the profession name."
+  },
+  {
+    "university_slug": "university-of-cape-town",
+    "university_name": "University of Cape Town",
+    "cluster_professions": ["Инженер-электрик"],
+    "current_wrong_name": "Инженер-электрик",
+    "proposed_name": "Bachelor of Science in Engineering in Electrical Engineering",
+    "source_url": "https://www.uct.ac.za/students/study-uct-degrees-diplomas-engineering-built-environment/engineering-built-environment-undergraduate",
+    "needs_manual_review": false,
+    "note": "Offered by the Department of Electrical Engineering, same EBE faculty."
+  },
+  {
+    "university_slug": "university-of-cape-town",
+    "university_name": "University of Cape Town",
+    "cluster_professions": ["Геодезист"],
+    "current_wrong_name": "Геодезист",
+    "proposed_name": "Bachelor of Science in Geomatics: Surveying",
+    "source_url": "https://www.uct.ac.za/students/study-uct-degrees-diplomas-engineering-built-environment/engineering-built-environment-undergraduate",
+    "needs_manual_review": false,
+    "note": "Offered by the School of Architecture, Planning & Geomatics. A 'Geoinformatics' variant of the same Geomatics degree also exists; 'Surveying' variant chosen as the direct match to the geodesist/surveyor profession. UCT is unusually well-matched to this cluster: all 5 professions have distinct real programs verified from a single official faculty page."
+  },
+  {
+    "university_slug": "universidade-de-sao-paulo",
+    "university_name": "Universidade de São Paulo — Escola Politécnica",
+    "cluster_professions": ["Инженер-строитель"],
+    "current_wrong_name": "Инженер-строитель",
+    "proposed_name": "Engenharia Civil",
+    "source_url": "https://www5.usp.br/ensino/graduacao/cursos-oferecidos/engenharia-civil/",
+    "needs_manual_review": false,
+    "note": "Escola Politécnica (Poli-USP) also offers separate Engenharia Elétrica and Engenharia Mecânica courses among its 17 undergraduate engineering programs, but these were not individually verified with a dedicated official course page in this pass; Engenharia Civil chosen as the single confirmed strongest match."
+  },
+  {
+    "university_slug": "georgia-institute-of-technology",
+    "university_name": "Georgia Institute of Technology",
+    "cluster_professions": ["Инженер-строитель"],
+    "current_wrong_name": "Инженер-строитель",
+    "proposed_name": "Bachelor of Science in Civil Engineering",
+    "source_url": "https://www.gatech.edu/academics/degrees/bachelors/civil-engineering-bs",
+    "needs_manual_review": false,
+    "note": "Offered by the School of Civil and Environmental Engineering, College of Engineering. Georgia Tech also has prominent Mechanical and Electrical Engineering programs but these were not individually verified in this pass."
+  },
+  {
+    "university_slug": "tu-munich",
+    "university_name": "Technical University of Munich",
+    "cluster_professions": ["Инженер-строитель"],
+    "current_wrong_name": "Инженер-строитель",
+    "proposed_name": "Civil Engineering - Bachelor of Science (B.Sc.)",
+    "source_url": "https://www.tum.de/en/studies/degree-programs/detail/civil-engineering-bachelor-of-science-bsc",
+    "needs_manual_review": false,
+    "note": "Offered by TUM School of Engineering and Design."
+  },
+  {
+    "university_slug": "tu-munich",
+    "university_name": "Technical University of Munich",
+    "cluster_professions": ["Архитектор"],
+    "current_wrong_name": "Архитектор",
+    "proposed_name": "Architecture - Bachelor of Arts (B.A.)",
+    "source_url": "https://www.tum.de/en/studies/degree-programs/detail/architecture-bachelor-of-arts-ba",
+    "needs_manual_review": false,
+    "note": "Also offered by TUM School of Engineering and Design; 8-semester program with mandatory semester abroad."
+  },
+  {
+    "university_slug": "tokyo-institute-of-technology",
+    "university_name": "Tokyo Institute of Technology",
+    "cluster_professions": ["Инженер-строитель"],
+    "current_wrong_name": "Инженер-строитель",
+    "proposed_name": "Civil and Environmental Engineering Undergraduate Major",
+    "source_url": "https://educ.titech.ac.jp/cv/eng/education/cv_undergraduate/curriculum.html",
+    "needs_manual_review": false,
+    "note": "Offered by the Department of Civil and Environmental Engineering, School of Environment and Society. Note: Tokyo Institute of Technology merged with Tokyo Medical and Dental University in October 2024 to form 'Institute of Science Tokyo' (Science Tokyo); the titech.ac.jp domain and program structure are still live/current as of this research."
+  },
+  {
+    "university_slug": "imperial-college-london",
+    "university_name": "Imperial College London",
+    "cluster_professions": ["Инженер-строитель"],
+    "current_wrong_name": "Инженер-строитель",
+    "proposed_name": "Civil Engineering MEng",
+    "source_url": "https://www.imperial.ac.uk/study/courses/undergraduate/civil-engineering/",
+    "needs_manual_review": false,
+    "note": "Integrated Master's (4-year) undergraduate degree, offered by the Department of Civil and Environmental Engineering; accredited by the Institution of Civil Engineers and Institution of Structural Engineers. A 'Civil Engineering with a Year Abroad MEng' variant also exists."
+  },
+  {
+    "university_slug": "university-of-toronto",
+    "university_name": "University of Toronto",
+    "cluster_professions": ["Инженер-строитель"],
+    "current_wrong_name": "Инженер-строитель",
+    "proposed_name": "Bachelor of Applied Science (Civil Engineering) — 'Civil' Track One program",
+    "source_url": "https://future.utoronto.ca/undergraduate-programs/civil-engineering/",
+    "needs_manual_review": false,
+    "note": "Offered by the Faculty of Applied Science and Engineering (Track One: Civil, one of the 'Core 8' first-year-common engineering streams). The exact conferred credential (Bachelor of Applied Science, BASc) was confirmed via secondary sources (TopUniversities/mastersportal citing UofT) referencing the same program; the official future.utoronto.ca page itself did not spell out the full degree designation in the fetched text, only 'Civil' and 'BASc'. Confidence is high but flagging the partial confirmation."
+  }
+]

@@ -1,0 +1,3 @@
+[
+  {"university_slug": "karsu-buketova", "university_name": "Карагандинский университет им. Е.А. Букетова", "cluster_professions": ["Бухгалтер", "Аудитор"], "current_wrong_name": "Бухгалтер, Аудитор", "proposed_name": "6В04103 Учет и аудит", "source_url": "https://ksu.edu.kz/files/educational-program/modular/accounting_and_auditing.pdf", "needs_manual_review": true, "note": "Доменная аномалия: документация размещена на ksu.edu.kz (Костанайский университет), а не на домене Карагандинского университета — требуется ручная верификация принадлежности программы."}
+]

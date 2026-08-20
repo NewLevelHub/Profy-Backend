@@ -50,11 +50,46 @@ RIASEC_STRENGTH_PHRASES: dict[str, str] = {
 # the student can point to — saying so plainly reads more trustworthy than
 # a vague "matches what you've shown" that implies a specific link that
 # doesn't actually exist (result-quality-fixes.md §3, variant A).
-NEUTRAL_CAREER_WHY = (
-    "Это направление подобрано по общей картине теста интересов, а не по "
-    "одной конкретной сильной стороне — иногда так тоже бывает, и это "
-    "нормально: стоит попробовать и посмотреть, откликается ли."
-)
+#
+# A flat/undifferentiated profile can legitimately land 5-10 of the 10 shown
+# careers in this fallback (riasec_service.strengths_weaknesses' 70.0 bar
+# often clears zero letters) — a single string then repeated verbatim across
+# unrelated careers read as broken/copy-pasted. Several honest rephrasings
+# of the same disclosure let report_v2_assembler cycle through them instead
+# of repeating one sentence (result-quality-fixes.md §3 follow-up, found live
+# 2026-08-19: 10/10 identical "why" for a flat profile).
+NEUTRAL_CAREER_WHY_VARIANTS: list[str] = [
+    (
+        "Это направление подобрано по общей картине теста интересов, а не по "
+        "одной конкретной сильной стороне — иногда так тоже бывает, и это "
+        "нормально: стоит попробовать и посмотреть, откликается ли."
+    ),
+    (
+        "Здесь нет одной ярко выраженной черты, на которую можно сослаться — "
+        "направление всплыло из общего сочетания твоих ответов. Понять, "
+        "откликается ли оно, можно только попробовав."
+    ),
+    (
+        "Прямого совпадения с твоими сильными сторонами тест не показал — "
+        "направление ближе по общему балансу интересов, чем по одной "
+        "конкретной черте. Не повод отказываться сразу, повод присмотреться."
+    ),
+    (
+        "Тест не выделил здесь конкретную сильную сторону, но направление "
+        "всё равно попало в подборку по совокупности ответов — иногда стоит "
+        "довериться и такому сигналу."
+    ),
+    (
+        "Однозначного совпадения с твоими сильными сторонами нет — "
+        "направление в списке благодаря общей картине теста, а не отдельному "
+        "яркому качеству. Проверить, откликается ли оно, можно только на практике."
+    ),
+]
+
+# Back-compat alias — some callers/tests only need "a" neutral fallback
+# string, not the rotation (e.g. to assert a career.why is *some* neutral
+# variant). Always the first, most-established phrasing.
+NEUTRAL_CAREER_WHY = NEUTRAL_CAREER_WHY_VARIANTS[0]
 
 # Same idea for `try_now` (StudentCareer.try_now, app/schemas/result_v2.py):
 # a Direction row with no first_steps in the DB must never leave the field

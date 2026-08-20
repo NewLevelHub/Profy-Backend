@@ -1,0 +1,3 @@
+[
+  {"university_slug": "toraigyrov-university", "university_name": "Торайгыров Университет", "cluster_professions": ["Тренер по спорту", "Преподаватель искусства"], "current_wrong_name": "Тренер по спорту, Преподаватель искусства", "proposed_name": "Физическая культура и спорт", "source_url": "https://tou.edu.kz/arm/upload/umk_pdf/150579.pdf", "needs_manual_review": true, "note": "В источнике найден только силлабус (УМК), официальный шифр и титульное название программы бакалавриата не задокументированы."}
+]

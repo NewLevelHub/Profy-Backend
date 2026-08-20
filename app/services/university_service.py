@@ -27,6 +27,18 @@ async def search_programs(
     )
     if country is not None:
         query = query.where(University.country.ilike(country))
+    # Best-known university first. University.ranking is the QS World numeric
+    # position (parsed from ranking_label's "#N (QS World ...)" prefix) — the
+    # only rank scale comparable across countries — so it sorts first;
+    # uniranks_world_rank (KZ-market source, mostly populated for KZ
+    # universities that have no QS World number) is the tiebreak for
+    # everything QS didn't rank. Universities with neither sort last, in a
+    # stable name order rather than DB-arbitrary order.
+    query = query.order_by(
+        University.ranking.asc().nulls_last(),
+        University.uniranks_world_rank.asc().nulls_last(),
+        University.name.asc(),
+    )
     query = query.limit(limit)
     result = await db.execute(query)
     return list(result.scalars().all())

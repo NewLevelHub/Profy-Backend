@@ -1,0 +1,2502 @@
+[
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 124,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "045",
+    "min_score": 122,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 34
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 122,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 23
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "040",
+    "min_score": 124,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "043",
+    "min_score": 122,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 12
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "036",
+    "min_score": 122,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "005",
+    "min_score": 122,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "016",
+    "min_score": 123,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "031",
+    "min_score": 122,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "158",
+    "min_score": 122,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "158",
+    "min_score": 121,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "045",
+    "min_score": 120,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 35
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "043",
+    "min_score": 120,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 14
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "007",
+    "min_score": 120,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "016",
+    "min_score": 120,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "025",
+    "min_score": 120,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 25
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "036",
+    "min_score": 120,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "005",
+    "min_score": 121,
+    "max_score": 121,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "031",
+    "min_score": 120,
+    "max_score": 121,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B092",
+    "specialty_name": "Досуг",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "040",
+    "min_score": 120,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "043",
+    "min_score": 120,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "045",
+    "min_score": 119,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "031",
+    "min_score": 119,
+    "max_score": 119,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "025",
+    "min_score": 119,
+    "max_score": 119,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "036",
+    "min_score": 119,
+    "max_score": 119,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "005",
+    "min_score": 119,
+    "max_score": 119,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "021",
+    "min_score": 120,
+    "max_score": 137,
+    "year": "2026-2027",
+    "recipient_count": 59
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "083",
+    "min_score": 120,
+    "max_score": 132,
+    "year": "2026-2027",
+    "recipient_count": 11
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 121,
+    "max_score": 131,
+    "year": "2026-2027",
+    "recipient_count": 12
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 120,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 79
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "023",
+    "min_score": 126,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "184",
+    "min_score": 122,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "038",
+    "min_score": 120,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "027",
+    "min_score": 115,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "021",
+    "min_score": 106,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 16
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "013",
+    "min_score": 115,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 31
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "182",
+    "min_score": 98,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "083",
+    "min_score": 98,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 18
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "053",
+    "min_score": 98,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "069",
+    "min_score": 98,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 12
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "023",
+    "min_score": 98,
+    "max_score": 110,
+    "year": "2026-2027",
+    "recipient_count": 16
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "184",
+    "min_score": 98,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 17
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "093",
+    "min_score": 98,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "160",
+    "min_score": 98,
+    "max_score": 103,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "045",
+    "min_score": 99,
+    "max_score": 102,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "003",
+    "min_score": 100,
+    "max_score": 100,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B093",
+    "specialty_name": "Ресторанное дело и гостиничный бизнес",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "031",
+    "min_score": 99,
+    "max_score": 99,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "012",
+    "min_score": 89,
+    "max_score": 97,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "029",
+    "min_score": 80,
+    "max_score": 93,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 80,
+    "max_score": 91,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "011",
+    "min_score": 82,
+    "max_score": 91,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "035",
+    "min_score": 86,
+    "max_score": 90,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "198",
+    "min_score": 89,
+    "max_score": 89,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "501",
+    "min_score": 78,
+    "max_score": 87,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "024",
+    "min_score": 78,
+    "max_score": 85,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "182",
+    "min_score": 77,
+    "max_score": 84,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "015",
+    "min_score": 84,
+    "max_score": 84,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "057",
+    "min_score": 77,
+    "max_score": 82,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "042",
+    "min_score": 81,
+    "max_score": 81,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "038",
+    "min_score": 77,
+    "max_score": 81,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "079",
+    "min_score": 79,
+    "max_score": 79,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "034",
+    "min_score": 79,
+    "max_score": 79,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "019",
+    "min_score": 78,
+    "max_score": 78,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "146",
+    "min_score": 78,
+    "max_score": 78,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "032",
+    "min_score": 72,
+    "max_score": 77,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "057",
+    "min_score": 71,
+    "max_score": 76,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "024",
+    "min_score": 71,
+    "max_score": 76,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "019",
+    "min_score": 71,
+    "max_score": 76,
+    "year": "2026-2027",
+    "recipient_count": 9
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "182",
+    "min_score": 71,
+    "max_score": 76,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "015",
+    "min_score": 72,
+    "max_score": 76,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "501",
+    "min_score": 74,
+    "max_score": 75,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "079",
+    "min_score": 73,
+    "max_score": 74,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "003",
+    "min_score": 74,
+    "max_score": 74,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "011",
+    "min_score": 74,
+    "max_score": 74,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "031",
+    "min_score": 74,
+    "max_score": 74,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "045",
+    "min_score": 74,
+    "max_score": 74,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "038",
+    "min_score": 74,
+    "max_score": 74,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "012",
+    "min_score": 72,
+    "max_score": 73,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B094",
+    "specialty_name": "Санитарно-профилактические мероприятия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "034",
+    "min_score": 72,
+    "max_score": 72,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "032",
+    "min_score": 70,
+    "max_score": 70,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "019",
+    "min_score": 69,
+    "max_score": 70,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "049",
+    "min_score": 70,
+    "max_score": 70,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "182",
+    "min_score": 70,
+    "max_score": 70,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "015",
+    "min_score": 70,
+    "max_score": 70,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "024",
+    "min_score": 70,
+    "max_score": 70,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "057",
+    "min_score": 70,
+    "max_score": 70,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "158",
+    "min_score": 69,
+    "max_score": 69,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 119,
+    "max_score": 134,
+    "year": "2026-2027",
+    "recipient_count": 66
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 119,
+    "max_score": 132,
+    "year": "2026-2027",
+    "recipient_count": 32
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "083",
+    "min_score": 119,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "045",
+    "min_score": 123,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "031",
+    "min_score": 125,
+    "max_score": 125,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "069",
+    "min_score": 120,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "029",
+    "min_score": 119,
+    "max_score": 122,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "157",
+    "min_score": 121,
+    "max_score": 121,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "012",
+    "min_score": 119,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "082",
+    "min_score": 119,
+    "max_score": 119,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "069",
+    "min_score": 119,
+    "max_score": 119,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "013",
+    "min_score": 114,
+    "max_score": 119,
+    "year": "2026-2027",
+    "recipient_count": 20
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "027",
+    "min_score": 114,
+    "max_score": 119,
+    "year": "2026-2027",
+    "recipient_count": 14
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "031",
+    "min_score": 118,
+    "max_score": 118,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "038",
+    "min_score": 117,
+    "max_score": 117,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "082",
+    "min_score": 116,
+    "max_score": 116,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "029",
+    "min_score": 115,
+    "max_score": 116,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "083",
+    "min_score": 116,
+    "max_score": 116,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B095",
+    "specialty_name": "Транспортные услуги",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "002",
+    "min_score": 115,
+    "max_score": 115,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B098",
+    "specialty_name": "Спорт",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 112,
+    "max_score": 114,
+    "year": "2026-2027",
+    "recipient_count": 18
+  },
+  {
+    "specialty_code": "B098",
+    "specialty_name": "Спорт",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "083",
+    "min_score": 112,
+    "max_score": 114,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B098",
+    "specialty_name": "Спорт",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "003",
+    "min_score": 114,
+    "max_score": 114,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B098",
+    "specialty_name": "Спорт",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 112,
+    "max_score": 114,
+    "year": "2026-2027",
+    "recipient_count": 10
+  },
+  {
+    "specialty_code": "B098",
+    "specialty_name": "Спорт",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "038",
+    "min_score": 114,
+    "max_score": 114,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B098",
+    "specialty_name": "Спорт",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "019",
+    "min_score": 114,
+    "max_score": 114,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B098",
+    "specialty_name": "Спорт",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "527",
+    "min_score": 129,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B126",
+    "specialty_name": "Транспортное строительство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "527",
+    "min_score": 128,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B126",
+    "specialty_name": "Транспортное строительство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "022",
+    "min_score": 61,
+    "max_score": 107,
+    "year": "2026-2027",
+    "recipient_count": 268
+  },
+  {
+    "specialty_code": "B126",
+    "specialty_name": "Транспортное строительство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "019",
+    "min_score": 61,
+    "max_score": 94,
+    "year": "2026-2027",
+    "recipient_count": 136
+  },
+  {
+    "specialty_code": "B126",
+    "specialty_name": "Транспортное строительство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "032",
+    "min_score": 62,
+    "max_score": 78,
+    "year": "2026-2027",
+    "recipient_count": 74
+  },
+  {
+    "specialty_code": "B126",
+    "specialty_name": "Транспортное строительство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "078",
+    "min_score": 62,
+    "max_score": 77,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B126",
+    "specialty_name": "Транспортное строительство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "009",
+    "min_score": 62,
+    "max_score": 70,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B126",
+    "specialty_name": "Транспортное строительство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "038",
+    "min_score": 62,
+    "max_score": 65,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B126",
+    "specialty_name": "Транспортное строительство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "012",
+    "min_score": 62,
+    "max_score": 64,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B126",
+    "specialty_name": "Транспортное строительство",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "162",
+    "min_score": 62,
+    "max_score": 62,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B126",
+    "specialty_name": "Транспортное строительство",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "019",
+    "min_score": 55,
+    "max_score": 61,
+    "year": "2026-2027",
+    "recipient_count": 144
+  },
+  {
+    "specialty_code": "B126",
+    "specialty_name": "Транспортное строительство",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "022",
+    "min_score": 55,
+    "max_score": 61,
+    "year": "2026-2027",
+    "recipient_count": 60
+  },
+  {
+    "specialty_code": "B126",
+    "specialty_name": "Транспортное строительство",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "078",
+    "min_score": 56,
+    "max_score": 61,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B126",
+    "specialty_name": "Транспортное строительство",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "032",
+    "min_score": 55,
+    "max_score": 61,
+    "year": "2026-2027",
+    "recipient_count": 46
+  },
+  {
+    "specialty_code": "B126",
+    "specialty_name": "Транспортное строительство",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "038",
+    "min_score": 55,
+    "max_score": 61,
+    "year": "2026-2027",
+    "recipient_count": 9
+  },
+  {
+    "specialty_code": "B126",
+    "specialty_name": "Транспортное строительство",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "009",
+    "min_score": 57,
+    "max_score": 61,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B126",
+    "specialty_name": "Транспортное строительство",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "162",
+    "min_score": 55,
+    "max_score": 61,
+    "year": "2026-2027",
+    "recipient_count": 11
+  },
+  {
+    "specialty_code": "B126",
+    "specialty_name": "Транспортное строительство",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "012",
+    "min_score": 55,
+    "max_score": 56,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B134",
+    "specialty_name": "Археология и этнология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "019",
+    "min_score": 54,
+    "max_score": 55,
+    "year": "2026-2027",
+    "recipient_count": 20
+  },
+  {
+    "specialty_code": "B134",
+    "specialty_name": "Археология и этнология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "012",
+    "min_score": 54,
+    "max_score": 55,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B134",
+    "specialty_name": "Археология и этнология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "022",
+    "min_score": 54,
+    "max_score": 55,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B134",
+    "specialty_name": "Археология и этнология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "032",
+    "min_score": 54,
+    "max_score": 55,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B134",
+    "specialty_name": "Археология и этнология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "162",
+    "min_score": 54,
+    "max_score": 54,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B134",
+    "specialty_name": "Археология и этнология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "038",
+    "min_score": 54,
+    "max_score": 54,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B134",
+    "specialty_name": "Археология и этнология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 113,
+    "max_score": 133,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B134",
+    "specialty_name": "Археология и этнология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 111,
+    "max_score": 111,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B134",
+    "specialty_name": "Археология и этнология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "042",
+    "min_score": 111,
+    "max_score": 111,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B134",
+    "specialty_name": "Археология и этнология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "013",
+    "min_score": 97,
+    "max_score": 110,
+    "year": "2026-2027",
+    "recipient_count": 24
+  },
+  {
+    "specialty_code": "B134",
+    "specialty_name": "Археология и этнология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "031",
+    "min_score": 97,
+    "max_score": 108,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B134",
+    "specialty_name": "Археология и этнология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "027",
+    "min_score": 97,
+    "max_score": 106,
+    "year": "2026-2027",
+    "recipient_count": 16
+  },
+  {
+    "specialty_code": "B134",
+    "specialty_name": "Археология и этнология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "045",
+    "min_score": 105,
+    "max_score": 105,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B134",
+    "specialty_name": "Археология и этнология",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "034",
+    "min_score": 98,
+    "max_score": 102,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B135",
+    "specialty_name": "Востоковедение",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 95,
+    "max_score": 132,
+    "year": "2026-2027",
+    "recipient_count": 27
+  },
+  {
+    "specialty_code": "B135",
+    "specialty_name": "Востоковедение",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "034",
+    "min_score": 96,
+    "max_score": 96,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B135",
+    "specialty_name": "Востоковедение",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 95,
+    "max_score": 135,
+    "year": "2026-2027",
+    "recipient_count": 52
+  },
+  {
+    "specialty_code": "B135",
+    "specialty_name": "Востоковедение",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "031",
+    "min_score": 96,
+    "max_score": 96,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B135",
+    "specialty_name": "Востоковедение",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "042",
+    "min_score": 95,
+    "max_score": 95,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B135",
+    "specialty_name": "Востоковедение",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "023",
+    "min_score": 129,
+    "max_score": 132,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B140",
+    "specialty_name": "Международные отношения и дипломатия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 128,
+    "max_score": 137,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B140",
+    "specialty_name": "Международные отношения и дипломатия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 128,
+    "max_score": 138,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B140",
+    "specialty_name": "Международные отношения и дипломатия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "174",
+    "min_score": 135,
+    "max_score": 140,
+    "year": "2026-2027",
+    "recipient_count": 72
+  },
+  {
+    "specialty_code": "B140",
+    "specialty_name": "Международные отношения и дипломатия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "302",
+    "min_score": 136,
+    "max_score": 137,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B140",
+    "specialty_name": "Международные отношения и дипломатия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "082",
+    "min_score": 136,
+    "max_score": 136,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B142",
+    "specialty_name": "Связь с общественностью",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "174",
+    "min_score": 135,
+    "max_score": 135,
+    "year": "2026-2027",
+    "recipient_count": 26
+  },
+  {
+    "specialty_code": "B142",
+    "specialty_name": "Связь с общественностью",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 128,
+    "max_score": 135,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B142",
+    "specialty_name": "Связь с общественностью",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "302",
+    "min_score": 135,
+    "max_score": 135,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B142",
+    "specialty_name": "Связь с общественностью",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 128,
+    "max_score": 135,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B142",
+    "specialty_name": "Связь с общественностью",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "185",
+    "min_score": 135,
+    "max_score": 135,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B157",
+    "specialty_name": "Математическое и компьютерное моделирование",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 105,
+    "max_score": 131,
+    "year": "2026-2027",
+    "recipient_count": 56
+  },
+  {
+    "specialty_code": "B157",
+    "specialty_name": "Математическое и компьютерное моделирование",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 100,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 10
+  },
+  {
+    "specialty_code": "B157",
+    "specialty_name": "Математическое и компьютерное моделирование",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "007",
+    "min_score": 126,
+    "max_score": 126,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B157",
+    "specialty_name": "Математическое и компьютерное моделирование",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "302",
+    "min_score": 121,
+    "max_score": 135,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B157",
+    "specialty_name": "Математическое и компьютерное моделирование",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "190",
+    "min_score": 75,
+    "max_score": 109,
+    "year": "2026-2027",
+    "recipient_count": 245
+  },
+  {
+    "specialty_code": "B158",
+    "specialty_name": "Криптология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "190",
+    "min_score": 75,
+    "max_score": 75,
+    "year": "2026-2027",
+    "recipient_count": 16
+  },
+  {
+    "specialty_code": "B158",
+    "specialty_name": "Криптология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 101,
+    "max_score": 128,
+    "year": "2026-2027",
+    "recipient_count": 22
+  },
+  {
+    "specialty_code": "B158",
+    "specialty_name": "Криптология",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 103,
+    "max_score": 114,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B161",
+    "specialty_name": "Инжиниринг материалов",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 101,
+    "max_score": 101,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B161",
+    "specialty_name": "Инжиниринг материалов",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 101,
+    "max_score": 101,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B161",
+    "specialty_name": "Инжиниринг материалов",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "019",
+    "min_score": 59,
+    "max_score": 78,
+    "year": "2026-2027",
+    "recipient_count": 40
+  },
+  {
+    "specialty_code": "B162",
+    "specialty_name": "Теплоэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "019",
+    "min_score": 58,
+    "max_score": 81,
+    "year": "2026-2027",
+    "recipient_count": 19
+  },
+  {
+    "specialty_code": "B162",
+    "specialty_name": "Теплоэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "057",
+    "min_score": 72,
+    "max_score": 121,
+    "year": "2026-2027",
+    "recipient_count": 75
+  },
+  {
+    "specialty_code": "B162",
+    "specialty_name": "Теплоэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "013",
+    "min_score": 90,
+    "max_score": 111,
+    "year": "2026-2027",
+    "recipient_count": 35
+  },
+  {
+    "specialty_code": "B162",
+    "specialty_name": "Теплоэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "002",
+    "min_score": 72,
+    "max_score": 88,
+    "year": "2026-2027",
+    "recipient_count": 86
+  },
+  {
+    "specialty_code": "B162",
+    "specialty_name": "Теплоэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "032",
+    "min_score": 73,
+    "max_score": 84,
+    "year": "2026-2027",
+    "recipient_count": 11
+  },
+  {
+    "specialty_code": "B162",
+    "specialty_name": "Теплоэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "012",
+    "min_score": 76,
+    "max_score": 78,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B162",
+    "specialty_name": "Теплоэнергетика",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "024",
+    "min_score": 72,
+    "max_score": 75,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B162",
+    "specialty_name": "Теплоэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "002",
+    "min_score": 64,
+    "max_score": 72,
+    "year": "2026-2027",
+    "recipient_count": 46
+  },
+  {
+    "specialty_code": "B162",
+    "specialty_name": "Теплоэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "057",
+    "min_score": 63,
+    "max_score": 72,
+    "year": "2026-2027",
+    "recipient_count": 59
+  },
+  {
+    "specialty_code": "B162",
+    "specialty_name": "Теплоэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "024",
+    "min_score": 66,
+    "max_score": 72,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B162",
+    "specialty_name": "Теплоэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "038",
+    "min_score": 64,
+    "max_score": 72,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B162",
+    "specialty_name": "Теплоэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "019",
+    "min_score": 63,
+    "max_score": 72,
+    "year": "2026-2027",
+    "recipient_count": 16
+  },
+  {
+    "specialty_code": "B162",
+    "specialty_name": "Теплоэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "032",
+    "min_score": 64,
+    "max_score": 72,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B162",
+    "specialty_name": "Теплоэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "042",
+    "min_score": 69,
+    "max_score": 69,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B162",
+    "specialty_name": "Теплоэнергетика",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "147",
+    "min_score": 64,
+    "max_score": 64,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B165",
+    "specialty_name": "Магистральные сети и инфраструктура",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "002",
+    "min_score": 62,
+    "max_score": 63,
+    "year": "2026-2027",
+    "recipient_count": 14
+  },
+  {
+    "specialty_code": "B165",
+    "specialty_name": "Магистральные сети и инфраструктура",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "057",
+    "min_score": 62,
+    "max_score": 63,
+    "year": "2026-2027",
+    "recipient_count": 11
+  },
+  {
+    "specialty_code": "B165",
+    "specialty_name": "Магистральные сети и инфраструктура",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "019",
+    "min_score": 63,
+    "max_score": 89,
+    "year": "2026-2027",
+    "recipient_count": 109
+  },
+  {
+    "specialty_code": "B165",
+    "specialty_name": "Магистральные сети и инфраструктура",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "038",
+    "min_score": 63,
+    "max_score": 63,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B165",
+    "specialty_name": "Магистральные сети и инфраструктура",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "029",
+    "min_score": 80,
+    "max_score": 86,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B166",
+    "specialty_name": "Транспортные сооружения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "019",
+    "min_score": 57,
+    "max_score": 81,
+    "year": "2026-2027",
+    "recipient_count": 185
+  },
+  {
+    "specialty_code": "B166",
+    "specialty_name": "Транспортные сооружения",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "029",
+    "min_score": 80,
+    "max_score": 81,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B166",
+    "specialty_name": "Транспортные сооружения",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "019",
+    "min_score": 52,
+    "max_score": 57,
+    "year": "2026-2027",
+    "recipient_count": 94
+  },
+  {
+    "specialty_code": "B167",
+    "specialty_name": "Летная эксплуатация летательных аппаратов и двигателей",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "019",
+    "min_score": 51,
+    "max_score": 52,
+    "year": "2026-2027",
+    "recipient_count": 13
+  },
+  {
+    "specialty_code": "B167",
+    "specialty_name": "Летная эксплуатация летательных аппаратов и двигателей",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "157",
+    "min_score": 92,
+    "max_score": 133,
+    "year": "2026-2027",
+    "recipient_count": 174
+  },
+  {
+    "specialty_code": "B171",
+    "specialty_name": "Металлургия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "157",
+    "min_score": 92,
+    "max_score": 92,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B171",
+    "specialty_name": "Металлургия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "029",
+    "min_score": 80,
+    "max_score": 84,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B171",
+    "specialty_name": "Металлургия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "039",
+    "min_score": 82,
+    "max_score": 82,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B171",
+    "specialty_name": "Металлургия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "147",
+    "min_score": 59,
+    "max_score": 77,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B171",
+    "specialty_name": "Металлургия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "032",
+    "min_score": 59,
+    "max_score": 77,
+    "year": "2026-2027",
+    "recipient_count": 61
+  },
+  {
+    "specialty_code": "B171",
+    "specialty_name": "Металлургия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "005",
+    "min_score": 60,
+    "max_score": 71,
+    "year": "2026-2027",
+    "recipient_count": 72
+  },
+  {
+    "specialty_code": "B171",
+    "specialty_name": "Металлургия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "038",
+    "min_score": 59,
+    "max_score": 69,
+    "year": "2026-2027",
+    "recipient_count": 25
+  },
+  {
+    "specialty_code": "B171",
+    "specialty_name": "Металлургия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "012",
+    "min_score": 59,
+    "max_score": 62,
+    "year": "2026-2027",
+    "recipient_count": 15
+  },
+  {
+    "specialty_code": "B173",
+    "specialty_name": "Гидромелиорация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "032",
+    "min_score": 58,
+    "max_score": 59,
+    "year": "2026-2027",
+    "recipient_count": 10
+  },
+  {
+    "specialty_code": "B173",
+    "specialty_name": "Гидромелиорация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "038",
+    "min_score": 58,
+    "max_score": 58,
+    "year": "2026-2027",
+    "recipient_count": 6
+  },
+  {
+    "specialty_code": "B173",
+    "specialty_name": "Гидромелиорация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "012",
+    "min_score": 58,
+    "max_score": 58,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B173",
+    "specialty_name": "Гидромелиорация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "147",
+    "min_score": 58,
+    "max_score": 58,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B173",
+    "specialty_name": "Гидромелиорация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "033",
+    "min_score": 50,
+    "max_score": 64,
+    "year": "2026-2027",
+    "recipient_count": 9
+  },
+  {
+    "specialty_code": "B173",
+    "specialty_name": "Гидромелиорация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "501",
+    "min_score": 57,
+    "max_score": 74,
+    "year": "2026-2027",
+    "recipient_count": 52
+  },
+  {
+    "specialty_code": "B173",
+    "specialty_name": "Гидромелиорация",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "501",
+    "min_score": 50,
+    "max_score": 56,
+    "year": "2026-2027",
+    "recipient_count": 47
+  },
+  {
+    "specialty_code": "B183",
+    "specialty_name": "Агроинженерия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "501",
+    "min_score": 50,
+    "max_score": 88,
+    "year": "2026-2027",
+    "recipient_count": 13
+  },
+  {
+    "specialty_code": "B183",
+    "specialty_name": "Агроинженерия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "002",
+    "min_score": 62,
+    "max_score": 79,
+    "year": "2026-2027",
+    "recipient_count": 167
+  },
+  {
+    "specialty_code": "B183",
+    "specialty_name": "Агроинженерия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "045",
+    "min_score": 62,
+    "max_score": 77,
+    "year": "2026-2027",
+    "recipient_count": 21
+  },
+  {
+    "specialty_code": "B183",
+    "specialty_name": "Агроинженерия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "036",
+    "min_score": 62,
+    "max_score": 71,
+    "year": "2026-2027",
+    "recipient_count": 8
+  },
+  {
+    "specialty_code": "B183",
+    "specialty_name": "Агроинженерия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "024",
+    "min_score": 62,
+    "max_score": 68,
+    "year": "2026-2027",
+    "recipient_count": 21
+  },
+  {
+    "specialty_code": "B183",
+    "specialty_name": "Агроинженерия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "035",
+    "min_score": 63,
+    "max_score": 67,
+    "year": "2026-2027",
+    "recipient_count": 4
+  },
+  {
+    "specialty_code": "B183",
+    "specialty_name": "Агроинженерия",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "140",
+    "min_score": 65,
+    "max_score": 65,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B183",
+    "specialty_name": "Агроинженерия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "002",
+    "min_score": 57,
+    "max_score": 62,
+    "year": "2026-2027",
+    "recipient_count": 52
+  },
+  {
+    "specialty_code": "B183",
+    "specialty_name": "Агроинженерия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "045",
+    "min_score": 57,
+    "max_score": 61,
+    "year": "2026-2027",
+    "recipient_count": 14
+  },
+  {
+    "specialty_code": "B183",
+    "specialty_name": "Агроинженерия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "024",
+    "min_score": 57,
+    "max_score": 61,
+    "year": "2026-2027",
+    "recipient_count": 19
+  },
+  {
+    "specialty_code": "B183",
+    "specialty_name": "Агроинженерия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "501",
+    "min_score": 57,
+    "max_score": 61,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B183",
+    "specialty_name": "Агроинженерия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "036",
+    "min_score": 58,
+    "max_score": 58,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B183",
+    "specialty_name": "Агроинженерия",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "035",
+    "min_score": 57,
+    "max_score": 57,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B234",
+    "specialty_name": "Музейное дело и охрана памятников",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "002",
+    "min_score": 56,
+    "max_score": 57,
+    "year": "2026-2027",
+    "recipient_count": 18
+  },
+  {
+    "specialty_code": "B234",
+    "specialty_name": "Музейное дело и охрана памятников",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "024",
+    "min_score": 56,
+    "max_score": 57,
+    "year": "2026-2027",
+    "recipient_count": 5
+  },
+  {
+    "specialty_code": "B234",
+    "specialty_name": "Музейное дело и охрана памятников",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "501",
+    "min_score": 56,
+    "max_score": 57,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B234",
+    "specialty_name": "Музейное дело и охрана памятников",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "036",
+    "min_score": 57,
+    "max_score": 57,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B234",
+    "specialty_name": "Музейное дело и охрана памятников",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "045",
+    "min_score": 56,
+    "max_score": 56,
+    "year": "2026-2027",
+    "recipient_count": 7
+  },
+  {
+    "specialty_code": "B234",
+    "specialty_name": "Музейное дело и охрана памятников",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "035",
+    "min_score": 56,
+    "max_score": 56,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B234",
+    "specialty_name": "Музейное дело и охрана памятников",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 123,
+    "max_score": 124,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B234",
+    "specialty_name": "Музейное дело и охрана памятников",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "027",
+    "min_score": 116,
+    "max_score": 123,
+    "year": "2026-2027",
+    "recipient_count": 46
+  },
+  {
+    "specialty_code": "B265",
+    "specialty_name": "Железнодорожный транспорт и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "027",
+    "min_score": 116,
+    "max_score": 116,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B265",
+    "specialty_name": "Железнодорожный транспорт и технологии",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "019",
+    "min_score": 73,
+    "max_score": 119,
+    "year": "2026-2027",
+    "recipient_count": 30
+  },
+  {
+    "specialty_code": "B084",
+    "specialty_name": "Сестринское дело",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "004",
+    "min_score": 99,
+    "max_score": 104,
+    "year": "2026-2027",
+    "recipient_count": 3
+  },
+  {
+    "specialty_code": "B084",
+    "specialty_name": "Сестринское дело",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "030",
+    "min_score": 103,
+    "max_score": 103,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B084",
+    "specialty_name": "Сестринское дело",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "041",
+    "min_score": 99,
+    "max_score": 99,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B084",
+    "specialty_name": "Сестринское дело",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "030",
+    "min_score": 97,
+    "max_score": 99,
+    "year": "2026-2027",
+    "recipient_count": 2
+  },
+  {
+    "specialty_code": "B085",
+    "specialty_name": "Фармация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "044",
+    "min_score": 97,
+    "max_score": 130,
+    "year": "2026-2027",
+    "recipient_count": 33
+  },
+  {
+    "specialty_code": "B085",
+    "specialty_name": "Фармация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "080",
+    "min_score": 106,
+    "max_score": 129,
+    "year": "2026-2027",
+    "recipient_count": 101
+  },
+  {
+    "specialty_code": "B085",
+    "specialty_name": "Фармация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "030",
+    "min_score": 96,
+    "max_score": 135,
+    "year": "2026-2027",
+    "recipient_count": 444
+  },
+  {
+    "specialty_code": "B085",
+    "specialty_name": "Фармация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "004",
+    "min_score": 97,
+    "max_score": 137,
+    "year": "2026-2027",
+    "recipient_count": 130
+  },
+  {
+    "specialty_code": "B085",
+    "specialty_name": "Фармация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "041",
+    "min_score": 97,
+    "max_score": 127,
+    "year": "2026-2027",
+    "recipient_count": 98
+  },
+  {
+    "specialty_code": "B085",
+    "specialty_name": "Фармация",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "080",
+    "min_score": 100,
+    "max_score": 115,
+    "year": "2026-2027",
+    "recipient_count": 96
+  },
+  {
+    "specialty_code": "B085",
+    "specialty_name": "Фармация",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "044",
+    "min_score": 101,
+    "max_score": 115,
+    "year": "2026-2027",
+    "recipient_count": 26
+  },
+  {
+    "specialty_code": "B085",
+    "specialty_name": "Фармация",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "004",
+    "min_score": 97,
+    "max_score": 115,
+    "year": "2026-2027",
+    "recipient_count": 89
+  },
+  {
+    "specialty_code": "B085",
+    "specialty_name": "Фармация",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "030",
+    "min_score": 98,
+    "max_score": 115,
+    "year": "2026-2027",
+    "recipient_count": 271
+  },
+  {
+    "specialty_code": "B085",
+    "specialty_name": "Фармация",
+    "quota": "ОБЩИЙ КОНКУРС",
+    "ovpo": "035",
+    "min_score": 120,
+    "max_score": 120,
+    "year": "2026-2027",
+    "recipient_count": 1
+  },
+  {
+    "specialty_code": "B085",
+    "specialty_name": "Фармация",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "041",
+    "min_score": 98,
+    "max_score": 115,
+    "year": "2026-2027",
+    "recipient_count": 35
+  },
+  {
+    "specialty_code": "B085",
+    "specialty_name": "Фармация",
+    "quota": "СЕЛЬСКАЯ КВОТА",
+    "ovpo": "035",
+    "min_score": 110,
+    "max_score": 110,
+    "year": "2026-2027",
+    "recipient_count": 1
+  }
+]

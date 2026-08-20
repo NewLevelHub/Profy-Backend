@@ -40,6 +40,17 @@ THINKING_STYLE_LABELS: dict[str, str] = {
 _STRONG = 60.0
 _LOW = 40.0
 
+# Mirrors the same product decision above, applied to the low/"growth" side
+# instead of the high/"strength" side: a low score on openness,
+# conscientiousness, or emotional_stability is a skill gap worth naming
+# (trying new things, follow-through, handling stress). A low score on
+# extraversion or agreeableness is temperament (introversion, directness),
+# not a deficiency — naming it as something to "work on" would tell a
+# student their normal personality is a problem. Used by
+# report_v2_assembler.build_personality_note to scope which low traits get
+# named in the report.
+GROWTH_ELIGIBLE_TRAITS = frozenset({"openness", "conscientiousness", "emotional_stability"})
+
 
 def strength_phrases(bigfive_normalized: dict[str, float]) -> list[str]:
     phrases: list[str] = []
@@ -153,17 +164,12 @@ def is_high_tier(value: float) -> bool:
     return value >= _STRONG
 
 
-def personality_level(value: float) -> Literal["low", "medium", "high"]:
-    """Same tier boundary personality_notes_for_age()/build_personality_profile()
-    use to pick description text — level and description always agree for a
-    trait. Mirrors report_v2_assembler._level()'s shape (low/medium/high) for
-    the interest map, but on Big Five's own _STRONG/_LOW cutoffs, not
-    RIASEC's different thresholds."""
-    if value >= _STRONG:
-        return "high"
-    if value <= _LOW:
-        return "low"
-    return "medium"
+def is_low_tier(value: float) -> bool:
+    """Same threshold `build_personality_profile` uses for its "low" tier —
+    mirrors `is_high_tier` above so consumers (e.g. `build_personality_note`)
+    can name genuinely low traits, not just high ones, without duplicating
+    the magic number."""
+    return value <= _LOW
 
 
 def build_personality_profile(

@@ -1,0 +1,3 @@
+[
+  {"university_slug": "toraigyrov-university", "university_name": "Торайгыров Университет", "cluster_professions": ["PR-менеджер", "Директор по маркетингу"], "current_wrong_name": "PR-менеджер, Директор по маркетингу", "proposed_name": "Магистратура: Маркетинг", "source_url": "https://tou.edu.kz/component/programms?spec_id=616", "needs_manual_review": false, "note": "Профильная магистратура, в спецификации которой прямо задокументирована подготовка PR-менеджеров и маркетологов."}
+]
