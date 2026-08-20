@@ -146,7 +146,7 @@ async def main() -> None:
                     city=record["city"],
                     website=record.get("website"),
                     ranking=None,
-                    description=record.get("specialties_summary") or "",
+                    description=record.get("description") or "",
                 )
                 db.add(existing_uni)
                 await db.flush()
@@ -159,8 +159,8 @@ async def main() -> None:
                 if not existing_uni.ovpo_code and record.get("ovpo_code"):
                     existing_uni.ovpo_code = record["ovpo_code"]
                     changed = True
-                if not existing_uni.description and record.get("specialties_summary"):
-                    existing_uni.description = record["specialties_summary"]
+                if not existing_uni.description and record.get("description"):
+                    existing_uni.description = record["description"]
                     changed = True
                 if not existing_uni.short_name and record.get("short_name"):
                     existing_uni.short_name = record["short_name"]
