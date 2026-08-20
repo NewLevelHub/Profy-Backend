@@ -172,6 +172,20 @@ def is_low_tier(value: float) -> bool:
     return value <= _LOW
 
 
+def personality_level(value: float) -> Literal["low", "medium", "high"]:
+    """Same tier boundary personality_notes_for_age()/build_personality_profile()
+    use to pick description text — level and description always agree for a
+    trait. Mirrors report_v2_assembler._level()'s shape (low/medium/high) for
+    the interest map, but on Big Five's own _STRONG/_LOW cutoffs, not
+    RIASEC's different thresholds. Used by build_personality_notes() to set
+    StudentPersonalityNote.level."""
+    if value >= _STRONG:
+        return "high"
+    if value <= _LOW:
+        return "low"
+    return "medium"
+
+
 def build_personality_profile(
     bigfive_normalized: dict[str, float],
 ) -> tuple[dict[str, float], dict[str, str]]:
