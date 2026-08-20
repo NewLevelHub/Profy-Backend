@@ -19,6 +19,7 @@ from app.models.profile import AgeGroup, Profile
 from app.models.program import Program
 from app.models.university import University
 from app.models.user import User
+from app.schemas.roadmap import GrowthFocus, ProgramFit, RoadmapTarget, UniversityTrack
 from app.services import roadmap_builder
 
 SLUG = "test-university-direction-8"
@@ -142,3 +143,95 @@ async def test_university_requirements_empty_for_slug_with_no_programs(db_sessio
         "no-programs-for-this-slug-xyz", db_session
     )
     assert reqs == []
+
+
+async def test_program_row_for_direction_validates_membership(db_session: AsyncSession):
+    university = University(name="Test University", country="Казахстан", city="Алматы")
+    db_session.add(university)
+    await db_session.flush()
+
+    program = Program(
+        university_id=university.id,
+        name="Test Program",
+        profession_slugs=["other-direction"],
+        language="ru",
+    )
+    db_session.add(program)
+    await db_session.flush()
+
+    with pytest.raises(HTTPException) as exc_info:
+        await roadmap_builder._program_row_for_direction(program.id, SLUG, db_session)
+
+    assert exc_info.value.status_code == 400
+
+
+async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
+    db_session: AsyncSession,
+):
+    assessment = await _make_assessment(db_session, AssessmentGoal.profession)
+
+    plan_a = roadmap_builder._DirectionPlan(
+        target=RoadmapTarget(role="Архитектор", why="Подходит", horizon_years=4),
+        growth_focus=GrowthFocus(
+            weakness="Математика",
+            why_it_matters="Нужна для направления",
+            evidence="Указал предмет как сложный",
+        ),
+        stages=[],
+        skills_to_build=["Черчение"],
+        subjects_to_focus=["Математика"],
+        university_track=UniversityTrack(specialties=["Архитектура"], prepare=["ЕНТ"]),
+        university_requirements=[],
+        program_fit=ProgramFit(
+            program_id=uuid.uuid4(),
+            program_name="Program A",
+            university_name="University A",
+            subjects=[],
+            summary="summary a",
+        ),
+    )
+    plan_b = roadmap_builder._DirectionPlan(
+        target=RoadmapTarget(role="Архитектор", why="Подходит", horizon_years=4),
+        growth_focus=GrowthFocus(
+            weakness="Физика",
+            why_it_matters="Нужна для направления",
+            evidence="Указал предмет как сложный",
+        ),
+        stages=[],
+        skills_to_build=["Проектирование"],
+        subjects_to_focus=["Физика"],
+        university_track=UniversityTrack(specialties=["Архитектура"], prepare=["ЕНТ"]),
+        university_requirements=[],
+        program_fit=ProgramFit(
+            program_id=uuid.uuid4(),
+            program_name="Program B",
+            university_name="University B",
+            subjects=[],
+            summary="summary b",
+        ),
+    )
+
+    roadmap_first = await roadmap_builder._upsert_direction_roadmap(
+        assessment.id,
+        SLUG,
+        "Architecture",
+        plan_a,
+        db_session,
+        plan_a.program_fit.program_id,
+    )
+    await db_session.flush()
+
+    roadmap_second = await roadmap_builder._upsert_direction_roadmap(
+        assessment.id,
+        SLUG,
+        "Architecture",
+        plan_b,
+        db_session,
+        plan_b.program_fit.program_id,
+    )
+    await db_session.flush()
+
+    assert roadmap_first.id == roadmap_second.id
+    assert roadmap_second.program_id == plan_b.program_fit.program_id
+    assert roadmap_second.program_fit["program_name"] == "Program B"
+    assert roadmap_second.growth_focus["weakness"] == "Физика"

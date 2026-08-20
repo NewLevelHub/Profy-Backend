@@ -10,9 +10,10 @@ from app.dependencies import get_current_user
 from app.models.assessment import Assessment
 from app.models.profile import Profile
 from app.models.user import User
+from app.schemas.feedback import ProductFeedbackCreate, ProductFeedbackResponse
 from app.schemas.goal_overlay import GoalOverlayResponse
 from app.schemas.result_v2 import ResultResponseV2, ResultV2Schema
-from app.services import report_service
+from app.services import feedback_service, report_service
 
 router = APIRouter(tags=["result"])
 
@@ -66,6 +67,16 @@ async def get_report(
             status_code=status.HTTP_404_NOT_FOUND, detail="Report not found"
         )
     return result
+
+
+@router.post("/feedback", response_model=ProductFeedbackResponse)
+async def submit_feedback(
+    data: ProductFeedbackCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ProductFeedbackResponse:
+    await _require_assessment_access(data.assessment_id, current_user, db)
+    return await feedback_service.submit_feedback(current_user.id, data, db)
 
 
 @router.get("/{assessment_id}/goal-context", response_model=GoalOverlayResponse)

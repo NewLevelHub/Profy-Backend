@@ -61,26 +61,31 @@
     {
       "description": "Короткое описание",
       "label": "Открытость новому",
+      "level": "medium",
       "trait": "openness"
     },
     {
       "description": "Короткое описание",
       "label": "Организованность",
+      "level": "medium",
       "trait": "conscientiousness"
     },
     {
       "description": "Короткое описание",
       "label": "Общительность",
+      "level": "medium",
       "trait": "extraversion"
     },
     {
       "description": "Короткое описание",
       "label": "Доброжелательность",
+      "level": "medium",
       "trait": "agreeableness"
     },
     {
       "description": "Короткое описание",
       "label": "Эмоциональная устойчивость",
+      "level": "medium",
       "trait": "emotional_stability"
     }
   ],

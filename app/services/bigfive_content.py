@@ -1,6 +1,7 @@
 """
 Big Five methodology reference tables — mirrors riasec_content.py's role.
 """
+from typing import Literal
 
 # Russian domain labels — admin/debug use only. Raw Big Five percentages are
 # never shown to the student directly (TZ_Profi.md §18.3: numbers are

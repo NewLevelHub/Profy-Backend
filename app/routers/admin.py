@@ -8,6 +8,8 @@ from app.dependencies import get_current_admin_user
 from app.models.user import User
 from app.schemas.admin import (
     AdminAssessmentDetailResponse,
+    AdminFeedbackListResponse,
+    AdminFeedbackStatsResponse,
     AdminUserDetailResponse,
     AdminUserListResponse,
 )
@@ -56,6 +58,24 @@ async def get_assessment_detail(
     if not detail:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
     return detail
+
+
+@router.get("/feedback", response_model=AdminFeedbackListResponse)
+async def list_feedback(
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=20, ge=1, le=100),
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await admin_service.list_feedback(db, page=page, limit=limit)
+
+
+@router.get("/feedback/stats", response_model=AdminFeedbackStatsResponse)
+async def get_feedback_stats(
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await admin_service.get_feedback_stats(db)
 
 
 @router.get("/universities", response_model=AdminUniversityListResponse)

@@ -68,7 +68,7 @@ DIRECTION_ROADMAP_SCHEMA: dict = {
     "additionalProperties": False,
     "required": [
         "target", "growth_focus", "stages",
-        "skills_to_build", "subjects_to_focus", "university_track",
+        "skills_to_build", "subjects_to_focus", "university_track", "program_fit",
     ],
     "properties": {
         "target": {
@@ -101,6 +101,35 @@ DIRECTION_ROADMAP_SCHEMA: dict = {
             "properties": {
                 "specialties": {"type": "array", "items": {"type": "string"}},
                 "prepare": {"type": "array", "items": {"type": "string"}},
+            },
+        },
+        "program_fit": {
+            "type": ["object", "null"],
+            "additionalProperties": False,
+            "required": [
+                "program_id", "program_name", "university_name", "subjects", "summary",
+            ],
+            "properties": {
+                "program_id": {"type": "string"},
+                "program_name": {"type": "string"},
+                "university_name": {"type": "string"},
+                "subjects": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": ["subject", "status", "note"],
+                        "properties": {
+                            "subject": {"type": "string"},
+                            "status": {
+                                "type": "string",
+                                "enum": ["strength", "needs_work", "unclear"],
+                            },
+                            "note": {"type": "string"},
+                        },
+                    },
+                },
+                "summary": {"type": "string"},
             },
         },
     },
@@ -295,6 +324,29 @@ subject_focus — темы вплоть до уровня вступительн
 specialties (направления обучения) и prepare (что готовить: профильные предметы, \
 экзамены, олимпиады, портфолио).
 
+PROGRAM_FIT — отдельный блок только для случая, когда ниже передана ВЫБРАННАЯ \
+ПРОГРАММА. Если такого блока нет — верни program_fit = null и ничего не выдумывай.
+Если блок есть — используй ТОЛЬКО его `requirements` и четыре списка предметов \
+ученика (`subjects_liked`, `subjects_disliked`, `subjects_easy`, `subjects_hard`).
+Твоя задача — извлечь из свободного текста только те предметы, которые ПРЯМО \
+упомянуты в требованиях программы, и по каждому вернуть:
+- subject — название ровно как в тексте требований;
+- status = strength, если предмет есть в subjects_easy или subjects_liked;
+- status = needs_work, если предмет есть в subjects_hard или subjects_disliked и \
+  нет более сильного позитивного сигнала;
+- status = unclear, если предмет в требованиях есть, а в четырёх списках ученика \
+  о нём нет достаточного сигнала или сигналы противоречат друг другу;
+- note — короткое объяснение, ссылающееся только на один из этих четырёх списков \
+  или честно сообщающее, что данных о предмете нет/сигнал смешанный.
+
+АНТИ-ГАЛЛЮЦИНАЦИЯ ДЛЯ PROGRAM_FIT:
+- НЕ называй предмет, если его нет в тексте требований программы;
+- НЕ подставляй «типичные» предметы по общим знаниям о специальности;
+- если требования не называют конкретных предметов, верни subjects=[] и summary \
+  с честным объяснением, что предметы в свободном тексте не перечислены;
+- summary — 1-2 предложения общего вывода по этой программе, без процентов и без \
+  новых фактов сверх требований и четырёх списков ученика.
+
 ЗАПРЕТ НА ВЫДУМКУ. У тебя НЕТ базы курсов, книг, кружков и школ. Никогда не \
 выдумывай названия конкретных курсов, платформ, кружков, книг или организаций и не \
 давай ссылок. Формулируй действие так, чтобы ученик сам нашёл: «найди в своём городе \
@@ -428,6 +480,7 @@ def build_messages(
     context: StudentContext,
     direction: Direction,
     university_requirements: list[UniversityRequirement] | None = None,
+    selected_program: dict | None = None,
     *,
     gap: "GapAnalysisResult | None" = None,
 ) -> list[dict[str, str]]:
@@ -447,6 +500,12 @@ def build_messages(
         user_sections.append(
             "ДАННЫЕ ПО ВУЗАМ (проверенные факты, НЕ придумывай ничего сверх этого):\n"
             f"{json.dumps(reqs_payload, ensure_ascii=False, indent=2)}"
+        )
+    if selected_program:
+        user_sections.append(
+            "ВЫБРАННАЯ ПРОГРАММА (для блока program_fit; извлекай только явно "
+            "названные в требованиях предметы):\n"
+            f"{json.dumps(selected_program, ensure_ascii=False, indent=2)}"
         )
     if gap is not None:
         # Real gap-analysis for the ONE program this plan is built for —

@@ -113,17 +113,20 @@ def build_interest_map_note(items: list[StudentInterestMapItem]) -> str:
 
 
 def build_interest_map(age_group: AgeGroup, profile_scores: dict[str, float]) -> list[StudentInterestMapItem]:
-    """All 6 RIASEC spheres (middle/senior) or all 8 MI spheres (junior), in
-    a fixed order — every category, not just the ones evidenced as a
-    "strength" (that subset is what report_narrative's `interests` field
-    covers instead, tier strong/steady; this is the numeric-level map)."""
+    """All 6 RIASEC spheres (middle/senior) or all 8 MI spheres (junior),
+    ranked most-to-least pronounced by score — every category, not just the
+    ones evidenced as a "strength" (that subset is what report_narrative's
+    `interests` field covers instead, tier strong/steady; this is the
+    numeric-level map). Same score-desc/canonical-index tie-break convention
+    as riasec_service.py's strengths/weaknesses ranking, just unfiltered."""
     if age_group == AgeGroup.junior:
         order, labels = MI_ORDER, MI_LABELS
     else:
         order, labels = HOLLAND_ORDER, RIASEC_LABELS
+    ranked = sorted(order, key=lambda key: (-profile_scores.get(key, 0.0), order.index(key)))
     return [
         StudentInterestMapItem(code=key, sphere=labels[key], level=_level(profile_scores.get(key, 0.0)))
-        for key in order
+        for key in ranked
     ]
 
 
@@ -135,12 +138,20 @@ def build_personality_notes(is_junior: bool, personality_profile: dict[str, floa
     phrasing instead of the adult table). Entirely deterministic, no LLM,
     no narrative pipeline involved — `personality_profile` is already a
     plain 5-domain float dict (report_service.py computes it once,
-    unconditionally, for every age group), so this is a straight lookup,
-    same shape as build_interest_map."""
+    unconditionally, for every age group). Ranked most-to-least pronounced,
+    same score-desc/canonical-index tie-break convention as
+    build_interest_map/riasec_service.py's strengths ranking."""
     notes = bigfive_content.personality_notes_for_age(is_junior, personality_profile)
+    traits = list(bigfive_content.PERSONALITY_LABELS.items())
+    ranked = sorted(traits, key=lambda item: (-personality_profile.get(item[0], 0.0), traits.index(item)))
     return [
-        StudentPersonalityNote(trait=trait, label=label, description=notes[trait])
-        for trait, label in bigfive_content.PERSONALITY_LABELS.items()
+        StudentPersonalityNote(
+            trait=trait,
+            label=label,
+            description=notes[trait],
+            level=bigfive_content.personality_level(personality_profile.get(trait, 0.0)),
+        )
+        for trait, label in ranked
     ]
 
 

@@ -1,11 +1,11 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models.artifact import ArtifactType
 
 
 class ArtifactItem(BaseModel):
     type: ArtifactType
-    value: str
+    value: str = Field(..., min_length=1)
 
 
 class ArtifactsBulkRequest(BaseModel):

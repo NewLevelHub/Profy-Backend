@@ -401,6 +401,23 @@ def test_interest_map_levels_follow_documented_thresholds() -> None:
     assert levels["C"] == "high"
 
 
+def test_interest_map_ranks_spheres_most_to_least_pronounced() -> None:
+    context = _context(age_group="senior", evidence=[])
+    response = report_v2_assembler.assemble_result_v2(
+        assessment_id=uuid.uuid4(),
+        age_group=AgeGroup.senior,
+        context=context,
+        narrative=_narrative(),
+        profile_scores={"R": 75.0, "I": 55.0, "A": 20.0, "S": 0.0, "E": 50.0, "C": 100.0},
+        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
+        differentiation=100.0,
+        careers=[],
+        created_at=_NOW,
+    )
+
+    assert [item.code for item in response.interest_map] == ["C", "R", "I", "E", "A", "S"]
+
+
 def test_interest_map_note_names_the_high_spheres() -> None:
     context = _context(age_group="senior", evidence=[])
     response = report_v2_assembler.assemble_result_v2(
@@ -487,13 +504,38 @@ def test_interest_map_note_does_not_list_a_majority_of_medium_spheres() -> None:
     assert response.interest_map_note
 
 
-def test_build_personality_notes_covers_all_five_traits_in_a_fixed_order() -> None:
+def test_build_personality_notes_covers_all_five_traits() -> None:
     from app.services.bigfive_content import PERSONALITY_LABELS
 
     notes = report_v2_assembler.build_personality_notes(False, _DEFAULT_PERSONALITY_PROFILE)
 
-    assert [n.trait for n in notes] == list(PERSONALITY_LABELS)
+    assert {n.trait for n in notes} == set(PERSONALITY_LABELS)
     assert all(n.label and n.description for n in notes)
+
+
+def test_build_personality_notes_ranks_traits_most_to_least_pronounced() -> None:
+    profile = {
+        "openness": 20.0, "conscientiousness": 90.0, "extraversion": 55.0,
+        "agreeableness": 61.0, "emotional_stability": 40.0,
+    }
+
+    notes = report_v2_assembler.build_personality_notes(False, profile)
+
+    assert [n.trait for n in notes] == [
+        "conscientiousness", "agreeableness", "extraversion", "emotional_stability", "openness",
+    ]
+    assert [n.level for n in notes] == ["high", "high", "medium", "low", "low"]
+
+
+def test_build_personality_notes_breaks_ties_by_canonical_order() -> None:
+    from app.services.bigfive_content import PERSONALITY_LABELS
+
+    # All-equal scores: sort key ties are broken by canonical index, so a
+    # flat profile still lists traits in PERSONALITY_LABELS' own order —
+    # same tie-break convention as build_interest_map/riasec_service.
+    notes = report_v2_assembler.build_personality_notes(False, _DEFAULT_PERSONALITY_PROFILE)
+
+    assert [n.trait for n in notes] == list(PERSONALITY_LABELS)
 
 
 def test_build_personality_notes_uses_junior_wording_for_junior() -> None:

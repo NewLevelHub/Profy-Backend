@@ -50,6 +50,10 @@ class DirectionRoadmap(Base):
     # Backend-populated only (never from the LLM): Program/University facts for
     # goal="university" — empty list for every other goal. See UniversityRequirement.
     university_requirements: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    # Optional LLM-derived fit summary for one concrete chosen program. Kept on
+    # the roadmap row so subsequent GETs can return the same program-aware result
+    # without regenerating the whole plan.
+    program_fit: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
     # Hand-verified catalogue entries, see app/data/resource_catalog.py.
     additional_resources: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(
