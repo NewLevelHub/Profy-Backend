@@ -31,6 +31,7 @@ from app.database import async_session
 from app.models.direction import Direction
 from app.models.program import Program
 from app.models.university import University
+from scripts.data.direction_program_names import DIRECTION_SLUG_TO_PROGRAM_NAME
 from scripts.data.universities_92_professions import CLUSTERS
 
 # A ranking_label routinely packs a global rank together with a
@@ -165,7 +166,18 @@ async def main() -> None:
                 grants = [{"name": uni_data["grants_text"]}]
 
                 for direction in direction_objs:
-                    program_name = direction.name
+                    # A foreign university doesn't offer a program literally
+                    # titled after the Russian profession name (e.g.
+                    # "Инженер-механик") — use the equivalent internationally
+                    # recognized academic field name instead. Kazakhstani
+                    # universities in these clusters keep the profession name
+                    # (their real specialty titles are in Russian, not this
+                    # English map).
+                    program_name = (
+                        DIRECTION_SLUG_TO_PROGRAM_NAME.get(direction.slug, direction.name)
+                        if uni_data["country"] != "Казахстан"
+                        else direction.name
+                    )
                     existing = await db.execute(
                         select(Program).where(
                             Program.university_id == university.id,
