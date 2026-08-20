@@ -186,10 +186,33 @@ jobs:
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_bigfive_questions.py
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_mi_questions.py
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_question_pairs.py
-            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_motivation_pairs.py
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_motivation_statements.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_motivation_pairs.py
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_riasec_directions.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/apply_direction_content.py
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_kz_universities.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_92_professions_universities.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/backfill_program_cost_label_2027.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/apply_uniranks_kz_2027.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/apply_uniranks_not_ranked.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/apply_university_enrichment_2027.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/apply_program_requirements_content_2027.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/apply_grant_admission_data_2026.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/backfill_program_source_metadata_2026.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/apply_ovpo_codes.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/merge_duplicate_programs.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/backfill_world_ranking.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/backfill_cost_range.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/backfill_ranking_from_label.py --apply
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/backfill_kz_program_description.py --apply
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/backfill_kazatu_duplicate_group_labels.py --apply
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/apply_specialty_names_from_review.py --apply
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/fix_enu_kazatu_program_names.py --apply
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/backfill_strip_masters_domestic_cost.py --apply
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/apply_university_descriptions_batch1.py --apply
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/backfill_foreign_cost_numeric.py --apply
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/backfill_foreign_cost_numeric_pass2.py --apply
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/apply_ent_profile_subjects.py --apply
 
             # Reload edge nginx (prod path) so Host:dev.profy.newlevelhub.kz is routed.
             # Certs under /etc/letsencrypt need root - write via docker volume mount.
