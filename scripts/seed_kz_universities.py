@@ -69,6 +69,10 @@ LEGACY_NAME_BY_SLUG: dict[str, str] = {
     "universitet-narhoz": "Narxoz University",
 }
 
+# Overrides the blanket "Казахский, Русский" default below for universities
+# that teach exclusively in English.
+ENGLISH_TAUGHT_UNIVERSITY_SLUGS: set[str] = {"nazarbayev-university"}
+
 
 async def _find_university(db: AsyncSession, record: dict) -> University | None:
     ovpo_code = record.get("ovpo_code")
@@ -227,7 +231,11 @@ async def main() -> None:
                     ]
 
                     prog_data = {
-                        "language": "Казахский, Русский",
+                        # KZ scrape default is "Казахский, Русский" for
+                        # nearly every university — but a handful (currently
+                        # just Nazarbayev University) teach exclusively in
+                        # English, so the blanket default is wrong for them.
+                        "language": "Английский" if record["slug"] in ENGLISH_TAUGHT_UNIVERSITY_SLUGS else "Казахский, Русский",
                         "cost_per_year": None,
                         # Deliberately left null, not group_name (e.g. "Школа
                         # медицины и педиатрии") — group_name is a
