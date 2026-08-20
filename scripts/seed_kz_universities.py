@@ -227,7 +227,7 @@ async def main() -> None:
                     ]
 
                     prog_data = {
-                        "language": "Казахский/Русский",
+                        "language": "Казахский, Русский",
                         "cost_per_year": None,
                         # Deliberately left null, not group_name (e.g. "Школа
                         # медицины и педиатрии") — group_name is a

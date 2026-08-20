@@ -88,6 +88,10 @@ class Program(Base):
     cost_currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     who_its_for: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Legacy field from an early data pass — populated for only ~9 of 2442
+    # programs. Display-only (shown on the program detail page when
+    # non-empty), never used in matching/scoring. Don't add new logic that
+    # relies on this being populated.
     career_options: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     requirements: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     deadlines: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
