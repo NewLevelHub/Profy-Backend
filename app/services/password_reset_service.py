@@ -39,7 +39,7 @@ async def initiate_reset(email: str, db: AsyncSession) -> None:
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
     if not user:
-        return
+        raise ValueError("Account not found")
 
     await _invalidate_reset_tokens(user.id, db)
 

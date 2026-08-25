@@ -5,9 +5,20 @@ from pydantic import BaseModel, Field
 
 from app.schemas.artifact import ArtifactItem
 
+# Letters (any script) plus space/hyphen/apostrophe for names like
+# "Анна-Мария" or "O'Brien" — no digits, no other symbols. Mirrors the
+# frontend's NAME_PATTERN (useProfileSetup.ts). pydantic-core's `pattern`
+# compiles with Rust's `regex` crate, which supports \p{L} natively.
+NAME_PATTERN = r"^[\p{L}\s'-]+$"
+
 
 class ProfileCreateRequest(BaseModel):
-    name: str
+    # min/max_length and pattern mirror the frontend's NAME_MIN_LENGTH/
+    # NAME_MAX_LENGTH/NAME_PATTERN (useProfileSetup.ts); max stays well
+    # under the `profiles.name` column's String(255) cap, so an invalid or
+    # over-limit name is rejected here with a clean 422 rather than
+    # reaching the DB layer.
+    name: str = Field(..., min_length=3, max_length=60, pattern=NAME_PATTERN)
     age: int = Field(..., ge=6, le=18)
     grade: int = Field(..., ge=1, le=12)
     city: str
@@ -29,7 +40,7 @@ class ProfileCreateRequest(BaseModel):
 
 
 class ProfileUpdateRequest(BaseModel):
-    name: str | None = None
+    name: str | None = Field(None, min_length=3, max_length=60, pattern=NAME_PATTERN)
     age: int | None = Field(None, ge=6, le=18)
     grade: int | None = Field(None, ge=1, le=12)
     city: str | None = None
