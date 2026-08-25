@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, func
+from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -22,6 +22,26 @@ def compute_age_group(age: int) -> AgeGroup:
     if age <= 13:
         return AgeGroup.middle
     return AgeGroup.senior
+
+
+class GpaScale(str, enum.Enum):
+    """The grading scale a stored `gpa_value` is expressed on."""
+
+    four = "4"
+    five = "5"
+    ten = "10"
+    hundred = "100"
+
+
+# Max legal gpa_value for each scale. Mirrors the frontend's GPA_SCALE_MAX
+# (certificateConfig.ts) so an out-of-range value is rejected in
+# app/schemas/profile.py rather than reaching the DB layer.
+GPA_SCALE_MAX: dict[GpaScale, float] = {
+    GpaScale.four: 4.0,
+    GpaScale.five: 5.0,
+    GpaScale.ten: 10.0,
+    GpaScale.hundred: 100.0,
+}
 
 
 class Profile(Base):
@@ -45,6 +65,15 @@ class Profile(Base):
     subjects_hard: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     age_group: Mapped[AgeGroup] = mapped_column(
         Enum(AgeGroup, name="age_group_enum"), nullable=False
+    )
+    gpa_value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    gpa_scale: Mapped[GpaScale | None] = mapped_column(
+        # values_callable: GpaScale member names ("four") don't match their
+        # values ("4", the Postgres enum labels) the way every other enum in
+        # this app does — without it SQLAlchemy binds `.name` and every
+        # write 422s with "invalid input value for enum gpa_scale_enum".
+        Enum(GpaScale, name="gpa_scale_enum", values_callable=lambda enum_cls: [e.value for e in enum_cls]),
+        nullable=True,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

@@ -4,6 +4,7 @@ from app.routers.admin import router as admin_router
 from app.routers.artifacts import router as artifacts_router
 from app.routers.assessment import router as assessment_router
 from app.routers.auth import router as auth_router
+from app.routers.certificates import router as certificates_router
 from app.routers.direction_inquiry import router as direction_inquiry_router
 from app.routers.directions import router as directions_router
 from app.routers.motivation import router as motivation_router
@@ -20,6 +21,7 @@ api_router.include_router(auth_router, prefix="/api/v1/auth")
 api_router.include_router(admin_router, prefix="/api/v1/admin")
 api_router.include_router(profile_router, prefix="/api/v1/profile")
 api_router.include_router(artifacts_router, prefix="/api/v1/profile/artifacts")
+api_router.include_router(certificates_router, prefix="/api/v1/profile/certificates")
 api_router.include_router(assessment_router, prefix="/api/v1/assessment")
 api_router.include_router(questions_router, prefix="/api/v1/assessment")
 api_router.include_router(question_pairs_router, prefix="/api/v1/assessment")
