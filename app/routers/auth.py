@@ -119,8 +119,11 @@ async def forgot_password(body: ForgotPasswordRequest, request: Request, db: Asy
     await _check_rate_limit(f"forgot_pwd_ip:{client_ip}", _FORGOT_IP_LIMIT, _FORGOT_IP_WINDOW)
     await _check_rate_limit(f"forgot_pwd_email:{body.email}", _FORGOT_EMAIL_LIMIT, _FORGOT_EMAIL_WINDOW)
 
-    await password_reset_service.initiate_reset(body.email, db)
-    return {"message": "If this email exists, a reset code has been sent."}
+    try:
+        await password_reset_service.initiate_reset(body.email, db)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
+    return {"message": "Reset code has been sent."}
 
 
 @router.post("/verify-reset-code", status_code=status.HTTP_200_OK)
