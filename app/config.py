@@ -40,10 +40,7 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float = 0.3
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
-    SMTP_HOST: str = ""
-    SMTP_PORT: int = 587
-    SMTP_USER: str = ""
-    SMTP_PASSWORD: str = ""
+    RESEND_API_KEY: str = ""
     EMAIL_FROM: str = ""
 
     @model_validator(mode="after")
