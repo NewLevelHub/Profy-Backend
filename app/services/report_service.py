@@ -139,9 +139,12 @@ async def _build_narrative(
         subjects_easy=list(profile.subjects_easy or []) if profile else [],
         artifacts=artifacts,
     )
-    narrative, is_ai = await generate_report_narrative(
-        context, language=(profile.language if profile else "ru") or "ru"
-    )
+    # `profile.language` is the student's school language of instruction
+    # (a free-text onboarding fact, e.g. "Английский") — unrelated to report
+    # output language. Report narrative localization is future scope
+    # (TZ_Profi.md §30, unimplemented); until then this must always be "ru",
+    # never derived from profile data.
+    narrative, is_ai = await generate_report_narrative(context, language="ru")
     logger.info("report_narrative generated is_ai=%s age_group=%s", is_ai, age_group.value)
     return context, narrative
 
