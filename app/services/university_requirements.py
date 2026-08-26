@@ -82,6 +82,13 @@ def map_program_requirement(program: Program, university: University) -> Univers
         required_documents = [
             label for key, label in _DOCUMENT_LABELS.items() if requirements.get(key)
         ]
+    # Raw document names from an external source (jinaq) — a real list of
+    # actual document names, not the fixed 3-boolean-flag labels above.
+    # Appended rather than replacing, so both sources' documents show up if
+    # a program somehow has both.
+    source_documents = requirements.get("source_required_documents")
+    if source_documents:
+        required_documents = (required_documents or []) + list(source_documents)
 
     # min_ent_threshold (new bulk-seed key) and min_ent (older hand-picked key)
     # are the same real-world fact under two different historical names —

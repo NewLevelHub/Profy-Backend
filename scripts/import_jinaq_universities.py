@@ -91,10 +91,22 @@ def _slug_for(name: str, taken_slugs: set[str]) -> str:
 
 def _requirement_notes_and_ielts(
     enrollment_requirements: list[dict], enrollment_documents: list[dict]
-) -> tuple[list[str], float | None]:
+) -> tuple[list[str], float | None, list[str]]:
     """institution-wide facts, reused for every major at that institution —
     see module docstring for why that's consistent with this codebase's
-    existing convention rather than a shortcut."""
+    existing convention rather than a shortcut.
+
+    Returns (notes, min_ielts, required_documents) — kept as two separate
+    output lists, not merged into one, because jinaq's enrollmentRequirements
+    and enrollmentDocuments largely restate the SAME facts for most foreign
+    universities (one phrased as "you need proof of English", the other as
+    "submit your language test results" — checked across universities in
+    Canada/UK/Malaysia, all following this same template). Concatenating
+    both into one flat notes list reads as literal duplication on the
+    program-detail page; keeping them in the two fields the schema already
+    has homes for (`notes` vs `required_documents` in UniversityRequirement,
+    see app/services/university_requirements.py) avoids restating the same
+    fact twice under two different labels."""
     min_ielts: float | None = None
     notes: list[str] = []
     for req in enrollment_requirements:
@@ -107,11 +119,8 @@ def _requirement_notes_and_ielts(
             except (TypeError, ValueError):
                 pass
         notes.append(f"{name}: {value}" if value not in (None, "") else name)
-    for doc in enrollment_documents:
-        name = doc.get("name")
-        if name:
-            notes.append(f"Требуемый документ: {name}")
-    return notes, min_ielts
+    required_documents = [doc["name"] for doc in enrollment_documents if doc.get("name")]
+    return notes, min_ielts, required_documents
 
 
 async def _find_or_create_university(
@@ -193,7 +202,7 @@ def _enrich_university(university: University, institution: dict) -> bool:
 
 
 async def _import_majors(db: AsyncSession, *, university: University, institution: dict) -> tuple[int, int]:
-    notes, min_ielts = _requirement_notes_and_ielts(
+    notes, min_ielts, required_documents = _requirement_notes_and_ielts(
         institution.get("enrollmentRequirements") or [],
         institution.get("enrollmentDocuments") or [],
     )
@@ -206,6 +215,8 @@ async def _import_majors(db: AsyncSession, *, university: University, institutio
             requirements["min_ielts"] = min_ielts
         if notes:
             requirements["notes"] = notes
+        if required_documents:
+            requirements["source_required_documents"] = required_documents
 
         try:
             async with db.begin_nested():

@@ -135,7 +135,7 @@ def test_enrich_merges_contacts_and_facilities_without_clobbering_existing():
 
 
 def test_requirement_notes_and_ielts_extracts_ielts_and_formats_rest():
-    notes, min_ielts = _requirement_notes_and_ielts(
+    notes, min_ielts, required_documents = _requirement_notes_and_ielts(
         enrollment_requirements=[
             {"name": "Минимальный IELTS", "type": "LANGUAGE", "value": "6.0"},
             {"name": "Минимальный TOEFL", "type": "LANGUAGE", "value": "75"},
@@ -144,7 +144,11 @@ def test_requirement_notes_and_ielts_extracts_ielts_and_formats_rest():
     )
     assert min_ielts == 6.0
     assert "Минимальный TOEFL: 75" in notes
-    assert "Требуемый документ: IELTS" in notes
+    # Documents are kept separate from notes — restating the same admission
+    # fact under two different labels is exactly the duplication this split
+    # was introduced to avoid (see this function's own docstring).
+    assert not any("IELTS" in n and "документ" in n.lower() for n in notes)
+    assert required_documents == ["IELTS"]
 
 
 async def test_import_majors_creates_programs_with_duration_and_ielts(db_session: AsyncSession):

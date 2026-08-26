@@ -171,6 +171,14 @@ docker-compose exec api python scripts/apply_ent_profile_subjects.py --apply
 # (name, city, country) match or creates new ones, upserts programs, never
 # touches price. See script docstring for the full rationale.
 docker-compose exec api python scripts/import_jinaq_universities.py
+# One-time correction for Program rows created by an earlier version of the
+# import script above, which dumped enrollmentRequirements AND
+# enrollmentDocuments into the same `requirements.notes` — jinaq's own data
+# restates the same admission facts in both lists for most foreign
+# universities, so that read as literal duplication on the program-detail
+# page. The import script itself is already fixed; this only repairs rows
+# created before the fix. No-op on a fresh DB, safe/idempotent to keep running.
+docker-compose exec api python scripts/backfill_jinaq_program_requirements.py
 # NOTE: scripts/import_jinaq_university_photos.py is intentionally NOT run
 # here — it downloads ~2300 images from the real jinaq.ai over the network
 # (~15 min) and is a one-time job, not a per-deploy step. Run it manually
