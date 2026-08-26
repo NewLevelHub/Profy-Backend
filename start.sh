@@ -176,3 +176,10 @@ docker-compose exec api python scripts/import_jinaq_universities.py
 # (~15 min) and is a one-time job, not a per-deploy step. Run it manually
 # once locally, then mirror the resulting MinIO bucket to prod storage
 # (`mc mirror local/profi-media prod/profi-media`) instead of re-downloading.
+
+# Tags Program rows (mostly the jinaq import above, but any other untagged
+# program too) with directions/professions from the human-reviewed mapping
+# in scripts/data/jinaq/specialty_direction_review.json. Only ever touches
+# rows with zero directions so far — never overwrites specialty_profession_map.py's
+# curated tagging. Idempotent, local dataset, no network access.
+docker-compose exec api python scripts/apply_jinaq_specialty_directions.py
