@@ -32,6 +32,13 @@ PROFESSIONS: list[dict] = [
     {"section": "Realistic", "title": "Спасатель МЧС", "holland_code": "SRE"},
     {"section": "Realistic", "title": "Системный администратор", "holland_code": "RIC"},
     {"section": "Realistic", "title": "Управляющий фермерским хозяйством", "holland_code": "ESR"},
+    {"section": "Realistic", "title": "Инженер-конструктор", "holland_code": "RIE"},
+    {"section": "Realistic", "title": "Инженер по автоматизации и робототехнике", "holland_code": "RIE"},
+    {"section": "Realistic", "title": "Инженер-энергетик", "holland_code": "RIE"},
+    {"section": "Realistic", "title": "Инженер-технолог (машиностроение)", "holland_code": "RCI"},
+    {"section": "Realistic", "title": "Горный инженер", "holland_code": "RIE"},
+    {"section": "Realistic", "title": "Металлург", "holland_code": "RIC"},
+    {"section": "Realistic", "title": "Военный (офицер)", "holland_code": "RES"},
 
     # Investigative
     {"section": "Investigative", "title": "Разработчик программного обеспечения", "holland_code": "IRC"},
@@ -52,6 +59,21 @@ PROFESSIONS: list[dict] = [
     {"section": "Investigative", "title": "Системный аналитик", "holland_code": "IER"},
     {"section": "Investigative", "title": "Исследователь в области биотехнологий", "holland_code": "IRS"},
     {"section": "Investigative", "title": "Инженер-эколог", "holland_code": "IRE"},
+    {"section": "Investigative", "title": "DevOps-инженер", "holland_code": "RCI"},
+    {"section": "Investigative", "title": "Инженер по кибербезопасности", "holland_code": "IRC"},
+    {"section": "Investigative", "title": "Data Engineer", "holland_code": "ICR"},
+    {"section": "Investigative", "title": "Mobile-разработчик", "holland_code": "IRC"},
+    {"section": "Investigative", "title": "Физик", "holland_code": "IRE"},
+    {"section": "Investigative", "title": "Астроном", "holland_code": "IRE"},
+    {"section": "Investigative", "title": "Хирург", "holland_code": "IRS"},
+    {"section": "Investigative", "title": "Педиатр", "holland_code": "ISA"},
+    {"section": "Investigative", "title": "Психиатр", "holland_code": "ISE"},
+    {"section": "Investigative", "title": "Генетик", "holland_code": "IRS"},
+    {"section": "Investigative", "title": "Эпидемиолог", "holland_code": "IRS"},
+    {"section": "Investigative", "title": "Нейробиолог", "holland_code": "IRE"},
+    {"section": "Investigative", "title": "Судмедэксперт / Криминалист", "holland_code": "IRC"},
+    {"section": "Investigative", "title": "Технический писатель", "holland_code": "ICA"},
+    {"section": "Investigative", "title": "Океанолог / Гидролог", "holland_code": "IRE"},
 
     # Artistic
     {"section": "Artistic", "title": "Архитектор", "holland_code": "AIR"},
@@ -69,6 +91,19 @@ PROFESSIONS: list[dict] = [
     {"section": "Artistic", "title": "Аниматор (2D/3D)", "holland_code": "ARI"},
     {"section": "Artistic", "title": "Преподаватель искусства", "holland_code": "ASE"},
     {"section": "Artistic", "title": "Искусствовед", "holland_code": "AIE"},
+    {"section": "Artistic", "title": "UX/UI-дизайнер", "holland_code": "AIE"},
+    {"section": "Artistic", "title": "Геймдизайнер", "holland_code": "ARI"},
+    {"section": "Artistic", "title": "Урбанист / Градостроитель", "holland_code": "AIR"},
+    {"section": "Artistic", "title": "Композитор", "holland_code": "ASI"},
+    {"section": "Artistic", "title": "Звукорежиссёр", "holland_code": "ARI"},
+    {"section": "Artistic", "title": "Сценарист", "holland_code": "ASI"},
+    {"section": "Artistic", "title": "Модный стилист", "holland_code": "ASE"},
+    {"section": "Artistic", "title": "Иллюстратор", "holland_code": "ASI"},
+    # "Блогер" isn't a degree anywhere in the jinaq dataset — named for the
+    # field that actually is: 30+ real programs like "Медиакоммуникации",
+    # "Цифровые медиа и коммуникации", "Цифровой маркетинг" exist and lead
+    # here, unlike the informal "blogger" framing.
+    {"section": "Artistic", "title": "Специалист по медиакоммуникациям", "holland_code": "AES"},
 
     # Social
     {"section": "Social", "title": "Школьный учитель", "holland_code": "SAE"},
@@ -84,6 +119,12 @@ PROFESSIONS: list[dict] = [
     {"section": "Social", "title": "Преподаватель вуза", "holland_code": "SEI"},
     {"section": "Social", "title": "Специалист по работе с молодёжью", "holland_code": "SEA"},
     {"section": "Social", "title": "Реабилитолог / Эрготерапевт", "holland_code": "SIE"},
+    {"section": "Social", "title": "Нутрициолог / Диетолог", "holland_code": "SIA"},
+    {"section": "Social", "title": "Дефектолог", "holland_code": "SAI"},
+    {"section": "Social", "title": "Физиотерапевт / Массажист", "holland_code": "SIR"},
+    {"section": "Social", "title": "Медиатор / Конфликтолог", "holland_code": "SEA"},
+    {"section": "Social", "title": "Профориентолог / Карьерный консультант", "holland_code": "SAE"},
+    {"section": "Social", "title": "Педагог-психолог", "holland_code": "SAI"},
 
     # Enterprising
     {"section": "Enterprising", "title": "Предприниматель", "holland_code": "ESA"},
@@ -101,6 +142,14 @@ PROFESSIONS: list[dict] = [
     {"section": "Enterprising", "title": "Биржевой брокер", "holland_code": "ESI"},
     {"section": "Enterprising", "title": "Директор по логистике", "holland_code": "ESC"},
     {"section": "Enterprising", "title": "Бизнес-переводчик", "holland_code": "ESA"},
+    {"section": "Enterprising", "title": "Продакт-менеджер", "holland_code": "EIA"},
+    {"section": "Enterprising", "title": "Проектный менеджер", "holland_code": "ECI"},
+    {"section": "Enterprising", "title": "Инвестиционный банкир", "holland_code": "ESI"},
+    {"section": "Enterprising", "title": "Маркетолог", "holland_code": "ESA"},
+    {"section": "Enterprising", "title": "Судья", "holland_code": "ESC"},
+    {"section": "Enterprising", "title": "Прокурор", "holland_code": "ESC"},
+    {"section": "Enterprising", "title": "Нотариус", "holland_code": "ESC"},
+    {"section": "Enterprising", "title": "Спортивный менеджер / агент", "holland_code": "ESA"},
 
     # Conventional
     {"section": "Conventional", "title": "Бухгалтер", "holland_code": "CSE"},
@@ -117,6 +166,9 @@ PROFESSIONS: list[dict] = [
     {"section": "Conventional", "title": "Страховой андеррайтер", "holland_code": "CSE"},
     {"section": "Conventional", "title": "Специалист по закупкам", "holland_code": "CES"},
     {"section": "Conventional", "title": "Администратор баз данных", "holland_code": "CRI"},
+    {"section": "Conventional", "title": "QA-инженер (тестировщик)", "holland_code": "CRI"},
+    {"section": "Conventional", "title": "Логист", "holland_code": "CES"},
+    {"section": "Conventional", "title": "Финансовый контролёр", "holland_code": "CES"},
 ]
 
 assert len(PROFESSIONS) == len({p["title"] for p in PROFESSIONS}), "duplicate profession titles in PROFESSIONS"
