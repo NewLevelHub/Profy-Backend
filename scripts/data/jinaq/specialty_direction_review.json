@@ -1,0 +1,4474 @@
+{
+  "_readme": "Fill in `direction_slugs` for each entry below with slugs from `available_directions` — one specialty may prepare someone for several professions, or none if it doesn't clearly match any. Leave `direction_slugs: []` for anything you're not confident about; an empty list is a valid, honest answer, not a TODO. Do not guess from `sample_categories` alone — that's exactly the classification-by-category approach this project already tried and rejected (see this script's own docstring).",
+  "available_directions": [
+    {
+      "slug": "administrator-baz-dannyh",
+      "name": "Администратор баз данных",
+      "holland_code": "CRI"
+    },
+    {
+      "slug": "agronom",
+      "name": "Агроном",
+      "holland_code": "IRS"
+    },
+    {
+      "slug": "akter",
+      "name": "Актёр",
+      "holland_code": "AES"
+    },
+    {
+      "slug": "aktuariy",
+      "name": "Актуарий",
+      "holland_code": "ISE"
+    },
+    {
+      "slug": "analitik-dannyh",
+      "name": "Аналитик данных",
+      "holland_code": "IRE"
+    },
+    {
+      "slug": "animator-2d-3d",
+      "name": "Аниматор (2D/3D)",
+      "holland_code": "ARI"
+    },
+    {
+      "slug": "arheolog",
+      "name": "Археолог",
+      "holland_code": "IRE"
+    },
+    {
+      "slug": "arhitektor",
+      "name": "Архитектор",
+      "holland_code": "AIR"
+    },
+    {
+      "slug": "arhivarius",
+      "name": "Архивариус",
+      "holland_code": "CSE"
+    },
+    {
+      "slug": "auditor",
+      "name": "Аудитор",
+      "holland_code": "CSE"
+    },
+    {
+      "slug": "aviadispetcher",
+      "name": "Авиадиспетчер",
+      "holland_code": "SER"
+    },
+    {
+      "slug": "bibliotekar",
+      "name": "Библиотекарь",
+      "holland_code": "SAI"
+    },
+    {
+      "slug": "biolog",
+      "name": "Биолог",
+      "holland_code": "IRE"
+    },
+    {
+      "slug": "birzhevoy-broker",
+      "name": "Биржевой брокер",
+      "holland_code": "ESI"
+    },
+    {
+      "slug": "biznes-perevodchik",
+      "name": "Бизнес-переводчик",
+      "holland_code": "ESA"
+    },
+    {
+      "slug": "buhgalter",
+      "name": "Бухгалтер",
+      "holland_code": "CSE"
+    },
+    {
+      "slug": "burovoy-inzhener-neftegazovoe-delo",
+      "name": "Буровой инженер (нефтегазовое дело)",
+      "holland_code": "RIE"
+    },
+    {
+      "slug": "diplomat",
+      "name": "Дипломат",
+      "holland_code": "ESA"
+    },
+    {
+      "slug": "direktor-po-logistike",
+      "name": "Директор по логистике",
+      "holland_code": "ESC"
+    },
+    {
+      "slug": "direktor-po-marketingu",
+      "name": "Директор по маркетингу",
+      "holland_code": "ESA"
+    },
+    {
+      "slug": "dizayner-interera",
+      "name": "Дизайнер интерьера",
+      "holland_code": "AES"
+    },
+    {
+      "slug": "ekonomist-analitik",
+      "name": "Экономист-аналитик",
+      "holland_code": "IAS"
+    },
+    {
+      "slug": "event-menedzher",
+      "name": "Event-менеджер",
+      "holland_code": "ESA"
+    },
+    {
+      "slug": "farmatsevt",
+      "name": "Фармацевт",
+      "holland_code": "IES"
+    },
+    {
+      "slug": "finansovyy-analitik",
+      "name": "Финансовый аналитик",
+      "holland_code": "CSI"
+    },
+    {
+      "slug": "finansovyy-konsultant",
+      "name": "Финансовый консультант",
+      "holland_code": "ESR"
+    },
+    {
+      "slug": "fotograf",
+      "name": "Фотограф",
+      "holland_code": "AES"
+    },
+    {
+      "slug": "geodezist",
+      "name": "Геодезист",
+      "holland_code": "IRE"
+    },
+    {
+      "slug": "geolog",
+      "name": "Геолог",
+      "holland_code": "IRE"
+    },
+    {
+      "slug": "gid-ekskursovod",
+      "name": "Гид-экскурсовод",
+      "holland_code": "SEA"
+    },
+    {
+      "slug": "gosudarstvennyy-sluzhaschiy",
+      "name": "Государственный служащий",
+      "holland_code": "ESA"
+    },
+    {
+      "slug": "graficheskiy-dizayner",
+      "name": "Графический дизайнер",
+      "holland_code": "AES"
+    },
+    {
+      "slug": "himik",
+      "name": "Химик",
+      "holland_code": "IRE"
+    },
+    {
+      "slug": "horeograf",
+      "name": "Хореограф",
+      "holland_code": "AER"
+    },
+    {
+      "slug": "hr-menedzher",
+      "name": "HR-менеджер",
+      "holland_code": "SEC"
+    },
+    {
+      "slug": "hudozhnik",
+      "name": "Художник",
+      "holland_code": "ASI"
+    },
+    {
+      "slug": "inzhener-ekolog",
+      "name": "Инженер-эколог",
+      "holland_code": "IRE"
+    },
+    {
+      "slug": "inzhener-elektrik",
+      "name": "Инженер-электрик",
+      "holland_code": "REI"
+    },
+    {
+      "slug": "inzhener-mehanik",
+      "name": "Инженер-механик",
+      "holland_code": "RIS"
+    },
+    {
+      "slug": "inzhener-stroitel",
+      "name": "Инженер-строитель",
+      "holland_code": "RIE"
+    },
+    {
+      "slug": "iskusstvoved",
+      "name": "Искусствовед",
+      "holland_code": "AIE"
+    },
+    {
+      "slug": "issledovatel-v-oblasti-biotehnologiy",
+      "name": "Исследователь в области биотехнологий",
+      "holland_code": "IRS"
+    },
+    {
+      "slug": "kreditnyy-analitik",
+      "name": "Кредитный аналитик",
+      "holland_code": "CES"
+    },
+    {
+      "slug": "landshaftnyy-dizayner",
+      "name": "Ландшафтный дизайнер",
+      "holland_code": "RAE"
+    },
+    {
+      "slug": "lesnichiy",
+      "name": "Лесничий",
+      "holland_code": "RIS"
+    },
+    {
+      "slug": "logoped",
+      "name": "Логопед",
+      "holland_code": "SAI"
+    },
+    {
+      "slug": "mashinist-lokomotiva",
+      "name": "Машинист локомотива",
+      "holland_code": "RES"
+    },
+    {
+      "slug": "matematik",
+      "name": "Математик",
+      "holland_code": "IRE"
+    },
+    {
+      "slug": "meditsinskaya-sestra-medbrat",
+      "name": "Медицинская сестра / медбрат",
+      "holland_code": "SIA"
+    },
+    {
+      "slug": "menedzher-po-prodazham",
+      "name": "Менеджер по продажам",
+      "holland_code": "ESR"
+    },
+    {
+      "slug": "meteorolog",
+      "name": "Метеоролог",
+      "holland_code": "IRS"
+    },
+    {
+      "slug": "modeler",
+      "name": "Модельер",
+      "holland_code": "ASR"
+    },
+    {
+      "slug": "muzykant-ispolnitel",
+      "name": "Музыкант-исполнитель",
+      "holland_code": "ASI"
+    },
+    {
+      "slug": "nalogovyy-konsultant",
+      "name": "Налоговый консультант",
+      "holland_code": "CES"
+    },
+    {
+      "slug": "pilot-grazhdanskoy-aviatsii",
+      "name": "Пилот гражданской авиации",
+      "holland_code": "RIE"
+    },
+    {
+      "slug": "pisatel-kopirayter",
+      "name": "Писатель / Копирайтер",
+      "holland_code": "ASI"
+    },
+    {
+      "slug": "politseyskiy",
+      "name": "Полицейский",
+      "holland_code": "SER"
+    },
+    {
+      "slug": "pr-menedzher",
+      "name": "PR-менеджер",
+      "holland_code": "EAS"
+    },
+    {
+      "slug": "predprinimatel",
+      "name": "Предприниматель",
+      "holland_code": "ESA"
+    },
+    {
+      "slug": "prepodavatel-iskusstva",
+      "name": "Преподаватель искусства",
+      "holland_code": "ASE"
+    },
+    {
+      "slug": "prepodavatel-vuza",
+      "name": "Преподаватель вуза",
+      "holland_code": "SEI"
+    },
+    {
+      "slug": "psiholog-issledovatel",
+      "name": "Психолог-исследователь",
+      "holland_code": "IES"
+    },
+    {
+      "slug": "psiholog-konsultant",
+      "name": "Психолог-консультант",
+      "holland_code": "SAE"
+    },
+    {
+      "slug": "razrabotchik-programmnogo-obespecheniya",
+      "name": "Разработчик программного обеспечения",
+      "holland_code": "IRC"
+    },
+    {
+      "slug": "reabilitolog-ergoterapevt",
+      "name": "Реабилитолог / Эрготерапевт",
+      "holland_code": "SIE"
+    },
+    {
+      "slug": "rezhisser",
+      "name": "Режиссёр",
+      "holland_code": "AES"
+    },
+    {
+      "slug": "rieltor",
+      "name": "Риелтор",
+      "holland_code": "ESA"
+    },
+    {
+      "slug": "sekretar-deloproizvoditel",
+      "name": "Секретарь-делопроизводитель",
+      "holland_code": "ESC"
+    },
+    {
+      "slug": "shkolnyy-uchitel",
+      "name": "Школьный учитель",
+      "holland_code": "SAE"
+    },
+    {
+      "slug": "sistemnyy-administrator",
+      "name": "Системный администратор",
+      "holland_code": "RIC"
+    },
+    {
+      "slug": "sistemnyy-analitik",
+      "name": "Системный аналитик",
+      "holland_code": "IER"
+    },
+    {
+      "slug": "sotsialnyy-rabotnik",
+      "name": "Социальный работник",
+      "holland_code": "SEA"
+    },
+    {
+      "slug": "spasatel-mchs",
+      "name": "Спасатель МЧС",
+      "holland_code": "SRE"
+    },
+    {
+      "slug": "spetsialist-po-iskusstvennomu-intellektu",
+      "name": "Специалист по искусственному интеллекту",
+      "holland_code": "IRA"
+    },
+    {
+      "slug": "spetsialist-po-kadrovomu-deloproizvodstvu",
+      "name": "Специалист по кадровому делопроизводству",
+      "holland_code": "ESC"
+    },
+    {
+      "slug": "spetsialist-po-rabote-s-molodezhyu",
+      "name": "Специалист по работе с молодёжью",
+      "holland_code": "SEA"
+    },
+    {
+      "slug": "spetsialist-po-standartizatsii-i-sertifikatsii",
+      "name": "Специалист по стандартизации и сертификации",
+      "holland_code": "CES"
+    },
+    {
+      "slug": "spetsialist-po-tamozhennomu-delu",
+      "name": "Специалист по таможенному делу",
+      "holland_code": "CEI"
+    },
+    {
+      "slug": "spetsialist-po-zakupkam",
+      "name": "Специалист по закупкам",
+      "holland_code": "CES"
+    },
+    {
+      "slug": "spetsialist-tehnicheskoy-podderzhki",
+      "name": "Специалист технической поддержки",
+      "holland_code": "CSR"
+    },
+    {
+      "slug": "stomatolog",
+      "name": "Стоматолог",
+      "holland_code": "ISR"
+    },
+    {
+      "slug": "strahovoy-agent",
+      "name": "Страховой агент",
+      "holland_code": "ESC"
+    },
+    {
+      "slug": "strahovoy-anderrayter",
+      "name": "Страховой андеррайтер",
+      "holland_code": "CSE"
+    },
+    {
+      "slug": "tehnolog-pischevogo-proizvodstva",
+      "name": "Технолог пищевого производства",
+      "holland_code": "RCI"
+    },
+    {
+      "slug": "trener-po-sportu",
+      "name": "Тренер по спорту",
+      "holland_code": "SRE"
+    },
+    {
+      "slug": "upravlyayuschiy-fermerskim-hozyaystvom",
+      "name": "Управляющий фермерским хозяйством",
+      "holland_code": "ESR"
+    },
+    {
+      "slug": "upravlyayuschiy-otelem-restoranom",
+      "name": "Управляющий отелем / рестораном",
+      "holland_code": "ESR"
+    },
+    {
+      "slug": "veterinar",
+      "name": "Ветеринар",
+      "holland_code": "IRS"
+    },
+    {
+      "slug": "vospitatel-detskogo-sada",
+      "name": "Воспитатель детского сада",
+      "holland_code": "SAE"
+    },
+    {
+      "slug": "vrach-obschey-praktiki",
+      "name": "Врач общей практики",
+      "holland_code": "ISR"
+    },
+    {
+      "slug": "yurist-advokat",
+      "name": "Юрист / Адвокат",
+      "holland_code": "ESA"
+    },
+    {
+      "slug": "zhurnalist",
+      "name": "Журналист",
+      "holland_code": "ASE"
+    }
+  ],
+  "specialties": [
+    {
+      "name": "Бизнес-администрирование",
+      "count": 604,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Antalya Belek University",
+        "Harvard University",
+        "Mudanya University"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Психология",
+      "count": 553,
+      "sample_categories": [
+        "PSYCHOLOGY",
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Australian National University",
+        "Pontificia Universidad Católica Argentina",
+        "Pontifícia Universidade Católica do Rio de Janeiro"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Информатика",
+      "count": 440,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Antalya Belek University",
+        "Universidad de Buenos Aires",
+        "Universidade Estadual de Campinas"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Экономика",
+      "count": 402,
+      "sample_categories": [
+        "ECONOMICS",
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Australian National University",
+        "Fundação Getulio Vargas",
+        "Massachusetts Institute of Technology"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Медицина",
+      "count": 382,
+      "sample_categories": [
+        "HEALTH_MEDICINE",
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Harvard University",
+        "Heidelberg University",
+        "Stanford University"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Компьютерные науки",
+      "count": 315,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Harvard University",
+        "Luther University",
+        "Massachusetts Institute of Technology"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Право",
+      "count": 265,
+      "sample_categories": [
+        "LAW"
+      ],
+      "sample_universities": [
+        "Fundação Getulio Vargas",
+        "Harvard University",
+        "Universidad de Buenos Aires"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Международные отношения",
+      "count": 251,
+      "sample_categories": [
+        "SOCIAL_SCIENCES",
+        "POLITICAL_SCIENCE",
+        "COMMUNICATION"
+      ],
+      "sample_universities": [
+        "Antalya Belek University",
+        "Australian National University",
+        "Luther University"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Инженерия",
+      "count": 179,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Universidade de São Paulo",
+        "Universidade Federal do Rio de Janeiro",
+        "University of Waterloo"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Информационные технологии",
+      "count": 161,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Mudanya University",
+        "University of the Hesperides",
+        "University of the Middle Atlantic"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Биология",
+      "count": 161,
+      "sample_categories": [
+        "NATURAL_SCIENCES",
+        "SOCIAL_SCIENCES",
+        "HUMANITIES"
+      ],
+      "sample_universities": [
+        "Universidade Estadual de Campinas",
+        "Автономный университет Барселоны",
+        "Автономный университет Мадрида"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Юриспруденция",
+      "count": 152,
+      "sample_categories": [
+        "LAW",
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Heidelberg University",
+        "Адыгейский государственный университет",
+        "Алтайский государственный университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Образование",
+      "count": 138,
+      "sample_categories": [
+        "EDUCATION"
+      ],
+      "sample_universities": [
+        "Висконсинский университет в Ла-Кроссе",
+        "Висконсинский университет в О-Клер",
+        "Висконсинский университет в Оскоше"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Механическая инженерия",
+      "count": 131,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Universidade Estadual de Campinas",
+        "Анадолу университет",
+        "Баликесирский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "История",
+      "count": 115,
+      "sample_categories": [
+        "HISTORY",
+        "SOCIAL_SCIENCES",
+        "HUMANITIES"
+      ],
+      "sample_universities": [
+        "Harvard University",
+        "University of Oxford",
+        "Адыгейский государственный университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Computer Science",
+      "count": 94,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "ADA University",
+        "Aix-Marseille Université",
+        "Erasmus University Rotterdam"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Архитектура",
+      "count": 94,
+      "sample_categories": [
+        "ARCHITECTURE"
+      ],
+      "sample_universities": [
+        "Академия искусств, архитектуры и дизайна в Праге",
+        "Акденизский университет",
+        "Анадолу университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Филология",
+      "count": 84,
+      "sample_categories": [
+        "LINGUISTICS",
+        "HUMANITIES"
+      ],
+      "sample_universities": [
+        "Адыгейский государственный университет",
+        "Алтайский государственный гуманитарно-педагогический университет",
+        "Алтайский государственный университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Инженерное дело",
+      "count": 75,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Massachusetts Institute of Technology",
+        "Stanford University",
+        "Восточный Пьемонтский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр наук в области компьютерных наук",
+      "count": 73,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Алабамский государственный университет",
+        "Военный колледж Южной Каролины «Цитадель»",
+        "Восточный Вашингтонский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Экономика и управление",
+      "count": 72,
+      "sample_categories": [
+        "ECONOMICS",
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Базиликатский университет",
+        "Бранденбургский технический университет Котбус-Зенфтенберг",
+        "Брешийский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Economics",
+      "count": 68,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION",
+        "ECONOMICS"
+      ],
+      "sample_universities": [
+        "ADA University",
+        "Duke-NUS Medical School",
+        "École Polytechnique"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Машиностроение",
+      "count": 66,
+      "sample_categories": [
+        "ENGINEERING",
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "University of California, Berkeley",
+        "Белостокский технологический университет",
+        "Бранденбургский технический университет Котбус-Зенфтенберг"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Фармация",
+      "count": 66,
+      "sample_categories": [
+        "HEALTH_MEDICINE",
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Алтайский государственный медицинский университет",
+        "Астраханский государственный медицинский университет",
+        "Бялостокский медицинский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Medicine",
+      "count": 65,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Chalmers University of Technology",
+        "École Polytechnique",
+        "Erasmus University Rotterdam"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Менеджмент",
+      "count": 62,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION",
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "University of California, Berkeley",
+        "Алматинский гуманитарно-экономический университет",
+        "Алматы Менеджмент Университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Гражданское строительство",
+      "count": 62,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Автономный университет Мадрида",
+        "Атлантико-Средиземноморский технологический университет",
+        "Барселонский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр бизнеса",
+      "count": 62,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Альбертский университет",
+        "Виндзорский университет",
+        "Виннипегский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Стоматология",
+      "count": 52,
+      "sample_categories": [
+        "HEALTH_MEDICINE",
+        "NATURAL_SCIENCES",
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Алтайский государственный медицинский университет",
+        "Астраханский государственный медицинский университет",
+        "Бялостокский медицинский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Engineering",
+      "count": 51,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Chalmers University of Technology",
+        "Delft University of Technology",
+        "Erasmus University Rotterdam"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Прикладная информатика",
+      "count": 50,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Адыгейский государственный университет",
+        "Амурский государственный университет",
+        "Астраханский государственный университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Информационные системы и технологии",
+      "count": 50,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Астраханский государственный технический университет",
+        "Белгородский государственный технологический университет имени В. Г. Шухова",
+        "Брянский государственный технический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Математика",
+      "count": 47,
+      "sample_categories": [
+        "MATHEMATICS",
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "McGill University",
+        "University of California, Berkeley",
+        "Адыгейский государственный университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Журналистика",
+      "count": 46,
+      "sample_categories": [
+        "JOURNALISM",
+        "HUMANITIES",
+        "MEDIA_STUDIES"
+      ],
+      "sample_universities": [
+        "Pontifícia Universidade Católica do Rio de Janeiro",
+        "Американский университет",
+        "Бостонский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр делового администрирования",
+      "count": 43,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Авондейлский университет",
+        "Аттабаскинский университет",
+        "Гартфордский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Law",
+      "count": 42,
+      "sample_categories": [
+        "LAW"
+      ],
+      "sample_universities": [
+        "Duke-NUS Medical School",
+        "KAIST",
+        "Kyoto University"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Педагогика",
+      "count": 42,
+      "sample_categories": [
+        "EDUCATION"
+      ],
+      "sample_universities": [
+        "Восточно-Китайский педагогический университет",
+        "Гванчжуский женский университет",
+        "Городской университет Градец-Кралове"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Физика",
+      "count": 40,
+      "sample_categories": [
+        "NATURAL_SCIENCES",
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Massachusetts Institute of Technology",
+        "Аркалыкский педагогический институт имени Ыбырая Алтынсарина",
+        "Баллиол-колледж, Оксфордский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр информационных технологий",
+      "count": 37,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Авондейлский университет",
+        "Кёртин Сингапур",
+        "Сиднейский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр инженерии",
+      "count": 37,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Государственный университет Вебера",
+        "Грузинский Южный университет",
+        "Калгарийский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Магистр делового администрирования (MBA)",
+      "count": 36,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Австралийский национальный университет",
+        "Альбертский университет",
+        "Аттабаскинский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр наук в области биологии",
+      "count": 33,
+      "sample_categories": [
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Восточный Вашингтонский университет",
+        "Восточный университет Каролины",
+        "Восточный университет Нью-Мексико"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавриат по информатике",
+      "count": 32,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Аберистуитский университет",
+        "Бирмингемский городской университет",
+        "Вустерский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Философия",
+      "count": 31,
+      "sample_categories": [
+        "PHILOSOPHY"
+      ],
+      "sample_universities": [
+        "Pontificia Universidad Católica Argentina",
+        "Stanford University",
+        "Билефельдский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Psychology",
+      "count": 31,
+      "sample_categories": [
+        "PSYCHOLOGY",
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "The Chinese University of Hong Kong",
+        "Бристольский университет",
+        "Гомельский государственный университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Графический дизайн",
+      "count": 30,
+      "sample_categories": [
+        "GRAPHIC_DESIGN"
+      ],
+      "sample_universities": [
+        "STING Академия",
+        "Академия изящных искусств в Варшаве",
+        "Академия изящных искусств в Катовице"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр искусств",
+      "count": 30,
+      "sample_categories": [
+        "HUMANITIES",
+        "ARTS_DESIGN"
+      ],
+      "sample_universities": [
+        "Австралийский национальный университет",
+        "Альбертский университет",
+        "Аттабаскинский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Экология и охрана окружающей среды",
+      "count": 30,
+      "sample_categories": [
+        "ENVIRONMENTAL_STUDIES"
+      ],
+      "sample_universities": [
+        "Варшавский университет наук о жизни",
+        "Вроцлавский университет наук о земле и жизни",
+        "Гангнын-Вонджу национальный университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Информационные системы",
+      "count": 29,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Акитский префектурный университет",
+        "Алматинский университет энергетики и связи",
+        "Астана IT Университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Информатика и вычислительная техника",
+      "count": 29,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Амурский государственный университет имени Шолом-Алейхема",
+        "Атлантико-Средиземноморский технологический университет",
+        "Брненский технический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Медицинские науки",
+      "count": 28,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Восточный университет Кентукки",
+        "Префектурный университет Кумамото",
+        "Университет Абдуллы Гюля"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Магистратура по международным отношениям",
+      "count": 27,
+      "sample_categories": [
+        "POLITICAL_SCIENCE"
+      ],
+      "sample_universities": [
+        "Бирмингемский городской университет",
+        "Западно-Бретонский университет",
+        "Колледж Рубен, Оксфордский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Финансы",
+      "count": 26,
+      "sample_categories": [
+        "ECONOMICS",
+        "SOCIAL_SCIENCES",
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Алматинский гуманитарно-экономический университет",
+        "Алматы Менеджмент Университет",
+        "Гуманитарно-техническая академия"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Медицина и хирургия",
+      "count": 26,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Веронский университет",
+        "Высшая школа Меридионале",
+        "Генуэзский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Инженерия программного обеспечения",
+      "count": 26,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY",
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Высшая школа технологий (École de technologie supérieure)",
+        "Государственный университет Канвондо",
+        "Европейский университет Андалусии"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Дизайн",
+      "count": 25,
+      "sample_categories": [
+        "ARTS_DESIGN",
+        "INDUSTRIAL_DESIGN",
+        "GRAPHIC_DESIGN"
+      ],
+      "sample_universities": [
+        "Акицкий университет искусств",
+        "Берлинский университет искусств",
+        "Венецианский университет IUAV"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Прикладная математика и информатика",
+      "count": 25,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY",
+        "MATHEMATICS"
+      ],
+      "sample_universities": [
+        "Алтайский государственный университет",
+        "Воронежский государственный технический университет",
+        "Воронежский государственный университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр наук в области бизнеса",
+      "count": 25,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Аляскинский университет в Анкоридже",
+        "Военный колледж Южной Каролины «Цитадель»",
+        "Восточный университет Каролины"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Строительство",
+      "count": 25,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Астраханский государственный технический университет",
+        "Волгоградский государственный технический университет",
+        "Воронежский государственный технический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Mechanical Engineering",
+      "count": 24,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Korea Advanced Institute of Science and Technology",
+        "New York University",
+        "Sapienza Università di Roma"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Международный бизнес",
+      "count": 24,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION",
+        "ECONOMICS"
+      ],
+      "sample_universities": [
+        "Аугсбургский университет",
+        "Бирмингемский университет",
+        "Высшая школа международных и общественных отношений в Праге"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Социальная работа",
+      "count": 23,
+      "sample_categories": [
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Алтайский государственный гуманитарно-педагогический университет",
+        "Аомориский университет здравоохранения и благосостояния",
+        "Гванчжуский женский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "International Relations",
+      "count": 22,
+      "sample_categories": [
+        "POLITICAL_SCIENCE",
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Stockholm University",
+        "Università di Firenze",
+        "University of Canterbury"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Агрономия",
+      "count": 22,
+      "sample_categories": [
+        "AGRICULTURE",
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Аграрный университет Таджикистана",
+        "Брянский государственный аграрный университет",
+        "Варшавский университет наук о жизни"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Автоматизация и управление",
+      "count": 22,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Восточно-Казахстанский технический университет имени Д. Серикбаева",
+        "Грозненский государственный нефтяной технический университет",
+        "Екибастузский инженерно-технический институт имени академика К.Сатпаева"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр наук в области психологии",
+      "count": 22,
+      "sample_categories": [
+        "PSYCHOLOGY"
+      ],
+      "sample_universities": [
+        "Восточный университет Нью-Мексико",
+        "Гартфордский университет",
+        "Индианский университет в Индианаполисе"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр образования",
+      "count": 21,
+      "sample_categories": [
+        "EDUCATION"
+      ],
+      "sample_universities": [
+        "Авондейлский университет",
+        "Австралийский католический университет",
+        "Виннипегский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Факультет инженерии",
+      "count": 21,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Кагосимский университет",
+        "Префектурный университет Фукуи",
+        "Префектурный университет Яманаси"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Business Administration",
+      "count": 20,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "ADA University",
+        "École Polytechnique",
+        "Singapore Management University"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Physics",
+      "count": 20,
+      "sample_categories": [
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Aix-Marseille Université",
+        "KTH Royal Institute of Technology",
+        "Leiden University"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Анимация",
+      "count": 20,
+      "sample_categories": [
+        "ANIMATION"
+      ],
+      "sample_universities": [
+        "Академия изящных искусств в Варшаве",
+        "Академия изящных искусств в Катовице",
+        "Академия изящных искусств имени Владислава Стшеминьского в Лодзи"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Сестринское дело",
+      "count": 20,
+      "sample_categories": [
+        "HEALTH_MEDICINE",
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Гванчжуский католический университет",
+        "Гифу колледж сестринского дела",
+        "Западно-Казахстанский медицинский университет имени Марата Оспанова"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Факультет гуманитарных наук",
+      "count": 20,
+      "sample_categories": [
+        "HUMANITIES"
+      ],
+      "sample_universities": [
+        "Кагосимский университет",
+        "Префектурный университет Яманаси",
+        "Университет Гифу"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавриат по бизнес-администрированию",
+      "count": 19,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Аберистуитский университет",
+        "Бирмингемский городской университет",
+        "Глостерский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр гуманитарных наук",
+      "count": 19,
+      "sample_categories": [
+        "HUMANITIES"
+      ],
+      "sample_universities": [
+        "Австралийский католический университет",
+        "Канадский меннонитский университет",
+        "Католический университет Америки"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр наук",
+      "count": 19,
+      "sample_categories": [
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Австралийский национальный университет",
+        "Альбертский университет",
+        "Виннипегский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавриат по праву",
+      "count": 19,
+      "sample_categories": [
+        "LAW"
+      ],
+      "sample_universities": [
+        "Британский университет Колумбии",
+        "Католический университет Запада",
+        "Католический университет Лиона"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Естественные науки",
+      "count": 19,
+      "sample_categories": [
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Городской университет Хиросимы",
+        "Казахский университет дружбы народов имени академика А. Куатбекова",
+        "Казахский университет технологии и бизнеса имени К. Кулажанова"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Биотехнология",
+      "count": 18,
+      "sample_categories": [
+        "NATURAL_SCIENCES",
+        "ENGINEERING",
+        "HUMANITIES"
+      ],
+      "sample_universities": [
+        "Australian National University",
+        "Валенсийский политехнический университет",
+        "Гванчжуский институт науки и технологий"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Экология и природопользование",
+      "count": 18,
+      "sample_categories": [
+        "ENVIRONMENTAL_STUDIES"
+      ],
+      "sample_universities": [
+        "University of British Columbia",
+        "Акитский префектурный университет",
+        "Аляскинский университет в Фэрбенксе"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Педагогическое образование",
+      "count": 18,
+      "sample_categories": [
+        "EDUCATION"
+      ],
+      "sample_universities": [
+        "Алтайский государственный гуманитарно-педагогический университет",
+        "Амурский государственный университет имени Шолом-Алейхема",
+        "Владимирский государственный университет имени А. Г. и Н. Г. Столетовых"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр наук в области инженерии",
+      "count": 18,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Альбертский университет",
+        "Военный колледж Южной Каролины «Цитадель»",
+        "Государственный университет Фэрмонт"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Физическая культура и спорт",
+      "count": 18,
+      "sample_categories": [
+        "SOCIAL_SCIENCES",
+        "HEALTH_MEDICINE",
+        "EDUCATION",
+        "NATURAL_SCIENCES",
+        "HUMANITIES"
+      ],
+      "sample_universities": [
+        "Аркалыкский педагогический институт имени Ыбырая Алтынсарина",
+        "Астраханский государственный университет",
+        "Братский государственный университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Политология",
+      "count": 17,
+      "sample_categories": [
+        "POLITICAL_SCIENCE"
+      ],
+      "sample_universities": [
+        "Harvard University",
+        "Академия политических и социальных наук",
+        "Восточно-Китайский университет политических наук и права"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр наук в области образования",
+      "count": 17,
+      "sample_categories": [
+        "EDUCATION"
+      ],
+      "sample_universities": [
+        "Алабамский государственный университет",
+        "Восточный университет Нью-Мексико",
+        "Государственный университет Западной Виргинии"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Педагогика и психология",
+      "count": 17,
+      "sample_categories": [
+        "SOCIAL_SCIENCES",
+        "EDUCATION",
+        "PSYCHOLOGY"
+      ],
+      "sample_universities": [
+        "Аркалыкский педагогический институт имени Ыбырая Алтынсарина",
+        "Джинджуский национальный университет образования",
+        "Евразийский гуманитарный институт имени А.К. Кусаинова"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Начальное Образование",
+      "count": 17,
+      "sample_categories": [
+        "SOCIAL_SCIENCES",
+        "EDUCATION"
+      ],
+      "sample_universities": [
+        "Аркалыкский педагогический институт имени Ыбырая Алтынсарина",
+        "Гванчжуский национальный педагогический университет",
+        "Гёнгинский национальный университет образования"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Английский язык и литература",
+      "count": 17,
+      "sample_categories": [
+        "HUMANITIES",
+        "LINGUISTICS"
+      ],
+      "sample_universities": [
+        "Баллиол-колледж, Оксфордский университет",
+        "Вустер-колледж, Оксфордский университет",
+        "Колледж Иисуса, Оксфордский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Электротехника и электроника",
+      "count": 17,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Брненский технический университет",
+        "Бурса Технический университет",
+        "Гванчжуский институт науки и технологий"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Медицина и здравоохранение",
+      "count": 17,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Восточный университет Мичигана",
+        "Государственный университет Вальдоста",
+        "Дербиширский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр здравоохранения",
+      "count": 17,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Технологический университет Квинсленда",
+        "Университет Виктории",
+        "Университет Вуллонгонга"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Biology",
+      "count": 16,
+      "sample_categories": [
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Delft University of Technology",
+        "Korea University",
+        "Ludwig-Maximilians-Universität München"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Социальные науки",
+      "count": 16,
+      "sample_categories": [
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Universidad Torcuato Di Tella",
+        "Академия политических и социальных наук",
+        "Городской университет Йокогамы"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Педиатрия",
+      "count": 16,
+      "sample_categories": [
+        "HEALTH_MEDICINE",
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Алтайский государственный медицинский университет",
+        "Астраханский государственный медицинский университет",
+        "Западно-Казахстанский медицинский университет имени Марата Оспанова"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр наук в области здравоохранения",
+      "count": 16,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Аляскинский университет в Анкоридже",
+        "Восточный университет штата Теннесси",
+        "Государственный университет Западной Виргинии"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавриат по биологии",
+      "count": 16,
+      "sample_categories": [
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Британский университет Колумбии",
+        "Западно-Бретонский университет",
+        "Йельский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Экономика и менеджмент",
+      "count": 16,
+      "sample_categories": [
+        "ECONOMICS",
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Венецианский университет Ка’ Фоскари",
+        "Католический университет Святого Сердца",
+        "Павийский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Китайский язык и литература",
+      "count": 16,
+      "sample_categories": [
+        "HUMANITIES",
+        "LINGUISTICS"
+      ],
+      "sample_universities": [
+        "Восточно-Китайский педагогический университет",
+        "Китайский народный университет",
+        "Пекинский городской университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Architecture",
+      "count": 15,
+      "sample_categories": [
+        "ARCHITECTURE"
+      ],
+      "sample_universities": [
+        "ADA University",
+        "Humboldt-Universität zu Berlin",
+        "University of Cambridge"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Дизайн интерьера",
+      "count": 15,
+      "sample_categories": [
+        "INTERIOR_DESIGN"
+      ],
+      "sample_universities": [
+        "Академия изящных искусств в Гданьске",
+        "Академия изящных искусств в Катовице",
+        "Академия изящных искусств имени Владислава Стшеминьского в Лодзи"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Факультет образования",
+      "count": 15,
+      "sample_categories": [
+        "EDUCATION"
+      ],
+      "sample_universities": [
+        "Аомориский государственный университет",
+        "Городской университет Асахикава",
+        "Кагосимский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Медицинская биология",
+      "count": 15,
+      "sample_categories": [
+        "HEALTH_MEDICINE",
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Волгоградский государственный университет",
+        "Исламский университет науки и технологий Газиантепа",
+        "Сивасский университет науки и технологий"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр искусств в области психологии",
+      "count": 15,
+      "sample_categories": [
+        "PSYCHOLOGY"
+      ],
+      "sample_universities": [
+        "Восточный университет штата Теннесси",
+        "Государственный колледж Кин",
+        "Государственный университет имени Стивена Ф. Остина"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Факультет естественных наук",
+      "count": 15,
+      "sample_categories": [
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Кагосимский университет",
+        "Университет Гифу",
+        "Университет города Фукуяма"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Business",
+      "count": 14,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Chalmers University of Technology",
+        "Duke-NUS Medical School",
+        "ETH Zürich"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр искусств в области бизнеса",
+      "count": 14,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Восточный Вашингтонский университет",
+        "Восточный университет Нью-Мексико",
+        "Государственный университет Хендерсон"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Специальное образование",
+      "count": 14,
+      "sample_categories": [
+        "EDUCATION"
+      ],
+      "sample_universities": [
+        "Гёнгинский национальный университет образования",
+        "Гончжу Национальный университет педагогики",
+        "Джинджуский национальный университет образования"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Гуманитарные науки",
+      "count": 14,
+      "sample_categories": [
+        "HUMANITIES"
+      ],
+      "sample_universities": [
+        "Городской университет Хиросимы",
+        "Ниигатский университет",
+        "Префектурный университет Окаяма"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Маркетинг",
+      "count": 13,
+      "sample_categories": [
+        "ECONOMICS",
+        "SOCIAL_SCIENCES",
+        "MARKETING",
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "McGill University",
+        "Алматы Менеджмент Университет",
+        "Гуманитарно-техническая академия"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Магистратура по психологии",
+      "count": 13,
+      "sample_categories": [
+        "PSYCHOLOGY"
+      ],
+      "sample_universities": [
+        "Аберистуитский университет",
+        "Вустерский университет",
+        "Глостерский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Музыка",
+      "count": 13,
+      "sample_categories": [
+        "MUSIC"
+      ],
+      "sample_universities": [
+        "Академия искусств в Щецине",
+        "Академия музыки и исполнительских искусств имени Леоша Яначека в Брно",
+        "Академия музыки имени Кароля Липиньского во Вроцлаве"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Медицинская биохимия",
+      "count": 13,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Алтайский государственный медицинский университет",
+        "Астраханский государственный медицинский университет",
+        "Нижегородский государственный медицинский университет имени Н. И. Пирогова"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Медицинская сестринская деятельность",
+      "count": 13,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Аомориский университет здравоохранения и благосостояния",
+        "Киотский префектурный медицинский университет",
+        "Префектурный университет здравоохранения Эхимэ"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр компьютерных наук",
+      "count": 13,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Аттабаскинский университет",
+        "Виндзорский университет",
+        "Государственный университет Вебера"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Биологические науки",
+      "count": 13,
+      "sample_categories": [
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Виргинский политехнический институт и Государственный университет",
+        "Восточноанглийский университет",
+        "Калифорнийский университет в Мерседе"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Горное дело",
+      "count": 13,
+      "sample_categories": [
+        "NATURAL_SCIENCES",
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Екибастузский инженерно-технический институт имени академика К.Сатпаева",
+        "Карагандинский государственный технический университет имени Абылкаса Сагинова",
+        "Китайский университет горного дела и технологии (Пекинский филиал)"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Агробиологические науки",
+      "count": 13,
+      "sample_categories": [
+        "AGRICULTURE"
+      ],
+      "sample_universities": [
+        "Обихиро университет сельского хозяйства и ветеринарной медицины",
+        "Сельскохозяйственный и лесотехнический университет Тохоку",
+        "Токийский университет сельского хозяйства и технологии"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Mathematics",
+      "count": 12,
+      "sample_categories": [
+        "MATHEMATICS",
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "ADA University",
+        "Aix-Marseille Université",
+        "Delft University of Technology"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Живопись",
+      "count": 12,
+      "sample_categories": [
+        "FINE_ARTS"
+      ],
+      "sample_universities": [
+        "Академия изящных искусств в Варшаве",
+        "Академия изящных искусств в Гданьске",
+        "Академия изящных искусств в Катовице"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Композиция",
+      "count": 12,
+      "sample_categories": [
+        "MUSIC"
+      ],
+      "sample_universities": [
+        "Академия музыки имени Гражины и Кежстута Бацевичей в Лодзи",
+        "Академия музыки имени Игнацы Яна Падеревского в Познани",
+        "Академия музыки имени Кароля Липиньского во Вроцлаве"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Изобразительное искусство",
+      "count": 12,
+      "sample_categories": [
+        "FINE_ARTS"
+      ],
+      "sample_universities": [
+        "Акицкий университет искусств",
+        "Берлинский университет искусств",
+        "Гамбургская высшая школа изящных искусств"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Физиотерапия",
+      "count": 12,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Аомориский университет здравоохранения и благосостояния",
+        "Вроцлавский университет наук о здоровье и спорте",
+        "Гданьский медицинский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Биомедицинская инженерия",
+      "count": 12,
+      "sample_categories": [
+        "ENGINEERING",
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Ганноверская медицинская школа",
+        "Гванчжуский католический университет",
+        "Католический университет Тэгу"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Лингвистика",
+      "count": 12,
+      "sample_categories": [
+        "LINGUISTICS"
+      ],
+      "sample_universities": [
+        "Калужский государственный университет имени К. Э. Циолковского",
+        "Колледж Святого Иоанна при Даремском университете",
+        "Нижегородский государственный лингвистический университет имени Н. А. Добролюбова"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Jurisprudence",
+      "count": 12,
+      "sample_categories": [
+        "LAW"
+      ],
+      "sample_universities": [
+        "Kyzylorda Open University",
+        "Kyzylorda Bolashak University",
+        "Korkyt Ata Kyzylorda University"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавриат по экономике и управлению",
+      "count": 12,
+      "sample_categories": [
+        "ECONOMICS",
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Университет Гавра Нормандия",
+        "Университет Жана Моне",
+        "Университет Ле-Мана"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Information Technology",
+      "count": 11,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "ADA University",
+        "Кунсанский национальный университет",
+        "Кюсюский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Dentistry",
+      "count": 11,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "National University of Singapore",
+        "Кюсюский стоматологический университет",
+        "Кютахья университет медицинских наук"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Ветеринария",
+      "count": 11,
+      "sample_categories": [
+        "HEALTH_MEDICINE",
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Аграрный университет Таджикистана",
+        "Брянский государственный аграрный университет",
+        "Западно-Казахстанский аграрно-технический университет имени Жангир хана"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Ветеринарная медицина",
+      "count": 11,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Варшавский университет наук о жизни",
+        "Ветеринарный университет в Брно",
+        "Ганноверский университет ветеринарной медицины, Фонд"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Туризм",
+      "count": 11,
+      "sample_categories": [
+        "SOCIAL_SCIENCES",
+        "ENVIRONMENTAL_STUDIES",
+        "BUSINESS_ADMINISTRATION",
+        "HUMANITIES"
+      ],
+      "sample_universities": [
+        "Восточно-Казахстанский государственный университет имени Сарсена Аманжолова",
+        "Есильский университет",
+        "Западно-Казахстанский инновационно-технологический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Электроэнергетика и электротехника",
+      "count": 11,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Ивановский государственный энергетический университет",
+        "Казанский государственный энергетический университет",
+        "Нижегородский государственный технический университет имени Р. Е. Алексеева"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "History",
+      "count": 10,
+      "sample_categories": [
+        "HISTORY",
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "LUISS Guido Carli",
+        "Technische Universität München",
+        "Université de Lyon"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Pharmacy",
+      "count": 10,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "National University of Singapore",
+        "Кютахья университет медицинских наук",
+        "Люблинский медицинский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр психологии",
+      "count": 10,
+      "sample_categories": [
+        "PSYCHOLOGY"
+      ],
+      "sample_universities": [
+        "Австралийский католический университет",
+        "Государственный университет Вебера",
+        "Грузинский Южный университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр права",
+      "count": 10,
+      "sample_categories": [
+        "LAW"
+      ],
+      "sample_universities": [
+        "Австралийский национальный университет",
+        "Оттавский университет",
+        "Сиднейский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Скульптура",
+      "count": 10,
+      "sample_categories": [
+        "FINE_ARTS"
+      ],
+      "sample_universities": [
+        "Академия изящных искусств в Варшаве",
+        "Академия изящных искусств в Гданьске",
+        "Академия изящных искусств в Катовице"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Музыкальное исполнительство",
+      "count": 10,
+      "sample_categories": [
+        "MUSIC"
+      ],
+      "sample_universities": [
+        "Академия исполнительских искусств в Праге",
+        "Академия музыки имени Кароля Шимановского в Катовице",
+        "Академия музыки имени Кшиштофа Пендерецкого в Кракове"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Музыкальная педагогика",
+      "count": 10,
+      "sample_categories": [
+        "EDUCATION"
+      ],
+      "sample_universities": [
+        "Академия музыки имени Гражины и Кежстута Бацевичей в Лодзи",
+        "Академия музыки имени Игнацы Яна Падеревского в Познани",
+        "Академия музыки имени Кароля Липиньского во Вроцлаве"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Лечебное дело",
+      "count": 10,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Алтайский государственный медицинский университет",
+        "Астраханский государственный медицинский университет",
+        "Нижегородский государственный медицинский университет имени Н. И. Пирогова"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавриат по экономике",
+      "count": 10,
+      "sample_categories": [
+        "ECONOMICS"
+      ],
+      "sample_universities": [
+        "Британский университет Колумбии",
+        "Йельский университет",
+        "Йоркский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Химическая инженерия",
+      "count": 10,
+      "sample_categories": [
+        "ENGINEERING",
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Бурса Технический университет",
+        "Гванчжуский институт науки и технологий",
+        "Измирский технический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Экология и природные ресурсы",
+      "count": 10,
+      "sample_categories": [
+        "ENVIRONMENTAL_STUDIES"
+      ],
+      "sample_universities": [
+        "Государственный университет Монтаны в Биллингсе",
+        "Западный Вашингтонский университет",
+        "Префектурный университет Иватэ"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавриат по психологии",
+      "count": 10,
+      "sample_categories": [
+        "PSYCHOLOGY"
+      ],
+      "sample_universities": [
+        "Йельский университет",
+        "Университет Баккингема",
+        "Университет Голдсмитс, Лондон"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Магистратура по менеджменту",
+      "count": 10,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Католический университет Запада",
+        "Католический университет Лиона",
+        "Колледж Келлогг, Оксфордский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Английская литература и язык",
+      "count": 10,
+      "sample_categories": [
+        "HUMANITIES"
+      ],
+      "sample_universities": [
+        "Колледж Брейзноза, Оксфордский университет",
+        "Колледж Вулфсон, Оксфордский университет",
+        "Колледж Мэнсфилд, Оксфордский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Философия, политика и экономика",
+      "count": 10,
+      "sample_categories": [
+        "POLITICAL_SCIENCE",
+        "PHILOSOPHY"
+      ],
+      "sample_universities": [
+        "Колледж Кебл, Оксфордский университет",
+        "Колледж Корпус Кристи, Оксфордский университет",
+        "Колледж Мертон, Оксфордский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Finance",
+      "count": 9,
+      "sample_categories": [
+        "ECONOMICS",
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "ADA University",
+        "Korea Advanced Institute of Science and Technology",
+        "New York University"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Electrical Engineering",
+      "count": 9,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "New York University",
+        "Politecnico di Milano",
+        "Singapore Management University"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Кибербезопасность",
+      "count": 9,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Астана IT Университет",
+        "Китайский народный университет общественной безопасности",
+        "Пекинский университет информационных наук и технологий"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Химическая технология",
+      "count": 9,
+      "sample_categories": [
+        "NATURAL_SCIENCES",
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Белгородский государственный технологический университет имени В. Г. Шухова",
+        "Бухарский инженерно-технологический институт",
+        "Ивановский государственный химико-технологический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Факультет экономики и управления",
+      "count": 9,
+      "sample_categories": [
+        "ECONOMICS",
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Городской университет Асахикава",
+        "Кагосимский университет",
+        "Префектурный университет Фукуи"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Магистратура по информатике",
+      "count": 9,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Католический университет Лилля",
+        "Сорбоннский университет",
+        "Университет Версаля Сен-Кантен-ан-Ивелин"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Компьютерная инженерия",
+      "count": 9,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY",
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Технический университет Йылдыз",
+        "Технический университет Эскишехира",
+        "Ульсанский национальный институт науки и технологий"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Магистратура по биологии",
+      "count": 9,
+      "sample_categories": [
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Университет Ангерса",
+        "Университет Артуа",
+        "Университет Клермон Овернь"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Chemistry",
+      "count": 8,
+      "sample_categories": [
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Aix-Marseille Université",
+        "Leiden University",
+        "LUISS Guido Carli"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бухгалтерский учет",
+      "count": 8,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Australian National University",
+        "Восточный университет Иллинойса",
+        "Государственный университет Дакоты"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Management",
+      "count": 8,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Korea Advanced Institute of Science and Technology",
+        "Лодзинский технический университет",
+        "Лондонская школа экономики и политических наук (Университет Лондона)"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Nursing",
+      "count": 8,
+      "sample_categories": [
+        "MUSIC",
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "National University of Singapore",
+        "The Chinese University of Hong Kong",
+        "University of California, Los Angeles"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Теология",
+      "count": 8,
+      "sample_categories": [
+        "HUMANITIES",
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Pontificia Universidad Católica Argentina",
+        "Египетский университет исламской культуры «Нур-Мубарак» в Казахстане",
+        "Католический университет имени Иоанна Павла II в Люблине"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Гражданская инженерия",
+      "count": 8,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Автономный университет Барселоны",
+        "Гранадский университет",
+        "Жиронский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавриат по компьютерным наукам",
+      "count": 8,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Британский университет Колумбии",
+        "Глостерский университет",
+        "Йельский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Автоматизация технологических процессов и производств",
+      "count": 8,
+      "sample_categories": [
+        "ENGINEERING",
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Брянский государственный технический университет",
+        "Ивановский государственный энергетический университет",
+        "Казанский государственный энергетический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Химия",
+      "count": 8,
+      "sample_categories": [
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Высшая нормальная школа",
+        "Калифорнийский технологический институт",
+        "Университет Китайской академии наук"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Биотехнологии",
+      "count": 8,
+      "sample_categories": [
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Высшая школа передовых исследований имени Сант-Анна",
+        "Корейский институт передовых наук и технологий",
+        "Римский университет биомедицинских наук"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Нефтегазовое дело",
+      "count": 8,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Грозненский государственный нефтяной технический университет",
+        "Западно-Казахстанский аграрно-технический университет имени Жангир хана",
+        "Западно-Казахстанский инновационно-технологический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Услуги",
+      "count": 8,
+      "sample_categories": [
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Евразийский национальный университет имени Л.Н. Гумилева",
+        "Западно-Казахстанский университет имени Махамбета Утемисова",
+        "Инновационный Евразийский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Факультет сельского хозяйства",
+      "count": 8,
+      "sample_categories": [
+        "AGRICULTURE"
+      ],
+      "sample_universities": [
+        "Кагосимский университет",
+        "Университет Вакаяма",
+        "Университет Гифу"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Факультет медицины",
+      "count": 8,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Кагосимский университет",
+        "Университет Вакаяма",
+        "Университет Гифу"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Экология и окружающая среда",
+      "count": 8,
+      "sample_categories": [
+        "ENVIRONMENTAL_STUDIES"
+      ],
+      "sample_universities": [
+        "Префектурный университет Исикава",
+        "Префектурный университет Кумамото",
+        "Префектурный университет Фукуока"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Philosophy",
+      "count": 7,
+      "sample_categories": [
+        "PHILOSOPHY"
+      ],
+      "sample_universities": [
+        "Seoul National University (SNU)",
+        "The Chinese University of Hong Kong",
+        "Université de Lyon"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Философия, политика и экономика (PPE)",
+      "count": 7,
+      "sample_categories": [
+        "SOCIAL_SCIENCES",
+        "PHILOSOPHY"
+      ],
+      "sample_universities": [
+        "Баллиол-колледж, Оксфордский университет",
+        "Колледж Брейзноза, Оксфордский университет",
+        "Колледж Святого Петра, Оксфордский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Business Management",
+      "count": 7,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Бристольский университет",
+        "Ланкастерский университет",
+        "Ливерпульский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Материаловедение и инженерия",
+      "count": 7,
+      "sample_categories": [
+        "NATURAL_SCIENCES",
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Восточно-китайский университет науки и технологии",
+        "Измирский технический университет",
+        "Пекинский университет материаловедения и инженерии"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Иностранные языки и литература",
+      "count": 7,
+      "sample_categories": [
+        "LINGUISTICS"
+      ],
+      "sample_universities": [
+        "Гванчжуский национальный педагогический университет",
+        "Пекинский педагогический университет",
+        "Токийский педагогический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Корейский язык и литература",
+      "count": 7,
+      "sample_categories": [
+        "LINGUISTICS"
+      ],
+      "sample_universities": [
+        "Гёнгинский национальный университет образования",
+        "Корейский национальный университет образования",
+        "Пусанский национальный университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Инженерия окружающей среды",
+      "count": 7,
+      "sample_categories": [
+        "ENVIRONMENTAL_STUDIES",
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Инчхонский национальный университет",
+        "Сунчхонский национальный университет",
+        "Технологический университет Тарб – Окситания Пиренеи"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр в области управления бизнесом",
+      "count": 7,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Итальянский университет онлайн",
+        "Квебекский университет в Римуски",
+        "Квебекский университет в Уатуе"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Морская инженерия",
+      "count": 7,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Корейский морской и океанический университет",
+        "Поморский университет в Слупске",
+        "Токийский университет морских наук и технологий"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Спортивная тренировка",
+      "count": 7,
+      "sample_categories": [
+        "EDUCATION",
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Краковский университет физического воспитания",
+        "Пекинский университет спорта",
+        "Столичный университет физического воспитания и спорта"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Philology",
+      "count": 7,
+      "sample_categories": [
+        "LINGUISTICS",
+        "HUMANITIES"
+      ],
+      "sample_universities": [
+        "Кюсюский университет",
+        "Мадридский университет Комплутенсе",
+        "Московский городской университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Civil Engineering",
+      "count": 7,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Мадридский политехнический университет",
+        "Мадридский университет дистанционного обучения",
+        "Малагский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Applied Mathematics and Informatics",
+      "count": 7,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY",
+        "MATHEMATICS"
+      ],
+      "sample_universities": [
+        "Московский государственный технический университет имени Н. Э. Баумана",
+        "Московский государственный университет имени М. В. Ломоносова",
+        "Национальный исследовательский технологический университет «МИСиС»"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Data Science",
+      "count": 6,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Goethe-Universität Frankfurt",
+        "University of Basel",
+        "Алматы Менеджмент Университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавриат по истории",
+      "count": 6,
+      "sample_categories": [
+        "HISTORY"
+      ],
+      "sample_universities": [
+        "Аберистуитский университет",
+        "Йельский университет",
+        "Йоркский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Образование и педагогика",
+      "count": 6,
+      "sample_categories": [
+        "EDUCATION"
+      ],
+      "sample_universities": [
+        "Акитский префектурный университет",
+        "Ардаханский университет",
+        "Гильдесхаймский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Казахский язык и литература",
+      "count": 6,
+      "sample_categories": [
+        "SOCIAL_SCIENCES",
+        "HUMANITIES"
+      ],
+      "sample_universities": [
+        "Аркалыкский педагогический институт имени Ыбырая Алтынсарина",
+        "Атырауский университет имени Х. Досмухамедова",
+        "Восточно-Казахстанский государственный университет имени Сарсена Аманжолова"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Градостроительство",
+      "count": 6,
+      "sample_categories": [
+        "ARCHITECTURE",
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Архитектурный институт в Праге (ARCHIP)",
+        "Баухаус-Университет Веймар",
+        "Казанский государственный архитектурно-строительный университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Теплоэнергетика и теплотехника",
+      "count": 6,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Астраханский государственный технический университет",
+        "Брянский государственный технический университет",
+        "Волгоградский государственный технический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Зоотехния",
+      "count": 6,
+      "sample_categories": [
+        "AGRICULTURE"
+      ],
+      "sample_universities": [
+        "Брянский государственный аграрный университет",
+        "Вроцлавский университет наук о земле и жизни",
+        "Кабардино-Балкарский государственный аграрный университет имени В. М. Кокова"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Финансы и бухгалтерский учет",
+      "count": 6,
+      "sample_categories": [
+        "ECONOMICS"
+      ],
+      "sample_universities": [
+        "Варшавская школа экономики",
+        "Краковский экономический университет",
+        "Познанский экономический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Физическая культура",
+      "count": 6,
+      "sample_categories": [
+        "EDUCATION",
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Вроцлавский университет наук о здоровье и спорте",
+        "Гданьский университет физического воспитания и спорта",
+        "Краковский университет физического воспитания"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Электротехника и информационные технологии",
+      "count": 6,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Гамбургский технический университет",
+        "Рейнско-Вестфальский технический университет Ахена",
+        "Технический университет Берлина"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Педагогика и образование",
+      "count": 6,
+      "sample_categories": [
+        "EDUCATION"
+      ],
+      "sample_universities": [
+        "Гванчжуский национальный педагогический университет",
+        "Гёнгинский национальный университет образования",
+        "Гончжу Национальный университет педагогики"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Естественные науки, математика и статистика",
+      "count": 6,
+      "sample_categories": [
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Евразийский национальный университет имени Л.Н. Гумилева",
+        "Западно-Казахстанский университет имени Махамбета Утемисова",
+        "Инновационный Евразийский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Информационно-коммуникационные технологии",
+      "count": 6,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Евразийский национальный университет имени Л.Н. Гумилева",
+        "Западно-Казахстанский университет имени Махамбета Утемисова",
+        "Инновационный Евразийский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Искусство и дизайн",
+      "count": 6,
+      "sample_categories": [
+        "ARTS_DESIGN"
+      ],
+      "sample_universities": [
+        "Женский университет Нара",
+        "Колледж Мейрион-Дуайфор",
+        "Норвичский университет искусств"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Информационные и коммуникационные технологии",
+      "count": 6,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Институт науки и технологий Тэгу Кёнбук",
+        "Пекинский университет почты и телекоммуникаций",
+        "Технологический институт Кюсю"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр социальных наук",
+      "count": 6,
+      "sample_categories": [
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Канадский меннонитский университет",
+        "Университет Рузвельта",
+        "Университет Саскачевана"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Педагогика и методика начального образования",
+      "count": 6,
+      "sample_categories": [
+        "EDUCATION"
+      ],
+      "sample_universities": [
+        "Карагандинская академия «Bolashaq»",
+        "Кокшетауский университет имени Абая Мырзахметова",
+        "Костанайский региональный университет имени Ахмета Байтурсынова"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр в области компьютерных наук",
+      "count": 6,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Кардиффский Метрополитенский университет",
+        "Квебекский университет в Римуски",
+        "Университет Бакингемшира Нью"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бизнес и менеджмент",
+      "count": 6,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Кардиффский университет",
+        "Королевский колледж Мэри Лондонского университета",
+        "Суонсийский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Геология",
+      "count": 6,
+      "sample_categories": [
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Китайский университет геонаук (Пекин)",
+        "Китайский университет горного дела и технологии (Пекинский филиал)",
+        "Китайский университет нефти (Пекин)"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Библейские исследования",
+      "count": 6,
+      "sample_categories": [
+        "HUMANITIES"
+      ],
+      "sample_universities": [
+        "Корейский баптистский теологический университет и семинария",
+        "Корейский христианский университет",
+        "Пусанский пресвитерианский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Journalism",
+      "count": 6,
+      "sample_categories": [
+        "JOURNALISM",
+        "COMMUNICATION"
+      ],
+      "sample_universities": [
+        "Korkyt Ata Kyzylorda University",
+        "Khoja Ahmed Yasawi International Kazakh-Turkish University",
+        "Метрополитен университет в Праге"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Information Systems and Technologies",
+      "count": 6,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Международный гуманитарно-технический институт",
+        "Московский государственный строительный университет",
+        "Московский государственный университет геодезии и картографии"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Науки о жизни",
+      "count": 6,
+      "sample_categories": [
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Префектуральный университет Нара",
+        "Префектурный университет Тояма",
+        "Префектурный университет Ямагучи"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр медицины",
+      "count": 6,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Сиднейский университет",
+        "Университет Далхаузи",
+        "Университет Квинсленда"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Журналистика и коммуникации",
+      "count": 6,
+      "sample_categories": [
+        "JOURNALISM",
+        "COMMUNICATION"
+      ],
+      "sample_universities": [
+        "Университет CEU Карденал Эррера",
+        "Университет Батлера",
+        "Университет Камило Хосе Села"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр делового администрирования (BBA)",
+      "count": 6,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Университет Бишопс",
+        "Университет Йорквилл",
+        "Университет Капилано"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Магистратура по праву",
+      "count": 6,
+      "sample_categories": [
+        "LAW"
+      ],
+      "sample_universities": [
+        "Университет Ле-Мана",
+        "Университет Лиможа",
+        "Университет Пикардии Жюль Верн"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Business and Management",
+      "count": 5,
+      "sample_categories": [
+        "SOCIAL_SCIENCES",
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Imperial College London",
+        "Даремский университет",
+        "Кентский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Chemical Engineering",
+      "count": 5,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Korea Advanced Institute of Science and Technology",
+        "University of California, Los Angeles",
+        "Монреальская политехника"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Information Systems",
+      "count": 5,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "The University of New South Wales",
+        "University of Zurich",
+        "Международный университет Астана"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Design",
+      "count": 5,
+      "sample_categories": [
+        "GRAPHIC_DESIGN",
+        "ARTS_DESIGN"
+      ],
+      "sample_universities": [
+        "The University of Western Australia",
+        "University of Cambridge",
+        "Грузинский технический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Экология",
+      "count": 5,
+      "sample_categories": [
+        "ENVIRONMENTAL_STUDIES",
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Аграрный университет Таджикистана",
+        "Бухарский инженерно-технологический институт",
+        "Карагандинский университет Казпотребсоюза"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Интерьерный дизайн",
+      "count": 5,
+      "sample_categories": [
+        "INTERIOR_DESIGN"
+      ],
+      "sample_universities": [
+        "Академия изящных искусств в Варшаве",
+        "Академия искусств, архитектуры и дизайна в Праге",
+        "Академия искусств и дизайна имени Эугениуша Гепперта во Вроцлаве"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Дирижирование",
+      "count": 5,
+      "sample_categories": [
+        "MUSIC"
+      ],
+      "sample_universities": [
+        "Академия музыки имени Игнацы Яна Падеревского в Познани",
+        "Академия музыки имени Кароля Липиньского во Вроцлаве",
+        "Академия музыки имени Станислава Монюшко в Гданьске"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Учет и аудит",
+      "count": 5,
+      "sample_categories": [
+        "ECONOMICS",
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Алматинский гуманитарно-экономический университет",
+        "Алматы Менеджмент Университет",
+        "Гуманитарно-техническая академия"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Электроэнергетика",
+      "count": 5,
+      "sample_categories": [
+        "ENGINEERING",
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Алматинский университет энергетики и связи",
+        "Екибастузский инженерно-технический институт имени академика К.Сатпаева",
+        "Костанайский социально-технический университет имени академика Зулкарнай Алдамжара"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Информационная безопасность",
+      "count": 5,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Алматинский университет энергетики и связи",
+        "Атырауский университет нефти и газа имени С. Утебаева",
+        "Казанский национальный исследовательский технический университет имени А. Н. Туполева – КАИ"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Ресторанное дело и гостиничный бизнес",
+      "count": 5,
+      "sample_categories": [
+        "SOCIAL_SCIENCES",
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Алматы Менеджмент Университет",
+        "Казахская академия спорта и туризма",
+        "Казахский университет международных отношений и мировых языков имени Абылай хана"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр наук в области информатики",
+      "count": 5,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Аляскинский университет в Анкоридже",
+        "Индианский университет в Индианаполисе",
+        "Университет Лаваля"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Русский язык и литература",
+      "count": 5,
+      "sample_categories": [
+        "SOCIAL_SCIENCES",
+        "LINGUISTICS"
+      ],
+      "sample_universities": [
+        "Аркалыкский педагогический институт имени Ыбырая Алтынсарина",
+        "Восточно-Казахстанский государственный университет имени Сарсена Аманжолова",
+        "Павлодарский педагогический университет имени Әлкей Марғұлан"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Программная инженерия",
+      "count": 5,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY",
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Астана IT Университет",
+        "ИТМО",
+        "Пекинский университет информационных наук и технологий"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бухгалтерский учет, анализ и аудит",
+      "count": 5,
+      "sample_categories": [
+        "ECONOMICS"
+      ],
+      "sample_universities": [
+        "Белгородский университет кооперации, экономики и права",
+        "Ростовский государственный экономический университет (РИНХ)",
+        "Санкт-Петербургский государственный университет экономики"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Лесное хозяйство",
+      "count": 5,
+      "sample_categories": [
+        "ENVIRONMENTAL_STUDIES",
+        "AGRICULTURE"
+      ],
+      "sample_universities": [
+        "Варшавский университет наук о жизни",
+        "Краковский университет сельского хозяйства",
+        "Пекинский лесотехнический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Туризм и рекреация",
+      "count": 5,
+      "sample_categories": [
+        "SOCIAL_SCIENCES",
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Высшая школа в Бельско-Бяле",
+        "Гданьский университет физического воспитания и спорта",
+        "Краковский университет физического воспитания"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Медиа и коммуникации",
+      "count": 5,
+      "sample_categories": [
+        "COMMUNICATION",
+        "MEDIA_STUDIES"
+      ],
+      "sample_universities": [
+        "Гильдесхаймский университет",
+        "Европейский университет Фленсбург",
+        "Университет Святого Сердца"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Переводческое дело",
+      "count": 5,
+      "sample_categories": [
+        "SOCIAL_SCIENCES",
+        "HUMANITIES",
+        "LINGUISTICS"
+      ],
+      "sample_universities": [
+        "Евразийский гуманитарный институт имени А.К. Кусаинова",
+        "Египетский университет исламской культуры «Нур-Мубарак» в Казахстане",
+        "Западно-Казахстанский инновационно-технологический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Социальные науки, журналистика и информация",
+      "count": 5,
+      "sample_categories": [
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Евразийский национальный университет имени Л.Н. Гумилева",
+        "Западно-Казахстанский университет имени Махамбета Утемисова",
+        "Инновационный Евразийский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Искусство и гуманитарные науки",
+      "count": 5,
+      "sample_categories": [
+        "HUMANITIES",
+        "ARTS_DESIGN"
+      ],
+      "sample_universities": [
+        "Евразийский национальный университет имени Л.Н. Гумилева",
+        "Западно-Казахстанский университет имени Махамбета Утемисова",
+        "Инновационный Евразийский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Педагогические Науки",
+      "count": 5,
+      "sample_categories": [
+        "EDUCATION",
+        "SOCIAL_SCIENCES",
+        "HUMANITIES"
+      ],
+      "sample_universities": [
+        "Евразийский национальный университет имени Л.Н. Гумилева",
+        "Западно-Казахстанский университет имени Махамбета Утемисова",
+        "Казахский национальный женский педагогический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Электроника и электротехника",
+      "count": 5,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Измирский технический университет",
+        "Институт технологии Китами",
+        "Пекинский технологический институт"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Геофизика",
+      "count": 5,
+      "sample_categories": [
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Китайский университет горного дела и технологии (Пекинский филиал)",
+        "Нью-Мексиканский институт горного дела и технологии",
+        "Санкт-Петербургский горный университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Information Security",
+      "count": 5,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Московский государственный технический университет имени Н. Э. Баумана",
+        "Национальный исследовательский университет «Московский авиационный институт (национальный исследовательский университет)»",
+        "Национальный исследовательский университет «Московский энергетический институт»"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Перевод и переводоведение",
+      "count": 5,
+      "sample_categories": [
+        "LINGUISTICS"
+      ],
+      "sample_universities": [
+        "Нижегородский государственный лингвистический университет имени Н. А. Добролюбова",
+        "Пекинский университет международных исследований",
+        "Тяньцзиньский университет иностранных языков"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Клиническая медицина",
+      "count": 5,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Пекинский объединённый медицинский колледж",
+        "Столичный медицинский университет",
+        "Тяньцзиньский медицинский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Международная экономика и торговля",
+      "count": 5,
+      "sample_categories": [
+        "ECONOMICS"
+      ],
+      "sample_universities": [
+        "Пекинский университет международного бизнеса и экономики",
+        "Пекинский университет технологий и бизнеса",
+        "Университет международных отношений"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Финансы и кредит",
+      "count": 5,
+      "sample_categories": [
+        "ECONOMICS"
+      ],
+      "sample_universities": [
+        "Российский экономический университет имени Г. В. Плеханова",
+        "Ростовский государственный экономический университет (РИНХ)",
+        "Санкт-Петербургский государственный университет экономики"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Радиотехника",
+      "count": 5,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Санкт-Петербургский государственный университет аэрокосмического приборостроения",
+        "Санкт-Петербургский государственный университет телекоммуникаций им. проф. М. А. Бонч-Бруевича",
+        "Санкт-Петербургский электротехнический университет «ЛЭТИ» имени В. И. Ульянова (Ленина)"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Международная торговля",
+      "count": 5,
+      "sample_categories": [
+        "ECONOMICS",
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Столичный университет экономики и бизнеса",
+        "Тяньцзиньский университет коммерции",
+        "Тяньцзиньский университет финансов и экономики"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр медицины и здравоохранения",
+      "count": 5,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Тасманийский университет",
+        "Университет Гриффит",
+        "Университет Ла Троб"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Информационные и вычислительные науки",
+      "count": 5,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Тяньцзиньский технологический университет",
+        "Тяньцзиньский университет науки и технологии",
+        "Чунцинский инженерный институт"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Коммуникация",
+      "count": 5,
+      "sample_categories": [
+        "COMMUNICATION"
+      ],
+      "sample_universities": [
+        "Университет Люмьер Лион 2",
+        "Университет Париж 1 Пантеон-Сорбонна",
+        "Университет Париж VIII Вэнсен — Сен-Дени"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Агробизнес",
+      "count": 4,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION",
+        "AGRICULTURE"
+      ],
+      "sample_universities": [
+        "McGill University",
+        "Профессиональный университет сельского хозяйства Сидзуока",
+        "Университет Харпер Адамс"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Aerospace Engineering",
+      "count": 4,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Seoul National University (SNU)",
+        "Université Paris-Saclay",
+        "University of California, Los Angeles"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Software Engineering",
+      "count": 4,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Universiti Sains Malaysia",
+        "Медиполь Университет Анкары",
+        "Международный университет информационных технологий"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Магистр образования",
+      "count": 4,
+      "sample_categories": [
+        "EDUCATION"
+      ],
+      "sample_universities": [
+        "Австралийский католический университет",
+        "Аттабаскинский университет",
+        "Восточный Вашингтонский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Графика",
+      "count": 4,
+      "sample_categories": [
+        "GRAPHIC_DESIGN"
+      ],
+      "sample_universities": [
+        "Академия изящных искусств в Гданьске",
+        "Академия изящных искусств в Праге",
+        "Академия изящных искусств имени Владислава Стшеминьского в Лодзи"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Мода и текстиль",
+      "count": 4,
+      "sample_categories": [
+        "FASHION_DESIGN"
+      ],
+      "sample_universities": [
+        "Академия изящных искусств имени Яна Матейко в Кракове",
+        "Академия искусств, архитектуры и дизайна в Праге",
+        "Академия искусств и дизайна имени Эугениуша Гепперта во Вроцлаве"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Музыкология",
+      "count": 4,
+      "sample_categories": [
+        "HUMANITIES"
+      ],
+      "sample_universities": [
+        "Академия музыки имени Гражины и Кежстута Бацевичей в Лодзи",
+        "Китайская консерватория музыки",
+        "Центральная консерватория музыки"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Инструментальное исполнительство",
+      "count": 4,
+      "sample_categories": [
+        "MUSIC"
+      ],
+      "sample_universities": [
+        "Академия музыки имени Гражины и Кежстута Бацевичей в Лодзи",
+        "Академия музыки имени Игнацы Яна Падеревского в Познани",
+        "Варшавская музыкальная академия имени Фредерика Шопена"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Туризм и гостиничное дело",
+      "count": 4,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "АКЦЕНТ Колледж",
+        "Стамбульский университет культуры",
+        "Университет Невшехир Хаджи Бекташ Вели"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Магистр наук",
+      "count": 4,
+      "sample_categories": [
+        "NATURAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Альбертский университет",
+        "Университет Акадия",
+        "Университет Монктон"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр инженерных наук",
+      "count": 4,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Аляскинский университет в Анкоридже",
+        "Королевский военный колледж Сен-Жан",
+        "Университет Лейкхед"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Аэрокосмическая инженерия",
+      "count": 4,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Аэрокосмический университет Эмбри-Риддл",
+        "Калифорнийский политехнический государственный университет, Сан-Луис-Обиспо",
+        "Корейский аэрокосмический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Управление воздушным движением",
+      "count": 4,
+      "sample_categories": [
+        "ENGINEERING",
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Аэрокосмический университет Эмбри-Риддл",
+        "Военно-воздушный университет имени маршала авиации Станислава Вежбицкого",
+        "Китайский университет гражданской авиации"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавриат по инженерии",
+      "count": 4,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Британский университет Колумбии",
+        "Университет Деусто",
+        "Университет Дюкейн"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Электротехника",
+      "count": 4,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Варшавская политехника",
+        "Высшая школа технологий (École de technologie supérieure)",
+        "Корейский институт передовых наук и технологий"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Магистратура по теологии",
+      "count": 4,
+      "sample_categories": [
+        "HUMANITIES"
+      ],
+      "sample_universities": [
+        "Виклиф Холл, Университет Оксфорда",
+        "Католический институт Вандеи",
+        "Католический институт Тулузы"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Электроника и телекоммуникации",
+      "count": 4,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Военный университет технологии в Варшаве",
+        "Гданьский Технический Университет",
+        "Познанский технический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Химическая инженерия и технологии",
+      "count": 4,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Восточно-китайский университет науки и технологии",
+        "Пекинский университет химической технологии",
+        "Тяньцзиньский технологический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавриат по образованию",
+      "count": 4,
+      "sample_categories": [
+        "EDUCATION"
+      ],
+      "sample_universities": [
+        "Вустерский университет",
+        "Университет Йорк Сент-Джон",
+        "Университет Ливерпуль Хоуп"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Логистика и управление цепями поставок",
+      "count": 4,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Высшая школа логистики",
+        "Гдыньский морской университет",
+        "Тяньцзиньский университет коммерции"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Физиотерапия и реабилитация",
+      "count": 4,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Высшая школа физического воспитания и спорта Палестра",
+        "Университет Безмиялем Вакыф",
+        "Университет здравоохранения и технологий Коджаэли"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Мода и дизайн",
+      "count": 4,
+      "sample_categories": [
+        "FASHION_DESIGN"
+      ],
+      "sample_universities": [
+        "Гванчжуский женский университет",
+        "Префектурный женский университет Гунма",
+        "Сеульский женский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Общественные науки",
+      "count": 4,
+      "sample_categories": [
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Городской университет Хиросимы",
+        "Префектурный университет Окаяма",
+        "Университет города Нагоя"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Педагогика и методика начального обучения",
+      "count": 4,
+      "sample_categories": [
+        "SOCIAL_SCIENCES",
+        "EDUCATION"
+      ],
+      "sample_universities": [
+        "Евразийский гуманитарный институт имени А.К. Кусаинова",
+        "Западно-Казахстанский инновационно-технологический университет",
+        "Казахстанско-Американский свободный университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бизнес, управление и право",
+      "count": 4,
+      "sample_categories": [
+        "SOCIAL_SCIENCES"
+      ],
+      "sample_universities": [
+        "Евразийский национальный университет имени Л.Н. Гумилева",
+        "Западно-Казахстанский университет имени Махамбета Утемисова",
+        "Инновационный Евразийский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Магистр финансов",
+      "count": 4,
+      "sample_categories": [
+        "ECONOMICS",
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Европейская школа менеджмента и технологий в Берлине",
+        "Университет Боккони",
+        "Франкфуртская школа финансов и менеджмента"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Магистратура по бизнес-администрированию (MBA)",
+      "count": 4,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Йоркский университет",
+        "Университет Голдсмитс, Лондон",
+        "Университет Дюкейн"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Инженерная экология",
+      "count": 4,
+      "sample_categories": [
+        "ENVIRONMENTAL_STUDIES",
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Казанский государственный архитектурно-строительный университет",
+        "Нижегородский государственный архитектурно-строительный университет",
+        "Санкт-Петербургский государственный архитектурно-строительный университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Менеджмент и управление",
+      "count": 4,
+      "sample_categories": [
+        "ECONOMICS",
+        "SOCIAL_SCIENCES",
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Казахский автомобильно-дорожный институт имени Л.Б. Гончарова",
+        "Казахский университет транспорта и коммуникаций имени М. Тынышпаева",
+        "Казахстанско-Немецкий университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Медико-профилактическое дело",
+      "count": 4,
+      "sample_categories": [
+        "NATURAL_SCIENCES",
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Казахский медицинский университет «Семей»",
+        "Казахский национальный медицинский университет имени С.Д. Асфендиярова",
+        "Казахстанско-Российский медицинский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Международное право",
+      "count": 4,
+      "sample_categories": [
+        "LAW"
+      ],
+      "sample_universities": [
+        "Казахский университет международных отношений и мировых языков имени Абылай хана",
+        "Китайский университет политических наук и права",
+        "Римский университет международных исследований"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр искусств в области коммуникаций",
+      "count": 4,
+      "sample_categories": [
+        "COMMUNICATION"
+      ],
+      "sample_universities": [
+        "Калифорнийский государственный университет в Лос-Анджелесе",
+        "Университет Нового Орлеана",
+        "Университет Пеппердин"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавриат по философии",
+      "count": 4,
+      "sample_categories": [
+        "PHILOSOPHY"
+      ],
+      "sample_universities": [
+        "Католический институт Вандеи",
+        "Католический институт Тулузы",
+        "Католический университет Запада"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Магистратура по философии",
+      "count": 4,
+      "sample_categories": [
+        "PHILOSOPHY"
+      ],
+      "sample_universities": [
+        "Католический институт Вандеи",
+        "Католический институт Парижа",
+        "Колледж Сэнт-Энтони, Оксфордский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Правоохранительная деятельность",
+      "count": 4,
+      "sample_categories": [
+        "LAW"
+      ],
+      "sample_universities": [
+        "Китайский народный университет общественной безопасности",
+        "Пекинский колледж народной полиции",
+        "Саратовская государственная юридическая академия"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Английская литература",
+      "count": 4,
+      "sample_categories": [
+        "HUMANITIES"
+      ],
+      "sample_universities": [
+        "Колледж Кебл, Оксфордский университет",
+        "Колледж Леди Маргарет Холл, Оксфордский университет",
+        "Колледж Род-Айленда"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Биомедицинские науки",
+      "count": 4,
+      "sample_categories": [
+        "NATURAL_SCIENCES",
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Королевский колледж Мэри Лондонского университета",
+        "Университет здравоохранения и науки штата Орегон",
+        "Университет Кеймён"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Автоматизация и робототехника",
+      "count": 4,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Кошалинский технический университет",
+        "Краковская горная академия имени Станислава Сташича",
+        "Опольский технологический университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Магистратура по экономике",
+      "count": 4,
+      "sample_categories": [
+        "ECONOMICS"
+      ],
+      "sample_universities": [
+        "Краковский экономический университет",
+        "Университет Версаля Сен-Кантен-ан-Ивелин",
+        "Университет Париж-Сорбонна Север"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Bachelor of Science in Computer Science",
+      "count": 4,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Лореншианский университет",
+        "Луизианский государственный университет",
+        "Манитобский университет"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Bachelor of Engineering",
+      "count": 4,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Манитобский университет",
+        "The University of Melbourne",
+        "Мемориальный университет Ньюфаундленда"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Cybersecurity",
+      "count": 4,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Международный университет информационных технологий",
+        "Национальный исследовательский университет «МИЭТ»",
+        "Национальный исследовательский университет «Московский физико-технический институт»"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Computer Science and Computer Engineering",
+      "count": 4,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Московский государственный технический университет имени Н. Э. Баумана",
+        "Национальный исследовательский Томский политехнический университет",
+        "Национальный исследовательский университет «МИЭТ»"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Applied Mathematics and Computer Science",
+      "count": 4,
+      "sample_categories": [
+        "MATHEMATICS",
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Мурманский государственный технический университет",
+        "Национальный исследовательский университет «МИЭТ»",
+        "Национальный исследовательский университет «Московский авиационный институт (национальный исследовательский университет)»"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Перевод и интерпретация",
+      "count": 4,
+      "sample_categories": [
+        "LINGUISTICS"
+      ],
+      "sample_universities": [
+        "Пекинский университет иностранных языков",
+        "Пекинский университет языка и культуры",
+        "Сычуаньский университет международных исследований"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Электротехника и автоматизация",
+      "count": 4,
+      "sample_categories": [
+        "ENGINEERING"
+      ],
+      "sample_universities": [
+        "Политехнический университет О-де-Франс",
+        "Северо-Китайский электротехнический университет",
+        "Тяньцзиньский китайско-германский университет прикладных наук"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр бизнес-администрирования",
+      "count": 4,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Сингапурский технологический институт",
+        "Университет Джеймса Кука в Сингапуре",
+        "Университет Крандолл"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр дизайна",
+      "count": 4,
+      "sample_categories": [
+        "ARTS_DESIGN"
+      ],
+      "sample_universities": [
+        "Технологический университет RMIT",
+        "Технологический университет Квинсленда",
+        "Технологический университет Сиднея"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Магистр информационных технологий",
+      "count": 4,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Технологический университет Сиднея",
+        "Технологический университет Суинберн",
+        "Университет Крандолл"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Магистратура по международному бизнесу",
+      "count": 4,
+      "sample_categories": [
+        "BUSINESS_ADMINISTRATION"
+      ],
+      "sample_universities": [
+        "Университет IE",
+        "Университет Деусто",
+        "Университет Йорк Сент-Джон"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр медицины и хирургии",
+      "count": 4,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Университет Аделаиды",
+        "Университет Джеймса Кука",
+        "Университет Западной Австралии"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Магистр искусств",
+      "count": 4,
+      "sample_categories": [
+        "HUMANITIES"
+      ],
+      "sample_universities": [
+        "Университет Акадия",
+        "Университет Монктон",
+        "Университет Святого Томаса"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Медицинская лабораторная техника",
+      "count": 4,
+      "sample_categories": [
+        "HEALTH_MEDICINE"
+      ],
+      "sample_universities": [
+        "Университет Безмиялем Вакыф",
+        "Университет здравоохранения и технологий Коджаэли",
+        "Университет Локман Хеким"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Бакалавр наук (BSc) в области компьютерных наук",
+      "count": 4,
+      "sample_categories": [
+        "INFORMATION_TECHNOLOGY"
+      ],
+      "sample_universities": [
+        "Университет Бишоп Гроссетест",
+        "Университет Вестминстера",
+        "Университет Уэльса Тринити Сент-Дэвид"
+      ],
+      "direction_slugs": []
+    },
+    {
+      "name": "Французский язык и литература",
+      "count": 4,
+      "sample_categories": [
+        "LINGUISTICS"
+      ],
+      "sample_universities": [
+        "Университет Бордо Монтань",
+        "Университет Поль Валери Монпелье",
+        "Университет Сорбонна Новая — Париж III"
+      ],
+      "direction_slugs": []
+    }
+  ]
+}

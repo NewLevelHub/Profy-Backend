@@ -48,6 +48,10 @@ class UniversityBrief(BaseModel):
     uniranks_world_rank: int | None
     uniranks_note: str | None
     description: str | None = None
+    # Reads University.image_url — a computed property (see that model),
+    # never a stored column, so a storage/CDN vendor swap never needs a DB
+    # backfill.
+    image_url: str | None = None
 
     model_config = {"from_attributes": True}
 

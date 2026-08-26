@@ -164,3 +164,15 @@ docker-compose exec api python scripts/backfill_foreign_cost_numeric_pass2.py --
 # servant) are deliberately left untouched — see script docstring. Only
 # subjects, not the grant-threshold scores (a separate, harder problem).
 docker-compose exec api python scripts/apply_ent_profile_subjects.py --apply
+
+# jinaq world university directory (2313 universities / 32 countries, 10,113
+# majors) — committed dataset in scripts/data/jinaq/universities.json, no
+# network access needed, ~30s. Idempotent: links to existing rows by exact
+# (name, city, country) match or creates new ones, upserts programs, never
+# touches price. See script docstring for the full rationale.
+docker-compose exec api python scripts/import_jinaq_universities.py
+# NOTE: scripts/import_jinaq_university_photos.py is intentionally NOT run
+# here — it downloads ~2300 images from the real jinaq.ai over the network
+# (~15 min) and is a one-time job, not a per-deploy step. Run it manually
+# once locally, then mirror the resulting MinIO bucket to prod storage
+# (`mc mirror local/profi-media prod/profi-media`) instead of re-downloading.

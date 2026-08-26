@@ -15,6 +15,8 @@ from app.models.question import Question  # noqa: F401 — keep model imported s
 from app.models.question_pair import QuestionPair  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.roadmap import Roadmap  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.university import University  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.university_image import UniversityImage  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.university_external_ref import UniversityExternalRef  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.user import User  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.user_response import UserResponse  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.goal_overlay import GoalOverlay  # noqa: F401 — keep model imported so Alembic discovers it
@@ -26,5 +28,6 @@ __all__ = [
     "EmailVerificationToken", "MotivationPair", "MotivationPairResponse",
     "MotivationResponse", "MotivationStatement", "PasswordResetToken",
     "Profile", "Program", "Question", "QuestionPair", "Roadmap",
-    "University", "User", "UserResponse", "GoalOverlay", "ProductFeedback",
+    "University", "UniversityImage", "UniversityExternalRef",
+    "User", "UserResponse", "GoalOverlay", "ProductFeedback",
 ]

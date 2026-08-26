@@ -69,3 +69,22 @@ class University(Base):
     fact_sources: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
     programs: Mapped[list["Program"]] = relationship("Program", back_populates="university", lazy="selectin")
+    images: Mapped[list["UniversityImage"]] = relationship(
+        "UniversityImage",
+        back_populates="university",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        order_by="UniversityImage.is_primary.desc()",
+    )
+
+    @property
+    def image_url(self) -> str | None:
+        """Public URL of this university's primary photo, or None if it has
+        none — computed from the first row of `images` (already sorted
+        primary-first) via the storage layer's key->URL builder, never
+        stored, so a storage/CDN vendor swap never needs a DB backfill."""
+        if not self.images:
+            return None
+        from app.integrations.storage.urls import build_public_url
+
+        return build_public_url(self.images[0].storage_key)
