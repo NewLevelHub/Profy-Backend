@@ -39,6 +39,7 @@ PROFESSIONS: list[dict] = [
     {"section": "Realistic", "title": "Горный инженер", "holland_code": "RIE"},
     {"section": "Realistic", "title": "Металлург", "holland_code": "RIC"},
     {"section": "Realistic", "title": "Военный (офицер)", "holland_code": "RES"},
+    {"section": "Realistic", "title": "Инженер-химик", "holland_code": "RCI"},
 
     # Investigative
     {"section": "Investigative", "title": "Разработчик программного обеспечения", "holland_code": "IRC"},
@@ -74,6 +75,8 @@ PROFESSIONS: list[dict] = [
     {"section": "Investigative", "title": "Судмедэксперт / Криминалист", "holland_code": "IRC"},
     {"section": "Investigative", "title": "Технический писатель", "holland_code": "ICA"},
     {"section": "Investigative", "title": "Океанолог / Гидролог", "holland_code": "IRE"},
+    {"section": "Investigative", "title": "Историк", "holland_code": "IAS"},
+    {"section": "Investigative", "title": "Медицинский лабораторный технолог", "holland_code": "ISR"},
 
     # Artistic
     {"section": "Artistic", "title": "Архитектор", "holland_code": "AIR"},
@@ -104,6 +107,7 @@ PROFESSIONS: list[dict] = [
     # "Цифровые медиа и коммуникации", "Цифровой маркетинг" exist and lead
     # here, unlike the informal "blogger" framing.
     {"section": "Artistic", "title": "Специалист по медиакоммуникациям", "holland_code": "AES"},
+    {"section": "Artistic", "title": "Филолог-лингвист", "holland_code": "ASI"},
 
     # Social
     {"section": "Social", "title": "Школьный учитель", "holland_code": "SAE"},
@@ -125,6 +129,7 @@ PROFESSIONS: list[dict] = [
     {"section": "Social", "title": "Медиатор / Конфликтолог", "holland_code": "SEA"},
     {"section": "Social", "title": "Профориентолог / Карьерный консультант", "holland_code": "SAE"},
     {"section": "Social", "title": "Педагог-психолог", "holland_code": "SAI"},
+    {"section": "Social", "title": "Теолог / Религиовед", "holland_code": "SAI"},
 
     # Enterprising
     {"section": "Enterprising", "title": "Предприниматель", "holland_code": "ESA"},

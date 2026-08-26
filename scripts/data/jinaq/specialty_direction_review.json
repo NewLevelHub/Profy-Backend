@@ -47,6 +47,11 @@
       "holland_code": "CSE"
     },
     {
+      "slug": "astronom",
+      "name": "Астроном",
+      "holland_code": "IRE"
+    },
+    {
       "slug": "auditor",
       "name": "Аудитор",
       "holland_code": "CSE"
@@ -87,6 +92,21 @@
       "holland_code": "RIE"
     },
     {
+      "slug": "data-engineer",
+      "name": "Data Engineer",
+      "holland_code": "ICR"
+    },
+    {
+      "slug": "defektolog",
+      "name": "Дефектолог",
+      "holland_code": "SAI"
+    },
+    {
+      "slug": "devops-inzhener",
+      "name": "DevOps-инженер",
+      "holland_code": "RCI"
+    },
+    {
       "slug": "diplomat",
       "name": "Дипломат",
       "holland_code": "ESA"
@@ -112,6 +132,11 @@
       "holland_code": "IAS"
     },
     {
+      "slug": "epidemiolog",
+      "name": "Эпидемиолог",
+      "holland_code": "IRS"
+    },
+    {
       "slug": "event-menedzher",
       "name": "Event-менеджер",
       "holland_code": "ESA"
@@ -120,6 +145,11 @@
       "slug": "farmatsevt",
       "name": "Фармацевт",
       "holland_code": "IES"
+    },
+    {
+      "slug": "filolog-lingvist",
+      "name": "Филолог-лингвист",
+      "holland_code": "ASI"
     },
     {
       "slug": "finansovyy-analitik",
@@ -132,9 +162,29 @@
       "holland_code": "ESR"
     },
     {
+      "slug": "finansovyy-kontroler",
+      "name": "Финансовый контролёр",
+      "holland_code": "CES"
+    },
+    {
+      "slug": "fizik",
+      "name": "Физик",
+      "holland_code": "IRE"
+    },
+    {
+      "slug": "fizioterapevt-massazhist",
+      "name": "Физиотерапевт / Массажист",
+      "holland_code": "SIR"
+    },
+    {
       "slug": "fotograf",
       "name": "Фотограф",
       "holland_code": "AES"
+    },
+    {
+      "slug": "genetik",
+      "name": "Генетик",
+      "holland_code": "IRS"
     },
     {
       "slug": "geodezist",
@@ -147,9 +197,19 @@
       "holland_code": "IRE"
     },
     {
+      "slug": "geymdizayner",
+      "name": "Геймдизайнер",
+      "holland_code": "ARI"
+    },
+    {
       "slug": "gid-ekskursovod",
       "name": "Гид-экскурсовод",
       "holland_code": "SEA"
+    },
+    {
+      "slug": "gornyy-inzhener",
+      "name": "Горный инженер",
+      "holland_code": "RIE"
     },
     {
       "slug": "gosudarstvennyy-sluzhaschiy",
@@ -167,6 +227,11 @@
       "holland_code": "IRE"
     },
     {
+      "slug": "hirurg",
+      "name": "Хирург",
+      "holland_code": "IRS"
+    },
+    {
       "slug": "horeograf",
       "name": "Хореограф",
       "holland_code": "AER"
@@ -182,6 +247,16 @@
       "holland_code": "ASI"
     },
     {
+      "slug": "illyustrator",
+      "name": "Иллюстратор",
+      "holland_code": "ASI"
+    },
+    {
+      "slug": "investitsionnyy-bankir",
+      "name": "Инвестиционный банкир",
+      "holland_code": "ESI"
+    },
+    {
       "slug": "inzhener-ekolog",
       "name": "Инженер-эколог",
       "holland_code": "IRE"
@@ -192,14 +267,44 @@
       "holland_code": "REI"
     },
     {
+      "slug": "inzhener-energetik",
+      "name": "Инженер-энергетик",
+      "holland_code": "RIE"
+    },
+    {
+      "slug": "inzhener-himik",
+      "name": "Инженер-химик",
+      "holland_code": "RCI"
+    },
+    {
+      "slug": "inzhener-konstruktor",
+      "name": "Инженер-конструктор",
+      "holland_code": "RIE"
+    },
+    {
       "slug": "inzhener-mehanik",
       "name": "Инженер-механик",
       "holland_code": "RIS"
     },
     {
+      "slug": "inzhener-po-avtomatizatsii-i-robototehnike",
+      "name": "Инженер по автоматизации и робототехнике",
+      "holland_code": "RIE"
+    },
+    {
+      "slug": "inzhener-po-kiberbezopasnosti",
+      "name": "Инженер по кибербезопасности",
+      "holland_code": "IRC"
+    },
+    {
       "slug": "inzhener-stroitel",
       "name": "Инженер-строитель",
       "holland_code": "RIE"
+    },
+    {
+      "slug": "inzhener-tehnolog-mashinostroenie",
+      "name": "Инженер-технолог (машиностроение)",
+      "holland_code": "RCI"
     },
     {
       "slug": "iskusstvoved",
@@ -210,6 +315,16 @@
       "slug": "issledovatel-v-oblasti-biotehnologiy",
       "name": "Исследователь в области биотехнологий",
       "holland_code": "IRS"
+    },
+    {
+      "slug": "istorik",
+      "name": "Историк",
+      "holland_code": "IAS"
+    },
+    {
+      "slug": "kompozitor",
+      "name": "Композитор",
+      "holland_code": "ASI"
     },
     {
       "slug": "kreditnyy-analitik",
@@ -227,9 +342,19 @@
       "holland_code": "RIS"
     },
     {
+      "slug": "logist",
+      "name": "Логист",
+      "holland_code": "CES"
+    },
+    {
       "slug": "logoped",
       "name": "Логопед",
       "holland_code": "SAI"
+    },
+    {
+      "slug": "marketolog",
+      "name": "Маркетолог",
+      "holland_code": "ESA"
     },
     {
       "slug": "mashinist-lokomotiva",
@@ -242,9 +367,19 @@
       "holland_code": "IRE"
     },
     {
+      "slug": "mediator-konfliktolog",
+      "name": "Медиатор / Конфликтолог",
+      "holland_code": "SEA"
+    },
+    {
       "slug": "meditsinskaya-sestra-medbrat",
       "name": "Медицинская сестра / медбрат",
       "holland_code": "SIA"
+    },
+    {
+      "slug": "meditsinskiy-laboratornyy-tehnolog",
+      "name": "Медицинский лабораторный технолог",
+      "holland_code": "ISR"
     },
     {
       "slug": "menedzher-po-prodazham",
@@ -252,14 +387,29 @@
       "holland_code": "ESR"
     },
     {
+      "slug": "metallurg",
+      "name": "Металлург",
+      "holland_code": "RIC"
+    },
+    {
       "slug": "meteorolog",
       "name": "Метеоролог",
       "holland_code": "IRS"
     },
     {
+      "slug": "mobile-razrabotchik",
+      "name": "Mobile-разработчик",
+      "holland_code": "IRC"
+    },
+    {
       "slug": "modeler",
       "name": "Модельер",
       "holland_code": "ASR"
+    },
+    {
+      "slug": "modnyy-stilist",
+      "name": "Модный стилист",
+      "holland_code": "ASE"
     },
     {
       "slug": "muzykant-ispolnitel",
@@ -270,6 +420,36 @@
       "slug": "nalogovyy-konsultant",
       "name": "Налоговый консультант",
       "holland_code": "CES"
+    },
+    {
+      "slug": "neyrobiolog",
+      "name": "Нейробиолог",
+      "holland_code": "IRE"
+    },
+    {
+      "slug": "notarius",
+      "name": "Нотариус",
+      "holland_code": "ESC"
+    },
+    {
+      "slug": "nutritsiolog-dietolog",
+      "name": "Нутрициолог / Диетолог",
+      "holland_code": "SIA"
+    },
+    {
+      "slug": "okeanolog-gidrolog",
+      "name": "Океанолог / Гидролог",
+      "holland_code": "IRE"
+    },
+    {
+      "slug": "pedagog-psiholog",
+      "name": "Педагог-психолог",
+      "holland_code": "SAI"
+    },
+    {
+      "slug": "pediatr",
+      "name": "Педиатр",
+      "holland_code": "ISA"
     },
     {
       "slug": "pilot-grazhdanskoy-aviatsii",
@@ -307,6 +487,31 @@
       "holland_code": "SEI"
     },
     {
+      "slug": "prodakt-menedzher",
+      "name": "Продакт-менеджер",
+      "holland_code": "EIA"
+    },
+    {
+      "slug": "proektnyy-menedzher",
+      "name": "Проектный менеджер",
+      "holland_code": "ECI"
+    },
+    {
+      "slug": "proforientolog-karernyy-konsultant",
+      "name": "Профориентолог / Карьерный консультант",
+      "holland_code": "SAE"
+    },
+    {
+      "slug": "prokuror",
+      "name": "Прокурор",
+      "holland_code": "ESC"
+    },
+    {
+      "slug": "psihiatr",
+      "name": "Психиатр",
+      "holland_code": "ISE"
+    },
+    {
       "slug": "psiholog-issledovatel",
       "name": "Психолог-исследователь",
       "holland_code": "IES"
@@ -315,6 +520,11 @@
       "slug": "psiholog-konsultant",
       "name": "Психолог-консультант",
       "holland_code": "SAE"
+    },
+    {
+      "slug": "qa-inzhener-testirovschik",
+      "name": "QA-инженер (тестировщик)",
+      "holland_code": "CRI"
     },
     {
       "slug": "razrabotchik-programmnogo-obespecheniya",
@@ -377,6 +587,11 @@
       "holland_code": "ESC"
     },
     {
+      "slug": "spetsialist-po-mediakommunikatsiyam",
+      "name": "Специалист по медиакоммуникациям",
+      "holland_code": "AES"
+    },
+    {
       "slug": "spetsialist-po-rabote-s-molodezhyu",
       "name": "Специалист по работе с молодёжью",
       "holland_code": "SEA"
@@ -402,6 +617,11 @@
       "holland_code": "CSR"
     },
     {
+      "slug": "sportivnyy-menedzher-agent",
+      "name": "Спортивный менеджер / агент",
+      "holland_code": "ESA"
+    },
+    {
       "slug": "stomatolog",
       "name": "Стоматолог",
       "holland_code": "ISR"
@@ -417,9 +637,34 @@
       "holland_code": "CSE"
     },
     {
+      "slug": "stsenarist",
+      "name": "Сценарист",
+      "holland_code": "ASI"
+    },
+    {
+      "slug": "sudmedekspert-kriminalist",
+      "name": "Судмедэксперт / Криминалист",
+      "holland_code": "IRC"
+    },
+    {
+      "slug": "sudya",
+      "name": "Судья",
+      "holland_code": "ESC"
+    },
+    {
+      "slug": "tehnicheskiy-pisatel",
+      "name": "Технический писатель",
+      "holland_code": "ICA"
+    },
+    {
       "slug": "tehnolog-pischevogo-proizvodstva",
       "name": "Технолог пищевого производства",
       "holland_code": "RCI"
+    },
+    {
+      "slug": "teolog-religioved",
+      "name": "Теолог / Религиовед",
+      "holland_code": "SAI"
     },
     {
       "slug": "trener-po-sportu",
@@ -437,9 +682,24 @@
       "holland_code": "ESR"
     },
     {
+      "slug": "urbanist-gradostroitel",
+      "name": "Урбанист / Градостроитель",
+      "holland_code": "AIR"
+    },
+    {
+      "slug": "ux-ui-dizayner",
+      "name": "UX/UI-дизайнер",
+      "holland_code": "AIE"
+    },
+    {
       "slug": "veterinar",
       "name": "Ветеринар",
       "holland_code": "IRS"
+    },
+    {
+      "slug": "voennyy-ofitser",
+      "name": "Военный (офицер)",
+      "holland_code": "RES"
     },
     {
       "slug": "vospitatel-detskogo-sada",
@@ -460,6 +720,11 @@
       "slug": "zhurnalist",
       "name": "Журналист",
       "holland_code": "ASE"
+    },
+    {
+      "slug": "zvukorezhisser",
+      "name": "Звукорежиссёр",
+      "holland_code": "ARI"
     }
   ],
   "specialties": [
@@ -474,7 +739,10 @@
         "Harvard University",
         "Mudanya University"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "predprinimatel",
+        "proektnyy-menedzher"
+      ]
     },
     {
       "name": "Психология",
@@ -488,7 +756,10 @@
         "Pontificia Universidad Católica Argentina",
         "Pontifícia Universidade Católica do Rio de Janeiro"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "psiholog-konsultant",
+        "psiholog-issledovatel"
+      ]
     },
     {
       "name": "Информатика",
@@ -501,7 +772,10 @@
         "Universidad de Buenos Aires",
         "Universidade Estadual de Campinas"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya",
+        "sistemnyy-analitik"
+      ]
     },
     {
       "name": "Экономика",
@@ -515,7 +789,10 @@
         "Fundação Getulio Vargas",
         "Massachusetts Institute of Technology"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "ekonomist-analitik",
+        "finansovyy-analitik"
+      ]
     },
     {
       "name": "Медицина",
@@ -529,7 +806,9 @@
         "Heidelberg University",
         "Stanford University"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "vrach-obschey-praktiki"
+      ]
     },
     {
       "name": "Компьютерные науки",
@@ -542,7 +821,10 @@
         "Luther University",
         "Massachusetts Institute of Technology"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya",
+        "analitik-dannyh"
+      ]
     },
     {
       "name": "Право",
@@ -555,7 +837,9 @@
         "Harvard University",
         "Universidad de Buenos Aires"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "yurist-advokat"
+      ]
     },
     {
       "name": "Международные отношения",
@@ -570,7 +854,9 @@
         "Australian National University",
         "Luther University"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "diplomat"
+      ]
     },
     {
       "name": "Инженерия",
@@ -596,7 +882,10 @@
         "University of the Hesperides",
         "University of the Middle Atlantic"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya",
+        "sistemnyy-administrator"
+      ]
     },
     {
       "name": "Биология",
@@ -611,7 +900,9 @@
         "Автономный университет Барселоны",
         "Автономный университет Мадрида"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "biolog"
+      ]
     },
     {
       "name": "Юриспруденция",
@@ -625,7 +916,9 @@
         "Адыгейский государственный университет",
         "Алтайский государственный университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "yurist-advokat"
+      ]
     },
     {
       "name": "Образование",
@@ -638,7 +931,10 @@
         "Висконсинский университет в О-Клер",
         "Висконсинский университет в Оскоше"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "shkolnyy-uchitel",
+        "prepodavatel-vuza"
+      ]
     },
     {
       "name": "Механическая инженерия",
@@ -651,7 +947,9 @@
         "Анадолу университет",
         "Баликесирский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-mehanik"
+      ]
     },
     {
       "name": "История",
@@ -666,7 +964,9 @@
         "University of Oxford",
         "Адыгейский государственный университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "istorik"
+      ]
     },
     {
       "name": "Computer Science",
@@ -679,7 +979,9 @@
         "Aix-Marseille Université",
         "Erasmus University Rotterdam"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Архитектура",
@@ -692,7 +994,9 @@
         "Акденизский университет",
         "Анадолу университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "arhitektor"
+      ]
     },
     {
       "name": "Филология",
@@ -706,7 +1010,9 @@
         "Алтайский государственный гуманитарно-педагогический университет",
         "Алтайский государственный университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "filolog-lingvist"
+      ]
     },
     {
       "name": "Инженерное дело",
@@ -732,7 +1038,9 @@
         "Военный колледж Южной Каролины «Цитадель»",
         "Восточный Вашингтонский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Экономика и управление",
@@ -746,7 +1054,9 @@
         "Бранденбургский технический университет Котбус-Зенфтенберг",
         "Брешийский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "ekonomist-analitik"
+      ]
     },
     {
       "name": "Economics",
@@ -760,7 +1070,9 @@
         "Duke-NUS Medical School",
         "École Polytechnique"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "ekonomist-analitik"
+      ]
     },
     {
       "name": "Машиностроение",
@@ -774,7 +1086,10 @@
         "Белостокский технологический университет",
         "Бранденбургский технический университет Котбус-Зенфтенберг"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-mehanik",
+        "inzhener-konstruktor"
+      ]
     },
     {
       "name": "Фармация",
@@ -788,7 +1103,9 @@
         "Астраханский государственный медицинский университет",
         "Бялостокский медицинский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "farmatsevt"
+      ]
     },
     {
       "name": "Medicine",
@@ -801,7 +1118,9 @@
         "École Polytechnique",
         "Erasmus University Rotterdam"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "vrach-obschey-praktiki"
+      ]
     },
     {
       "name": "Менеджмент",
@@ -815,7 +1134,9 @@
         "Алматинский гуманитарно-экономический университет",
         "Алматы Менеджмент Университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "proektnyy-menedzher"
+      ]
     },
     {
       "name": "Гражданское строительство",
@@ -828,7 +1149,9 @@
         "Атлантико-Средиземноморский технологический университет",
         "Барселонский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-stroitel"
+      ]
     },
     {
       "name": "Бакалавр бизнеса",
@@ -841,7 +1164,9 @@
         "Виндзорский университет",
         "Виннипегский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "predprinimatel"
+      ]
     },
     {
       "name": "Стоматология",
@@ -856,7 +1181,9 @@
         "Астраханский государственный медицинский университет",
         "Бялостокский медицинский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "stomatolog"
+      ]
     },
     {
       "name": "Engineering",
@@ -882,7 +1209,9 @@
         "Амурский государственный университет",
         "Астраханский государственный университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Информационные системы и технологии",
@@ -895,7 +1224,10 @@
         "Белгородский государственный технологический университет имени В. Г. Шухова",
         "Брянский государственный технический университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "sistemnyy-analitik",
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Математика",
@@ -909,7 +1241,9 @@
         "University of California, Berkeley",
         "Адыгейский государственный университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "matematik"
+      ]
     },
     {
       "name": "Журналистика",
@@ -924,7 +1258,9 @@
         "Американский университет",
         "Бостонский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "zhurnalist"
+      ]
     },
     {
       "name": "Бакалавр делового администрирования",
@@ -937,7 +1273,9 @@
         "Аттабаскинский университет",
         "Гартфордский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "predprinimatel"
+      ]
     },
     {
       "name": "Law",
@@ -950,7 +1288,9 @@
         "KAIST",
         "Kyoto University"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "yurist-advokat"
+      ]
     },
     {
       "name": "Педагогика",
@@ -963,7 +1303,9 @@
         "Гванчжуский женский университет",
         "Городской университет Градец-Кралове"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "shkolnyy-uchitel"
+      ]
     },
     {
       "name": "Физика",
@@ -977,7 +1319,9 @@
         "Аркалыкский педагогический институт имени Ыбырая Алтынсарина",
         "Баллиол-колледж, Оксфордский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "fizik"
+      ]
     },
     {
       "name": "Бакалавр информационных технологий",
@@ -990,7 +1334,9 @@
         "Кёртин Сингапур",
         "Сиднейский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Бакалавр инженерии",
@@ -1016,7 +1362,10 @@
         "Альбертский университет",
         "Аттабаскинский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "predprinimatel",
+        "proektnyy-menedzher"
+      ]
     },
     {
       "name": "Бакалавр наук в области биологии",
@@ -1029,7 +1378,9 @@
         "Восточный университет Каролины",
         "Восточный университет Нью-Мексико"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "biolog"
+      ]
     },
     {
       "name": "Бакалавриат по информатике",
@@ -1042,7 +1393,9 @@
         "Бирмингемский городской университет",
         "Вустерский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Философия",
@@ -1069,7 +1422,9 @@
         "Бристольский университет",
         "Гомельский государственный университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "psiholog-konsultant"
+      ]
     },
     {
       "name": "Графический дизайн",
@@ -1082,7 +1437,9 @@
         "Академия изящных искусств в Варшаве",
         "Академия изящных искусств в Катовице"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "graficheskiy-dizayner"
+      ]
     },
     {
       "name": "Бакалавр искусств",
@@ -1109,7 +1466,9 @@
         "Вроцлавский университет наук о земле и жизни",
         "Гангнын-Вонджу национальный университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-ekolog"
+      ]
     },
     {
       "name": "Информационные системы",
@@ -1122,7 +1481,9 @@
         "Алматинский университет энергетики и связи",
         "Астана IT Университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "sistemnyy-analitik"
+      ]
     },
     {
       "name": "Информатика и вычислительная техника",
@@ -1135,7 +1496,9 @@
         "Атлантико-Средиземноморский технологический университет",
         "Брненский технический университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Медицинские науки",
@@ -1148,7 +1511,9 @@
         "Префектурный университет Кумамото",
         "Университет Абдуллы Гюля"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "vrach-obschey-praktiki"
+      ]
     },
     {
       "name": "Магистратура по международным отношениям",
@@ -1161,7 +1526,9 @@
         "Западно-Бретонский университет",
         "Колледж Рубен, Оксфордский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "diplomat"
+      ]
     },
     {
       "name": "Финансы",
@@ -1176,7 +1543,10 @@
         "Алматы Менеджмент Университет",
         "Гуманитарно-техническая академия"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "finansovyy-analitik",
+        "finansovyy-konsultant"
+      ]
     },
     {
       "name": "Медицина и хирургия",
@@ -1189,7 +1559,9 @@
         "Высшая школа Меридионале",
         "Генуэзский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "hirurg"
+      ]
     },
     {
       "name": "Инженерия программного обеспечения",
@@ -1203,7 +1575,9 @@
         "Государственный университет Канвондо",
         "Европейский университет Андалусии"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Дизайн",
@@ -1218,7 +1592,9 @@
         "Берлинский университет искусств",
         "Венецианский университет IUAV"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "graficheskiy-dizayner"
+      ]
     },
     {
       "name": "Прикладная математика и информатика",
@@ -1232,7 +1608,10 @@
         "Воронежский государственный технический университет",
         "Воронежский государственный университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "matematik",
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Бакалавр наук в области бизнеса",
@@ -1245,7 +1624,9 @@
         "Военный колледж Южной Каролины «Цитадель»",
         "Восточный университет Каролины"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "predprinimatel"
+      ]
     },
     {
       "name": "Строительство",
@@ -1258,7 +1639,9 @@
         "Волгоградский государственный технический университет",
         "Воронежский государственный технический университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-stroitel"
+      ]
     },
     {
       "name": "Mechanical Engineering",
@@ -1271,7 +1654,9 @@
         "New York University",
         "Sapienza Università di Roma"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-mehanik"
+      ]
     },
     {
       "name": "Международный бизнес",
@@ -1285,7 +1670,10 @@
         "Бирмингемский университет",
         "Высшая школа международных и общественных отношений в Праге"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "predprinimatel",
+        "biznes-perevodchik"
+      ]
     },
     {
       "name": "Социальная работа",
@@ -1298,7 +1686,9 @@
         "Аомориский университет здравоохранения и благосостояния",
         "Гванчжуский женский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "sotsialnyy-rabotnik"
+      ]
     },
     {
       "name": "International Relations",
@@ -1312,7 +1702,9 @@
         "Università di Firenze",
         "University of Canterbury"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "diplomat"
+      ]
     },
     {
       "name": "Агрономия",
@@ -1326,7 +1718,9 @@
         "Брянский государственный аграрный университет",
         "Варшавский университет наук о жизни"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "agronom"
+      ]
     },
     {
       "name": "Автоматизация и управление",
@@ -1339,7 +1733,9 @@
         "Грозненский государственный нефтяной технический университет",
         "Екибастузский инженерно-технический институт имени академика К.Сатпаева"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-po-avtomatizatsii-i-robototehnike"
+      ]
     },
     {
       "name": "Бакалавр наук в области психологии",
@@ -1352,7 +1748,9 @@
         "Гартфордский университет",
         "Индианский университет в Индианаполисе"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "psiholog-konsultant"
+      ]
     },
     {
       "name": "Бакалавр образования",
@@ -1365,7 +1763,9 @@
         "Австралийский католический университет",
         "Виннипегский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "shkolnyy-uchitel"
+      ]
     },
     {
       "name": "Факультет инженерии",
@@ -1391,7 +1791,9 @@
         "École Polytechnique",
         "Singapore Management University"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "predprinimatel"
+      ]
     },
     {
       "name": "Physics",
@@ -1404,7 +1806,9 @@
         "KTH Royal Institute of Technology",
         "Leiden University"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "fizik"
+      ]
     },
     {
       "name": "Анимация",
@@ -1417,7 +1821,9 @@
         "Академия изящных искусств в Катовице",
         "Академия изящных искусств имени Владислава Стшеминьского в Лодзи"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "animator-2d-3d"
+      ]
     },
     {
       "name": "Сестринское дело",
@@ -1431,7 +1837,9 @@
         "Гифу колледж сестринского дела",
         "Западно-Казахстанский медицинский университет имени Марата Оспанова"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "meditsinskaya-sestra-medbrat"
+      ]
     },
     {
       "name": "Факультет гуманитарных наук",
@@ -1457,7 +1865,9 @@
         "Бирмингемский городской университет",
         "Глостерский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "predprinimatel"
+      ]
     },
     {
       "name": "Бакалавр гуманитарных наук",
@@ -1496,7 +1906,9 @@
         "Католический университет Запада",
         "Католический университет Лиона"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "yurist-advokat"
+      ]
     },
     {
       "name": "Естественные науки",
@@ -1524,7 +1936,9 @@
         "Валенсийский политехнический университет",
         "Гванчжуский институт науки и технологий"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "issledovatel-v-oblasti-biotehnologiy"
+      ]
     },
     {
       "name": "Экология и природопользование",
@@ -1537,7 +1951,9 @@
         "Акитский префектурный университет",
         "Аляскинский университет в Фэрбенксе"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-ekolog"
+      ]
     },
     {
       "name": "Педагогическое образование",
@@ -1550,7 +1966,9 @@
         "Амурский государственный университет имени Шолом-Алейхема",
         "Владимирский государственный университет имени А. Г. и Н. Г. Столетовых"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "shkolnyy-uchitel"
+      ]
     },
     {
       "name": "Бакалавр наук в области инженерии",
@@ -1580,7 +1998,9 @@
         "Астраханский государственный университет",
         "Братский государственный университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "trener-po-sportu"
+      ]
     },
     {
       "name": "Политология",
@@ -1593,7 +2013,9 @@
         "Академия политических и социальных наук",
         "Восточно-Китайский университет политических наук и права"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "gosudarstvennyy-sluzhaschiy"
+      ]
     },
     {
       "name": "Бакалавр наук в области образования",
@@ -1606,7 +2028,9 @@
         "Восточный университет Нью-Мексико",
         "Государственный университет Западной Виргинии"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "shkolnyy-uchitel"
+      ]
     },
     {
       "name": "Педагогика и психология",
@@ -1621,7 +2045,10 @@
         "Джинджуский национальный университет образования",
         "Евразийский гуманитарный институт имени А.К. Кусаинова"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "shkolnyy-uchitel",
+        "psiholog-konsultant"
+      ]
     },
     {
       "name": "Начальное Образование",
@@ -1635,7 +2062,9 @@
         "Гванчжуский национальный педагогический университет",
         "Гёнгинский национальный университет образования"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "shkolnyy-uchitel"
+      ]
     },
     {
       "name": "Английский язык и литература",
@@ -1649,7 +2078,9 @@
         "Вустер-колледж, Оксфордский университет",
         "Колледж Иисуса, Оксфордский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "filolog-lingvist"
+      ]
     },
     {
       "name": "Электротехника и электроника",
@@ -1662,7 +2093,9 @@
         "Бурса Технический университет",
         "Гванчжуский институт науки и технологий"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-elektrik"
+      ]
     },
     {
       "name": "Медицина и здравоохранение",
@@ -1675,7 +2108,9 @@
         "Государственный университет Вальдоста",
         "Дербиширский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "vrach-obschey-praktiki"
+      ]
     },
     {
       "name": "Бакалавр здравоохранения",
@@ -1688,7 +2123,9 @@
         "Университет Виктории",
         "Университет Вуллонгонга"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "vrach-obschey-praktiki"
+      ]
     },
     {
       "name": "Biology",
@@ -1701,7 +2138,9 @@
         "Korea University",
         "Ludwig-Maximilians-Universität München"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "biolog"
+      ]
     },
     {
       "name": "Социальные науки",
@@ -1728,7 +2167,9 @@
         "Астраханский государственный медицинский университет",
         "Западно-Казахстанский медицинский университет имени Марата Оспанова"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "pediatr"
+      ]
     },
     {
       "name": "Бакалавр наук в области здравоохранения",
@@ -1741,7 +2182,9 @@
         "Восточный университет штата Теннесси",
         "Государственный университет Западной Виргинии"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "vrach-obschey-praktiki"
+      ]
     },
     {
       "name": "Бакалавриат по биологии",
@@ -1754,7 +2197,9 @@
         "Западно-Бретонский университет",
         "Йельский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "biolog"
+      ]
     },
     {
       "name": "Экономика и менеджмент",
@@ -1768,7 +2213,9 @@
         "Католический университет Святого Сердца",
         "Павийский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "ekonomist-analitik"
+      ]
     },
     {
       "name": "Китайский язык и литература",
@@ -1782,7 +2229,9 @@
         "Китайский народный университет",
         "Пекинский городской университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "filolog-lingvist"
+      ]
     },
     {
       "name": "Architecture",
@@ -1795,7 +2244,9 @@
         "Humboldt-Universität zu Berlin",
         "University of Cambridge"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "arhitektor"
+      ]
     },
     {
       "name": "Дизайн интерьера",
@@ -1808,7 +2259,9 @@
         "Академия изящных искусств в Катовице",
         "Академия изящных искусств имени Владислава Стшеминьского в Лодзи"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "dizayner-interera"
+      ]
     },
     {
       "name": "Факультет образования",
@@ -1821,7 +2274,9 @@
         "Городской университет Асахикава",
         "Кагосимский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "shkolnyy-uchitel"
+      ]
     },
     {
       "name": "Медицинская биология",
@@ -1835,7 +2290,9 @@
         "Исламский университет науки и технологий Газиантепа",
         "Сивасский университет науки и технологий"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "biolog"
+      ]
     },
     {
       "name": "Бакалавр искусств в области психологии",
@@ -1848,7 +2305,9 @@
         "Государственный колледж Кин",
         "Государственный университет имени Стивена Ф. Остина"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "psiholog-konsultant"
+      ]
     },
     {
       "name": "Факультет естественных наук",
@@ -1874,7 +2333,9 @@
         "Duke-NUS Medical School",
         "ETH Zürich"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "predprinimatel"
+      ]
     },
     {
       "name": "Бакалавр искусств в области бизнеса",
@@ -1887,7 +2348,9 @@
         "Восточный университет Нью-Мексико",
         "Государственный университет Хендерсон"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "predprinimatel"
+      ]
     },
     {
       "name": "Специальное образование",
@@ -1900,7 +2363,9 @@
         "Гончжу Национальный университет педагогики",
         "Джинджуский национальный университет образования"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "defektolog"
+      ]
     },
     {
       "name": "Гуманитарные науки",
@@ -1929,7 +2394,9 @@
         "Алматы Менеджмент Университет",
         "Гуманитарно-техническая академия"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "marketolog"
+      ]
     },
     {
       "name": "Магистратура по психологии",
@@ -1942,7 +2409,9 @@
         "Вустерский университет",
         "Глостерский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "psiholog-konsultant"
+      ]
     },
     {
       "name": "Музыка",
@@ -1955,7 +2424,9 @@
         "Академия музыки и исполнительских искусств имени Леоша Яначека в Брно",
         "Академия музыки имени Кароля Липиньского во Вроцлаве"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "muzykant-ispolnitel"
+      ]
     },
     {
       "name": "Медицинская биохимия",
@@ -1968,7 +2439,9 @@
         "Астраханский государственный медицинский университет",
         "Нижегородский государственный медицинский университет имени Н. И. Пирогова"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "meditsinskiy-laboratornyy-tehnolog"
+      ]
     },
     {
       "name": "Медицинская сестринская деятельность",
@@ -1981,7 +2454,9 @@
         "Киотский префектурный медицинский университет",
         "Префектурный университет здравоохранения Эхимэ"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "meditsinskaya-sestra-medbrat"
+      ]
     },
     {
       "name": "Бакалавр компьютерных наук",
@@ -1994,7 +2469,9 @@
         "Виндзорский университет",
         "Государственный университет Вебера"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Биологические науки",
@@ -2007,7 +2484,9 @@
         "Восточноанглийский университет",
         "Калифорнийский университет в Мерседе"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "biolog"
+      ]
     },
     {
       "name": "Горное дело",
@@ -2021,7 +2500,9 @@
         "Карагандинский государственный технический университет имени Абылкаса Сагинова",
         "Китайский университет горного дела и технологии (Пекинский филиал)"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "gornyy-inzhener"
+      ]
     },
     {
       "name": "Агробиологические науки",
@@ -2034,7 +2515,9 @@
         "Сельскохозяйственный и лесотехнический университет Тохоку",
         "Токийский университет сельского хозяйства и технологии"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "agronom"
+      ]
     },
     {
       "name": "Mathematics",
@@ -2048,7 +2531,9 @@
         "Aix-Marseille Université",
         "Delft University of Technology"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "matematik"
+      ]
     },
     {
       "name": "Живопись",
@@ -2061,7 +2546,9 @@
         "Академия изящных искусств в Гданьске",
         "Академия изящных искусств в Катовице"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "hudozhnik"
+      ]
     },
     {
       "name": "Композиция",
@@ -2074,7 +2561,9 @@
         "Академия музыки имени Игнацы Яна Падеревского в Познани",
         "Академия музыки имени Кароля Липиньского во Вроцлаве"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "kompozitor"
+      ]
     },
     {
       "name": "Изобразительное искусство",
@@ -2087,7 +2576,9 @@
         "Берлинский университет искусств",
         "Гамбургская высшая школа изящных искусств"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "hudozhnik"
+      ]
     },
     {
       "name": "Физиотерапия",
@@ -2100,7 +2591,9 @@
         "Вроцлавский университет наук о здоровье и спорте",
         "Гданьский медицинский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "fizioterapevt-massazhist"
+      ]
     },
     {
       "name": "Биомедицинская инженерия",
@@ -2114,7 +2607,9 @@
         "Гванчжуский католический университет",
         "Католический университет Тэгу"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "meditsinskiy-laboratornyy-tehnolog"
+      ]
     },
     {
       "name": "Лингвистика",
@@ -2127,7 +2622,9 @@
         "Колледж Святого Иоанна при Даремском университете",
         "Нижегородский государственный лингвистический университет имени Н. А. Добролюбова"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "filolog-lingvist"
+      ]
     },
     {
       "name": "Jurisprudence",
@@ -2140,7 +2637,9 @@
         "Kyzylorda Bolashak University",
         "Korkyt Ata Kyzylorda University"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "yurist-advokat"
+      ]
     },
     {
       "name": "Бакалавриат по экономике и управлению",
@@ -2154,7 +2653,9 @@
         "Университет Жана Моне",
         "Университет Ле-Мана"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "ekonomist-analitik"
+      ]
     },
     {
       "name": "Information Technology",
@@ -2167,7 +2668,9 @@
         "Кунсанский национальный университет",
         "Кюсюский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Dentistry",
@@ -2180,7 +2683,9 @@
         "Кюсюский стоматологический университет",
         "Кютахья университет медицинских наук"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "stomatolog"
+      ]
     },
     {
       "name": "Ветеринария",
@@ -2194,7 +2699,9 @@
         "Брянский государственный аграрный университет",
         "Западно-Казахстанский аграрно-технический университет имени Жангир хана"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "veterinar"
+      ]
     },
     {
       "name": "Ветеринарная медицина",
@@ -2207,7 +2714,9 @@
         "Ветеринарный университет в Брно",
         "Ганноверский университет ветеринарной медицины, Фонд"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "veterinar"
+      ]
     },
     {
       "name": "Туризм",
@@ -2223,7 +2732,9 @@
         "Есильский университет",
         "Западно-Казахстанский инновационно-технологический университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "upravlyayuschiy-otelem-restoranom"
+      ]
     },
     {
       "name": "Электроэнергетика и электротехника",
@@ -2236,7 +2747,9 @@
         "Казанский государственный энергетический университет",
         "Нижегородский государственный технический университет имени Р. Е. Алексеева"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-energetik"
+      ]
     },
     {
       "name": "History",
@@ -2250,7 +2763,9 @@
         "Technische Universität München",
         "Université de Lyon"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "istorik"
+      ]
     },
     {
       "name": "Pharmacy",
@@ -2263,7 +2778,9 @@
         "Кютахья университет медицинских наук",
         "Люблинский медицинский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "farmatsevt"
+      ]
     },
     {
       "name": "Бакалавр психологии",
@@ -2276,7 +2793,9 @@
         "Государственный университет Вебера",
         "Грузинский Южный университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "psiholog-konsultant"
+      ]
     },
     {
       "name": "Бакалавр права",
@@ -2289,7 +2808,9 @@
         "Оттавский университет",
         "Сиднейский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "yurist-advokat"
+      ]
     },
     {
       "name": "Скульптура",
@@ -2302,7 +2823,9 @@
         "Академия изящных искусств в Гданьске",
         "Академия изящных искусств в Катовице"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "hudozhnik"
+      ]
     },
     {
       "name": "Музыкальное исполнительство",
@@ -2315,7 +2838,9 @@
         "Академия музыки имени Кароля Шимановского в Катовице",
         "Академия музыки имени Кшиштофа Пендерецкого в Кракове"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "muzykant-ispolnitel"
+      ]
     },
     {
       "name": "Музыкальная педагогика",
@@ -2328,7 +2853,9 @@
         "Академия музыки имени Игнацы Яна Падеревского в Познани",
         "Академия музыки имени Кароля Липиньского во Вроцлаве"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "prepodavatel-iskusstva"
+      ]
     },
     {
       "name": "Лечебное дело",
@@ -2341,7 +2868,9 @@
         "Астраханский государственный медицинский университет",
         "Нижегородский государственный медицинский университет имени Н. И. Пирогова"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "vrach-obschey-praktiki"
+      ]
     },
     {
       "name": "Бакалавриат по экономике",
@@ -2354,7 +2883,9 @@
         "Йельский университет",
         "Йоркский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "ekonomist-analitik"
+      ]
     },
     {
       "name": "Химическая инженерия",
@@ -2368,7 +2899,9 @@
         "Гванчжуский институт науки и технологий",
         "Измирский технический университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-himik"
+      ]
     },
     {
       "name": "Экология и природные ресурсы",
@@ -2381,7 +2914,9 @@
         "Западный Вашингтонский университет",
         "Префектурный университет Иватэ"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-ekolog"
+      ]
     },
     {
       "name": "Бакалавриат по психологии",
@@ -2394,7 +2929,9 @@
         "Университет Баккингема",
         "Университет Голдсмитс, Лондон"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "psiholog-konsultant"
+      ]
     },
     {
       "name": "Магистратура по менеджменту",
@@ -2407,7 +2944,9 @@
         "Католический университет Лиона",
         "Колледж Келлогг, Оксфордский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "proektnyy-menedzher"
+      ]
     },
     {
       "name": "Английская литература и язык",
@@ -2420,7 +2959,9 @@
         "Колледж Вулфсон, Оксфордский университет",
         "Колледж Мэнсфилд, Оксфордский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "filolog-lingvist"
+      ]
     },
     {
       "name": "Философия, политика и экономика",
@@ -2448,7 +2989,9 @@
         "Korea Advanced Institute of Science and Technology",
         "New York University"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "finansovyy-analitik"
+      ]
     },
     {
       "name": "Electrical Engineering",
@@ -2461,7 +3004,9 @@
         "Politecnico di Milano",
         "Singapore Management University"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-elektrik"
+      ]
     },
     {
       "name": "Кибербезопасность",
@@ -2474,7 +3019,9 @@
         "Китайский народный университет общественной безопасности",
         "Пекинский университет информационных наук и технологий"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-po-kiberbezopasnosti"
+      ]
     },
     {
       "name": "Химическая технология",
@@ -2488,7 +3035,9 @@
         "Бухарский инженерно-технологический институт",
         "Ивановский государственный химико-технологический университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-himik"
+      ]
     },
     {
       "name": "Факультет экономики и управления",
@@ -2502,7 +3051,9 @@
         "Кагосимский университет",
         "Префектурный университет Фукуи"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "ekonomist-analitik"
+      ]
     },
     {
       "name": "Магистратура по информатике",
@@ -2515,7 +3066,9 @@
         "Сорбоннский университет",
         "Университет Версаля Сен-Кантен-ан-Ивелин"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Компьютерная инженерия",
@@ -2529,7 +3082,9 @@
         "Технический университет Эскишехира",
         "Ульсанский национальный институт науки и технологий"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Магистратура по биологии",
@@ -2542,7 +3097,9 @@
         "Университет Артуа",
         "Университет Клермон Овернь"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "biolog"
+      ]
     },
     {
       "name": "Chemistry",
@@ -2555,7 +3112,9 @@
         "Leiden University",
         "LUISS Guido Carli"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "himik"
+      ]
     },
     {
       "name": "Бухгалтерский учет",
@@ -2568,7 +3127,9 @@
         "Восточный университет Иллинойса",
         "Государственный университет Дакоты"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "buhgalter"
+      ]
     },
     {
       "name": "Management",
@@ -2581,7 +3142,9 @@
         "Лодзинский технический университет",
         "Лондонская школа экономики и политических наук (Университет Лондона)"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "proektnyy-menedzher"
+      ]
     },
     {
       "name": "Nursing",
@@ -2595,7 +3158,9 @@
         "The Chinese University of Hong Kong",
         "University of California, Los Angeles"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "meditsinskaya-sestra-medbrat"
+      ]
     },
     {
       "name": "Теология",
@@ -2609,7 +3174,9 @@
         "Египетский университет исламской культуры «Нур-Мубарак» в Казахстане",
         "Католический университет имени Иоанна Павла II в Люблине"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "teolog-religioved"
+      ]
     },
     {
       "name": "Гражданская инженерия",
@@ -2622,7 +3189,9 @@
         "Гранадский университет",
         "Жиронский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-stroitel"
+      ]
     },
     {
       "name": "Бакалавриат по компьютерным наукам",
@@ -2635,7 +3204,9 @@
         "Глостерский университет",
         "Йельский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Автоматизация технологических процессов и производств",
@@ -2649,7 +3220,9 @@
         "Ивановский государственный энергетический университет",
         "Казанский государственный энергетический университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-po-avtomatizatsii-i-robototehnike"
+      ]
     },
     {
       "name": "Химия",
@@ -2662,7 +3235,9 @@
         "Калифорнийский технологический институт",
         "Университет Китайской академии наук"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "himik"
+      ]
     },
     {
       "name": "Биотехнологии",
@@ -2675,7 +3250,9 @@
         "Корейский институт передовых наук и технологий",
         "Римский университет биомедицинских наук"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "issledovatel-v-oblasti-biotehnologiy"
+      ]
     },
     {
       "name": "Нефтегазовое дело",
@@ -2688,7 +3265,9 @@
         "Западно-Казахстанский аграрно-технический университет имени Жангир хана",
         "Западно-Казахстанский инновационно-технологический университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "burovoy-inzhener-neftegazovoe-delo"
+      ]
     },
     {
       "name": "Услуги",
@@ -2714,7 +3293,9 @@
         "Университет Вакаяма",
         "Университет Гифу"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "agronom"
+      ]
     },
     {
       "name": "Факультет медицины",
@@ -2727,7 +3308,9 @@
         "Университет Вакаяма",
         "Университет Гифу"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "vrach-obschey-praktiki"
+      ]
     },
     {
       "name": "Экология и окружающая среда",
@@ -2740,7 +3323,9 @@
         "Префектурный университет Кумамото",
         "Префектурный университет Фукуока"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-ekolog"
+      ]
     },
     {
       "name": "Philosophy",
@@ -2780,7 +3365,9 @@
         "Ланкастерский университет",
         "Ливерпульский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "proektnyy-menedzher"
+      ]
     },
     {
       "name": "Материаловедение и инженерия",
@@ -2794,7 +3381,9 @@
         "Измирский технический университет",
         "Пекинский университет материаловедения и инженерии"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "metallurg"
+      ]
     },
     {
       "name": "Иностранные языки и литература",
@@ -2807,7 +3396,9 @@
         "Пекинский педагогический университет",
         "Токийский педагогический университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "filolog-lingvist"
+      ]
     },
     {
       "name": "Корейский язык и литература",
@@ -2820,7 +3411,9 @@
         "Корейский национальный университет образования",
         "Пусанский национальный университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "filolog-lingvist"
+      ]
     },
     {
       "name": "Инженерия окружающей среды",
@@ -2834,7 +3427,9 @@
         "Сунчхонский национальный университет",
         "Технологический университет Тарб – Окситания Пиренеи"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-ekolog"
+      ]
     },
     {
       "name": "Бакалавр в области управления бизнесом",
@@ -2847,7 +3442,9 @@
         "Квебекский университет в Римуски",
         "Квебекский университет в Уатуе"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "predprinimatel"
+      ]
     },
     {
       "name": "Морская инженерия",
@@ -2874,7 +3471,9 @@
         "Пекинский университет спорта",
         "Столичный университет физического воспитания и спорта"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "trener-po-sportu"
+      ]
     },
     {
       "name": "Philology",
@@ -2888,7 +3487,9 @@
         "Мадридский университет Комплутенсе",
         "Московский городской университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "filolog-lingvist"
+      ]
     },
     {
       "name": "Civil Engineering",
@@ -2901,7 +3502,9 @@
         "Мадридский университет дистанционного обучения",
         "Малагский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-stroitel"
+      ]
     },
     {
       "name": "Applied Mathematics and Informatics",
@@ -2915,7 +3518,9 @@
         "Московский государственный университет имени М. В. Ломоносова",
         "Национальный исследовательский технологический университет «МИСиС»"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "matematik"
+      ]
     },
     {
       "name": "Data Science",
@@ -2928,7 +3533,9 @@
         "University of Basel",
         "Алматы Менеджмент Университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "analitik-dannyh"
+      ]
     },
     {
       "name": "Бакалавриат по истории",
@@ -2941,7 +3548,9 @@
         "Йельский университет",
         "Йоркский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "istorik"
+      ]
     },
     {
       "name": "Образование и педагогика",
@@ -2954,7 +3563,9 @@
         "Ардаханский университет",
         "Гильдесхаймский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "shkolnyy-uchitel"
+      ]
     },
     {
       "name": "Казахский язык и литература",
@@ -2968,7 +3579,9 @@
         "Атырауский университет имени Х. Досмухамедова",
         "Восточно-Казахстанский государственный университет имени Сарсена Аманжолова"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "filolog-lingvist"
+      ]
     },
     {
       "name": "Градостроительство",
@@ -2982,7 +3595,9 @@
         "Баухаус-Университет Веймар",
         "Казанский государственный архитектурно-строительный университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "urbanist-gradostroitel"
+      ]
     },
     {
       "name": "Теплоэнергетика и теплотехника",
@@ -2995,7 +3610,9 @@
         "Брянский государственный технический университет",
         "Волгоградский государственный технический университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-energetik"
+      ]
     },
     {
       "name": "Зоотехния",
@@ -3008,7 +3625,9 @@
         "Вроцлавский университет наук о земле и жизни",
         "Кабардино-Балкарский государственный аграрный университет имени В. М. Кокова"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "veterinar"
+      ]
     },
     {
       "name": "Финансы и бухгалтерский учет",
@@ -3021,7 +3640,10 @@
         "Краковский экономический университет",
         "Познанский экономический университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "buhgalter",
+        "finansovyy-analitik"
+      ]
     },
     {
       "name": "Физическая культура",
@@ -3035,7 +3657,9 @@
         "Гданьский университет физического воспитания и спорта",
         "Краковский университет физического воспитания"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "trener-po-sportu"
+      ]
     },
     {
       "name": "Электротехника и информационные технологии",
@@ -3048,7 +3672,9 @@
         "Рейнско-Вестфальский технический университет Ахена",
         "Технический университет Берлина"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-elektrik"
+      ]
     },
     {
       "name": "Педагогика и образование",
@@ -3061,7 +3687,9 @@
         "Гёнгинский национальный университет образования",
         "Гончжу Национальный университет педагогики"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "shkolnyy-uchitel"
+      ]
     },
     {
       "name": "Естественные науки, математика и статистика",
@@ -3074,7 +3702,9 @@
         "Западно-Казахстанский университет имени Махамбета Утемисова",
         "Инновационный Евразийский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "matematik"
+      ]
     },
     {
       "name": "Информационно-коммуникационные технологии",
@@ -3087,7 +3717,9 @@
         "Западно-Казахстанский университет имени Махамбета Утемисова",
         "Инновационный Евразийский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Искусство и дизайн",
@@ -3113,7 +3745,9 @@
         "Пекинский университет почты и телекоммуникаций",
         "Технологический институт Кюсю"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Бакалавр социальных наук",
@@ -3139,7 +3773,9 @@
         "Кокшетауский университет имени Абая Мырзахметова",
         "Костанайский региональный университет имени Ахмета Байтурсынова"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "shkolnyy-uchitel"
+      ]
     },
     {
       "name": "Бакалавр в области компьютерных наук",
@@ -3152,7 +3788,9 @@
         "Квебекский университет в Римуски",
         "Университет Бакингемшира Нью"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Бизнес и менеджмент",
@@ -3165,7 +3803,9 @@
         "Королевский колледж Мэри Лондонского университета",
         "Суонсийский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "predprinimatel"
+      ]
     },
     {
       "name": "Геология",
@@ -3178,7 +3818,9 @@
         "Китайский университет горного дела и технологии (Пекинский филиал)",
         "Китайский университет нефти (Пекин)"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "geolog"
+      ]
     },
     {
       "name": "Библейские исследования",
@@ -3191,7 +3833,9 @@
         "Корейский христианский университет",
         "Пусанский пресвитерианский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "teolog-religioved"
+      ]
     },
     {
       "name": "Journalism",
@@ -3205,7 +3849,9 @@
         "Khoja Ahmed Yasawi International Kazakh-Turkish University",
         "Метрополитен университет в Праге"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "zhurnalist"
+      ]
     },
     {
       "name": "Information Systems and Technologies",
@@ -3218,7 +3864,9 @@
         "Московский государственный строительный университет",
         "Московский государственный университет геодезии и картографии"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "sistemnyy-analitik"
+      ]
     },
     {
       "name": "Науки о жизни",
@@ -3231,7 +3879,9 @@
         "Префектурный университет Тояма",
         "Префектурный университет Ямагучи"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "biolog"
+      ]
     },
     {
       "name": "Бакалавр медицины",
@@ -3244,7 +3894,9 @@
         "Университет Далхаузи",
         "Университет Квинсленда"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "vrach-obschey-praktiki"
+      ]
     },
     {
       "name": "Журналистика и коммуникации",
@@ -3258,7 +3910,9 @@
         "Университет Батлера",
         "Университет Камило Хосе Села"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "zhurnalist"
+      ]
     },
     {
       "name": "Бакалавр делового администрирования (BBA)",
@@ -3271,7 +3925,9 @@
         "Университет Йорквилл",
         "Университет Капилано"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "predprinimatel"
+      ]
     },
     {
       "name": "Магистратура по праву",
@@ -3284,7 +3940,9 @@
         "Университет Лиможа",
         "Университет Пикардии Жюль Верн"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "yurist-advokat"
+      ]
     },
     {
       "name": "Business and Management",
@@ -3298,7 +3956,9 @@
         "Даремский университет",
         "Кентский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "predprinimatel"
+      ]
     },
     {
       "name": "Chemical Engineering",
@@ -3311,7 +3971,9 @@
         "University of California, Los Angeles",
         "Монреальская политехника"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-himik"
+      ]
     },
     {
       "name": "Information Systems",
@@ -3324,7 +3986,9 @@
         "University of Zurich",
         "Международный университет Астана"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "sistemnyy-analitik"
+      ]
     },
     {
       "name": "Design",
@@ -3352,7 +4016,9 @@
         "Бухарский инженерно-технологический институт",
         "Карагандинский университет Казпотребсоюза"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-ekolog"
+      ]
     },
     {
       "name": "Интерьерный дизайн",
@@ -3365,7 +4031,9 @@
         "Академия искусств, архитектуры и дизайна в Праге",
         "Академия искусств и дизайна имени Эугениуша Гепперта во Вроцлаве"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "dizayner-interera"
+      ]
     },
     {
       "name": "Дирижирование",
@@ -3378,7 +4046,9 @@
         "Академия музыки имени Кароля Липиньского во Вроцлаве",
         "Академия музыки имени Станислава Монюшко в Гданьске"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "kompozitor"
+      ]
     },
     {
       "name": "Учет и аудит",
@@ -3392,7 +4062,9 @@
         "Алматы Менеджмент Университет",
         "Гуманитарно-техническая академия"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "auditor"
+      ]
     },
     {
       "name": "Электроэнергетика",
@@ -3406,7 +4078,9 @@
         "Екибастузский инженерно-технический институт имени академика К.Сатпаева",
         "Костанайский социально-технический университет имени академика Зулкарнай Алдамжара"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-energetik"
+      ]
     },
     {
       "name": "Информационная безопасность",
@@ -3419,7 +4093,9 @@
         "Атырауский университет нефти и газа имени С. Утебаева",
         "Казанский национальный исследовательский технический университет имени А. Н. Туполева – КАИ"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-po-kiberbezopasnosti"
+      ]
     },
     {
       "name": "Ресторанное дело и гостиничный бизнес",
@@ -3433,7 +4109,9 @@
         "Казахская академия спорта и туризма",
         "Казахский университет международных отношений и мировых языков имени Абылай хана"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "upravlyayuschiy-otelem-restoranom"
+      ]
     },
     {
       "name": "Бакалавр наук в области информатики",
@@ -3446,7 +4124,9 @@
         "Индианский университет в Индианаполисе",
         "Университет Лаваля"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Русский язык и литература",
@@ -3460,7 +4140,9 @@
         "Восточно-Казахстанский государственный университет имени Сарсена Аманжолова",
         "Павлодарский педагогический университет имени Әлкей Марғұлан"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "filolog-lingvist"
+      ]
     },
     {
       "name": "Программная инженерия",
@@ -3474,7 +4156,9 @@
         "ИТМО",
         "Пекинский университет информационных наук и технологий"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Бухгалтерский учет, анализ и аудит",
@@ -3487,7 +4171,9 @@
         "Ростовский государственный экономический университет (РИНХ)",
         "Санкт-Петербургский государственный университет экономики"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "buhgalter"
+      ]
     },
     {
       "name": "Лесное хозяйство",
@@ -3501,7 +4187,9 @@
         "Краковский университет сельского хозяйства",
         "Пекинский лесотехнический университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "lesnichiy"
+      ]
     },
     {
       "name": "Туризм и рекреация",
@@ -3515,7 +4203,9 @@
         "Гданьский университет физического воспитания и спорта",
         "Краковский университет физического воспитания"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "upravlyayuschiy-otelem-restoranom"
+      ]
     },
     {
       "name": "Медиа и коммуникации",
@@ -3529,7 +4219,9 @@
         "Европейский университет Фленсбург",
         "Университет Святого Сердца"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "spetsialist-po-mediakommunikatsiyam"
+      ]
     },
     {
       "name": "Переводческое дело",
@@ -3544,7 +4236,9 @@
         "Египетский университет исламской культуры «Нур-Мубарак» в Казахстане",
         "Западно-Казахстанский инновационно-технологический университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "biznes-perevodchik"
+      ]
     },
     {
       "name": "Социальные науки, журналистика и информация",
@@ -3557,7 +4251,9 @@
         "Западно-Казахстанский университет имени Махамбета Утемисова",
         "Инновационный Евразийский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "zhurnalist"
+      ]
     },
     {
       "name": "Искусство и гуманитарные науки",
@@ -3586,7 +4282,9 @@
         "Западно-Казахстанский университет имени Махамбета Утемисова",
         "Казахский национальный женский педагогический университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "shkolnyy-uchitel"
+      ]
     },
     {
       "name": "Электроника и электротехника",
@@ -3599,7 +4297,9 @@
         "Институт технологии Китами",
         "Пекинский технологический институт"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-elektrik"
+      ]
     },
     {
       "name": "Геофизика",
@@ -3612,7 +4312,9 @@
         "Нью-Мексиканский институт горного дела и технологии",
         "Санкт-Петербургский горный университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "geolog"
+      ]
     },
     {
       "name": "Information Security",
@@ -3625,7 +4327,9 @@
         "Национальный исследовательский университет «Московский авиационный институт (национальный исследовательский университет)»",
         "Национальный исследовательский университет «Московский энергетический институт»"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-po-kiberbezopasnosti"
+      ]
     },
     {
       "name": "Перевод и переводоведение",
@@ -3638,7 +4342,9 @@
         "Пекинский университет международных исследований",
         "Тяньцзиньский университет иностранных языков"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "biznes-perevodchik"
+      ]
     },
     {
       "name": "Клиническая медицина",
@@ -3651,7 +4357,9 @@
         "Столичный медицинский университет",
         "Тяньцзиньский медицинский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "vrach-obschey-praktiki"
+      ]
     },
     {
       "name": "Международная экономика и торговля",
@@ -3664,7 +4372,9 @@
         "Пекинский университет технологий и бизнеса",
         "Университет международных отношений"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "ekonomist-analitik"
+      ]
     },
     {
       "name": "Финансы и кредит",
@@ -3677,7 +4387,9 @@
         "Ростовский государственный экономический университет (РИНХ)",
         "Санкт-Петербургский государственный университет экономики"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "finansovyy-analitik"
+      ]
     },
     {
       "name": "Радиотехника",
@@ -3690,7 +4402,9 @@
         "Санкт-Петербургский государственный университет телекоммуникаций им. проф. М. А. Бонч-Бруевича",
         "Санкт-Петербургский электротехнический университет «ЛЭТИ» имени В. И. Ульянова (Ленина)"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-elektrik"
+      ]
     },
     {
       "name": "Международная торговля",
@@ -3704,7 +4418,9 @@
         "Тяньцзиньский университет коммерции",
         "Тяньцзиньский университет финансов и экономики"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "predprinimatel"
+      ]
     },
     {
       "name": "Бакалавр медицины и здравоохранения",
@@ -3717,7 +4433,9 @@
         "Университет Гриффит",
         "Университет Ла Троб"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "vrach-obschey-praktiki"
+      ]
     },
     {
       "name": "Информационные и вычислительные науки",
@@ -3730,7 +4448,9 @@
         "Тяньцзиньский университет науки и технологии",
         "Чунцинский инженерный институт"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Коммуникация",
@@ -3743,7 +4463,9 @@
         "Университет Париж 1 Пантеон-Сорбонна",
         "Университет Париж VIII Вэнсен — Сен-Дени"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "spetsialist-po-mediakommunikatsiyam"
+      ]
     },
     {
       "name": "Агробизнес",
@@ -3757,7 +4479,9 @@
         "Профессиональный университет сельского хозяйства Сидзуока",
         "Университет Харпер Адамс"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "agronom"
+      ]
     },
     {
       "name": "Aerospace Engineering",
@@ -3783,7 +4507,9 @@
         "Медиполь Университет Анкары",
         "Международный университет информационных технологий"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Магистр образования",
@@ -3796,7 +4522,9 @@
         "Аттабаскинский университет",
         "Восточный Вашингтонский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "shkolnyy-uchitel"
+      ]
     },
     {
       "name": "Графика",
@@ -3809,7 +4537,9 @@
         "Академия изящных искусств в Праге",
         "Академия изящных искусств имени Владислава Стшеминьского в Лодзи"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "graficheskiy-dizayner"
+      ]
     },
     {
       "name": "Мода и текстиль",
@@ -3822,7 +4552,9 @@
         "Академия искусств, архитектуры и дизайна в Праге",
         "Академия искусств и дизайна имени Эугениуша Гепперта во Вроцлаве"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "modeler"
+      ]
     },
     {
       "name": "Музыкология",
@@ -3848,7 +4580,9 @@
         "Академия музыки имени Игнацы Яна Падеревского в Познани",
         "Варшавская музыкальная академия имени Фредерика Шопена"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "muzykant-ispolnitel"
+      ]
     },
     {
       "name": "Туризм и гостиничное дело",
@@ -3861,7 +4595,9 @@
         "Стамбульский университет культуры",
         "Университет Невшехир Хаджи Бекташ Вели"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "upravlyayuschiy-otelem-restoranom"
+      ]
     },
     {
       "name": "Магистр наук",
@@ -3914,7 +4650,9 @@
         "Военно-воздушный университет имени маршала авиации Станислава Вежбицкого",
         "Китайский университет гражданской авиации"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "aviadispetcher"
+      ]
     },
     {
       "name": "Бакалавриат по инженерии",
@@ -3940,7 +4678,9 @@
         "Высшая школа технологий (École de technologie supérieure)",
         "Корейский институт передовых наук и технологий"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-elektrik"
+      ]
     },
     {
       "name": "Магистратура по теологии",
@@ -3953,7 +4693,9 @@
         "Католический институт Вандеи",
         "Католический институт Тулузы"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "teolog-religioved"
+      ]
     },
     {
       "name": "Электроника и телекоммуникации",
@@ -3966,7 +4708,9 @@
         "Гданьский Технический Университет",
         "Познанский технический университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-elektrik"
+      ]
     },
     {
       "name": "Химическая инженерия и технологии",
@@ -3979,7 +4723,9 @@
         "Пекинский университет химической технологии",
         "Тяньцзиньский технологический университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-himik"
+      ]
     },
     {
       "name": "Бакалавриат по образованию",
@@ -3992,7 +4738,9 @@
         "Университет Йорк Сент-Джон",
         "Университет Ливерпуль Хоуп"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "shkolnyy-uchitel"
+      ]
     },
     {
       "name": "Логистика и управление цепями поставок",
@@ -4005,7 +4753,10 @@
         "Гдыньский морской университет",
         "Тяньцзиньский университет коммерции"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "logist",
+        "direktor-po-logistike"
+      ]
     },
     {
       "name": "Физиотерапия и реабилитация",
@@ -4018,7 +4769,9 @@
         "Университет Безмиялем Вакыф",
         "Университет здравоохранения и технологий Коджаэли"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "fizioterapevt-massazhist"
+      ]
     },
     {
       "name": "Мода и дизайн",
@@ -4031,7 +4784,9 @@
         "Префектурный женский университет Гунма",
         "Сеульский женский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "modeler"
+      ]
     },
     {
       "name": "Общественные науки",
@@ -4058,7 +4813,9 @@
         "Западно-Казахстанский инновационно-технологический университет",
         "Казахстанско-Американский свободный университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "shkolnyy-uchitel"
+      ]
     },
     {
       "name": "Бизнес, управление и право",
@@ -4085,7 +4842,9 @@
         "Университет Боккони",
         "Франкфуртская школа финансов и менеджмента"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "finansovyy-analitik"
+      ]
     },
     {
       "name": "Магистратура по бизнес-администрированию (MBA)",
@@ -4098,7 +4857,9 @@
         "Университет Голдсмитс, Лондон",
         "Университет Дюкейн"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "predprinimatel"
+      ]
     },
     {
       "name": "Инженерная экология",
@@ -4112,7 +4873,9 @@
         "Нижегородский государственный архитектурно-строительный университет",
         "Санкт-Петербургский государственный архитектурно-строительный университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-ekolog"
+      ]
     },
     {
       "name": "Менеджмент и управление",
@@ -4127,7 +4890,9 @@
         "Казахский университет транспорта и коммуникаций имени М. Тынышпаева",
         "Казахстанско-Немецкий университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "proektnyy-menedzher"
+      ]
     },
     {
       "name": "Медико-профилактическое дело",
@@ -4141,7 +4906,9 @@
         "Казахский национальный медицинский университет имени С.Д. Асфендиярова",
         "Казахстанско-Российский медицинский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "epidemiolog"
+      ]
     },
     {
       "name": "Международное право",
@@ -4154,7 +4921,9 @@
         "Китайский университет политических наук и права",
         "Римский университет международных исследований"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "yurist-advokat"
+      ]
     },
     {
       "name": "Бакалавр искусств в области коммуникаций",
@@ -4167,7 +4936,9 @@
         "Университет Нового Орлеана",
         "Университет Пеппердин"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "spetsialist-po-mediakommunikatsiyam"
+      ]
     },
     {
       "name": "Бакалавриат по философии",
@@ -4206,7 +4977,9 @@
         "Пекинский колледж народной полиции",
         "Саратовская государственная юридическая академия"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "politseyskiy"
+      ]
     },
     {
       "name": "Английская литература",
@@ -4219,7 +4992,9 @@
         "Колледж Леди Маргарет Холл, Оксфордский университет",
         "Колледж Род-Айленда"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "filolog-lingvist"
+      ]
     },
     {
       "name": "Биомедицинские науки",
@@ -4233,7 +5008,9 @@
         "Университет здравоохранения и науки штата Орегон",
         "Университет Кеймён"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "meditsinskiy-laboratornyy-tehnolog"
+      ]
     },
     {
       "name": "Автоматизация и робототехника",
@@ -4246,7 +5023,9 @@
         "Краковская горная академия имени Станислава Сташича",
         "Опольский технологический университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-po-avtomatizatsii-i-robototehnike"
+      ]
     },
     {
       "name": "Магистратура по экономике",
@@ -4259,7 +5038,9 @@
         "Университет Версаля Сен-Кантен-ан-Ивелин",
         "Университет Париж-Сорбонна Север"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "ekonomist-analitik"
+      ]
     },
     {
       "name": "Bachelor of Science in Computer Science",
@@ -4272,7 +5053,9 @@
         "Луизианский государственный университет",
         "Манитобский университет"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Bachelor of Engineering",
@@ -4298,7 +5081,9 @@
         "Национальный исследовательский университет «МИЭТ»",
         "Национальный исследовательский университет «Московский физико-технический институт»"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-po-kiberbezopasnosti"
+      ]
     },
     {
       "name": "Computer Science and Computer Engineering",
@@ -4311,7 +5096,9 @@
         "Национальный исследовательский Томский политехнический университет",
         "Национальный исследовательский университет «МИЭТ»"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Applied Mathematics and Computer Science",
@@ -4325,7 +5112,9 @@
         "Национальный исследовательский университет «МИЭТ»",
         "Национальный исследовательский университет «Московский авиационный институт (национальный исследовательский университет)»"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "matematik"
+      ]
     },
     {
       "name": "Перевод и интерпретация",
@@ -4338,7 +5127,9 @@
         "Пекинский университет языка и культуры",
         "Сычуаньский университет международных исследований"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "biznes-perevodchik"
+      ]
     },
     {
       "name": "Электротехника и автоматизация",
@@ -4351,7 +5142,9 @@
         "Северо-Китайский электротехнический университет",
         "Тяньцзиньский китайско-германский университет прикладных наук"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "inzhener-elektrik"
+      ]
     },
     {
       "name": "Бакалавр бизнес-администрирования",
@@ -4364,7 +5157,9 @@
         "Университет Джеймса Кука в Сингапуре",
         "Университет Крандолл"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "predprinimatel"
+      ]
     },
     {
       "name": "Бакалавр дизайна",
@@ -4390,7 +5185,9 @@
         "Технологический университет Суинберн",
         "Университет Крандолл"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Магистратура по международному бизнесу",
@@ -4403,7 +5200,9 @@
         "Университет Деусто",
         "Университет Йорк Сент-Джон"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "predprinimatel"
+      ]
     },
     {
       "name": "Бакалавр медицины и хирургии",
@@ -4416,7 +5215,9 @@
         "Университет Джеймса Кука",
         "Университет Западной Австралии"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "hirurg"
+      ]
     },
     {
       "name": "Магистр искусств",
@@ -4442,7 +5243,9 @@
         "Университет здравоохранения и технологий Коджаэли",
         "Университет Локман Хеким"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "meditsinskiy-laboratornyy-tehnolog"
+      ]
     },
     {
       "name": "Бакалавр наук (BSc) в области компьютерных наук",
@@ -4455,7 +5258,9 @@
         "Университет Вестминстера",
         "Университет Уэльса Тринити Сент-Дэвид"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "razrabotchik-programmnogo-obespecheniya"
+      ]
     },
     {
       "name": "Французский язык и литература",
@@ -4468,7 +5273,9 @@
         "Университет Поль Валери Монпелье",
         "Университет Сорбонна Новая — Париж III"
       ],
-      "direction_slugs": []
+      "direction_slugs": [
+        "filolog-lingvist"
+      ]
     }
   ]
 }
