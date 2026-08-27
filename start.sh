@@ -193,6 +193,10 @@ docker-compose exec api python scripts/backfill_jinaq_program_requirements.py
 # row and deletes the duplicate. Idempotent (already-merged entries are a
 # no-op), local dataset, no network access.
 docker-compose exec api python scripts/apply_kz_university_merge.py
+# Pre-existing duplicate unrelated to jinaq: KAZGUU University was renamed
+# to Maqsut Narikbayev University, but both the old (kazgyuu) and new (mnu)
+# rows existed separately in the curated dataset. Idempotent, no-op once merged.
+docker-compose exec api python scripts/merge_kazguu_into_mnu.py
 
 # Tags Program rows (mostly the jinaq import above, but any other untagged
 # program too) with directions/professions from the human-reviewed mapping
