@@ -29,6 +29,7 @@ _PILLOW_FORMAT_TO_CONTENT_TYPE: dict[str, str] = {
     "JPEG": "image/jpeg",
     "PNG": "image/png",
     "WEBP": "image/webp",
+    "AVIF": "image/avif",
 }
 
 
