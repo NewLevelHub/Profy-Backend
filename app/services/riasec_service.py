@@ -144,21 +144,20 @@ async def matched_careers(
     # Tie-break on slug (ascending) so equal scores don't depend on DB row
     # order — same convention as top_code's HOLLAND_ORDER tie-break above.
     scored.sort(key=lambda pair: (-pair[1], pair[0].slug))
-    # Never surface two directions with the literally identical holland_code
-    # in the same result — found live: 3 of the top-5 careers shown to a
-    # student (Архивариус/Аудитор/Бухгалтер) all had holland_code=="CSE",
-    # so they scored identically AND cited the identical evidence, reading
-    # as the app just repeating itself. Positional scoring above already
-    # differentiates anagrams (CSE vs ESC) — this handles the case no
-    # scoring change can fix: an exact duplicate code has no order to weigh.
-    deduped: list[tuple[Direction, int]] = []
-    seen_codes: set[str] = set()
-    for direction, score in scored:
-        if direction.holland_code in seen_codes:
-            continue
-        seen_codes.add(direction.holland_code)
-        deduped.append((direction, score))
-    return deduped[:limit]
+    # Used to drop every direction but one for an exact-duplicate
+    # holland_code here (found live: 3 of 5 careers shown to a student all
+    # had holland_code=="CSE", reading as the app repeating itself) — but
+    # that also permanently hid every OTHER direction sharing that code from
+    # EVERY student, no matter how well any of them actually fit, which
+    # stopped scaling once the catalog grew past ~120 directions (more
+    # entries than there are distinct 3-distinct-letter codes, so exact
+    # collisions become unavoidable). The repetition problem this was
+    # guarding against is now handled correctly downstream instead —
+    # report_v2_assembler.py's build_riasec_careers gives any career sharing
+    # already-shown matched evidence its own distinguishing clause (that
+    # career's own skills_needed[0]) rather than repeating the sentence — so
+    # nothing needs to be hidden here to avoid reading as copy-pasted.
+    return scored[:limit]
 
 
 def _aversion_ratio(letter: str, aversion_counts: dict[str, int], counts: dict[str, int]) -> float:
