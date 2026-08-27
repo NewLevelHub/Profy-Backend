@@ -123,7 +123,14 @@ MIN_ENT_THRESHOLD_OVERRIDES: dict[str, int] = {
 }
 
 
-def get_min_ent_threshold(code: str, program_id: str | None = None) -> int:
+def get_min_ent_threshold(code: str, program_id: str | None = None, *, is_national: bool = False) -> int:
+    """Official МОН РК threshold table (confirmed stable year-to-year — see
+    https://www.nur.kz/society/2348017 and https://www.gov.kz/memleket/entities/sci/press/news/details/696041):
+    Педагогика/Право = 75, Здравоохранение = 70, национальные вузы = 65 for
+    everything else, всё остальное = 50. The "национальный" designation is
+    approximated by that word appearing in the university's own official
+    name (not a verified legal-status registry) — good enough for a
+    fallback floor, not authoritative."""
     if program_id in MIN_ENT_THRESHOLD_OVERRIDES:
         return MIN_ENT_THRESHOLD_OVERRIDES[program_id]
     if code.startswith("B00") or code.startswith("B01") or code == "B020":
@@ -132,6 +139,8 @@ def get_min_ent_threshold(code: str, program_id: str | None = None) -> int:
         return 75  # Право
     if code in ["B084", "B085", "B086", "B087", "B088", "B089"]:
         return 70  # Здравоохранение
+    if is_national:
+        return 65  # Национальные вузы
     return 50  # Остальные
 
 def classify_program(name: str) -> str | None:
@@ -345,7 +354,8 @@ async def main() -> None:
 
             # 1. Update exams and min threshold
             exams = CLASSIFIER_CODE_TO_EXAMS.get(code)
-            min_ent_threshold = get_min_ent_threshold(code, str(program.id))
+            is_national = "национальн" in program.university.name.lower()
+            min_ent_threshold = get_min_ent_threshold(code, str(program.id), is_national=is_national)
 
             if exams and requirements.get("exams") != exams:
                 requirements["exams"] = exams
