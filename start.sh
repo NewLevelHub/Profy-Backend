@@ -185,6 +185,15 @@ docker-compose exec api python scripts/backfill_jinaq_program_requirements.py
 # once locally, then mirror the resulting MinIO bucket to prod storage
 # (`mc mirror local/profi-media prod/profi-media`) instead of re-downloading.
 
+# Most KZ universities jinaq couldn't exact-match already existed in the
+# curated set under a different name string (abbreviations, "имени"/"им.",
+# EN/RU name pairs, institution renames, Astana/Nur-Sultan city naming) —
+# checked by hand, reviewed in scripts/data/jinaq/kz_university_merge_review.json.
+# Merges each confirmed jinaq duplicate's photo/specialties into the curated
+# row and deletes the duplicate. Idempotent (already-merged entries are a
+# no-op), local dataset, no network access.
+docker-compose exec api python scripts/apply_kz_university_merge.py
+
 # Tags Program rows (mostly the jinaq import above, but any other untagged
 # program too) with directions/professions from the human-reviewed mapping
 # in scripts/data/jinaq/specialty_direction_review.json. Only ever touches

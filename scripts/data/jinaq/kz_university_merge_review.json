@@ -13,7 +13,7 @@
       },
       "confidence": "high",
       "reason": "punctuation-only difference (space after 'К.')",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "959",
@@ -27,7 +27,7 @@
       },
       "confidence": "high",
       "reason": "curated row just adds the (АГЭУ) abbreviation suffix",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "955",
@@ -41,7 +41,7 @@
       },
       "confidence": "high",
       "reason": "curated row just adds the (АТУ) abbreviation suffix",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "985",
@@ -55,7 +55,7 @@
       },
       "confidence": "high",
       "reason": "curated row just adds the (АУЭС) abbreviation suffix",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "958",
@@ -69,7 +69,7 @@
       },
       "confidence": "high",
       "reason": "EN/RU name pair, city matches",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1041",
@@ -83,7 +83,7 @@
       },
       "confidence": "medium",
       "reason": "институт (jinaq) vs университет (curated), same city and namesake",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "993",
@@ -97,7 +97,7 @@
       },
       "confidence": "high",
       "reason": "EN/RU name pair, city matches",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1021",
@@ -111,7 +111,7 @@
       },
       "confidence": "high",
       "reason": "abbreviated vs full first name of same namesake",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1020",
@@ -125,7 +125,7 @@
       },
       "confidence": "high",
       "reason": "abbreviated vs full first name of same namesake",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "2",
@@ -139,7 +139,7 @@
       },
       "confidence": "high",
       "reason": "КазНУ abbreviation / EN full name pair, flagship university",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1027",
@@ -153,7 +153,7 @@
       },
       "confidence": "high",
       "reason": "curated drops 'государственный', same namesake and city",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1022",
@@ -167,7 +167,7 @@
       },
       "confidence": "high",
       "reason": "curated drops the 'имени Д. Серикбаева' suffix, same city",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1012",
@@ -177,7 +177,7 @@
       "proposed_curated_match": null,
       "confidence": "none",
       "reason": "no candidate found — Кокшетау city not otherwise represented in curated KZ list",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "957",
@@ -191,7 +191,7 @@
       },
       "confidence": "high",
       "reason": "'Университет' vs 'Юниверсити' transliteration variant, same city",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "999",
@@ -205,7 +205,7 @@
       },
       "confidence": "high",
       "reason": "EN/RU name pair, city matches",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "961",
@@ -219,7 +219,7 @@
       },
       "confidence": "high",
       "reason": "curated drops trailing 'в Казахстане', same city",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1055",
@@ -233,7 +233,7 @@
       },
       "confidence": "high",
       "reason": "'Екибастузский'/'Экибастузский' spelling variant only",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "995",
@@ -247,7 +247,7 @@
       },
       "confidence": "high",
       "reason": "EN/RU name pair, city matches",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1030",
@@ -257,7 +257,7 @@
       "proposed_curated_match": null,
       "confidence": "none",
       "reason": "no candidate found — curated's only Zapadno-Kazakhstan entry is the medical university, a different institution",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1018",
@@ -271,7 +271,7 @@
       },
       "confidence": "high",
       "reason": "full vs abbreviated namesake first name",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "953",
@@ -285,7 +285,7 @@
       },
       "confidence": "high",
       "reason": "exact same institution, slug abbreviates the Russian name",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "974",
@@ -299,7 +299,7 @@
       },
       "confidence": "high",
       "reason": "curated just adds the (КАСТ) abbreviation suffix",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "967",
@@ -309,7 +309,7 @@
       "proposed_curated_match": null,
       "confidence": "none",
       "reason": "no candidate found in curated KZ list",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "2341",
@@ -321,9 +321,9 @@
         "name": "Международная образовательная корпорация (КазГАСА)",
         "city": "Алматы"
       },
-      "confidence": "low",
-      "reason": "shares the КазГАСА abbreviation with jinaq entry 982 (International Educational Corporation) — possible 3-way overlap (this row, entry 982, and the curated row might all be the same institution under different historical names), or this could be a genuinely distinct predecessor institution. Verify before confirming — do not blindly merge both 982 and 2341 into the same curated row without checking.",
-      "confirmed": false
+      "confidence": "high",
+      "reason": "Подтверждено пользователем: КазГАСА — ведущий институт внутри Международной образовательной корпорации, один вуз",
+      "confirmed": true
     },
     {
       "jinaq_external_id": "962",
@@ -337,7 +337,7 @@
       },
       "confidence": "high",
       "reason": "EN/RU name pair, city matches",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "963",
@@ -351,7 +351,7 @@
       },
       "confidence": "high",
       "reason": "'имени' vs 'им.' only",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "965",
@@ -365,7 +365,7 @@
       },
       "confidence": "medium",
       "reason": "институт (jinaq) vs академия (curated), same 'автомобильно-дорожный' subject and city",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1002",
@@ -379,7 +379,7 @@
       },
       "confidence": "high",
       "reason": "curated adds 'исследовательский' and abbreviates the namesake, same institution",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1011",
@@ -393,7 +393,7 @@
       },
       "confidence": "high",
       "reason": "curated drops the 'Некоммерческое акционерное общество' legal-form prefix, same city",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "968",
@@ -407,7 +407,7 @@
       },
       "confidence": "high",
       "reason": "curated just adds the (КазНАИУ) abbreviation suffix",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "969",
@@ -421,7 +421,7 @@
       },
       "confidence": "medium",
       "reason": "'национальный' (jinaq) vs 'государственный' (curated) — same subject-specific (women's pedagogical) university, verify it wasn't actually renamed to something else",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "970",
@@ -435,7 +435,7 @@
       },
       "confidence": "high",
       "reason": "'имени' vs 'им.' + curated adds (КазНМУ) suffix",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "972",
@@ -449,7 +449,7 @@
       },
       "confidence": "high",
       "reason": "EN/RU name pair, flagship university",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1067",
@@ -459,7 +459,7 @@
       "proposed_curated_match": null,
       "confidence": "none",
       "reason": "no candidate found in curated KZ list",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "975",
@@ -473,7 +473,7 @@
       },
       "confidence": "high",
       "reason": "EN/RU name pair",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1001",
@@ -487,7 +487,7 @@
       },
       "confidence": "high",
       "reason": "'имени' vs 'им.' only",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "976",
@@ -499,9 +499,9 @@
         "name": "ALT UNIVERSITY им. Мухаметжана Тынышпаева",
         "city": "Алматы"
       },
-      "confidence": "low",
-      "reason": "very different name strings (curated: 'ALT UNIVERSITY им. Мухаметжана Тынышпаева'), only the surname reference overlaps — verify carefully before confirming, could be wrong",
-      "confirmed": false
+      "confidence": "high",
+      "reason": "Подтверждено пользователем: вуз переименован в ALT UNIVERSITY им. Мухаметжана Тынышпаева",
+      "confirmed": true
     },
     {
       "jinaq_external_id": "988",
@@ -515,7 +515,7 @@
       },
       "confidence": "high",
       "reason": "EN/RU name pair, iconic university",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "954",
@@ -529,7 +529,7 @@
       },
       "confidence": "high",
       "reason": "curated just adds the (КБТУ) abbreviation suffix",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "978",
@@ -543,7 +543,7 @@
       },
       "confidence": "high",
       "reason": "curated just adds the (КНУ) abbreviation suffix",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "979",
@@ -557,7 +557,7 @@
       },
       "confidence": "high",
       "reason": "curated just adds the (КРМУ) abbreviation suffix",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1034",
@@ -571,7 +571,7 @@
       },
       "confidence": "high",
       "reason": "curated drops the 'Карагандинская' city-adjective prefix, same city",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1036",
@@ -583,9 +583,9 @@
         "name": "Карагандинский индустриальный университет",
         "city": "Темиртау"
       },
-      "confidence": "low",
-      "reason": "name matches closely but curated row's city is Темиртау, not Караганда (adjacent cities) — verify this is really the same institution before confirming",
-      "confirmed": false
+      "confidence": "high",
+      "reason": "Подтверждено пользователем: тот же вуз, локация — г. Темиртау",
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1037",
@@ -599,7 +599,7 @@
       },
       "confidence": "high",
       "reason": "reordered name, same city",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1038",
@@ -613,7 +613,7 @@
       },
       "confidence": "high",
       "reason": "curated drops the 'имени Абылкаса Сагинова' suffix and 'государственный', same city",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1039",
@@ -627,7 +627,7 @@
       },
       "confidence": "high",
       "reason": "curated drops 'государственный', same namesake and city",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1040",
@@ -637,7 +637,7 @@
       "proposed_curated_match": null,
       "confidence": "none",
       "reason": "no candidate found in curated KZ list",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "980",
@@ -651,7 +651,7 @@
       },
       "confidence": "medium",
       "reason": "'общественный' (jinaq) vs no modifier (curated) — same city, verify same institution",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1054",
@@ -665,7 +665,7 @@
       },
       "confidence": "high",
       "reason": "curated's primary name is English with the Russian full name in parens — matches exactly",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1044",
@@ -679,7 +679,7 @@
       },
       "confidence": "high",
       "reason": "curated drops the 'имени Ахмета Байтурсынова' suffix, same city",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1046",
@@ -693,7 +693,7 @@
       },
       "confidence": "high",
       "reason": "'Зулкарнай'/'Зулхарнай' + 'Алдамжара'/'Алдамжар' spelling variants only",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1048",
@@ -707,7 +707,7 @@
       },
       "confidence": "high",
       "reason": "EN/RU translation, city matches",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1050",
@@ -721,7 +721,7 @@
       },
       "confidence": "high",
       "reason": "EN/RU translation, city matches",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1051",
@@ -735,7 +735,7 @@
       },
       "confidence": "high",
       "reason": "EN/RU translation + reorder, city matches",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1003",
@@ -749,7 +749,7 @@
       },
       "confidence": "high",
       "reason": "EN/RU name pair (Astana Medical University / Медицинский университет Астана), city matches",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "982",
@@ -763,7 +763,7 @@
       },
       "confidence": "high",
       "reason": "EN/RU translation of the same name, city matches",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1057",
@@ -773,7 +773,7 @@
       "proposed_curated_match": null,
       "confidence": "none",
       "reason": "no candidate found — distinct from the unrelated МИТУ engineering university",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "981",
@@ -787,7 +787,7 @@
       },
       "confidence": "high",
       "reason": "EN/RU translation, city matches",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1062",
@@ -801,7 +801,7 @@
       },
       "confidence": "high",
       "reason": "EN/RU translation, city Туркестан matches both",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "983",
@@ -815,7 +815,7 @@
       },
       "confidence": "high",
       "reason": "EN/RU translation, city matches",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1065",
@@ -825,7 +825,7 @@
       "proposed_curated_match": null,
       "confidence": "none",
       "reason": "no candidate found in curated KZ list",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "984",
@@ -839,7 +839,7 @@
       },
       "confidence": "high",
       "reason": "curated just adds the (МУИТ) abbreviation suffix",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1061",
@@ -849,7 +849,7 @@
       "proposed_curated_match": null,
       "confidence": "none",
       "reason": "no candidate found in curated KZ list",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1",
@@ -863,7 +863,7 @@
       },
       "confidence": "high",
       "reason": "EN/RU name pair, city matches",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1059",
@@ -877,7 +877,7 @@
       },
       "confidence": "medium",
       "reason": "institution was renamed (Pavlodar State University -> Toraighyrov University) — city Павлодар matches exactly, verify it's the same institution and not a genuine separate one",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1047",
@@ -887,7 +887,7 @@
       "proposed_curated_match": null,
       "confidence": "none",
       "reason": "no candidate found — distinct from Kostanay Regional University",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1023",
@@ -897,7 +897,7 @@
       "proposed_curated_match": null,
       "confidence": "none",
       "reason": "no candidate found in curated KZ list",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1063",
@@ -907,7 +907,7 @@
       "proposed_curated_match": null,
       "confidence": "none",
       "reason": "no candidate found in curated KZ list",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1045",
@@ -921,7 +921,7 @@
       },
       "confidence": "high",
       "reason": "институт (jinaq) vs университет (curated) only, same city",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1029",
@@ -935,7 +935,7 @@
       },
       "confidence": "high",
       "reason": "curated drops 'государственный педагогический', same namesake and city",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1026",
@@ -949,7 +949,7 @@
       },
       "confidence": "medium",
       "reason": "'инновационный' (jinaq) vs 'Международный' (curated) modifier differs, same namesake and city",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1010",
@@ -963,7 +963,7 @@
       },
       "confidence": "high",
       "reason": "EN/RU name pair, city matches",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1060",
@@ -977,7 +977,7 @@
       },
       "confidence": "medium",
       "reason": "middle-name spelling variant ('Жумабека' vs 'Жубанова'), same surname and city",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1008",
@@ -989,9 +989,9 @@
         "name": "Maqsut Narikbayev University",
         "city": "Астана"
       },
-      "confidence": "medium",
-      "reason": "curated ALSO has a separate 'Университет КАЗГЮУ имени М.С. Нарикбаева' (slug kazgyuu) — this looks like a pre-existing duplicate in the curated data itself (KAZGUU renamed to Maqsut Narikbayev University), unrelated to jinaq. Needs a human decision on whether jinaq's row should merge into kazgyuu, mnu, or whether kazgyuu and mnu should first be merged with each other.",
-      "confirmed": false
+      "confidence": "high",
+      "reason": "Подтверждено пользователем: текущее название — Maqsut Narikbayev University",
+      "confirmed": true
     },
     {
       "jinaq_external_id": "986",
@@ -1001,7 +1001,7 @@
       "proposed_curated_match": null,
       "confidence": "none",
       "reason": "no candidate found in curated KZ list",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "989",
@@ -1015,7 +1015,7 @@
       },
       "confidence": "high",
       "reason": "curated drops the 'имени Кенжегали Сагадиева' suffix, same city",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1066",
@@ -1025,7 +1025,7 @@
       "proposed_curated_match": null,
       "confidence": "none",
       "reason": "no candidate found in curated KZ list",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "5",
@@ -1035,7 +1035,7 @@
       "proposed_curated_match": null,
       "confidence": "none",
       "reason": "no candidate found in curated KZ list — real, well-known university, likely just genuinely missing from curated set",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "987",
@@ -1049,7 +1049,7 @@
       },
       "confidence": "high",
       "reason": "exact name match — only the city differs (jinaq: Нур-Султан, curated: Астана — same city, renamed over the years)",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1064",
@@ -1059,7 +1059,7 @@
       "proposed_curated_match": null,
       "confidence": "none",
       "reason": "no candidate found in curated KZ list",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1042",
@@ -1069,7 +1069,7 @@
       "proposed_curated_match": null,
       "confidence": "none",
       "reason": "no candidate found in curated KZ list",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1013",
@@ -1083,7 +1083,7 @@
       },
       "confidence": "high",
       "reason": "reordered name, same namesake and city",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1068",
@@ -1093,7 +1093,7 @@
       "proposed_curated_match": null,
       "confidence": "none",
       "reason": "no candidate found in curated KZ list",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1071",
@@ -1107,17 +1107,19 @@
       },
       "confidence": "high",
       "reason": "curated drops 'государственный', same namesake and city",
-      "confirmed": false
+      "confirmed": true
     },
     {
       "jinaq_external_id": "1069",
       "jinaq_university_id": "fb558ea4-6ceb-4f99-a84c-88b620ef9200",
-      "jinaq_name": "Южно-Казахстанский медицинский университет имени М. Ауэзова",
+      "jinaq_name": "Южно-Казахстанский медицинская академия",
       "jinaq_city": "Шымкент",
       "proposed_curated_match": null,
-      "confidence": "low",
-      "reason": "possible jinaq data-quality duplicate of external_id 1071 with 'медицинский' inserted into the name — no distinct medical-only curated counterpart exists; could be a genuinely separate institution or a source error, needs a human look at the raw jinaq record",
-      "confirmed": false
+      "confidence": "none",
+      "reason": "Не слияние — подтверждено пользователем, что реальное название вуза \"Южно-Казахстанская медицинская академия (ЮКМА)\", без \"им. М. Ауэзова\". Такой строки в базе нет, нужно просто переименовать эту jinaq-строку, а не сливать.",
+      "confirmed": false,
+      "rename_to": "Южно-Казахстанская медицинская академия (ЮКМА)",
+      "short_name_to": "ЮКМА"
     }
   ]
 }
