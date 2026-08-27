@@ -172,7 +172,8 @@ def classify_program(name: str) -> str | None:
         
     if 'ветеринар' in n or 'veterin' in n: return 'B078'
     if 'водн' in n or 'water' in n: return 'B082'
-    if 'судовожд' in n: return 'B066'
+    if 'судовожд' in n or 'морск' in n: return 'B066'
+    if 'беспилотн' in n: return 'B063'
     
     # Specific languages and Philology (RU & KZ)
     if 'казах' in n or 'kazakh' in n:
@@ -218,7 +219,7 @@ def classify_program(name: str) -> str | None:
         if 'social' in n: return 'B038'
 
     # IT and computer science (RU & EN)
-    if any(k in n for k in ['информацион', 'компьютер', 'вычислительн', 'программн', 'it', 'computer', 'software', 'data science', 'искусствен', 'artificial', 'intelligence', 'machine learning', 'разработк', 'web', 'кибер', 'cyber', 'программист', 'баз данных', 'информатика', 'вычислени', 'programming', 'системный администратор', 'вычислительная', 'ai', 'data', 'computing', 'systems', 'smart', 'технологии', 'вычисления', 'данн', 'данных', 'крипто', 'сетев', 'сети', 'телематик', 'internet of things', 'things', 'защиты информации', 'поддержк']):
+    if any(k in n for k in ['информацион', 'компьютер', 'вычислительн', 'программн', 'it', 'computer', 'software', 'data science', 'искусствен', 'artificial', 'intelligence', 'machine learning', 'разработк', 'web', 'кибер', 'cyber', 'программист', 'баз данных', 'информатика', 'вычислени', 'programming', 'системный администратор', 'вычислительная', 'ai', 'data', 'computing', 'systems', 'smart', 'технологии', 'вычисления', 'данн', 'данных', 'крипто', 'сетев', 'сети', 'телематик', 'internet of things', 'things', 'защиты информации', 'поддержк', 'information technology', 'программирован']):
         if 'безопасн' in n or 'security' in n or 'крипто' in n or 'защит' in n or 'защиты информации' in n: return 'B058'
         if 'моделир' in n: return 'B157'
         return 'B057'
@@ -248,7 +249,7 @@ def classify_program(name: str) -> str | None:
         return 'B006'
 
     # Natural Sciences
-    if 'биотехнолог' in n: return 'B050'
+    if 'биотехнолог' in n or 'biotechnology' in n: return 'B050'
     if any(k in n for k in ['биолог', 'biolog', 'biology', 'biological', 'микробиол', 'генетик']): return 'B050'
     if any(k in n for k in ['эколог', 'ecology', 'окружающ', 'environmental', 'природопольз', 'жизнедеят', 'техносфер', 'спасател', 'мчс']): return 'B051'
     if any(k in n for k in ['геолог', 'geolog', 'земл', 'earth', 'географ', 'geography', 'недра', 'картогр', 'геодез', 'землеустр', 'метеорол', 'сейсмол']): return 'B052'
@@ -257,7 +258,7 @@ def classify_program(name: str) -> str | None:
     if any(k in n for k in ['математик', 'mathe', 'mathematics', 'статистик', 'statistics', 'актуари', 'аналитик данных', 'data analyst']): return 'B055'
 
     # Engineering (RU)
-    if 'архитект' in n or 'architect' in n: return 'B073'
+    if 'архитект' in n or 'architect' in n or 'архетиктур' in n: return 'B073'
     if any(k in n for k in ['строитель', 'civil', 'бетон', 'конструкц', 'дорожн', 'трубопровод', 'здани', 'сооружен', 'проектир']): return 'B074'
     if any(k in n for k in ['электр', 'power', 'энерг', 'тепло', 'канализ', 'водоснабж', 'водоотвед']):
         if 'тепло' in n or 'heat' in n: return 'B162'
@@ -278,7 +279,7 @@ def classify_program(name: str) -> str | None:
     if any(k in n for k in ['фармац', 'pharmac', 'аптек']):
         if 'производ' in n or 'технол' in n: return 'B072'
         return 'B085'
-    if any(k in n for k in ['медицин', 'врач', 'medicine', 'doctor', 'клиническ', 'стоматолог', 'педиатр', 'сестринск', 'nursing', 'здравоохр', 'hygiene', 'гигиен', 'акушер', 'фармакология', 'здоровье', 'анатом', 'профилактическ', 'реабилитолог', 'эрготерапевт', 'резидентур', 'санитарн']):
+    if any(k in n for k in ['медицин', 'врач', 'medicine', 'doctor', 'клиническ', 'стоматолог', 'dentistry', 'педиатр', 'pediatrics', 'сестринск', 'nursing', 'здравоохр', 'public health', 'hygiene', 'гигиен', 'акушер', 'фармакология', 'здоровье', 'анатом', 'профилактическ', 'реабилитолог', 'kinesiotherapy', 'ergotherapy', 'эрготерапевт', 'резидентур', 'санитарн']):
         return 'B086'
 
     # Services & Agriculture

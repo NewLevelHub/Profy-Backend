@@ -44,7 +44,7 @@ class PhotoImportResult:
     failed: list[tuple[str, str]] = field(default_factory=list)
 
 
-async def _download_image(http_client: httpx.AsyncClient, url: str) -> bytes | None:
+async def download_image(http_client: httpx.AsyncClient, url: str) -> bytes | None:
     async with http_client.stream("GET", url) as response:
         response.raise_for_status()
         chunks: list[bytes] = []
@@ -57,7 +57,7 @@ async def _download_image(http_client: httpx.AsyncClient, url: str) -> bytes | N
         return b"".join(chunks)
 
 
-def _validate_image(data: bytes) -> tuple[str, int | None, int | None] | None:
+def validate_image(data: bytes) -> tuple[str, int | None, int | None] | None:
     """Returns (content_type, width, height) if `data` is a real, decodable
     image in an allowed format, else None. Trusts only what Pillow actually
     decoded — never the HTTP Content-Type header, which a scraped source can
@@ -117,14 +117,14 @@ async def import_one_institution_photo(
     full_url = f"{media_base_url.rstrip('/')}/{image_path.lstrip('/')}"
 
     try:
-        data = await _download_image(http_client, full_url)
+        data = await download_image(http_client, full_url)
     except httpx.HTTPError as exc:
         return f"failed:{exc!r}"
 
     if data is None:
         return "failed:image too large"
 
-    validated = _validate_image(data)
+    validated = validate_image(data)
     if validated is None:
         return "invalid_image"
     content_type, width, height = validated
@@ -148,7 +148,7 @@ async def import_one_institution_photo(
     )
     is_primary = has_images_result.scalar_one_or_none() is None
 
-    ext = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}[content_type]
+    ext = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif"}[content_type]
     storage_key = f"universities/{university_id}/{checksum[:16]}.{ext}"
     await storage.put_object(storage_key, data, content_type=content_type)
 

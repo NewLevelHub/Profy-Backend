@@ -205,6 +205,16 @@ class UniversityRequirement(BaseModel):
     has_military_department: bool | None = None
     admissions_contacts: dict[str, str] = {}
     notes: list[str] = []
+    # None (default) = "we haven't specifically researched this university's
+    # ENT policy" — same as every other field here, absence isn't a claim.
+    # False is a real, confirmed fact (e.g. Nazarbayev University, or a
+    # foreign-funded branch campus like Astana MSU) — the frontend must show
+    # "не требуется", never "не установлен", when this is False, since those
+    # mean genuinely different things to an applicant. True is set for
+    # confirmed ENT-requiring universities that also run their own
+    # additional test (most KZ private universities), purely so the
+    # frontend never has to guess from a missing value alone.
+    requires_ent: bool | None = None
 
 
 class SubjectFit(BaseModel):

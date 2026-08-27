@@ -139,4 +139,5 @@ def map_program_requirement(program: Program, university: University) -> Univers
         has_military_department=university.facilities.get("has_military_department") if university.facilities else None,
         admissions_contacts=university.contacts or {},
         notes=notes,
+        requires_ent=university.facilities.get("requires_ent") if university.facilities else None,
     )
