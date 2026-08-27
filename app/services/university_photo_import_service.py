@@ -14,6 +14,7 @@ import io
 from dataclasses import dataclass, field
 
 import httpx
+import pillow_avif  # noqa: F401 — registers AVIF decode support in Pillow on import; unused directly
 from PIL import Image, UnidentifiedImageError
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
