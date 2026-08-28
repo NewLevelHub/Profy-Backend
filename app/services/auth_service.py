@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -12,6 +13,8 @@ from app.models.user import User
 from app.schemas.auth import RegisterResponse
 from app.services import email_service
 from app.services.token_utils import generate_code, hash_code
+
+logger = logging.getLogger(__name__)
 
 _pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
@@ -66,7 +69,10 @@ async def register(email: str, password: str, db: AsyncSession) -> RegisterRespo
     code = await _create_verification_token(user.id, db)
     await db.commit()
 
-    await email_service.send_verification_email(email, code)
+    try:
+        await email_service.send_verification_email(email, code)
+    except Exception:
+        logger.exception("Failed to send verification email during registration for %s", email)
 
     return RegisterResponse(user_id=user.id, email=email, message="Код отправлен на почту")
 
@@ -75,7 +81,13 @@ async def login(email: str, password: str, db: AsyncSession) -> tuple[User, str]
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
 
-    if not user or not verify_password(password, user.hashed_password):
+    if not user:
+        raise PermissionError("Invalid credentials")
+
+    if user.hashed_password is None:
+        raise LookupError(f"google_account:{user.email}")
+
+    if not verify_password(password, user.hashed_password):
         raise PermissionError("Invalid credentials")
 
     if not user.is_verified:
@@ -134,4 +146,7 @@ async def resend_verification(email: str, db: AsyncSession) -> None:
     code = await _create_verification_token(user.id, db)
     await db.commit()
 
-    await email_service.send_verification_email(email, code)
+    try:
+        await email_service.send_verification_email(email, code)
+    except Exception:
+        logger.exception("Failed to send verification email during resend for %s", email)

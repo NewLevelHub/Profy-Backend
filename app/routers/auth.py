@@ -8,6 +8,7 @@ from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.auth import (
     ForgotPasswordRequest,
+    GoogleAuthRequest,
     LoginRequest,
     RegisterRequest,
     RegisterResponse,
@@ -18,7 +19,7 @@ from app.schemas.auth import (
     VerifyEmailRequest,
     VerifyResetCodeRequest,
 )
-from app.services import auth_service, password_reset_service
+from app.services import auth_service, oauth_service, password_reset_service
 
 router = APIRouter(tags=["auth"])
 
@@ -68,11 +69,21 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     except PermissionError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc))
     except LookupError as exc:
-        _, email = str(exc).split(":", 1)
+        kind, email = str(exc).split(":", 1)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail={"detail": "email_not_verified", "email": email},
+            detail={"detail": kind, "email": email},
         )
+
+    return TokenResponse(access_token=token, user=user)
+
+
+@router.post("/google", response_model=TokenResponse)
+async def google_login(body: GoogleAuthRequest, db: AsyncSession = Depends(get_db)):
+    try:
+        user, token = await oauth_service.login_or_register_google(body.id_token, db)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
     return TokenResponse(access_token=token, user=user)
 
