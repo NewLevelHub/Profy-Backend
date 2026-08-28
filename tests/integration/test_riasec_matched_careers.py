@@ -42,17 +42,22 @@ async def test_matched_careers_tie_break_is_deterministic_by_slug(
     assert [slug for slug, _ in tied] == ["test-tiebreak-aaa", "test-tiebreak-zzz"]
 
 
-async def test_matched_careers_never_returns_two_directions_with_the_same_holland_code(
+async def test_matched_careers_keeps_directions_that_share_an_exact_holland_code(
     db_session: AsyncSession,
 ) -> None:
-    """Found live: 3 of 5 careers shown to a {C,S,E}-topped student
-    (Архивариус/Аудитор/Бухгалтер) all had holland_code=="CSE" — same score,
-    same matched evidence, same `why` text, reading as the app repeating
-    itself. Only the tie-break winner among exact-duplicate codes may
-    survive; a large limit must not resurrect the loser. A repeated-letter
-    code ("CCC") keeps this isolated from the ~90 real seeded directions
-    (which never repeat a letter), so no real direction can interfere with
-    which of the two test rows wins the tie-break."""
+    """matched_careers used to drop every direction but one whenever two
+    shared the exact same holland_code (found live: 3 of 5 careers shown to
+    a {C,S,E}-topped student all had holland_code=="CSE") — but with the
+    catalog now past 120 directions, exact-code collisions are unavoidable
+    (more directions than there are distinct 3-distinct-letter codes), so
+    that silently hid a growing fraction of the whole catalog from every
+    student, forever. The "reads as repeating itself" problem this was
+    guarding against is now handled downstream instead (see
+    report_v2_assembler.build_riasec_careers's evidence-based
+    differentiation) — so both should now survive, in the same
+    slug-ascending tie-break order as any other tie. A repeated-letter code
+    ("CCC") keeps this isolated from the ~140 real seeded directions (which
+    never repeat a letter)."""
     d_z = Direction(name="Z Duplicate", slug="test-dup-zzz", holland_code="CCC")
     d_a = Direction(name="A Duplicate", slug="test-dup-aaa", holland_code="CCC")
     db_session.add_all([d_z, d_a])
@@ -61,4 +66,4 @@ async def test_matched_careers_never_returns_two_directions_with_the_same_hollan
     matched = await riasec_service.matched_careers(["C", "S", "E"], db_session, limit=1000)
 
     dup_slugs = [d.slug for d, _ in matched if d.slug in ("test-dup-aaa", "test-dup-zzz")]
-    assert dup_slugs == ["test-dup-aaa"], "only the slug-ascending tie-break winner should survive dedup"
+    assert dup_slugs == ["test-dup-aaa", "test-dup-zzz"], "both must survive, in slug-ascending tie-break order"

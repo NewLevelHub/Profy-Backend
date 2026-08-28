@@ -245,10 +245,10 @@ async def main() -> None:
                         # university.description (which only kicks in when
                         # program.description.length <= 40) skip long group
                         # labels that read as if they were real descriptions.
-                        # See university-cards-ux-fix-plan.md §7 and
-                        # scripts/backfill_kz_program_description.py, which
-                        # nulls out already-seeded rows carrying this same
-                        # stale value.
+                        # See university-cards-ux-fix-plan.md §7 — the generic
+                        # per-field diff below already nulls out any existing
+                        # row still carrying the old stale group_name value on
+                        # every rerun, no separate backfill needed.
                         "description": None,
                         "who_its_for": None,
                         "career_options": [],

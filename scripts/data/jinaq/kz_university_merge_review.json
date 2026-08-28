@@ -1,0 +1,1125 @@
+{
+  "_readme": "Each entry is a jinaq-created University row suspected of duplicating an already-existing curated row. Check `proposed_curated_match` against `jinaq_name`/`jinaq_city` — if it's really the same institution, set `confirmed: true`. If it's wrong, either fix `proposed_curated_match` to the right slug (look it up among existing universities) or set it to null if this is genuinely a new, previously-missing university. Nothing merges until `confirmed` is true — scripts/apply_kz_university_merge.py only acts on confirmed entries.",
+  "entries": [
+    {
+      "jinaq_external_id": "1017",
+      "jinaq_university_id": "a2872b49-69b3-4695-a4c0-d6ba57c73428",
+      "jinaq_name": "Актюбинский региональный университет имени К. Жубанова",
+      "jinaq_city": "Актобе",
+      "proposed_curated_match": {
+        "slug": "aktyubinskiy-regionalnyy-universitet",
+        "name": "Актюбинский региональный университет имени К.Жубанова",
+        "city": "Актобе"
+      },
+      "confidence": "high",
+      "reason": "punctuation-only difference (space after 'К.')",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "959",
+      "jinaq_university_id": "0cdba83f-d9f5-42e9-ac51-5a72d493cd06",
+      "jinaq_name": "Алматинский гуманитарно-экономический университет",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "almatinskij-gumanitarno-ekonomicheskij-universitet",
+        "name": "Алматинский гуманитарно-экономический университет (АГЭУ)",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "curated row just adds the (АГЭУ) abbreviation suffix",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "955",
+      "jinaq_university_id": "1b5073ca-12b2-4bf9-8004-541931e002dd",
+      "jinaq_name": "Алматинский технологический университет",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "almatinskij-tehnologicheskij-universitet",
+        "name": "Алматинский технологический университет (АТУ)",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "curated row just adds the (АТУ) abbreviation suffix",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "985",
+      "jinaq_university_id": "64bf9127-e2c9-43ee-9eda-ddf2eae3791a",
+      "jinaq_name": "Алматинский университет энергетики и связи",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "almatinskij-universitet-energetiki-i-svyazi",
+        "name": "Алматинский университет энергетики и связи (АУЭС)",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "curated row just adds the (АУЭС) abbreviation suffix",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "958",
+      "jinaq_university_id": "f8a6f8cc-8bad-48fa-a19e-4ca47f746d83",
+      "jinaq_name": "Алматы Менеджмент Университет",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "almaty-management-university",
+        "name": "Almaty Management University",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "EN/RU name pair, city matches",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1041",
+      "jinaq_university_id": "4e66be2f-f4fc-4605-9e2e-f7f7728a2d8f",
+      "jinaq_name": "Аркалыкский педагогический институт имени Ыбырая Алтынсарина",
+      "jinaq_city": "Аркалык",
+      "proposed_curated_match": {
+        "slug": "arkalykskiy-pedagogicheskiy-universitet",
+        "name": "Аркалыкский педагогический университет имени Ыбырай Алтынсарин",
+        "city": "Аркалык"
+      },
+      "confidence": "medium",
+      "reason": "институт (jinaq) vs университет (curated), same city and namesake",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "993",
+      "jinaq_university_id": "32083445-4371-4228-b738-42159449cc66",
+      "jinaq_name": "Астана IT Университет",
+      "jinaq_city": "Астана",
+      "proposed_curated_match": {
+        "slug": "astana-it-university",
+        "name": "Astana IT University",
+        "city": "Астана"
+      },
+      "confidence": "high",
+      "reason": "EN/RU name pair, city matches",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1021",
+      "jinaq_university_id": "497463b5-23aa-4259-8558-673e696d919c",
+      "jinaq_name": "Атырауский университет имени Х. Досмухамедова",
+      "jinaq_city": "Атырау",
+      "proposed_curated_match": {
+        "slug": "atyrauskiy-universitet-dosmuhamedova",
+        "name": "Атырауский университет имени Халела Досмухамедова",
+        "city": "Атырау"
+      },
+      "confidence": "high",
+      "reason": "abbreviated vs full first name of same namesake",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1020",
+      "jinaq_university_id": "f5efeea9-2bc5-47ef-8e68-16de60f343eb",
+      "jinaq_name": "Атырауский университет нефти и газа имени С. Утебаева",
+      "jinaq_city": "Атырау",
+      "proposed_curated_match": {
+        "slug": "atyrauskiy-universitet-nefti-i-gaza",
+        "name": "Атырауский университет нефти и газа имени Сафи Утебаева",
+        "city": "Атырау"
+      },
+      "confidence": "high",
+      "reason": "abbreviated vs full first name of same namesake",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "2",
+      "jinaq_university_id": "e5189591-2229-4259-a188-701601fea31b",
+      "jinaq_name": "КазНУ им. аль-Фараби",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "al-farabi-kazakh-national-university",
+        "name": "Al-Farabi Kazakh National University",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "КазНУ abbreviation / EN full name pair, flagship university",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1027",
+      "jinaq_university_id": "37d7302f-db72-40fa-aaea-46e04ba0b53a",
+      "jinaq_name": "Восточно-Казахстанский государственный университет имени Сарсена Аманжолова",
+      "jinaq_city": "Усть-Каменогорск",
+      "proposed_curated_match": {
+        "slug": "vostochno-kazakhstanskiy-universitet",
+        "name": "Восточно-Казахстанский университет имени Сарсена Аманжолова",
+        "city": "Усть-Каменогорск"
+      },
+      "confidence": "high",
+      "reason": "curated drops 'государственный', same namesake and city",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1022",
+      "jinaq_university_id": "376c65c8-1ef5-44c0-ad4e-20eb35c540f2",
+      "jinaq_name": "Восточно-Казахстанский технический университет имени Д. Серикбаева",
+      "jinaq_city": "Усть-Каменогорск",
+      "proposed_curated_match": {
+        "slug": "vktu-ust-kamenogorsk",
+        "name": "Восточно-Казахстанский технический университет",
+        "city": "Усть-Каменогорск"
+      },
+      "confidence": "high",
+      "reason": "curated drops the 'имени Д. Серикбаева' suffix, same city",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1012",
+      "jinaq_university_id": "5aec6822-7f04-4037-8f5e-2ccbfe95d777",
+      "jinaq_name": "Гуманитарно-техническая академия",
+      "jinaq_city": "Кокшетау",
+      "proposed_curated_match": null,
+      "confidence": "none",
+      "reason": "no candidate found — Кокшетау city not otherwise represented in curated KZ list",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "957",
+      "jinaq_university_id": "3423fc46-c73e-43ea-b7e2-74e801cbfbf9",
+      "jinaq_name": "Де Монтфорт Университет Казахстан",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "de-montfort-yuniversiti-kazahstan",
+        "name": "Де Монтфорт Юниверсити Казахстан (DMU Kazakhstan)",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "'Университет' vs 'Юниверсити' transliteration variant, same city",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "999",
+      "jinaq_university_id": "0dfed7a0-8c94-4d56-a9e1-5f60d57411d1",
+      "jinaq_name": "Евразийский национальный университет имени Л.Н. Гумилева",
+      "jinaq_city": "Астана",
+      "proposed_curated_match": {
+        "slug": "l-n-gumilyov-eurasian-national-university",
+        "name": "L.N. Gumilyov Eurasian National University",
+        "city": "Астана"
+      },
+      "confidence": "high",
+      "reason": "EN/RU name pair, city matches",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "961",
+      "jinaq_university_id": "902daf05-428f-4e22-934f-9e6359f43323",
+      "jinaq_name": "Египетский университет исламской культуры «Нур-Мубарак» в Казахстане",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "egipetskij-universitet-islamskoj-kultury-nur-mubarak",
+        "name": "Египетский университет исламской культуры «Нур-Мубарак»",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "curated drops trailing 'в Казахстане', same city",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1055",
+      "jinaq_university_id": "c057e9b5-bf77-4de8-a7ac-e4ef208d978d",
+      "jinaq_name": "Екибастузский инженерно-технический институт имени академика К.Сатпаева",
+      "jinaq_city": "Екибастуз",
+      "proposed_curated_match": {
+        "slug": "ekibastuzskiy-inzhenerno-tekhnicheskiy-institut-satpaeva",
+        "name": "Экибастузский инженерно-технический институт имени академика К. Сатпаева",
+        "city": "Экибастуз"
+      },
+      "confidence": "high",
+      "reason": "'Екибастузский'/'Экибастузский' spelling variant only",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "995",
+      "jinaq_university_id": "4ecc819f-4b2a-4220-9d5f-53951c27d490",
+      "jinaq_name": "Есильский университет",
+      "jinaq_city": "Астана",
+      "proposed_curated_match": {
+        "slug": "esil-university",
+        "name": "Esil University",
+        "city": "Астана"
+      },
+      "confidence": "high",
+      "reason": "EN/RU name pair, city matches",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1030",
+      "jinaq_university_id": "5100df3b-dce4-4e73-8ccd-71f9ec622429",
+      "jinaq_name": "Западно-Казахстанский инновационно-технологический университет",
+      "jinaq_city": "Уральск",
+      "proposed_curated_match": null,
+      "confidence": "none",
+      "reason": "no candidate found — curated's only Zapadno-Kazakhstan entry is the medical university, a different institution",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1018",
+      "jinaq_university_id": "1f41d7ed-096c-450a-8223-c6003aafda2e",
+      "jinaq_name": "Западно-Казахстанский медицинский университет имени Марата Оспанова",
+      "jinaq_city": "Актобе",
+      "proposed_curated_match": {
+        "slug": "zapadno-kazakhstanskiy-meditsinskiy-universitet",
+        "name": "Западно-Казахстанский медицинский университет имени М.Оспанова",
+        "city": "Актобе"
+      },
+      "confidence": "high",
+      "reason": "full vs abbreviated namesake first name",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "953",
+      "jinaq_university_id": "17eaffdd-e016-4578-acaf-4ff6b755e46d",
+      "jinaq_name": "Казахская академия гражданской авиации",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "akademiya-grazhdanskoj-aviaczii",
+        "name": "Академия гражданской авиации (АГА)",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "exact same institution, slug abbreviates the Russian name",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "974",
+      "jinaq_university_id": "acf8d97a-aeac-433a-9385-6bd6327e6634",
+      "jinaq_name": "Казахская академия спорта и туризма",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "kazahskaya-akademiya-sporta-i-turizma",
+        "name": "Казахская академия спорта и туризма (КАСТ)",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "curated just adds the (КАСТ) abbreviation suffix",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "967",
+      "jinaq_university_id": "4492b331-fe9c-44a3-958b-956264f7e736",
+      "jinaq_name": "Казахская академия труда и социальных отношений",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": null,
+      "confidence": "none",
+      "reason": "no candidate found in curated KZ list",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "2341",
+      "jinaq_university_id": "6d36844e-7375-48ef-861b-ee341fb72a43",
+      "jinaq_name": "Казахская головная архитектурно-строительная академия",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "mezhdunarodnaya-obrazovatelnaya-korporacziya",
+        "name": "Международная образовательная корпорация (КазГАСА)",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "Подтверждено пользователем: КазГАСА — ведущий институт внутри Международной образовательной корпорации, один вуз",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "962",
+      "jinaq_university_id": "8bb69d69-f272-4f9d-8edb-0269cb9a4ff1",
+      "jinaq_name": "Казахская национальная академия искусств имени Т. Жургенова",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "kazakh-national-academy-of-arts-named-after-t-zhurgenov",
+        "name": "Kazakh National Academy of Arts named after T. Zhurgenov",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "EN/RU name pair, city matches",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "963",
+      "jinaq_university_id": "f8e35430-e951-49df-90ea-756c02cefa99",
+      "jinaq_name": "Казахская национальная консерватория имени Курмангазы",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "kazahskaya-naczionalnaya-konservatoriya-im-kurmangazy",
+        "name": "Казахская национальная консерватория им. Курмангазы",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "'имени' vs 'им.' only",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "965",
+      "jinaq_university_id": "2d665ed9-a572-4cb8-bd4a-683fdb231793",
+      "jinaq_name": "Казахский автомобильно-дорожный институт имени Л.Б. Гончарова",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "kazahskaya-avtomobilno-dorozhnaya-akademiya",
+        "name": "Казахстанский автомобильно-дорожный институт (КазАДИ)",
+        "city": "Алматы"
+      },
+      "confidence": "medium",
+      "reason": "институт (jinaq) vs академия (curated), same 'автомобильно-дорожный' subject and city",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1002",
+      "jinaq_university_id": "bebe84e0-fd9d-4307-83a1-9813b31ff012",
+      "jinaq_name": "Казахский агротехнический университет имени Сакена Сейфуллина",
+      "jinaq_city": "Астана",
+      "proposed_curated_match": {
+        "slug": "kazatu",
+        "name": "Казахский агротехнический исследовательский университет им. С. Сейфуллина",
+        "city": "Астана"
+      },
+      "confidence": "high",
+      "reason": "curated adds 'исследовательский' and abbreviates the namesake, same institution",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1011",
+      "jinaq_university_id": "74e4b4e5-dea6-4f62-a9cc-db9852fc09d4",
+      "jinaq_name": "Казахский медицинский университет «Семей»",
+      "jinaq_city": "Семей",
+      "proposed_curated_match": {
+        "slug": "meditsinskiy-universitet-semey",
+        "name": "Некоммерческое акционерное общество «Медицинский университет Семей»",
+        "city": "Семей"
+      },
+      "confidence": "high",
+      "reason": "curated drops the 'Некоммерческое акционерное общество' legal-form prefix, same city",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "968",
+      "jinaq_university_id": "786ece9e-06c0-4d12-a191-d7e383736511",
+      "jinaq_name": "Казахский национальный аграрный исследовательский университет",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "kazahskij-naczionalnyj-agrarnyj-issledovatelskij-universitet",
+        "name": "Казахский национальный аграрный исследовательский университет (КазНАИУ)",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "curated just adds the (КазНАИУ) abbreviation suffix",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "969",
+      "jinaq_university_id": "3e7e90a2-85d1-4322-a845-98d7482ad24a",
+      "jinaq_name": "Казахский национальный женский педагогический университет",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "kazahskij-gosudarstvennyj-zhenskij-pedagogicheskij-universitet",
+        "name": "Казахский государственный женский педагогический университет (КГЖПУ)",
+        "city": "Алматы"
+      },
+      "confidence": "medium",
+      "reason": "'национальный' (jinaq) vs 'государственный' (curated) — same subject-specific (women's pedagogical) university, verify it wasn't actually renamed to something else",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "970",
+      "jinaq_university_id": "e5625f2f-fd1f-4374-b06c-1d62c60ec7b6",
+      "jinaq_name": "Казахский национальный медицинский университет имени С.Д. Асфендиярова",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "kazahskij-naczionalnyj-mediczinskij-universitet-im-s-d-asfendiyarova",
+        "name": "Казахский национальный медицинский университет им. С.Д. Асфендиярова (КазНМУ)",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "'имени' vs 'им.' + curated adds (КазНМУ) suffix",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "972",
+      "jinaq_university_id": "6c87f604-be26-4e57-9174-2d70c2058f67",
+      "jinaq_name": "Казахский национальный педагогический университет имени Абая",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "abai-kazakh-national-pedagogical-university",
+        "name": "Abai Kazakh National Pedagogical University",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "EN/RU name pair, flagship university",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1067",
+      "jinaq_university_id": "f10e0c24-7eef-4e00-9bcf-df6d2291ea91",
+      "jinaq_name": "Казахский университет дружбы народов имени академика А. Куатбекова",
+      "jinaq_city": "Шымкент",
+      "proposed_curated_match": null,
+      "confidence": "none",
+      "reason": "no candidate found in curated KZ list",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "975",
+      "jinaq_university_id": "9d48231f-fb23-4744-a861-67392ec2b931",
+      "jinaq_name": "Казахский университет международных отношений и мировых языков имени Абылай хана",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "kazakh-ablai-khan-university-of-international-relations-and-world-languages",
+        "name": "Kazakh Ablai Khan University of International Relations and World Languages",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "EN/RU name pair",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1001",
+      "jinaq_university_id": "85222006-8bde-4fd5-8753-ed0511af5106",
+      "jinaq_name": "Казахский университет технологии и бизнеса имени К. Кулажанова",
+      "jinaq_city": "Астана",
+      "proposed_curated_match": {
+        "slug": "kazutb",
+        "name": "Казахский университет технологии и бизнеса им. К. Кулажанова",
+        "city": "Астана"
+      },
+      "confidence": "high",
+      "reason": "'имени' vs 'им.' only",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "976",
+      "jinaq_university_id": "0102af8b-49b4-47f6-8c4c-edb2f7385bdc",
+      "jinaq_name": "Казахский университет транспорта и коммуникаций имени М. Тынышпаева",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "akademiya-logistiki-i-transporta",
+        "name": "ALT UNIVERSITY им. Мухаметжана Тынышпаева",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "Подтверждено пользователем: вуз переименован в ALT UNIVERSITY им. Мухаметжана Тынышпаева",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "988",
+      "jinaq_university_id": "84ca4f31-4a73-41fc-bfae-e9ea30767068",
+      "jinaq_name": "Казахстанско-Американский университет КИМЭП",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "kimep-university",
+        "name": "KIMEP University",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "EN/RU name pair, iconic university",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "954",
+      "jinaq_university_id": "dce014a7-7cd4-4d65-b453-8ae29171f2d6",
+      "jinaq_name": "Казахстанско-Британский Технический Университет",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "kazahstansko-britanskij-tehnicheskij-universitet",
+        "name": "Казахстанско-Британский технический университет (КБТУ)",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "curated just adds the (КБТУ) abbreviation suffix",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "978",
+      "jinaq_university_id": "7a6ba4e0-bc10-4bc0-9d84-16aa6d8de71e",
+      "jinaq_name": "Казахстанско-Немецкий университет",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "kazahstansko-nemeczkij-universitet",
+        "name": "Казахстанско-Немецкий университет (КНУ)",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "curated just adds the (КНУ) abbreviation suffix",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "979",
+      "jinaq_university_id": "6b5432f6-845f-4aa2-b2b0-51657b093f91",
+      "jinaq_name": "Казахстанско-Российский медицинский университет",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "kazahstansko-rossijskij-mediczinskij-universitet",
+        "name": "Казахстанско-Российский медицинский университет (КРМУ)",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "curated just adds the (КРМУ) abbreviation suffix",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1034",
+      "jinaq_university_id": "58eb72a9-3e09-400f-87ad-cdd93a91a41e",
+      "jinaq_name": "Карагандинская академия «Bolashaq»",
+      "jinaq_city": "Караганда",
+      "proposed_curated_match": {
+        "slug": "bolashaq-akademiya",
+        "name": "Академия «Bolashaq»",
+        "city": "Караганда"
+      },
+      "confidence": "high",
+      "reason": "curated drops the 'Карагандинская' city-adjective prefix, same city",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1036",
+      "jinaq_university_id": "e27d552f-ff0a-4111-99df-e1c9fc9058fa",
+      "jinaq_name": "Карагандинский государственный индустриальный университет",
+      "jinaq_city": "Караганда",
+      "proposed_curated_match": {
+        "slug": "karagandinskiy-industrialnyy-universitet",
+        "name": "Карагандинский индустриальный университет",
+        "city": "Темиртау"
+      },
+      "confidence": "high",
+      "reason": "Подтверждено пользователем: тот же вуз, локация — г. Темиртау",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1037",
+      "jinaq_university_id": "f5122d78-0be7-454b-a186-6bde9e91b139",
+      "jinaq_name": "Карагандинский государственный медицинский университет",
+      "jinaq_city": "Караганда",
+      "proposed_curated_match": {
+        "slug": "medical-university-karaganda",
+        "name": "Медицинский университет Караганды",
+        "city": "Караганда"
+      },
+      "confidence": "high",
+      "reason": "reordered name, same city",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1038",
+      "jinaq_university_id": "f4c52b4f-e510-48b6-9a2c-513b62f4e613",
+      "jinaq_name": "Карагандинский государственный технический университет имени Абылкаса Сагинова",
+      "jinaq_city": "Караганда",
+      "proposed_curated_match": {
+        "slug": "kartu-karaganda",
+        "name": "Карагандинский технический университет (КарТУ)",
+        "city": "Караганда"
+      },
+      "confidence": "high",
+      "reason": "curated drops the 'имени Абылкаса Сагинова' suffix and 'государственный', same city",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1039",
+      "jinaq_university_id": "2462c2bd-184e-4917-b7aa-b8cdd23282de",
+      "jinaq_name": "Карагандинский государственный университет имени академика Е. А. Букетова",
+      "jinaq_city": "Караганда",
+      "proposed_curated_match": {
+        "slug": "karsu-buketova",
+        "name": "Карагандинский университет имени академика Е.А. Букетова",
+        "city": "Караганда"
+      },
+      "confidence": "high",
+      "reason": "curated drops 'государственный', same namesake and city",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1040",
+      "jinaq_university_id": "cf983992-aaae-46da-be23-9606b9cb4448",
+      "jinaq_name": "Карагандинский университет Казпотребсоюза",
+      "jinaq_city": "Караганда",
+      "proposed_curated_match": null,
+      "confidence": "none",
+      "reason": "no candidate found in curated KZ list",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "980",
+      "jinaq_university_id": "b91883d4-c687-4c9d-88e1-1da8c5844a7b",
+      "jinaq_name": "Каспийский общественный университет",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "kaspijskij-universitet",
+        "name": "Каспийский университет (Caspian University)",
+        "city": "Алматы"
+      },
+      "confidence": "medium",
+      "reason": "'общественный' (jinaq) vs no modifier (curated) — same city, verify same institution",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1054",
+      "jinaq_university_id": "4743001a-61c0-44a3-9efb-2dd212e3c46c",
+      "jinaq_name": "Каспийский университет технологий и инжиниринга имени Ш. Есенова",
+      "jinaq_city": "Актау",
+      "proposed_curated_match": {
+        "slug": "yessenov-university",
+        "name": "Yessenov University (Каспийский государственный университет технологий и инжиниринга им. Ш. Есенова)",
+        "city": "Актау"
+      },
+      "confidence": "high",
+      "reason": "curated's primary name is English with the Russian full name in parens — matches exactly",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1044",
+      "jinaq_university_id": "54282bf1-2f5c-45d6-a817-d9c4da5b577b",
+      "jinaq_name": "Костанайский региональный университет имени Ахмета Байтурсынова",
+      "jinaq_city": "Костанай",
+      "proposed_curated_match": {
+        "slug": "kostanay-regional-university",
+        "name": "Костанайский региональный университет",
+        "city": "Костанай"
+      },
+      "confidence": "high",
+      "reason": "curated drops the 'имени Ахмета Байтурсынова' suffix, same city",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1046",
+      "jinaq_university_id": "b80592de-645d-4303-a6f8-e33c5044cc9b",
+      "jinaq_name": "Костанайский социально-технический университет имени академика Зулкарнай Алдамжара",
+      "jinaq_city": "Костанай",
+      "proposed_curated_match": {
+        "slug": "kostanaiskiy-sotsialno-tekhnicheskiy-universitet-aldamzhar",
+        "name": "Костанайский социально-технический университет имени академика Зулхарнай Алдамжар",
+        "city": "Костанай"
+      },
+      "confidence": "high",
+      "reason": "'Зулкарнай'/'Зулхарнай' + 'Алдамжара'/'Алдамжар' spelling variants only",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1048",
+      "jinaq_university_id": "86eeccdf-91bd-40dd-9db4-983c69e9725e",
+      "jinaq_name": "Kyzylorda Open University",
+      "jinaq_city": "Кызылорда",
+      "proposed_curated_match": {
+        "slug": "kyzylordinskiy-otkrytiy-universitet",
+        "name": "Кызылординский открытый университет",
+        "city": "Кызылорда"
+      },
+      "confidence": "high",
+      "reason": "EN/RU translation, city matches",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1050",
+      "jinaq_university_id": "65fecffd-a75c-4356-91e4-5f48a6119526",
+      "jinaq_name": "Kyzylorda Bolashak University",
+      "jinaq_city": "Кызылорда",
+      "proposed_curated_match": {
+        "slug": "bolashak-universitet-kyzylorda",
+        "name": "Кызылординский Университет «Болашак»",
+        "city": "Кызылорда"
+      },
+      "confidence": "high",
+      "reason": "EN/RU translation, city matches",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1051",
+      "jinaq_university_id": "0f3111b4-f267-4d7c-afac-8ed6eadb4211",
+      "jinaq_name": "Korkyt Ata Kyzylorda University",
+      "jinaq_city": "Кызылорда",
+      "proposed_curated_match": {
+        "slug": "kyzylordinskiy-universitet-imeni-korkyt-ata",
+        "name": "Кызылординский государственный университет имени Коркыт Ата",
+        "city": "Кызылорда"
+      },
+      "confidence": "high",
+      "reason": "EN/RU translation + reorder, city matches",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1003",
+      "jinaq_university_id": "6a277ec5-001d-414b-8040-514126efad83",
+      "jinaq_name": "Astana Medical University",
+      "jinaq_city": "Астана",
+      "proposed_curated_match": {
+        "slug": "amu",
+        "name": "Медицинский университет Астана",
+        "city": "Астана"
+      },
+      "confidence": "high",
+      "reason": "EN/RU name pair (Astana Medical University / Медицинский университет Астана), city matches",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "982",
+      "jinaq_university_id": "efb6acd7-31af-4ffd-adb7-580419e6d17d",
+      "jinaq_name": "International Educational Corporation",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "mezhdunarodnaya-obrazovatelnaya-korporacziya",
+        "name": "Международная образовательная корпорация (КазГАСА)",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "EN/RU translation of the same name, city matches",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1057",
+      "jinaq_university_id": "7c28da9c-ac4c-4b3c-bb55-c8e430739b40",
+      "jinaq_name": "Международный гуманитарно-технический институт",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": null,
+      "confidence": "none",
+      "reason": "no candidate found — distinct from the unrelated МИТУ engineering university",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "981",
+      "jinaq_university_id": "9f828cd6-7906-42e8-91e6-69b14f346863",
+      "jinaq_name": "International Engineering and Technology University",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "mezhdunarodnyj-inzhenerno-tehnologicheskij-universitet",
+        "name": "Международный инженерно-технологический университет (МИТУ)",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "EN/RU translation, city matches",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1062",
+      "jinaq_university_id": "57d8058b-e120-4b56-8ffd-ebed81fd7b1c",
+      "jinaq_name": "Khoja Ahmed Yasawi International Kazakh-Turkish University",
+      "jinaq_city": "Туркестан",
+      "proposed_curated_match": {
+        "slug": "mezhdunarodnyy-kazahsko-turetskiy-universitet-imeni-hodzhi-ahmeda-yasavi",
+        "name": "Международный казахско-турецкий университет имени Ходжи Ахмеда Ясави",
+        "city": "Туркестан"
+      },
+      "confidence": "high",
+      "reason": "EN/RU translation, city Туркестан matches both",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "983",
+      "jinaq_university_id": "a2a0d909-34fd-45f2-a0ca-0754ca3b0caa",
+      "jinaq_name": "International Transport and Humanities University",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "mezhdunarodnyy-transportno-gumanitarnyy-universitet",
+        "name": "Международный транспортно-гуманитарный университет",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "EN/RU translation, city matches",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1065",
+      "jinaq_university_id": "1203e071-9d97-4b48-93d0-31c8bdf74253",
+      "jinaq_name": "Silkway International University",
+      "jinaq_city": "Шымкент",
+      "proposed_curated_match": null,
+      "confidence": "none",
+      "reason": "no candidate found in curated KZ list",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "984",
+      "jinaq_university_id": "3e40dd84-9ebd-4b1b-8c1e-fd57e6072df3",
+      "jinaq_name": "Международный университет информационных технологий",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "mezhdunarodnyj-universitet-informaczionnyh-tehnologij",
+        "name": "Международный университет информационных технологий (МУИТ)",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "curated just adds the (МУИТ) abbreviation suffix",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1061",
+      "jinaq_university_id": "7458647b-85d4-4562-96b0-6049ece33889",
+      "jinaq_name": "Международный университет туризма и гостеприимства",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": null,
+      "confidence": "none",
+      "reason": "no candidate found in curated KZ list",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1",
+      "jinaq_university_id": "398bc28e-194d-4b28-937c-e641be7c4761",
+      "jinaq_name": "Назарбаев Университет",
+      "jinaq_city": "Астана",
+      "proposed_curated_match": {
+        "slug": "nazarbayev-university",
+        "name": "Nazarbayev University",
+        "city": "Астана"
+      },
+      "confidence": "high",
+      "reason": "EN/RU name pair, city matches",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1059",
+      "jinaq_university_id": "faaa9276-0daf-4dcb-af07-9169bee92314",
+      "jinaq_name": "Павлодарский государственный университет имени С. Торайгырова",
+      "jinaq_city": "Павлодар",
+      "proposed_curated_match": {
+        "slug": "toraigyrov-university",
+        "name": "Торайгыров Университет (ToU)",
+        "city": "Павлодар"
+      },
+      "confidence": "medium",
+      "reason": "institution was renamed (Pavlodar State University -> Toraighyrov University) — city Павлодар matches exactly, verify it's the same institution and not a genuine separate one",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1047",
+      "jinaq_university_id": "63dc2e68-d87c-4364-a0bc-d4c4bcccbfa3",
+      "jinaq_name": "Педагогический институт имени Умирзака Султангазина",
+      "jinaq_city": "Костанай",
+      "proposed_curated_match": null,
+      "confidence": "none",
+      "reason": "no candidate found — distinct from Kostanay Regional University",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1023",
+      "jinaq_university_id": "b7a70bd2-a899-476b-b9ac-fb5d225ada9d",
+      "jinaq_name": "Региональный инновационный университет",
+      "jinaq_city": "Шымкент",
+      "proposed_curated_match": null,
+      "confidence": "none",
+      "reason": "no candidate found in curated KZ list",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1063",
+      "jinaq_university_id": "fb706a71-01b6-4e15-9489-e0fb5cd9d4e8",
+      "jinaq_name": "Региональный социально-инновационный университет",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": null,
+      "confidence": "none",
+      "reason": "no candidate found in curated KZ list",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1045",
+      "jinaq_university_id": "a6036e5f-fbe3-4625-b973-c0ccc0348970",
+      "jinaq_name": "Рудненский индустриальный институт",
+      "jinaq_city": "Рудный",
+      "proposed_curated_match": {
+        "slug": "rudnenskiy-industrialnyy-universitet",
+        "name": "Рудненский индустриальный университет",
+        "city": "Рудный"
+      },
+      "confidence": "high",
+      "reason": "институт (jinaq) vs университет (curated) only, same city",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1029",
+      "jinaq_university_id": "3d1c44d8-c1eb-494d-8e9a-1d6522a714bf",
+      "jinaq_name": "Таразский государственный педагогический университет имени М. Х. Дулати",
+      "jinaq_city": "Тараз",
+      "proposed_curated_match": {
+        "slug": "tarazskiy-universitet-dulati",
+        "name": "Таразский университет имени М.Х. Дулати",
+        "city": "Тараз"
+      },
+      "confidence": "high",
+      "reason": "curated drops 'государственный педагогический', same namesake and city",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1026",
+      "jinaq_university_id": "a7051771-6d37-49e4-a510-287135dc754a",
+      "jinaq_name": "Таразский инновационный университет имени Шерхана Муртазы",
+      "jinaq_city": "Тараз",
+      "proposed_curated_match": {
+        "slug": "mezhdunarodnyy-tarazskiy-universitet-murtaza",
+        "name": "Международный Таразский университет имени Шерхана Муртазы",
+        "city": "Тараз"
+      },
+      "confidence": "medium",
+      "reason": "'инновационный' (jinaq) vs 'Международный' (curated) modifier differs, same namesake and city",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1010",
+      "jinaq_university_id": "bc4a4ab2-6cde-4e62-b2e8-fba3b3fd9eeb",
+      "jinaq_name": "Университет имени Алихана Бокейхана",
+      "jinaq_city": "Семей",
+      "proposed_curated_match": {
+        "slug": "alikhan-bokeikhan-university",
+        "name": "Alikhan Bokeikhan University",
+        "city": "Семей"
+      },
+      "confidence": "high",
+      "reason": "EN/RU name pair, city matches",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1060",
+      "jinaq_university_id": "bd8fdfbd-64d7-404b-8a96-96f441c9ec52",
+      "jinaq_name": "Университет имени Жумабека Ахметулы Ташенева",
+      "jinaq_city": "Шымкент",
+      "proposed_curated_match": {
+        "slug": "universitet-tasheneva",
+        "name": "Университет имени Жубанова Ахметулы Ташенева",
+        "city": "Шымкент"
+      },
+      "confidence": "medium",
+      "reason": "middle-name spelling variant ('Жумабека' vs 'Жубанова'), same surname and city",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1008",
+      "jinaq_university_id": "528542cb-962d-4717-9a8b-950cd02c44b4",
+      "jinaq_name": "Университет имени М. С. Нарикбаева",
+      "jinaq_city": "Астана",
+      "proposed_curated_match": {
+        "slug": "mnu",
+        "name": "Maqsut Narikbayev University",
+        "city": "Астана"
+      },
+      "confidence": "high",
+      "reason": "Подтверждено пользователем: текущее название — Maqsut Narikbayev University",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "986",
+      "jinaq_university_id": "06e9700d-184c-4b00-bfda-4a9ecccc6b89",
+      "jinaq_name": "Университет иностранных языков и деловой карьеры",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": null,
+      "confidence": "none",
+      "reason": "no candidate found in curated KZ list",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "989",
+      "jinaq_university_id": "cdb867f8-f8ff-4c5e-a66e-2898199fa7d5",
+      "jinaq_name": "Университет международного бизнеса имени Кенжегали Сагадиева",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": {
+        "slug": "universitet-mezhdunarodnogo-biznesa-uib",
+        "name": "Университет международного бизнеса (UIB)",
+        "city": "Алматы"
+      },
+      "confidence": "high",
+      "reason": "curated drops the 'имени Кенжегали Сагадиева' suffix, same city",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1066",
+      "jinaq_university_id": "1d896212-96b3-45ef-a67b-b20fa412400c",
+      "jinaq_name": "Университет «Мирас»",
+      "jinaq_city": "Шымкент",
+      "proposed_curated_match": null,
+      "confidence": "none",
+      "reason": "no candidate found in curated KZ list",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "5",
+      "jinaq_university_id": "3c040d01-756c-4379-a114-4d0e14a79b97",
+      "jinaq_name": "Suleyman Demirel University",
+      "jinaq_city": "Алматы",
+      "proposed_curated_match": null,
+      "confidence": "none",
+      "reason": "no candidate found in curated KZ list — real, well-known university, likely just genuinely missing from curated set",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "987",
+      "jinaq_university_id": "4bca23ab-9b3a-43a9-8610-f8c98597659f",
+      "jinaq_name": "Университет «Туран-Астана»",
+      "jinaq_city": "Нур-Султан",
+      "proposed_curated_match": {
+        "slug": "turan-astana",
+        "name": "Университет «Туран-Астана»",
+        "city": "Астана"
+      },
+      "confidence": "high",
+      "reason": "exact name match — only the city differs (jinaq: Нур-Султан, curated: Астана — same city, renamed over the years)",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1064",
+      "jinaq_university_id": "d8c37644-9baf-4d75-b524-beb259c8d54d",
+      "jinaq_name": "Центрально-Азиатский Инновационный Университет",
+      "jinaq_city": "Шымкент",
+      "proposed_curated_match": null,
+      "confidence": "none",
+      "reason": "no candidate found in curated KZ list",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1042",
+      "jinaq_university_id": "ec14efd2-d654-44be-a0f1-2e8db769d7f8",
+      "jinaq_name": "Центрально-Казахстанская академия",
+      "jinaq_city": "Караганда",
+      "proposed_curated_match": null,
+      "confidence": "none",
+      "reason": "no candidate found in curated KZ list",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1013",
+      "jinaq_university_id": "850101c1-7b3f-418f-96db-a0fcd33b7018",
+      "jinaq_name": "Шакаримский университет",
+      "jinaq_city": "Семей",
+      "proposed_curated_match": {
+        "slug": "shakarima-semey-universitet",
+        "name": "Университет имени Шакарима города Семей",
+        "city": "Семей"
+      },
+      "confidence": "high",
+      "reason": "reordered name, same namesake and city",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1068",
+      "jinaq_university_id": "2d9b4d91-d0ee-4361-8d9d-7abfdb3429ec",
+      "jinaq_name": "Шымкентский университет",
+      "jinaq_city": "Шымкент",
+      "proposed_curated_match": null,
+      "confidence": "none",
+      "reason": "no candidate found in curated KZ list",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1071",
+      "jinaq_university_id": "a8f5cac9-a122-4c99-bd52-726d4b7a7ea6",
+      "jinaq_name": "Южно-Казахстанский государственный университет имени М. Ауэзова",
+      "jinaq_city": "Шымкент",
+      "proposed_curated_match": {
+        "slug": "yuzhno-kazakhstanskiy-universitet-auezova",
+        "name": "Южно-Казахстанский университет имени М. Ауэзова",
+        "city": "Шымкент"
+      },
+      "confidence": "high",
+      "reason": "curated drops 'государственный', same namesake and city",
+      "confirmed": true
+    },
+    {
+      "jinaq_external_id": "1069",
+      "jinaq_university_id": "fb558ea4-6ceb-4f99-a84c-88b620ef9200",
+      "jinaq_name": "Южно-Казахстанский медицинская академия",
+      "jinaq_city": "Шымкент",
+      "proposed_curated_match": null,
+      "confidence": "none",
+      "reason": "Не слияние — подтверждено пользователем, что реальное название вуза \"Южно-Казахстанская медицинская академия (ЮКМА)\", без \"им. М. Ауэзова\". Такой строки в базе нет, нужно просто переименовать эту jinaq-строку, а не сливать.",
+      "confirmed": false,
+      "rename_to": "Южно-Казахстанская медицинская академия (ЮКМА)",
+      "short_name_to": "ЮКМА"
+    }
+  ]
+}

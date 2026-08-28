@@ -30,6 +30,13 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://profi_user:profi_password@db:5432/profi_db
       REDIS_URL: redis://redis:6379/0
+    volumes:
+      # University photos live on the host, not in the image. Mounted
+      # read-write here so the scripts/import_*_photos.py jobs can write new
+      # files; nginx mounts the same folder read-only to serve them.
+      # STORAGE_FS_ROOT (.env) points at /srv/media. Override the host path
+      # with MEDIA_DIR (e.g. MEDIA_DIR=/srv/profy-media on a server).
+      - ${MEDIA_DIR:-../profy-media}:/srv/media
     depends_on:
       db:
         condition: service_healthy
@@ -44,6 +51,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx/local.conf:/etc/nginx/nginx.conf:ro
+      - ${MEDIA_DIR:-../profy-media}:/srv/media:ro
     depends_on:
       - api
     restart: unless-stopped

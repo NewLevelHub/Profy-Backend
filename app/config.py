@@ -43,6 +43,41 @@ class Settings(BaseSettings):
     RESEND_API_KEY: str = ""
     EMAIL_FROM: str = ""
 
+    # Which backend build_storage_backend() returns:
+    #   "fs"  — write photos to STORAGE_FS_ROOT on disk; nginx serves them
+    #           directly (default; no object-storage service to run).
+    #   "s3"  — talk to the S3-compatible endpoint below (MinIO / real
+    #           S3 / R2 / Spaces).
+    STORAGE_BACKEND: str = "fs"
+    # "fs" backend: directory the photos are written to. MUST be the same
+    # directory nginx serves at STORAGE_PUBLIC_BASE_URL — in Docker the one
+    # host folder is bind-mounted into api (read-write) and nginx
+    # (read-only); see docker-compose.yml. This is the in-container path.
+    STORAGE_FS_ROOT: str = "/srv/media"
+
+    # "s3" backend (unused while STORAGE_BACKEND=fs). STORAGE_ENDPOINT_URL is
+    # the write-path boto3 talks to and is often internal.
+    STORAGE_ENDPOINT_URL: str | None = None
+    STORAGE_REGION: str = "us-east-1"
+    STORAGE_ACCESS_KEY: str = ""
+    STORAGE_SECRET_KEY: str = ""
+    STORAGE_BUCKET: str = "profi-media"
+    STORAGE_USE_PATH_STYLE: bool = True
+    # The read-path base the browser actually hits: nginx's /media/ locally,
+    # a CDN / bucket-website domain in prod. Independent of the backend —
+    # build_public_url() just prepends it to the stored storage_key.
+    STORAGE_PUBLIC_BASE_URL: str = "http://localhost/media"
+
+    # University photo import (scripts/import_jinaq_university_photos.py).
+    SCRAPER_USER_AGENT: str = "ProfyUniversityPhotoBot/1.0"
+    SCRAPER_REQUEST_DELAY_SECONDS: float = 1.0
+    SCRAPER_REQUEST_TIMEOUT_SECONDS: float = 20.0
+    # Real domain of the jinaq source site — imageUrl in universities.json is
+    # a relative path (e.g. "/cdn/jinaq-media/institutions/3109/image.webp");
+    # this is prepended to build the absolute download URL. Fill in before
+    # running scripts/import_jinaq_university_photos.py for real.
+    JINAQ_MEDIA_BASE_URL: str = "https://TODO-set-real-jinaq-domain"
+
     @model_validator(mode="after")
     def build_database_url(self) -> Self:
         if self.DATABASE_URL:

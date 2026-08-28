@@ -123,7 +123,14 @@ MIN_ENT_THRESHOLD_OVERRIDES: dict[str, int] = {
 }
 
 
-def get_min_ent_threshold(code: str, program_id: str | None = None) -> int:
+def get_min_ent_threshold(code: str, program_id: str | None = None, *, is_national: bool = False) -> int:
+    """Official МОН РК threshold table (confirmed stable year-to-year — see
+    https://www.nur.kz/society/2348017 and https://www.gov.kz/memleket/entities/sci/press/news/details/696041):
+    Педагогика/Право = 75, Здравоохранение = 70, национальные вузы = 65 for
+    everything else, всё остальное = 50. The "национальный" designation is
+    approximated by that word appearing in the university's own official
+    name (not a verified legal-status registry) — good enough for a
+    fallback floor, not authoritative."""
     if program_id in MIN_ENT_THRESHOLD_OVERRIDES:
         return MIN_ENT_THRESHOLD_OVERRIDES[program_id]
     if code.startswith("B00") or code.startswith("B01") or code == "B020":
@@ -132,6 +139,8 @@ def get_min_ent_threshold(code: str, program_id: str | None = None) -> int:
         return 75  # Право
     if code in ["B084", "B085", "B086", "B087", "B088", "B089"]:
         return 70  # Здравоохранение
+    if is_national:
+        return 65  # Национальные вузы
     return 50  # Остальные
 
 def classify_program(name: str) -> str | None:
@@ -163,7 +172,8 @@ def classify_program(name: str) -> str | None:
         
     if 'ветеринар' in n or 'veterin' in n: return 'B078'
     if 'водн' in n or 'water' in n: return 'B082'
-    if 'судовожд' in n: return 'B066'
+    if 'судовожд' in n or 'морск' in n: return 'B066'
+    if 'беспилотн' in n: return 'B063'
     
     # Specific languages and Philology (RU & KZ)
     if 'казах' in n or 'kazakh' in n:
@@ -209,7 +219,7 @@ def classify_program(name: str) -> str | None:
         if 'social' in n: return 'B038'
 
     # IT and computer science (RU & EN)
-    if any(k in n for k in ['информацион', 'компьютер', 'вычислительн', 'программн', 'it', 'computer', 'software', 'data science', 'искусствен', 'artificial', 'intelligence', 'machine learning', 'разработк', 'web', 'кибер', 'cyber', 'программист', 'баз данных', 'информатика', 'вычислени', 'programming', 'системный администратор', 'вычислительная', 'ai', 'data', 'computing', 'systems', 'smart', 'технологии', 'вычисления', 'данн', 'данных', 'крипто', 'сетев', 'сети', 'телематик', 'internet of things', 'things', 'защиты информации', 'поддержк']):
+    if any(k in n for k in ['информацион', 'компьютер', 'вычислительн', 'программн', 'it', 'computer', 'software', 'data science', 'искусствен', 'artificial', 'intelligence', 'machine learning', 'разработк', 'web', 'кибер', 'cyber', 'программист', 'баз данных', 'информатика', 'вычислени', 'programming', 'системный администратор', 'вычислительная', 'ai', 'data', 'computing', 'systems', 'smart', 'технологии', 'вычисления', 'данн', 'данных', 'крипто', 'сетев', 'сети', 'телематик', 'internet of things', 'things', 'защиты информации', 'поддержк', 'information technology', 'программирован']):
         if 'безопасн' in n or 'security' in n or 'крипто' in n or 'защит' in n or 'защиты информации' in n: return 'B058'
         if 'моделир' in n: return 'B157'
         return 'B057'
@@ -239,7 +249,7 @@ def classify_program(name: str) -> str | None:
         return 'B006'
 
     # Natural Sciences
-    if 'биотехнолог' in n: return 'B050'
+    if 'биотехнолог' in n or 'biotechnology' in n: return 'B050'
     if any(k in n for k in ['биолог', 'biolog', 'biology', 'biological', 'микробиол', 'генетик']): return 'B050'
     if any(k in n for k in ['эколог', 'ecology', 'окружающ', 'environmental', 'природопольз', 'жизнедеят', 'техносфер', 'спасател', 'мчс']): return 'B051'
     if any(k in n for k in ['геолог', 'geolog', 'земл', 'earth', 'географ', 'geography', 'недра', 'картогр', 'геодез', 'землеустр', 'метеорол', 'сейсмол']): return 'B052'
@@ -248,7 +258,7 @@ def classify_program(name: str) -> str | None:
     if any(k in n for k in ['математик', 'mathe', 'mathematics', 'статистик', 'statistics', 'актуари', 'аналитик данных', 'data analyst']): return 'B055'
 
     # Engineering (RU)
-    if 'архитект' in n or 'architect' in n: return 'B073'
+    if 'архитект' in n or 'architect' in n or 'архетиктур' in n: return 'B073'
     if any(k in n for k in ['строитель', 'civil', 'бетон', 'конструкц', 'дорожн', 'трубопровод', 'здани', 'сооружен', 'проектир']): return 'B074'
     if any(k in n for k in ['электр', 'power', 'энерг', 'тепло', 'канализ', 'водоснабж', 'водоотвед']):
         if 'тепло' in n or 'heat' in n: return 'B162'
@@ -269,7 +279,7 @@ def classify_program(name: str) -> str | None:
     if any(k in n for k in ['фармац', 'pharmac', 'аптек']):
         if 'производ' in n or 'технол' in n: return 'B072'
         return 'B085'
-    if any(k in n for k in ['медицин', 'врач', 'medicine', 'doctor', 'клиническ', 'стоматолог', 'педиатр', 'сестринск', 'nursing', 'здравоохр', 'hygiene', 'гигиен', 'акушер', 'фармакология', 'здоровье', 'анатом', 'профилактическ', 'реабилитолог', 'эрготерапевт', 'резидентур', 'санитарн']):
+    if any(k in n for k in ['медицин', 'врач', 'medicine', 'doctor', 'клиническ', 'стоматолог', 'dentistry', 'педиатр', 'pediatrics', 'сестринск', 'nursing', 'здравоохр', 'public health', 'hygiene', 'гигиен', 'акушер', 'фармакология', 'здоровье', 'анатом', 'профилактическ', 'реабилитолог', 'kinesiotherapy', 'ergotherapy', 'эрготерапевт', 'резидентур', 'санитарн']):
         return 'B086'
 
     # Services & Agriculture
@@ -345,7 +355,8 @@ async def main() -> None:
 
             # 1. Update exams and min threshold
             exams = CLASSIFIER_CODE_TO_EXAMS.get(code)
-            min_ent_threshold = get_min_ent_threshold(code, str(program.id))
+            is_national = "национальн" in program.university.name.lower()
+            min_ent_threshold = get_min_ent_threshold(code, str(program.id), is_national=is_national)
 
             if exams and requirements.get("exams") != exams:
                 requirements["exams"] = exams

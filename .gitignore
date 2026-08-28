@@ -18,3 +18,8 @@ venv/
 htmlcov/
 .coverage
 *.log
+
+# University photos — big binary asset, distributed as profy-media.tar.gz out of band
+media/
+profy-media/
+*.tar.gz

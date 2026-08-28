@@ -149,6 +149,19 @@ async def main() -> None:
                             universities_by_ror_id[ror_id] = university
                 else:
                     universities_existing += 1
+                    # Self-heal: ranking/ranking_label only got set at creation
+                    # time, so a university seeded before a ranking_label
+                    # correction (or before parse_ranking() itself was fixed —
+                    # see university-cards-ux-fix-plan.md §1) kept a stale
+                    # value forever. Re-derive on every run instead of only on
+                    # insert, so correcting a label in CLUSTERS above is
+                    # enough on its own — no separate backfill script needed.
+                    new_ranking_label = uni_data["ranking_label"]
+                    new_ranking = parse_ranking(new_ranking_label)
+                    if university.ranking_label != new_ranking_label:
+                        university.ranking_label = new_ranking_label
+                    if university.ranking != new_ranking:
+                        university.ranking = new_ranking
 
                 if university is None:
                     # dry-run: nothing to attach programs to yet
@@ -184,8 +197,21 @@ async def main() -> None:
                             Program.name == program_name,
                         )
                     )
-                    if existing.scalar_one_or_none() is not None:
+                    existing_program = existing.scalar_one_or_none()
+                    if existing_program is not None:
                         programs_existing += 1
+                        # Self-heal, same reasoning as the ranking block above:
+                        # cost_label and requirements["notes"] only got written
+                        # at creation time, so a row seeded before a CLUSTERS
+                        # correction kept the stale value forever. `notes` is
+                        # merged like seed_kz_universities.py does — this data
+                        # source only ever knows about `notes`, but later
+                        # pipeline steps (grant/ENT backfills) add other keys
+                        # into the same dict that must survive a rerun.
+                        if existing_program.cost_label != cost_label:
+                            existing_program.cost_label = cost_label
+                        if existing_program.requirements.get("notes") != notes:
+                            existing_program.requirements = {**existing_program.requirements, "notes": notes}
                         continue
 
                     programs_created += 1

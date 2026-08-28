@@ -4,9 +4,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.artifact import Artifact
+from app.models.certificate import Certificate
 from app.models.profile import Profile, compute_age_group
 from app.schemas.profile import ProfileCreateRequest, ProfileUpdateRequest
-from app.services import artifact_service
+from app.services import artifact_service, certificate_service
 
 
 async def create_profile(
@@ -28,9 +29,11 @@ async def create_profile(
     if existing.scalar_one_or_none() is not None:
         raise ValueError("Profile already exists for this user")
 
-    # `artifacts` (if present) is handled by the caller via artifact_service,
-    # not a Profile column — exclude it before spreading onto the model.
-    profile_fields = data.model_dump(exclude={"artifacts"})
+    # `artifacts`/`certificates` (if present) are handled by the caller via
+    # artifact_service/certificate_service, not Profile columns — exclude
+    # them before spreading onto the model. `gpa_value`/`gpa_scale` ARE real
+    # Profile columns, so they pass through untouched.
+    profile_fields = data.model_dump(exclude={"artifacts", "certificates"})
     profile = Profile(
         user_id=user_id,
         age_group=compute_age_group(data.age),
@@ -52,19 +55,22 @@ async def get_profile(user_id: uuid.UUID, db: AsyncSession) -> Profile | None:
 
 async def update_profile(
     user_id: uuid.UUID, data: ProfileUpdateRequest, db: AsyncSession
-) -> tuple[Profile, list[Artifact]]:
-    """Update the caller's Profile, optionally replacing their artifacts in
-    the same transaction (`data.artifacts`) — mirrors `create_profile`'s
-    combined-write contract. `data.artifacts is None` means "leave artifacts
-    untouched"; the current set is still fetched so the response can embed
-    it (see `ProfileResponse.artifacts`), same as GET.
+) -> tuple[Profile, list[Artifact], list[Certificate]]:
+    """Update the caller's Profile, optionally replacing their artifacts
+    and/or certificates in the same transaction (`data.artifacts`,
+    `data.certificates`) — mirrors `create_profile`'s combined-write
+    contract. `None` for either means "leave that sub-resource untouched";
+    the current set is still fetched so the response can embed it (see
+    `ProfileResponse.artifacts`/`.certificates`), same as GET. `gpa_value`/
+    `gpa_scale` are plain columns and flow through `updates` like any other
+    scalar field.
     """
     result = await db.execute(select(Profile).where(Profile.user_id == user_id))
     profile = result.scalar_one_or_none()
     if profile is None:
         raise ValueError("Profile not found")
 
-    updates = data.model_dump(exclude={"artifacts"}, exclude_none=True)
+    updates = data.model_dump(exclude={"artifacts", "certificates"}, exclude_none=True)
     for key, value in updates.items():
         setattr(profile, key, value)
 
@@ -76,6 +82,13 @@ async def update_profile(
     else:
         artifacts = await artifact_service.get_artifacts(profile.id, db)
 
+    if data.certificates is not None:
+        certificates = await certificate_service.save_certificates(
+            profile.id, data.certificates, db, commit=False
+        )
+    else:
+        certificates = await certificate_service.get_certificates(profile.id, db)
+
     await db.commit()
     await db.refresh(profile)
-    return profile, artifacts
+    return profile, artifacts, certificates
