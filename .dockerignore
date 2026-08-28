@@ -1,0 +1,41 @@
+# Keep the build context (and image layers) small and secret-free.
+# The image installs deps from requirements.txt and gets env at runtime via
+# docker-compose `env_file:` / `environment:` — nothing below belongs in it.
+
+# Version control
+.git/
+.gitignore
+
+# Local virtualenv (~90 MB) — deps come from requirements.txt
+.venv/
+venv/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Secrets — compose injects env at runtime; never bake them into a layer
+.env
+.env.*
+!.env.example
+
+# University photos — served from a bind-mounted host folder, never the image
+profyphoto/
+media/
+*.tar
+*.tar.gz
+
+# Infra / editor / OS — not needed at runtime inside the api container
+docker-compose*.yml
+nginx/
+nginx*.conf
+*.log
+.vscode/
+.idea/
+.DS_Store

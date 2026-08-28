@@ -3,11 +3,63 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-docker compose up -d --build
+# University photos are served by nginx straight from a host folder (no MinIO).
+# docker-compose.yml bind-mounts ${MEDIA_DIR:-../profy-media} at /srv/media in
+# both api and nginx. The folder is NOT in git — get profy-media.tar.gz from
+# the team share and extract it next to this repo (so ../profy-media/universities/
+# has the <slug>.webp files), or rebuild it: scripts/export_university_photos.py
+# then scripts/generate_card_thumbnails.py.
+#
+# Missing folder is not fatal — the backend runs fine, university cards just
+# show the placeholder icon instead of a photo. We create the dir so Docker
+# doesn't auto-make it as root.
+MEDIA_DIR="${MEDIA_DIR:-../profy-media}"
+export MEDIA_DIR
+mkdir -p "$MEDIA_DIR/universities"
+if [ -z "$(find "$MEDIA_DIR/universities" -maxdepth 1 -name '*.webp' -print -quit 2>/dev/null)" ]; then
+  echo "WARNING: no photos in '$MEDIA_DIR/universities' — cards will show the placeholder icon."
+  echo "         Get profy-media.tar.gz from the team share, or run"
+  echo "         scripts/export_university_photos.py + scripts/generate_card_thumbnails.py."
+fi
+
+# --remove-orphans clears the old minio / minio-init containers on machines
+# that ran the pre-filesystem stack.
+docker compose up -d --build --remove-orphans
 docker compose restart nginx
+
+# Wait for the api container to actually accept connections before the first
+# `exec` — `up -d --build` returns as soon as the container is *started*, not
+# ready, and a rebuild makes it recreate mid-script (cd.yml has the same loop).
+echo "Waiting for api..."
+for i in $(seq 1 60); do
+  if docker compose exec -T api python -c "import socket; s=socket.socket(); s.settimeout(1); s.connect(('127.0.0.1', 8000)); s.close()" >/dev/null 2>&1; then
+    break
+  fi
+  [ "$i" -eq 60 ] && { echo "ERROR: api did not become ready in 60s"; docker compose logs api | tail -40; exit 1; }
+  sleep 1
+done
+
 docker compose exec api alembic upgrade head
 
 echo "Backend is ready: http://localhost/docs"
+
+# Photo-serving smoke check — diagnostic only, must never abort the script
+# (set -euo pipefail is unforgiving of SIGPIPE from `ls | head`, curl, grep).
+set +e
+{
+  _photo_file=$(find "$MEDIA_DIR/universities" -maxdepth 1 -name '*.webp' -print -quit 2>/dev/null)
+  if [ -n "$_photo_file" ]; then
+    _photo_slug=$(basename "$_photo_file" .webp)
+    _code=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost/media/universities/${_photo_slug}.webp")
+    echo "Photo check: GET /media/universities/${_photo_slug}.webp -> HTTP ${_code} (expect 200)"
+    _api=$(curl -s "http://localhost/api/v1/universities/programs?profession=arhitektor&limit=1" \
+      | grep -o '"image_url":"[^"]*"' | head -1)
+    echo "Photo check: API image_url -> ${_api:-<none>}"
+  else
+    echo "Photo check: '$MEDIA_DIR/universities' has no *.webp — build it with scripts/export_university_photos.py"
+  fi
+}
+set -e
 
 # Question banks — order matters: bigfive/mi/question_pairs each resolve
 # `order`/name references against whatever was seeded before them.
@@ -46,14 +98,6 @@ docker-compose exec api python scripts/seed_kz_universities.py
 # Idempotent, keyed by (university slug) / (university_id, program name);
 # reviewed data in scripts/data/universities_92_professions.py (committed).
 docker-compose exec api python scripts/seed_92_professions_universities.py
-# The script above used to smash cost + admission-requirements text into one
-# Program.requirements["notes"] string (and as a bare string, not list[str] —
-# university_requirements.py does `list(requirements.get("notes") or [])`,
-# which explodes a bare string into one character per list entry). Both bugs
-# are fixed in the seed script itself now; this backfills rows created before
-# the fix, splitting cost into Program.cost_label and leaving notes clean.
-# No-op on a fresh DB, safe/idempotent to keep running.
-docker-compose exec api python scripts/backfill_program_cost_label_2027.py
 # UNIRANKS® 2027 Kazakhstan ranking (kz_rank/world_rank, or "Н/Р" where
 # checked and confirmed absent from the ranking) — reviewed data from
 # scripts/data/uniranks_kz_2027.json (committed). Idempotent, keyed by slug;
@@ -93,31 +137,24 @@ docker-compose exec api python scripts/merge_duplicate_programs.py
 # didn't parse before the A5 fix (national/subject-specific labels stay NULL
 # on purpose — see script docstring).
 docker-compose exec api python scripts/backfill_world_ranking.py
-# Numeric cost_per_year_min/max/currency from cost_label text (A6) —
-# conservative parser, only fills unambiguous single-figure labels.
-docker-compose exec api python scripts/backfill_cost_range.py
 
 # --- university-cards-ux-fix-plan.md fixes (2026-08-19) ---
-# NOTE: unlike the backfill scripts above, these all default to a DRY RUN —
+# NOTE: unlike the seed scripts above, these all default to a DRY RUN —
 # `--apply` is required to actually write. Don't drop the flag when adding a
 # new one here, or a fresh reseed will silently skip it.
-
-# University.ranking must only ever hold a genuine QS World figure, never a
-# subject/national/US-News number from the same free-text label (§1) — the
-# parser itself is already fixed in seed_92_professions_universities.py, so
-# this only re-derives `ranking` for rows already seeded before that fix.
-docker-compose exec api python scripts/backfill_ranking_from_label.py --apply
-
-# Program.description for KZ bulk-seeded programs must never be the
-# specialty-group category label (§7) — seed_kz_universities.py itself is
-# already fixed (writes null now), this re-derives rows seeded before that.
-docker-compose exec api python scripts/backfill_kz_program_description.py --apply
-# Same bug, but for the 14 KazATU programs seeded from the duplicate
-# "kazahskij-agrotehnicheskij-universitet-kazatu" record in
-# almaty_universities_data.py that backfill_kz_program_description.py's
-# _find_university() can't resolve (see docs/university-module-fix-plan.md A1
-# and this script's own docstring).
-docker-compose exec api python scripts/backfill_kazatu_duplicate_group_labels.py --apply
+#
+# ranking/ranking_label (§1) and Program.cost_label/requirements["notes"]
+# (the notes/cost split) used to only get set at creation time in
+# seed_92_professions_universities.py, so a row seeded before a CLUSTERS
+# correction (or before parse_ranking()/the notes-splitting bug were fixed)
+# kept a stale value forever — that seed script now re-derives all of these
+# on every run for existing rows too, so correcting CLUSTERS data is enough
+# on its own; no separate backfill scripts needed any more. Same for
+# Program.description on KZ bulk-seeded programs (§7, was defaulting to the
+# specialty-group category label) — seed_kz_universities.py's existing
+# generic per-field diff already re-derives it (null) on every run, covering
+# both the main source data and the KazATU duplicate-record rows that used
+# to need their own separate backfill.
 
 # Real, source-verified academic program names (§5) — replaces
 # seed_92_professions_universities.py's program_name = direction.name bug
@@ -129,31 +166,12 @@ docker-compose exec api python scripts/backfill_kazatu_duplicate_group_labels.py
 docker-compose exec api python scripts/apply_specialty_names_from_review.py --apply
 docker-compose exec api python scripts/fix_enu_kazatu_program_names.py --apply
 
-# Foreign-university cost_label text must never show a master's-only or
-# domestic/subsidized-citizen rate to a KZ bachelor's applicant (§2) —
-# reviewed rules hardcoded in the script itself (small, fixed, per-university
-# set), not a separate JSON file.
-docker-compose exec api python scripts/backfill_strip_masters_domestic_cost.py --apply
 
 # Real institutional descriptions for KZ universities, replacing the
 # "N программ на M факультетах" placeholder (§7 follow-up) — reviewed data
 # hardcoded in the script (51 universities researched so far, of 111 total).
 docker-compose exec api python scripts/apply_university_descriptions_batch1.py --apply
 
-# Foreign-university cost_label was 100% free text before this (0/1205 had a
-# numeric cost_per_year) — inconsistent currencies/formats on the card, and
-# several texts showed a domestic/citizen-only rate a KZ applicant can't
-# actually get (e.g. Tsinghua "для китайцев", Tokyo "бесплатно для японцев";
-# §2/§10). Sets cost_per_year_min/max/currency directly from a hand-read
-# international-applicable figure for 148 distinct cost_label texts (1016 of
-# 1205 programs) — the existing convert_cost_to_usd validator
-# (app/schemas/university.py) does the currency conversion at read time, so
-# once this runs there's no free-text parsing left for those rows at all.
-# Two passes: the second catches (university, label) pairs the first missed
-# because the same label text is shared by a university under two slightly
-# different name strings.
-docker-compose exec api python scripts/backfill_foreign_cost_numeric.py --apply
-docker-compose exec api python scripts/backfill_foreign_cost_numeric_pass2.py --apply
 
 # ЕНТ profile-subject pairs (§8-9) — replaces per-university website-sourced
 # pairs with the OFFICIAL state classifier (Приложение 1 к Правилам
@@ -164,3 +182,64 @@ docker-compose exec api python scripts/backfill_foreign_cost_numeric_pass2.py --
 # servant) are deliberately left untouched — see script docstring. Only
 # subjects, not the grant-threshold scores (a separate, harder problem).
 docker-compose exec api python scripts/apply_ent_profile_subjects.py --apply
+
+# jinaq world university directory (2313 universities / 32 countries, 10,113
+# majors) — committed dataset in scripts/data/jinaq/universities.json, no
+# network access needed, ~30s. Idempotent: links to existing rows by exact
+# (name, city, country) match or creates new ones, upserts programs, never
+# touches price. See script docstring for the full rationale.
+docker-compose exec api python scripts/import_jinaq_universities.py
+# One-time correction for Program rows created by an earlier version of the
+# import script above, which dumped enrollmentRequirements AND
+# enrollmentDocuments into the same `requirements.notes` — jinaq's own data
+# restates the same admission facts in both lists for most foreign
+# universities, so that read as literal duplication on the program-detail
+# page. The import script itself is already fixed; this only repairs rows
+# created before the fix. No-op on a fresh DB, safe/idempotent to keep running.
+docker-compose exec api python scripts/backfill_jinaq_program_requirements.py
+# NOTE: the photo-import scripts (scripts/import_jinaq_university_photos.py,
+# scripts/apply_*_photos_from_wikidata.py, scripts/import_manual_university_photos.py)
+# are intentionally NOT run here — together they pull ~2300 images over the
+# network (~15 min) and are a one-time job, not a per-deploy step. Photos are
+# served by nginx from ${MEDIA_DIR:-../profy-media} (STORAGE_BACKEND=fs); to move
+# them to a server, copy that folder (tar + scp) rather than re-downloading.
+# See app/integrations/storage/ for the backend.
+
+# Most KZ universities jinaq couldn't exact-match already existed in the
+# curated set under a different name string (abbreviations, "имени"/"им.",
+# EN/RU name pairs, institution renames, Astana/Nur-Sultan city naming) —
+# checked by hand, reviewed in scripts/data/jinaq/kz_university_merge_review.json.
+# Merges each confirmed jinaq duplicate's photo/specialties into the curated
+# row and deletes the duplicate. Idempotent (already-merged entries are a
+# no-op), local dataset, no network access.
+docker-compose exec api python scripts/apply_kz_university_merge.py
+# Pre-existing duplicate unrelated to jinaq: KAZGUU University was renamed
+# to Maqsut Narikbayev University, but both the old (kazgyuu) and new (mnu)
+# rows existed separately in the curated dataset. Idempotent, no-op once merged.
+docker-compose exec api python scripts/merge_kazguu_into_mnu.py
+
+# Tags Program rows (mostly the jinaq import above, but any other untagged
+# program too) with directions/professions from the human-reviewed mapping
+# in scripts/data/jinaq/specialty_direction_review.json. Only ever touches
+# rows with zero directions so far — never overwrites specialty_profession_map.py's
+# curated tagging. Idempotent, local dataset, no network access.
+docker-compose exec api python scripts/apply_jinaq_specialty_directions.py
+
+# Hand-researched admission profiles (hybrid ЕНТ+own-test vs no-ЕНТ-at-all)
+# for KZ universities without an ovpo_code, so apply_grant_admission_data_2026.py
+# has nothing to key off for them — reviewed data in
+# scripts/data/researched_kz_admission_data.json (committed). Idempotent,
+# keyed by a hand-checked slug map in the script itself.
+docker-compose exec api python scripts/apply_researched_kz_admission_data.py
+# Foreign-university duplicates surfaced while world-ranking every university
+# (same institution under two name strings, or one row with a wrong/generic
+# city inherited from an old superseded seed script) — reviewed pairs in
+# scripts/data/foreign_university_dedup_review.json (committed). Idempotent,
+# keyed by university_id; a re-run after a completed merge is a no-op.
+docker-compose exec api python scripts/apply_foreign_university_dedup.py
+# UNIRANKS 2027 world rank (not the per-country table used for Kazakhstan
+# above) for every university uniranks.com actually rates — reviewed data in
+# scripts/data/uniranks_world_rank_review.json (committed, gathered via
+# generate_uniranks_world_rank_review.py's live per-university lookups, which
+# needs network access and is NOT run here). Idempotent, keyed by university_id.
+docker-compose exec api python scripts/apply_uniranks_world_rank.py

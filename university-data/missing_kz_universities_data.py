@@ -7,15 +7,18 @@ batch (haiku-model research agents, 6 batches of 8). ovpo_code cross-checked
 against the checklist table for every record -- all 48 accounted for, no
 duplicates, no name substitutions beyond what the checklist specifies.
 
-Known gaps to resolve before/soon after seeding (see docs/university-module-fix-plan.md A9
-for the follow-up on profile ЕНТ subject pairs, which this file deliberately does not
-attempt -- that data comes from the national specialty classifier, not university sites):
+Known gaps to resolve before/soon after seeding (profile ЕНТ subject pairs are
+deliberately not attempted here -- that data comes from the national specialty
+classifier, not university sites; see scripts/apply_ent_profile_subjects.py):
   - ovpo_code 143 (Университет имени Жубанова): official sources spell the patronymic
     "Жумабека", not "Жубанова" as in the checklist -- kept the checklist
     spelling here, flag for manual verification against the official OVPO registry entry.
-  - ovpo_code 543 (Университет Ұлытау) and 545 (Филиал Гази): both very new campuses
-    (2025-2026), thin web presence -- specialties/website may need a follow-up pass once
-    they're further along.
+  - ovpo_code 543 (Университет Ұлытау): removed entirely (2026-08-28) -- confirmed
+    closed. Was a very new campus (2025-2026 intake) when first researched; the
+    ovpo_code may still linger in the official registry for a while after closure,
+    that alone isn't evidence it's still open.
+  - ovpo_code 545 (Филиал Гази): very new campus (2025-2026), thin web presence --
+    specialties/website may need a follow-up pass once it's further along.
   - Several records (016, 033, 035, 037, 039, 040, 041, 305, 528) have specialty groups
     with an empty `programs` list -- the source university's site listed the
     faculty/institute name but not individual program names discoverable by search;
@@ -1451,31 +1454,6 @@ MISSING_KZ_UNIVERSITIES: list[UniversityRecord] = [{'slug': 'zapadno-kazakhstans
                              'сертификат IELTS 6.0 или прохождение языкового тестирования'],
   'rankings': ['QS: входит в топ-100 мировых университетов по политологии и международным '
                'отношениям']},
- {'slug': 'ulytau-university',
-  'ovpo_code': '543',
-  'name': 'Университет Ұлытау',
-  'short_name': 'Ұлытау',
-  'aliases': ['Горно-металлургический университет Казахстана',
-              'Mining and Metallurgical University of Kazakhstan'],
-  'city': 'Жезказган',
-  'country': 'Казахстан',
-  'website': 'https://ulytau.edu.kz/',
-  'description': 'Университет Ұлытау создан в партнёрстве Министерства науки и высшего образования '
-                 'Казахстана с корпорацией Kazakhmys. Университет готовит высокообразованных '
-                 'специалистов для горнодобывающей и металлургической промышленности Казахстана. '
-                 'Инфраструктура университета включает современные учебные здания, '
-                 'научно-исследовательский центр, спортивный комплекс и общежитие с 140-150 '
-                 'местами. Обучение проводится по международным стандартам с использованием '
-                 'современных технологий.',
-  'location': 'Жезказган, Ұлытау область',
-  'specialties_summary': 'Программы подготовки в области горнодобычи и металлургии, разработанные '
-                         'в соответствии с международными стандартами.',
-  'specialties': [{'group': 'Горнодобывающая промышленность',
-                   'programs': ['Mining Engineering', 'Metallurgy']}],
-  'admission_summary': 'Приём студентов начался с 2025-2026 учебного года на основе результатов '
-                       'единого национального тестирования.',
-  'admission_requirements': ['Результаты Единого национального тестирования (ЕНТ)'],
-  'rankings': []},
  {'slug': 'nyfa-almaty',
   'ovpo_code': '544',
   'name': 'Иностранное учебное заведение «New York Film Academy Kazakhstan» в городе Алматы',
