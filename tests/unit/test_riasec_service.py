@@ -74,6 +74,33 @@ def test_strengths_no_padding_needed_when_filter_already_yields_enough() -> None
     assert strengths == ["R", "I", "A"]
 
 
+def test_strengths_pad_from_medium_band_when_nothing_clears_the_high_bar() -> None:
+    """An ordinary profile with no type at LEVEL_HIGH_MIN still fills
+    `strengths` to `limit` from the LEVEL_MEDIUM_MIN..LEVEL_HIGH_MIN band, by
+    rank — so "Сильные стороны" isn't empty just because the absolute scale
+    is demanding. (Before: this returned 0 strengths.)"""
+    normalized = {"R": 68.0, "I": 64.0, "A": 58.0, "S": 52.0, "E": 40.0, "C": 30.0}
+    aversion_counts = {t: 0 for t in "RIASEC"}
+    counts = {t: 24 for t in "RIASEC"}
+
+    strengths, _ = riasec_service.strengths_weaknesses(normalized, aversion_counts, counts, limit=3)
+
+    assert strengths == ["R", "I", "A"]
+
+
+def test_strengths_never_promotes_a_below_medium_type() -> None:
+    """The floor the padding must not cross: a type below LEVEL_MEDIUM_MIN is
+    "low" in interest_map, so it can never be cited as a strength — even when
+    that leaves fewer than `limit` (I=A=100, everything else at 20 → only 2)."""
+    normalized = {"I": 100.0, "A": 100.0, "R": 20.0, "C": 20.0, "E": 20.0, "S": 20.0}
+    aversion_counts = {t: 0 for t in "RIASEC"}
+    counts = {t: 24 for t in "RIASEC"}
+
+    strengths, _ = riasec_service.strengths_weaknesses(normalized, aversion_counts, counts, limit=3)
+
+    assert strengths == ["I", "A"]
+
+
 def test_direction_letter_weight_rewards_the_directions_primary_letter_most() -> None:
     assert riasec_service.direction_letter_weight("C", "CSE") == 3
     assert riasec_service.direction_letter_weight("S", "CSE") == 2

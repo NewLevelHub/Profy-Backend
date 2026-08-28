@@ -36,3 +36,19 @@ def test_strengths_no_padding_needed_when_filter_already_yields_enough() -> None
     strengths, _ = mi_service.strengths_weaknesses(normalized, aversion_counts, counts, limit=3)
 
     assert strengths == ["verbal", "logical", "musical"]
+
+
+def test_strengths_pad_from_medium_band_when_nothing_clears_the_high_bar() -> None:
+    """Same contract as riasec_service — an ordinary junior profile with no
+    category at LEVEL_HIGH_MIN still fills to `limit` from the medium band by
+    rank, and never from a category below LEVEL_MEDIUM_MIN."""
+    normalized = {
+        "verbal": 66.0, "logical": 62.0, "musical": 55.0, "visual": 48.0,
+        "bodily": 40.0, "interpersonal": 35.0, "intrapersonal": 30.0, "naturalistic": 20.0,
+    }
+    aversion_counts = {k: 0 for k in normalized}
+    counts = {k: 20 for k in normalized}
+
+    strengths, _ = mi_service.strengths_weaknesses(normalized, aversion_counts, counts, limit=3)
+
+    assert strengths == ["verbal", "logical", "musical"]  # visual (48) is below the medium floor
