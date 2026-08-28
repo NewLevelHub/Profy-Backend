@@ -38,15 +38,18 @@ async def test_login_or_register_google_creates_new_user(
     assert user.is_verified is True
 
 
-async def test_login_or_register_google_links_existing_password_account(
+async def test_login_or_register_google_links_verified_password_account(
     db_session: AsyncSession, monkeypatch
 ) -> None:
+    """A user who already verified their email via the password flow proved
+    ownership themselves — linking Google to that account must not disturb
+    their existing password login."""
     email = f"{uuid.uuid4()}@example.test"
     existing = User(
         email=email,
         hashed_password=auth_service.hash_password("Testpass123!"),
         is_active=True,
-        is_verified=False,
+        is_verified=True,
     )
     db_session.add(existing)
     await db_session.commit()
@@ -63,6 +66,40 @@ async def test_login_or_register_google_links_existing_password_account(
     assert user.google_id == sub
     assert user.is_verified is True
     assert user.hashed_password is not None  # password preserved, not wiped
+
+
+async def test_login_or_register_google_clears_password_for_unverified_account(
+    db_session: AsyncSession, monkeypatch
+) -> None:
+    """An unverified row could have been created by someone else squatting on
+    this email with a password of their own choosing — Google's email
+    verification is trustworthy, that row's password is not. Linking must
+    clear it, or the squatter's password keeps granting them access once the
+    real owner's Google login marks the row verified (account takeover)."""
+    email = f"{uuid.uuid4()}@example.test"
+    existing = User(
+        email=email,
+        hashed_password=auth_service.hash_password("AttackerChosenPass1"),
+        is_active=True,
+        is_verified=False,
+    )
+    db_session.add(existing)
+    await db_session.commit()
+    await db_session.refresh(existing)
+
+    sub = str(uuid.uuid4())
+    monkeypatch.setattr(
+        google_id_token, "verify_oauth2_token", lambda *a, **kw: _fake_claims(email, sub)
+    )
+
+    user, _ = await oauth_service.login_or_register_google("fake-token", db_session)
+
+    assert user.id == existing.id
+    assert user.is_verified is True
+    assert user.hashed_password is None  # squatter's password no longer works
+
+    with pytest.raises(LookupError, match=f"google_account:{email}"):
+        await auth_service.login(email, "AttackerChosenPass1", db_session)
 
 
 async def test_login_or_register_google_relogs_in_existing_google_user(

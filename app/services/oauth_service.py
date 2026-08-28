@@ -40,6 +40,13 @@ async def login_or_register_google(token: str, db: AsyncSession) -> tuple[User, 
         result = await db.execute(select(User).where(User.email == email))
         user = result.scalar_one_or_none()
         if user:
+            if not user.is_verified:
+                # An unverified row could have been created by someone else
+                # squatting on this email with a password of their choosing —
+                # Google's verification of the email is trustworthy, the
+                # row's existing password is not. Clear it so that password
+                # stops granting access once we adopt the row as verified.
+                user.hashed_password = None
             user.google_id = google_id
             user.is_verified = True
         else:
