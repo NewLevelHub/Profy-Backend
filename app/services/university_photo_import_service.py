@@ -24,13 +24,45 @@ from app.integrations.storage.base import StorageBackend
 from app.models.university_external_ref import UniversityExternalRef
 from app.models.university_image import UniversityImage
 
-_MAX_IMAGE_BYTES = 15 * 1024 * 1024
+_MAX_IMAGE_BYTES = 40 * 1024 * 1024
 _PILLOW_FORMAT_TO_CONTENT_TYPE: dict[str, str] = {
     "JPEG": "image/jpeg",
     "PNG": "image/png",
     "WEBP": "image/webp",
     "AVIF": "image/avif",
+    # Multi-Picture Object — a JPEG variant some cameras use for stereo/
+    # multi-shot photos (extra APP2 frames alongside a normal primary JPEG
+    # frame); several real Wikimedia Commons university photos turned out to
+    # be served this way. Pillow decodes it like any other JPEG and
+    # optimize_image() re-encodes it (as WebP) regardless, so there's
+    # nothing MPO-specific to handle beyond recognizing the format name.
+    "MPO": "image/jpeg",
 }
+# A raw scraped source has no reason to be sized for our use — e.g. Stanford's
+# jinaq photo was a 10800x2700 press panorama at 12MB, for a card that renders
+# it at ~130px tall (ProgramListSection.tsx's ProgramCard: `h-32 object-cover`).
+# 1600px comfortably covers that even at a high-DPI 3x pixel density with
+# room to spare for a future full-size detail view. Re-encoding everything to
+# WebP (already one of the allowed formats above) also normalizes away
+# whatever format/compression the source used, typically shrinking a JPEG
+# press photo by 70-90% with no visible quality loss at this size.
+_MAX_IMAGE_DIMENSION = 1600
+_WEBP_QUALITY = 82
+
+
+def optimize_image(data: bytes) -> tuple[bytes, str, int, int]:
+    """Downscales an oversized image and re-encodes it as WebP. Only ever
+    called after validate_image() has confirmed `data` decodes cleanly, so
+    decode failures here would be a real bug, not an expected input — let
+    them raise instead of silently swallowing a corrupt upload."""
+    with Image.open(io.BytesIO(data)) as img:
+        if img.mode not in ("RGB", "RGBA"):
+            img = img.convert("RGB")
+        if max(img.size) > _MAX_IMAGE_DIMENSION:
+            img.thumbnail((_MAX_IMAGE_DIMENSION, _MAX_IMAGE_DIMENSION), Image.LANCZOS)
+        buf = io.BytesIO()
+        img.save(buf, format="WEBP", quality=_WEBP_QUALITY)
+        return buf.getvalue(), "image/webp", img.width, img.height
 
 
 @dataclass
@@ -127,8 +159,8 @@ async def import_one_institution_photo(
     validated = validate_image(data)
     if validated is None:
         return "invalid_image"
-    content_type, width, height = validated
 
+    data, content_type, width, height = optimize_image(data)
     checksum = hashlib.sha256(data).hexdigest()
 
     existing_result = await db.execute(

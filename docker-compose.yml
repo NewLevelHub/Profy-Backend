@@ -30,12 +30,17 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://profi_user:profi_password@db:5432/profi_db
       REDIS_URL: redis://redis:6379/0
+    volumes:
+      # University photos live on the host, not in the image. Mounted
+      # read-write here so the scripts/import_*_photos.py jobs can write new
+      # files; nginx mounts the same folder read-only to serve them.
+      # STORAGE_FS_ROOT (.env) points at /srv/media. Override the host path
+      # with MEDIA_DIR (e.g. MEDIA_DIR=/srv/profy-media on a server).
+      - ${MEDIA_DIR:-../profy-media}:/srv/media
     depends_on:
       db:
         condition: service_healthy
       redis:
-        condition: service_healthy
-      minio:
         condition: service_healthy
     expose:
       - "8000"
@@ -46,47 +51,10 @@ services:
       - "80:80"
     volumes:
       - ./nginx/local.conf:/etc/nginx/nginx.conf:ro
+      - ${MEDIA_DIR:-../profy-media}:/srv/media:ro
     depends_on:
       - api
-      - minio
     restart: unless-stopped
-
-  # S3-compatible object storage for university photos (see
-  # app/integrations/storage/) — same STORAGE_* config works unchanged
-  # against a real S3/R2/Spaces bucket in prod, only the values differ.
-  minio:
-    image: minio/minio:RELEASE.2025-04-08T15-41-24Z
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: profi_minio
-      MINIO_ROOT_PASSWORD: profi_minio_password
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - minio_data:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  # One-shot: creates the bucket and makes it public-read (unsigned GET) so
-  # STORAGE_PUBLIC_BASE_URL URLs work without signing, same as a real
-  # CDN/bucket-website URL would.
-  minio-init:
-    image: minio/mc:RELEASE.2025-04-08T15-39-49Z
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      sh -c "
-      mc alias set local http://minio:9000 profi_minio profi_minio_password &&
-      mc mb --ignore-existing local/profi-media &&
-      mc anonymous set download local/profi-media
-      "
-    restart: "no"
 
 volumes:
   postgres_data:
-  minio_data:

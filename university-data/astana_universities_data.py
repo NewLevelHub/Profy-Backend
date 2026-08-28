@@ -921,47 +921,10 @@ ASTANA_UNIVERSITIES: list[UniversityRecord] = [
             "Ориентирован на региональный рынок труда, а не на международное академическое ранжирование.",
         ],
     },
-    {
-        "index": 17,
-        "slug": "astana-university",
-        "name": "Astana University",
-        "short_name": "Astana University",
-        "aliases": ["Университет «Астана»"],
-        "city": "Астана",
-        "country": "Казахстан",
-        "website": "http://astanauniver.kz",
-        "description": (
-            "Частный многопрофильный вуз, позиционирующий себя как «учебное заведение нового "
-            "поколения». Расположен в современном 17-этажном здании в центре Астаны. "
-            "Подготовка специалистов идёт по трёхуровневой системе: колледж → бакалавриат → "
-            "магистратура/докторантура."
-        ),
-        "location": "Астана, проспект Абая, 15 (пересечение с проспектом Сарыарка)",
-        "specialties_summary": "Около 25 специальностей бакалавриата и 15 магистратуры.",
-        "specialties": [
-            {
-                "group": "Известные направления",
-                "programs": [
-                    "Дизайн",
-                    "Экономика",
-                    "Туризм",
-                    "Гуманитарные направления",
-                    "Юридические направления",
-                    "IT-направления",
-                ],
-            }
-        ],
-        "admission_summary": "Стандартная схема через ЕНТ, профильные предметы зависят от специальности.",
-        "admission_requirements": [
-            "Зачисление на гранты по конкурсу баллов либо на договорной основе.",
-            "Срок обучения бакалавриата — 4 года.",
-            "Полный актуальный перечень программ следует уточнять на сайте вуза.",
-        ],
-        "rankings": [
-            "В международных QS/THE рейтингах не представлен.",
-            "По данным EduRank — около 101-го места среди вузов Казахстана и порядка 13400-го в мире (2026).",
-        ],
-    },
+    # index 17 "Astana University" (slug astana-university, astanauniver.kz) removed
+    # 2026-08-28 -- confirmed no longer exists; its domain now redirects to an
+    # unrelated sportswear business (i-print.kz), and the user independently
+    # confirmed the institution itself is gone.
     {
         "index": 18,
         "slug": "msu-kz-branch",

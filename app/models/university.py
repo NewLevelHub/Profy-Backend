@@ -79,12 +79,19 @@ class University(Base):
 
     @property
     def image_url(self) -> str | None:
-        """Public URL of this university's primary photo, or None if it has
-        none — computed from the first row of `images` (already sorted
-        primary-first) via the storage layer's key->URL builder, never
-        stored, so a storage/CDN vendor swap never needs a DB backfill."""
-        if not self.images:
+        """Public URL of this university's photo, or None if there is none.
+
+        Resolved by `slug` against the media folder's contents, NOT from the
+        `images` rows — the folder is the portable source of truth, so a host
+        needs only the folder (plus a DB seeded to the same slugs), never a
+        copy of whatever DB the photos were first imported into. `images`
+        rows are just the staging area `scripts/export_university_photos.py`
+        builds that folder from.
+        """
+        if not self.slug:
             return None
+        from app.integrations.storage.university_photos import university_photo_key
         from app.integrations.storage.urls import build_public_url
 
-        return build_public_url(self.images[0].storage_key)
+        key = university_photo_key(self.slug)
+        return build_public_url(key) if key else None

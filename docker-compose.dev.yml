@@ -28,6 +28,14 @@ services:
     networks:
       - profi_network_dev
 
+  # No storage service here — university photos are plain files on disk
+  # (STORAGE_BACKEND=fs). dev has no nginx of its own: the prod-stack edge
+  # nginx serves /media/ for dev.profy.newlevelhub.kz from the same host
+  # folder, so api_dev bind-mounts that folder too (read-write, for the
+  # scripts/import_*_photos.py jobs). Set STORAGE_BACKEND=fs and
+  # STORAGE_FS_ROOT=/srv/media in .env.development; MEDIA_DIR must match the
+  # prod stack's MEDIA_DIR (default /srv/profy-media).
+
   # Service name api_dev (not "api") so joining the prod edge network
   # does not steal DNS name "api" / "db" from production.
   api_dev:
@@ -43,6 +51,8 @@ services:
       POSTGRES_HOST: profi_db_dev
       POSTGRES_PORT: "5432"
       REDIS_URL: redis://profi_redis_dev:6379/0
+    volumes:
+      - ${MEDIA_DIR:-/srv/profy-media}:/srv/media
     depends_on:
       db:
         condition: service_healthy
