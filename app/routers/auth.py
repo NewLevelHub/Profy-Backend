@@ -122,8 +122,11 @@ async def forgot_password(body: ForgotPasswordRequest, request: Request, db: Asy
     try:
         await password_reset_service.initiate_reset(body.email, db)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
-    return {"message": "Reset code has been sent."}
+        # Не раскрываем, зарегистрирован ли адрес: ответ одинаков в обоих
+        # случаях, иначе форма становится оракулом для перебора почт. Тот же
+        # приём, что и в /resend-verification выше.
+        pass
+    return {"message": "If an account exists, a reset code has been sent."}
 
 
 @router.post("/verify-reset-code", status_code=status.HTTP_200_OK)
