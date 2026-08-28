@@ -6,7 +6,7 @@ Backend API платформы профориентации Profi.
 
 - **FastAPI** — HTTP API (SQLAlchemy 2.0 async)
 - **PostgreSQL 16** — основная БД
-- **Redis 7** — кэш
+- **Redis 7** — кэш, rate limiting
 - **Alembic** — миграции
 - **Nginx** — reverse proxy (`80 → api:8000`), плюс отдаёт фото вузов прямо из папки
 - **Docker Compose** — локальная разработка
@@ -44,6 +44,15 @@ Backend API платформы профориентации Profi.
   (или `WARNING: no photos …`, если папку не подкладывал)
 - дальше идут seed-скрипты (`Total questions in bank: …` и т.д.)
 
+## Сервисы (локально)
+
+| Сервис | Образ | Назначение |
+|--------|-------|------------|
+| `api` | `python:3.11-slim` | FastAPI + Uvicorn |
+| `db` | `postgres:16-alpine` | PostgreSQL |
+| `redis` | `redis:7-alpine` | Redis |
+| `nginx` | `nginx:alpine` | Reverse proxy |
+
 ## Доступ после запуска
 
 | Что | URL |
@@ -63,6 +72,8 @@ Backend API платформы профориентации Profi.
   ```
 - Бэкенд хранения — `STORAGE_BACKEND`: `fs` (дефолт, файлы на диске) или `s3` (S3-совместимое). Код — `app/integrations/storage/`.
 
+Основные группы эндпоинтов (все под `/api/v1`): `auth`, `admin`, `profile` (+ `profile/artifacts`), `assessment` (+ questions/question-pairs/motivation/motivation-pairs), `directions`, `inquiry`, `result`, `roadmap`, `universities`. Полный список — в Swagger UI.
+
 ## Переменные окружения
 
 `.env` (шаблон — `.env.example`). Ключевые:
@@ -71,8 +82,14 @@ Backend API платформы профориентации Profi.
 |---|---|
 | `DATABASE_URL` | PostgreSQL (`postgresql+asyncpg://…`) |
 | `REDIS_URL` | Redis URL |
-| `SECRET_KEY` | секрет для JWT |
-| `LLM_API_KEY` / `LLM_ENABLED` | LLM-провайдер для roadmap (опционально) |
+| `SECRET_KEY` | Секрет для JWT (сменить в production) |
+| `LLM_API_KEY` | Ключ LLM-провайдера (опционально) |
+| `LLM_ENABLED` | Включает генерацию roadmap через LLM; `false` по умолчанию — тогда используются статические шаблоны |
+| `LLM_MODEL`, `LLM_BASE_URL`, `LLM_TIMEOUT`, `LLM_MAX_TOKENS`, `LLM_TEMPERATURE` | Настройки обычных (лёгких) LLM-вызовов |
+| `LLM_ROADMAP_TIMEOUT`, `LLM_ROADMAP_MAX_TOKENS`, `LLM_ROADMAP_MODEL` | Отдельные, более щедрые настройки для генерации roadmap — она заметно крупнее остальных LLM-вызовов |
+| `RESEND_API_KEY` | Ключ [Resend](https://resend.com) для отправки email (коды подтверждения, сброс пароля). Пусто — коды просто логируются в консоль, письма не отправляются |
+| `EMAIL_FROM` | Адрес отправителя писем |
+| `GOOGLE_CLIENT_ID` | Client ID из Google Cloud Console для входа через Google (веб) |
 | `STORAGE_BACKEND` | `fs` (дефолт) или `s3` |
 | `STORAGE_FS_ROOT` | путь к фото внутри контейнера (`/srv/media`) |
 | `STORAGE_PUBLIC_BASE_URL` | база URL для браузера (локально `http://localhost/media`) |
@@ -88,6 +105,35 @@ docker compose down -v                     # + сбросить БД (удали
 docker compose exec api alembic upgrade head
 ./start.sh                                  # переподнять и пересидить (идемпотентно)
 ```
+
+## Миграции
+
+В `alembic/versions/` больше 60 файлов, и история миграций **не линейна** — есть несколько параллельных head'ов. Перед созданием новой миграции проверьте актуальный head:
+
+```bash
+docker compose exec api alembic heads
+```
+
+## Seed-данные
+
+Вопросы (RIASEC / Big Five / MI), forced-choice пары, мотивационные утверждения/пары и RIASEC-направления описаны в Python-файлах-«банках» (`scripts/*_bank.py`) — это источник правды, а не БД напрямую. Соответствующий `scripts/seed_*.py` при каждом запуске **полностью синхронизирует** БД с банком: обновляет изменившиеся поля, добавляет новые строки и **удаляет** те, ключа которых больше нет в банке. Чтобы поменять контент — редактируйте файл-банк и перезапускайте seed-скрипт, а не правьте строки в БД напрямую (правки не переживут следующий деплой/reseed).
+
+Полный и актуальный порядок всех seed/backfill/apply-скриптов, которые гоняются на каждый деплой, — в `.github/workflows/cd.yml` / `cd-dev.yml`.
+
+## Тесты
+
+Нужны доступные Postgres и Redis (например, `docker compose up -d db redis`):
+
+```bash
+docker compose exec api pytest                                    # всё
+docker compose exec api pytest tests/unit                         # без БД
+docker compose exec api pytest tests/integration                  # с реальной БД
+docker compose exec api pytest tests/unit/test_riasec_service.py::test_name -v   # один тест
+```
+
+Каждый тест оборачивается в отдельную транзакцию с rollback в конце (`tests/conftest.py`) — писать вручную очистку данных после теста не нужно.
+
+CI не гоняет тесты автоматически на PR — `cd.yml`/`cd-dev.yml` только деплоят по пушу в `main`/`dev`.
 
 ## Структура
 
@@ -112,4 +158,9 @@ profi-backend/
 
 ## Деплой
 
-Прод и дев катятся через GitHub Actions (`.github/workflows/cd.yml` на пуш в `main`, `cd-dev.yml` — в `dev`): собирается образ, на сервер копируются `docker-compose.prod.yml` + `nginx.prod.conf`, затем гоняется тот же список seed-скриптов, что и в `start.sh`. Фото на сервер кладутся один раз вручную (`/srv/profy-media`, монтируется в контейнеры как `/srv/media`) — CI их не трогает.
+Push в `dev` или `main` триггерит `.github/workflows/cd-dev.yml` / `cd.yml`: сборка образа → деплой на соответствующий сервер → миграции → полный прогон seed/backfill-скриптов. `dev.profy.newlevelhub.kz` и `profy.newlevelhub.kz` обслуживаются одним общим edge-nginx контейнером на проде — при правках `nginx.prod.conf` см. `docs/nginx-prod-points-to-dev-incident.md`. Фото на сервер кладутся один раз вручную (`/srv/profy-media`, монтируется в контейнеры как `/srv/media`) — CI их не трогает.
+
+## Дополнительная документация
+
+- `CLAUDE.md` — архитектурные заметки и нюансы для работы с кодом (контент-пайплайн, топология деплоя, тестовая инфраструктура и т.д.)
+- `docs/` — контракты API, планы фич, разборы инцидентов

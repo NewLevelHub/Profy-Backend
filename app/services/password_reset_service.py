@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -9,6 +10,8 @@ from app.models.user import User
 from app.services import email_service
 from app.services.auth_service import hash_password
 from app.services.token_utils import generate_code, hash_code
+
+logger = logging.getLogger(__name__)
 
 
 async def _invalidate_reset_tokens(user_id: uuid.UUID, db: AsyncSession) -> None:
@@ -52,7 +55,10 @@ async def initiate_reset(email: str, db: AsyncSession) -> None:
     db.add(token)
     await db.commit()
 
-    await email_service.send_password_reset_email(email, code)
+    try:
+        await email_service.send_password_reset_email(email, code)
+    except Exception:
+        logger.exception("Failed to send password reset email for %s", email)
 
 
 async def verify_code(email: str, code: str, db: AsyncSession) -> None:
