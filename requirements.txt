@@ -9,6 +9,7 @@ passlib[argon2]==1.7.4
 argon2-cffi==23.1.0
 redis==8.0.0
 httpx==0.28.1
+google-auth==2.50.0
 email-validator==2.2.0
 resend==2.39.0
 pytest==8.3.4

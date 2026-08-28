@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
     RESEND_API_KEY: str = ""
     EMAIL_FROM: str = ""
+    GOOGLE_CLIENT_ID: str = ""
 
     @model_validator(mode="after")
     def build_database_url(self) -> Self:

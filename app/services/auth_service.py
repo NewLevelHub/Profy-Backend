@@ -81,7 +81,13 @@ async def login(email: str, password: str, db: AsyncSession) -> tuple[User, str]
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
 
-    if not user or not verify_password(password, user.hashed_password):
+    if not user:
+        raise PermissionError("Invalid credentials")
+
+    if user.hashed_password is None:
+        raise LookupError(f"google_account:{user.email}")
+
+    if not verify_password(password, user.hashed_password):
         raise PermissionError("Invalid credentials")
 
     if not user.is_verified:
