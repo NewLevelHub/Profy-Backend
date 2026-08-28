@@ -13,6 +13,12 @@ This does NOT write to the database. It writes a review file
 approve/edit. Applying the reviewed file to the DB is a separate script
 (scripts/apply_direction_content.py) run only after that review.
 
+Incremental: a slug already present in direction_content_review.json is kept
+as-is and NOT regenerated — so this only ever fills gaps (e.g. professions
+added to riasec_professions.py after the last content pass), and a re-run
+can't silently overwrite entries a human already reviewed. Delete an entry
+from the file (or pass --regenerate SLUG,SLUG) to force it to be redone.
+
 Run inside Docker: docker compose exec api python scripts/generate_direction_content.py
 """
 import asyncio
@@ -114,16 +120,34 @@ async def _generate_one(direction: Direction) -> dict:
     return payload
 
 
+def _load_existing() -> dict[str, dict]:
+    if not os.path.exists(OUTPUT_PATH):
+        return {}
+    with open(OUTPUT_PATH, encoding="utf-8") as f:
+        return {entry["slug"]: entry for entry in json.load(f)}
+
+
 async def main() -> None:
     if not llm_client.is_enabled():
         print("LLM disabled — nothing to generate.")
         return
 
+    force = set()
+    if "--regenerate" in sys.argv:
+        force = set(sys.argv[sys.argv.index("--regenerate") + 1].split(","))
+
+    existing = _load_existing()
+    reviewed_slugs = existing.keys() - force
+
     async with async_session() as db:
         result = await db.execute(select(Direction).order_by(Direction.slug))
-        directions = list(result.scalars().all())
+        directions = [d for d in result.scalars().all() if d.slug not in reviewed_slugs]
 
-    print(f"Generating content for {len(directions)} directions...")
+    if not directions:
+        print(f"Nothing to do — all {len(existing)} directions already in {OUTPUT_PATH}.")
+        return
+
+    print(f"Generating content for {len(directions)} directions ({len(existing)} already reviewed, kept as-is)...")
     results: list[dict] = []
     failures: list[str] = []
 
@@ -147,14 +171,20 @@ async def main() -> None:
             **payload,
         })
 
+    # Merge freshly generated entries with the reviewed ones we kept, so a
+    # gap-fill run never drops existing human-approved content.
+    merged = {**{s: e for s, e in existing.items() if s not in {r["slug"] for r in results}}}
+    merged.update({r["slug"]: r for r in results})
+    out = sorted(merged.values(), key=lambda e: e["slug"])
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-        json.dump(results, f, ensure_ascii=False, indent=2)
+        json.dump(out, f, ensure_ascii=False, indent=2)
+        f.write("\n")
 
     flagged_count = sum(1 for r in results if r["flags"])
     print(f"\nDone. {len(results)} generated, {len(failures)} failed, {flagged_count} flagged for review.")
-    print(f"Written to {OUTPUT_PATH}")
+    print(f"Written to {OUTPUT_PATH} ({len(out)} entries total).")
     if failures:
-        print(f"Failed slugs (not in output, rerun script to retry — it's not idempotent-skip, will regenerate all): {failures}")
+        print(f"Failed slugs (not written — re-run to retry just these): {failures}")
 
 
 if __name__ == "__main__":

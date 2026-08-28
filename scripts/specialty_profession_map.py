@@ -659,3 +659,257 @@ SPECIALTY_TO_PROFESSIONS: dict[str, list[str]] = {
     "Энергетика": ["inzhener-elektrik"],
     "Энергосистемы": ["inzhener-elektrik"],
 }
+
+# --- 2026-08-27: coverage for the 53 professions added to
+# scripts/riasec_professions.py after the map above (originally 92 professions)
+# was written. Kept as a separate additive dict and merged into
+# SPECIALTY_TO_PROFESSIONS at import time, NOT edited into the entries above, so:
+#   * the new mappings stay reviewable as one unit;
+#   * a key that already exists can't be silently dropped by a duplicate literal
+#     (a real Python footgun — last dict key wins);
+#   * seed_kz_universities.py needs no change — it still just reads
+#     SPECIALTY_TO_PROFESSIONS.
+# Each list holds ONLY the slugs to ADD; the merge loop below appends them to the
+# existing list (deduped) or creates the key. Same rule as the rest of the file:
+# a specialty is listed under a profession only when it genuinely trains for it,
+# not by shared category. `voennyy-ofitser` is deliberately absent — no civilian
+# bachelor specialty in university-data/*.py trains an army officer, and the
+# module docstring prefers leaving it in the "unmapped" report over a forced fit.
+_ADDITIONAL_SPECIALTY_PROFESSIONS: dict[str, list[str]] = {
+    # --- IT: roles that share the CS/SE/IS specialties ---
+    "Информационные системы": ["data-engineer"],
+    "Информационные системы и связь": ["data-engineer"],
+    "Наука о данных": ["data-engineer"],
+    "Data Science": ["data-engineer"],
+    "Economics and Data Science": ["data-engineer"],
+    "Экономика и наука о данных": ["data-engineer"],
+    "Вычислительная техника и программное обеспечение": ["devops-inzhener", "qa-inzhener-testirovschik"],
+    "Компьютерная инженерия": ["devops-inzhener"],
+    "Вычислительная инженерия": ["devops-inzhener"],
+    "Computing Systems and Technologies": ["devops-inzhener"],
+    "Computer technology and software": ["devops-inzhener", "qa-inzhener-testirovschik"],
+    "Программная инженерия": ["mobile-razrabotchik", "qa-inzhener-testirovschik"],
+    "Software Engineering": ["mobile-razrabotchik", "qa-inzhener-testirovschik"],
+    "Инженерия программного обеспечения (Software Engineering)": ["mobile-razrabotchik", "qa-inzhener-testirovschik"],
+    "Mobile computing (Мобильные вычисления)": ["mobile-razrabotchik"],
+    "Разработка программного обеспечения и защита информации": ["qa-inzhener-testirovschik"],
+    "Информационно-программные системы": ["mobile-razrabotchik", "qa-inzhener-testirovschik"],
+    "Mathematical and Software Support for Information Systems": ["qa-inzhener-testirovschik"],
+    "Computer Science": ["mobile-razrabotchik"],
+    "Компьютерные науки": ["mobile-razrabotchik"],
+    "Информатика (Computer science)": ["mobile-razrabotchik"],
+    # --- IT: management / design roles ---
+    "IT-менеджмент": ["prodakt-menedzher"],
+    "IT Management": ["prodakt-menedzher"],
+    "IT в бизнесе": ["prodakt-menedzher"],
+    "IT (Information Technology, бизнес-профиль)": ["prodakt-menedzher"],
+    "Информационные бизнес-системы": ["prodakt-menedzher"],
+    "Информационные системы в бизнесе": ["prodakt-menedzher"],
+    "Управление информационными технологиями": ["prodakt-menedzher"],
+    "Графический дизайн": ["ux-ui-dizayner", "illyustrator"],
+    "Графический дизайн (Иллюстрация)": ["ux-ui-dizayner", "illyustrator"],
+    "Дизайн": ["ux-ui-dizayner"],
+    "Промышленный дизайн": ["ux-ui-dizayner"],
+    "IT Design": ["ux-ui-dizayner"],
+    "3D Animation and Visual Effects": ["geymdizayner"],
+    "Режиссура анимации": ["geymdizayner"],
+    "Режиссура анимационного фильма": ["geymdizayner"],
+    "Медиакоммуникации": ["tehnicheskiy-pisatel"],
+
+    # --- Law: a law bachelor is the educational path to all of these ---
+    "Юриспруденция": ["sudya", "prokuror", "notarius", "mediator-konfliktolog"],
+    "Law (Юриспруденция)": ["sudya", "prokuror", "notarius"],
+    "Юридический": ["sudya", "prokuror", "notarius"],
+    "Право": ["sudya", "prokuror", "notarius"],
+    "Цифровая юриспруденция": ["sudya", "notarius"],
+    "Юриспруденция: предпринимательское право": ["notarius"],
+    "Корпоративное право": ["notarius"],
+    "Судебно-прокурорская деятельность": ["prokuror", "sudya"],
+    "Следственно-криминалистическая деятельность": ["sudmedekspert-kriminalist"],
+    "Право и правоохранительная деятельность": ["sudmedekspert-kriminalist"],
+    "Правоохранительная деятельность": ["sudmedekspert-kriminalist"],
+    "Юриспруденция: правоохранительная деятельность": ["sudmedekspert-kriminalist"],
+    "Социология": ["mediator-konfliktolog"],
+
+    # --- Medicine / biology ---
+    "Общая медицина": ["hirurg", "psihiatr", "pediatr"],
+    "Педиатрия": ["pediatr"],
+    '6-летняя программа "Doctor of Medicine" (Undergraduate Medical Program)': ["hirurg", "psihiatr", "pediatr"],
+    "Bachelor of Medical Science": ["hirurg", "psihiatr"],
+    "Клиническая психология": ["psihiatr"],
+    "Медицинская биология": ["genetik", "neyrobiolog", "meditsinskiy-laboratornyy-tehnolog"],
+    "Медико-профилактическое дело": ["epidemiolog", "meditsinskiy-laboratornyy-tehnolog"],
+    "Общественное здравоохранение": ["epidemiolog", "nutritsiolog-dietolog"],
+    "Общественное здоровье": ["epidemiolog", "nutritsiolog-dietolog"],
+    "Биология": ["genetik", "neyrobiolog"],
+    "Biological Sciences": ["genetik", "neyrobiolog"],
+    "Биофизика": ["neyrobiolog"],
+    "Биоинженерия и биоинформатика": ["genetik"],
+    "Биотехнология": ["genetik"],
+    "Когнитивные науки": ["neyrobiolog"],
+    "Технология продовольственных продуктов": ["nutritsiolog-dietolog"],
+    "Технология пищевых продуктов": ["nutritsiolog-dietolog"],
+    "Пищевая технология": ["nutritsiolog-dietolog"],
+    "Пищевая инженерия": ["nutritsiolog-dietolog"],
+
+    # --- Natural sciences ---
+    "Физика": ["fizik", "astronom"],
+    "Physics": ["fizik", "astronom"],
+    "Астрофизика": ["astronom", "fizik"],
+    "Физика элементарных частиц и космофизика": ["fizik", "astronom"],
+    "География": ["okeanolog-gidrolog"],
+    "Экология": ["okeanolog-gidrolog"],
+    "Водное хозяйство и мелиорация": ["okeanolog-gidrolog"],
+    "Гидротехническое строительство в водном хозяйстве": ["okeanolog-gidrolog"],
+
+    # --- Engineering: constructor / manufacturing technologist / automation ---
+    "Машиностроение": ["inzhener-konstruktor", "inzhener-tehnolog-mashinostroenie"],
+    "Технология машиностроения": ["inzhener-tehnolog-mashinostroenie", "inzhener-konstruktor"],
+    "Технологические машины и оборудование": ["inzhener-tehnolog-mashinostroenie", "inzhener-konstruktor"],
+    "Технологические машины и оборудование (по отраслям)": ["inzhener-tehnolog-mashinostroenie", "inzhener-konstruktor"],
+    "Приборостроение": ["inzhener-konstruktor"],
+    "Техническая механика": ["inzhener-konstruktor"],
+    "Механическая инженерия": ["inzhener-konstruktor"],
+    "Aircraft Construction and Testing": ["inzhener-konstruktor"],
+    "Robotics Engineering": ["inzhener-po-avtomatizatsii-i-robototehnike"],
+    "Интеллектуальная робототехника": ["inzhener-po-avtomatizatsii-i-robototehnike"],
+    "Робототехника и мехатроника": ["inzhener-po-avtomatizatsii-i-robototehnike"],
+    "Mechatronics Робототехника": ["inzhener-po-avtomatizatsii-i-robototehnike"],
+    "Контрольно-измерительные приборы и системы в робототехнике": ["inzhener-po-avtomatizatsii-i-robototehnike"],
+    "Автоматизация и управление": ["inzhener-po-avtomatizatsii-i-robototehnike"],
+    "Системы автоматизации": ["inzhener-po-avtomatizatsii-i-robototehnike"],
+
+    # --- Engineering: chemical / power / mining / metallurgy ---
+    "Химическая технология": ["inzhener-himik"],
+    "Химическая технология органических веществ": ["inzhener-himik"],
+    "Chemical and Materials Engineering": ["inzhener-himik"],
+    "Машины и аппараты химических производств": ["inzhener-himik"],
+    "Технология редких и радиоактивных элементов": ["inzhener-himik", "metallurg"],
+    "Электроэнергетика": ["inzhener-energetik"],
+    "Теплоэнергетика": ["inzhener-energetik"],
+    "Теплоэнергетическая инженерия": ["inzhener-energetik"],
+    "Энергетика": ["inzhener-energetik"],
+    "Энергосистемы": ["inzhener-energetik"],
+    "Энергетическая и экологическая техника": ["inzhener-energetik"],
+    "Горное дело": ["gornyy-inzhener"],
+    "Mining and Minerals Engineering": ["gornyy-inzhener"],
+    "Mining Engineering": ["gornyy-inzhener"],
+    "Добыча полезных ископаемых": ["gornyy-inzhener"],
+    "Обогащение полезных ископаемых": ["gornyy-inzhener", "metallurg"],
+    "Обработка полезных ископаемых": ["gornyy-inzhener", "metallurg"],
+
+    # --- Cybersecurity engineer (distinct from sysadmin-flavoured infosec) ---
+    "Cybersecurity": ["inzhener-po-kiberbezopasnosti"],
+    "Кибербезопасность": ["inzhener-po-kiberbezopasnosti"],
+    "Кибербезопасность цифровых систем": ["inzhener-po-kiberbezopasnosti"],
+    "Кибер безопасность": ["inzhener-po-kiberbezopasnosti"],
+    "Компьютерная безопасность": ["inzhener-po-kiberbezopasnosti"],
+    "Сетевая безопасность": ["inzhener-po-kiberbezopasnosti"],
+    "Системы информационной безопасности": ["inzhener-po-kiberbezopasnosti"],
+    "Информационные технологии и защита данных": ["inzhener-po-kiberbezopasnosti"],
+    "Криптология": ["inzhener-po-kiberbezopasnosti"],
+
+    # --- Creative: sound / illustration / screenwriting / stylist ---
+    "Аудиопроизводство": ["zvukorezhisser"],
+    "Аудиовизуальные устройства и медиапроизводство": ["zvukorezhisser"],
+    "Эстрадное искусство": ["zvukorezhisser"],
+    "Изобразительное искусство": ["illyustrator"],
+    "Изобразительное искусство и черчение": ["illyustrator"],
+    "Декоративное искусство": ["illyustrator"],
+    "Screenwriting": ["stsenarist"],
+    "Режиссура кино и телевидения": ["stsenarist"],
+    "Цифровое кинопроизводство (Digital Filmmaking)": ["stsenarist"],
+    "Filmmaking": ["stsenarist"],
+    "Fashion design": ["modnyy-stilist"],
+    "Мода, дизайн": ["modnyy-stilist"],
+    "Технология моды": ["modnyy-stilist"],
+    "Fashion-индустрия: технологии и конструирование": ["modnyy-stilist"],
+    "Композиция": ["kompozitor"],
+    "Музыковедение": ["kompozitor"],
+    "Музыкальное образование": ["kompozitor"],
+
+    # --- Finance: investment banker / financial controller ---
+    "Финансы": ["investitsionnyy-bankir", "finansovyy-kontroler"],
+    "Finance": ["investitsionnyy-bankir", "finansovyy-kontroler"],
+    "Финансы и инвестиции": ["investitsionnyy-bankir"],
+    "Финансовые рынки и финансовые институты": ["investitsionnyy-bankir"],
+    "Банковское дело и финансы": ["investitsionnyy-bankir"],
+    "Financial Economics and Financial Technologies": ["investitsionnyy-bankir"],
+    "Корпоративные финансы": ["investitsionnyy-bankir", "finansovyy-kontroler"],
+    "Финансовая аналитика": ["finansovyy-kontroler"],
+    "Учет и аудит": ["finansovyy-kontroler"],
+    "Учёт и аудит": ["finansovyy-kontroler"],
+    "Учет и Аудит": ["finansovyy-kontroler"],
+    "Учет и аудит по ACCA": ["finansovyy-kontroler"],
+    "Бухгалтерский учет и аудит": ["finansovyy-kontroler"],
+    "Бухгалтерский учет и финансы": ["finansovyy-kontroler"],
+    "Экономика и аудит": ["finansovyy-kontroler"],
+
+    # --- Marketing / logistics: broaden from the "director" role to the IC role ---
+    "Маркетинг": ["marketolog"],
+    "Marketing": ["marketolog"],
+    "Бизнес и маркетинг": ["marketolog"],
+    "Менеджмент и маркетинг": ["marketolog"],
+    "Digital маркетинг": ["marketolog"],
+    "Digital-маркетинг": ["marketolog"],
+    "IT Маркетинг": ["marketolog"],
+    "Маркетинг и бизнес аналитика": ["marketolog"],
+    "Реклама и маркетинговые коммуникации": ["marketolog"],
+    "Реклама и цифровой маркетинг": ["marketolog"],
+    "Логистика": ["logist"],
+    "Логистика (по отраслям)": ["logist"],
+    "Транспортная логистика": ["logist"],
+    "Производственная логистика": ["logist"],
+    "Цифровая логистика": ["logist"],
+    "Логистика на транспорте": ["logist"],
+    "Logistics (Логистика)": ["logist"],
+    "Организация перевозок и логистика на транспорте": ["logist"],
+    "Организация транспорта и логистика": ["logist"],
+    "Транспортные системы": ["logist"],
+    "Business Administration - Global Logistics": ["logist"],
+
+    # --- Psychology / pedagogy / social ---
+    "Педагогика и психология": ["pedagog-psiholog", "proforientolog-karernyy-konsultant"],
+    "Педагогика и психология с полиязычием": ["pedagog-psiholog"],
+    "Психологические особенности развития личности": ["pedagog-psiholog"],
+    "Специальная педагогика и психология": ["pedagog-psiholog", "defektolog"],
+    "Специальное образование": ["defektolog"],
+    "Дефектология": ["defektolog"],
+    "Психология": ["proforientolog-karernyy-konsultant"],
+    "Практическая психология": ["proforientolog-karernyy-konsultant"],
+    "Организационная психология": ["proforientolog-karernyy-konsultant"],
+    "Психологическое консультирование": ["proforientolog-karernyy-konsultant"],
+    "Социальная работа": ["mediator-konfliktolog"],
+
+    # --- Sport management / agency ---
+    "Физическая культура и спорт": ["sportivnyy-menedzher-agent"],
+    "Физическая культура": ["sportivnyy-menedzher-agent"],
+    "Спортивная подготовка": ["sportivnyy-menedzher-agent"],
+    "Фитнес и рекреация": ["sportivnyy-menedzher-agent"],
+
+    # --- Humanities: historian / linguist / religious-studies scholar / urbanist ---
+    "История": ["istorik"],
+    "History": ["istorik"],
+    "История Казахстана": ["istorik"],
+    "История и образование": ["istorik"],
+    "Anthropology": ["istorik"],
+    "Филология": ["filolog-lingvist"],
+    "Филологический": ["filolog-lingvist"],
+    "Прикладная лингвистика": ["filolog-lingvist"],
+    "Applied Linguistics": ["filolog-lingvist"],
+    "Казахский язык и литература": ["filolog-lingvist"],
+    "Русский язык и литература": ["filolog-lingvist"],
+    "Казахский-английский языки и лингвистика": ["filolog-lingvist"],
+    "Религиоведение": ["teolog-religioved"],
+    "Исламоведение": ["teolog-religioved"],
+    "Теология": ["teolog-religioved"],
+    "Архитектура": ["urbanist-gradostroitel"],
+    "Архитектурно-строительный": ["urbanist-gradostroitel"],
+    "Факультет управления земельными ресурсами, архитектуры и дизайна": ["urbanist-gradostroitel"],
+}
+
+for _specialty, _new_slugs in _ADDITIONAL_SPECIALTY_PROFESSIONS.items():
+    _current = SPECIALTY_TO_PROFESSIONS.setdefault(_specialty, [])
+    for _slug in _new_slugs:
+        if _slug not in _current:
+            _current.append(_slug)

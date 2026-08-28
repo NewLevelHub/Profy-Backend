@@ -1,7 +1,13 @@
 import re
 import uuid
+from typing import Annotated
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import AfterValidator, BaseModel, EmailStr, Field, field_validator
+
+# Emails are matched case-insensitively everywhere (DB lookups, Google
+# account linking) — normalizing once at the request boundary keeps every
+# call site consistent instead of relying on each service function to do it.
+NormalizedEmail = Annotated[EmailStr, AfterValidator(lambda v: v.strip().lower())]
 
 
 def _validate_password_complexity(v: str) -> str:
@@ -13,7 +19,7 @@ def _validate_password_complexity(v: str) -> str:
 
 
 class RegisterRequest(BaseModel):
-    email: EmailStr
+    email: NormalizedEmail
     password: str = Field(min_length=8)
 
     @field_validator("password")
@@ -23,8 +29,12 @@ class RegisterRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: NormalizedEmail
     password: str
+
+
+class GoogleAuthRequest(BaseModel):
+    id_token: str
 
 
 class UserInfo(BaseModel):
@@ -48,12 +58,12 @@ class RegisterResponse(BaseModel):
 
 
 class VerifyEmailRequest(BaseModel):
-    email: EmailStr
+    email: NormalizedEmail
     code: str
 
 
 class ResendVerificationRequest(BaseModel):
-    email: EmailStr
+    email: NormalizedEmail
 
 
 class UserResponse(BaseModel):
@@ -67,16 +77,16 @@ class UserResponse(BaseModel):
 
 
 class ForgotPasswordRequest(BaseModel):
-    email: EmailStr
+    email: NormalizedEmail
 
 
 class VerifyResetCodeRequest(BaseModel):
-    email: EmailStr
+    email: NormalizedEmail
     code: str
 
 
 class ResetPasswordRequest(BaseModel):
-    email: EmailStr
+    email: NormalizedEmail
     code: str
     new_password: str = Field(min_length=8)
 

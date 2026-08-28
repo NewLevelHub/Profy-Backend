@@ -12,7 +12,7 @@ from app.models.question import HollandType, Question, QuestionInstrument
 from app.models.user_response import UserResponse
 from app.services.age_tiers import visible_tiers
 from app.services.riasec_content import TYPE_ACTIVITIES
-from app.services.scoring_levels import LEVEL_HIGH_MIN, LEVEL_LOW_MAX
+from app.services.scoring_levels import LEVEL_HIGH_MIN, LEVEL_LOW_MAX, LEVEL_MEDIUM_MIN
 
 HOLLAND_ORDER: list[str] = ["R", "I", "A", "S", "E", "C"]
 
@@ -144,21 +144,20 @@ async def matched_careers(
     # Tie-break on slug (ascending) so equal scores don't depend on DB row
     # order — same convention as top_code's HOLLAND_ORDER tie-break above.
     scored.sort(key=lambda pair: (-pair[1], pair[0].slug))
-    # Never surface two directions with the literally identical holland_code
-    # in the same result — found live: 3 of the top-5 careers shown to a
-    # student (Архивариус/Аудитор/Бухгалтер) all had holland_code=="CSE",
-    # so they scored identically AND cited the identical evidence, reading
-    # as the app just repeating itself. Positional scoring above already
-    # differentiates anagrams (CSE vs ESC) — this handles the case no
-    # scoring change can fix: an exact duplicate code has no order to weigh.
-    deduped: list[tuple[Direction, int]] = []
-    seen_codes: set[str] = set()
-    for direction, score in scored:
-        if direction.holland_code in seen_codes:
-            continue
-        seen_codes.add(direction.holland_code)
-        deduped.append((direction, score))
-    return deduped[:limit]
+    # Used to drop every direction but one for an exact-duplicate
+    # holland_code here (found live: 3 of 5 careers shown to a student all
+    # had holland_code=="CSE", reading as the app repeating itself) — but
+    # that also permanently hid every OTHER direction sharing that code from
+    # EVERY student, no matter how well any of them actually fit, which
+    # stopped scaling once the catalog grew past ~120 directions (more
+    # entries than there are distinct 3-distinct-letter codes, so exact
+    # collisions become unavoidable). The repetition problem this was
+    # guarding against is now handled correctly downstream instead —
+    # report_v2_assembler.py's build_riasec_careers gives any career sharing
+    # already-shown matched evidence its own distinguishing clause (that
+    # career's own skills_needed[0]) rather than repeating the sentence — so
+    # nothing needs to be hidden here to avoid reading as copy-pasted.
+    return scored[:limit]
 
 
 def _aversion_ratio(letter: str, aversion_counts: dict[str, int], counts: dict[str, int]) -> float:
@@ -172,41 +171,40 @@ def strengths_weaknesses(
     counts: dict[str, int],
     limit: int = 3,
 ) -> tuple[list[str], list[str]]:
-    """A type only counts as a strength if it's clearly expressed (>=
-    LEVEL_HIGH_MIN — the same bar interest_map uses to call a sphere
-    "high") — not just "top-N by rank" among whatever six numbers happen to
-    exist. Found live: a profile of I=100/A=100/R=C=E=S=20 (R tied exactly
-    with two of the three "weaknesses") still had R padded into `strengths`
-    by the old blind top-3 — the type then got cited as matched evidence
-    in 7 of the 10 shown careers despite being statistically indistinguishable
-    from what the same report labeled a weakness. Can legitimately return
-    fewer than `limit` (even zero) now when nothing actually clears the
-    bar — an honest "no standout type" beats a manufactured one; the flat
-    profile is already surfaced elsewhere (differentiation/is_flat_profile).
-    Weaknesses get the mirror-image bar (<= LEVEL_LOW_MAX) for the same
-    reason — a mid-pack score isn't a confirmed weakness either."""
+    """Build up to `limit` strengths in three tiers of decreasing confidence,
+    so the "Сильные стороны" section stays populated for an ordinary profile
+    without ever promoting a genuinely weak type:
+
+    1. Types that clear LEVEL_HIGH_MIN (the same bar interest_map uses for
+       "high") AND aren't explicitly disliked (aversion) — the real signal.
+    2. Still short of `limit`? Any remaining type >= LEVEL_MEDIUM_MIN, by
+       rank, aversion ignored (career matching / top_code ignores it too).
+       A mid-band score is softer evidence but it's still the student's own
+       relative high, and 50-70 is interest_map's neutral "medium" band —
+       so citing it here doesn't contradict that section the way a
+       floor-level type would.
+    3. Never a type below LEVEL_MEDIUM_MIN. Found live: a profile of
+       I=100/A=100/R=C=E=S=20 had R (tied with two "weaknesses") padded into
+       `strengths` by the old blind top-3 and then cited as matched evidence
+       in 7 of 10 careers — that's the case this floor prevents. So a
+       profile with fewer than `limit` types at >= LEVEL_MEDIUM_MIN still
+       returns fewer than `limit` (even zero — the flat profile is surfaced
+       elsewhere via differentiation/is_flat_profile).
+
+    Weaknesses get the mirror-image bar (<= LEVEL_LOW_MAX) — a mid-pack
+    score isn't a confirmed weakness either."""
     ranked = sorted(HOLLAND_ORDER, key=lambda t: (-normalized.get(t, 0.0), HOLLAND_ORDER.index(t)))
-    qualifying_strengths = [t for t in ranked if normalized.get(t, 0.0) >= LEVEL_HIGH_MIN]
 
     strengths = [
-        t for t in qualifying_strengths
-        if _aversion_ratio(t, aversion_counts, counts) < _AVERSION_DISQUALIFY_RATIO
+        t for t in ranked
+        if normalized.get(t, 0.0) >= LEVEL_HIGH_MIN
+        and _aversion_ratio(t, aversion_counts, counts) < _AVERSION_DISQUALIFY_RATIO
     ][:limit]
-    if len(strengths) < min(limit, len(qualifying_strengths)):
-        # A strict aversion filter can leave too few (even zero) categories
-        # despite real signal existing — found live: a student with >=30%
-        # explicit dislike on otherwise-high-scoring types ended up with a
-        # near-empty/empty evidence catalog, so "Сильные стороны"
-        # disappeared from the report entirely. That reads worse than
-        # showing the best-available *real* signal. career matching
-        # (top_code, above) already ignores aversion completely — this just
-        # brings the evidence catalog in line with that. Still only ever
-        # pads from `qualifying_strengths` — aversion can waive the
-        # disqualification, it can't lower the score bar.
-        for t in qualifying_strengths:
+    if len(strengths) < limit:
+        for t in ranked:
             if len(strengths) >= limit:
                 break
-            if t not in strengths:
+            if t not in strengths and normalized.get(t, 0.0) >= LEVEL_MEDIUM_MIN:
                 strengths.append(t)
 
     weaknesses = [t for t in reversed(ranked) if normalized.get(t, 0.0) <= LEVEL_LOW_MAX][:limit]

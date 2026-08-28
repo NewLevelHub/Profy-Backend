@@ -68,6 +68,12 @@ class Program(Base):
         "Direction", secondary=program_directions, lazy="selectin", order_by="Direction.slug"
     )
     language: Mapped[str] = mapped_column(String(50), nullable=False)
+    # Raw subject-taxonomy tag from an external source (e.g. jinaq's
+    # `major.category`: "ENGINEERING", "LAW", ...) — kept separate from
+    # `directions` (RIASEC/Holland-code career matching, hand-mapped per
+    # scripts/specialty_profession_map.py) since the two taxonomies don't
+    # correspond 1:1 and this project never auto-derives one from the other.
+    source_category: Mapped[str | None] = mapped_column(String(50), nullable=True)
     cost_per_year: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     # Free-text fallback for when cost is a range/mixed currency and doesn't
     # fit a single Decimal (e.g. "2 000 – 6 000 EUR в семестр для граждан вне

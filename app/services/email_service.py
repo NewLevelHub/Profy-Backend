@@ -1,15 +1,13 @@
 import asyncio
 import logging
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from pathlib import Path
+
+import resend
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-_SMTP_TIMEOUT = 10
 _TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "email"
 
 
@@ -18,26 +16,17 @@ def _load_template(name: str, **kwargs: str) -> str:
     return path.read_text(encoding="utf-8").format(**kwargs)
 
 
-def _send_smtp(to: str, subject: str, plain: str, html: str) -> None:
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = settings.EMAIL_FROM
-    msg["To"] = to
-    msg.attach(MIMEText(plain, "plain", "utf-8"))
-    msg.attach(MIMEText(html, "html", "utf-8"))
-
-    use_ssl = settings.SMTP_PORT == 465
-    if use_ssl:
-        with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, timeout=_SMTP_TIMEOUT) as server:
-            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            server.sendmail(settings.EMAIL_FROM, to, msg.as_string())
-    else:
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=_SMTP_TIMEOUT) as server:
-            server.ehlo()
-            server.starttls()
-            server.ehlo()  # re-identify after TLS handshake
-            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            server.sendmail(settings.EMAIL_FROM, to, msg.as_string())
+def _send_resend(to: str, subject: str, plain: str, html: str) -> None:
+    resend.api_key = settings.RESEND_API_KEY
+    resend.Emails.send(
+        {
+            "from": settings.EMAIL_FROM,
+            "to": [to],
+            "subject": subject,
+            "html": html,
+            "text": plain,
+        }
+    )
 
 
 async def send_verification_email(to: str, code: str) -> None:
@@ -45,12 +34,12 @@ async def send_verification_email(to: str, code: str) -> None:
     plain = f"Твой код подтверждения: {code}\n\nКод действителен 15 минут."
     html = _load_template("verification.html", code=code)
 
-    if not settings.SMTP_HOST:
-        logger.warning("SMTP not configured — verification code for %s: %s", to, code)
+    if not settings.RESEND_API_KEY:
+        logger.warning("Resend not configured — verification code for %s: %s", to, code)
         return
 
     try:
-        await asyncio.to_thread(_send_smtp, to, subject, plain, html)
+        await asyncio.to_thread(_send_resend, to, subject, plain, html)
     except Exception:
         logger.exception("Failed to send verification email to %s", to)
         raise
@@ -65,12 +54,12 @@ async def send_password_reset_email(to: str, code: str) -> None:
     )
     html = _load_template("password_reset.html", code=code)
 
-    if not settings.SMTP_HOST:
-        logger.warning("SMTP not configured — password reset code for %s: %s", to, code)
+    if not settings.RESEND_API_KEY:
+        logger.warning("Resend not configured — password reset code for %s: %s", to, code)
         return
 
     try:
-        await asyncio.to_thread(_send_smtp, to, subject, plain, html)
+        await asyncio.to_thread(_send_resend, to, subject, plain, html)
     except Exception:
         logger.exception("Failed to send password reset email to %s", to)
         raise
