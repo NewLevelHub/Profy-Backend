@@ -1120,6 +1120,20 @@
       "confirmed": false,
       "rename_to": "Южно-Казахстанская медицинская академия (ЮКМА)",
       "short_name_to": "ЮКМА"
+    },
+    {
+      "jinaq_external_id": "1055",
+      "jinaq_university_id": "084ef576-d97a-464c-bfec-4a893e715f5d",
+      "jinaq_name": "Екибастузский инженерно-технический институт имени академика К.Сатпаева",
+      "jinaq_city": "Екибастуз",
+      "proposed_curated_match": {
+        "slug": "ekibastuzskiy-inzhenerno-tekhnicheskiy-institut-satpaeva",
+        "name": "Экибастузский инженерно-технический институт имени академика К. Сатпаева",
+        "city": "Экибастуз"
+      },
+      "confidence": "high",
+      "reason": "same institution — jinaq name uses Е (Екибастузский) instead of Э (Экибастузский) plus no space after \"К.\"; curated row has ovpo_code 147, jinaq row does not; found while auditing a duplicate-photo report from the user",
+      "confirmed": true
     }
   ]
 }
