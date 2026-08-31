@@ -514,6 +514,8 @@ def test_build_personality_notes_covers_all_five_traits() -> None:
 
 
 def test_build_personality_notes_ranks_traits_most_to_least_pronounced() -> None:
+    # mean of the five is 53.2; level is the band relative to THAT, not an
+    # absolute cutoff — agreeableness at 61 is only +7.8, inside the mid band.
     profile = {
         "openness": 20.0, "conscientiousness": 90.0, "extraversion": 55.0,
         "agreeableness": 61.0, "emotional_stability": 40.0,
@@ -524,7 +526,7 @@ def test_build_personality_notes_ranks_traits_most_to_least_pronounced() -> None
     assert [n.trait for n in notes] == [
         "conscientiousness", "agreeableness", "extraversion", "emotional_stability", "openness",
     ]
-    assert [n.level for n in notes] == ["high", "high", "medium", "low", "low"]
+    assert [n.level for n in notes] == ["high", "medium", "medium", "low", "low"]
 
 
 def test_build_personality_notes_breaks_ties_by_canonical_order() -> None:
@@ -580,7 +582,9 @@ def test_build_personality_note_names_a_minority_of_low_growth_eligible_traits()
     """A student who is honestly weak on a couple of skill-like traits
     (everything else mid) must be told so, not falsely called "balanced" —
     the whole point of this feature."""
-    profile = {**_DEFAULT_PERSONALITY_PROFILE, "openness": 0.0, "conscientiousness": 0.0}
+    # openness/conscientiousness sit a band below the rest, the other three
+    # stay close to the mean (so nothing reads as a spurious "high").
+    profile = {**_DEFAULT_PERSONALITY_PROFILE, "openness": 35.0, "conscientiousness": 35.0}
 
     note = report_v2_assembler.build_personality_note(profile)
 

@@ -18,7 +18,7 @@ import re
 from app.models.artifact import Artifact
 from app.models.profile import AgeGroup
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
-from app.services.bigfive_content import is_high_tier
+from app.services.bigfive_content import relative_bands
 from app.services.mi_content import MI_STRENGTH_PHRASES
 from app.services.riasec_content import RIASEC_STRENGTH_PHRASES
 from app.services.thinking_style_content import THINKING_STYLE_NOTES
@@ -67,12 +67,15 @@ def _interest_evidence(age_group: AgeGroup, strengths: list[str]) -> tuple[str, 
 def _personality_evidence(
     personality_profile: dict[str, float], personality_notes: dict[str, str]
 ) -> list[EvidenceItem]:
-    """Only high-tier traits — a "mid" or "low" tiered note is honest, not a
-    strength, and doesn't belong in a strengths-evidence catalog."""
+    """Only traits in the "high" band (pronounced relative to the student's
+    own five-trait average — bigfive_content.relative_bands) — a "medium" or
+    "low" tiered note is honest, not a strength, and doesn't belong in a
+    strengths-evidence catalog."""
+    bands = relative_bands(personality_profile)
     return [
         EvidenceItem(source_id=f"personality:{trait}", source_type="personality", text=personality_notes[trait])
-        for trait, value in personality_profile.items()
-        if is_high_tier(value) and trait in personality_notes
+        for trait in personality_profile
+        if bands.get(trait) == "high" and trait in personality_notes
     ]
 
 

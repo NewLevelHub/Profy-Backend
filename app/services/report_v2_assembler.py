@@ -131,17 +131,20 @@ def build_interest_map(age_group: AgeGroup, profile_scores: dict[str, float]) ->
 
 
 def build_personality_notes(is_junior: bool, personality_profile: dict[str, float]) -> list[StudentPersonalityNote]:
-    """"Твой характер" — TZ_Profi.md's Big Five instrument is answered
-    identically by all three age groups (only interests/motivation branch
-    by age), so unlike interest_map this never varies by instrument, only
-    by wording (junior gets bigfive_content._NOTES_JUNIOR's short, concrete
-    phrasing instead of the adult table). Entirely deterministic, no LLM,
-    no narrative pipeline involved — `personality_profile` is already a
-    plain 5-domain float dict (report_service.py computes it once,
-    unconditionally, for every age group). Ranked most-to-least pronounced,
-    same score-desc/canonical-index tie-break convention as
-    build_interest_map/riasec_service.py's strengths ranking."""
+    """"Твой характер" — the Big Five instrument is answered identically by
+    all three age groups (only interests/motivation branch by age), so
+    unlike interest_map this never varies by instrument, only by wording
+    (junior gets bigfive_content._NOTES_JUNIOR's short, concrete phrasing
+    instead of the adult table). Entirely deterministic, no LLM, no
+    narrative pipeline involved — `personality_profile` is already a plain
+    5-domain float dict (report_service.py computes it once, unconditionally,
+    for every age group). Ranked most-to-least pronounced, same
+    score-desc/canonical-index tie-break convention as
+    build_interest_map/riasec_service.py's strengths ranking. `level` is the
+    trait's band relative to the student's own five-trait average
+    (bigfive_content.relative_bands), not an absolute cutoff."""
     notes = bigfive_content.personality_notes_for_age(is_junior, personality_profile)
+    bands = bigfive_content.relative_bands(personality_profile)
     traits = list(bigfive_content.PERSONALITY_LABELS.items())
     ranked = sorted(traits, key=lambda item: (-personality_profile.get(item[0], 0.0), traits.index(item)))
     return [
@@ -149,7 +152,7 @@ def build_personality_notes(is_junior: bool, personality_profile: dict[str, floa
             trait=trait,
             label=label,
             description=notes[trait],
-            level=bigfive_content.personality_level(personality_profile.get(trait, 0.0)),
+            level=bands.get(trait, "medium"),
         )
         for trait, label in ranked
     ]
@@ -179,19 +182,20 @@ def build_personality_note(personality_profile: dict[str, float]) -> str:
     either, or neither) — each is skipped if it would name literally every
     eligible trait (that's the whole list, not a highlight).
 
-    Superseded the old "spread >= threshold" gate: gating on the per-trait
-    high/low bands directly is itself already a meaningful-outlier check
-    (the 40-60 mid band is the buffer), so a separate spread check was
-    redundant."""
+    Bands are relative to the student's own five-trait average
+    (bigfive_content.relative_bands) — an even profile comes back all
+    "medium", which is itself the meaningful-outlier gate, so no separate
+    spread check is needed here."""
     labels = bigfive_content.PERSONALITY_LABELS
+    bands = bigfive_content.relative_bands(personality_profile)
     high = [
         label for trait, label in labels.items()
-        if bigfive_content.is_high_tier(personality_profile.get(trait, 0.0))
+        if bands.get(trait) == "high"
     ]
     low = [
         label for trait, label in labels.items()
         if trait in bigfive_content.GROWTH_ELIGIBLE_TRAITS
-        and bigfive_content.is_low_tier(personality_profile.get(trait, 0.0))
+        and bands.get(trait) == "low"
     ]
     sentences = []
     if high and len(high) < len(labels):
