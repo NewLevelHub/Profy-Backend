@@ -8,6 +8,7 @@ test_auth_email_resilience.py."""
 import uuid
 
 import pytest
+from google.auth import exceptions as google_auth_exceptions
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -131,6 +132,72 @@ async def test_verify_google_id_token_rejects_unverified_email(monkeypatch) -> N
 
     with pytest.raises(ValueError):
         await oauth_service.verify_google_id_token("fake-token")
+
+
+async def test_verify_google_id_token_rejects_missing_email_claim(monkeypatch) -> None:
+    """A token obtained without the email/profile scope has no "email" key.
+    This must surface as a clean ValueError (-> 400), not an uncaught
+    KeyError (-> 500)."""
+    monkeypatch.setattr(
+        google_id_token,
+        "verify_oauth2_token",
+        lambda *a, **kw: {"sub": "sub-1", "email_verified": True},
+    )
+
+    with pytest.raises(ValueError, match="email"):
+        await oauth_service.verify_google_id_token("fake-token")
+
+
+async def test_verify_google_id_token_wraps_transient_google_auth_error(monkeypatch) -> None:
+    """A brief JWKS-fetch failure (e.g. Google's cert endpoint unreachable)
+    raises google.auth.exceptions.GoogleAuthError, not ValueError. This must
+    also surface as a clean ValueError (-> 400), not an unhandled 500."""
+
+    def _raise(*a, **kw):
+        raise google_auth_exceptions.TransportError("cert fetch failed")
+
+    monkeypatch.setattr(google_id_token, "verify_oauth2_token", _raise)
+
+    with pytest.raises(ValueError):
+        await oauth_service.verify_google_id_token("fake-token")
+
+
+async def test_login_or_register_google_recovers_from_concurrent_insert_race(
+    db_session: AsyncSession, monkeypatch
+) -> None:
+    """Two simultaneous first-time Google logins for the same brand-new
+    account can both pass the lookup and both attempt to insert; the loser
+    must recover by re-fetching the winner's row instead of surfacing the
+    unique-constraint IntegrityError as a 500."""
+    email = f"{uuid.uuid4()}@example.test"
+    sub = str(uuid.uuid4())
+    monkeypatch.setattr(
+        google_id_token, "verify_oauth2_token", lambda *a, **kw: _fake_claims(email, sub)
+    )
+
+    # Simulate a concurrent request that already inserted the row for this
+    # google_id between our lookup and our insert attempt.
+    winner = User(email=email, hashed_password=None, google_id=sub, is_verified=True)
+    db_session.add(winner)
+    await db_session.commit()
+    await db_session.refresh(winner)
+
+    real_lookup = oauth_service._lookup_google_user
+    calls = {"n": 0}
+
+    async def flaky_lookup(google_id, email_arg, db):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return None  # pretend our lookup raced and missed the winner
+        return await real_lookup(google_id, email_arg, db)
+
+    monkeypatch.setattr(oauth_service, "_lookup_google_user", flaky_lookup)
+
+    user, token = await oauth_service.login_or_register_google("fake-token", db_session)
+
+    assert token
+    assert user.id == winner.id
+    assert calls["n"] == 2
 
 
 async def test_login_rejects_password_for_google_only_account(
