@@ -210,7 +210,10 @@ def test_evidence_contains_no_raw_numbers_or_percent_signs() -> None:
     context = build_report_narrative_context(
         age_group=AgeGroup.senior,
         strengths=["R", "I", "A"],
-        personality_profile={"openness": 80.0, "conscientiousness": 70.0},
+        personality_profile={
+            "openness": 90.0, "conscientiousness": 85.0,
+            "extraversion": 40.0, "agreeableness": 40.0, "emotional_stability": 40.0,
+        },
         personality_notes={"openness": "Тебе интересно узнавать новое", "conscientiousness": "Ты организован"},
         thinking_style={"creative_think": 90.0, "systematic": 85.0, "strategic": 10.0, "practical": 5.0},
         motivation_top=["interest"],
@@ -275,7 +278,10 @@ def test_onboarding_evidence_is_capped_but_test_derived_evidence_is_not() -> Non
     context = build_report_narrative_context(
         age_group=AgeGroup.senior,
         strengths=["R", "I", "C"],  # 3 riasec_category items, never capped
-        personality_profile={"openness": 70.0, "conscientiousness": 65.0},
+        personality_profile={
+            "openness": 90.0, "conscientiousness": 85.0,
+            "extraversion": 40.0, "agreeableness": 40.0, "emotional_stability": 40.0,
+        },
         personality_notes={"openness": "Тебе интересно новое", "conscientiousness": "Ты организован"},
         thinking_style={},
         motivation_top=[], motivation_highlights=[],

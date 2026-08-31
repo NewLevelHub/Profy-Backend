@@ -97,7 +97,7 @@ async def test_report_cache_key_is_centralized_and_versioned() -> None:
     assessment_id = uuid.uuid4()
     assert (
         assessment_shared.report_cache_key(assessment_id)
-        == f"report:v2:{assessment_id}"
+        == f"report:v3:{assessment_id}"
     )
     # report_service must use the exact same builder, not a parallel copy —
     # that's precisely what regressed last time.
@@ -115,7 +115,7 @@ async def test_build_report_writes_and_get_report_reads_the_same_cache_key(
     await report_service.build_report(assessment.id, db_session)
 
     redis = assessment_shared.get_redis()
-    assert await redis.get(f"report:v2:{assessment.id}") is not None
+    assert await redis.get(f"report:v3:{assessment.id}") is not None
 
 
 async def test_legacy_unversioned_cache_payload_is_never_read_as_v2(
@@ -123,7 +123,7 @@ async def test_legacy_unversioned_cache_payload_is_never_read_as_v2(
 ) -> None:
     """A pre-rollout v1-shaped JSON blob might still be sitting under the old
     `report:{id}` key when this ships. get_report/build_report must ignore
-    it completely (they only ever address `report:v2:{id}`) rather than try
+    it completely (they only ever address `report:v3:{id}`) rather than try
     to parse it as ResultResponseV2 and blow up."""
     assessment = await _make_assessment(db_session, AgeGroup.senior)
     _force_complete_and_llm_disabled(monkeypatch, senior=True)

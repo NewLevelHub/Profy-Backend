@@ -364,8 +364,8 @@ async def build_report(
     bf_facet_norm = bigfive_service.facet_normalize(bf_facet_raw, bf_facet_counts)
     thinking_style = thinking_style_service.compute(bf_facet_norm)
 
-    personality_highlights = strength_phrases(bigfive_scores)
     personality_profile, personality_notes = bigfive_content.build_personality_profile(bigfive_scores)
+    personality_highlights = strength_phrases(personality_profile)
 
     # Junior/middle answer the Harter-format pairs instead of the 3-way
     # MOST/LEAST triplets (senior) — different tables/scoring, same shape.

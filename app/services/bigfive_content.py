@@ -4,9 +4,8 @@ Big Five methodology reference tables — mirrors riasec_content.py's role.
 from typing import Literal
 
 # Russian domain labels — admin/debug use only. Raw Big Five percentages are
-# never shown to the student directly (TZ_Profi.md §18.3: numbers are
-# admin-only); the student-facing report uses thinking_style + the
-# interpreted phrases below instead.
+# never shown to the student directly; the student-facing report uses
+# thinking_style + the interpreted phrases below instead.
 BIGFIVE_LABELS: dict[str, str] = {
     "N": "Эмоциональная чувствительность",
     "E": "Экстраверсия",
@@ -33,17 +32,28 @@ THINKING_STYLE_LABELS: dict[str, str] = {
     "practical": "Доведение идеи до работающего результата",
 }
 
-# Only 3 domains feed "Сильные стороны" (Openness, Conscientiousness, low
-# Neuroticism) — confirmed with product owner: Extraversion/Agreeableness
-# aren't reliably "strengths" (can be a liability depending on context), so
-# they're excluded here rather than guessed at.
-_STRONG = 60.0
-_LOW = 40.0
+# Big Five tiering is RELATIVE, not absolute. There are no population norms
+# for this instrument (nor age-appropriate ones for 14-18), so a raw min-max
+# % like "62" has no interpretable meaning on its own — "answered 3 to
+# everything" already lands at 50. Instead every trait is judged against the
+# student's OWN average across their five traits: a trait `_REL_BAND` points
+# above that average reads as "проявляется ярче", `_REL_BAND` below as
+# "проявляется слабее", everything else as "заметно". `_FLAT_SPREAD` guards
+# against labelling noise on a genuinely even profile — if the whole five-trait
+# spread is under it, every trait is "medium". Start values; tune against real
+# distributions so a typical profile yields ~1-2 high and ~1-2 low, not a
+# lopsided split. See relative_bands().
+_REL_BAND = 8.0
+_FLAT_SPREAD = 10.0
 
-# Mirrors the same product decision above, applied to the low/"growth" side
-# instead of the high/"strength" side: a low score on openness,
-# conscientiousness, or emotional_stability is a skill gap worth naming
-# (trying new things, follow-through, handling stress). A low score on
+# Only 3 traits feed "Сильные стороны" (Openness, Conscientiousness, Emotional
+# Stability) — confirmed with product owner: Extraversion/Agreeableness aren't
+# reliably "strengths" (can be a liability depending on context), so they're
+# excluded here rather than guessed at.
+#
+# Same product decision applied to the low/"growth" side: a low score on
+# openness, conscientiousness, or emotional_stability is a skill gap worth
+# naming (trying new things, follow-through, handling stress). A low score on
 # extraversion or agreeableness is temperament (introversion, directness),
 # not a deficiency — naming it as something to "work on" would tell a
 # student their normal personality is a problem. Used by
@@ -52,13 +62,44 @@ _LOW = 40.0
 GROWTH_ELIGIBLE_TRAITS = frozenset({"openness", "conscientiousness", "emotional_stability"})
 
 
-def strength_phrases(bigfive_normalized: dict[str, float]) -> list[str]:
+def relative_bands(profile: dict[str, float]) -> dict[str, Literal["low", "medium", "high"]]:
+    """Per-trait band relative to the student's own five-trait average — the
+    single source of the high/medium/low tier everything downstream uses
+    (`personality_notes_for_age`, `StudentPersonalityNote.level`,
+    `build_personality_note`, the narrative evidence catalog). `profile` is
+    the 5-key dict `build_personality_profile()` returns (or a stored
+    `AnalysisResult.personality_profile` row — same keys). An even profile
+    (spread < `_FLAT_SPREAD`) is all "medium"."""
+    values = list(profile.values())
+    if not values:
+        return {}
+    if max(values) - min(values) < _FLAT_SPREAD:
+        return {trait: "medium" for trait in profile}
+    mean = sum(values) / len(values)
+    bands: dict[str, Literal["low", "medium", "high"]] = {}
+    for trait, value in profile.items():
+        delta = value - mean
+        bands[trait] = "high" if delta >= _REL_BAND else "low" if delta <= -_REL_BAND else "medium"
+    return bands
+
+
+def _note_tier(band: str) -> str:
+    """`relative_bands` speaks low/medium/high; the _NOTES tables are keyed
+    high/mid/low."""
+    return {"high": "high", "low": "low", "medium": "mid"}[band]
+
+
+def strength_phrases(profile: dict[str, float]) -> list[str]:
+    """Admin-only `personality_highlights`. `profile` is the 5-trait dict
+    (build_personality_profile), so Emotional Stability is already the
+    positive direction — no separate low-Neuroticism check."""
+    bands = relative_bands(profile)
     phrases: list[str] = []
-    if bigfive_normalized.get("O", 0.0) >= _STRONG:
+    if bands.get("openness") == "high":
         phrases.append("Тебе интересно пробовать новое и нестандартно смотреть на вещи")
-    if bigfive_normalized.get("C", 0.0) >= _STRONG:
+    if bands.get("conscientiousness") == "high":
         phrases.append("Ты умеешь довести начатое до конца, даже когда это скучно")
-    if bigfive_normalized.get("N", 100.0) <= _LOW:
+    if bands.get("emotional_stability") == "high":
         phrases.append("Ты спокойно переживаешь неудачи и пробуешь снова")
     return phrases
 
@@ -149,50 +190,21 @@ def personality_notes_for_age(is_junior: bool, profile: dict[str, float]) -> dic
     personality_profile` row just as well as a freshly-computed one — same
     5 keys either way."""
     table = _NOTES_JUNIOR if is_junior else _NOTES
-    notes: dict[str, str] = {}
-    for trait, value in profile.items():
-        tier = "high" if value >= _STRONG else "low" if value <= _LOW else "mid"
-        notes[trait] = table[trait][tier]
-    return notes
-
-
-def is_high_tier(value: float) -> bool:
-    """Same threshold `build_personality_profile` uses for its "high" tier —
-    exposed so other consumers (the report narrative evidence catalog) can
-    filter to only strongly-evidenced traits without duplicating the magic
-    number or re-deriving the tier from scratch."""
-    return value >= _STRONG
-
-
-def is_low_tier(value: float) -> bool:
-    """Same threshold `build_personality_profile` uses for its "low" tier —
-    mirrors `is_high_tier` above so consumers (e.g. `build_personality_note`)
-    can name genuinely low traits, not just high ones, without duplicating
-    the magic number."""
-    return value <= _LOW
-
-
-def personality_level(value: float) -> Literal["low", "medium", "high"]:
-    """Same tier boundary personality_notes_for_age()/build_personality_profile()
-    use to pick description text — level and description always agree for a
-    trait. Mirrors report_v2_assembler._level()'s shape (low/medium/high) for
-    the interest map, but on Big Five's own _STRONG/_LOW cutoffs, not
-    RIASEC's different thresholds. Used by build_personality_notes() to set
-    StudentPersonalityNote.level."""
-    if value >= _STRONG:
-        return "high"
-    if value <= _LOW:
-        return "low"
-    return "medium"
+    bands = relative_bands(profile)
+    return {
+        trait: table[trait][_note_tier(bands.get(trait, "medium"))]
+        for trait in profile
+    }
 
 
 def build_personality_profile(
     bigfive_normalized: dict[str, float],
 ) -> tuple[dict[str, float], dict[str, str]]:
-    """Display-ready 5-trait profile + one tiered note per trait. Neuroticism
-    is flipped to Emotional Stability (100 - N) so a high bar always reads
-    positive, matching the other 4 traits — the raw `big_five.N` used
-    elsewhere (admin, thinking_style) is untouched."""
+    """Display-ready 5-trait profile + one tiered (adult-worded) note per
+    trait. Neuroticism is flipped to Emotional Stability (100 - N) so a high
+    bar always reads positive, matching the other 4 traits — the raw
+    `big_five.N` used elsewhere (admin, thinking_style) is untouched. Tiering
+    is relative (see relative_bands)."""
     profile = {
         "openness": bigfive_normalized.get("O", 0.0),
         "conscientiousness": bigfive_normalized.get("C", 0.0),
@@ -200,8 +212,4 @@ def build_personality_profile(
         "agreeableness": bigfive_normalized.get("A", 0.0),
         "emotional_stability": round(100.0 - bigfive_normalized.get("N", 0.0), 1),
     }
-    notes: dict[str, str] = {}
-    for trait, value in profile.items():
-        tier = "high" if value >= _STRONG else "low" if value <= _LOW else "mid"
-        notes[trait] = _NOTES[trait][tier]
-    return profile, notes
+    return profile, personality_notes_for_age(is_junior=False, profile=profile)
