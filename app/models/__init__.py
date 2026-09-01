@@ -6,7 +6,6 @@ from app.models.assessment import Assessment  # noqa: F401 — keep model import
 from app.models.direction import Direction  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.direction_inquiry import DirectionInquiry  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.direction_roadmap import DirectionRoadmap  # noqa: F401 — keep model imported so Alembic discovers it
-from app.models.development_plan import DevelopmentPlan  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.motivation import MotivationResponse, MotivationStatement  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.motivation_pair import MotivationPair, MotivationPairResponse  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.password_reset import PasswordResetToken  # noqa: F401 — keep model imported so Alembic discovers it
@@ -25,7 +24,7 @@ from app.models.product_feedback import ProductFeedback  # noqa: F401 — keep m
 
 __all__ = [
     "Base", "AnalysisResult", "Artifact", "Assessment",
-    "Direction", "DirectionInquiry", "DirectionRoadmap", "DevelopmentPlan",
+    "Direction", "DirectionInquiry", "DirectionRoadmap",
     "EmailVerificationToken", "MotivationPair", "MotivationPairResponse",
     "MotivationResponse", "MotivationStatement", "PasswordResetToken",
     "Profile", "Program", "Question", "QuestionPair", "Roadmap",

@@ -5,7 +5,6 @@ from app.routers.artifacts import router as artifacts_router
 from app.routers.assessment import router as assessment_router
 from app.routers.auth import router as auth_router
 from app.routers.certificates import router as certificates_router
-from app.routers.development_plan import router as development_plan_router
 from app.routers.direction_inquiry import router as direction_inquiry_router
 from app.routers.directions import router as directions_router
 from app.routers.motivation import router as motivation_router
@@ -32,5 +31,4 @@ api_router.include_router(directions_router, prefix="/api/v1/directions")
 api_router.include_router(direction_inquiry_router, prefix="/api/v1/inquiry")
 api_router.include_router(result_router, prefix="/api/v1/result")
 api_router.include_router(roadmap_router, prefix="/api/v1/roadmap")
-api_router.include_router(development_plan_router, prefix="/api/v1/development-plan")
 api_router.include_router(university_router, prefix="/api/v1/universities")

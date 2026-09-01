@@ -6,7 +6,6 @@ Every failure — disabled, network, timeout, bad status, refusal, unparseable �
 raises LLMError so callers can fall back deterministically. Cost is bounded by
 a single retry, an output token cap, and a request timeout.
 """
-import asyncio
 import json
 import logging
 from typing import Any
@@ -16,22 +15,6 @@ import httpx
 from app.config import settings
 
 logger = logging.getLogger(__name__)
-
-# 429 (rate limit) is retryable, not terminal — OpenAI TPM limits are easy to
-# hit with a few dense calls. Sleep for the server-suggested delay (capped) and
-# try again, on a small budget separate from the normal attempt count.
-_MAX_429_RETRIES = 4
-_MAX_429_SLEEP = 20.0
-
-
-def _retry_after_seconds(response: httpx.Response) -> float:
-    raw = response.headers.get("retry-after")
-    if raw:
-        try:
-            return min(float(raw), _MAX_429_SLEEP)
-        except ValueError:
-            pass
-    return 5.0
 
 # USD per token, input/output — for cost logging only. Keep in sync with
 # OpenAI's published pricing; an unlisted model still logs token counts, just
@@ -127,35 +110,17 @@ async def complete_json(
     url = f"{settings.LLM_BASE_URL}/chat/completions"
 
     last_error: LLMError | None = None
-    attempt = 0
-    rate_limit_retries = 0
     async with httpx.AsyncClient(timeout=timeout or settings.LLM_TIMEOUT) as client:
-        while attempt < _MAX_ATTEMPTS:
+        for attempt in range(_MAX_ATTEMPTS):
             try:
                 response = await client.post(url, json=payload, headers=headers)
             except httpx.HTTPError as exc:
                 # str(exc) is empty for timeouts — keep the class name or the log says nothing.
                 last_error = LLMError(f"request failed: {type(exc).__name__}: {exc}")
-                attempt += 1
                 continue  # transient — retry
             # 5xx is transient (retry); other non-200 is terminal (don't spend again).
             if response.status_code >= 500:
                 last_error = LLMError(f"status {response.status_code}")
-                attempt += 1
-                continue
-            if response.status_code == 429:
-                # Rate limit — retryable, on its own budget (does not consume a
-                # normal attempt), sleeping for the server-suggested delay.
-                last_error = LLMError("status 429: rate limited")
-                if rate_limit_retries >= _MAX_429_RETRIES:
-                    raise last_error
-                rate_limit_retries += 1
-                delay = _retry_after_seconds(response)
-                logger.warning(
-                    "LLM 429 (rate limit), retry %s/%s after %.1fs",
-                    rate_limit_retries, _MAX_429_RETRIES, delay,
-                )
-                await asyncio.sleep(delay)
                 continue
             if response.status_code != 200:
                 raise LLMError(f"status {response.status_code}: {response.text[:300]}")
