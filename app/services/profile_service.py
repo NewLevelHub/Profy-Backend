@@ -31,8 +31,8 @@ async def create_profile(
 
     # `artifacts`/`certificates` (if present) are handled by the caller via
     # artifact_service/certificate_service, not Profile columns — exclude
-    # them before spreading onto the model. `gpa_value`/`gpa_scale` ARE real
-    # Profile columns, so they pass through untouched.
+    # them before spreading onto the model. Everything else on the request
+    # is a real Profile column and passes through untouched.
     profile_fields = data.model_dump(exclude={"artifacts", "certificates"})
     profile = Profile(
         user_id=user_id,
@@ -61,9 +61,7 @@ async def update_profile(
     `data.certificates`) — mirrors `create_profile`'s combined-write
     contract. `None` for either means "leave that sub-resource untouched";
     the current set is still fetched so the response can embed it (see
-    `ProfileResponse.artifacts`/`.certificates`), same as GET. `gpa_value`/
-    `gpa_scale` are plain columns and flow through `updates` like any other
-    scalar field.
+    `ProfileResponse.artifacts`/`.certificates`), same as GET.
     """
     result = await db.execute(select(Profile).where(Profile.user_id == user_id))
     profile = result.scalar_one_or_none()
