@@ -38,6 +38,13 @@ class Settings(BaseSettings):
     LLM_ROADMAP_MAX_TOKENS: int = 8000
     LLM_ROADMAP_MODEL: str = "gpt-4.1"
     LLM_TEMPERATURE: float = 0.3
+    # Development plan — two-phase generation (skeleton + per-stage expansion).
+    LLM_DEVPLAN_MODEL: str = "gpt-4.1"
+    LLM_DEVPLAN_TIMEOUT: float = 120.0
+    LLM_DEVPLAN_SKELETON_MAX_TOKENS: int = 4000
+    LLM_DEVPLAN_STAGE_MAX_TOKENS: int = 5000
+    # Staged rollout — the feature 404s until this is on.
+    DEVELOPMENT_PLAN_ENABLED: bool = False
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
     RESEND_API_KEY: str = ""

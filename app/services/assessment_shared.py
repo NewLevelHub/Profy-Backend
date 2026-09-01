@@ -46,6 +46,11 @@ ROADMAP_CACHE_KEY_PREFIX = "roadmap:v2"
 # exact key on invalidate_direction_flow.
 DIRECTION_ROADMAP_CACHE_KEY_PREFIX = "droadmap:v2"
 
+# Development plan cache — one key per (assessment_id, program_id).
+# development_plan_service._cache_key builds the full key from this prefix;
+# invalidate_direction_flow scan-deletes `<prefix>:<assessment_id>:*` on retake.
+DEVELOPMENT_PLAN_CACHE_KEY_PREFIX = "devplan:v1"
+
 
 def report_cache_key(assessment_id: uuid.UUID) -> str:
     return f"{REPORT_CACHE_KEY_PREFIX}:{assessment_id}"
@@ -97,6 +102,10 @@ async def invalidate_direction_flow(
     await db.execute(
         DirectionInquiry.__table__.delete().where(DirectionInquiry.assessment_id == assessment_id)
     )
+    from app.models.development_plan import DevelopmentPlan
+    await db.execute(
+        DevelopmentPlan.__table__.delete().where(DevelopmentPlan.assessment_id == assessment_id)
+    )
     assessment.selected_direction_slug = None
 
     for slug in slugs:
@@ -105,6 +114,11 @@ async def invalidate_direction_flow(
             f"{DIRECTION_ROADMAP_CACHE_KEY_PREFIX}:{assessment_id}:{slug}",
             f"dq:{assessment_id}:{slug}",
         )
+    # Development plan cache keys are per-program — scan, don't guess program_id.
+    stale = await safe_redis_scan(
+        redis, f"{DEVELOPMENT_PLAN_CACHE_KEY_PREFIX}:{assessment_id}:*"
+    )
+    await safe_redis_delete(redis, *stale)
 
 
 async def invalidate_goal_roadmap(
