@@ -32,7 +32,9 @@ docker compose exec api pytest tests/unit/test_riasec_service.py::test_name -v
 docker compose exec api pytest tests/integration      # integration/ vs unit/
 ```
 
-There is no CI workflow that runs tests or lint on pull requests — `cd.yml`/`cd-dev.yml` only deploy on push to `main`/`dev`. Running `pytest` locally/in a container before opening a PR is the only check that happens.
+There is no CI workflow that runs tests or lint on pull requests — `cd.yml`/`cd-dev.yml` only deploy on push to `main`/`dev`. Running `pytest` locally/in a container before opening a PR is the only automated check that happens.
+
+Before opening a PR, also run `git review-main` (optionally `git review-main high` for a deeper pass) — a local git alias for `scripts/review-before-main.sh`, which runs Claude Code's `/code-review` in headless mode. It picks the diff base to match the two-stage workflow (`feature -> dev`, then `dev -> main`): on `dev` it reviews against `main`; on any other branch it reviews against `dev` (not `main`, which would also include everything already unreleased on `dev`). It excludes `scripts/data/**` and `university-data/**` from the diff (static data dumps, not reviewable logic — they're normally ~97% of a `dev...main` diff's line count and just burn tokens for nothing). The alias itself isn't part of the repo (git aliases live in `.git/config`/`~/.gitconfig`, personal per machine) — set it up once per clone, scoped to this repo only (not `--global`, to avoid clashing with an unrelated `review-main` alias in other repos): `git config alias.review-main '!bash scripts/review-before-main.sh'`.
 
 ## Architecture
 
