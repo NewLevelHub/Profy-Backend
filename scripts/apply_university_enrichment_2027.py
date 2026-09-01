@@ -28,6 +28,7 @@ from sqlalchemy import select
 
 from app.database import async_session
 from app.models.university import University
+from app.services.admin_lock import is_locked
 
 DATA_PATH = os.path.join(_ROOT, "scripts", "data", "university_enrichment_2027.json")
 
@@ -52,11 +53,14 @@ async def main() -> None:
                 missing.append(slug)
                 continue
 
-            changes = {
-                field: value
-                for field, value in payload.items()
-                if field in FIELDS and getattr(university, field) != value
-            }
+            changes = {}
+            for field, value in payload.items():
+                if field not in FIELDS or getattr(university, field) == value:
+                    continue
+                if is_locked(university, field):
+                    print(f"Skipping {field} for {slug} — admin-locked")
+                    continue
+                changes[field] = value
 
             if changes:
                 updated += 1
