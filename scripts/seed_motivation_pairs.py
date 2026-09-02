@@ -17,6 +17,7 @@ from sqlalchemy import select
 from app.models.motivation import MotivationCategory
 from app.models.motivation_pair import MotivationPair
 from app.database import async_session
+from app.services.admin_lock import effective_value, has_overrides
 from scripts.motivation_pair_bank import PAIRS
 
 
@@ -40,17 +41,21 @@ async def main() -> None:
 
             if existing is not None:
                 changed = False
-                if existing.category_a != category_a:
-                    existing.category_a = category_a
+                target = effective_value(existing, "category_a", category_a)
+                if existing.category_a != target:
+                    existing.category_a = target
                     changed = True
-                if existing.category_b != category_b:
-                    existing.category_b = category_b
+                target = effective_value(existing, "category_b", category_b)
+                if existing.category_b != target:
+                    existing.category_b = target
                     changed = True
-                if existing.text_a != data["text_a"]:
-                    existing.text_a = data["text_a"]
+                target = effective_value(existing, "text_a", data["text_a"])
+                if existing.text_a != target:
+                    existing.text_a = target
                     changed = True
-                if existing.text_b != data["text_b"]:
-                    existing.text_b = data["text_b"]
+                target = effective_value(existing, "text_b", data["text_b"])
+                if existing.text_b != target:
+                    existing.text_b = target
                     changed = True
                 if changed:
                     updated += 1
@@ -70,7 +75,7 @@ async def main() -> None:
             inserted += 1
 
         for key, pair in existing_by_key.items():
-            if key not in live_keys:
+            if key not in live_keys and not has_overrides(pair):
                 await db.delete(pair)
                 deleted += 1
 

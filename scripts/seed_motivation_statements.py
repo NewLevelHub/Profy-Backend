@@ -16,6 +16,7 @@ from sqlalchemy import select
 
 from app.database import async_session
 from app.models.motivation import MotivationCategory, MotivationStatement
+from app.services.admin_lock import effective_value, has_overrides
 from scripts.motivation_statement_bank import STATEMENTS
 
 
@@ -40,14 +41,17 @@ async def main() -> None:
 
             if existing is not None:
                 changed = False
-                if existing.category != category:
-                    existing.category = category
+                target = effective_value(existing, "category", category)
+                if existing.category != target:
+                    existing.category = target
                     changed = True
-                if existing.text != data["text"]:
-                    existing.text = data["text"]
+                target = effective_value(existing, "text", data["text"])
+                if existing.text != target:
+                    existing.text = target
                     changed = True
-                if existing.text_junior != data.get("text_junior"):
-                    existing.text_junior = data.get("text_junior")
+                target = effective_value(existing, "text_junior", data.get("text_junior"))
+                if existing.text_junior != target:
+                    existing.text_junior = target
                     changed = True
                 if changed:
                     updated += 1
@@ -67,7 +71,7 @@ async def main() -> None:
             inserted += 1
 
         for key, statement in existing_by_key.items():
-            if key not in live_keys:
+            if key not in live_keys and not has_overrides(statement):
                 await db.delete(statement)
                 deleted += 1
 

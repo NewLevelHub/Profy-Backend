@@ -18,6 +18,7 @@ from sqlalchemy import select
 from app.database import async_session
 from app.models.profile import AgeGroup
 from app.models.question import HollandType, Question, QuestionInstrument
+from app.services.admin_lock import effective_value, has_overrides
 from scripts.riasec_question_bank import QUESTIONS
 
 
@@ -49,20 +50,25 @@ async def main() -> None:
 
             if existing is not None:
                 changed = False
-                if existing.riasec_type != riasec_type:
-                    existing.riasec_type = riasec_type
+                target = effective_value(existing, "riasec_type", riasec_type)
+                if existing.riasec_type != target:
+                    existing.riasec_type = target
                     changed = True
-                if existing.text != data["text"]:
-                    existing.text = data["text"]
+                target = effective_value(existing, "text", data["text"])
+                if existing.text != target:
+                    existing.text = target
                     changed = True
-                if existing.age_tier != age_tier:
-                    existing.age_tier = age_tier
+                target = effective_value(existing, "age_tier", age_tier)
+                if existing.age_tier != target:
+                    existing.age_tier = target
                     changed = True
-                if existing.short_text != short_text:
-                    existing.short_text = short_text
+                target = effective_value(existing, "short_text", short_text)
+                if existing.short_text != target:
+                    existing.short_text = target
                     changed = True
-                if existing.icon != icon:
-                    existing.icon = icon
+                target = effective_value(existing, "icon", icon)
+                if existing.icon != target:
+                    existing.icon = target
                     changed = True
                 if changed:
                     updated += 1
@@ -77,7 +83,7 @@ async def main() -> None:
             inserted += 1
 
         for order, question in existing_by_order.items():
-            if order not in live_orders:
+            if order not in live_orders and not has_overrides(question):
                 await db.delete(question)
                 deleted += 1
 
