@@ -1,10 +1,11 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_admin_user
+from app.models.assessment import AssessmentGoal, AssessmentStatus
 from app.models.user import User
 from app.schemas.admin import (
     AdminAssessmentDetailResponse,
@@ -39,7 +40,13 @@ from app.schemas.admin_content import (
     AdminQuestionPairUpdateRequest,
     AdminQuestionUpdateRequest,
 )
-from app.services import admin_content_service, admin_service, admin_university_service, university_service
+from app.services import (
+    admin_content_service,
+    admin_export_service,
+    admin_service,
+    admin_university_service,
+    university_service,
+)
 
 router = APIRouter(tags=["admin"])
 
@@ -49,10 +56,35 @@ async def list_users(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
     search: str | None = Query(default=None),
+    age_group: AgeGroup | None = Query(default=None),
+    status: AssessmentStatus | None = Query(default=None),
+    goal: AssessmentGoal | None = Query(default=None),
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await admin_service.list_users(db, page=page, limit=limit, search=search)
+    return await admin_service.list_users(
+        db, page=page, limit=limit, search=search, age_group=age_group, status=status, goal=goal
+    )
+
+
+@router.get("/users/export")
+async def export_users(
+    search: str | None = Query(default=None),
+    age_group: AgeGroup | None = Query(default=None),
+    status: AssessmentStatus | None = Query(default=None),
+    goal: AssessmentGoal | None = Query(default=None),
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    items = await admin_service.export_users(
+        db, search=search, age_group=age_group, status=status, goal=goal
+    )
+    csv_text = admin_export_service.users_to_csv(items)
+    return Response(
+        content=csv_text,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=users_export.csv"},
+    )
 
 
 @router.get("/users/{user_id}", response_model=AdminUserDetailResponse)
@@ -77,6 +109,23 @@ async def get_assessment_detail(
     if not detail:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
     return detail
+
+
+@router.get("/assessments/{assessment_id}/export")
+async def export_assessment(
+    assessment_id: uuid.UUID,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    detail = await admin_service.get_assessment_detail(db, assessment_id)
+    if not detail:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+    zip_bytes = admin_export_service.assessment_detail_to_zip(detail)
+    return Response(
+        content=zip_bytes,
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename=assessment_{assessment_id}.zip"},
+    )
 
 
 @router.get("/feedback", response_model=AdminFeedbackListResponse)

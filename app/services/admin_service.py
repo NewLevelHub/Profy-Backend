@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
-from app.models.assessment import Assessment, AssessmentStatus
+from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.motivation import MotivationResponse
 from app.models.product_feedback import ProductFeedback
 from app.models.profile import AgeGroup, Profile
@@ -43,30 +43,95 @@ def _selected_answer_text(answer_value: int, instrument: QuestionInstrument | No
     return f"Шкала {answer_value}/5"
 
 
+def _build_user_filters(
+    *,
+    search: str | None,
+    age_group: AgeGroup | None,
+    status: AssessmentStatus | None,
+    goal: AssessmentGoal | None,
+) -> tuple[list, bool]:
+    """Filter clauses for the admin users list/export query, plus whether an
+    Assessment join is needed. `status`/`goal` match "this user has AT LEAST
+    ONE assessment matching", not necessarily their latest one — the already-
+    exposed `latest_assessment_status`/`latest_assessment_goal` columns keep
+    reflecting the true latest, independent of this filter. A user can have
+    multiple assessments matching, so joining Assessment needs `.distinct()`
+    on the caller's side; `age_group` only needs the (always-present, 1:1)
+    Profile join, no distinct."""
+    filters = []
+    if search:
+        filters.append(User.email.ilike(f"%{search.strip()}%"))
+    if age_group is not None:
+        filters.append(Profile.age_group == age_group)
+    needs_distinct = status is not None or goal is not None
+    if status is not None:
+        filters.append(Assessment.status == status)
+    if goal is not None:
+        filters.append(Assessment.goal == goal)
+    return filters, needs_distinct
+
+
+def _user_base_query(*, needs_distinct: bool):
+    query = select(User).outerjoin(Profile, Profile.user_id == User.id)
+    if needs_distinct:
+        query = query.outerjoin(Assessment, Assessment.profile_id == Profile.id)
+    return query
+
+
 async def list_users(
     db: AsyncSession,
     *,
     page: int = 1,
     limit: int = 20,
     search: str | None = None,
+    age_group: AgeGroup | None = None,
+    status: AssessmentStatus | None = None,
+    goal: AssessmentGoal | None = None,
 ) -> AdminUserListResponse:
-    filters = []
-    if search:
-        filters.append(User.email.ilike(f"%{search.strip()}%"))
+    filters, needs_distinct = _build_user_filters(
+        search=search, age_group=age_group, status=status, goal=goal
+    )
 
-    total_result = await db.execute(select(func.count()).select_from(User).where(*filters))
+    count_query = _user_base_query(needs_distinct=needs_distinct).with_only_columns(User.id).where(*filters)
+    if needs_distinct:
+        count_query = count_query.distinct()
+    total_result = await db.execute(select(func.count()).select_from(count_query.subquery()))
     total = total_result.scalar_one()
 
-    users_result = await db.execute(
-        select(User)
-        .where(*filters)
-        .order_by(User.created_at.desc())
-        .offset((page - 1) * limit)
-        .limit(limit)
-    )
+    query = _user_base_query(needs_distinct=needs_distinct).where(*filters).order_by(User.created_at.desc())
+    if needs_distinct:
+        query = query.distinct()
+    query = query.offset((page - 1) * limit).limit(limit)
+    users_result = await db.execute(query)
     users = users_result.scalars().all()
+
+    items = await _build_user_list_items(db, list(users))
+    return AdminUserListResponse(items=items, total=total, page=page, limit=limit)
+
+
+async def export_users(
+    db: AsyncSession,
+    *,
+    search: str | None = None,
+    age_group: AgeGroup | None = None,
+    status: AssessmentStatus | None = None,
+    goal: AssessmentGoal | None = None,
+) -> list[AdminUserListItem]:
+    """Same filters as `list_users`, no pagination — for CSV export."""
+    filters, needs_distinct = _build_user_filters(
+        search=search, age_group=age_group, status=status, goal=goal
+    )
+    query = _user_base_query(needs_distinct=needs_distinct).where(*filters).order_by(User.created_at.desc())
+    if needs_distinct:
+        query = query.distinct()
+    users_result = await db.execute(query)
+    users = users_result.scalars().all()
+    return await _build_user_list_items(db, list(users))
+
+
+async def _build_user_list_items(db: AsyncSession, users: list[User]) -> list[AdminUserListItem]:
     if not users:
-        return AdminUserListResponse(items=[], total=total, page=page, limit=limit)
+        return []
 
     user_ids = [user.id for user in users]
     profiles_result = await db.execute(select(Profile).where(Profile.user_id.in_(user_ids)))
@@ -130,14 +195,16 @@ async def list_users(
                 created_at=user.created_at,
                 has_profile=profile is not None,
                 profile_name=profile.name if profile else None,
+                age_group=profile.age_group.value if profile else None,
                 assessments_count=len(assessments),
                 latest_assessment_status=latest.status.value if latest else None,
+                latest_assessment_goal=latest.goal.value if latest else None,
                 riasec=riasec,
                 big_five=big_five,
             )
         )
 
-    return AdminUserListResponse(items=items, total=total, page=page, limit=limit)
+    return items
 
 
 async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDetailResponse | None:
@@ -281,11 +348,12 @@ async def get_assessment_detail(
             )
             continue
 
-        category = (
-            question.riasec_type.value
-            if question.instrument == QuestionInstrument.riasec
-            else question.bigfive_domain.value
-        )
+        if question.instrument == QuestionInstrument.riasec:
+            category = question.riasec_type.value
+        elif question.instrument == QuestionInstrument.big_five:
+            category = question.bigfive_domain.value
+        else:
+            category = question.mi_category.value
         responses.append(
             AdminResponseItem(
                 question_id=response.question_id,
@@ -323,12 +391,12 @@ async def get_assessment_detail(
             motivation_responses.append(
                 AdminMotivationResponseItem(
                     triplet_index=row.triplet_index,
-                    most_text=most.text if most else "?",
-                    most_category=most.category.value if most else "?",
-                    least_text=least.text if least else "?",
-                    least_category=least.category.value if least else "?",
-                    neutral_text=neutral.text if neutral else "?",
-                    neutral_category=neutral.category.value if neutral else "?",
+                    picked_most_text=most.text if most else "?",
+                    picked_most_category=most.category.value if most else "?",
+                    picked_least_text=least.text if least else "?",
+                    picked_least_category=least.category.value if least else "?",
+                    not_picked_text=neutral.text if neutral else "?",
+                    not_picked_category=neutral.category.value if neutral else "?",
                     created_at=row.created_at,
                 )
             )

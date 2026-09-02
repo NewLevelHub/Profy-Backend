@@ -18,8 +18,10 @@ class AdminUserListItem(BaseModel):
     created_at: datetime
     has_profile: bool
     profile_name: str | None = None
+    age_group: str | None = None
     assessments_count: int = 0
     latest_assessment_status: str | None = None
+    latest_assessment_goal: str | None = None
     # From the profile's latest COMPLETED assessment's AnalysisResult, admin-
     # only raw percentages (TZ_Profi.md §18.3). `riasec` is None for junior
     # (whose instrument is MI, not RIASEC — deliberately not shown here) and
@@ -74,13 +76,19 @@ class AdminResponseItem(BaseModel):
 
 
 class AdminMotivationResponseItem(BaseModel):
+    """One answered triplet: 3 statements were shown, the user picked one as
+    MOST important and one as LEAST important — the third, untouched one is
+    inferred (never stored as its own choice). All 3 text/category fields
+    below are real answer data, not static triplet content — `picked_most_*`
+    and `picked_least_*` are what the user actually clicked."""
+
     triplet_index: int
-    most_text: str
-    most_category: str
-    least_text: str
-    least_category: str
-    neutral_text: str
-    neutral_category: str
+    picked_most_text: str
+    picked_most_category: str
+    picked_least_text: str
+    picked_least_category: str
+    not_picked_text: str
+    not_picked_category: str
     created_at: datetime
 
 
