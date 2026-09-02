@@ -51,10 +51,11 @@ async def create_profile(
     try:
         profile = await profile_service.create_profile(current_user.id, data, db, commit=False)
 
-        # First-time pre-fill of the UI locale from the "language of instruction"
-        # field — only when the user hasn't got a non-default locale already
-        # (e.g. from Accept-Language at registration or an explicit PATCH).
-        if current_user.locale == "ru":
+        # One-time pre-fill of the UI locale from the "language of instruction"
+        # field. Skipped once the user has chosen a locale via the switcher
+        # (`locale_explicit`) so a deliberate choice is never overwritten — see
+        # docs/i18n-contract.md §6. Only ever upgrades the default "ru".
+        if not current_user.locale_explicit and current_user.locale == "ru":
             current_user.locale = guess_locale_from_language_field(data.language)
 
         saved_artifacts: list[Artifact] = []

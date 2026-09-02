@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, String, func
+from sqlalchemy import Boolean, DateTime, Enum, String, false, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -30,6 +30,12 @@ class User(Base):
         Enum("ru", "kk", name="locale_enum", create_type=False),
         nullable=False,
         server_default="ru",
+    )
+    # Set once the user picks a locale via the switcher. While False, creating a
+    # profile may pre-fill `locale` from `profiles.language`; once True that
+    # pre-fill is permanently skipped (docs/i18n-contract.md §6).
+    locale_explicit: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

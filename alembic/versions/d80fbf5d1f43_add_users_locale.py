@@ -38,8 +38,21 @@ def upgrade() -> None:
             server_default="ru",
         ),
     )
+    # True once the user has picked a locale via the switcher. Gates the
+    # one-time pre-fill from profiles.language so it can't overwrite a
+    # deliberate choice — see docs/i18n-contract.md §6.
+    op.add_column(
+        "users",
+        sa.Column(
+            "locale_explicit",
+            sa.Boolean(),
+            nullable=False,
+            server_default=sa.false(),
+        ),
+    )
 
 
 def downgrade() -> None:
+    op.drop_column("users", "locale_explicit")
     op.drop_column("users", "locale")
     op.execute("DROP TYPE IF EXISTS locale_enum")

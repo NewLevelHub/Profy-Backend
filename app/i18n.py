@@ -34,8 +34,10 @@ SUPPORTED_LOCALES: tuple[str, ...] = ("ru",)
 # registration), not by request resolution.
 KNOWN_LOCALES: tuple[str, ...] = ("ru", "kk")
 
-# Free-text values of profiles.language that imply a Kazakh UI preference.
-_KK_LANGUAGE_FIELD_RE = re.compile(r"каз[аоя]|qaz|kaz|қаз", re.IGNORECASE)
+# Free-text values of profiles.language that name Kazakh. Full roots only:
+# a bare "kaz"/"каз" substring also matches ordinary words ("показать",
+# "рассказать", "kazan"). Matches docs/i18n-contract.md §6.
+_KK_LANGUAGE_FIELD_RE = re.compile(r"казах|kazakh|qaz|қаз", re.IGNORECASE)
 
 _current_locale: contextvars.ContextVar[str] = contextvars.ContextVar(
     "current_locale", default=DEFAULT_LOCALE

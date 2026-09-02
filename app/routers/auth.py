@@ -137,6 +137,7 @@ async def update_me(
     db: AsyncSession = Depends(get_db),
 ):
     current_user.locale = body.locale
+    current_user.locale_explicit = True
     await db.commit()
     await db.refresh(current_user)
     return current_user

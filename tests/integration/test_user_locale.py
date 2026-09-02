@@ -115,3 +115,28 @@ async def test_profile_create_does_not_override_explicit_locale(
 
     me = await client.get("/api/v1/auth/me", headers=auth_headers)
     assert me.json()["locale"] == "kk"  # unchanged
+
+
+async def test_profile_create_does_not_override_explicit_ru(
+    client: httpx.AsyncClient, auth_headers: dict[str, str]
+) -> None:
+    # User explicitly switched to ru (e.g. kk -> ru) — same default value, but a
+    # deliberate choice. `locale_explicit` must stop the profile pre-fill.
+    await client.patch("/api/v1/auth/me", json={"locale": "ru"}, headers=auth_headers)
+    payload = {**_PROFILE_PAYLOAD, "language": "казахский"}
+    created = await client.post("/api/v1/profile", json=payload, headers=auth_headers)
+    assert created.status_code == 201
+
+    me = await client.get("/api/v1/auth/me", headers=auth_headers)
+    assert me.json()["locale"] == "ru"  # not flipped to kk
+
+
+async def test_patch_me_rejects_unknown_locale_via_validator(
+    client: httpx.AsyncClient, auth_headers: dict[str, str]
+) -> None:
+    # The set is KNOWN_LOCALES, not a hardcoded Literal — "fr" is rejected the
+    # same way, and adding a locale to KNOWN_LOCALES would let it through.
+    resp = await client.patch(
+        "/api/v1/auth/me", json={"locale": "fr"}, headers=auth_headers
+    )
+    assert resp.status_code == 422

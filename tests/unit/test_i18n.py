@@ -103,8 +103,10 @@ def test_normalize_locale_with_known_locales_allows_kk(raw, expected):
         ("казахский", "kk"),
         ("Казахский язык", "kk"),
         ("қазақ тілі", "kk"),
+        ("қазақша", "kk"),
         ("Kazakh", "kk"),
-        ("kaz", "kk"),
+        ("kazakh language", "kk"),
+        ("qazaq", "kk"),
         ("обучение на казахском", "kk"),
         ("русский", "ru"),
         ("Русский язык", "ru"),
@@ -112,6 +114,11 @@ def test_normalize_locale_with_known_locales_allows_kk(raw, expected):
         ("English", "ru"),
         ("", "ru"),
         (None, "ru"),
+        # No false positives on ordinary words containing "каз"/"kaz".
+        ("показать варианты", "ru"),
+        ("рассказать о себе", "ru"),
+        ("указать позже", "ru"),
+        ("kazan", "ru"),
     ],
 )
 def test_guess_locale_from_language_field(value, expected):

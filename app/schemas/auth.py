@@ -1,8 +1,10 @@
 import re
 import uuid
-from typing import Annotated, Literal
+from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, EmailStr, Field, field_validator
+
+from app.i18n import KNOWN_LOCALES
 
 # Emails are matched case-insensitively everywhere (DB lookups, Google
 # account linking) — normalizing once at the request boundary keeps every
@@ -79,10 +81,18 @@ class UserResponse(BaseModel):
 
 
 class UpdateMeRequest(BaseModel):
-    """PATCH /auth/me — currently only the UI locale. `kk` is accepted and
-    stored before KZ-603; it just isn't runtime-honored until then."""
+    """PATCH /auth/me — currently only the UI locale. Any value in
+    `KNOWN_LOCALES` is accepted and stored (a `kk` choice is honored only from
+    KZ-603 on); anything else is a 422."""
 
-    locale: Literal["ru", "kk"]
+    locale: str
+
+    @field_validator("locale")
+    @classmethod
+    def _known_locale(cls, v: str) -> str:
+        if v not in KNOWN_LOCALES:
+            raise ValueError(f"locale must be one of {sorted(KNOWN_LOCALES)}")
+        return v
 
 
 class ForgotPasswordRequest(BaseModel):
