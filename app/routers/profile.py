@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
+from app.i18n import guess_locale_from_language_field
 from app.models.artifact import Artifact
 from app.models.certificate import Certificate
 from app.models.profile import Profile
@@ -49,6 +50,12 @@ async def create_profile(
     """
     try:
         profile = await profile_service.create_profile(current_user.id, data, db, commit=False)
+
+        # First-time pre-fill of the UI locale from the "language of instruction"
+        # field — only when the user hasn't got a non-default locale already
+        # (e.g. from Accept-Language at registration or an explicit PATCH).
+        if current_user.locale == "ru":
+            current_user.locale = guess_locale_from_language_field(data.language)
 
         saved_artifacts: list[Artifact] = []
         if data.artifacts is not None:

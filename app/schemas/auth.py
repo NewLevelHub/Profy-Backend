@@ -1,6 +1,6 @@
 import re
 import uuid
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, EmailStr, Field, field_validator
 
@@ -41,6 +41,7 @@ class UserInfo(BaseModel):
     id: uuid.UUID
     email: str
     is_admin: bool = False
+    locale: str = "ru"
 
     model_config = {"from_attributes": True}
 
@@ -72,8 +73,16 @@ class UserResponse(BaseModel):
     is_active: bool
     is_verified: bool
     is_admin: bool
+    locale: str = "ru"
 
     model_config = {"from_attributes": True}
+
+
+class UpdateMeRequest(BaseModel):
+    """PATCH /auth/me — currently only the UI locale. `kk` is accepted and
+    stored before KZ-603; it just isn't runtime-honored until then."""
+
+    locale: Literal["ru", "kk"]
 
 
 class ForgotPasswordRequest(BaseModel):

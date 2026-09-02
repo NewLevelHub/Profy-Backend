@@ -57,12 +57,19 @@ async def _create_verification_token(user_id: uuid.UUID, db: AsyncSession) -> st
     return code
 
 
-async def register(email: str, password: str, db: AsyncSession) -> RegisterResponse:
+async def register(
+    email: str, password: str, db: AsyncSession, *, locale: str = "ru"
+) -> RegisterResponse:
     result = await db.execute(select(User).where(User.email == email))
     if result.scalar_one_or_none():
         raise ValueError("Email already exists")
 
-    user = User(email=email, hashed_password=hash_password(password), is_verified=False)
+    user = User(
+        email=email,
+        hashed_password=hash_password(password),
+        is_verified=False,
+        locale=locale,
+    )
     db.add(user)
     await db.flush()
 

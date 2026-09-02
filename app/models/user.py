@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, String, func
+from sqlalchemy import Boolean, DateTime, Enum, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -22,6 +22,15 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # UI locale ("ru" | "kk"). Plain-string Enum (values, not a Python enum
+    # class) so `user.locale` is a str, not `Locale.ru`. Distinct from
+    # `profiles.language` (language of instruction). See docs/i18n-contract.md.
+    # "kk" is stored but not runtime-honored until KZ-603 (no feature flag).
+    locale: Mapped[str] = mapped_column(
+        Enum("ru", "kk", name="locale_enum", create_type=False),
+        nullable=False,
+        server_default="ru",
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
