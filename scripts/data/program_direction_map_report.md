@@ -1,6 +1,6 @@
 # program_direction_map — build & coverage report
 
-map keys: **1093**   distinct slugs: 144   (kept 337 hand-added keys)
+map keys: **1093**   distinct slugs: 144   (loaded verbatim from the existing file — 1093 keys; pass --reseed to rebuild from sources)
 
 ## coverage against university_snapshot.clean.json
 

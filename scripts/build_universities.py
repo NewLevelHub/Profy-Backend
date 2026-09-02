@@ -90,6 +90,17 @@ def _norm_program(name: str) -> str:
 
 
 def university_id(rec: dict) -> uuid.UUID:
+    """Deterministic PK, keyed by the most stable identifier available.
+    `jinaq_id` first — covers the ~2200 jinaq-sourced rows and is immune to
+    the slug canonicalization done in build_catalog.py, so their id (and
+    every child program's id, which is derived from it) never moves. The
+    `slug` / `ror_id` / `ncc` fallbacks are only for the ~150 rows with no
+    jinaq_id at all; for those, a slug change DOES move the id, which re-keys
+    their programs and nulls `direction_roadmaps.program_id`
+    (ON DELETE SET NULL) for any student who saved a plan against one. That
+    is acceptable only because slug canonicalization is a one-time build-time
+    step that produces stable slugs — after it has run once, these ids are
+    fixed too. Don't add a runtime code path that renames a curated slug."""
     k = rec.get("keys") or {}
     if k.get("jinaq_id"):
         return uuid.uuid5(NAMESPACE, f"jinaq:{k['jinaq_id']}")
@@ -223,9 +234,7 @@ async def main() -> int:
             await db.flush()
 
         existing_unis = {
-            u.id: u for u in (
-                await db.execute(select(University).options(selectinload(University.programs)))
-            ).scalars().all()
+            u.id: u for u in (await db.execute(select(University))).scalars().all()
         }
         existing_progs = {
             p.id: p for p in (

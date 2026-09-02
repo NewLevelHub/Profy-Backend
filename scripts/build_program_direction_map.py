@@ -4,13 +4,19 @@ canonical `program name -> [direction_slug]` dictionary that replaces
 scripts/specialty_profession_map.py and
 scripts/data/jinaq/specialty_direction_review.json.
 
-Merges both existing hand-reviewed sources (union of slugs on a shared key),
-keyed by a normalised program name. If program_direction_map.json already
-exists, its `map` is merged on top (existing keys win, so HAND EDITS ARE
-KEPT) unless --reseed. Then reports how far that gets us against
-university_snapshot.clean.json: how many currently-untagged programs it would
-tag, how many stay untagged, and the most frequent untagged names left for a
-human to add to the map.
+First run (no program_direction_map.json yet): seed it from both hand-reviewed
+sources — specialty_profession_map.py + jinaq/specialty_direction_review.json
+(union of slugs on a shared normalised program name).
+
+Every later run: the file IS the source of truth — it is loaded VERBATIM and
+the two seed sources are ignored. build_catalog.py re-runs this on every
+build, so a slug a human removed from the file must stay removed; a re-merge
+from the sources would silently bring it back. Pass --reseed to rebuild from
+the sources anyway (discards all hand edits).
+
+Either way, reports coverage against university_snapshot.clean.json: how many
+currently-untagged programs the map would tag, how many stay untagged, and
+the most frequent untagged names left for a human to add.
 
 `category_fallback` (jinaq `source_category` -> [slug]) is left EMPTY — see
 SNAP-4 step 3: whether a coarse-category fallback is acceptable is a
@@ -75,12 +81,13 @@ def main() -> None:
     kept_hand_keys = 0
     category_fallback = {}
     if not args.reseed and os.path.exists(args.out):
+        # File exists -> it IS the source of truth. Load verbatim, ignore the
+        # seed sources above — otherwise a re-run would union a hand-removed
+        # wrong slug straight back in.
         prev_doc = json.load(open(args.out, encoding="utf-8"))
-        for k, v in prev_doc.get("map", {}).items():
-            if k not in merged:
-                kept_hand_keys += 1
-            merged.setdefault(k, set()).update(v)  # existing wins / adds
-        category_fallback = prev_doc.get("category_fallback") or {}  # hand-maintained, kept as-is
+        merged = {k: set(v) for k, v in prev_doc.get("map", {}).items()}
+        category_fallback = prev_doc.get("category_fallback") or {}
+        kept_hand_keys = len(merged)
 
     mapping = {k: sorted(v) for k, v in sorted(merged.items())}
     all_slugs = sorted({s for v in mapping.values() for s in v})
@@ -122,7 +129,8 @@ def main() -> None:
     lines = [
         "# program_direction_map — build & coverage report\n",
         f"map keys: **{len(mapping)}**   distinct slugs: {len(all_slugs)}"
-        + (f"   (kept {kept_hand_keys} hand-added keys)" if kept_hand_keys else "") + "\n",
+        + (f"   (loaded verbatim from the existing file — {kept_hand_keys} keys; "
+           f"pass --reseed to rebuild from sources)" if kept_hand_keys else "") + "\n",
         "## coverage against university_snapshot.clean.json\n",
         f"- total programs: {total}",
         f"- already tagged in snapshot: {tagged_now}",
