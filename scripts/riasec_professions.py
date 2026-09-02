@@ -73,7 +73,6 @@ PROFESSIONS: list[dict] = [
     {"section": "Investigative", "title": "Эпидемиолог", "holland_code": "ICS"},
     {"section": "Investigative", "title": "Нейробиолог", "holland_code": "IRE"},
     {"section": "Investigative", "title": "Судмедэксперт / Криминалист", "holland_code": "ISR"},
-    {"section": "Investigative", "title": "Технический писатель", "holland_code": "ICA"},
     {"section": "Investigative", "title": "Океанолог / Гидролог", "holland_code": "IRE"},
     {"section": "Investigative", "title": "Историк", "holland_code": "IAS"},
     {"section": "Investigative", "title": "Медицинский лабораторный технолог", "holland_code": "ISR"},

@@ -1,0 +1,17 @@
+{
+  "_note": "Hand-checked: photo file <key>.webp belongs to the university now at slug <value>. These are photos whose original (English-named / curated) University row was merged away by SNAP-7 dedup, so slug_rename_map.json (generated from row renames only) does not cover them. Consumed by rename_university_photos.py alongside slug_rename_map.json.",
+  "al-farabi-kazakh-national-university": "kazahskiy-natsionalnyy-universitet-im-al-farabi-kaznu",
+  "abai-kazakh-national-pedagogical-university": "kazahskiy-natsionalnyy-pedagogicheskiy-universitet-im-abaya-kaznpu",
+  "kimep-university": "universitet-kimep",
+  "narxoz-university": "universitet-narhoz",
+  "almaty-management-university": "almatinskiy-institut-menedzhmenta-aim-almau",
+  "l-n-gumilyov-eurasian-national-university": "evraziyskiy-natsionalnyy-universitet-im-l-n-gumileva",
+  "kazakh-ablai-khan-university-of-international-relations-and-world-languages": "kazahskiy-universitet-mezhdunarodnyh-otnosheniy-i-mirovyh-yazykov-im-abylay-hana",
+  "kazakh-national-academy-of-arts-named-after-t-zhurgenov": "kazahskaya-natsionalnaya-akademiya-iskusstv-im-t-zhurgenova-kaznai",
+  "kartu-karaganda": "karagandinskiy-gosudarstvennyy-tehnicheskiy-universitet-imeni-abylkasa-saginova",
+  "rudnenskiy-industrialnyy-universitet": "rudnenskiy-industrialnyy-institut",
+  "zapadno-kazahstanskiy-universitet-imeni-mahambe--utemisova": "zapadno-kazahstanskiy-universitet-imeni-mahambeta-utemisova",
+  "meditsinskiy-universitet-semey": "kazahskiy-meditsinskiy-universitet-semey",
+  "delft-university-technology": "delft-university-of-technology-tu-delft",
+  "university-of-warwick": "universitet-uorika"
+}
