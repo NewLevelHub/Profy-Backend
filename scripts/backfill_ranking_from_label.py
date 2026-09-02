@@ -24,6 +24,7 @@ from sqlalchemy import select
 
 from app.database import async_session
 from app.models.university import University
+from app.services.admin_lock import is_locked
 from scripts.seed_92_professions_universities import parse_ranking
 
 
@@ -41,6 +42,9 @@ async def main() -> None:
         for uni in universities:
             new_ranking = parse_ranking(uni.ranking_label)
             if new_ranking != uni.ranking:
+                if is_locked(uni, "ranking"):
+                    print(f"Skipping ranking for {uni.name!r} ({uni.slug}) — admin-locked")
+                    continue
                 changed += 1
                 print(
                     f"{'[would update]' if not apply else '[updating]'} "
