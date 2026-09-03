@@ -69,12 +69,19 @@ async def _resolve_jinaq_university(db, external_id: str) -> University | None:
     return await db.get(University, ref.university_id)
 
 
-async def _merge_one(db, *, target_university_id: uuid.UUID, external_id: str) -> bool:
+async def _merge_one(db, *, target_university_id: uuid.UUID, external_id: str) -> str:
+    """Returns "merged", "already_done", or "unresolved" — mirrors
+    apply_foreign_university_dedup.py's `_merge_one`, which distinguishes
+    these same two "nothing to do" cases for the identical reason: a plain
+    bool can't tell "genuinely already merged" apart from "this jinaq row
+    was never imported on this DB, the review data doesn't resolve here" —
+    collapsing them hides real never-merged duplicates in the "already done"
+    count with no signal to investigate."""
     jinaq_uni = await _resolve_jinaq_university(db, external_id)
     if jinaq_uni is None:
-        return False  # jinaq row was never imported on this DB, or the ref is gone
+        return "unresolved"  # jinaq row was never imported on this DB, or the ref is gone
     if jinaq_uni.id == target_university_id:
-        return False  # already merged on a previous run — ref now points at the target itself
+        return "already_done"  # already merged on a previous run — ref now points at the target itself
     jinaq_university_id = jinaq_uni.id
 
     target_has_primary = (
@@ -127,7 +134,7 @@ async def _merge_one(db, *, target_university_id: uuid.UUID, external_id: str) -
     # was moved or deleted above), so a bare DELETE is both correct and
     # side-effect-free.
     await db.execute(delete(University).where(University.id == jinaq_university_id))
-    return True
+    return "merged"
 
 
 async def main(*, dry_run: bool) -> None:
@@ -135,23 +142,27 @@ async def main(*, dry_run: bool) -> None:
         review = json.load(f)
 
     async with async_session() as db:
-        merged = skipped_not_confirmed = skipped_no_match = already_done = renamed = 0
+        merged = skipped_not_confirmed = skipped_no_match = already_done = renamed = unresolved = 0
 
         for entry in review["entries"]:
             if entry.get("rename_to"):
                 jinaq_uni = await _resolve_jinaq_university(db, entry["jinaq_external_id"])
                 if jinaq_uni is None:
                     continue
+                touched = False
                 if is_locked(jinaq_uni, "name"):
                     print(f"Skipping name for {jinaq_uni.id} — admin-locked")
                 else:
                     jinaq_uni.name = entry["rename_to"]
-                    renamed += 1
+                    touched = True
                 if entry.get("short_name_to"):
                     if is_locked(jinaq_uni, "short_name"):
                         print(f"Skipping short_name for {jinaq_uni.id} — admin-locked")
                     else:
                         jinaq_uni.short_name = entry["short_name_to"]
+                        touched = True
+                if touched:
+                    renamed += 1
                 continue
 
             if not entry["confirmed"]:
@@ -171,16 +182,18 @@ async def main(*, dry_run: bool) -> None:
             target_id = target.id
             print(f"merging {entry['jinaq_name']!r} (jinaq external_id={entry['jinaq_external_id']}) -> {entry['proposed_curated_match']['slug']!r} ({target_id})")
 
-            did_merge = await _merge_one(
+            outcome = await _merge_one(
                 db,
                 target_university_id=target_id,
                 external_id=entry["jinaq_external_id"],
             )
             await db.flush()
-            if did_merge:
+            if outcome == "merged":
                 merged += 1
-            else:
+            elif outcome == "already_done":
                 already_done += 1
+            else:
+                unresolved += 1
 
         if dry_run:
             await db.rollback()
@@ -189,7 +202,8 @@ async def main(*, dry_run: bool) -> None:
             await db.commit()
 
         print(
-            f"Merged: {merged}, already done (idempotent skip): {already_done}, renamed: {renamed}, "
+            f"Merged: {merged}, already done (idempotent skip): {already_done}, "
+            f"UNRESOLVED (stale review data): {unresolved}, renamed: {renamed}, "
             f"not confirmed (left alone): {skipped_not_confirmed}, confirmed no-match (left alone): {skipped_no_match}"
         )
 

@@ -7,6 +7,17 @@ created, so existing rows seeded before the parser fix keep their old
 (sometimes wrong, mixing subject/national ranks into the "global" field)
 value until this backfill runs.
 
+NOT wired into cd.yml/cd-dev.yml — removed from both pipelines (along with
+7 sibling one-time backfill_*.py scripts) once it had already corrected
+every existing row in production; a completed backfill is a no-op forever
+after (parse_ranking(ranking_label) stops disagreeing with ranking), so
+running it on every future deploy serves no purpose. Kept here as a manual/
+on-demand tool for whenever the parser itself changes again — the
+is_locked(uni, "ranking") guard below (and
+tests/unit/test_admin_university_lock.py::test_backfill_ranking_from_label_skips_locked_field)
+protect an admin's PATCH-edited ranking on THAT run, not as a standing
+production guarantee, since the script doesn't currently run on its own.
+
 Dry-run by default — prints every row whose ranking would change, does not
 write anything. Pass --apply to actually UPDATE the database.
 

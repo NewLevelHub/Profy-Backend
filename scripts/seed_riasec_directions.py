@@ -22,6 +22,7 @@ from sqlalchemy import select
 
 from app.database import async_session
 from app.models.direction import Direction
+from app.services.admin_lock import has_overrides, sync_fields
 from scripts.riasec_professions import PROFESSIONS
 
 
@@ -73,13 +74,10 @@ async def main() -> None:
         for data in directions:
             existing = existing_by_slug.get(data["slug"])
             if existing is not None:
-                changed = False
-                if existing.name != data["name"]:
-                    existing.name = data["name"]
-                    changed = True
-                if existing.holland_code != data["holland_code"]:
-                    existing.holland_code = data["holland_code"]
-                    changed = True
+                changed = sync_fields(existing, {
+                    "name": data["name"],
+                    "holland_code": data["holland_code"],
+                })
                 if changed:
                     updated += 1
                 else:
@@ -94,7 +92,7 @@ async def main() -> None:
             inserted += 1
 
         for slug, direction in existing_by_slug.items():
-            if slug not in live_slugs:
+            if slug not in live_slugs and not has_overrides(direction):
                 await db.delete(direction)
                 deleted += 1
 

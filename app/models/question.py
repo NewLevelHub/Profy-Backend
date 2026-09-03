@@ -2,7 +2,7 @@ import enum
 import uuid
 
 from sqlalchemy import Enum, Integer, String
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -94,3 +94,7 @@ class Question(Base):
         server_default="senior",
         index=True,
     )
+    # Field-name -> admin-edited value, composed on top of the bank content
+    # by every scripts/seed_*.py at resync time so admin edits survive
+    # redeploys (see docs/admin-questions-content-overrides-plan.md).
+    overrides: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
