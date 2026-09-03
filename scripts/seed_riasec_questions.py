@@ -2,10 +2,14 @@
 Seed script: populate the questions table from riasec_question_bank.py.
 Run inside Docker: docker-compose exec api python scripts/seed_riasec_questions.py
 
-Idempotent, self-healing: upserts by `order`, deletes any DB row whose `order`
-is no longer present in QUESTIONS (so editing riasec_question_bank.py and
-rerunning this script is the entire "change the question bank" workflow —
-nothing else needs touching).
+Idempotent, self-healing: upserts by `(order, locale)`, deletes any DB row
+whose `(order, locale)` is no longer present in QUESTIONS (so editing
+riasec_question_bank.py and rerunning this script is the entire "change the
+question bank" workflow — nothing else needs touching).
+
+`riasec_question_bank.py` is Russian-only, so this seeder only ever
+inserts/updates/deletes `locale='ru'` rows — rows of any other locale are
+never read and never deleted here (KZ-301; KZ-302 lets the bank carry `kk`).
 """
 import asyncio
 import os
@@ -20,17 +24,23 @@ from app.models.profile import AgeGroup
 from app.models.question import HollandType, Question, QuestionInstrument
 from scripts.riasec_question_bank import QUESTIONS
 
+# riasec_question_bank.py holds Russian text only.
+BANK_LOCALE = "ru"
+
 
 async def main() -> None:
     async with async_session() as db:
         live_orders = {q["order"] for q in QUESTIONS}
 
-        # Scoped to instrument='riasec' — unscoped would also match Big Five
-        # rows (same table) and the orphan-cleanup below would wrongly delete
-        # every one of them, since their `order` is never in RIASEC's own
-        # live_orders.
+        # Scoped to instrument='riasec' AND locale=BANK_LOCALE — unscoped would
+        # also match Big Five rows (same table) or other locales' rows, and the
+        # orphan-cleanup below would wrongly delete them, since their `order` is
+        # never in RIASEC's own live_orders.
         existing_result = await db.execute(
-            select(Question).where(Question.instrument == QuestionInstrument.riasec)
+            select(Question).where(
+                Question.instrument == QuestionInstrument.riasec,
+                Question.locale == BANK_LOCALE,
+            )
         )
         existing_by_order = {q.order: q for q in existing_result.scalars().all()}
 
@@ -72,7 +82,7 @@ async def main() -> None:
 
             db.add(Question(
                 riasec_type=riasec_type, text=data["text"], order=data["order"], age_tier=age_tier,
-                short_text=short_text, icon=icon,
+                short_text=short_text, icon=icon, locale=BANK_LOCALE,
             ))
             inserted += 1
 

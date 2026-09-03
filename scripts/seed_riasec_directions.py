@@ -5,8 +5,10 @@ Run inside Docker: docker-compose exec api python scripts/seed_riasec_directions
 Idempotent, self-healing: dedupes PROFESSIONS by title (first occurrence in
 source order wins — this is what deterministically resolves the one real
 data conflict in the source, "Psychologist" listed as both IES and SEI, see
-riasec_professions.py's docstring), slugifies the title, upserts by slug,
-deletes any DB row whose slug is no longer produced by the current list.
+riasec_professions.py's docstring), slugifies the title, upserts by
+`(slug, locale)`, deletes any DB row whose `(slug, locale)` is no longer
+produced by the current list. `riasec_professions.py` is Russian-only, so this
+only ever touches `locale='ru'` rows (KZ-301; KZ-306 lets it carry `kk`).
 
 To change the profession catalog: edit riasec_professions.py and rerun this
 script — nothing else hardcodes profession names or codes.
@@ -23,6 +25,9 @@ from sqlalchemy import select
 from app.database import async_session
 from app.models.direction import Direction
 from scripts.riasec_professions import PROFESSIONS
+
+# riasec_professions.py holds Russian names only.
+BANK_LOCALE = "ru"
 
 
 _CYRILLIC_TO_LATIN = {
@@ -62,7 +67,9 @@ async def main() -> None:
     async with async_session() as db:
         live_slugs = {d["slug"] for d in directions}
 
-        existing_result = await db.execute(select(Direction))
+        existing_result = await db.execute(
+            select(Direction).where(Direction.locale == BANK_LOCALE)
+        )
         existing_by_slug = {d.slug: d for d in existing_result.scalars().all()}
 
         inserted = 0
@@ -90,6 +97,7 @@ async def main() -> None:
                 name=data["name"],
                 slug=data["slug"],
                 holland_code=data["holland_code"],
+                locale=BANK_LOCALE,
             ))
             inserted += 1
 

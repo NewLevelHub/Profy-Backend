@@ -33,6 +33,7 @@ from app.schemas.question_pair import (
     SubmitPairAnswersResponse,
 )
 from app.services import assessment_shared
+from app.services.content_locale import localized_rows
 
 _PICKED_VALUE = 5
 _OTHER_VALUE = 1
@@ -70,7 +71,10 @@ async def get_pairs(db: AsyncSession, age_group: AgeGroup) -> list[QuestionPairI
         # unrelated MI categories made an already-weak construct worse — see
         # question_service.get_all_questions), so only Big Five stays paired.
         query = query.where(QuestionPair.instrument == QuestionInstrument.big_five)
-    result = await db.execute(query)
+    # Display path: request locale, whole-set fallback to `ru` (KZ-301). The
+    # joined Question rows follow the pair's FK, so they're the pair's own
+    # locale already — no separate filter on the aliases.
+    rows = await localized_rows(db, query, QuestionPair.locale, scalars=False)
     return [
         QuestionPairItem(
             pair_index=pair.pair_index,
@@ -80,7 +84,7 @@ async def get_pairs(db: AsyncSession, age_group: AgeGroup) -> list[QuestionPairI
             option_a=_to_option(q_a, pair.option_a_text, pair.option_a_icon),
             option_b=_to_option(q_b, pair.option_b_text, pair.option_b_icon),
         )
-        for pair, q_a, q_b in result.all()
+        for pair, q_a, q_b in rows
     ]
 
 
@@ -101,10 +105,14 @@ async def submit_pair_answers(
     age_group = await assessment_shared.get_profile_age_group(assessment.profile_id, db)
 
     pair_indexes = [item.pair_index for item in answers]
-    pairs_result = await db.execute(
-        select(QuestionPair).where(QuestionPair.pair_index.in_(pair_indexes))
+    # Same locale resolution as get_pairs, so the pair the user was shown is the
+    # pair we validate their pick against (the option ids differ per locale).
+    pairs_rows = await localized_rows(
+        db,
+        select(QuestionPair).where(QuestionPair.pair_index.in_(pair_indexes)),
+        QuestionPair.locale,
     )
-    pairs_by_index = {p.pair_index: p for p in pairs_result.scalars().all()}
+    pairs_by_index = {p.pair_index: p for p in pairs_rows}
 
     response_rows: list[dict] = []
     for item in answers:

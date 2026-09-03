@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+from app.models.content_locale_column import locale_column
 from app.models.motivation import MotivationCategory
 
 
@@ -32,11 +33,19 @@ class MotivationPair(Base):
     cognitively lighter than holding 3 constructs at once."""
 
     __tablename__ = "motivation_pairs"
+    # KZ-301: natural key is pair_index; one row per locale. The bare-column
+    # UNIQUE this table used to carry is now (pair_index, locale).
+    __table_args__ = (
+        UniqueConstraint(
+            "pair_index", "locale", name="uq_motivation_pairs_pair_index_locale"
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    pair_index: Mapped[int] = mapped_column(Integer, nullable=False, unique=True, index=True)
+    locale: Mapped[str] = locale_column()
+    pair_index: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     category_a: Mapped[MotivationCategory] = mapped_column(
         Enum(MotivationCategory, name="motivation_category_enum", create_type=False), nullable=False
     )

@@ -197,6 +197,33 @@ UI-локаль — отдельное поле `users.locale`. Связь то�
 
 Детали миграций и правок seed-скриптов — тикет KZ-301.
 
+### Реализация KZ-301 (что уже в коде)
+
+- Миграция `f3b9c1d47a20` — колонка `locale` (`locale_enum NOT NULL DEFAULT 'ru'`)
+  + индекс `ix_<table>_locale` на всех пяти таблицах. Существующие строки → `ru`.
+- Составной **DB-UNIQUE `(<natural_key>, locale)`** заведён только там, где раньше
+  был одиночный DB-UNIQUE по ключу: `directions` (`uq_directions_slug_locale`,
+  бывший `ix_directions_slug`) и `motivation_pairs`
+  (`uq_motivation_pairs_pair_index_locale`, бывший `ix_motivation_pairs_pair_index`);
+  бывшие уникальные индексы понижены до обычных lookup-индексов. У `questions`,
+  `question_pairs`, `motivation_statements` DB-уникальности по натуральному ключу
+  не было — seed по-прежнему дедуплицирует по `(natural_key, locale)` в Python,
+  а нового DB-UNIQUE нет (иначе он бы впервые запрещал фикстуры с «неважным»
+  `order=0`).
+- Банки на этом тикете **не меняются** — остаются плоскими строками; каждый
+  `seed_*.py` объявляет `BANK_LOCALE = "ru"`, читает/пишет/чистит только
+  `locale='ru'` строки и никогда не трогает другие локали. Формат
+  `text: {"ru": …, "kk": …}` вводится в KZ-302…306.
+- Чтение per-locale строк — хелпер `app/services/content_locale.py::localized_rows`
+  (не `pick_locale`, который для `{locale: text}`-маппингов на JSON-полях):
+  фильтр по локали запроса, фолбэк на **весь** `ru`-набор при отсутствии строк
+  запрошенной локали, `record_fallback` на фолбэке. Скоринговые знаменатели
+  (`riasec/bigfive/mi_service.question_counts`, `assessment_shared.
+  likert_total_questions`, `motivation*_service.total_*`) прибиты к `ru`
+  напрямую — `ru` всегда полный канонический набор, счёт не зависит от локали
+  UI. Запросы, доходящие до контент-таблицы только через join `user_responses`,
+  локаль-фильтра не требуют.
+
 ## 9. Хранение ИИ-артефактов — с ключом локали
 
 Сгенерированные LLM тексты (нарратив отчёта, роадмапы по цели и направлению,

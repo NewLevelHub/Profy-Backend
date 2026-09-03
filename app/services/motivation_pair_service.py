@@ -16,10 +16,12 @@ from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n import DEFAULT_LOCALE
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.motivation_pair import MotivationIntensity, MotivationPair, MotivationPairResponse, PairSide
 from app.schemas.motivation_pair import MotivationPairItem, PairIntensityAnswer, SubmitMotivationPairResponse
 from app.services import assessment_shared
+from app.services.content_locale import localized_rows
 from scripts.motivation_statement_bank import CATEGORIES as CATEGORY_ORDER
 
 # (chosen_side, intensity) -> 1-4 Harter-style score for this one item.
@@ -34,12 +36,20 @@ _SCORE_TABLE: dict[tuple[str, str], int] = {
 
 
 async def pairs(db: AsyncSession) -> list[MotivationPair]:
-    result = await db.execute(select(MotivationPair).order_by(MotivationPair.pair_index))
-    return list(result.scalars().all())
+    # Display path: request locale, whole-set fallback to `ru` (KZ-301). Also
+    # feeds raw_scores/submit, which key on pair_index and read only
+    # `category_a` (identical across locales), so the locale that wins here
+    # never changes a score.
+    stmt = select(MotivationPair).order_by(MotivationPair.pair_index)
+    return await localized_rows(db, stmt, MotivationPair.locale)
 
 
 async def total_pairs(db: AsyncSession) -> int:
-    result = await db.execute(select(func.count(MotivationPair.id)))
+    # Structural count — pin to `ru`, the canonical always-complete set, so the
+    # completion denominator never doubles when `kk` rows are added (KZ-301).
+    result = await db.execute(
+        select(func.count(MotivationPair.id)).where(MotivationPair.locale == DEFAULT_LOCALE)
+    )
     return result.scalar_one()
 
 

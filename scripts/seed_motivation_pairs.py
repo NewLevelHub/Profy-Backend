@@ -2,9 +2,10 @@
 Seed script: populate motivation_pairs from motivation_pair_bank.py.
 Run inside Docker: docker-compose exec api python scripts/seed_motivation_pairs.py
 
-Idempotent, self-healing: upserts by pair_index, deletes any DB row whose
-pair_index is no longer present in PAIRS — same pattern as the other seed
-scripts.
+Idempotent, self-healing: upserts by (pair_index, locale), deletes any DB row
+whose (pair_index, locale) is no longer present in PAIRS — same pattern as the
+other seed scripts. The bank is Russian-only, so this only ever touches
+`locale='ru'` rows (KZ-301).
 """
 import asyncio
 import os
@@ -19,12 +20,17 @@ from app.models.motivation_pair import MotivationPair
 from app.database import async_session
 from scripts.motivation_pair_bank import PAIRS
 
+# motivation_pair_bank.py holds Russian text only.
+BANK_LOCALE = "ru"
+
 
 async def main() -> None:
     async with async_session() as db:
         live_keys = {p["pair_index"] for p in PAIRS}
 
-        existing_result = await db.execute(select(MotivationPair))
+        existing_result = await db.execute(
+            select(MotivationPair).where(MotivationPair.locale == BANK_LOCALE)
+        )
         existing_by_key = {p.pair_index: p for p in existing_result.scalars().all()}
 
         inserted = 0
@@ -65,6 +71,7 @@ async def main() -> None:
                     category_b=category_b,
                     text_a=data["text_a"],
                     text_b=data["text_b"],
+                    locale=BANK_LOCALE,
                 )
             )
             inserted += 1

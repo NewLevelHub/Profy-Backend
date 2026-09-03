@@ -1,20 +1,28 @@
 import uuid
 
-from sqlalchemy import String, Text
+from sqlalchemy import String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+from app.models.content_locale_column import locale_column
 
 
 class Direction(Base):
     __tablename__ = "directions"
+    # KZ-301: natural key is slug (shared across locales, never a per-locale
+    # slug — see KZ-306); one row per locale. The bare-column UNIQUE this table
+    # used to carry is now (slug, locale).
+    __table_args__ = (
+        UniqueConstraint("slug", "locale", name="uq_directions_slug_locale"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
+    locale: Mapped[str] = locale_column()
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    slug: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    slug: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     # 3-letter Holland code (e.g. "RIS") — sole basis for career matching
     # (riasec_service.career_match_score). Replaces the old required_scores/
     # bonus_scores threshold scoring entirely.

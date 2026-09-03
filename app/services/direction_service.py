@@ -3,16 +3,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.direction import Direction
 from app.schemas.direction import DirectionBase, DirectionDetail
+from app.services.content_locale import localized_rows
 
 
 async def get_all_directions(db: AsyncSession) -> list[Direction]:
-    result = await db.execute(select(Direction).order_by(Direction.name))
-    return list(result.scalars().all())
+    # Display path: request locale, whole-set fallback to `ru` (KZ-301).
+    return await localized_rows(db, select(Direction).order_by(Direction.name), Direction.locale)
 
 
 async def get_direction_by_slug(slug: str, db: AsyncSession) -> Direction | None:
-    result = await db.execute(select(Direction).where(Direction.slug == slug))
-    return result.scalar_one_or_none()
+    rows = await localized_rows(
+        db, select(Direction).where(Direction.slug == slug), Direction.locale
+    )
+    return rows[0] if rows else None
 
 
 async def get_direction_details(slug: str, db: AsyncSession) -> DirectionDetail | None:

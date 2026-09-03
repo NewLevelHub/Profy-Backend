@@ -4,10 +4,10 @@ Run inside Docker, AFTER seed_riasec_questions.py and seed_bigfive_questions.py
 (order continues from their combined bank length):
 docker-compose exec api python scripts/seed_mi_questions.py
 
-Idempotent, self-healing: upserts by `order`, deletes any mi DB row whose
-`order` is no longer present in QUESTIONS — same pattern as
+Idempotent, self-healing: upserts by `(order, locale)`, deletes any mi DB row
+whose `(order, locale)` is no longer present in QUESTIONS — same pattern as
 seed_riasec_questions.py/seed_bigfive_questions.py. Only touches
-instrument='mi' rows.
+instrument='mi', `locale='ru'` rows (the bank is Russian-only; KZ-301).
 """
 import asyncio
 import os
@@ -22,13 +22,19 @@ from app.models.profile import AgeGroup
 from app.models.question import MIType, Question, QuestionInstrument
 from scripts.mi_question_bank import QUESTIONS
 
+# mi_question_bank.py holds Russian text only.
+BANK_LOCALE = "ru"
+
 
 async def main() -> None:
     async with async_session() as db:
         live_orders = {q["order"] for q in QUESTIONS}
 
         existing_result = await db.execute(
-            select(Question).where(Question.instrument == QuestionInstrument.mi)
+            select(Question).where(
+                Question.instrument == QuestionInstrument.mi,
+                Question.locale == BANK_LOCALE,
+            )
         )
         existing_by_order = {q.order: q for q in existing_result.scalars().all()}
 
@@ -74,6 +80,7 @@ async def main() -> None:
                     age_tier=age_tier,
                     short_text=data.get("short_text"),
                     icon=data.get("icon"),
+                    locale=BANK_LOCALE,
                 )
             )
             inserted += 1

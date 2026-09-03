@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+from app.models.content_locale_column import locale_column
 
 
 class MotivationCategory(str, enum.Enum):
@@ -31,6 +32,9 @@ class MotivationStatement(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
+    # KZ-301: natural key is (triplet_index, order); the seed dedupes on
+    # (triplet_index, order, locale) in Python, no DB constraint.
+    locale: Mapped[str] = locale_column()
     triplet_index: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     category: Mapped[MotivationCategory] = mapped_column(

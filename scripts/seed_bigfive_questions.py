@@ -4,9 +4,10 @@ bigfive_question_bank.py.
 Run inside Docker, AFTER seed_riasec_questions.py (order continues from the
 RIASEC bank's length): docker-compose exec api python scripts/seed_bigfive_questions.py
 
-Idempotent, self-healing: upserts by `order`, deletes any big_five DB row
-whose `order` is no longer present in QUESTIONS — same pattern as
-seed_riasec_questions.py. Only touches instrument='big_five' rows.
+Idempotent, self-healing: upserts by `(order, locale)`, deletes any big_five
+DB row whose `(order, locale)` is no longer present in QUESTIONS — same pattern
+as seed_riasec_questions.py. Only touches instrument='big_five', `locale='ru'`
+rows (the bank is Russian-only; KZ-301).
 """
 import asyncio
 import os
@@ -21,13 +22,19 @@ from app.models.profile import AgeGroup
 from app.models.question import BigFiveDomain, Keyed, Question, QuestionInstrument
 from scripts.bigfive_question_bank import QUESTIONS
 
+# bigfive_question_bank.py holds Russian text only.
+BANK_LOCALE = "ru"
+
 
 async def main() -> None:
     async with async_session() as db:
         live_orders = {q["order"] for q in QUESTIONS}
 
         existing_result = await db.execute(
-            select(Question).where(Question.instrument == QuestionInstrument.big_five)
+            select(Question).where(
+                Question.instrument == QuestionInstrument.big_five,
+                Question.locale == BANK_LOCALE,
+            )
         )
         existing_by_order = {q.order: q for q in existing_result.scalars().all()}
 
@@ -82,6 +89,7 @@ async def main() -> None:
                     age_tier=age_tier,
                     short_text=data.get("short_text"),
                     icon=data.get("icon"),
+                    locale=BANK_LOCALE,
                 )
             )
             inserted += 1

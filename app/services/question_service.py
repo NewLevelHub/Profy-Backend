@@ -5,6 +5,7 @@ from app.models.profile import AgeGroup
 from app.models.question import Question, QuestionInstrument
 from app.schemas.question import QuestionResponse
 from app.services.age_tiers import visible_tiers
+from app.services.content_locale import localized_rows
 
 
 async def get_all_questions(db: AsyncSession, age_group: AgeGroup) -> list[QuestionResponse]:
@@ -18,5 +19,6 @@ async def get_all_questions(db: AsyncSession, age_group: AgeGroup) -> list[Quest
         # question_pair_service.get_pairs) would otherwise leak into the
         # plain Likert flow now that junior answers MI here too.
         query = query.where(Question.instrument != QuestionInstrument.riasec)
-    result = await db.execute(query)
-    return [QuestionResponse.model_validate(q) for q in result.scalars().all()]
+    # Display path: request locale, whole-set fallback to `ru` (KZ-301).
+    questions = await localized_rows(db, query, Question.locale)
+    return [QuestionResponse.model_validate(q) for q in questions]

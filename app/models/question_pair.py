@@ -5,6 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+from app.models.content_locale_column import locale_column
 from app.models.profile import AgeGroup
 from app.models.question import QuestionInstrument
 
@@ -28,6 +29,9 @@ class QuestionPair(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
+    # KZ-301: natural key is (instrument, pair_index); the seed dedupes on
+    # (instrument, pair_index, locale) in Python, no DB constraint.
+    locale: Mapped[str] = locale_column()
     instrument: Mapped[QuestionInstrument] = mapped_column(
         Enum(QuestionInstrument, name="question_instrument_enum", create_type=False),
         nullable=False,

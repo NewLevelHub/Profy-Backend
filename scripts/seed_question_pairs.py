@@ -4,9 +4,12 @@ Run inside Docker, AFTER seed_riasec_questions.py and seed_bigfive_questions.py
 (pairs reference those rows by `order`, resolved to Question.id here):
 docker-compose exec api python scripts/seed_question_pairs.py
 
-Idempotent, self-healing: upserts by `(instrument, pair_index)`, deletes any
-DB row whose `(instrument, pair_index)` is no longer present in PAIRS — same
-pattern as the other seed scripts.
+Idempotent, self-healing: upserts by `(instrument, pair_index, locale)`,
+deletes any DB row whose `(instrument, pair_index, locale)` is no longer
+present in PAIRS — same pattern as the other seed scripts. `question_pairing.py`
+is Russian-only, so this only ever touches `locale='ru'` rows and resolves the
+referenced questions against `locale='ru'` questions (KZ-301; KZ-304 lets the
+bank carry `kk`).
 """
 import asyncio
 import os
@@ -22,13 +25,20 @@ from app.models.question import Question, QuestionInstrument
 from app.models.question_pair import QuestionPair
 from scripts.question_pairing import PAIRS
 
+# question_pairing.py holds Russian text only, and references `ru` questions.
+BANK_LOCALE = "ru"
+
 
 async def main() -> None:
     async with async_session() as db:
-        order_to_id_result = await db.execute(select(Question.order, Question.id))
+        order_to_id_result = await db.execute(
+            select(Question.order, Question.id).where(Question.locale == BANK_LOCALE)
+        )
         order_to_id = dict(order_to_id_result.all())
 
-        existing_result = await db.execute(select(QuestionPair))
+        existing_result = await db.execute(
+            select(QuestionPair).where(QuestionPair.locale == BANK_LOCALE)
+        )
         existing_by_key = {(p.instrument, p.pair_index): p for p in existing_result.scalars().all()}
 
         live_keys = {(QuestionInstrument(p["instrument"]), p["pair_index"]) for p in PAIRS}
@@ -89,6 +99,7 @@ async def main() -> None:
                 option_b_text=data.get("option_b_text"),
                 option_a_icon=data.get("option_a_icon"),
                 option_b_icon=data.get("option_b_icon"),
+                locale=BANK_LOCALE,
             ))
             inserted += 1
 

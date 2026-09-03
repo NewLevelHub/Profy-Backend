@@ -3,6 +3,7 @@ import uuid
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n import DEFAULT_LOCALE
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
@@ -194,7 +195,10 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
 
         total_questions_result = await db.execute(
             select(func.count(Question.id)).where(
-                Question.age_tier.in_(visible_tiers(profile.age_group))
+                Question.age_tier.in_(visible_tiers(profile.age_group)),
+                # ru-only denominator (admin is ru-only; KZ-301 — never
+                # double-count once kk question rows exist).
+                Question.locale == DEFAULT_LOCALE,
             )
         )
         total_questions = total_questions_result.scalar_one()
@@ -350,7 +354,10 @@ async def get_assessment_detail(
 
     total_questions_result = await db.execute(
         select(func.count(Question.id)).where(
-            Question.age_tier.in_(visible_tiers(profile.age_group))
+            Question.age_tier.in_(visible_tiers(profile.age_group)),
+            # ru-only denominator (admin is ru-only; KZ-301 — never double-count
+            # once kk question rows exist).
+            Question.locale == DEFAULT_LOCALE,
         )
     )
     total_questions = total_questions_result.scalar_one()
