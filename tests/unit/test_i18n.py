@@ -11,6 +11,7 @@ from app.i18n import (
     DEFAULT_LOCALE,
     KNOWN_LOCALES,
     SUPPORTED_LOCALES,
+    MissingLocalizedText,
     fallback_counts,
     get_locale,
     guess_locale_from_language_field,
@@ -59,6 +60,24 @@ def test_normalize_locale_respects_q_weight_order():
     # both supported? only "ru" is right now, so this just confirms ru wins
     assert normalize_locale("en;q=0.1, ru;q=0.9") == "ru"
     assert normalize_locale("en;q=0.9, ru;q=0.1") == "ru"
+
+
+@pytest.mark.parametrize(
+    "raw, expected",
+    [
+        # trailing params after the q weight must not break float() parsing
+        ("ru;q=0.1;x=1, kk;q=0.9", "kk"),
+        ("kk;q=0.9;charset=utf-8, ru;q=0.1", "kk"),
+        # q is matched case-insensitively
+        ("ru;Q=0.1, kk;Q=0.9", "kk"),
+        # out-of-range / junk q values are clamped or ignored, never win outright
+        ("ru;q=5, kk;q=0.9", "ru"),  # q>1 clamps to 1.0, order breaks the tie -> ru first
+        ("ru;q=nonsense, kk;q=0.5", "ru"),  # unparseable -> 1.0, ru wins
+        ("ru;q=-1, kk;q=0.1", "kk"),  # q<0 clamps to 0.0
+    ],
+)
+def test_normalize_locale_q_weight_parsing(raw, expected):
+    assert normalize_locale(raw, allowed=KNOWN_LOCALES) == expected
 
 
 def test_set_locale_clamps_to_supported():
@@ -146,10 +165,20 @@ def test_pick_locale_treats_blank_kk_as_missing():
     assert fallback_counts() == {"kk": 1}
 
 
-def test_pick_locale_empty_and_none_mapping_return_blank_and_count():
-    assert pick_locale({}, "kk") == ""
-    assert pick_locale(None, "kk") == ""
-    assert fallback_counts() == {"kk": 2}
+def test_pick_locale_raises_when_no_ru_fallback():
+    # contract §5: never return "" where text is expected — a mapping without a
+    # ru value (or empty / None) is a data-integrity bug, so it raises.
+    for bad in ({}, None, {"kk": "Сәлем"}, {"en": "Hi"}):
+        with pytest.raises(MissingLocalizedText):
+            pick_locale(bad, "ru")
+    # every attempt still bumped the fallback tally before raising
+    assert fallback_counts() == {"ru": 4}
+
+
+def test_pick_locale_uses_kk_without_needing_ru():
+    # a present, non-blank kk value is returned as-is; ru is only the fallback
+    assert pick_locale({"kk": "Сәлем"}, "kk") == "Сәлем"
+    assert fallback_counts() == {}
 
 
 def test_pick_locale_defaults_to_current_request_locale():

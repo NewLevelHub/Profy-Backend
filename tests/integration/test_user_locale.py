@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
+from app.services import auth_service
 
 _PROFILE_PAYLOAD = {
     "name": "Аружан",
@@ -101,6 +102,33 @@ async def test_profile_create_prefills_locale_from_language_field(
 
     me = await client.get("/api/v1/auth/me", headers=auth_headers)
     assert me.json()["locale"] == "kk"
+
+
+async def test_profile_create_flips_autoseeded_kk_to_ru_when_language_is_russian(
+    client: httpx.AsyncClient, db_session: AsyncSession
+) -> None:
+    # "kk" was seeded implicitly from the browser at registration
+    # (locale_explicit stays False) — a later profile whose language of
+    # instruction is Russian must win, since the guard is on locale_explicit
+    # only, not on the current value (contract §6).
+    user = User(
+        email=f"{uuid.uuid4()}@example.com",
+        hashed_password=auth_service.hash_password("Testpass123!"),
+        is_active=True,
+        is_verified=True,
+        locale="kk",
+        locale_explicit=False,
+    )
+    db_session.add(user)
+    await db_session.flush()
+    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user.id)}"}
+
+    payload = {**_PROFILE_PAYLOAD, "language": "русский"}
+    created = await client.post("/api/v1/profile", json=payload, headers=headers)
+    assert created.status_code == 201
+
+    me = await client.get("/api/v1/auth/me", headers=headers)
+    assert me.json()["locale"] == "ru"
 
 
 async def test_profile_create_does_not_override_explicit_locale(

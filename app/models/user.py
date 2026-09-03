@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+from app.i18n import KNOWN_LOCALES
 
 
 class User(Base):
@@ -26,8 +27,12 @@ class User(Base):
     # class) so `user.locale` is a str, not `Locale.ru`. Distinct from
     # `profiles.language` (language of instruction). See docs/i18n-contract.md.
     # "kk" is stored but not runtime-honored until KZ-603 (no feature flag).
+    # Enum values come from KNOWN_LOCALES so this and the persistence contract
+    # can't drift; the `locale_enum` Postgres type is still owned by Alembic
+    # (migration d80fbf5d1f43) — see the KNOWN_LOCALES comment in app/i18n.py
+    # before adding a value.
     locale: Mapped[str] = mapped_column(
-        Enum("ru", "kk", name="locale_enum", create_type=False),
+        Enum(*KNOWN_LOCALES, name="locale_enum", create_type=False),
         nullable=False,
         server_default="ru",
     )

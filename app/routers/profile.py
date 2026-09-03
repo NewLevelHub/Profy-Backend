@@ -51,11 +51,14 @@ async def create_profile(
     try:
         profile = await profile_service.create_profile(current_user.id, data, db, commit=False)
 
-        # One-time pre-fill of the UI locale from the "language of instruction"
-        # field. Skipped once the user has chosen a locale via the switcher
-        # (`locale_explicit`) so a deliberate choice is never overwritten — see
-        # docs/i18n-contract.md §6. Only ever upgrades the default "ru".
-        if not current_user.locale_explicit and current_user.locale == "ru":
+        # Pre-fill the UI locale from the "language of instruction" field at
+        # profile creation. Gated ONLY on `locale_explicit` (contract §6): while
+        # the user has never picked a locale via the switcher, the language
+        # field is the authoritative implicit signal and always wins — including
+        # over an `Accept-Language`-seeded "kk" when the language of instruction
+        # is Russian. The heuristic yields "kk" or "ru", so this can move the
+        # value either way. Any explicit switcher choice disables this for good.
+        if not current_user.locale_explicit:
             current_user.locale = guess_locale_from_language_field(data.language)
 
         saved_artifacts: list[Artifact] = []
