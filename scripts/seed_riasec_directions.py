@@ -22,7 +22,7 @@ from sqlalchemy import select
 
 from app.database import async_session
 from app.models.direction import Direction
-from app.services.admin_lock import effective_value, has_overrides
+from app.services.admin_lock import has_overrides, sync_fields
 from scripts.riasec_professions import PROFESSIONS
 
 
@@ -74,15 +74,10 @@ async def main() -> None:
         for data in directions:
             existing = existing_by_slug.get(data["slug"])
             if existing is not None:
-                changed = False
-                target = effective_value(existing, "name", data["name"])
-                if existing.name != target:
-                    existing.name = target
-                    changed = True
-                target = effective_value(existing, "holland_code", data["holland_code"])
-                if existing.holland_code != target:
-                    existing.holland_code = target
-                    changed = True
+                changed = sync_fields(existing, {
+                    "name": data["name"],
+                    "holland_code": data["holland_code"],
+                })
                 if changed:
                     updated += 1
                 else:

@@ -17,7 +17,7 @@ from sqlalchemy import select
 from app.models.motivation import MotivationCategory
 from app.models.motivation_pair import MotivationPair
 from app.database import async_session
-from app.services.admin_lock import effective_value, has_overrides
+from app.services.admin_lock import has_overrides, sync_fields
 from scripts.motivation_pair_bank import PAIRS
 
 
@@ -40,23 +40,12 @@ async def main() -> None:
             category_b = MotivationCategory(data["category_b"])
 
             if existing is not None:
-                changed = False
-                target = effective_value(existing, "category_a", category_a)
-                if existing.category_a != target:
-                    existing.category_a = target
-                    changed = True
-                target = effective_value(existing, "category_b", category_b)
-                if existing.category_b != target:
-                    existing.category_b = target
-                    changed = True
-                target = effective_value(existing, "text_a", data["text_a"])
-                if existing.text_a != target:
-                    existing.text_a = target
-                    changed = True
-                target = effective_value(existing, "text_b", data["text_b"])
-                if existing.text_b != target:
-                    existing.text_b = target
-                    changed = True
+                changed = sync_fields(existing, {
+                    "category_a": category_a,
+                    "category_b": category_b,
+                    "text_a": data["text_a"],
+                    "text_b": data["text_b"],
+                })
                 if changed:
                     updated += 1
                 else:

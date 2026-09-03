@@ -75,6 +75,10 @@ async def test_update_program_locks_only_patched_fields(db_session: AsyncSession
 async def test_backfill_ranking_from_label_skips_locked_field(
     db_session: AsyncSession, monkeypatch, capsys
 ) -> None:
+    """backfill_ranking_from_label.py is NOT in cd.yml/cd-dev.yml (retired
+    as a completed one-time migration — see its module docstring) — this
+    covers its is_locked() guard for whenever someone runs it by hand again,
+    not an automated production guarantee."""
     from scripts import backfill_ranking_from_label as script
 
     university = University(

@@ -1,11 +1,13 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import status as http_status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_admin_user
 from app.models.assessment import AssessmentGoal, AssessmentStatus
+from app.services.admin_lock import AdminOverrideValidationError
 from app.models.user import User
 from app.schemas.admin import (
     AdminAssessmentDetailResponse,
@@ -76,9 +78,14 @@ async def export_users(
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    items = await admin_service.export_users(
-        db, search=search, age_group=age_group, status=status, goal=goal
-    )
+    try:
+        items = await admin_service.export_users(
+            db, search=search, age_group=age_group, status=status, goal=goal
+        )
+    except admin_service.ExportTooLargeError as e:
+        # `status` (the query param above) shadows the fastapi `status`
+        # module in this function's scope — use the `http_status` alias.
+        raise HTTPException(status_code=http_status.HTTP_400_BAD_REQUEST, detail=str(e))
     csv_text = admin_export_service.users_to_csv(items)
     return Response(
         content=csv_text,
@@ -243,6 +250,8 @@ async def update_question(
 ):
     try:
         return await admin_content_service.update_question(db, question_id, data)
+    except AdminOverrideValidationError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -282,6 +291,8 @@ async def update_question_pair(
 ):
     try:
         return await admin_content_service.update_question_pair(db, pair_id, data)
+    except AdminOverrideValidationError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -323,6 +334,8 @@ async def update_motivation_statement(
 ):
     try:
         return await admin_content_service.update_motivation_statement(db, statement_id, data)
+    except AdminOverrideValidationError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -360,6 +373,8 @@ async def update_motivation_pair(
 ):
     try:
         return await admin_content_service.update_motivation_pair(db, pair_id, data)
+    except AdminOverrideValidationError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -396,5 +411,7 @@ async def update_direction(
 ):
     try:
         return await admin_content_service.update_direction(db, direction_id, data)
+    except AdminOverrideValidationError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

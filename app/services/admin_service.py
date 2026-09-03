@@ -35,6 +35,20 @@ from app.services.age_tiers import visible_tiers
 from app.services.goal_overlay_service import _get_effective_goal_and_scenario
 from app.services.riasec_content import LIKERT_LABELS as RIASEC_LIKERT_LABELS
 
+# GET /admin/users/export has no page/limit — unlike list_users, it always
+# fetches every matching row (plus their profiles/assessments/analysis
+# results) into memory before building the CSV. This cap turns an unbounded
+# query + full in-memory result set into a clean, actionable error instead
+# of a slow request that risks a timeout or holds a DB connection for the
+# whole build, as the dataset grows.
+EXPORT_MAX_ROWS = 5000
+
+
+class ExportTooLargeError(Exception):
+    """Raised by export_users() when the filtered result set exceeds
+    EXPORT_MAX_ROWS — narrow the filters (search/age_group/status/goal)
+    instead of exporting everyone at once."""
+
 
 def _selected_answer_text(answer_value: int, instrument: QuestionInstrument | None = None) -> str:
     labels = bigfive_content.LIKERT_LABELS if instrument == QuestionInstrument.big_five else RIASEC_LIKERT_LABELS
@@ -117,10 +131,24 @@ async def export_users(
     status: AssessmentStatus | None = None,
     goal: AssessmentGoal | None = None,
 ) -> list[AdminUserListItem]:
-    """Same filters as `list_users`, no pagination — for CSV export."""
+    """Same filters as `list_users`, no pagination — for CSV export. Raises
+    ExportTooLargeError instead of running an unbounded query if the
+    filtered result set is bigger than EXPORT_MAX_ROWS."""
     filters, needs_distinct = _build_user_filters(
         search=search, age_group=age_group, status=status, goal=goal
     )
+
+    count_query = _user_base_query(needs_distinct=needs_distinct).with_only_columns(User.id).where(*filters)
+    if needs_distinct:
+        count_query = count_query.distinct()
+    total_result = await db.execute(select(func.count()).select_from(count_query.subquery()))
+    total = total_result.scalar_one()
+    if total > EXPORT_MAX_ROWS:
+        raise ExportTooLargeError(
+            f"Export matches {total} users, exceeding the {EXPORT_MAX_ROWS}-row limit — "
+            "narrow the search/age_group/status/goal filters first."
+        )
+
     query = _user_base_query(needs_distinct=needs_distinct).where(*filters).order_by(User.created_at.desc())
     if needs_distinct:
         query = query.distinct()
@@ -348,12 +376,18 @@ async def get_assessment_detail(
             )
             continue
 
+        # riasec_type/bigfive_domain/mi_category are all nullable columns
+        # (only the one matching `instrument` is normally populated) — since
+        # admin PATCH /admin/questions/{id} can null any of them out
+        # (app/services/admin_content_service.py::update_question), fall
+        # back to "?" instead of crashing on a None here, same convention
+        # as the "question deleted" branch above.
         if question.instrument == QuestionInstrument.riasec:
-            category = question.riasec_type.value
+            category = question.riasec_type.value if question.riasec_type else "?"
         elif question.instrument == QuestionInstrument.big_five:
-            category = question.bigfive_domain.value
+            category = question.bigfive_domain.value if question.bigfive_domain else "?"
         else:
-            category = question.mi_category.value
+            category = question.mi_category.value if question.mi_category else "?"
         responses.append(
             AdminResponseItem(
                 question_id=response.question_id,

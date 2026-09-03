@@ -29,6 +29,25 @@ from app.schemas.admin_content import (
 from app.services.admin_lock import apply_overrides
 
 
+async def _get_by_id(db: AsyncSession, model, row_id: uuid.UUID):
+    """Shared get-by-id body for all 5 question-bank content types below —
+    the get_X_detail/update_X pairs only ever differ by model class and
+    not-found message, so that's the only thing each caller supplies."""
+    result = await db.execute(select(model).where(model.id == row_id))
+    return result.scalar_one_or_none()
+
+
+async def _update_by_id(db: AsyncSession, model, row_id: uuid.UUID, data, not_found_msg: str):
+    row = await _get_by_id(db, model, row_id)
+    if row is None:
+        raise ValueError(not_found_msg)
+
+    apply_overrides(row, data.model_dump(exclude_unset=True))
+    await db.commit()
+    await db.refresh(row)
+    return row
+
+
 # --- Questions ---
 
 
@@ -80,22 +99,13 @@ async def list_questions(
 
 
 async def get_question_detail(db: AsyncSession, question_id: uuid.UUID) -> Question | None:
-    result = await db.execute(select(Question).where(Question.id == question_id))
-    return result.scalar_one_or_none()
+    return await _get_by_id(db, Question, question_id)
 
 
 async def update_question(
     db: AsyncSession, question_id: uuid.UUID, data: AdminQuestionUpdateRequest
 ) -> Question:
-    result = await db.execute(select(Question).where(Question.id == question_id))
-    question = result.scalar_one_or_none()
-    if question is None:
-        raise ValueError("Question not found")
-
-    apply_overrides(question, data.model_dump(exclude_unset=True))
-    await db.commit()
-    await db.refresh(question)
-    return question
+    return await _update_by_id(db, Question, question_id, data, "Question not found")
 
 
 # --- Question pairs ---
@@ -142,22 +152,13 @@ async def list_question_pairs(
 
 
 async def get_question_pair_detail(db: AsyncSession, pair_id: uuid.UUID) -> QuestionPair | None:
-    result = await db.execute(select(QuestionPair).where(QuestionPair.id == pair_id))
-    return result.scalar_one_or_none()
+    return await _get_by_id(db, QuestionPair, pair_id)
 
 
 async def update_question_pair(
     db: AsyncSession, pair_id: uuid.UUID, data: AdminQuestionPairUpdateRequest
 ) -> QuestionPair:
-    result = await db.execute(select(QuestionPair).where(QuestionPair.id == pair_id))
-    pair = result.scalar_one_or_none()
-    if pair is None:
-        raise ValueError("Question pair not found")
-
-    apply_overrides(pair, data.model_dump(exclude_unset=True))
-    await db.commit()
-    await db.refresh(pair)
-    return pair
+    return await _update_by_id(db, QuestionPair, pair_id, data, "Question pair not found")
 
 
 # --- Motivation statements ---
@@ -198,26 +199,15 @@ async def list_motivation_statements(
 async def get_motivation_statement_detail(
     db: AsyncSession, statement_id: uuid.UUID
 ) -> MotivationStatement | None:
-    result = await db.execute(
-        select(MotivationStatement).where(MotivationStatement.id == statement_id)
-    )
-    return result.scalar_one_or_none()
+    return await _get_by_id(db, MotivationStatement, statement_id)
 
 
 async def update_motivation_statement(
     db: AsyncSession, statement_id: uuid.UUID, data: AdminMotivationStatementUpdateRequest
 ) -> MotivationStatement:
-    result = await db.execute(
-        select(MotivationStatement).where(MotivationStatement.id == statement_id)
+    return await _update_by_id(
+        db, MotivationStatement, statement_id, data, "Motivation statement not found"
     )
-    statement = result.scalar_one_or_none()
-    if statement is None:
-        raise ValueError("Motivation statement not found")
-
-    apply_overrides(statement, data.model_dump(exclude_unset=True))
-    await db.commit()
-    await db.refresh(statement)
-    return statement
 
 
 # --- Motivation pairs ---
@@ -255,22 +245,13 @@ async def list_motivation_pairs(
 
 
 async def get_motivation_pair_detail(db: AsyncSession, pair_id: uuid.UUID) -> MotivationPair | None:
-    result = await db.execute(select(MotivationPair).where(MotivationPair.id == pair_id))
-    return result.scalar_one_or_none()
+    return await _get_by_id(db, MotivationPair, pair_id)
 
 
 async def update_motivation_pair(
     db: AsyncSession, pair_id: uuid.UUID, data: AdminMotivationPairUpdateRequest
 ) -> MotivationPair:
-    result = await db.execute(select(MotivationPair).where(MotivationPair.id == pair_id))
-    pair = result.scalar_one_or_none()
-    if pair is None:
-        raise ValueError("Motivation pair not found")
-
-    apply_overrides(pair, data.model_dump(exclude_unset=True))
-    await db.commit()
-    await db.refresh(pair)
-    return pair
+    return await _update_by_id(db, MotivationPair, pair_id, data, "Motivation pair not found")
 
 
 # --- Directions ---
@@ -314,19 +295,10 @@ async def list_directions(
 
 
 async def get_direction_detail(db: AsyncSession, direction_id: uuid.UUID) -> Direction | None:
-    result = await db.execute(select(Direction).where(Direction.id == direction_id))
-    return result.scalar_one_or_none()
+    return await _get_by_id(db, Direction, direction_id)
 
 
 async def update_direction(
     db: AsyncSession, direction_id: uuid.UUID, data: AdminDirectionUpdateRequest
 ) -> Direction:
-    result = await db.execute(select(Direction).where(Direction.id == direction_id))
-    direction = result.scalar_one_or_none()
-    if direction is None:
-        raise ValueError("Direction not found")
-
-    apply_overrides(direction, data.model_dump(exclude_unset=True))
-    await db.commit()
-    await db.refresh(direction)
-    return direction
+    return await _update_by_id(db, Direction, direction_id, data, "Direction not found")

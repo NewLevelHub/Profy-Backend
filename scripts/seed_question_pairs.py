@@ -20,7 +20,7 @@ from app.database import async_session
 from app.models.profile import AgeGroup
 from app.models.question import Question, QuestionInstrument
 from app.models.question_pair import QuestionPair
-from app.services.admin_lock import effective_value, has_overrides
+from app.services.admin_lock import has_overrides, sync_fields
 from scripts.question_pairing import PAIRS
 
 
@@ -58,25 +58,13 @@ async def main() -> None:
                 if existing.question_b_id != question_b_id:
                     existing.question_b_id = question_b_id
                     changed = True
-                target = effective_value(existing, "frame", data["frame"])
-                if existing.frame != target:
-                    existing.frame = target
-                    changed = True
-                target = effective_value(existing, "option_a_text", data.get("option_a_text"))
-                if existing.option_a_text != target:
-                    existing.option_a_text = target
-                    changed = True
-                target = effective_value(existing, "option_b_text", data.get("option_b_text"))
-                if existing.option_b_text != target:
-                    existing.option_b_text = target
-                    changed = True
-                target = effective_value(existing, "option_a_icon", data.get("option_a_icon"))
-                if existing.option_a_icon != target:
-                    existing.option_a_icon = target
-                    changed = True
-                target = effective_value(existing, "option_b_icon", data.get("option_b_icon"))
-                if existing.option_b_icon != target:
-                    existing.option_b_icon = target
+                if sync_fields(existing, {
+                    "frame": data["frame"],
+                    "option_a_text": data.get("option_a_text"),
+                    "option_b_text": data.get("option_b_text"),
+                    "option_a_icon": data.get("option_a_icon"),
+                    "option_b_icon": data.get("option_b_icon"),
+                }):
                     changed = True
                 if changed:
                     updated += 1

@@ -19,7 +19,7 @@ from sqlalchemy import select
 from app.database import async_session
 from app.models.profile import AgeGroup
 from app.models.question import BigFiveDomain, Keyed, Question, QuestionInstrument
-from app.services.admin_lock import effective_value, has_overrides
+from app.services.admin_lock import has_overrides, sync_fields
 from scripts.bigfive_question_bank import QUESTIONS
 
 
@@ -44,35 +44,15 @@ async def main() -> None:
             age_tier = AgeGroup(data["age_tier"])
 
             if existing is not None:
-                changed = False
-                target = effective_value(existing, "bigfive_domain", domain)
-                if existing.bigfive_domain != target:
-                    existing.bigfive_domain = target
-                    changed = True
-                target = effective_value(existing, "facet", data["facet"])
-                if existing.facet != target:
-                    existing.facet = target
-                    changed = True
-                target = effective_value(existing, "keyed", keyed)
-                if existing.keyed != target:
-                    existing.keyed = target
-                    changed = True
-                target = effective_value(existing, "text", data["text"])
-                if existing.text != target:
-                    existing.text = target
-                    changed = True
-                target = effective_value(existing, "age_tier", age_tier)
-                if existing.age_tier != target:
-                    existing.age_tier = target
-                    changed = True
-                target = effective_value(existing, "short_text", data.get("short_text"))
-                if existing.short_text != target:
-                    existing.short_text = target
-                    changed = True
-                target = effective_value(existing, "icon", data.get("icon"))
-                if existing.icon != target:
-                    existing.icon = target
-                    changed = True
+                changed = sync_fields(existing, {
+                    "bigfive_domain": domain,
+                    "facet": data["facet"],
+                    "keyed": keyed,
+                    "text": data["text"],
+                    "age_tier": age_tier,
+                    "short_text": data.get("short_text"),
+                    "icon": data.get("icon"),
+                })
                 if changed:
                     updated += 1
                 else:

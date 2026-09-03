@@ -18,7 +18,7 @@ from sqlalchemy import select
 from app.database import async_session
 from app.models.profile import AgeGroup
 from app.models.question import HollandType, Question, QuestionInstrument
-from app.services.admin_lock import effective_value, has_overrides
+from app.services.admin_lock import has_overrides, sync_fields
 from scripts.riasec_question_bank import QUESTIONS
 
 
@@ -49,27 +49,13 @@ async def main() -> None:
             icon = data.get("icon")
 
             if existing is not None:
-                changed = False
-                target = effective_value(existing, "riasec_type", riasec_type)
-                if existing.riasec_type != target:
-                    existing.riasec_type = target
-                    changed = True
-                target = effective_value(existing, "text", data["text"])
-                if existing.text != target:
-                    existing.text = target
-                    changed = True
-                target = effective_value(existing, "age_tier", age_tier)
-                if existing.age_tier != target:
-                    existing.age_tier = target
-                    changed = True
-                target = effective_value(existing, "short_text", short_text)
-                if existing.short_text != target:
-                    existing.short_text = target
-                    changed = True
-                target = effective_value(existing, "icon", icon)
-                if existing.icon != target:
-                    existing.icon = target
-                    changed = True
+                changed = sync_fields(existing, {
+                    "riasec_type": riasec_type,
+                    "text": data["text"],
+                    "age_tier": age_tier,
+                    "short_text": short_text,
+                    "icon": icon,
+                })
                 if changed:
                     updated += 1
                 else:
