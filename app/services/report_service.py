@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.errors import AppError
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
@@ -252,8 +253,9 @@ async def _assert_assessment_complete(
     mot_done = mot_total > 0 and mot_answered >= mot_total
 
     if not (likert_done and mot_done):
-        raise HTTPException(
+        raise AppError(
             status_code=status.HTTP_409_CONFLICT,
+            error_code="assessment_not_completed",
             detail="Тест ещё не завершён — сначала ответь на все обязательные вопросы",
         )
 

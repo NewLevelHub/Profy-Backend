@@ -110,8 +110,23 @@ UI-локаль — отдельное поле `users.locale`. Связь то�
   человекочитаемый `detail` на русском (обратная совместимость с текущими
   потребителями).
 - Локализованный текст ошибки собирает фронт из словаря по `error_code`.
-- Новые ошибки обязаны иметь `error_code`. Аудит существующих кириллических
-  `detail=` — тикет KZ-309.
+- Новые ошибки обязаны иметь `error_code`.
+
+### KZ-309 — реализовано
+
+- `app/errors.py::AppError(HTTPException)` несёт `error_code`; хендлер
+  `app_error_handler` в `app/main.py` рендерит тело
+  `{"detail": "<ru>", "error_code": "<code>"}`. Обычный `HTTPException` не
+  затронут (`{"detail": …}` как прежде).
+- На `AppError` переведены **только** пользовательские русские `detail=` — 16
+  мест в `assessment_service` / `direction_inquiry_service` / `goal_overlay_service`
+  / `report_service` / `roadmap_builder` (13 уникальных кодов). `detail`-строки
+  байт-в-байт прежние.
+- Английские `detail=` (`"Profile not found"`, `"Access denied"`, `str(exc)`,
+  auth-сентинелы …) — не локализуемая копия, оставлены как есть.
+- Полный аудит-список + коды для фронтового словаря (KZ-203):
+  `ProfOr/Тикеты-локализация-KZ/KZ-309-аудит-detail.md`.
+- Тест: `tests/integration/test_error_locale.py`.
 
 ## 8. Хранение локализованного контента (вариант A: колонка `locale`)
 
@@ -248,6 +263,162 @@ UI-локаль — отдельное поле `users.locale`. Связь то�
   `ru`, поэтому `kk`-прохождение теста интересов отдаёт казахские RIASEC-строки
   и `ru` на big_five/mi (per-key фолбэк). Скоринг не изменился
   (`test_content_locale.py`, `test_age_matrix_full_flow.py`).
+
+### KZ-303 — банк Big Five (kk)
+
+- `scripts/bigfive_question_bank.py` — та же схема: `QUESTIONS` не тронут,
+  `_KK_TEXT` (120) + `_KK_SHORT` (30) по `ru`-строке-ключу, свёртка в
+  `{"ru": …, "kk": …}` + ассерт покрытия, `LOCALES = ("ru", "kk")`.
+- `keyed` (plus/minus), `bigfive_domain`, `facet` — не тронуты; полярность
+  `minus`-пунктов сохранена в казахской формулировке, поэтому
+  `bigfive_service` и `thinking_style_service` дают тот же результат
+  (`test_question_bank_has_a_complete_kk_set[big_five]`, `test_bigfive_service`,
+  `test_age_matrix_full_flow`).
+- `seed_bigfive_questions.py` итерирует `LOCALES`, идемпотентен. DB:
+  big_five ru=120 + kk=120.
+- **Вычитка носителем пока не сделана** —
+  `ProfOr/Тикеты-локализация-KZ/KZ-303-вычитка-kk.md`.
+
+### KZ-304 — банк MI (junior) + question-pairs (kk)
+
+- `scripts/mi_question_bank.py` — та же схема (`_KK_TEXT` 48, `_KK_SHORT` 48,
+  `LOCALES=("ru","kk")`, свёртка + ассерт покрытия). `mi_category` не тронут.
+- `scripts/question_pairing.py` — `PAIRS` (67: 34 junior + 33 middle) не тронут
+  по структуре; параллельные `_KK_*_CONTENT` (4 dict-а: junior/middle ×
+  riasec/big_five) с теми же tuple-ключами хранят только текстовые поля.
+  `_merge_bilingual()` сворачивает `frame` / `option_a_text` / `option_b_text`
+  каждой записи в `{"ru": …, "kk": …}` (иконки — общие) и ассертит точное
+  покрытие ключей + полей. `PAIR_LOCALES = ("ru", "kk")` экспортируется.
+- `seed_mi_questions.py` итерирует `LOCALES`; `seed_question_pairs.py` итерирует
+  `PAIR_LOCALES` — `order_to_id` резолвится **по каждой локали** (kk-пара
+  ссылается на kk-строки вопросов), ключ `(instrument, pair_index, locale)`,
+  резинк per-locale. Иконки одинаковы между локалями. Оба идемпотентны.
+- DB: mi ru=48 + kk=48; question_pairs ru=67 + kk=67 (34 junior + 33 middle
+  каждая); структурный паритет ru↔kk (age_tier, иконки) — 0 расхождений;
+  kk-пары ссылаются на kk-`question_a_id`/`question_b_id`, не на ru.
+- junior-флоу на `kk`: `question_pair_service.get_pairs` отдаёт kk `frame` +
+  option-тексты; выбор пары пишется как 2 `UserResponse` на kk-`question_id` →
+  riasec/bigfive-скоринг тот же (структурные поля вопроса идентичны).
+  `test_content_locale.py::test_get_pairs_kk_serves_translated_frame_and_options`
+  + `test_age_matrix_full_flow` (junior) зелёные.
+- **Вычитка носителем пока не сделана** —
+  `ProfOr/Тикеты-локализация-KZ/KZ-304-вычитка-kk.md`.
+
+### KZ-305 — мотивационные утверждения + Harter-пары + лейблы ценностей (kk)
+
+- `scripts/motivation_statement_bank.py` — `PHRASES` / `PHRASES_JUNIOR` не
+  тронуты; позиционные копии `_KK_PHRASES` / `_KK_PHRASES_JUNIOR`
+  (`dict[cat, list[4]]`, индекс N = kk от `PHRASES[cat][N]`) + ассерты
+  покрытия. `STATEMENTS` loop сворачивает `text` **и** `text_junior` в
+  `{"ru": …, "kk": …}`. `LOCALES=("ru","kk")`.
+- `scripts/motivation_pair_bank.py` — `_CONTENT` не тронут; позиционная копия
+  `_KK_CONTENT` (те же категории, 2 фасета, порядок `(positive, negative)`
+  сохранён — конвенция a=+/b=− для скоринга не ломается). `PAIRS` сворачивает
+  `text_a`/`text_b`. Harter-рамка kk: «Кейбір балалар …, ал басқалары …».
+- `seed_motivation_statements.py` / `seed_motivation_pairs.py` итерируют
+  `LOCALES`, резинк per-locale, идемпотентны. DB: statements ru=36 + kk=36,
+  pairs ru=18 + kk=18; `category` совпадает ru↔kk (0 расхождений).
+- `app/services/motivation_content.py` — добавлены `_MOTIVATION_LABELS_KK` /
+  `_DRIVER_PHRASES_KK`; `highlight_phrases()` и новый `motivation_label()`
+  резолвят `get_locale()` с фолбэком `ru` (student-facing driver-фразы отчёта
+  теперь берут kk при `locale=kk`). Формальный перенос в `app/i18n/catalog/` —
+  за KZ-307 (та же accessor-форма).
+- **Вычитка носителем пока не сделана** —
+  `ProfOr/Тикеты-локализация-KZ/KZ-305-вычитка-kk.md`.
+
+### KZ-306 — каталог направлений/профессий (kk) — names + инфра
+
+Сделано:
+- `scripts/riasec_professions.py` — `PROFESSIONS` не тронут; `KK_NAMES`
+  (145, ключ = точная `ru`-`title`) + ассерт покрытия; `LOCALES=("ru","kk")`.
+  **`slug` и `holland_code` — НЕ per-locale**: slug всегда из `ru`-title
+  (стабильный якорь), поэтому career-matching и `program_directions` (M2M по
+  `direction.id`, линкует только `ru`-строки — 19362 линка, все `ru`) не
+  затронуты.
+- `seed_riasec_directions.py` итерирует `LOCALES`; `name` = `ru`-title либо
+  `KK_NAMES[title]`; slug/holland_code общие; резинк per-locale. Идемпотентен.
+  DB: directions ru=145 + kk=145.
+- `apply_direction_content.py` — **locale-aware**: `direction_content_review.json`
+  → `locale='ru'` строки, `direction_content_review_kk.json` (когда появится) →
+  `locale='kk'`. Отсутствие kk-файла — не ошибка (печатает «skipped»), CD
+  зелёный.
+- `scripts/export_direction_glossary.py` (новый) → `scripts/data/direction_glossary_kk.json`
+  = `[{slug, holland_code, name_ru, name_kk}]`, отсортировано по slug. **Это
+  вход для KZ-401** (промпт/валидатор ИИ-генерации должен писать названия
+  профессий ровно как в каталоге). Перегенерировать после правки имён/ре-сида.
+- `direction_service` / `riasec_service.matched_careers` уже locale-aware
+  (KZ-301); `test_content_locale.py::test_directions_kk_names_and_shared_slug`
+  проверяет паритет + идентичность ранжирования matched_careers ru↔kk.
+
+**Отложено в batch (решение пользователя):** `description` / `skills_needed` /
+`subjects_to_develop` / `first_steps` для `kk` (≈ 1824 строки прозы) — наполнить
+`scripts/direction_content_review_kk.json` тем же batch-прогоном, что и
+описания вузов/программ (KZ-504). Инфраструктура (`apply_direction_content.py`,
+per-locale строки) готова принять файл без изменений кода. До KZ-603 kk-описания
+всё равно недостижимы (`get_locale()` не возвращает `kk`); `get_direction_by_slug`
+под `kk` вернёт kk-строку с kk-именем и **пустым** description (fallback
+`localized_rows` не сработает — kk-строка существует).
+  - **Вычитка носителем (имена)** — `ProfOr/Тикеты-локализация-KZ/KZ-306-вычитка-kk.md`.
+
+### KZ-307 — питон-литералы контент-сервисов → `app/i18n/catalog/`
+
+- `app/i18n.py` стал пакетом `app/i18n/__init__.py` (импорты `from app.i18n import …`
+  без изменений); добавлен подпакет **`app/i18n/catalog/`**. Каждый модуль-область
+  = `RU` и `KK` деревья одинаковой формы; `catalog.tr(area)` резолвит по локали
+  запроса с **пофайловым (по top-level ключу) фолбэком на `ru`** и инкрементом
+  `i18n.fallback`. `catalog.key(area, *path)` — удобный индексер.
+- Области: `riasec`, `bigfive`, `mi`, `motivation` (завершён перенос из KZ-305),
+  `thinking_style`, `gap_analysis`, `university_requirements`, `resource_catalog`,
+  `goal_overlay`.
+- Сервисы `*_content.py` теперь — тонкие аксессоры-функции (`riasec_labels()`,
+  `mi_activities()`, `personality_labels()`, `thinking_style_notes()`, …), а не
+  модульные dict-константы. Все ~15 потребителей (`report_narrative*`,
+  `report_v2_assembler`, `riasec_service`, `mi_service`, `direction_inquiry_service`,
+  `admin_service`, `goal_overlay_service`, `gap_analysis_service`,
+  `university_requirements`) переведены на вызовы функций. Тип возврата —
+  дерево для текущей локали; **не кэшировать между запросами разной локали**.
+- `gap_analysis_service` `comment=` → `catalog("gap_analysis")`; `_*_KEYS`/`_*_TERMS`
+  остаются `ru` (match-data по бэкенд-данным, не UI — исключены из KZ-602-гарда,
+  комментарий в файле). `resource_catalog`: `RESOURCE_CATALOG` → каталог (kind
+  переведён, title — имя собственное, как названия вузов), `CATEGORY_KEYWORDS`
+  остаётся `ru` (match-data). `goal_overlay_service`: единственная оставшаяся
+  `ru`-строка — `raise HTTPException(detail=…)` (это KZ-309).
+- Отчёт генерируется всё ещё `ru` (локаль в пайплайн — KZ-401); но аксессоры
+  уже locale-aware, так что `_current_locale='kk'` → детерминированные части на
+  казахском (`test_i18n_catalog.py::test_deterministic_report_pieces_follow_the_request_locale`).
+- Тесты: `tests/unit/test_i18n_catalog.py` — форма RU↔KK, резолв по локали,
+  пофайловый фолбэк + tally, explicit-locale override. Тест-файлы, тянувшие
+  `_NOTES` / `RESOURCE_CATALOG` / `*_LABELS` напрямую, переведены на
+  `app.i18n.catalog.<area>.RU` / аксессоры.
+- **Вычитка носителем** — `ProfOr/Тикеты-локализация-KZ/KZ-307-вычитка-kk.md`.
+
+### KZ-308 — письма верификации и сброса пароля (kk)
+
+- Тема письма + plain-text тело → новая область каталога `app/i18n/catalog/email.py`
+  (`RU`/`KK`, ключи `verification_subject` / `verification_plain` /
+  `password_reset_subject` / `password_reset_plain`, единственный плейсхолдер
+  `{code}`). HTML-тела — файлы: `verification.html` + `verification.kk.html`,
+  `password_reset.html` + `password_reset.kk.html` (та же вёрстка, только текст,
+  `lang="kk"`).
+- `email_service.send_verification_email` / `send_password_reset_email` получили
+  keyword-параметр `locale` (эти функции вызываются из best-effort шага после
+  коммита, без request-контекста — явный параметр по правилу KZ-307).
+  `_load_template(name, locale)` предпочитает `<stem>.<locale>.html`, падает на
+  `ru`-файл если казахского нет (§5 — не отдаём пустое).
+- **Локаль письма — выбор получателя, а не резолв запроса.** `_email_locale()`
+  клампит по `KNOWN_LOCALES` (не `SUPPORTED_LOCALES`), т.е. `kk` работает до
+  KZ-603: источник — `users.locale` (resend, сброс) либо `Accept-Language`
+  регистрации, оба уже нормализованы через `KNOWN_LOCALES` на write-пути
+  (`app/routers/auth.py`). Незнакомая/`None` локаль → `ru`.
+- Вызовы: `auth_service.register` → `locale=locale` (из `Accept-Language`);
+  `auth_service.resend_verification` и `password_reset_service.initiate_reset` →
+  `locale=user.locale`.
+- `ru`-письма — байт-в-байт как раньше (`tr("email", locale="ru")` отдаёт `RU`
+  как есть; строки перенесены дословно).
+- Тесты: `tests/integration/test_email_locale.py` — тема/тело/выбор шаблона по
+  локали, `ru` без изменений, фолбэк незнакомой локали, регистрация с
+  `Accept-Language: kk`, сброс по `users.locale`.
+- **Вычитка носителем** — `ProfOr/Тикеты-локализация-KZ/KZ-308-вычитка-kk.md`.
 
 ## 9. Хранение ИИ-артефактов — с ключом локали
 

@@ -16,8 +16,8 @@ import json
 
 from app.models.profile import AgeGroup
 from app.schemas.report_narrative_context import ReportNarrativeContext
-from app.services.mi_content import MI_LABELS
-from app.services.riasec_content import RIASEC_LABELS
+from app.services.mi_content import mi_labels
+from app.services.riasec_content import riasec_labels
 
 
 def _card_schema() -> dict:
@@ -138,7 +138,7 @@ _AGE_STYLE = {
 def _system_prompt(context: ReportNarrativeContext) -> str:
     age_group = AgeGroup(context.age_group)
     is_mi = context.interest_instrument == "mi"
-    labels = MI_LABELS if is_mi else RIASEC_LABELS
+    labels = mi_labels() if is_mi else riasec_labels()
     categories_line = ", ".join(f"{key} ({label})" for key, label in labels.items())
 
     return f"""\

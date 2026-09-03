@@ -14,9 +14,9 @@ from dataclasses import dataclass
 from app.models.profile import AgeGroup
 from app.schemas.report_narrative import ReportNarrativeOutput
 from app.schemas.report_narrative_context import ReportNarrativeContext
-from app.services.mi_content import MI_LABELS
+from app.services.mi_content import mi_labels
 from app.services.report_narrative_context import STRENGTH_CARD_EXCLUDED_SOURCE_TYPES, unknown_source_ids
-from app.services.riasec_content import RIASEC_LABELS
+from app.services.riasec_content import riasec_labels
 
 # Приложение C, В.1 — verbatim phrases, matched as lowercase substrings.
 # Diagnoses/states is explicitly open-ended in the TZ ("любые формулировки о
@@ -149,7 +149,7 @@ def _check_evidence_ids(output: ReportNarrativeOutput, context: ReportNarrativeC
 
 
 def _check_interests(output: ReportNarrativeOutput, context: ReportNarrativeContext) -> list[ValidationIssue]:
-    labels = MI_LABELS if context.interest_instrument == "mi" else RIASEC_LABELS
+    labels = mi_labels() if context.interest_instrument == "mi" else riasec_labels()
     expected = set(labels.keys())
     got_categories = [i.category for i in output.interests]
     issues: list[ValidationIssue] = []

@@ -28,7 +28,8 @@ from app.schemas.result_v2 import (
     StudentStrengthCard,
     StudentThinkingStyleNote,
 )
-from app.services.bigfive_content import PERSONALITY_LABELS
+from app.services.bigfive_content import personality_labels
+PERSONALITY_LABELS = personality_labels()
 
 _NOW = datetime.now(timezone.utc)
 

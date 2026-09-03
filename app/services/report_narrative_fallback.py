@@ -18,14 +18,14 @@ from app.schemas.report_narrative import (
     ReportNarrativeOutput,
 )
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
-from app.services.bigfive_content import PERSONALITY_LABELS
-from app.services.mi_content import MI_LABELS
+from app.services.bigfive_content import personality_labels
+from app.services.mi_content import mi_labels
 from app.services.report_narrative_context import STRENGTH_CARD_EXCLUDED_SOURCE_TYPES
-from app.services.riasec_content import RIASEC_LABELS
+from app.services.riasec_content import riasec_labels
 from app.services.thinking_style_content import (
-    THINKING_STYLE_ADJ,
-    THINKING_STYLE_CUE_SHORT,
-    THINKING_STYLE_IMPACT,
+    thinking_style_adj,
+    thinking_style_cue_short,
+    thinking_style_impact,
 )
 
 # middle/senior only — a short "helps to..." clause per Big Five trait, used
@@ -178,7 +178,7 @@ def _strength_cards(context: ReportNarrativeContext) -> list[NarrativeCard]:
 
 def _interests(context: ReportNarrativeContext) -> list[InterestCard]:
     is_mi = context.interest_instrument == "mi"
-    labels = MI_LABELS if is_mi else RIASEC_LABELS
+    labels = mi_labels() if is_mi else riasec_labels()
     source_type = "mi_category" if is_mi else "riasec_category"
     strong: dict[str, EvidenceItem] = {
         e.source_id.split(":", 1)[1]: e for e in context.evidence if e.source_type == source_type
@@ -205,17 +205,17 @@ def _thinking_style_notes(context: ReportNarrativeContext, age_group: AgeGroup) 
     evidence_ids = [e.source_id for e in items]
 
     if age_group == AgeGroup.junior:
-        clauses = [THINKING_STYLE_CUE_SHORT[key] for key in keys]
+        clauses = [thinking_style_cue_short()[key] for key in keys]
         description = _join_ru(clauses) + "."
         description = description[0].upper() + description[1:]
         return [NarrativeCard(title="Как тебе легче думать", description=description, evidence_ids=evidence_ids)]
 
     verb = "близко" if len(keys) == 1 else "близки"
-    adjectives = _join_ru([THINKING_STYLE_ADJ[key] for key in keys])
+    adjectives = _join_ru([thinking_style_adj()[key] for key in keys])
     title = f"Тебе {verb} {adjectives} мышление"
 
     cues = " ".join(item.text for item in items)
-    impact = _join_ru([THINKING_STYLE_IMPACT[key] for key in keys])
+    impact = _join_ru([thinking_style_impact()[key] for key in keys])
     description = f"{cues} Люди с таким складом ума часто умеют {impact}."
 
     # New synthesis with one personality trait, not a repeat of "Твой
@@ -225,8 +225,8 @@ def _thinking_style_notes(context: ReportNarrativeContext, age_group: AgeGroup) 
     personality_item = next((e for e in context.evidence if e.source_type == "personality"), None)
     if personality_item is not None:
         trait = personality_item.source_id.split(":", 1)[1]
-        if trait in _PERSONALITY_SYNTHESIS_HINT and trait in PERSONALITY_LABELS:
-            label = PERSONALITY_LABELS[trait]
+        if trait in _PERSONALITY_SYNTHESIS_HINT and trait in personality_labels():
+            label = personality_labels()[trait]
             label = label[0].lower() + label[1:]
             description += f" А твоя {label} помогает {_PERSONALITY_SYNTHESIS_HINT[trait]}."
             evidence_ids = evidence_ids + [personality_item.source_id]

@@ -19,9 +19,9 @@ from app.models.artifact import Artifact
 from app.models.profile import AgeGroup
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
 from app.services.bigfive_content import relative_bands
-from app.services.mi_content import MI_STRENGTH_PHRASES
-from app.services.riasec_content import RIASEC_STRENGTH_PHRASES
-from app.services.thinking_style_content import THINKING_STYLE_NOTES
+from app.services.mi_content import mi_strength_phrases
+from app.services.riasec_content import riasec_strength_phrases
+from app.services.thinking_style_content import thinking_style_notes
 
 # Fixed order for deterministic top-N selection — same tie-break convention
 # as riasec_service.HOLLAND_ORDER (equal scores must not depend on dict
@@ -52,9 +52,9 @@ def _interest_evidence(age_group: AgeGroup, strengths: list[str]) -> tuple[str, 
     spheres, not just these vetted top ones) uses the bare name instead,
     built separately in report_fallback.py from the full profile."""
     if age_group == AgeGroup.junior:
-        phrases, source_type, instrument = MI_STRENGTH_PHRASES, "mi_category", "mi"
+        phrases, source_type, instrument = mi_strength_phrases(), "mi_category", "mi"
     else:
-        phrases, source_type, instrument = RIASEC_STRENGTH_PHRASES, "riasec_category", "riasec"
+        phrases, source_type, instrument = riasec_strength_phrases(), "riasec_category", "riasec"
 
     items = [
         EvidenceItem(source_id=f"{instrument}:{key}", source_type=source_type, text=phrases[key])
@@ -100,7 +100,7 @@ def _thinking_style_evidence(thinking_style: dict[str, float]) -> list[EvidenceI
         key=lambda key: (-thinking_style[key], _THINKING_STYLE_ORDER.index(key)),
     )
     return [
-        EvidenceItem(source_id=f"thinking_style:{key}", source_type="thinking_style", text=THINKING_STYLE_NOTES[key])
+        EvidenceItem(source_id=f"thinking_style:{key}", source_type="thinking_style", text=thinking_style_notes()[key])
         for key in ranked[:_TOP_THINKING_STYLES]
     ]
 

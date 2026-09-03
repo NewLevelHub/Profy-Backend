@@ -37,9 +37,9 @@ from app.schemas.result_v2 import (
     StudentThinkingStyleNote,
 )
 from app.services import bigfive_content
-from app.services.mi_content import MI_ACTIVITIES, MI_LABELS
+from app.services.mi_content import mi_activities, mi_labels
 from app.services.mi_service import MI_ORDER
-from app.services.riasec_content import NEUTRAL_CAREER_WHY_VARIANTS, NEUTRAL_TRY_NOW, RIASEC_LABELS
+from app.services.riasec_content import neutral_career_why_variants, neutral_try_now, riasec_labels
 from app.services.riasec_service import HOLLAND_ORDER, direction_letter_weight
 from app.services.scoring_levels import LEVEL_HIGH_MIN, LEVEL_MEDIUM_MIN
 
@@ -120,9 +120,9 @@ def build_interest_map(age_group: AgeGroup, profile_scores: dict[str, float]) ->
     numeric-level map). Same score-desc/canonical-index tie-break convention
     as riasec_service.py's strengths/weaknesses ranking, just unfiltered."""
     if age_group == AgeGroup.junior:
-        order, labels = MI_ORDER, MI_LABELS
+        order, labels = MI_ORDER, mi_labels()
     else:
-        order, labels = HOLLAND_ORDER, RIASEC_LABELS
+        order, labels = HOLLAND_ORDER, riasec_labels()
     ranked = sorted(order, key=lambda key: (-profile_scores.get(key, 0.0), order.index(key)))
     return [
         StudentInterestMapItem(code=key, sphere=labels[key], level=_level(profile_scores.get(key, 0.0)))
@@ -145,7 +145,7 @@ def build_personality_notes(is_junior: bool, personality_profile: dict[str, floa
     (bigfive_content.relative_bands), not an absolute cutoff."""
     notes = bigfive_content.personality_notes_for_age(is_junior, personality_profile)
     bands = bigfive_content.relative_bands(personality_profile)
-    traits = list(bigfive_content.PERSONALITY_LABELS.items())
+    traits = list(bigfive_content.personality_labels().items())
     ranked = sorted(traits, key=lambda item: (-personality_profile.get(item[0], 0.0), traits.index(item)))
     return [
         StudentPersonalityNote(
@@ -186,7 +186,7 @@ def build_personality_note(personality_profile: dict[str, float]) -> str:
     (bigfive_content.relative_bands) — an even profile comes back all
     "medium", which is itself the meaningful-outlier gate, so no separate
     spread check is needed here."""
-    labels = bigfive_content.PERSONALITY_LABELS
+    labels = bigfive_content.personality_labels()
     bands = bigfive_content.relative_bands(personality_profile)
     high = [
         label for trait, label in labels.items()
@@ -224,10 +224,10 @@ def build_exploration_activities(context: ReportNarrativeContext) -> list[str]:
     activities: list[str] = []
     for item in mi_items:
         key = item.source_id.split(":", 1)[1]
-        activities.extend(MI_ACTIVITIES.get(key, [])[:2])
+        activities.extend(mi_activities().get(key, [])[:2])
     if activities:
         return activities
-    return [acts[0] for acts in MI_ACTIVITIES.values() if acts]
+    return [acts[0] for acts in mi_activities().values() if acts]
 
 
 def _join_ru(items: list[str]) -> str:
@@ -307,8 +307,9 @@ def build_riasec_careers(
                 why += f" Именно здесь особенно пригодится: {skills_needed[0]}."
             seen_evidence.add(evidence_key)
         else:
-            why = NEUTRAL_CAREER_WHY_VARIANTS[fallback_uses % len(NEUTRAL_CAREER_WHY_VARIANTS)]
-            if fallback_uses >= len(NEUTRAL_CAREER_WHY_VARIANTS) and skills_needed:
+            _why_variants = neutral_career_why_variants()
+            why = _why_variants[fallback_uses % len(_why_variants)]
+            if fallback_uses >= len(_why_variants) and skills_needed:
                 why += f" В этой сфере особенно ценится: {skills_needed[0]}."
             fallback_uses += 1
         # Direction.first_steps may hold several catalog entries, but the
@@ -323,7 +324,7 @@ def build_riasec_careers(
             tier=_tier_for_rank(rank),
             why=why,
             matched_strengths=matched_strengths,
-            try_now=first_steps[0] if first_steps else NEUTRAL_TRY_NOW,
+            try_now=first_steps[0] if first_steps else neutral_try_now(),
             description=career.get("description") or None,
             skills_needed=skills_needed,
             subjects_to_develop=list(career.get("subjects_to_develop") or []),

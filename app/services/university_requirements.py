@@ -14,15 +14,13 @@ min_ent_threshold or admission_scores_2026 from scripts/apply_grant_admission_da
 `None` always means "no data", never "not required" — `dict.get` already gives us
 that distinction, so never coerce a missing key to `False`.
 """
+from app.i18n.catalog import tr
 from app.models.program import Program
 from app.models.university import University
 from app.schemas.roadmap import ProgramGrant, UniversityRequirement
 
-_DOCUMENT_LABELS: dict[str, str] = {
-    "needs_essay": "Мотивационное эссе",
-    "needs_recommendations": "Рекомендательные письма",
-    "needs_interview": "Собеседование",
-}
+# The raw requirement flags this maps; labels resolve per locale (KZ-307).
+_DOCUMENT_FLAGS = ("needs_essay", "needs_recommendations", "needs_interview")
 
 
 def admission_scores_2026_brief(requirements: dict) -> list[str]:
@@ -40,7 +38,11 @@ def admission_scores_2026_brief(requirements: dict) -> list[str]:
         if min_score is None:
             continue
         score_range = f"{min_score}–{max_score}" if max_score is not None and max_score != min_score else str(min_score)
-        briefs.append(f"{specialty} ({quota}, {year}): проходной балл {score_range}")
+        briefs.append(
+            tr("university_requirements")["admission_score_brief"].format(
+                specialty=specialty, quota=quota, year=year, score_range=score_range
+            )
+        )
     return briefs
 
 
@@ -78,9 +80,10 @@ def map_program_requirement(program: Program, university: University) -> Univers
     language_level = f"IELTS {min_ielts}" if min_ielts is not None else None
 
     required_documents: list[str] | None = None
-    if any(key in requirements for key in _DOCUMENT_LABELS):
+    if any(flag in requirements for flag in _DOCUMENT_FLAGS):
+        _doc_labels = tr("university_requirements")["document_labels"]
         required_documents = [
-            label for key, label in _DOCUMENT_LABELS.items() if requirements.get(key)
+            _doc_labels[flag] for flag in _DOCUMENT_FLAGS if requirements.get(flag)
         ]
     # Raw document names from an external source (jinaq) — a real list of
     # actual document names, not the fixed 3-boolean-flag labels above.

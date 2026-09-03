@@ -34,11 +34,11 @@ from app.schemas.roadmap import RoadmapResponse
 from app.services import bigfive_content, motivation_service
 from app.services.age_tiers import visible_tiers
 from app.services.goal_overlay_service import _get_effective_goal_and_scenario
-from app.services.riasec_content import LIKERT_LABELS as RIASEC_LIKERT_LABELS
+from app.services.riasec_content import likert_labels as riasec_likert_labels
 
 
 def _selected_answer_text(answer_value: int, instrument: QuestionInstrument | None = None) -> str:
-    labels = bigfive_content.LIKERT_LABELS if instrument == QuestionInstrument.big_five else RIASEC_LIKERT_LABELS
+    labels = bigfive_content.likert_labels() if instrument == QuestionInstrument.big_five else riasec_likert_labels()
     if 1 <= answer_value <= len(labels):
         return labels[answer_value - 1]
     return f"Шкала {answer_value}/5"

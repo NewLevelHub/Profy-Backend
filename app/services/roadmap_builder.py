@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.data import resource_catalog
+from app.errors import AppError
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentGoal
@@ -667,8 +668,9 @@ async def get_roadmap(
 
 # ─── Direction roadmap (AI-only, no template fallback) ──────────────────────────
 
-_AI_UNAVAILABLE = HTTPException(
+_AI_UNAVAILABLE = AppError(
     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+    error_code="ai_unavailable",
     detail="ИИ временно недоступен, попробуй ещё раз",
 )
 
@@ -865,8 +867,9 @@ async def _require_direction_roadmap_access(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
 
     if profile.age_group == AgeGroup.junior:
-        raise HTTPException(
+        raise AppError(
             status_code=status.HTTP_403_FORBIDDEN,
+            error_code="feature_requires_age_10",
             detail="Эта возможность доступна с 10 лет",
         )
 
@@ -875,8 +878,9 @@ async def _require_direction_roadmap_access(
         if effective_goal != AssessmentGoal.university:
             inquiry = await direction_inquiry_service.get_inquiry(assessment_id, slug, db)
             if inquiry is None:
-                raise HTTPException(
+                raise AppError(
                     status_code=status.HTTP_400_BAD_REQUEST,
+                    error_code="direction_inquiry_not_completed",
                     detail="Сначала пройди опрос по этому направлению",
                 )
 
@@ -1044,8 +1048,9 @@ async def generate_direction_roadmap_for_program(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
 
     if profile.age_group == AgeGroup.junior:
-        raise HTTPException(
+        raise AppError(
             status_code=status.HTTP_403_FORBIDDEN,
+            error_code="feature_requires_age_10",
             detail="Эта возможность доступна с 10 лет",
         )
 
@@ -1061,8 +1066,9 @@ async def generate_direction_roadmap_for_program(
     careers: list = analysis.careers if analysis else []
     slug = direction_service.best_matching_slug(program.profession_slugs or [], careers)
     if slug is None:
-        raise HTTPException(
+        raise AppError(
             status_code=status.HTTP_400_BAD_REQUEST,
+            error_code="program_has_no_direction",
             detail="Эта программа не связана ни с одним направлением",
         )
 

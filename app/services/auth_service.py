@@ -77,7 +77,7 @@ async def register(
     await db.commit()
 
     try:
-        await email_service.send_verification_email(email, code)
+        await email_service.send_verification_email(email, code, locale=locale)
     except Exception:
         logger.exception("Failed to send verification email during registration for %s", email)
 
@@ -154,6 +154,6 @@ async def resend_verification(email: str, db: AsyncSession) -> None:
     await db.commit()
 
     try:
-        await email_service.send_verification_email(email, code)
+        await email_service.send_verification_email(email, code, locale=user.locale)
     except Exception:
         logger.exception("Failed to send verification email during resend for %s", email)

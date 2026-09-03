@@ -293,7 +293,8 @@ async def test_junior_full_flow_gives_eight_mi_interests_no_careers_and_activiti
     assert {n.trait for n in response.personality_notes} == {
         "openness", "conscientiousness", "extraversion", "agreeableness", "emotional_stability",
     }
-    from app.services.bigfive_content import _NOTES
+    from app.i18n.catalog import bigfive as _bf_cat
+    _NOTES = _bf_cat.RU["notes"]
     adult_descriptions = {note for tiers in _NOTES.values() for note in tiers.values()}
     assert not any(n.description in adult_descriptions for n in response.personality_notes)
     strength_texts = " ".join(c.title + c.description for c in response.strength_cards)
@@ -409,6 +410,7 @@ async def test_senior_full_flow_same_motivation_shape_and_harter_rows_ignored(
 
     # "Твой характер" — adult wording for senior (not junior's simplified table).
     assert len(response.personality_notes) == 5
-    from app.services.bigfive_content import _NOTES_JUNIOR
+    from app.i18n.catalog import bigfive as _bf_cat
+    _NOTES_JUNIOR = _bf_cat.RU["notes_junior"]
     junior_descriptions = {note for tiers in _NOTES_JUNIOR.values() for note in tiers.values()}
     assert not any(n.description in junior_descriptions for n in response.personality_notes)
