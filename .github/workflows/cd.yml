@@ -88,6 +88,11 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
+          # Default is 10m — too short for build_universities.py's first-run
+          # destructive rebuild (prune + reinsert every University/Program row)
+          # against a real database; every later run is a near no-op, but the
+          # timeout has to cover the slow first run too.
+          command_timeout: 40m
           envs: DOCKER_REGISTRY,DOCKER_USERNAME,DOCKER_PASSWORD,DOCKER_REPOSITORY,DEPLOY_PATH,COMMIT_SHA
           script: |
             set -e
