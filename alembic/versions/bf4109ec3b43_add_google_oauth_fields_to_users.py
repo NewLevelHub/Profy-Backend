@@ -29,4 +29,19 @@ def downgrade() -> None:
     op.drop_index("ix_users_google_id", table_name="users")
     op.drop_constraint("uq_users_google_id", "users", type_="unique")
     op.drop_column("users", "google_id")
+
+    # Google-only accounts (created after upgrade()) have no password, so
+    # re-adding the NOT NULL constraint below would fail once any such
+    # account exists. There's nothing meaningful to restore it to since the
+    # original password was never set — mark these rows with an unusable
+    # placeholder so the column can be made NOT NULL again; the account is
+    # already unreachable via password login post-downgrade since the
+    # google_id column dropped above is gone too.
+    conn = op.get_bind()
+    conn.execute(
+        sa.text(
+            "UPDATE users SET hashed_password = 'google-oauth-only:no-password-set' "
+            "WHERE hashed_password IS NULL"
+        )
+    )
     op.alter_column("users", "hashed_password", existing_type=sa.String(255), nullable=False)
