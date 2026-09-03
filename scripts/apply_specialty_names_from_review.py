@@ -59,6 +59,7 @@ from app.database import async_session
 from app.models.direction import Direction
 from app.models.program import Program, program_directions
 from app.models.university import University
+from app.services.admin_lock import is_locked
 
 REVIEW_FILES = [
     os.path.join(_ROOT, "scripts", "data", "specialty_name_review_cluster_00.json"),
@@ -177,7 +178,10 @@ async def main() -> None:
             print(f"{tag} {uni.name} | {survivor.name!r} -> {new_name!r}{merge_note}")
 
             if apply:
-                survivor.name = new_name
+                if is_locked(survivor, "name"):
+                    print(f"Skipping name for program {survivor.id} — admin-locked")
+                else:
+                    survivor.name = new_name
                 # Plain core INSERT/DELETE on the association table instead of
                 # reassigning the ORM `.directions` collection on two objects
                 # in the same flush -- that silently dropped the survivor's

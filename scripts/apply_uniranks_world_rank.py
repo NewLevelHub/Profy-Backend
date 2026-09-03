@@ -27,6 +27,7 @@ from sqlalchemy import select
 
 from app.database import async_session
 from app.models.university import University
+from app.services.admin_lock import is_locked
 
 DATA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "uniranks_world_rank_review.json")
 
@@ -43,6 +44,7 @@ async def main() -> None:
     async with async_session() as db:
         updated = 0
         skipped_missing = 0
+        skipped_locked = 0
 
         for entry in confirmed:
             result = await db.execute(select(University).where(University.id == entry["university_id"]))
@@ -55,6 +57,11 @@ async def main() -> None:
             if university.uniranks_world_rank == entry["world_rank"]:
                 continue
 
+            if is_locked(university, "uniranks_world_rank"):
+                print(f"Skipping uniranks_world_rank for {entry['our_name']!r} — admin-locked")
+                skipped_locked += 1
+                continue
+
             updated += 1
             if dry_run:
                 print(f"[would update] {entry['our_name']!r} -> world_rank={entry['world_rank']}")
@@ -64,7 +71,10 @@ async def main() -> None:
         if not dry_run:
             await db.commit()
 
-        print(f"\n{'DRY RUN — ' if dry_run else ''}updated: {updated}, skipped (not found): {skipped_missing}")
+        print(
+            f"\n{'DRY RUN — ' if dry_run else ''}updated: {updated}, "
+            f"skipped (not found): {skipped_missing}, skipped (admin-locked): {skipped_locked}"
+        )
 
 
 if __name__ == "__main__":

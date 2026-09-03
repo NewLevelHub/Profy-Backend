@@ -15,8 +15,21 @@ violation) — generalized here to move ALL external refs regardless of
 `source`, not just "jinaq", since these merge pairs mix jinaq-imported and
 older curated rows in both directions.
 
-Idempotent: matched by the review file's own "remove" university_id: once
-that row is gone, a re-run just reports it "already done" and moves on.
+Idempotent: matched by the review file's own "remove"/"keep" university_id
+values — but unlike apply_kz_university_merge.py, these ids have no
+portable equivalent to fall back on (no external_id in this review file,
+only a combined display "name" string per pair, which isn't safe to
+re-resolve automatically — see module docstring's caveat, same discipline
+as apply_ovpo_codes.py's discarded fuzzy-matching attempt). So a
+"remove" id that doesn't exist is logged as UNRESOLVED (not silently
+"already done") unless the "keep" id it should have merged into still
+exists — that combination is the only signal that actually distinguishes
+"genuinely already merged here" from "these ids were never valid on this
+database" (e.g. a snapshot taken from a different DB instance, since
+University.id is a random uuid4() per row per database — see
+apply_kz_university_merge.py's docstring for the general problem). An
+UNRESOLVED pair needs the review file regenerated/re-matched against the
+current database, not another run of this script.
 
 Run inside the api container:
   docker-compose exec api python scripts/apply_foreign_university_dedup.py [--dry-run]
@@ -43,10 +56,18 @@ from app.models.university_image import UniversityImage
 REVIEW_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "foreign_university_dedup_review.json")
 
 
-async def _merge_one(db, *, remove_id: uuid.UUID, keep_id: uuid.UUID) -> bool:
+async def _merge_one(db, *, remove_id: uuid.UUID, keep_id: uuid.UUID) -> str:
+    """Returns "merged", "already_done", or "unresolved" — see module
+    docstring for why these three outcomes aren't collapsible into a plain
+    bool the way apply_kz_university_merge.py's are."""
     remove_uni = await db.get(University, remove_id)
     if remove_uni is None:
-        return False  # already merged on a previous run
+        keep_uni = await db.get(University, keep_id)
+        if keep_uni is None:
+            # Neither id exists on this DB — not a completed merge, the
+            # review file's ids just don't match this database instance.
+            return "unresolved"
+        return "already_done"  # remove-side gone, keep-side survives: a real prior merge
 
     target_has_primary = (
         await db.execute(
@@ -89,7 +110,7 @@ async def _merge_one(db, *, remove_id: uuid.UUID, keep_id: uuid.UUID) -> bool:
         ref.match_method = "manual"
 
     await db.execute(delete(University).where(University.id == remove_id))
-    return True
+    return "merged"
 
 
 async def main(*, dry_run: bool) -> None:
@@ -97,7 +118,7 @@ async def main(*, dry_run: bool) -> None:
         review = json.load(f)
 
     async with async_session() as db:
-        merged = skipped_not_confirmed = already_done = 0
+        merged = skipped_not_confirmed = already_done = unresolved = 0
 
         for entry in review["merges"]:
             if not entry.get("confirmed"):
@@ -105,12 +126,18 @@ async def main(*, dry_run: bool) -> None:
                 continue
 
             print(f"merging {entry['name']!r}: {entry['remove']} -> {entry['keep']}")
-            did_merge = await _merge_one(db, remove_id=uuid.UUID(entry["remove"]), keep_id=uuid.UUID(entry["keep"]))
+            outcome = await _merge_one(db, remove_id=uuid.UUID(entry["remove"]), keep_id=uuid.UUID(entry["keep"]))
             await db.flush()
-            if did_merge:
+            if outcome == "merged":
                 merged += 1
-            else:
+            elif outcome == "already_done":
                 already_done += 1
+            else:
+                print(
+                    f"  UNRESOLVED: neither {entry['remove']} nor {entry['keep']} exists on this database — "
+                    f"review data is stale for {entry['name']!r}, needs re-matching against the current DB"
+                )
+                unresolved += 1
 
         if dry_run:
             await db.rollback()
@@ -118,7 +145,10 @@ async def main(*, dry_run: bool) -> None:
         else:
             await db.commit()
 
-        print(f"\nMerged: {merged}, already done (idempotent skip): {already_done}, not confirmed (left alone): {skipped_not_confirmed}")
+        print(
+            f"\nMerged: {merged}, already done (idempotent skip): {already_done}, "
+            f"UNRESOLVED (stale review data): {unresolved}, not confirmed (left alone): {skipped_not_confirmed}"
+        )
 
 
 if __name__ == "__main__":

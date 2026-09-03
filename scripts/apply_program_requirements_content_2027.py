@@ -29,6 +29,7 @@ from sqlalchemy import select
 
 from app.database import async_session
 from app.models.program import Program
+from app.services.admin_lock import is_locked
 
 REVIEW_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "program_requirements_review_2027.json")
 
@@ -55,6 +56,15 @@ async def main() -> None:
                     missing.append(pid_str)
                     continue
 
+                requirements_locked = is_locked(program, "requirements")
+                deadlines_locked = is_locked(program, "deadlines")
+                if requirements_locked:
+                    print(f"Skipping requirements for {program.name} ({pid_str}) — admin-locked")
+                if deadlines_locked:
+                    print(f"Skipping deadlines for {program.name} ({pid_str}) — admin-locked")
+                if requirements_locked and deadlines_locked:
+                    continue
+
                 new_requirements = dict(program.requirements)
                 if group.get("exams"):
                     new_requirements["exams"] = group["exams"]
@@ -69,8 +79,10 @@ async def main() -> None:
                 if dry_run:
                     print(f"[would update] {program.name} ({pid_str}) -> exams={group.get('exams')}")
                 else:
-                    program.requirements = new_requirements
-                    program.deadlines = new_deadlines
+                    if not requirements_locked:
+                        program.requirements = new_requirements
+                    if not deadlines_locked:
+                        program.deadlines = new_deadlines
                 updated += 1
 
         if not dry_run:
