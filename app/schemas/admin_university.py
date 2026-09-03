@@ -57,6 +57,7 @@ class AdminUniversityDetail(BaseModel):
     updated_at: datetime | None
     source_url: str | None
     programs: list[AdminProgramBrief]
+    admin_locked_fields: list[str]
 
     model_config = {"from_attributes": True}
 
@@ -101,6 +102,7 @@ class AdminProgramDetail(BaseModel):
     updated_at: datetime | None
     source_url: str | None
     university: AdminUniversityBrief
+    admin_locked_fields: list[str]
 
     model_config = {"from_attributes": True}
 

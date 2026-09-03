@@ -24,6 +24,11 @@ def compute_age_group(age: int) -> AgeGroup:
     return AgeGroup.senior
 
 
+# GPA was dropped from the product surface (pro-236): the profile API no
+# longer accepts or returns `gpa_value`/`gpa_scale`. The columns and this
+# enum are kept so the existing `profiles` table (and the `ad95fcc5d772`
+# migration already on `dev`) still map cleanly and any values written
+# before the removal are preserved, not orphaned — nothing reads them now.
 class GpaScale(str, enum.Enum):
     """The grading scale a stored `gpa_value` is expressed on."""
 
@@ -31,17 +36,6 @@ class GpaScale(str, enum.Enum):
     five = "5"
     ten = "10"
     hundred = "100"
-
-
-# Max legal gpa_value for each scale. Mirrors the frontend's GPA_SCALE_MAX
-# (certificateConfig.ts) so an out-of-range value is rejected in
-# app/schemas/profile.py rather than reaching the DB layer.
-GPA_SCALE_MAX: dict[GpaScale, float] = {
-    GpaScale.four: 4.0,
-    GpaScale.five: 5.0,
-    GpaScale.ten: 10.0,
-    GpaScale.hundred: 100.0,
-}
 
 
 class Profile(Base):

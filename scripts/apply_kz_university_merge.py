@@ -46,6 +46,7 @@ from app.database import async_session
 from app.models.program import Program
 from app.models.university import University
 from app.models.university_image import UniversityImage
+from app.services.admin_lock import is_locked
 from scripts.entity_resolver import repoint_jinaq_ref, resolve_jinaq_university
 
 REVIEW_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "jinaq", "kz_university_merge_review.json")
@@ -108,10 +109,20 @@ async def main(*, dry_run: bool) -> None:
                 jinaq_uni = await resolve_jinaq_university(db, entry["jinaq_external_id"])
                 if jinaq_uni is None:
                     continue
-                jinaq_uni.name = entry["rename_to"]
+                touched = False
+                if is_locked(jinaq_uni, "name"):
+                    print(f"Skipping name for {jinaq_uni.id} — admin-locked")
+                else:
+                    jinaq_uni.name = entry["rename_to"]
+                    touched = True
                 if entry.get("short_name_to"):
-                    jinaq_uni.short_name = entry["short_name_to"]
-                renamed += 1
+                    if is_locked(jinaq_uni, "short_name"):
+                        print(f"Skipping short_name for {jinaq_uni.id} — admin-locked")
+                    else:
+                        jinaq_uni.short_name = entry["short_name_to"]
+                        touched = True
+                if touched:
+                    renamed += 1
                 continue
 
             if not entry["confirmed"]:

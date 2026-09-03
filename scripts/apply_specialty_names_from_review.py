@@ -59,6 +59,7 @@ from app.database import async_session
 from app.models.direction import Direction
 from app.models.program import Program, program_directions
 from app.models.university import University
+from app.services.admin_lock import is_locked
 
 REVIEW_FILES = [
     os.path.join(_ROOT, "scripts", "data", "specialty_name_review_cluster_00.json"),
@@ -176,8 +177,13 @@ async def main() -> None:
             merge_note = f" (merging {len(others)} duplicate row(s))" if others else ""
             print(f"{tag} {uni.name} | {survivor.name!r} -> {new_name!r}{merge_note}")
 
+            name_changed = False
             if apply:
-                survivor.name = new_name
+                if is_locked(survivor, "name"):
+                    print(f"Skipping name for program {survivor.id} — admin-locked")
+                else:
+                    survivor.name = new_name
+                    name_changed = True
                 # Plain core INSERT/DELETE on the association table instead of
                 # reassigning the ORM `.directions` collection on two objects
                 # in the same flush -- that silently dropped the survivor's
@@ -218,7 +224,13 @@ async def main() -> None:
                     lookup_failures.append(f"FAILED to apply {uni_slug} -> {new_name!r}: {exc}")
                     continue
 
-            renamed += 1
+            # In dry-run (apply=False) nothing was actually lock-checked, so
+            # this is a preview count ("would be renamed"); in apply mode,
+            # only count it if the name write actually happened — a run that
+            # only merged directions because `name` was admin-locked
+            # shouldn't inflate the rename total (see is_locked check above).
+            if not apply or name_changed:
+                renamed += 1
             detached += len(others)
 
         print(

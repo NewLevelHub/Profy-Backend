@@ -32,6 +32,7 @@ _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _ROOT)
 
 from app.database import async_session
+from app.services.admin_lock import is_locked
 from scripts.entity_resolver import resolve_university
 
 DATA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "uniranks_world_rank_review.json")
@@ -49,6 +50,7 @@ async def main(*, apply: bool) -> None:
         skipped_needs_review = 0
         skipped_no_key = 0
         skipped_unresolved = 0
+        skipped_locked = 0
 
         for entry in confirmed:
             if entry.get("needs_review"):
@@ -75,6 +77,11 @@ async def main(*, apply: bool) -> None:
             if university.uniranks_world_rank == entry["world_rank"]:
                 continue
 
+            if is_locked(university, "uniranks_world_rank"):
+                print(f"Skipping uniranks_world_rank for {entry['our_name']!r} — admin-locked")
+                skipped_locked += 1
+                continue
+
             updated += 1
             if apply:
                 university.uniranks_world_rank = entry["world_rank"]
@@ -87,7 +94,7 @@ async def main(*, apply: bool) -> None:
         print(
             f"\n{'' if apply else 'DRY RUN — '}updated: {updated}, "
             f"skipped (needs review): {skipped_needs_review}, skipped (no portable key): {skipped_no_key}, "
-            f"skipped (unresolved on this DB): {skipped_unresolved}"
+            f"skipped (unresolved on this DB): {skipped_unresolved}, skipped (admin-locked): {skipped_locked}"
         )
 
 
