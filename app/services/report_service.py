@@ -11,11 +11,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.errors import AppError
+from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.direction import Direction
 from app.models.profile import AgeGroup, Profile
+from app.models.user import User
 from app.schemas.report_narrative import ReportNarrativeOutput
 from app.schemas.result_v2 import (
     MiResultResponse,
@@ -122,6 +124,7 @@ async def _build_narrative(
     motivation_highlights: list[str],
     profile: Profile | None,
     artifacts: list[Artifact],
+    locale: str = DEFAULT_LOCALE,
 ) -> tuple[report_narrative_context.ReportNarrativeContext, ReportNarrativeOutput]:
     """One LLM→validate→fallback call (report_narrative_service) produces
     everything text-shaped: summary, strength_cards, thinking_style_notes —
@@ -140,13 +143,11 @@ async def _build_narrative(
         subjects_easy=list(profile.subjects_easy or []) if profile else [],
         artifacts=artifacts,
     )
-    # `profile.language` is the student's school language of instruction
-    # (a free-text onboarding fact, e.g. "Английский") — unrelated to report
-    # output language. Report narrative localization is future scope
-    # (TZ_Profi.md §30, unimplemented); until then this must always be "ru",
-    # never derived from profile data.
-    narrative, is_ai = await generate_report_narrative(context, language="ru")
-    logger.info("report_narrative generated is_ai=%s age_group=%s", is_ai, age_group.value)
+    narrative, is_ai = await generate_report_narrative(context, language=locale)
+    logger.info(
+        "report_narrative generated is_ai=%s age_group=%s locale=%s",
+        is_ai, age_group.value, locale,
+    )
     return context, narrative
 
 
@@ -312,6 +313,11 @@ async def build_report(
     profile = profile_result.scalar_one_or_none()
     age_group = profile.age_group if profile is not None else AgeGroup.senior
 
+    user = (
+        await db.execute(select(User).where(User.id == profile.user_id))
+    ).scalar_one_or_none() if profile else None
+    locale = user.locale if user and user.locale in KNOWN_LOCALES else DEFAULT_LOCALE
+
     # Gate before any write: an incomplete assessment must not flip to
     # `completed` and must not get a partial AnalysisResult.
     await _assert_assessment_complete(assessment_id, age_group, db)
@@ -392,6 +398,7 @@ async def build_report(
         motivation_highlights=mot_highlights,
         profile=profile,
         artifacts=artifacts,
+        locale=locale,
     )
     strength_cards_stored = [card.model_dump(exclude={"evidence_ids"}) for card in narrative.strength_cards]
     thinking_style_notes_stored = [

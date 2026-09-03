@@ -14,6 +14,7 @@ import json
 from typing import TYPE_CHECKING
 
 from app.models.direction import Direction
+from app.prompts._locale import glossary_block, language_directive
 from app.schemas.roadmap import DIRECTION_HORIZONS, STEP_TRACKS, UniversityRequirement
 from app.schemas.student_context import StudentContext
 
@@ -135,13 +136,13 @@ DIRECTION_ROADMAP_SCHEMA: dict = {
     },
 }
 
-_SYSTEM_PROMPT = """\
+_BASE_SYSTEM_PROMPT = """\
 Ты — сильный карьерный наставник для подростков. Ученик прошёл профтест, выбрал \
 направление и подтвердил через ИИ-опрос, что оно ему подходит. Твоя задача — \
 построить ЧЕСТНЫЙ, конкретный план развития именно в этом направлении.
 
-Отвечай СТРОГО в JSON по заданной схеме, без текста вне JSON. Язык — русский, \
-обращайся на «ты».
+Отвечай СТРОГО в JSON по заданной схеме, без текста вне JSON. __LANGUAGE_DIRECTIVE__ \
+Обращайся на «ты».
 
 КОНЕЧНАЯ ЦЕЛЬ (target). Сначала определи, кем конкретно этот ученик может стать в \
 этом направлении — не «специалистом в IT», а конкретной ролью (например, \
@@ -358,6 +359,15 @@ priority: 1 — самое важное в треке, дальше по воз�
 """
 
 
+def _system_prompt(locale: str = "ru", direction_slug: str | None = None) -> str:
+    glossary = glossary_block(locale, direction_slug=direction_slug)
+    glossary_section = f"\n\n{glossary}" if glossary else ""
+    return _BASE_SYSTEM_PROMPT.replace("__LANGUAGE_DIRECTIVE__", language_directive(locale)) + glossary_section
+
+
+_SYSTEM_PROMPT = _system_prompt("ru")
+
+
 # Goal-specific emphasis (ТЗ §23.3: сценарии A/B/C differ in *content*, not in
 # response shape). Appended to _SYSTEM_PROMPT by build_messages — the JSON
 # schema the model must satisfy (DIRECTION_ROADMAP_SCHEMA) is identical for
@@ -483,10 +493,13 @@ def build_messages(
     selected_program: dict | None = None,
     *,
     gap: "GapAnalysisResult | None" = None,
+    locale: str | None = None,
 ) -> list[dict[str, str]]:
+    target_locale = locale or getattr(context, "locale", "ru")
     allowed = ", ".join(CATEGORIES)
     goal_focus = _GOAL_FOCUS.get(context.goal, "")
-    system_content = f"{_SYSTEM_PROMPT}\n\n{goal_focus}" if goal_focus else _SYSTEM_PROMPT
+    base_system = _system_prompt(target_locale, direction_slug=direction.slug)
+    system_content = f"{base_system}\n\n{goal_focus}" if goal_focus else base_system
 
     user_sections = [
         f"НАПРАВЛЕНИЕ:\n{json.dumps(_direction_brief(direction), ensure_ascii=False, indent=2)}",
