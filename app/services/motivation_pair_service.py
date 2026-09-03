@@ -36,12 +36,12 @@ _SCORE_TABLE: dict[tuple[str, str], int] = {
 
 
 async def pairs(db: AsyncSession) -> list[MotivationPair]:
-    # Display path: request locale, whole-set fallback to `ru` (KZ-301). Also
+    # Display path: request locale, per-pair fallback to `ru` (KZ-301). Also
     # feeds raw_scores/submit, which key on pair_index and read only
     # `category_a` (identical across locales), so the locale that wins here
     # never changes a score.
     stmt = select(MotivationPair).order_by(MotivationPair.pair_index)
-    return await localized_rows(db, stmt, MotivationPair.locale)
+    return await localized_rows(db, stmt, MotivationPair, key="pair_index")
 
 
 async def total_pairs(db: AsyncSession) -> int:

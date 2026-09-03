@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models.analysis_result import AnalysisResult
+from app.i18n import DEFAULT_LOCALE
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.direction import Direction
 from app.models.goal_overlay import GoalOverlay
@@ -310,7 +311,16 @@ async def get_or_create_goal_overlay(
         adjacent_names = []
 
         if assessment.selected_direction_slug:
-            stmt = select(Direction).where(Direction.slug == assessment.selected_direction_slug)
+            # Pin to `ru`: `directions.slug` is unique only per-locale since
+            # KZ-301, so an unscoped slug lookup would raise MultipleResultsFound
+            # once KZ-306 seeds `kk` rows. Overlay text stays `ru` here until a
+            # later ticket localizes this service (the epic caches overlays by
+            # locale) — `holland_code`, the only field driving scoring below, is
+            # locale-invariant anyway.
+            stmt = select(Direction).where(
+                Direction.slug == assessment.selected_direction_slug,
+                Direction.locale == DEFAULT_LOCALE,
+            )
             res = await db.execute(stmt)
             direction = res.scalar_one_or_none()
             if direction:
@@ -337,10 +347,13 @@ async def get_or_create_goal_overlay(
                 bridge_scenario = _build_alignment_evidence(user_code, direction.holland_code)
 
                 if alignment == "bridge":
-                    stmt = select(Direction)
+                    # `ru` set only — adjacency is scored on `holland_code`
+                    # (locale-invariant); an unscoped select doubles the list
+                    # once KZ-306 seeds `kk` directions.
+                    stmt = select(Direction).where(Direction.locale == DEFAULT_LOCALE)
                     res = await db.execute(stmt)
                     all_directions = res.scalars().all()
-                    
+
                     adjacent = []
                     selected_set = set(direction.holland_code)
                     for d in all_directions:
@@ -437,7 +450,12 @@ async def get_or_create_goal_overlay(
                     matched_direction_slug = prof_slugs[0] if prof_slugs else None
 
                 if matched_direction_slug:
-                    stmt = select(Direction).where(Direction.slug == matched_direction_slug)
+                    # Pin to `ru` — see the scenario-C selected-direction lookup
+                    # above (slug unique per-locale since KZ-301).
+                    stmt = select(Direction).where(
+                        Direction.slug == matched_direction_slug,
+                        Direction.locale == DEFAULT_LOCALE,
+                    )
                     res = await db.execute(stmt)
                     direction = res.scalar_one_or_none()
                     if direction:
@@ -445,10 +463,12 @@ async def get_or_create_goal_overlay(
                         bridge_scenario = _build_alignment_evidence(user_code, direction.holland_code)
 
                         if alignment == "bridge":
-                            stmt = select(Direction)
+                            # `ru` set only — adjacency scored on `holland_code`
+                            # (locale-invariant); unscoped doubles after KZ-306.
+                            stmt = select(Direction).where(Direction.locale == DEFAULT_LOCALE)
                             res = await db.execute(stmt)
                             all_directions = res.scalars().all()
-                            
+
                             adjacent = []
                             selected_set = set(direction.holland_code)
                             for d in all_directions:

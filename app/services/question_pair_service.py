@@ -71,10 +71,12 @@ async def get_pairs(db: AsyncSession, age_group: AgeGroup) -> list[QuestionPairI
         # unrelated MI categories made an already-weak construct worse — see
         # question_service.get_all_questions), so only Big Five stays paired.
         query = query.where(QuestionPair.instrument == QuestionInstrument.big_five)
-    # Display path: request locale, whole-set fallback to `ru` (KZ-301). The
+    # Display path: request locale, per-pair fallback to `ru` (KZ-301). The
     # joined Question rows follow the pair's FK, so they're the pair's own
     # locale already — no separate filter on the aliases.
-    rows = await localized_rows(db, query, QuestionPair.locale, scalars=False)
+    rows = await localized_rows(
+        db, query, QuestionPair, key=("instrument", "pair_index"), scalars=False
+    )
     return [
         QuestionPairItem(
             pair_index=pair.pair_index,
@@ -110,7 +112,8 @@ async def submit_pair_answers(
     pairs_rows = await localized_rows(
         db,
         select(QuestionPair).where(QuestionPair.pair_index.in_(pair_indexes)),
-        QuestionPair.locale,
+        QuestionPair,
+        key=("instrument", "pair_index"),
     )
     pairs_by_index = {p.pair_index: p for p in pairs_rows}
 

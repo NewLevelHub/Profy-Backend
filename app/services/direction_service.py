@@ -7,13 +7,15 @@ from app.services.content_locale import localized_rows
 
 
 async def get_all_directions(db: AsyncSession) -> list[Direction]:
-    # Display path: request locale, whole-set fallback to `ru` (KZ-301).
-    return await localized_rows(db, select(Direction).order_by(Direction.name), Direction.locale)
+    # Display path: request locale, per-direction fallback to `ru` (KZ-301).
+    return await localized_rows(
+        db, select(Direction).order_by(Direction.name), Direction, key="slug"
+    )
 
 
 async def get_direction_by_slug(slug: str, db: AsyncSession) -> Direction | None:
     rows = await localized_rows(
-        db, select(Direction).where(Direction.slug == slug), Direction.locale
+        db, select(Direction).where(Direction.slug == slug), Direction, key="slug"
     )
     return rows[0] if rows else None
 

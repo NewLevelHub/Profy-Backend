@@ -19,6 +19,6 @@ async def get_all_questions(db: AsyncSession, age_group: AgeGroup) -> list[Quest
         # question_pair_service.get_pairs) would otherwise leak into the
         # plain Likert flow now that junior answers MI here too.
         query = query.where(Question.instrument != QuestionInstrument.riasec)
-    # Display path: request locale, whole-set fallback to `ru` (KZ-301).
-    questions = await localized_rows(db, query, Question.locale)
+    # Display path: request locale, per-question fallback to `ru` (KZ-301).
+    questions = await localized_rows(db, query, Question, key="order")
     return [QuestionResponse.model_validate(q) for q in questions]

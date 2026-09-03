@@ -145,10 +145,10 @@ def career_match_score(user_code: list[str], direction_code: str) -> int:
 async def matched_careers(
     user_code: list[str], db: AsyncSession, limit: int = 10
 ) -> list[tuple[Direction, int]]:
-    # Display path (names/descriptions are shown): request locale, whole-set
+    # Display path (names/descriptions are shown): request locale, per-direction
     # fallback to `ru` (KZ-301). holland_code is identical across locales, so
     # match scores and ordering are locale-independent.
-    directions = await localized_rows(db, select(Direction), Direction.locale)
+    directions = await localized_rows(db, select(Direction), Direction, key="slug")
     scored = [(d, career_match_score(user_code, d.holland_code)) for d in directions]
     # Tie-break on slug (ascending) so equal scores don't depend on DB row
     # order — same convention as top_code's HOLLAND_ORDER tie-break above.

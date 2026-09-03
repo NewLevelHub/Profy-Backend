@@ -27,12 +27,15 @@ _LEAST_POINTS = 0
 
 
 async def triplets(db: AsyncSession) -> dict[int, list[MotivationStatement]]:
-    # Display path: request locale, whole-set fallback to `ru` (KZ-301).
+    # Display path: request locale, per-statement fallback to `ru` (KZ-301).
     stmt = select(MotivationStatement).order_by(
         MotivationStatement.triplet_index, MotivationStatement.order
     )
     grouped: dict[int, list[MotivationStatement]] = {}
-    for statement in await localized_rows(db, stmt, MotivationStatement.locale):
+    rows = await localized_rows(
+        db, stmt, MotivationStatement, key=("triplet_index", "order")
+    )
+    for statement in rows:
         grouped.setdefault(statement.triplet_index, []).append(statement)
     return grouped
 
