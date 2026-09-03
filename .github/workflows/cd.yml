@@ -177,29 +177,27 @@ jobs:
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_motivation_pairs.py
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_riasec_directions.py
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/apply_direction_content.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_kz_universities.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_92_professions_universities.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/apply_uniranks_kz_2027.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/apply_uniranks_not_ranked.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/apply_university_enrichment_2027.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/apply_program_requirements_content_2027.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/apply_grant_admission_data_2026.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/backfill_program_source_metadata_2026.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/apply_ovpo_codes.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/merge_duplicate_programs.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/backfill_world_ranking.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/apply_specialty_names_from_review.py --apply
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/fix_enu_kazatu_program_names.py --apply
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/apply_university_descriptions_batch1.py --apply
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/apply_ent_profile_subjects.py --apply
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/import_jinaq_universities.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/backfill_jinaq_program_requirements.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/apply_kz_university_merge.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/merge_kazguu_into_mnu.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/apply_jinaq_specialty_directions.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/apply_researched_kz_admission_data.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/apply_foreign_university_dedup.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/apply_uniranks_world_rank.py
+            # Universities/programs — single committed snapshot
+            # (scripts/data/university_snapshot.clean.json), one loader.
+            # Replaces the ~30-script seed/apply/backfill pipeline this block
+            # used to run (seed_kz_universities.py, seed_92_professions_universities.py,
+            # import_jinaq_universities.py, every apply_*/backfill_*/merge_* for
+            # universities). Deterministic uuid5 ids: on the FIRST run against a DB
+            # seeded the old way, this is a one-time destructive rebuild (every
+            # University/Program row gets pruned and reinserted under a new id —
+            # direction_roadmaps.program_id is nulled, ON DELETE SET NULL); every
+            # later run is a near no-op. See docs/content-pipeline-id-resolution-audit.md.
+            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/build_universities.py
+            # University photo files are named by the pre-canonicalization slugs;
+            # build_universities.py's dedup + canonical-slug pass renames ~220
+            # university slugs, so rename the matching <slug>.webp / <slug>.card.webp
+            # in the shared media folder to match (idempotent — already-renamed
+            # files are skipped). Run inside the api container (not on this host —
+            # $DEPLOY_PATH only has docker-compose.prod.yml/nginx.prod.conf, not the
+            # scripts/ tree) against /srv/media, the same path api mounts read-write.
+            if docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api test -d /srv/media/universities; then
+              docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/rename_university_photos.py --media-dir /srv/media --apply
+            fi
 
             echo "=== Production deploy complete ==="
             echo "Image: $API_IMAGE"

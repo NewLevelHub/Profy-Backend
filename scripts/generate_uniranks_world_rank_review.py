@@ -58,6 +58,7 @@ from sqlalchemy import select
 
 from app.database import async_session
 from app.models.university import University
+from app.models.university_external_ref import UniversityExternalRef
 
 OUTPUT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "uniranks_world_rank_review.json")
 _USER_AGENT = "ProfyUniversityRankingResearch/1.0 (contact: aarhat144@gmail.com; university world-ranking research)"
@@ -122,7 +123,12 @@ async def _lookup(client: httpx.AsyncClient, slug: str) -> tuple[str, int] | Non
     return entity_name, int(rank_match.group(1))
 
 
-async def _process_one(sem: asyncio.Semaphore, client: httpx.AsyncClient, uni: University) -> dict | None:
+async def _process_one(
+    sem: asyncio.Semaphore,
+    client: httpx.AsyncClient,
+    uni: University,
+    jinaq_external_id_by_uni_id: dict,
+) -> dict | None:
     for variant_index, variant in enumerate(_name_variants(uni)):
         slug = _slugify(variant)
         async with sem:
@@ -137,7 +143,15 @@ async def _process_one(sem: asyncio.Semaphore, client: httpx.AsyncClient, uni: U
         # shortened/derived variant is weaker and gets a human glance.
         confidence = "high" if variant_index == 0 else "low"
         return {
+            # Portable keys — how apply_uniranks_world_rank.py resolves the
+            # row on whatever DB it runs against. `slug` is University.slug
+            # (NOT `matched_slug`, which is a uniranks.com URL slug derived
+            # from the name). `university_id` is a per-DB snapshot kept only
+            # as a breadcrumb / for same-DB enrichment.
             "university_id": str(uni.id),
+            "slug": uni.slug,
+            "ror_id": uni.ror_id,
+            "jinaq_external_id": jinaq_external_id_by_uni_id.get(uni.id),
             "our_name": uni.name,
             "country": uni.country,
             "city": uni.city,
@@ -162,6 +176,13 @@ async def main() -> None:
         )
         universities = result.scalars().all()
 
+        refs = await db.execute(
+            select(UniversityExternalRef.university_id, UniversityExternalRef.external_id).where(
+                UniversityExternalRef.source == "jinaq"
+            )
+        )
+        jinaq_external_id_by_uni_id = {uni_id: ext_id for uni_id, ext_id in refs.all()}
+
     if limit:
         universities = universities[:limit]
 
@@ -172,7 +193,7 @@ async def main() -> None:
     checked = 0
 
     async with httpx.AsyncClient(headers={"User-Agent": _USER_AGENT}, timeout=20.0) as client:
-        tasks = [_process_one(sem, client, uni) for uni in universities]
+        tasks = [_process_one(sem, client, uni, jinaq_external_id_by_uni_id) for uni in universities]
         for coro in asyncio.as_completed(tasks):
             res = await coro
             checked += 1

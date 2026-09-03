@@ -1,12 +1,12 @@
 """Applies scripts/data/foreign_university_dedup_review.json: for every
 confirmed entry under "merges", moves the "remove" University row's photos,
 programs, and external refs onto the "keep" row, then deletes the "remove"
-row. See that file's _notes for how these 19 pairs were found (a
-same-name-different-city signal and a shared-uniranks-profile signal, both
-surfaced while running generate_uniranks_world_rank_review.py) and reviewed
-(program/image counts, ovpo_code, ror_id per side). Entries under
-"no_action" are genuine sub-units or translation coincidences between
-different real institutions — not touched by this script at all.
+row. Regenerate the file with scripts/generate_foreign_university_dedup_review.py
+(it surfaces same-name / shared-ror_id / parenthetical-variant candidates
+with program/photo/ror_id per side); a human sets `confirmed: true` and
+fills `keep_slug` / `remove_slug`. Entries under "no_action" are genuine
+sub-units or translation coincidences between different real institutions —
+not touched by this script at all.
 
 Merge mechanics copied from apply_kz_university_merge.py's _merge_one (same
 partial-unique-index-on-is_primary caveat, same reason for a Core DELETE
@@ -15,31 +15,26 @@ violation) — generalized here to move ALL external refs regardless of
 `source`, not just "jinaq", since these merge pairs mix jinaq-imported and
 older curated rows in both directions.
 
-Idempotent: matched by the review file's own "remove"/"keep" university_id
-values — but unlike apply_kz_university_merge.py, these ids have no
-portable equivalent to fall back on (no external_id in this review file,
-only a combined display "name" string per pair, which isn't safe to
-re-resolve automatically — see module docstring's caveat, same discipline
-as apply_ovpo_codes.py's discarded fuzzy-matching attempt). So a
-"remove" id that doesn't exist is logged as UNRESOLVED (not silently
-"already done") unless the "keep" id it should have merged into still
-exists — that combination is the only signal that actually distinguishes
-"genuinely already merged here" from "these ids were never valid on this
-database" (e.g. a snapshot taken from a different DB instance, since
-University.id is a random uuid4() per row per database — see
-apply_kz_university_merge.py's docstring for the general problem). An
-UNRESOLVED pair needs the review file regenerated/re-matched against the
-current database, not another run of this script.
+Resolves each side by `keep_slug` / `remove_slug` (falling back to
+`keep_ror_id` / `remove_ror_id`) via scripts/entity_resolver.py — never by
+a bare `University.id`, which is a per-database random uuid4() that does not
+resolve on another DB (PRO-247; see
+docs/content-pipeline-id-resolution-audit.md). Outcomes per pair:
+  merged      both sides resolved to two distinct rows -> merge done
+  already_done remove-side slug is gone, keep-side survives: a real prior run
+  unresolved  neither side resolves, or only the keep side does, or the
+              entry still uses the old bare-uuid schema -> the review file
+              is stale for this pair, regenerate it (another run won't help)
 
-Run inside the api container:
-  docker-compose exec api python scripts/apply_foreign_university_dedup.py [--dry-run]
+Run inside the api container (writes nothing without --apply):
+  docker-compose exec api python scripts/apply_foreign_university_dedup.py            # dry run
+  docker-compose exec api python scripts/apply_foreign_university_dedup.py --apply
 """
 import argparse
 import asyncio
 import json
 import os
 import sys
-import uuid
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _ROOT)
@@ -52,22 +47,13 @@ from app.models.program import Program
 from app.models.university import University
 from app.models.university_external_ref import UniversityExternalRef
 from app.models.university_image import UniversityImage
+from scripts.entity_resolver import resolve_university
 
 REVIEW_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "foreign_university_dedup_review.json")
 
 
-async def _merge_one(db, *, remove_id: uuid.UUID, keep_id: uuid.UUID) -> str:
-    """Returns "merged", "already_done", or "unresolved" — see module
-    docstring for why these three outcomes aren't collapsible into a plain
-    bool the way apply_kz_university_merge.py's are."""
-    remove_uni = await db.get(University, remove_id)
-    if remove_uni is None:
-        keep_uni = await db.get(University, keep_id)
-        if keep_uni is None:
-            # Neither id exists on this DB — not a completed merge, the
-            # review file's ids just don't match this database instance.
-            return "unresolved"
-        return "already_done"  # remove-side gone, keep-side survives: a real prior merge
+async def _merge_rows(db, *, keep: University, remove: University) -> None:
+    keep_id, remove_id = keep.id, remove.id
 
     target_has_primary = (
         await db.execute(
@@ -110,10 +96,17 @@ async def _merge_one(db, *, remove_id: uuid.UUID, keep_id: uuid.UUID) -> str:
         ref.match_method = "manual"
 
     await db.execute(delete(University).where(University.id == remove_id))
-    return "merged"
 
 
-async def main(*, dry_run: bool) -> None:
+async def _resolve_side(db, entry: dict, side: str) -> University | None:
+    return (
+        await resolve_university(
+            db, slug=entry.get(f"{side}_slug"), ror_id=entry.get(f"{side}_ror_id")
+        )
+    )[0]
+
+
+async def main(*, apply: bool) -> None:
     with open(REVIEW_PATH, encoding="utf-8") as f:
         review = json.load(f)
 
@@ -125,25 +118,35 @@ async def main(*, dry_run: bool) -> None:
                 skipped_not_confirmed += 1
                 continue
 
-            print(f"merging {entry['name']!r}: {entry['remove']} -> {entry['keep']}")
-            outcome = await _merge_one(db, remove_id=uuid.UUID(entry["remove"]), keep_id=uuid.UUID(entry["keep"]))
-            await db.flush()
-            if outcome == "merged":
+            label = entry.get("name") or entry.get("keep_slug") or "<pair>"
+
+            if not entry.get("keep_slug") or not entry.get("remove_slug"):
+                print(f"  UNRESOLVED: {label!r} has no keep_slug/remove_slug — regenerate the review file")
+                unresolved += 1
+                continue
+
+            keep = await _resolve_side(db, entry, "keep")
+            remove = await _resolve_side(db, entry, "remove")
+
+            if keep is not None and remove is not None and keep.id != remove.id:
+                print(f"merging {label!r}: {entry['remove_slug']} -> {entry['keep_slug']}")
+                await _merge_rows(db, keep=keep, remove=remove)
+                await db.flush()
                 merged += 1
-            elif outcome == "already_done":
+            elif keep is not None and (remove is None or remove.id == keep.id):
                 already_done += 1
             else:
                 print(
-                    f"  UNRESOLVED: neither {entry['remove']} nor {entry['keep']} exists on this database — "
-                    f"review data is stale for {entry['name']!r}, needs re-matching against the current DB"
+                    f"  UNRESOLVED: {label!r} — keep_slug={entry['keep_slug']!r} "
+                    f"remove_slug={entry['remove_slug']!r} don't both resolve on this DB; regenerate the review file"
                 )
                 unresolved += 1
 
-        if dry_run:
+        if apply:
+            await db.commit()
+        else:
             await db.rollback()
             print("[dry-run] no changes committed")
-        else:
-            await db.commit()
 
         print(
             f"\nMerged: {merged}, already done (idempotent skip): {already_done}, "
@@ -153,6 +156,7 @@ async def main(*, dry_run: bool) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--apply", action="store_true", help="commit changes (default: dry run)")
+    parser.add_argument("--dry-run", action="store_true", help=argparse.SUPPRESS)  # deprecated no-op alias
     args = parser.parse_args()
-    asyncio.run(main(dry_run=args.dry_run))
+    asyncio.run(main(apply=args.apply))

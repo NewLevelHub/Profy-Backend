@@ -12,21 +12,19 @@ Never acts on an entry that isn't `confirmed: true` (or doesn't have
 `rename_to`) — an unreviewed or rejected entry is left exactly as jinaq
 created it.
 
-Idempotent: re-running is a no-op for anything already merged. Matched by
-the review file's `jinaq_external_id` via `university_external_refs`
-(source="jinaq"), NOT by the review file's own `jinaq_university_id` field
-— that field is a snapshot of `University.id` (a random uuid4() assigned
-independently per row per database) taken from whatever DB the review was
-generated against, so it does not resolve to the right row (or any row) on
-a different database instance — every other environment (a fresh local
-DB, prod on its first run of this pipeline) would silently no-op on every
-entry, miscounted as "already done" rather than "never found a match".
-`external_id` is jinaq's own source-system id, written into
-university_external_refs by import_jinaq_universities.py on every import
-regardless of which database it runs against, so it's the actually durable
-key. After a successful merge the ref is repointed at the curated target,
-so a re-run correctly recognizes "already merged" (ref.university_id ==
-target) instead of treating the stale review-file id as authoritative.
+Resolves the jinaq row by the review file's `jinaq_external_id` through
+university_external_refs (source="jinaq"), NOT by its `jinaq_university_id`
+field — that is a snapshot of `University.id` (a per-database random
+uuid4()) and resolves to nothing on any other database instance, so every
+fresh environment (a new local DB, prod's first pipeline run) would
+silently no-op on every entry. `external_id` is jinaq's own source id,
+written into university_external_refs by import_jinaq_universities.py on
+every import regardless of which DB it runs against. See
+docs/content-pipeline-id-resolution-audit.md.
+
+Idempotent: after a merge the ref is repointed at the curated target, so a
+re-run resolves the jinaq id straight to the target (jinaq_uni.id ==
+target) and is recognised as "already done".
 
 Run inside the api container:
   docker-compose exec api python scripts/apply_kz_university_merge.py [--dry-run]
@@ -47,43 +45,14 @@ from sqlalchemy.exc import IntegrityError
 from app.database import async_session
 from app.models.program import Program
 from app.models.university import University
-from app.models.university_external_ref import UniversityExternalRef
 from app.models.university_image import UniversityImage
 from app.services.admin_lock import is_locked
+from scripts.entity_resolver import repoint_jinaq_ref, resolve_jinaq_university
 
 REVIEW_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "jinaq", "kz_university_merge_review.json")
 
 
-async def _resolve_jinaq_university(db, external_id: str) -> University | None:
-    """Looks up the current University row for a jinaq source id via
-    university_external_refs — the only key that's stable across database
-    instances (see module docstring)."""
-    ref_result = await db.execute(
-        select(UniversityExternalRef).where(
-            UniversityExternalRef.source == "jinaq", UniversityExternalRef.external_id == external_id
-        )
-    )
-    ref = ref_result.scalar_one_or_none()
-    if ref is None:
-        return None
-    return await db.get(University, ref.university_id)
-
-
-async def _merge_one(db, *, target_university_id: uuid.UUID, external_id: str) -> str:
-    """Returns "merged", "already_done", or "unresolved" — mirrors
-    apply_foreign_university_dedup.py's `_merge_one`, which distinguishes
-    these same two "nothing to do" cases for the identical reason: a plain
-    bool can't tell "genuinely already merged" apart from "this jinaq row
-    was never imported on this DB, the review data doesn't resolve here" —
-    collapsing them hides real never-merged duplicates in the "already done"
-    count with no signal to investigate."""
-    jinaq_uni = await _resolve_jinaq_university(db, external_id)
-    if jinaq_uni is None:
-        return "unresolved"  # jinaq row was never imported on this DB, or the ref is gone
-    if jinaq_uni.id == target_university_id:
-        return "already_done"  # already merged on a previous run — ref now points at the target itself
-    jinaq_university_id = jinaq_uni.id
-
+async def _merge_one(db, *, jinaq_university_id: uuid.UUID, target_university_id: uuid.UUID, external_id: str) -> None:
     target_has_primary = (
         await db.execute(
             select(UniversityImage).where(UniversityImage.university_id == target_university_id, UniversityImage.is_primary.is_(True))
@@ -114,15 +83,7 @@ async def _merge_one(db, *, target_university_id: uuid.UUID, external_id: str) -
             await db.delete(program)
             await db.flush()
 
-    ref_result = await db.execute(
-        select(UniversityExternalRef).where(
-            UniversityExternalRef.source == "jinaq", UniversityExternalRef.external_id == external_id
-        )
-    )
-    ref = ref_result.scalar_one_or_none()
-    if ref is not None:
-        ref.university_id = target_university_id
-        ref.match_method = "manual"
+    await repoint_jinaq_ref(db, external_id, target_university_id)
 
     # Plain Core DELETE, not db.delete(jinaq_uni) — the ORM delete tries to
     # cascade-null University.programs for any Program still associated with
@@ -134,7 +95,6 @@ async def _merge_one(db, *, target_university_id: uuid.UUID, external_id: str) -
     # was moved or deleted above), so a bare DELETE is both correct and
     # side-effect-free.
     await db.execute(delete(University).where(University.id == jinaq_university_id))
-    return "merged"
 
 
 async def main(*, dry_run: bool) -> None:
@@ -142,11 +102,11 @@ async def main(*, dry_run: bool) -> None:
         review = json.load(f)
 
     async with async_session() as db:
-        merged = skipped_not_confirmed = skipped_no_match = already_done = renamed = unresolved = 0
+        merged = skipped_not_confirmed = skipped_no_match = already_done = unresolved = renamed = 0
 
         for entry in review["entries"]:
             if entry.get("rename_to"):
-                jinaq_uni = await _resolve_jinaq_university(db, entry["jinaq_external_id"])
+                jinaq_uni = await resolve_jinaq_university(db, entry["jinaq_external_id"])
                 if jinaq_uni is None:
                     continue
                 touched = False
@@ -172,28 +132,33 @@ async def main(*, dry_run: bool) -> None:
                 skipped_no_match += 1
                 continue
 
-            target_result = await db.execute(
-                select(University).where(University.slug == entry["proposed_curated_match"]["slug"])
-            )
-            target = target_result.scalar_one_or_none()
+            target = (
+                await db.execute(
+                    select(University).where(University.slug == entry["proposed_curated_match"]["slug"])
+                )
+            ).scalar_one_or_none()
             if target is None:
                 print(f"WARNING: target slug {entry['proposed_curated_match']['slug']!r} not found, skipping {entry['jinaq_name']!r}")
                 continue
-            target_id = target.id
-            print(f"merging {entry['jinaq_name']!r} (jinaq external_id={entry['jinaq_external_id']}) -> {entry['proposed_curated_match']['slug']!r} ({target_id})")
 
-            outcome = await _merge_one(
+            jinaq_uni = await resolve_jinaq_university(db, entry["jinaq_external_id"])
+            if jinaq_uni is None:
+                print(f"  UNRESOLVED: jinaq external_id {entry['jinaq_external_id']} not on this DB — import_jinaq_universities.py must run first")
+                unresolved += 1
+                continue
+            if jinaq_uni.id == target.id:
+                already_done += 1
+                continue
+
+            print(f"merging {entry['jinaq_name']!r} (jinaq external_id={entry['jinaq_external_id']}) -> {entry['proposed_curated_match']['slug']!r} ({target.id})")
+            await _merge_one(
                 db,
-                target_university_id=target_id,
+                jinaq_university_id=jinaq_uni.id,
+                target_university_id=target.id,
                 external_id=entry["jinaq_external_id"],
             )
             await db.flush()
-            if outcome == "merged":
-                merged += 1
-            elif outcome == "already_done":
-                already_done += 1
-            else:
-                unresolved += 1
+            merged += 1
 
         if dry_run:
             await db.rollback()
@@ -202,9 +167,9 @@ async def main(*, dry_run: bool) -> None:
             await db.commit()
 
         print(
-            f"Merged: {merged}, already done (idempotent skip): {already_done}, "
-            f"UNRESOLVED (stale review data): {unresolved}, renamed: {renamed}, "
-            f"not confirmed (left alone): {skipped_not_confirmed}, confirmed no-match (left alone): {skipped_no_match}"
+            f"Merged: {merged}, already done (idempotent skip): {already_done}, unresolved: {unresolved}, "
+            f"renamed: {renamed}, not confirmed (left alone): {skipped_not_confirmed}, "
+            f"confirmed no-match (left alone): {skipped_no_match}"
         )
 
 
