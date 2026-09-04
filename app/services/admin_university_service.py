@@ -12,7 +12,7 @@ from app.schemas.admin_university import (
     AdminUniversityUpdateRequest,
     AdminProgramUpdateRequest,
 )
-from app.services.admin_lock import lock_fields, unlock_fields
+from app.services.admin_lock import AdminNothingToClearError, lock_fields, unlock_fields
 from app.services.admin_listing import SortOrder, order_by_clause
 
 
@@ -178,7 +178,7 @@ async def _unlock_row(db: AsyncSession, row, field: str | None):
     has ever had. Reported as such rather than pretending to be an undo."""
     removed = unlock_fields(row, None if field is None else [field])
     if field is not None and not removed:
-        raise ValueError(f"Field '{field}' is not locked on this row")
+        raise AdminNothingToClearError(f"Field '{field}' is not locked on this row")
 
     await db.commit()
     await db.refresh(row)

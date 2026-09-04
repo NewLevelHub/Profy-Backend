@@ -19,12 +19,19 @@ from app.models.question import Question, QuestionInstrument
 from app.models.university import University
 from app.schemas.admin_content import (
     AdminDirectionUpdateRequest,
+    AdminQuestionDetail,
     AdminMotivationStatementUpdateRequest,
     AdminQuestionUpdateRequest,
 )
 from app.schemas.admin_university import AdminUniversityUpdateRequest
 from app.services import admin_content_service, admin_university_service
-from app.services.admin_lock import clear_overrides, is_locked, sync_fields, unlock_fields
+from app.services.admin_lock import (
+    AdminNothingToClearError,
+    clear_overrides,
+    is_locked,
+    sync_fields,
+    unlock_fields,
+)
 
 
 async def _question(db: AsyncSession, text: str) -> Question:
@@ -110,7 +117,7 @@ async def test_clearing_a_field_that_is_not_overridden_is_reported(
 ) -> None:
     question = await _question(db_session, "Текст из банка")
 
-    with pytest.raises(ValueError, match="not overridden"):
+    with pytest.raises(AdminNothingToClearError, match="not overridden"):
         await admin_content_service.clear_question_overrides(db_session, question.id, "text")
 
 
@@ -252,7 +259,7 @@ async def test_unlocking_a_field_that_is_not_locked_is_reported(
     db_session.add(university)
     await db_session.commit()
 
-    with pytest.raises(ValueError, match="not locked"):
+    with pytest.raises(AdminNothingToClearError, match="not locked"):
         await admin_university_service.unlock_university_fields(
             db_session, university.id, "ranking"
         )
@@ -286,3 +293,65 @@ async def test_program_locks_clear_as_well(db_session: AsyncSession) -> None:
     unlocked = await admin_university_service.unlock_program_fields(db_session, program.id)
 
     assert unlocked.admin_locked_fields == []
+
+
+# --- regressions caught in review -------------------------------------------
+
+
+async def test_re_editing_a_legacy_override_does_not_promote_a_typo_to_original(
+    db_session: AsyncSession,
+) -> None:
+    """A row overridden before bank values were recorded holds an old ADMIN
+    edit in its column. Reading that column on the next edit would file the
+    typo as "the bank's original" and a later revert would restore it — the
+    original has to stay unknown instead."""
+    question = await _question(db_session, "Опечатка админа")
+    question.overrides = {"text": {"value": "Опечатка админа"}}
+    await db_session.commit()
+
+    updated = await admin_content_service.update_question(
+        db_session, question.id, AdminQuestionUpdateRequest(text="Вторая правка")
+    )
+
+    assert "bank_value" not in updated.overrides["text"]
+
+    reverted = await admin_content_service.clear_question_overrides(db_session, question.id)
+    assert reverted.text == "Вторая правка"  # left for the seed run, not "restored" to a typo
+
+
+async def test_the_api_says_whether_the_original_is_known(db_session: AsyncSession) -> None:
+    """JSON cannot express "absent" — a missing key and a null one both arrive
+    as null — so the flag carries it. Without this the UI shows "было:
+    (пусто)" for every override migrated from the old shape and offers a
+    revert that restores nothing."""
+    known = await _question(db_session, "Текст из банка")
+    await admin_content_service.update_question(
+        db_session, known.id, AdminQuestionUpdateRequest(text="Правка")
+    )
+
+    unknown = await _question(db_session, "Значение админа")
+    unknown.overrides = {"text": {"value": "Значение админа"}}
+    await db_session.commit()
+
+    known_detail = AdminQuestionDetail.model_validate(known)
+    unknown_detail = AdminQuestionDetail.model_validate(unknown)
+
+    assert known_detail.overrides["text"].bank_value_known is True
+    assert known_detail.overrides["text"].bank_value == "Текст из банка"
+    assert unknown_detail.overrides["text"].bank_value_known is False
+
+
+async def test_a_resync_that_only_refreshed_the_bank_value_reports_as_changed(
+    db_session: AsyncSession,
+) -> None:
+    """Seed scripts count this return value as updated-vs-skipped. Writing a
+    new bank value while reporting "unchanged" makes all seven of them lie
+    about what they did."""
+    question = await _question(db_session, "Старый текст банка")
+    await admin_content_service.update_question(
+        db_session, question.id, AdminQuestionUpdateRequest(text="Правка админа")
+    )
+    await db_session.refresh(question)
+
+    assert sync_fields(question, {"text": "Новый текст банка"}) is True
+    assert sync_fields(question, {"text": "Новый текст банка"}) is False

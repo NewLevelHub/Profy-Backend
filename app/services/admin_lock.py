@@ -28,6 +28,17 @@ def unlock_fields(row, field_names: Iterable[str] | None = None) -> list[str]:
     return removed
 
 
+class AdminNothingToClearError(Exception):
+    """The row exists, but the field the caller asked to un-edit carries no
+    override (or no lock) to remove.
+
+    Its own type because both this and "row not found" used to surface as a
+    plain ValueError, which the DELETE routes map to 404 — leaving the caller
+    unable to tell "this row is gone, leave the page" from "your view was
+    stale, refresh it". Deliberately not a ValueError subclass, for the same
+    reason AdminOverrideValidationError isn't."""
+
+
 class AdminOverrideValidationError(Exception):
     """Raised by apply_overrides() instead of letting a bad PATCH reach the
     DB as an uncaught IntegrityError. Deliberately not a ValueError subclass
@@ -77,17 +88,22 @@ def apply_overrides(row, updates: dict) -> None:
         column = columns.get(key)
         if value is None and column is not None and not column.nullable:
             raise AdminOverrideValidationError(f"{key} cannot be null")
-        # The column still holds the bank's own value the first time a field
-        # is edited; on a re-edit the bank value already recorded is the one
-        # to keep, since the column now holds the previous admin edit.
         existing = overrides.get(key)
-        bank_value = (
-            existing.get(_BANK_VALUE)
-            if isinstance(existing, dict) and _BANK_VALUE in existing
-            else getattr(row, key)
-        )
+        if isinstance(existing, dict) and _BANK_VALUE in existing:
+            # Re-edit: the column holds the PREVIOUS ADMIN EDIT now, so the
+            # already-recorded bank value is the one to keep.
+            entry = _entry(value, existing[_BANK_VALUE])
+        elif existing is not None:
+            # Overridden before bank values were recorded. The column holds
+            # that old admin edit, so reading it here would label a typo as
+            # the bank's original — the original stays unknown instead.
+            entry = {_VALUE: _jsonable(value)}
+        else:
+            # First edit: the column still holds the bank's own value.
+            entry = _entry(value, getattr(row, key))
+
         setattr(row, key, value)
-        overrides[key] = _entry(value, bank_value)
+        overrides[key] = entry
     row.overrides = overrides
 
 
@@ -155,4 +171,7 @@ def sync_fields(row, bank_values: dict) -> bool:
 
     if overrides_changed:
         row.overrides = overrides
-    return changed
+    # Refreshing a recorded bank value is a real write, so it must not be
+    # reported as "skipped (unchanged)" by the seven seed scripts that count
+    # this return value.
+    return changed or overrides_changed

@@ -23,7 +23,13 @@ _BOM = "\ufeff"
 # Excel does not recognise an ISO timestamp with microseconds and an offset as
 # a date either, so sorting and date filters silently do nothing on the
 # column. Minutes are as precise as an admin export needs.
+#
+# Dropping the offset is what makes the value parse as a date, so the zone
+# has to be stated in the column heading instead: everything is stored and
+# written in UTC, and an admin in Almaty (UTC+5) would otherwise read every
+# timestamp five hours early with nothing on screen saying so.
 _DATETIME_FORMAT = "%Y-%m-%d %H:%M"
+_UTC_SUFFIX = " (UTC)"
 
 # Python's True/False are not booleans to Excel, just words.
 _YES, _NO = "да", "нет"
@@ -86,8 +92,8 @@ _USER_COLUMNS = (
     "Почта подтверждена",
     "Аккаунт активен",
     "Администратор",
-    "Регистрация",
-    "Последняя активность",
+    "Регистрация" + _UTC_SUFFIX,
+    "Последняя активность" + _UTC_SUFFIX,
     "Есть профиль",
     "Имя",
     "Класс (группа)",
@@ -195,8 +201,8 @@ def _summary_csv(detail: AdminAssessmentDetailResponse) -> str:
     writer.writerow(["Имя", detail.profile_name or ""])
     writer.writerow(["Цель", _label(_GOAL_LABELS, detail.goal)])
     writer.writerow(["Статус", _label(_STATUS_LABELS, detail.status)])
-    writer.writerow(["Начато", _at(detail.created_at)])
-    writer.writerow(["Завершено", _at(detail.completed_at)])
+    writer.writerow(["Начато" + _UTC_SUFFIX, _at(detail.created_at)])
+    writer.writerow(["Завершено" + _UTC_SUFFIX, _at(detail.completed_at)])
     writer.writerow(["Отвечено вопросов", detail.answered_count])
     writer.writerow(["Всего вопросов", detail.total_questions])
     writer.writerow(["Есть роадмап", _yes_no(detail.roadmap is not None)])
@@ -233,7 +239,7 @@ def _responses_csv(detail: AdminAssessmentDetailResponse) -> str:
             "Вопрос",
             "Ответ (1-5)",
             "Ответ словами",
-            "Время ответа",
+            "Время ответа" + _UTC_SUFFIX,
         ]
     )
     for response in detail.responses:

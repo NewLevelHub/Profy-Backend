@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult
@@ -60,6 +60,20 @@ def _selected_answer_text(answer_value: int, instrument: QuestionInstrument | No
     return f"Шкала {answer_value}/5"
 
 
+def _last_known_activity():
+    """The most recent moment a user is known to have been here.
+
+    Falling back to `created_at` matters: `last_active_at` is null for anyone
+    who has not been seen since it started being recorded, and treating null
+    as "inactive forever" would return an account registered five minutes ago
+    from `?inactive_days=365`. Registering is itself activity.
+
+    `get_user_stats` answers the same question about the same user, so it
+    reuses this — otherwise the list and the "abandoned" tile on top of it
+    disagree about who counts as quiet."""
+    return func.coalesce(User.last_active_at, User.created_at)
+
+
 def _build_user_filters(
     *,
     search: str | None,
@@ -82,11 +96,8 @@ def _build_user_filters(
     if age_group is not None:
         filters.append(Profile.age_group == age_group)
     if inactive_days is not None:
-        # A user never seen at all counts as inactive: this filter answers
-        # "who has gone quiet", and "no record of them ever being here" is the
-        # strongest possible yes.
         cutoff = datetime.now(timezone.utc) - timedelta(days=inactive_days)
-        filters.append(or_(User.last_active_at.is_(None), User.last_active_at < cutoff))
+        filters.append(_last_known_activity() < cutoff)
     needs_distinct = status is not None or goal is not None
     if status is not None:
         filters.append(Assessment.status == status)
@@ -720,10 +731,9 @@ async def get_user_stats(
     """Whole-table counts the users list cannot produce from one page of 20.
 
     "Abandoned" means an assessment still in progress whose owner has not been
-    seen for `inactive_days`. Users with no recorded activity fall back to the
-    assessment's own start time, so accounts that predate activity tracking
-    are judged by when they started rather than being silently counted as
-    active (which a plain NULL comparison would do)."""
+    seen for `inactive_days` — the same "last known activity" rule the users
+    list filters on (`_last_known_activity`), so this tile and the list it
+    sits above cannot disagree about who counts as quiet."""
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(days=inactive_days)
     # Fixed at 7 days on purpose: it is a signup-rate figure named after its
@@ -754,7 +764,7 @@ async def get_user_stats(
             .join(User, Profile.user_id == User.id)
             .where(
                 Assessment.status == AssessmentStatus.in_progress,
-                func.coalesce(User.last_active_at, Assessment.created_at) < cutoff,
+                _last_known_activity() < cutoff,
             )
         )
     ).scalar_one()

@@ -68,8 +68,8 @@ def test_timestamps_are_readable_as_dates() -> None:
     filters on the column silently do nothing."""
     csv_text = export.users_to_csv([_user_item()])
 
-    assert _cell(csv_text, "Регистрация") == "2026-09-03 09:29"
-    assert _cell(csv_text, "Последняя активность") == "2026-09-04 11:05"
+    assert _cell(csv_text, "Регистрация (UTC)") == "2026-09-03 09:29"
+    assert _cell(csv_text, "Последняя активность (UTC)") == "2026-09-04 11:05"
 
 
 def test_enum_keys_are_localized_the_way_the_screen_shows_them() -> None:
@@ -191,7 +191,7 @@ def test_summary_localizes_values_and_avoids_python_literals() -> None:
 
     assert values["Цель"] == "Поступить в вуз"
     assert values["Статус"] == "Завершён"
-    assert values["Начато"] == "2026-09-03 09:29"
+    assert values["Начато (UTC)"] == "2026-09-03 09:29"
     assert values["Есть роадмап"] == "нет"
 
 

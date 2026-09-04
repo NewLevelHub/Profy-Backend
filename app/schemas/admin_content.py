@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from app.models.motivation import MotivationCategory
 from app.models.profile import AgeGroup
@@ -18,10 +18,24 @@ class AdminFieldOverride(BaseModel):
     original is unknown; reverting those still drops the override and lets the
     next seed run restore the bank's own value. Absence and null are different
     things here — several overridable columns (icon, short_text, frame) are
-    nullable, so a null bank_value is a real value to put back."""
+    nullable, so a null bank_value is a real value to put back.
+
+    JSON has no way to say "absent" once this is serialized — a missing key
+    and a null one both arrive as null — so `bank_value_known` carries that
+    distinction explicitly. Without it the UI would show "было: (пусто)" for
+    every override migrated from the old flat shape and offer a revert that
+    restores nothing."""
 
     value: Any = None
     bank_value: Any = None
+    bank_value_known: bool = False
+
+    @model_validator(mode="before")
+    @classmethod
+    def _record_whether_the_original_is_known(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            return {**data, "bank_value_known": "bank_value" in data}
+        return data
 
 
 # --- Questions (RIASEC / Big Five / MI, one shared table) ---

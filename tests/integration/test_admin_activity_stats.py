@@ -120,20 +120,26 @@ async def test_a_stale_timestamp_is_refreshed(
 async def test_users_can_be_filtered_by_how_long_they_have_been_quiet(
     db_session: AsyncSession,
 ) -> None:
-    """A user never seen at all counts as inactive — "no record of them ever
-    being here" is the strongest possible yes to "have they gone quiet"."""
+    """Never being seen is not the same as having gone quiet: `last_active_at`
+    is null for everyone who has not been back since it started being
+    recorded, so treating null as "inactive forever" would return an account
+    registered five minutes ago from ?inactive_days=365. Registration is
+    itself activity, and it is the floor."""
     marker = uuid.uuid4().hex
     now = datetime.now(timezone.utc)
     quiet = await _user(db_session, marker=marker, last_active_at=now - timedelta(days=30))
-    never_seen = await _user(db_session, marker=marker)
+    fresh_never_seen = await _user(db_session, marker=marker)
+    old_never_seen = await _user(db_session, marker=marker)
+    old_never_seen.created_at = now - timedelta(days=30)
     await _user(db_session, marker=marker, last_active_at=now - timedelta(hours=1))
+    await db_session.flush()
 
     result = await admin_service.list_users(
         db_session, search=marker, inactive_days=7, limit=100
     )
 
-    assert {i.id for i in result.items} == {quiet.id, never_seen.id}
-    assert result.total == 2
+    assert {i.id for i in result.items} == {quiet.id, old_never_seen.id}
+    assert fresh_never_seen.id not in {i.id for i in result.items}
 
 
 async def test_users_list_exposes_and_sorts_by_last_active(db_session: AsyncSession) -> None:
@@ -195,17 +201,23 @@ async def test_a_user_with_no_recorded_activity_is_judged_by_the_assessment_star
     db_session: AsyncSession,
 ) -> None:
     """Accounts predating activity tracking must not be counted as active — a
-    plain NULL comparison would silently exclude every one of them."""
+    plain NULL comparison would silently exclude every one of them. They fall
+    back to their registration date, the same rule the users list filters on,
+    so the tile and the list below it cannot disagree."""
     baseline = await admin_service.get_user_stats(db_session, inactive_days=7)
 
     user = await _user(db_session)
-    assessment = await _assessment(db_session, user, AssessmentStatus.in_progress)
-    assessment.created_at = datetime.now(timezone.utc) - timedelta(days=30)
+    user.created_at = datetime.now(timezone.utc) - timedelta(days=30)
+    await _assessment(db_session, user, AssessmentStatus.in_progress)
     await db_session.flush()
 
     stats = await admin_service.get_user_stats(db_session, inactive_days=7)
+    listed = await admin_service.list_users(
+        db_session, search=user.email, inactive_days=7, limit=10
+    )
 
     assert stats.abandoned_diagnostics == baseline.abandoned_diagnostics + 1
+    assert [i.id for i in listed.items] == [user.id]
 
 
 async def test_users_stats_route_is_not_swallowed_by_the_detail_route(

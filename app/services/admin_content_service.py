@@ -34,6 +34,7 @@ from app.schemas.admin_content import (
     AdminQuestionUpdateRequest,
 )
 from app.services.admin_lock import (
+    AdminNothingToClearError,
     AdminOverrideValidationError,
     apply_overrides,
     clear_overrides,
@@ -80,7 +81,7 @@ async def _clear_overrides_by_id(
 
     cleared = clear_overrides(row, None if field is None else [field])
     if field is not None and not cleared:
-        raise ValueError(f"Field '{field}' is not overridden on this row")
+        raise AdminNothingToClearError(f"Field '{field}' is not overridden on this row")
 
     await db.commit()
     await db.refresh(row)

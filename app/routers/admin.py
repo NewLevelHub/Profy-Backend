@@ -9,7 +9,7 @@ from app.database import get_db
 from app.dependencies import get_current_admin_user
 from app.models.assessment import AssessmentGoal, AssessmentStatus
 from app.models.motivation import MotivationCategory
-from app.services.admin_lock import AdminOverrideValidationError
+from app.services.admin_lock import AdminNothingToClearError, AdminOverrideValidationError
 from app.services.admin_listing import AdminSortFieldError, SortOrder
 from app.models.user import User
 from app.schemas.admin import (
@@ -612,6 +612,10 @@ async def clear_question_overrides(
     """Drop every override on the row, putting it fully back under the bank."""
     try:
         return await admin_content_service.clear_question_overrides(db, row_id)
+    except AdminNothingToClearError as e:
+        # The row is fine; the caller's view of it was stale. 409, not 404,
+        # so the client can refresh the row instead of leaving the page.
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -625,6 +629,10 @@ async def clear_question_override_field(
 ):
     try:
         return await admin_content_service.clear_question_overrides(db, row_id, field)
+    except AdminNothingToClearError as e:
+        # The row is fine; the caller's view of it was stale. 409, not 404,
+        # so the client can refresh the row instead of leaving the page.
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -638,6 +646,10 @@ async def clear_question_pair_overrides(
     """Drop every override on the row, putting it fully back under the bank."""
     try:
         return await admin_content_service.clear_question_pair_overrides(db, row_id)
+    except AdminNothingToClearError as e:
+        # The row is fine; the caller's view of it was stale. 409, not 404,
+        # so the client can refresh the row instead of leaving the page.
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -651,6 +663,10 @@ async def clear_question_pair_override_field(
 ):
     try:
         return await admin_content_service.clear_question_pair_overrides(db, row_id, field)
+    except AdminNothingToClearError as e:
+        # The row is fine; the caller's view of it was stale. 409, not 404,
+        # so the client can refresh the row instead of leaving the page.
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -664,6 +680,10 @@ async def clear_motivation_statement_overrides(
     """Drop every override on the row, putting it fully back under the bank."""
     try:
         return await admin_content_service.clear_motivation_statement_overrides(db, row_id)
+    except AdminNothingToClearError as e:
+        # The row is fine; the caller's view of it was stale. 409, not 404,
+        # so the client can refresh the row instead of leaving the page.
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -677,6 +697,10 @@ async def clear_motivation_statement_override_field(
 ):
     try:
         return await admin_content_service.clear_motivation_statement_overrides(db, row_id, field)
+    except AdminNothingToClearError as e:
+        # The row is fine; the caller's view of it was stale. 409, not 404,
+        # so the client can refresh the row instead of leaving the page.
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -690,6 +714,10 @@ async def clear_motivation_pair_overrides(
     """Drop every override on the row, putting it fully back under the bank."""
     try:
         return await admin_content_service.clear_motivation_pair_overrides(db, row_id)
+    except AdminNothingToClearError as e:
+        # The row is fine; the caller's view of it was stale. 409, not 404,
+        # so the client can refresh the row instead of leaving the page.
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -703,6 +731,10 @@ async def clear_motivation_pair_override_field(
 ):
     try:
         return await admin_content_service.clear_motivation_pair_overrides(db, row_id, field)
+    except AdminNothingToClearError as e:
+        # The row is fine; the caller's view of it was stale. 409, not 404,
+        # so the client can refresh the row instead of leaving the page.
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -716,6 +748,10 @@ async def clear_direction_overrides(
     """Drop every override on the row, putting it fully back under the bank."""
     try:
         return await admin_content_service.clear_direction_overrides(db, row_id)
+    except AdminNothingToClearError as e:
+        # The row is fine; the caller's view of it was stale. 409, not 404,
+        # so the client can refresh the row instead of leaving the page.
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -729,6 +765,10 @@ async def clear_direction_override_field(
 ):
     try:
         return await admin_content_service.clear_direction_overrides(db, row_id, field)
+    except AdminNothingToClearError as e:
+        # The row is fine; the caller's view of it was stale. 409, not 404,
+        # so the client can refresh the row instead of leaving the page.
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -746,6 +786,10 @@ async def unlock_university_fields(
 ):
     try:
         return await admin_university_service.unlock_university_fields(db, university_id)
+    except AdminNothingToClearError as e:
+        # The row is fine; the caller's view of it was stale. 409, not 404,
+        # so the client can refresh the row instead of leaving the page.
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -759,6 +803,10 @@ async def unlock_university_field(
 ):
     try:
         return await admin_university_service.unlock_university_fields(db, university_id, field)
+    except AdminNothingToClearError as e:
+        # The row is fine; the caller's view of it was stale. 409, not 404,
+        # so the client can refresh the row instead of leaving the page.
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -771,6 +819,10 @@ async def unlock_program_fields(
 ):
     try:
         return await admin_university_service.unlock_program_fields(db, program_id)
+    except AdminNothingToClearError as e:
+        # The row is fine; the caller's view of it was stale. 409, not 404,
+        # so the client can refresh the row instead of leaving the page.
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -784,5 +836,9 @@ async def unlock_program_field(
 ):
     try:
         return await admin_university_service.unlock_program_fields(db, program_id, field)
+    except AdminNothingToClearError as e:
+        # The row is fine; the caller's view of it was stale. 409, not 404,
+        # so the client can refresh the row instead of leaving the page.
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
