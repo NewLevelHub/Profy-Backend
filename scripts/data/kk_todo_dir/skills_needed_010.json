@@ -1,0 +1,482 @@
+[
+  {
+    "id": "spetsialist-po-tamozhennomu-delu#skills_needed#0",
+    "kind": "direction",
+    "slug": "spetsialist-po-tamozhennomu-delu",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "знание таможенного законодательства"
+  },
+  {
+    "id": "spetsialist-po-tamozhennomu-delu#skills_needed#1",
+    "kind": "direction",
+    "slug": "spetsialist-po-tamozhennomu-delu",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "умение работать с документами"
+  },
+  {
+    "id": "spetsialist-po-tamozhennomu-delu#skills_needed#2",
+    "kind": "direction",
+    "slug": "spetsialist-po-tamozhennomu-delu",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "аналитические способности"
+  },
+  {
+    "id": "spetsialist-po-tamozhennomu-delu#skills_needed#3",
+    "kind": "direction",
+    "slug": "spetsialist-po-tamozhennomu-delu",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "внимание к деталям"
+  },
+  {
+    "id": "spetsialist-po-tamozhennomu-delu#skills_needed#4",
+    "kind": "direction",
+    "slug": "spetsialist-po-tamozhennomu-delu",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "навыки переговоров"
+  },
+  {
+    "id": "spetsialist-po-zakupkam#skills_needed#0",
+    "kind": "direction",
+    "slug": "spetsialist-po-zakupkam",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение вести переговоры"
+  },
+  {
+    "id": "spetsialist-po-zakupkam#skills_needed#1",
+    "kind": "direction",
+    "slug": "spetsialist-po-zakupkam",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "анализировать рыночные предложения"
+  },
+  {
+    "id": "spetsialist-po-zakupkam#skills_needed#2",
+    "kind": "direction",
+    "slug": "spetsialist-po-zakupkam",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "знать основы логистики"
+  },
+  {
+    "id": "spetsialist-po-zakupkam#skills_needed#3",
+    "kind": "direction",
+    "slug": "spetsialist-po-zakupkam",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "работать с документацией"
+  },
+  {
+    "id": "spetsialist-po-zakupkam#skills_needed#4",
+    "kind": "direction",
+    "slug": "spetsialist-po-zakupkam",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "использовать программы для учета закупок"
+  },
+  {
+    "id": "spetsialist-tehnicheskoy-podderzhki#skills_needed#0",
+    "kind": "direction",
+    "slug": "spetsialist-tehnicheskoy-podderzhki",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение быстро находить решения проблем"
+  },
+  {
+    "id": "spetsialist-tehnicheskoy-podderzhki#skills_needed#1",
+    "kind": "direction",
+    "slug": "spetsialist-tehnicheskoy-podderzhki",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "знание основ работы компьютеров и программ"
+  },
+  {
+    "id": "spetsialist-tehnicheskoy-podderzhki#skills_needed#2",
+    "kind": "direction",
+    "slug": "spetsialist-tehnicheskoy-podderzhki",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "навыки общения с клиентами"
+  },
+  {
+    "id": "spetsialist-tehnicheskoy-podderzhki#skills_needed#3",
+    "kind": "direction",
+    "slug": "spetsialist-tehnicheskoy-podderzhki",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "умение объяснять технические детали простыми словами"
+  },
+  {
+    "id": "spetsialist-tehnicheskoy-podderzhki#skills_needed#4",
+    "kind": "direction",
+    "slug": "spetsialist-tehnicheskoy-podderzhki",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "владение инструментами удаленной поддержки"
+  },
+  {
+    "id": "sportivnyy-menedzher-agent#skills_needed#0",
+    "kind": "direction",
+    "slug": "sportivnyy-menedzher-agent",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "планировать мероприятия и распределять бюджет"
+  },
+  {
+    "id": "sportivnyy-menedzher-agent#skills_needed#1",
+    "kind": "direction",
+    "slug": "sportivnyy-menedzher-agent",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "вести переговоры и оформлять договорённости"
+  },
+  {
+    "id": "sportivnyy-menedzher-agent#skills_needed#2",
+    "kind": "direction",
+    "slug": "sportivnyy-menedzher-agent",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "разбираться в устройстве спорта и его правил"
+  },
+  {
+    "id": "sportivnyy-menedzher-agent#skills_needed#3",
+    "kind": "direction",
+    "slug": "sportivnyy-menedzher-agent",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "находить партнёров и спонсоров"
+  },
+  {
+    "id": "sportivnyy-menedzher-agent#skills_needed#4",
+    "kind": "direction",
+    "slug": "sportivnyy-menedzher-agent",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "решать организационные проблемы в сжатые сроки"
+  },
+  {
+    "id": "stomatolog#skills_needed#0",
+    "kind": "direction",
+    "slug": "stomatolog",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение работать с инструментами и оборудованием"
+  },
+  {
+    "id": "stomatolog#skills_needed#1",
+    "kind": "direction",
+    "slug": "stomatolog",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "внимание к деталям"
+  },
+  {
+    "id": "stomatolog#skills_needed#2",
+    "kind": "direction",
+    "slug": "stomatolog",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "коммуникация с пациентами"
+  },
+  {
+    "id": "stomatolog#skills_needed#3",
+    "kind": "direction",
+    "slug": "stomatolog",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "навыки диагностики заболеваний"
+  },
+  {
+    "id": "stomatolog#skills_needed#4",
+    "kind": "direction",
+    "slug": "stomatolog",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "умение успокаивать и поддерживать пациентов"
+  },
+  {
+    "id": "strahovoy-agent#skills_needed#0",
+    "kind": "direction",
+    "slug": "strahovoy-agent",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение анализировать потребности клиентов"
+  },
+  {
+    "id": "strahovoy-agent#skills_needed#1",
+    "kind": "direction",
+    "slug": "strahovoy-agent",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "объяснять условия страхования простым языком"
+  },
+  {
+    "id": "strahovoy-agent#skills_needed#2",
+    "kind": "direction",
+    "slug": "strahovoy-agent",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "работать с документацией"
+  },
+  {
+    "id": "strahovoy-agent#skills_needed#3",
+    "kind": "direction",
+    "slug": "strahovoy-agent",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "вести переговоры"
+  },
+  {
+    "id": "strahovoy-agent#skills_needed#4",
+    "kind": "direction",
+    "slug": "strahovoy-agent",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "знать основы финансов и рисков"
+  },
+  {
+    "id": "strahovoy-anderrayter#skills_needed#0",
+    "kind": "direction",
+    "slug": "strahovoy-anderrayter",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "анализировать данные и информацию"
+  },
+  {
+    "id": "strahovoy-anderrayter#skills_needed#1",
+    "kind": "direction",
+    "slug": "strahovoy-anderrayter",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "оценивать риски"
+  },
+  {
+    "id": "strahovoy-anderrayter#skills_needed#2",
+    "kind": "direction",
+    "slug": "strahovoy-anderrayter",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "принимать обоснованные решения"
+  },
+  {
+    "id": "strahovoy-anderrayter#skills_needed#3",
+    "kind": "direction",
+    "slug": "strahovoy-anderrayter",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "работать с документами"
+  },
+  {
+    "id": "strahovoy-anderrayter#skills_needed#4",
+    "kind": "direction",
+    "slug": "strahovoy-anderrayter",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "общаться с клиентами и коллегами"
+  },
+  {
+    "id": "stsenarist#skills_needed#0",
+    "kind": "direction",
+    "slug": "stsenarist",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "строить сюжет с завязкой, поворотами и развязкой"
+  },
+  {
+    "id": "stsenarist#skills_needed#1",
+    "kind": "direction",
+    "slug": "stsenarist",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "прописывать характеры и живые диалоги"
+  },
+  {
+    "id": "stsenarist#skills_needed#2",
+    "kind": "direction",
+    "slug": "stsenarist",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "оформлять текст в сценарном формате"
+  },
+  {
+    "id": "stsenarist#skills_needed#3",
+    "kind": "direction",
+    "slug": "stsenarist",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "переписывать сцены по замечаниям без потери сути"
+  },
+  {
+    "id": "stsenarist#skills_needed#4",
+    "kind": "direction",
+    "slug": "stsenarist",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "чувствовать ритм и структуру истории"
+  },
+  {
+    "id": "sudmedekspert-kriminalist#skills_needed#0",
+    "kind": "direction",
+    "slug": "sudmedekspert-kriminalist",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "методично осматривать место и фиксировать всё найденное"
+  },
+  {
+    "id": "sudmedekspert-kriminalist#skills_needed#1",
+    "kind": "direction",
+    "slug": "sudmedekspert-kriminalist",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "аккуратно собирать и хранить образцы без загрязнения"
+  },
+  {
+    "id": "sudmedekspert-kriminalist#skills_needed#2",
+    "kind": "direction",
+    "slug": "sudmedekspert-kriminalist",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "работать с лабораторными методами анализа"
+  },
+  {
+    "id": "sudmedekspert-kriminalist#skills_needed#3",
+    "kind": "direction",
+    "slug": "sudmedekspert-kriminalist",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "строго опираться на факты в выводах"
+  },
+  {
+    "id": "sudmedekspert-kriminalist#skills_needed#4",
+    "kind": "direction",
+    "slug": "sudmedekspert-kriminalist",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "понятно и точно оформлять заключение"
+  },
+  {
+    "id": "sudya#skills_needed#0",
+    "kind": "direction",
+    "slug": "sudya",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "глубоко знать законы и уметь применять их к конкретному делу"
+  },
+  {
+    "id": "sudya#skills_needed#1",
+    "kind": "direction",
+    "slug": "sudya",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "беспристрастно оценивать доводы обеих сторон"
+  },
+  {
+    "id": "sudya#skills_needed#2",
+    "kind": "direction",
+    "slug": "sudya",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "разбирать большой объём документов и удерживать логику дела"
+  },
+  {
+    "id": "sudya#skills_needed#3",
+    "kind": "direction",
+    "slug": "sudya",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "чётко и обоснованно излагать решение"
+  },
+  {
+    "id": "sudya#skills_needed#4",
+    "kind": "direction",
+    "slug": "sudya",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "сохранять выдержку и нейтральность"
+  },
+  {
+    "id": "tehnolog-pischevogo-proizvodstva#skills_needed#0",
+    "kind": "direction",
+    "slug": "tehnolog-pischevogo-proizvodstva",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "анализировать состав продуктов"
+  },
+  {
+    "id": "tehnolog-pischevogo-proizvodstva#skills_needed#1",
+    "kind": "direction",
+    "slug": "tehnolog-pischevogo-proizvodstva",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "разрабатывать рецептуры"
+  },
+  {
+    "id": "tehnolog-pischevogo-proizvodstva#skills_needed#2",
+    "kind": "direction",
+    "slug": "tehnolog-pischevogo-proizvodstva",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "контролировать качество сырья и готовой продукции"
+  },
+  {
+    "id": "tehnolog-pischevogo-proizvodstva#skills_needed#3",
+    "kind": "direction",
+    "slug": "tehnolog-pischevogo-proizvodstva",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "работать с технологическим оборудованием"
+  },
+  {
+    "id": "tehnolog-pischevogo-proizvodstva#skills_needed#4",
+    "kind": "direction",
+    "slug": "tehnolog-pischevogo-proizvodstva",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "знать нормы и стандарты пищевой безопасности"
+  },
+  {
+    "id": "teolog-religioved#skills_needed#0",
+    "kind": "direction",
+    "slug": "teolog-religioved",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "внимательно и бережно читать религиозные тексты и источники"
+  },
+  {
+    "id": "teolog-religioved#skills_needed#1",
+    "kind": "direction",
+    "slug": "teolog-religioved",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "сравнивать традиции без предвзятости"
+  },
+  {
+    "id": "teolog-religioved#skills_needed#2",
+    "kind": "direction",
+    "slug": "teolog-religioved",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "разбираться в истории и культуре разных народов"
+  },
+  {
+    "id": "teolog-religioved#skills_needed#3",
+    "kind": "direction",
+    "slug": "teolog-religioved",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "вести уважительный диалог на чувствительные темы"
+  },
+  {
+    "id": "teolog-religioved#skills_needed#4",
+    "kind": "direction",
+    "slug": "teolog-religioved",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "ясно и корректно излагать выводы"
+  }
+]

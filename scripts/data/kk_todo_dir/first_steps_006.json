@@ -1,0 +1,482 @@
+[
+  {
+    "id": "spetsialist-po-tamozhennomu-delu#first_steps#0",
+    "kind": "direction",
+    "slug": "spetsialist-po-tamozhennomu-delu",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "прочитать о том, как товар проходит таможенное оформление на границе — от подачи декларации до выпуска груза"
+  },
+  {
+    "id": "spetsialist-po-tamozhennomu-delu#first_steps#1",
+    "kind": "direction",
+    "slug": "spetsialist-po-tamozhennomu-delu",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "провести исследование о правилах импорта и экспорта товаров в своей стране"
+  },
+  {
+    "id": "spetsialist-po-tamozhennomu-delu#first_steps#2",
+    "kind": "direction",
+    "slug": "spetsialist-po-tamozhennomu-delu",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "пообщаться с профессионалом в этой области и задать ему вопросы о его работе"
+  },
+  {
+    "id": "spetsialist-po-zakupkam#first_steps#0",
+    "kind": "direction",
+    "slug": "spetsialist-po-zakupkam",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "попробовать составить список необходимых товаров для вымышленной компании"
+  },
+  {
+    "id": "spetsialist-po-zakupkam#first_steps#1",
+    "kind": "direction",
+    "slug": "spetsialist-po-zakupkam",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "провести исследование цен на товары в магазинах и сравнить их"
+  },
+  {
+    "id": "spetsialist-po-zakupkam#first_steps#2",
+    "kind": "direction",
+    "slug": "spetsialist-po-zakupkam",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "пообщаться с родителями или знакомыми о том, как они делают закупки для своих нужд"
+  },
+  {
+    "id": "spetsialist-tehnicheskoy-podderzhki#first_steps#0",
+    "kind": "direction",
+    "slug": "spetsialist-tehnicheskoy-podderzhki",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "попробовать помочь друзьям или родственникам с настройкой их устройств"
+  },
+  {
+    "id": "spetsialist-tehnicheskoy-podderzhki#first_steps#1",
+    "kind": "direction",
+    "slug": "spetsialist-tehnicheskoy-podderzhki",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "создать простой FAQ по часто возникающим вопросам о каком-либо ПО"
+  },
+  {
+    "id": "spetsialist-tehnicheskoy-podderzhki#first_steps#2",
+    "kind": "direction",
+    "slug": "spetsialist-tehnicheskoy-podderzhki",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "поучаствовать в онлайн-курсах или вебинарах по технической поддержке"
+  },
+  {
+    "id": "sportivnyy-menedzher-agent#first_steps#0",
+    "kind": "direction",
+    "slug": "sportivnyy-menedzher-agent",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "организовать турнир или спортивный день: заявки, расписание, судьи, призы, объявление"
+  },
+  {
+    "id": "sportivnyy-menedzher-agent#first_steps#1",
+    "kind": "direction",
+    "slug": "sportivnyy-menedzher-agent",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "разобрать, как устроен доход известного клуба: билеты, реклама, трансляции, атрибутика"
+  },
+  {
+    "id": "sportivnyy-menedzher-agent#first_steps#2",
+    "kind": "direction",
+    "slug": "sportivnyy-menedzher-agent",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "провести учебные переговоры о контракте спортсмена, продумав интересы обеих сторон"
+  },
+  {
+    "id": "stomatolog#first_steps#0",
+    "kind": "direction",
+    "slug": "stomatolog",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "пообщайся с местным стоматологом о его работе и задавай вопросы"
+  },
+  {
+    "id": "stomatolog#first_steps#1",
+    "kind": "direction",
+    "slug": "stomatolog",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "прочитай о том, как проходит приём у стоматолога, и посмотри видео о современных методах лечения зубов"
+  },
+  {
+    "id": "stomatolog#first_steps#2",
+    "kind": "direction",
+    "slug": "stomatolog",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "пройди онлайн-курс по основам стоматологии или гигиены полости рта"
+  },
+  {
+    "id": "strahovoy-agent#first_steps#0",
+    "kind": "direction",
+    "slug": "strahovoy-agent",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "пообщайся с родственниками или знакомыми о том, какие виды страховок они используют и почему"
+  },
+  {
+    "id": "strahovoy-agent#first_steps#1",
+    "kind": "direction",
+    "slug": "strahovoy-agent",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "пройди онлайн-тест на определение своих финансовых навыков"
+  },
+  {
+    "id": "strahovoy-agent#first_steps#2",
+    "kind": "direction",
+    "slug": "strahovoy-agent",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "создай презентацию о различных видах страхования и представь её в классе."
+  },
+  {
+    "id": "strahovoy-anderrayter#first_steps#0",
+    "kind": "direction",
+    "slug": "strahovoy-anderrayter",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "провести опрос среди знакомых о том, какие страховые случаи они знают"
+  },
+  {
+    "id": "strahovoy-anderrayter#first_steps#1",
+    "kind": "direction",
+    "slug": "strahovoy-anderrayter",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "изучить основные виды страхования и их особенности"
+  },
+  {
+    "id": "strahovoy-anderrayter#first_steps#2",
+    "kind": "direction",
+    "slug": "strahovoy-anderrayter",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "создать таблицу с примерами рисков для разных видов страхования"
+  },
+  {
+    "id": "stsenarist#first_steps#0",
+    "kind": "direction",
+    "slug": "stsenarist",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "написать короткий сценарий одной сцены на несколько страниц в правильном формате и дать друзьям прочитать по ролям"
+  },
+  {
+    "id": "stsenarist#first_steps#1",
+    "kind": "direction",
+    "slug": "stsenarist",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "разобрать любимый фильм по эпизодам: где завязка, где перелом, где развязка"
+  },
+  {
+    "id": "stsenarist#first_steps#2",
+    "kind": "direction",
+    "slug": "stsenarist",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "взять готовую историю и переписать её финал двумя разными способами"
+  },
+  {
+    "id": "sudmedekspert-kriminalist#first_steps#0",
+    "kind": "direction",
+    "slug": "sudmedekspert-kriminalist",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "снять и сравнить отпечатки пальцев у нескольких людей и найти различия в узорах"
+  },
+  {
+    "id": "sudmedekspert-kriminalist#first_steps#1",
+    "kind": "direction",
+    "slug": "sudmedekspert-kriminalist",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "разыграть осмотр места: сфотографировать, описать и составить схему расположения предметов"
+  },
+  {
+    "id": "sudmedekspert-kriminalist#first_steps#2",
+    "kind": "direction",
+    "slug": "sudmedekspert-kriminalist",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "провести опыт по проявлению невидимых следов на стекле подручными средствами"
+  },
+  {
+    "id": "sudya#first_steps#0",
+    "kind": "direction",
+    "slug": "sudya",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "провести учебный суд с друзьями: одни защищают, другие обвиняют, ты выносишь решение только по правилам и фактам"
+  },
+  {
+    "id": "sudya#first_steps#1",
+    "kind": "direction",
+    "slug": "sudya",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "разобрать реальное несложное судебное решение и понять, на чём оно основано"
+  },
+  {
+    "id": "sudya#first_steps#2",
+    "kind": "direction",
+    "slug": "sudya",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "потренироваться письменно обосновывать вывод: тезис, доводы, ссылки на правила"
+  },
+  {
+    "id": "tehnolog-pischevogo-proizvodstva#first_steps#0",
+    "kind": "direction",
+    "slug": "tehnolog-pischevogo-proizvodstva",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "посмотреть документальный фильм или видеообзор о том, как производят продукты питания на заводе — от переработки сырья до упаковки готовой продукции"
+  },
+  {
+    "id": "tehnolog-pischevogo-proizvodstva#first_steps#1",
+    "kind": "direction",
+    "slug": "tehnolog-pischevogo-proizvodstva",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "попробовать самостоятельно приготовить новое блюдо, экспериментируя с ингредиентами"
+  },
+  {
+    "id": "tehnolog-pischevogo-proizvodstva#first_steps#2",
+    "kind": "direction",
+    "slug": "tehnolog-pischevogo-proizvodstva",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "изучить состав любимого продукта и попробовать создать его аналог с использованием других ингредиентов"
+  },
+  {
+    "id": "teolog-religioved#first_steps#0",
+    "kind": "direction",
+    "slug": "teolog-religioved",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "сравнить, как в двух-трёх традициях устроены главные праздники, и составить таблицу сходств и различий"
+  },
+  {
+    "id": "teolog-religioved#first_steps#1",
+    "kind": "direction",
+    "slug": "teolog-religioved",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "сходить в музей или храм с экскурсией и записать вопросы, которые возникли"
+  },
+  {
+    "id": "teolog-religioved#first_steps#2",
+    "kind": "direction",
+    "slug": "teolog-religioved",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "разобрать один известный сюжет, встречающийся в разных культурах, и проследить, как он меняется"
+  },
+  {
+    "id": "trener-po-sportu#first_steps#0",
+    "kind": "direction",
+    "slug": "trener-po-sportu",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "принять участие в спортивных секциях или клубах"
+  },
+  {
+    "id": "trener-po-sportu#first_steps#1",
+    "kind": "direction",
+    "slug": "trener-po-sportu",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "провести тренировку для друзей или младших школьников"
+  },
+  {
+    "id": "trener-po-sportu#first_steps#2",
+    "kind": "direction",
+    "slug": "trener-po-sportu",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "изучить основы спортивной науки через книги или статьи"
+  },
+  {
+    "id": "upravlyayuschiy-fermerskim-hozyaystvom#first_steps#0",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-fermerskim-hozyaystvom",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "посмотреть видео о том, как устроено современное фермерское хозяйство — от посевной до сбора урожая"
+  },
+  {
+    "id": "upravlyayuschiy-fermerskim-hozyaystvom#first_steps#1",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-fermerskim-hozyaystvom",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "попробовать вырастить растения на балконе или в саду"
+  },
+  {
+    "id": "upravlyayuschiy-fermerskim-hozyaystvom#first_steps#2",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-fermerskim-hozyaystvom",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "узнать о различных сельскохозяйственных культурах и их особенностях через книги или интернет"
+  },
+  {
+    "id": "upravlyayuschiy-otelem-restoranom#first_steps#0",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-otelem-restoranom",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "попробовать организовать небольшое мероприятие для друзей или семьи"
+  },
+  {
+    "id": "upravlyayuschiy-otelem-restoranom#first_steps#1",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-otelem-restoranom",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "поработать волонтером на мероприятиях или в ресторане"
+  },
+  {
+    "id": "upravlyayuschiy-otelem-restoranom#first_steps#2",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-otelem-restoranom",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "провести опрос среди знакомых о предпочтениях в обслуживании в ресторанах"
+  },
+  {
+    "id": "urbanist-gradostroitel#first_steps#0",
+    "kind": "direction",
+    "slug": "urbanist-gradostroitel",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "выбрать перекрёсток или двор и понаблюдать час, как им пользуются пешеходы, машины и дети, и предложить улучшения"
+  },
+  {
+    "id": "urbanist-gradostroitel#first_steps#1",
+    "kind": "direction",
+    "slug": "urbanist-gradostroitel",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "нарисовать карту своего района с проблемными местами: где темно, опасно, негде перейти"
+  },
+  {
+    "id": "urbanist-gradostroitel#first_steps#2",
+    "kind": "direction",
+    "slug": "urbanist-gradostroitel",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "разобрать удобный и неудобный маршрут до школы и объяснить, из-за чего разница"
+  },
+  {
+    "id": "ux-ui-dizayner#first_steps#0",
+    "kind": "direction",
+    "slug": "ux-ui-dizayner",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "взять неудобное приложение и перерисовать один его экран так, чтобы им было проще пользоваться"
+  },
+  {
+    "id": "ux-ui-dizayner#first_steps#1",
+    "kind": "direction",
+    "slug": "ux-ui-dizayner",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "собрать кликабельный прототип простого приложения в бесплатном онлайн-редакторе"
+  },
+  {
+    "id": "ux-ui-dizayner#first_steps#2",
+    "kind": "direction",
+    "slug": "ux-ui-dizayner",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "дать пяти людям выполнить задачу в каком-нибудь интерфейсе и записать, где они застревали"
+  },
+  {
+    "id": "veterinar#first_steps#0",
+    "kind": "direction",
+    "slug": "veterinar",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "пообщайся с ветеринаром в клинике или на ферме, узнай о его работе"
+  },
+  {
+    "id": "veterinar#first_steps#1",
+    "kind": "direction",
+    "slug": "veterinar",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "попробуй ухаживать за домашним животным, следи за его здоровьем и поведением"
+  },
+  {
+    "id": "veterinar#first_steps#2",
+    "kind": "direction",
+    "slug": "veterinar",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "посети зоологический сад и понаблюдай за животными, узнай о их привычках и потребностях"
+  },
+  {
+    "id": "voennyy-ofitser#first_steps#0",
+    "kind": "direction",
+    "slug": "voennyy-ofitser",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "поддерживать регулярную физподготовку по плану и отслеживать результаты"
+  },
+  {
+    "id": "voennyy-ofitser#first_steps#1",
+    "kind": "direction",
+    "slug": "voennyy-ofitser",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "взять на себя роль организатора в командной игре или походе: поставить задачу, распределить людей, разобрать итог"
+  },
+  {
+    "id": "voennyy-ofitser#first_steps#2",
+    "kind": "direction",
+    "slug": "voennyy-ofitser",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "изучить основы ориентирования на местности с картой и компасом и пройти маршрут"
+  },
+  {
+    "id": "vospitatel-detskogo-sada#first_steps#0",
+    "kind": "direction",
+    "slug": "vospitatel-detskogo-sada",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "провести мини-занятие для младших братьев или сестер"
+  },
+  {
+    "id": "vospitatel-detskogo-sada#first_steps#1",
+    "kind": "direction",
+    "slug": "vospitatel-detskogo-sada",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "создать развивающую игру или поделку для детей"
+  },
+  {
+    "id": "vospitatel-detskogo-sada#first_steps#2",
+    "kind": "direction",
+    "slug": "vospitatel-detskogo-sada",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "наблюдать за работой воспитателя в детском саду и записать интересные моменты"
+  }
+]

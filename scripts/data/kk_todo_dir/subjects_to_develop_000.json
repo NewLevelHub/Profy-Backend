@@ -1,0 +1,482 @@
+[
+  {
+    "id": "administrator-baz-dannyh#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "administrator-baz-dannyh",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "информатика"
+  },
+  {
+    "id": "administrator-baz-dannyh#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "administrator-baz-dannyh",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "математика"
+  },
+  {
+    "id": "administrator-baz-dannyh#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "administrator-baz-dannyh",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "физика"
+  },
+  {
+    "id": "agronom#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "agronom",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "биология"
+  },
+  {
+    "id": "agronom#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "agronom",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "химия"
+  },
+  {
+    "id": "agronom#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "agronom",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "математика"
+  },
+  {
+    "id": "agronom#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "agronom",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "география"
+  },
+  {
+    "id": "akter#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "akter",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "литература"
+  },
+  {
+    "id": "akter#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "akter",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "akter#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "akter",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "музыка"
+  },
+  {
+    "id": "akter#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "akter",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "изобразительное искусство"
+  },
+  {
+    "id": "aktuariy#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "aktuariy",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "математика"
+  },
+  {
+    "id": "aktuariy#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "aktuariy",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "информатика"
+  },
+  {
+    "id": "aktuariy#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "aktuariy",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "физика"
+  },
+  {
+    "id": "aktuariy#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "aktuariy",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "экономика"
+  },
+  {
+    "id": "analitik-dannyh#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "analitik-dannyh",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "математика"
+  },
+  {
+    "id": "analitik-dannyh#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "analitik-dannyh",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "информатика"
+  },
+  {
+    "id": "analitik-dannyh#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "analitik-dannyh",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "физика"
+  },
+  {
+    "id": "analitik-dannyh#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "analitik-dannyh",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "animator-2d-3d#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "animator-2d-3d",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "информатика"
+  },
+  {
+    "id": "animator-2d-3d#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "animator-2d-3d",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "изобразительное искусство"
+  },
+  {
+    "id": "animator-2d-3d#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "animator-2d-3d",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "математика"
+  },
+  {
+    "id": "animator-2d-3d#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "animator-2d-3d",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "физика"
+  },
+  {
+    "id": "arheolog#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "arheolog",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "история"
+  },
+  {
+    "id": "arheolog#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "arheolog",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "биология"
+  },
+  {
+    "id": "arheolog#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "arheolog",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "география"
+  },
+  {
+    "id": "arheolog#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "arheolog",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "информатика"
+  },
+  {
+    "id": "arhitektor#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "arhitektor",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "математика"
+  },
+  {
+    "id": "arhitektor#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "arhitektor",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "черчение"
+  },
+  {
+    "id": "arhitektor#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "arhitektor",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "физика"
+  },
+  {
+    "id": "arhitektor#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "arhitektor",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "изобразительное искусство"
+  },
+  {
+    "id": "arhivarius#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "arhivarius",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "история"
+  },
+  {
+    "id": "arhivarius#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "arhivarius",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "информатика"
+  },
+  {
+    "id": "arhivarius#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "arhivarius",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "arhivarius#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "arhivarius",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "обществознание"
+  },
+  {
+    "id": "astronom#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "astronom",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "физика"
+  },
+  {
+    "id": "astronom#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "astronom",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "математика"
+  },
+  {
+    "id": "astronom#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "astronom",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "информатика"
+  },
+  {
+    "id": "auditor#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "auditor",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "математика"
+  },
+  {
+    "id": "auditor#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "auditor",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "информатика"
+  },
+  {
+    "id": "auditor#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "auditor",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "экономика"
+  },
+  {
+    "id": "auditor#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "auditor",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "русский язык"
+  },
+  {
+    "id": "aviadispetcher#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "aviadispetcher",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "математика"
+  },
+  {
+    "id": "aviadispetcher#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "aviadispetcher",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "физика"
+  },
+  {
+    "id": "aviadispetcher#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "aviadispetcher",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "информатика"
+  },
+  {
+    "id": "aviadispetcher#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "aviadispetcher",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "bibliotekar#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "bibliotekar",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "bibliotekar#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "bibliotekar",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "литература"
+  },
+  {
+    "id": "bibliotekar#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "bibliotekar",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "информатика"
+  },
+  {
+    "id": "bibliotekar#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "bibliotekar",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "обществознание"
+  },
+  {
+    "id": "biolog#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "biolog",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "биология"
+  },
+  {
+    "id": "biolog#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "biolog",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "химия"
+  },
+  {
+    "id": "biolog#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "biolog",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "математика"
+  },
+  {
+    "id": "biolog#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "biolog",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "информатика"
+  },
+  {
+    "id": "birzhevoy-broker#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "birzhevoy-broker",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "математика"
+  },
+  {
+    "id": "birzhevoy-broker#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "birzhevoy-broker",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "информатика"
+  },
+  {
+    "id": "birzhevoy-broker#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "birzhevoy-broker",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "экономика"
+  },
+  {
+    "id": "birzhevoy-broker#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "birzhevoy-broker",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "обществознание"
+  },
+  {
+    "id": "biznes-perevodchik#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "biznes-perevodchik",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "иностранный язык"
+  },
+  {
+    "id": "biznes-perevodchik#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "biznes-perevodchik",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "русский/казахский язык"
+  }
+]

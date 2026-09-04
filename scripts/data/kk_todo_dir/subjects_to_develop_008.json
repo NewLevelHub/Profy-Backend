@@ -1,0 +1,290 @@
+[
+  {
+    "id": "upravlyayuschiy-fermerskim-hozyaystvom#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-fermerskim-hozyaystvom",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "обществознание"
+  },
+  {
+    "id": "upravlyayuschiy-otelem-restoranom#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-otelem-restoranom",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "экономика"
+  },
+  {
+    "id": "upravlyayuschiy-otelem-restoranom#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-otelem-restoranom",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "upravlyayuschiy-otelem-restoranom#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-otelem-restoranom",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "информатика"
+  },
+  {
+    "id": "upravlyayuschiy-otelem-restoranom#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-otelem-restoranom",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "обществознание"
+  },
+  {
+    "id": "urbanist-gradostroitel#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "urbanist-gradostroitel",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "география"
+  },
+  {
+    "id": "urbanist-gradostroitel#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "urbanist-gradostroitel",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "черчение"
+  },
+  {
+    "id": "urbanist-gradostroitel#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "urbanist-gradostroitel",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "обществознание"
+  },
+  {
+    "id": "ux-ui-dizayner#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "ux-ui-dizayner",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "ИЗО"
+  },
+  {
+    "id": "ux-ui-dizayner#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "ux-ui-dizayner",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "информатика"
+  },
+  {
+    "id": "ux-ui-dizayner#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "ux-ui-dizayner",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "обществознание"
+  },
+  {
+    "id": "veterinar#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "veterinar",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "биология"
+  },
+  {
+    "id": "veterinar#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "veterinar",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "химия"
+  },
+  {
+    "id": "veterinar#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "veterinar",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "физика"
+  },
+  {
+    "id": "veterinar#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "veterinar",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "voennyy-ofitser#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "voennyy-ofitser",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "физическая культура"
+  },
+  {
+    "id": "voennyy-ofitser#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "voennyy-ofitser",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "история"
+  },
+  {
+    "id": "voennyy-ofitser#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "voennyy-ofitser",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "физика"
+  },
+  {
+    "id": "vospitatel-detskogo-sada#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "vospitatel-detskogo-sada",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "психология"
+  },
+  {
+    "id": "vospitatel-detskogo-sada#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "vospitatel-detskogo-sada",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "vospitatel-detskogo-sada#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "vospitatel-detskogo-sada",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "изобразительное искусство (ИЗО)"
+  },
+  {
+    "id": "vospitatel-detskogo-sada#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "vospitatel-detskogo-sada",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "музыка"
+  },
+  {
+    "id": "vrach-obschey-praktiki#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "vrach-obschey-praktiki",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "биология"
+  },
+  {
+    "id": "vrach-obschey-praktiki#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "vrach-obschey-praktiki",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "химия"
+  },
+  {
+    "id": "vrach-obschey-praktiki#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "vrach-obschey-praktiki",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "физика"
+  },
+  {
+    "id": "vrach-obschey-praktiki#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "vrach-obschey-praktiki",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "yurist-advokat#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "yurist-advokat",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "обществознание"
+  },
+  {
+    "id": "yurist-advokat#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "yurist-advokat",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "yurist-advokat#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "yurist-advokat",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "история"
+  },
+  {
+    "id": "zhurnalist#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "zhurnalist",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "zhurnalist#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "zhurnalist",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "литература"
+  },
+  {
+    "id": "zhurnalist#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "zhurnalist",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "история"
+  },
+  {
+    "id": "zhurnalist#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "zhurnalist",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "обществознание"
+  },
+  {
+    "id": "zvukorezhisser#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "zvukorezhisser",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "физика"
+  },
+  {
+    "id": "zvukorezhisser#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "zvukorezhisser",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "музыка"
+  },
+  {
+    "id": "zvukorezhisser#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "zvukorezhisser",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "информатика"
+  }
+]

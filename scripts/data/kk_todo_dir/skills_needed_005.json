@@ -1,0 +1,482 @@
+[
+  {
+    "id": "inzhener-tehnolog-mashinostroenie#skills_needed#0",
+    "kind": "direction",
+    "slug": "inzhener-tehnolog-mashinostroenie",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "разбираться в способах обработки металлов и других материалов"
+  },
+  {
+    "id": "inzhener-tehnolog-mashinostroenie#skills_needed#1",
+    "kind": "direction",
+    "slug": "inzhener-tehnolog-mashinostroenie",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "читать чертежи и понимать требования к точности"
+  },
+  {
+    "id": "inzhener-tehnolog-mashinostroenie#skills_needed#2",
+    "kind": "direction",
+    "slug": "inzhener-tehnolog-mashinostroenie",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "составлять последовательность операций изготовления"
+  },
+  {
+    "id": "inzhener-tehnolog-mashinostroenie#skills_needed#3",
+    "kind": "direction",
+    "slug": "inzhener-tehnolog-mashinostroenie",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "подбирать станки, инструмент и режимы резания"
+  },
+  {
+    "id": "inzhener-tehnolog-mashinostroenie#skills_needed#4",
+    "kind": "direction",
+    "slug": "inzhener-tehnolog-mashinostroenie",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "искать причины брака и устранять их"
+  },
+  {
+    "id": "iskusstvoved#skills_needed#0",
+    "kind": "direction",
+    "slug": "iskusstvoved",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "анализировать и интерпретировать произведения искусства"
+  },
+  {
+    "id": "iskusstvoved#skills_needed#1",
+    "kind": "direction",
+    "slug": "iskusstvoved",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "проводить исследования и собирать информацию"
+  },
+  {
+    "id": "iskusstvoved#skills_needed#2",
+    "kind": "direction",
+    "slug": "iskusstvoved",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "писать статьи и рецензии"
+  },
+  {
+    "id": "iskusstvoved#skills_needed#3",
+    "kind": "direction",
+    "slug": "iskusstvoved",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "общаться с художниками и публикой"
+  },
+  {
+    "id": "iskusstvoved#skills_needed#4",
+    "kind": "direction",
+    "slug": "iskusstvoved",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "организовывать выставки и мероприятия"
+  },
+  {
+    "id": "issledovatel-v-oblasti-biotehnologiy#skills_needed#0",
+    "kind": "direction",
+    "slug": "issledovatel-v-oblasti-biotehnologiy",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "проводить лабораторные эксперименты"
+  },
+  {
+    "id": "issledovatel-v-oblasti-biotehnologiy#skills_needed#1",
+    "kind": "direction",
+    "slug": "issledovatel-v-oblasti-biotehnologiy",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "анализировать и интерпретировать научные данные"
+  },
+  {
+    "id": "issledovatel-v-oblasti-biotehnologiy#skills_needed#2",
+    "kind": "direction",
+    "slug": "issledovatel-v-oblasti-biotehnologiy",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "работать с современным лабораторным оборудованием"
+  },
+  {
+    "id": "issledovatel-v-oblasti-biotehnologiy#skills_needed#3",
+    "kind": "direction",
+    "slug": "issledovatel-v-oblasti-biotehnologiy",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "разрабатывать новые биотехнологические процессы"
+  },
+  {
+    "id": "issledovatel-v-oblasti-biotehnologiy#skills_needed#4",
+    "kind": "direction",
+    "slug": "issledovatel-v-oblasti-biotehnologiy",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "писать научные отчеты и статьи"
+  },
+  {
+    "id": "istorik#skills_needed#0",
+    "kind": "direction",
+    "slug": "istorik",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "критически оценивать надёжность источника"
+  },
+  {
+    "id": "istorik#skills_needed#1",
+    "kind": "direction",
+    "slug": "istorik",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "сопоставлять противоречивые свидетельства"
+  },
+  {
+    "id": "istorik#skills_needed#2",
+    "kind": "direction",
+    "slug": "istorik",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "работать с архивами и старыми текстами"
+  },
+  {
+    "id": "istorik#skills_needed#3",
+    "kind": "direction",
+    "slug": "istorik",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "выстраивать связную аргументацию по фактам"
+  },
+  {
+    "id": "istorik#skills_needed#4",
+    "kind": "direction",
+    "slug": "istorik",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "ясно и точно излагать выводы письменно"
+  },
+  {
+    "id": "kompozitor#skills_needed#0",
+    "kind": "direction",
+    "slug": "kompozitor",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "слышать музыку внутри и записывать её нотами или в программе"
+  },
+  {
+    "id": "kompozitor#skills_needed#1",
+    "kind": "direction",
+    "slug": "kompozitor",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "разбираться в гармонии и форме произведения"
+  },
+  {
+    "id": "kompozitor#skills_needed#2",
+    "kind": "direction",
+    "slug": "kompozitor",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "аранжировать музыку для разных инструментов"
+  },
+  {
+    "id": "kompozitor#skills_needed#3",
+    "kind": "direction",
+    "slug": "kompozitor",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "работать в программах для записи и сведения звука"
+  },
+  {
+    "id": "kompozitor#skills_needed#4",
+    "kind": "direction",
+    "slug": "kompozitor",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "подбирать музыку под настроение и задачу"
+  },
+  {
+    "id": "kreditnyy-analitik#skills_needed#0",
+    "kind": "direction",
+    "slug": "kreditnyy-analitik",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "анализировать финансовые документы"
+  },
+  {
+    "id": "kreditnyy-analitik#skills_needed#1",
+    "kind": "direction",
+    "slug": "kreditnyy-analitik",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "работать с таблицами и базами данных"
+  },
+  {
+    "id": "kreditnyy-analitik#skills_needed#2",
+    "kind": "direction",
+    "slug": "kreditnyy-analitik",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "оценивать риски"
+  },
+  {
+    "id": "kreditnyy-analitik#skills_needed#3",
+    "kind": "direction",
+    "slug": "kreditnyy-analitik",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "подготавливать отчеты и рекомендации"
+  },
+  {
+    "id": "kreditnyy-analitik#skills_needed#4",
+    "kind": "direction",
+    "slug": "kreditnyy-analitik",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "общаться с клиентами и коллегами"
+  },
+  {
+    "id": "landshaftnyy-dizayner#skills_needed#0",
+    "kind": "direction",
+    "slug": "landshaftnyy-dizayner",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение работать с растениями и знать их особенности"
+  },
+  {
+    "id": "landshaftnyy-dizayner#skills_needed#1",
+    "kind": "direction",
+    "slug": "landshaftnyy-dizayner",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "навыки проектирования и планировки"
+  },
+  {
+    "id": "landshaftnyy-dizayner#skills_needed#2",
+    "kind": "direction",
+    "slug": "landshaftnyy-dizayner",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "креативность и художественное восприятие"
+  },
+  {
+    "id": "landshaftnyy-dizayner#skills_needed#3",
+    "kind": "direction",
+    "slug": "landshaftnyy-dizayner",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "знание основ экологии и устойчивого дизайна"
+  },
+  {
+    "id": "landshaftnyy-dizayner#skills_needed#4",
+    "kind": "direction",
+    "slug": "landshaftnyy-dizayner",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "умение использовать графические программы для создания проектов"
+  },
+  {
+    "id": "lesnichiy#skills_needed#0",
+    "kind": "direction",
+    "slug": "lesnichiy",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "проводить лесные обследования и оценивать состояние деревьев"
+  },
+  {
+    "id": "lesnichiy#skills_needed#1",
+    "kind": "direction",
+    "slug": "lesnichiy",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "разрабатывать планы по восстановлению лесных экосистем"
+  },
+  {
+    "id": "lesnichiy#skills_needed#2",
+    "kind": "direction",
+    "slug": "lesnichiy",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "работать с картами и навигационными системами"
+  },
+  {
+    "id": "lesnichiy#skills_needed#3",
+    "kind": "direction",
+    "slug": "lesnichiy",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "знать основы экологии и биологии растений"
+  },
+  {
+    "id": "lesnichiy#skills_needed#4",
+    "kind": "direction",
+    "slug": "lesnichiy",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "уметь общаться с разными группами людей, включая местное население и школьников"
+  },
+  {
+    "id": "logist#skills_needed#0",
+    "kind": "direction",
+    "slug": "logist",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "планировать маршруты и рассчитывать сроки доставки"
+  },
+  {
+    "id": "logist#skills_needed#1",
+    "kind": "direction",
+    "slug": "logist",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "сравнивать варианты перевозки по цене и времени"
+  },
+  {
+    "id": "logist#skills_needed#2",
+    "kind": "direction",
+    "slug": "logist",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "вести документы и учёт грузов"
+  },
+  {
+    "id": "logist#skills_needed#3",
+    "kind": "direction",
+    "slug": "logist",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "быстро искать решение при сбоях в доставке"
+  },
+  {
+    "id": "logist#skills_needed#4",
+    "kind": "direction",
+    "slug": "logist",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "договариваться с перевозчиками и складами"
+  },
+  {
+    "id": "logoped#skills_needed#0",
+    "kind": "direction",
+    "slug": "logoped",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение проводить диагностику речевых нарушений"
+  },
+  {
+    "id": "logoped#skills_needed#1",
+    "kind": "direction",
+    "slug": "logoped",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "разработка индивидуальных программ занятий"
+  },
+  {
+    "id": "logoped#skills_needed#2",
+    "kind": "direction",
+    "slug": "logoped",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "использование различных методик и упражнений для коррекции речи"
+  },
+  {
+    "id": "logoped#skills_needed#3",
+    "kind": "direction",
+    "slug": "logoped",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "умение работать с детьми и их родителями"
+  },
+  {
+    "id": "logoped#skills_needed#4",
+    "kind": "direction",
+    "slug": "logoped",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "навыки наблюдения и анализа прогресса клиента"
+  },
+  {
+    "id": "marketolog#skills_needed#0",
+    "kind": "direction",
+    "slug": "marketolog",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "изучать потребности аудитории через опросы и наблюдение"
+  },
+  {
+    "id": "marketolog#skills_needed#1",
+    "kind": "direction",
+    "slug": "marketolog",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "анализировать конкурентов и рынок"
+  },
+  {
+    "id": "marketolog#skills_needed#2",
+    "kind": "direction",
+    "slug": "marketolog",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "формулировать понятное торговое предложение"
+  },
+  {
+    "id": "marketolog#skills_needed#3",
+    "kind": "direction",
+    "slug": "marketolog",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "оценивать эффективность рекламы по данным"
+  },
+  {
+    "id": "marketolog#skills_needed#4",
+    "kind": "direction",
+    "slug": "marketolog",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "придумывать и проверять рекламные идеи"
+  },
+  {
+    "id": "mashinist-lokomotiva#skills_needed#0",
+    "kind": "direction",
+    "slug": "mashinist-lokomotiva",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "управлять сложными механизмами"
+  },
+  {
+    "id": "mashinist-lokomotiva#skills_needed#1",
+    "kind": "direction",
+    "slug": "mashinist-lokomotiva",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "анализировать и реагировать на изменения в ситуации"
+  },
+  {
+    "id": "mashinist-lokomotiva#skills_needed#2",
+    "kind": "direction",
+    "slug": "mashinist-lokomotiva",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "соблюдать правила безопасности"
+  },
+  {
+    "id": "mashinist-lokomotiva#skills_needed#3",
+    "kind": "direction",
+    "slug": "mashinist-lokomotiva",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "работать в команде с другими членами экипажа"
+  },
+  {
+    "id": "mashinist-lokomotiva#skills_needed#4",
+    "kind": "direction",
+    "slug": "mashinist-lokomotiva",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "принимать быстрые решения в экстренных ситуациях"
+  }
+]

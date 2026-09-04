@@ -1,0 +1,87 @@
+name: i18n guard
+
+# KZ-602 — blocking i18n regression checks on every PR. There is no other PR
+# CI in this repo (cd.yml / cd-dev.yml only deploy on push to main/dev), so
+# this is the one automated gate for localization.
+on:
+  pull_request:
+    paths:
+      - 'app/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'alembic/**'
+      - 'requirements.txt'
+      - 'pyproject.toml'
+      - '.github/workflows/i18n-guard.yml'
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: profi_user
+          POSTGRES_PASSWORD: profi_password
+          POSTGRES_DB: profi_db
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U profi_user -d profi_db"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://profi_user:profi_password@localhost:5432/profi_db
+      REDIS_URL: redis://localhost:6379/0
+      SECRET_KEY: ci-not-a-secret
+      LLM_ENABLED: "false"
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      - name: migrate
+        run: alembic upgrade head
+
+      # test_content_locale asserts against real bank-seeded rows (directions,
+      # questions, pairs, motivation) — seed only those, not the full ~25-script
+      # CD chain.
+      - name: seed bank content
+        run: |
+          python scripts/seed_riasec_questions.py
+          python scripts/seed_bigfive_questions.py
+          python scripts/seed_mi_questions.py
+          python scripts/seed_question_pairs.py
+          python scripts/seed_riasec_directions.py
+          python scripts/apply_direction_content.py
+          python scripts/seed_motivation_statements.py
+          python scripts/seed_motivation_pairs.py
+
+      - name: i18n guard tests
+        run: >-
+          pytest -q
+          tests/unit/test_i18n.py
+          tests/unit/test_i18n_catalog.py
+          tests/unit/test_subjects_catalog.py
+          tests/unit/test_prompt_locale.py
+          tests/unit/test_narrative_language_guard.py
+          tests/unit/test_fallback_narrative_locale.py
+          tests/unit/test_report_narrative_context.py
+          tests/integration/test_content_locale.py
+          tests/integration/test_email_locale.py
+          tests/integration/test_error_locale.py
+          tests/integration/test_result_locale.py
+          tests/integration/test_user_locale.py
+          tests/integration/test_university_locale.py
+          tests/integration/test_ai_artifact_locale_key.py
+          tests/guard/

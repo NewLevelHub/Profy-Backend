@@ -23,3 +23,7 @@ htmlcov/
 media/
 profy-media/
 *.tar.gz
+
+# KZ-504: Kazakh translation working directories (not committed, generated per-session)
+scripts/data/kk_todo/
+scripts/data/kk_done/

@@ -1,0 +1,182 @@
+[
+  {
+    "id": "kyzylorda-open-university#description",
+    "kind": "university",
+    "university_key": "kyzylorda-open-university",
+    "ru": "Kyzylorda Open University is a higher education institution in Kyzylorda, Kazakhstan, providing distance and on-campus education."
+  },
+  {
+    "id": "alt-university-im-muhametzhana-tynyshpaeva#description",
+    "kind": "university",
+    "university_key": "alt-university-im-muhametzhana-tynyshpaeva",
+    "ru": "ALT University им. Мухаметжана Тынышпаева — специализированный вуз в области логистики, транспорта и инженерии. Предлагает программы по IT, энергетике, машиностроению, транспортным технологиям и строительству. 20 образовательных программ бакалавриата."
+  },
+  {
+    "id": "astana-it-university#description",
+    "kind": "university",
+    "university_key": "astana-it-university",
+    "ru": "Один из самых молодых вузов Казахстана, основан в 2019 году в рамках программы «Цифровой Казахстан». Специализируется исключительно на IT-образовании: ИИ, кибербезопасность, big data, встраиваемые системы, IT-предпринимательство. Обучение полностью на английском языке."
+  },
+  {
+    "id": "cardiff-university-kazakhstan#description",
+    "kind": "university",
+    "university_key": "cardiff-university-kazakhstan",
+    "ru": "Первый зарубежный кампус Cardiff University (Уэльс, Великобритания) и единственный в Центральной Азии кампус университета из группы Russell Group. Официально открыт 3 сентября 2025 года."
+  },
+  {
+    "id": "international-educational-corporation#description",
+    "kind": "university",
+    "university_key": "international-educational-corporation",
+    "ru": "International Educational Corporation is a unified educational, scientific, and production complex combining educational, scientific, production, and other units, with a rich history, traditions, and developed infrastructure."
+  },
+  {
+    "id": "international-engineering-and-technology-university#description",
+    "kind": "university",
+    "university_key": "international-engineering-and-technology-university",
+    "ru": "International Engineering and Technology University is a higher education institution in Kazakhstan specializing in engineering and technological fields."
+  },
+  {
+    "id": "international-transport-and-humanities-university#description",
+    "kind": "university",
+    "university_key": "international-transport-and-humanities-university",
+    "ru": "International Transport and Humanities University is a higher education institution in Kazakhstan specializing in training specialists in transport and humanities."
+  },
+  {
+    "id": "qazaq-ai-research-university#description",
+    "kind": "university",
+    "university_key": "qazaq-ai-research-university",
+    "ru": "Первый исследовательский AI-ориентированный университет в Центральной Азии, создан по поручению Президента РК К.-Ж. Токаева и открылся 1 сентября 2026 года на территории EXPO/Alem.ai. При университете действуют Quantum AI Lab, Robotics and Intelligent Systems Lab и AI Health Lab."
+  },
+  {
+    "id": "satbayev-university-universitet-satpaeva#description",
+    "kind": "university",
+    "university_key": "satbayev-university-universitet-satpaeva",
+    "ru": "Satbayev University (ранее — Казахский национальный исследовательский технический университет им. К.И. Сатпаева, КазНТУ) — ведущий технический университет Казахстана и Центральной Азии. Основан в 1934 году. Специализируется на инженерных, горно-металлургических, нефтегазовых и IT-направлениях. 89 образовательных программ бакалавриата."
+  },
+  {
+    "id": "silkway-international-university#description",
+    "kind": "university",
+    "university_key": "silkway-international-university",
+    "ru": "Silkway International University is a multidisciplinary higher education institution offering undergraduate and postgraduate education."
+  },
+  {
+    "id": "suleyman-demirel-university#description",
+    "kind": "university",
+    "university_key": "suleyman-demirel-university",
+    "ru": "Являясь одним из первых университетов, где преподавание ведется на английском языке, SDU предлагает 56 образовательных программ, в том числе 28 программ бакалавриата, 21 магистрескую программу и 7 докторских программ. Университет имеет трехъязычную систему образования, где 82% его образовательных программ преподаются на английском языке и 18% – на казахском. Обучение проводится в соответствии с системой ECTS (European Credit Transfer and Accumulation System), которая является европейской системой перевода и накопления."
+  },
+  {
+    "id": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova#description",
+    "kind": "university",
+    "university_key": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova",
+    "ru": "Многопрофильный университет в центре транзитных и коммерческих путей на Каспии. Инфраструктура для практического обучения предпринимательству, закупкам и коммерции, программы по международной торговле и управлению имущественными рисками."
+  },
+  {
+    "id": "ao-finansovaya-akademiya#description",
+    "kind": "university",
+    "university_key": "ao-finansovaya-akademiya",
+    "ru": "Специализированный вуз, открыт в 2009 году по инициативе Министерства финансов Республики Казахстан на базе Акмолинского финансово-экономического колледжа. Готовит кадры в области финансов, бухучёта и аудита, экономики, менеджмента и информационных систем."
+  },
+  {
+    "id": "akademiya-bolashaq#description",
+    "kind": "university",
+    "university_key": "akademiya-bolashaq",
+    "ru": "Частная высшая школа, одна из первых частных учебных заведений Казахстана, основанная в 1995 году в городе Караганда. Первоначально называлась Болашак Карагандинский институт современного образования, с 2007 года имеет статус университета. Обслуживает около 5,000-5,999 студентов."
+  },
+  {
+    "id": "akademiya-kaynar-q-university#description",
+    "kind": "university",
+    "university_key": "akademiya-kaynar-q-university",
+    "ru": "Академия «Кайнар» (Q University) — частный вуз Алматы, основанный в 1991 году. Предлагает программы по IT, праву, экономике, журналистике и психологии. 11 образовательных программ бакалавриата."
+  },
+  {
+    "id": "akademiya-grazhdanskoy-aviatsii-aga#description",
+    "kind": "university",
+    "university_key": "akademiya-grazhdanskoy-aviatsii-aga",
+    "ru": "Академия гражданской авиации (АГА) — ведущее учебное заведение Казахстана, специализирующееся на подготовке специалистов для гражданской авиации. Готовит пилотов, авиационных инженеров, диспетчеров и специалистов по авиационной безопасности и логистике. 21 образовательная программа бакалавриата."
+  },
+  {
+    "id": "akademiya-fizicheskoy-kultury-i-massovogo-sporta#description",
+    "kind": "university",
+    "university_key": "akademiya-fizicheskoy-kultury-i-massovogo-sporta",
+    "ru": "Академия физической культуры и массового спорта в Астане является ведущей образовательной и научно-исследовательской институцией, занимающейся подготовкой специалистов в области физической культуры, спорта и здорового образа жизни. Она играет ключевую роль в формировании профессионалов, способных улучшать физическое и психическое здоровье населения, а также развивать и популяризировать различные виды спорта на местном, региональном и национальном уровнях."
+  },
+  {
+    "id": "aktyubinskiy-regionalnyy-universitet-imeni-k-zhubanova#description",
+    "kind": "university",
+    "university_key": "aktyubinskiy-regionalnyy-universitet-imeni-k-zhubanova",
+    "ru": "Многопрофильный университет, основанный в 1966 году как педагогический институт, имеет в своём составе 16 факультетов и многопрофильный колледж. Назван в честь Кудайбергена Жубанова, выдающегося лингвиста и первого профессора казахского языкознания. Предоставляет образование в гуманитарных, естественных, технических и социальных науках."
+  },
+  {
+    "id": "almatinskiy-gumanitarno-ekonomicheskiy-universitet-ageu#description",
+    "kind": "university",
+    "university_key": "almatinskiy-gumanitarno-ekonomicheskiy-universitet-ageu",
+    "ru": "Алматинский гуманитарно-экономический университет (АГЭУ) — правопреемник Алматинской академии экономики и статистики (ААЭС). Основан в 2021 году. Предлагает программы по педагогике, физической культуре, дизайну, праву и экономике. 30 образовательных программ бакалавриата."
+  },
+  {
+    "id": "almatinskiy-institut-menedzhmenta-aim-almau#description",
+    "kind": "university",
+    "university_key": "almatinskiy-institut-menedzhmenta-aim-almau",
+    "ru": "Алматинский институт менеджмента (АИМ, AlmaU) — один из ведущих бизнес-университетов Казахстана. Основан в 1992 году. Специализируется на менеджменте, финансах, маркетинге, IT, медиа и психологии. 35 образовательных программ бакалавриата."
+  },
+  {
+    "id": "almatinskiy-tehnologicheskiy-universitet-atu#description",
+    "kind": "university",
+    "university_key": "almatinskiy-tehnologicheskiy-universitet-atu",
+    "ru": "Алматинский технологический университет (АТУ) — вуз, специализирующийся на технологиях пищевых производств, лёгкой промышленности, биотехнологии и информационных технологиях. Основан в 1957 году. 29 образовательных программ бакалавриата."
+  },
+  {
+    "id": "almatinskiy-universitet-energetiki-i-svyazi-aues#description",
+    "kind": "university",
+    "university_key": "almatinskiy-universitet-energetiki-i-svyazi-aues",
+    "ru": "Алматинский университет энергетики и связи (АУЭС) — ведущий вуз Казахстана в области энергетики, связи и информационных технологий. Основан в 1947 году. Предлагает широкий спектр программ по IT, электроэнергетике, телекоммуникациям, робототехнике и кибербезопасности. 46 образовательных программ бакалавриата."
+  },
+  {
+    "id": "arkalykskiy-pedagogicheskiy-universitet-imeni-ybyray-altynsarin#description",
+    "kind": "university",
+    "university_key": "arkalykskiy-pedagogicheskiy-universitet-imeni-ybyray-altynsarin",
+    "ru": "Основан 12 апреля 1972 года как педагогический институт и получил статус университета в марте 2025 года. Учебное заведение подготавливает компетентных, многоязычных педагогических специалистов, способных к высоким профессиональным достижениям. Располагает высокой квалификацией профессорско-преподавательского состава и современным информационно-техническим оборудованием."
+  },
+  {
+    "id": "atyrauskiy-universitet-imeni-halela-dosmuhamedova#description",
+    "kind": "university",
+    "university_key": "atyrauskiy-universitet-imeni-halela-dosmuhamedova",
+    "ru": "Многопрофильный университет, основанный в 1940 году как двухгодичный педагогический институт и переобразованный в университет в 1994 году. Назван в честь Халела Досмухамедова, выдающегося учёного-энциклопедиста. Позиционирует себя как ведущий университет Казахстана, центр качественного образования и инновационных исследований."
+  },
+  {
+    "id": "atyrauskiy-universitet-nefti-i-gaza-imeni-safi-utebaeva#description",
+    "kind": "university",
+    "university_key": "atyrauskiy-universitet-nefti-i-gaza-imeni-safi-utebaeva",
+    "ru": "Единственное в Казахстане государственное специализированное высшее учебное заведение, основанное в 1959 году, занимающееся подготовкой специалистов для нефтегазовой промышленности. В 2019 году университет был переименован в честь Сафи Утебаева, выдающегося учёного в области петрохимии. Является научно-образовательным центром Атырауской области."
+  },
+  {
+    "id": "baishev-universitet#description",
+    "kind": "university",
+    "university_key": "baishev-universitet",
+    "ru": "Основана в 1996 году как филиал Казахской академии менеджмента, в 2001 получила имя Сактагана Баишева. С 2019 переименована в Баишев Университет. Многопрофильный центр подготовки кадров и научной поддержки инновационного развития Казахстана с фокусом на высокие стандарты образования."
+  },
+  {
+    "id": "voennyy-in-t-sil-vozdushnoy-oborony#description",
+    "kind": "university",
+    "university_key": "voennyy-in-t-sil-vozdushnoy-oborony",
+    "ru": "Уникальное для всей Центральной Азии летное учебное заведение. Беспрецедентная практическая база: обучение на авиационных симуляторах и реальных воздушных судах. Помимо пилотов, выпускает диспетчеров и инженеров по эксплуатации."
+  },
+  {
+    "id": "vostochno-kazahstanskiy-tehnicheskiy-universitet#description",
+    "kind": "university",
+    "university_key": "vostochno-kazahstanskiy-tehnicheskiy-universitet",
+    "ru": "Флагман инженерного образования в центре металлургической и горнодобывающей промышленности страны. Эталонные программы по геологии, горному делу и инженерной экологии, полевые испытания на местных месторождениях."
+  },
+  {
+    "id": "egipetskiy-universitet-islamskoy-kultury-nur-mubarak#description",
+    "kind": "university",
+    "university_key": "egipetskiy-universitet-islamskoy-kultury-nur-mubarak",
+    "ru": "Египетский университет исламской культуры «Нур-Мубарак» в Алматы — учебное заведение, предлагающее образование в области исламской культуры, религиоведения, теологии и восточной филологии. Основан при поддержке Египта."
+  },
+  {
+    "id": "vostochno-kazahstanskiy-universitet-imeni-sarsena-amanzholova#description",
+    "kind": "university",
+    "university_key": "vostochno-kazahstanskiy-universitet-imeni-sarsena-amanzholova",
+    "ru": "Ведущий многопрофильный вуз Восточно-Казахстанской области, основанный в 1952 году. Входит в топ-10 многопрофильных университетов Казахстана. Активно развивает научную деятельность и поддерживает более 50 международных партнёрств. Является членом Евразийской ассоциации университетов и других международных организаций высшего образования."
+  }
+]

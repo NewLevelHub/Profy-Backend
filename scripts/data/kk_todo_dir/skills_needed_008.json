@@ -1,0 +1,482 @@
+[
+  {
+    "id": "prepodavatel-vuza#skills_needed#0",
+    "kind": "direction",
+    "slug": "prepodavatel-vuza",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение объяснять сложные темы доступным языком"
+  },
+  {
+    "id": "prepodavatel-vuza#skills_needed#1",
+    "kind": "direction",
+    "slug": "prepodavatel-vuza",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "навыки подготовки учебных материалов"
+  },
+  {
+    "id": "prepodavatel-vuza#skills_needed#2",
+    "kind": "direction",
+    "slug": "prepodavatel-vuza",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "умение организовывать учебный процесс"
+  },
+  {
+    "id": "prepodavatel-vuza#skills_needed#3",
+    "kind": "direction",
+    "slug": "prepodavatel-vuza",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "навыки работы с научной литературой"
+  },
+  {
+    "id": "prepodavatel-vuza#skills_needed#4",
+    "kind": "direction",
+    "slug": "prepodavatel-vuza",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "умение давать конструктивную обратную связь"
+  },
+  {
+    "id": "prodakt-menedzher#skills_needed#0",
+    "kind": "direction",
+    "slug": "prodakt-menedzher",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "выяснять реальные потребности пользователей"
+  },
+  {
+    "id": "prodakt-menedzher#skills_needed#1",
+    "kind": "direction",
+    "slug": "prodakt-menedzher",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "расставлять задачи по приоритету и объяснять выбор"
+  },
+  {
+    "id": "prodakt-menedzher#skills_needed#2",
+    "kind": "direction",
+    "slug": "prodakt-menedzher",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "формулировать понятные требования для команды"
+  },
+  {
+    "id": "prodakt-menedzher#skills_needed#3",
+    "kind": "direction",
+    "slug": "prodakt-menedzher",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "читать данные о поведении пользователей"
+  },
+  {
+    "id": "prodakt-menedzher#skills_needed#4",
+    "kind": "direction",
+    "slug": "prodakt-menedzher",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "договариваться между людьми с разными интересами"
+  },
+  {
+    "id": "proektnyy-menedzher#skills_needed#0",
+    "kind": "direction",
+    "slug": "proektnyy-menedzher",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "разбивать большую задачу на шаги и оценивать сроки"
+  },
+  {
+    "id": "proektnyy-menedzher#skills_needed#1",
+    "kind": "direction",
+    "slug": "proektnyy-menedzher",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "составлять план и следить за его выполнением"
+  },
+  {
+    "id": "proektnyy-menedzher#skills_needed#2",
+    "kind": "direction",
+    "slug": "proektnyy-menedzher",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "заранее находить риски и готовить запасные варианты"
+  },
+  {
+    "id": "proektnyy-menedzher#skills_needed#3",
+    "kind": "direction",
+    "slug": "proektnyy-menedzher",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "вести переговоры и решать споры в команде"
+  },
+  {
+    "id": "proektnyy-menedzher#skills_needed#4",
+    "kind": "direction",
+    "slug": "proektnyy-menedzher",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "чётко вести переписку и записи договорённостей"
+  },
+  {
+    "id": "proforientolog-karernyy-konsultant#skills_needed#0",
+    "kind": "direction",
+    "slug": "proforientolog-karernyy-konsultant",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "вести беседу и задавать вопросы, помогающие человеку понять себя"
+  },
+  {
+    "id": "proforientolog-karernyy-konsultant#skills_needed#1",
+    "kind": "direction",
+    "slug": "proforientolog-karernyy-konsultant",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "разбираться в мире профессий и путях входа в них"
+  },
+  {
+    "id": "proforientolog-karernyy-konsultant#skills_needed#2",
+    "kind": "direction",
+    "slug": "proforientolog-karernyy-konsultant",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "объяснять результаты опросников без ярлыков"
+  },
+  {
+    "id": "proforientolog-karernyy-konsultant#skills_needed#3",
+    "kind": "direction",
+    "slug": "proforientolog-karernyy-konsultant",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "помогать составить конкретный план действий"
+  },
+  {
+    "id": "proforientolog-karernyy-konsultant#skills_needed#4",
+    "kind": "direction",
+    "slug": "proforientolog-karernyy-konsultant",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "поддерживать, не решая за человека"
+  },
+  {
+    "id": "prokuror#skills_needed#0",
+    "kind": "direction",
+    "slug": "prokuror",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "хорошо знать законы и уметь применять их к делу"
+  },
+  {
+    "id": "prokuror#skills_needed#1",
+    "kind": "direction",
+    "slug": "prokuror",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "разбирать большой объём документов и находить главное"
+  },
+  {
+    "id": "prokuror#skills_needed#2",
+    "kind": "direction",
+    "slug": "prokuror",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "выстраивать логичную и доказательную позицию"
+  },
+  {
+    "id": "prokuror#skills_needed#3",
+    "kind": "direction",
+    "slug": "prokuror",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "уверенно и чётко выступать публично"
+  },
+  {
+    "id": "prokuror#skills_needed#4",
+    "kind": "direction",
+    "slug": "prokuror",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "сохранять принципиальность и объективность"
+  },
+  {
+    "id": "psihiatr#skills_needed#0",
+    "kind": "direction",
+    "slug": "psihiatr",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "внимательно вести беседу и слышать важные детали"
+  },
+  {
+    "id": "psihiatr#skills_needed#1",
+    "kind": "direction",
+    "slug": "psihiatr",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "разбираться в том, как работает мозг и действуют препараты"
+  },
+  {
+    "id": "psihiatr#skills_needed#2",
+    "kind": "direction",
+    "slug": "psihiatr",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "отличать одно состояние от другого по признакам"
+  },
+  {
+    "id": "psihiatr#skills_needed#3",
+    "kind": "direction",
+    "slug": "psihiatr",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "выстраивать доверие и не осуждать пациента"
+  },
+  {
+    "id": "psihiatr#skills_needed#4",
+    "kind": "direction",
+    "slug": "psihiatr",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "аккуратно вести записи наблюдений"
+  },
+  {
+    "id": "psiholog-issledovatel#skills_needed#0",
+    "kind": "direction",
+    "slug": "psiholog-issledovatel",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "проводить опросы и интервью"
+  },
+  {
+    "id": "psiholog-issledovatel#skills_needed#1",
+    "kind": "direction",
+    "slug": "psiholog-issledovatel",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "анализировать данные и делать выводы"
+  },
+  {
+    "id": "psiholog-issledovatel#skills_needed#2",
+    "kind": "direction",
+    "slug": "psiholog-issledovatel",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "разрабатывать и проводить психологические эксперименты"
+  },
+  {
+    "id": "psiholog-issledovatel#skills_needed#3",
+    "kind": "direction",
+    "slug": "psiholog-issledovatel",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "писать научные статьи и отчеты"
+  },
+  {
+    "id": "psiholog-issledovatel#skills_needed#4",
+    "kind": "direction",
+    "slug": "psiholog-issledovatel",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "работать с различными психологическими тестами"
+  },
+  {
+    "id": "psiholog-konsultant#skills_needed#0",
+    "kind": "direction",
+    "slug": "psiholog-konsultant",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение слушать и понимать других"
+  },
+  {
+    "id": "psiholog-konsultant#skills_needed#1",
+    "kind": "direction",
+    "slug": "psiholog-konsultant",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "анализировать ситуации и поведение людей"
+  },
+  {
+    "id": "psiholog-konsultant#skills_needed#2",
+    "kind": "direction",
+    "slug": "psiholog-konsultant",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "проводить беседы и задавать вопросы"
+  },
+  {
+    "id": "psiholog-konsultant#skills_needed#3",
+    "kind": "direction",
+    "slug": "psiholog-konsultant",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "разрабатывать планы помощи и поддержки"
+  },
+  {
+    "id": "psiholog-konsultant#skills_needed#4",
+    "kind": "direction",
+    "slug": "psiholog-konsultant",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "сохранять конфиденциальность информации"
+  },
+  {
+    "id": "qa-inzhener-testirovschik#skills_needed#0",
+    "kind": "direction",
+    "slug": "qa-inzhener-testirovschik",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "продумывать сценарии проверки, включая необычные случаи"
+  },
+  {
+    "id": "qa-inzhener-testirovschik#skills_needed#1",
+    "kind": "direction",
+    "slug": "qa-inzhener-testirovschik",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "внимательно и методично проходить проверки"
+  },
+  {
+    "id": "qa-inzhener-testirovschik#skills_needed#2",
+    "kind": "direction",
+    "slug": "qa-inzhener-testirovschik",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "чётко и воспроизводимо описывать найденные ошибки"
+  },
+  {
+    "id": "qa-inzhener-testirovschik#skills_needed#3",
+    "kind": "direction",
+    "slug": "qa-inzhener-testirovschik",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "писать автоматические тесты"
+  },
+  {
+    "id": "qa-inzhener-testirovschik#skills_needed#4",
+    "kind": "direction",
+    "slug": "qa-inzhener-testirovschik",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "разбираться в том, как устроено приложение внутри"
+  },
+  {
+    "id": "razrabotchik-programmnogo-obespecheniya#skills_needed#0",
+    "kind": "direction",
+    "slug": "razrabotchik-programmnogo-obespecheniya",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение программировать на языках, таких как Python, Java или C++"
+  },
+  {
+    "id": "razrabotchik-programmnogo-obespecheniya#skills_needed#1",
+    "kind": "direction",
+    "slug": "razrabotchik-programmnogo-obespecheniya",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "навыки работы с системами управления версиями, например, Git"
+  },
+  {
+    "id": "razrabotchik-programmnogo-obespecheniya#skills_needed#2",
+    "kind": "direction",
+    "slug": "razrabotchik-programmnogo-obespecheniya",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "умение анализировать и решать проблемы"
+  },
+  {
+    "id": "razrabotchik-programmnogo-obespecheniya#skills_needed#3",
+    "kind": "direction",
+    "slug": "razrabotchik-programmnogo-obespecheniya",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "знание основ алгоритмов и структур данных"
+  },
+  {
+    "id": "razrabotchik-programmnogo-obespecheniya#skills_needed#4",
+    "kind": "direction",
+    "slug": "razrabotchik-programmnogo-obespecheniya",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "умение работать в команде и общаться с коллегами"
+  },
+  {
+    "id": "reabilitolog-ergoterapevt#skills_needed#0",
+    "kind": "direction",
+    "slug": "reabilitolog-ergoterapevt",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "анализировать состояние пациента"
+  },
+  {
+    "id": "reabilitolog-ergoterapevt#skills_needed#1",
+    "kind": "direction",
+    "slug": "reabilitolog-ergoterapevt",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "разрабатывать индивидуальные реабилитационные программы"
+  },
+  {
+    "id": "reabilitolog-ergoterapevt#skills_needed#2",
+    "kind": "direction",
+    "slug": "reabilitolog-ergoterapevt",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "объяснять пациентам упражнения и методики"
+  },
+  {
+    "id": "reabilitolog-ergoterapevt#skills_needed#3",
+    "kind": "direction",
+    "slug": "reabilitolog-ergoterapevt",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "работать с медицинским оборудованием"
+  },
+  {
+    "id": "reabilitolog-ergoterapevt#skills_needed#4",
+    "kind": "direction",
+    "slug": "reabilitolog-ergoterapevt",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "составлять отчеты о прогрессе пациентов"
+  },
+  {
+    "id": "rezhisser#skills_needed#0",
+    "kind": "direction",
+    "slug": "rezhisser",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "разрабатывать сценарии и концепции"
+  },
+  {
+    "id": "rezhisser#skills_needed#1",
+    "kind": "direction",
+    "slug": "rezhisser",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "управлять командой и организовывать работу"
+  },
+  {
+    "id": "rezhisser#skills_needed#2",
+    "kind": "direction",
+    "slug": "rezhisser",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "анализировать и оценивать исполнение актёров"
+  },
+  {
+    "id": "rezhisser#skills_needed#3",
+    "kind": "direction",
+    "slug": "rezhisser",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "принимать решения в условиях стресса"
+  },
+  {
+    "id": "rezhisser#skills_needed#4",
+    "kind": "direction",
+    "slug": "rezhisser",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "работать с различными техническими средствами (камеры, свет)"
+  }
+]

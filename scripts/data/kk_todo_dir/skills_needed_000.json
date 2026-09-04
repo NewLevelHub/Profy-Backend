@@ -1,0 +1,482 @@
+[
+  {
+    "id": "administrator-baz-dannyh#skills_needed#0",
+    "kind": "direction",
+    "slug": "administrator-baz-dannyh",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение работать с SQL и другими языками запросов"
+  },
+  {
+    "id": "administrator-baz-dannyh#skills_needed#1",
+    "kind": "direction",
+    "slug": "administrator-baz-dannyh",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "навыки настройки и администрирования серверов"
+  },
+  {
+    "id": "administrator-baz-dannyh#skills_needed#2",
+    "kind": "direction",
+    "slug": "administrator-baz-dannyh",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "знание принципов проектирования баз данных"
+  },
+  {
+    "id": "administrator-baz-dannyh#skills_needed#3",
+    "kind": "direction",
+    "slug": "administrator-baz-dannyh",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "умение анализировать и оптимизировать производительность баз данных"
+  },
+  {
+    "id": "administrator-baz-dannyh#skills_needed#4",
+    "kind": "direction",
+    "slug": "administrator-baz-dannyh",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "способность выявлять и устранять ошибки в системах"
+  },
+  {
+    "id": "agronom#skills_needed#0",
+    "kind": "direction",
+    "slug": "agronom",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "анализировать данные о состоянии почвы и растений"
+  },
+  {
+    "id": "agronom#skills_needed#1",
+    "kind": "direction",
+    "slug": "agronom",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "разрабатывать технологии выращивания культур"
+  },
+  {
+    "id": "agronom#skills_needed#2",
+    "kind": "direction",
+    "slug": "agronom",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "проводить эксперименты и исследования"
+  },
+  {
+    "id": "agronom#skills_needed#3",
+    "kind": "direction",
+    "slug": "agronom",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "консультировать фермеров по вопросам агрономии"
+  },
+  {
+    "id": "agronom#skills_needed#4",
+    "kind": "direction",
+    "slug": "agronom",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "работать с сельскохозяйственной техникой"
+  },
+  {
+    "id": "akter#skills_needed#0",
+    "kind": "direction",
+    "slug": "akter",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение работать в команде"
+  },
+  {
+    "id": "akter#skills_needed#1",
+    "kind": "direction",
+    "slug": "akter",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "хорошая память для запоминания текстов"
+  },
+  {
+    "id": "akter#skills_needed#2",
+    "kind": "direction",
+    "slug": "akter",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "навыки импровизации"
+  },
+  {
+    "id": "akter#skills_needed#3",
+    "kind": "direction",
+    "slug": "akter",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "умение передавать эмоции"
+  },
+  {
+    "id": "akter#skills_needed#4",
+    "kind": "direction",
+    "slug": "akter",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "владение голосом и дикцией"
+  },
+  {
+    "id": "aktuariy#skills_needed#0",
+    "kind": "direction",
+    "slug": "aktuariy",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "анализировать и интерпретировать статистические данные"
+  },
+  {
+    "id": "aktuariy#skills_needed#1",
+    "kind": "direction",
+    "slug": "aktuariy",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "разрабатывать математические модели"
+  },
+  {
+    "id": "aktuariy#skills_needed#2",
+    "kind": "direction",
+    "slug": "aktuariy",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "работать с финансовыми расчетами"
+  },
+  {
+    "id": "aktuariy#skills_needed#3",
+    "kind": "direction",
+    "slug": "aktuariy",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "использовать программное обеспечение для статистики и моделирования"
+  },
+  {
+    "id": "aktuariy#skills_needed#4",
+    "kind": "direction",
+    "slug": "aktuariy",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "представлять сложные данные в понятной форме"
+  },
+  {
+    "id": "analitik-dannyh#skills_needed#0",
+    "kind": "direction",
+    "slug": "analitik-dannyh",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "работать с таблицами и базами данных"
+  },
+  {
+    "id": "analitik-dannyh#skills_needed#1",
+    "kind": "direction",
+    "slug": "analitik-dannyh",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "анализировать и интерпретировать данные"
+  },
+  {
+    "id": "analitik-dannyh#skills_needed#2",
+    "kind": "direction",
+    "slug": "analitik-dannyh",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "создавать визуализации данных"
+  },
+  {
+    "id": "analitik-dannyh#skills_needed#3",
+    "kind": "direction",
+    "slug": "analitik-dannyh",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "знать основы статистики"
+  },
+  {
+    "id": "analitik-dannyh#skills_needed#4",
+    "kind": "direction",
+    "slug": "analitik-dannyh",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "уметь программировать на языках, таких как Python или R"
+  },
+  {
+    "id": "animator-2d-3d#skills_needed#0",
+    "kind": "direction",
+    "slug": "animator-2d-3d",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение работать в графических редакторах"
+  },
+  {
+    "id": "animator-2d-3d#skills_needed#1",
+    "kind": "direction",
+    "slug": "animator-2d-3d",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "знание основ анимации и движения"
+  },
+  {
+    "id": "animator-2d-3d#skills_needed#2",
+    "kind": "direction",
+    "slug": "animator-2d-3d",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "креативное мышление"
+  },
+  {
+    "id": "animator-2d-3d#skills_needed#3",
+    "kind": "direction",
+    "slug": "animator-2d-3d",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "внимание к деталям"
+  },
+  {
+    "id": "animator-2d-3d#skills_needed#4",
+    "kind": "direction",
+    "slug": "animator-2d-3d",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "умение работать в команде"
+  },
+  {
+    "id": "arheolog#skills_needed#0",
+    "kind": "direction",
+    "slug": "arheolog",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение проводить раскопки и работать с инструментами"
+  },
+  {
+    "id": "arheolog#skills_needed#1",
+    "kind": "direction",
+    "slug": "arheolog",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "навыки анализа и интерпретации исторических данных"
+  },
+  {
+    "id": "arheolog#skills_needed#2",
+    "kind": "direction",
+    "slug": "arheolog",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "знание методов датировки находок"
+  },
+  {
+    "id": "arheolog#skills_needed#3",
+    "kind": "direction",
+    "slug": "arheolog",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "умение работать в команде и общаться с коллегами"
+  },
+  {
+    "id": "arheolog#skills_needed#4",
+    "kind": "direction",
+    "slug": "arheolog",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "навыки написания научных отчетов"
+  },
+  {
+    "id": "arhitektor#skills_needed#0",
+    "kind": "direction",
+    "slug": "arhitektor",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение работать с архитектурными программами (например, AutoCAD, SketchUp)"
+  },
+  {
+    "id": "arhitektor#skills_needed#1",
+    "kind": "direction",
+    "slug": "arhitektor",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "навыки рисования и создания эскизов"
+  },
+  {
+    "id": "arhitektor#skills_needed#2",
+    "kind": "direction",
+    "slug": "arhitektor",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "знание строительных норм и правил"
+  },
+  {
+    "id": "arhitektor#skills_needed#3",
+    "kind": "direction",
+    "slug": "arhitektor",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "умение анализировать потребности клиентов"
+  },
+  {
+    "id": "arhitektor#skills_needed#4",
+    "kind": "direction",
+    "slug": "arhitektor",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "критическое мышление для решения проектных задач"
+  },
+  {
+    "id": "arhivarius#skills_needed#0",
+    "kind": "direction",
+    "slug": "arhivarius",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение организовывать и систематизировать информацию"
+  },
+  {
+    "id": "arhivarius#skills_needed#1",
+    "kind": "direction",
+    "slug": "arhivarius",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "внимание к деталям"
+  },
+  {
+    "id": "arhivarius#skills_needed#2",
+    "kind": "direction",
+    "slug": "arhivarius",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "знание основ архивного дела и документации"
+  },
+  {
+    "id": "arhivarius#skills_needed#3",
+    "kind": "direction",
+    "slug": "arhivarius",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "навыки работы с компьютерными программами для учета и хранения данных"
+  },
+  {
+    "id": "arhivarius#skills_needed#4",
+    "kind": "direction",
+    "slug": "arhivarius",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "умение работать с историческими источниками"
+  },
+  {
+    "id": "astronom#skills_needed#0",
+    "kind": "direction",
+    "slug": "astronom",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "обрабатывать большие массивы данных наблюдений"
+  },
+  {
+    "id": "astronom#skills_needed#1",
+    "kind": "direction",
+    "slug": "astronom",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "программировать для обработки и визуализации данных"
+  },
+  {
+    "id": "astronom#skills_needed#2",
+    "kind": "direction",
+    "slug": "astronom",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "строить и проверять физические модели явлений"
+  },
+  {
+    "id": "astronom#skills_needed#3",
+    "kind": "direction",
+    "slug": "astronom",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "работать с оптическими приборами и телескопами"
+  },
+  {
+    "id": "astronom#skills_needed#4",
+    "kind": "direction",
+    "slug": "astronom",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "аккуратно вести записи наблюдений и расчётов"
+  },
+  {
+    "id": "auditor#skills_needed#0",
+    "kind": "direction",
+    "slug": "auditor",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "анализировать финансовые документы"
+  },
+  {
+    "id": "auditor#skills_needed#1",
+    "kind": "direction",
+    "slug": "auditor",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "составлять отчеты и рекомендации"
+  },
+  {
+    "id": "auditor#skills_needed#2",
+    "kind": "direction",
+    "slug": "auditor",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "работать с бухгалтерскими программами"
+  },
+  {
+    "id": "auditor#skills_needed#3",
+    "kind": "direction",
+    "slug": "auditor",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "объяснять результаты проверки клиентам"
+  },
+  {
+    "id": "auditor#skills_needed#4",
+    "kind": "direction",
+    "slug": "auditor",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "обращаться с цифрами и статистикой"
+  },
+  {
+    "id": "aviadispetcher#skills_needed#0",
+    "kind": "direction",
+    "slug": "aviadispetcher",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "анализировать информацию в реальном времени"
+  },
+  {
+    "id": "aviadispetcher#skills_needed#1",
+    "kind": "direction",
+    "slug": "aviadispetcher",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "принимать быстрые решения"
+  },
+  {
+    "id": "aviadispetcher#skills_needed#2",
+    "kind": "direction",
+    "slug": "aviadispetcher",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "работать с радиосвязью"
+  },
+  {
+    "id": "aviadispetcher#skills_needed#3",
+    "kind": "direction",
+    "slug": "aviadispetcher",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "использовать специальные программы для отслеживания полетов"
+  },
+  {
+    "id": "aviadispetcher#skills_needed#4",
+    "kind": "direction",
+    "slug": "aviadispetcher",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "объяснять инструкции четко и понятно"
+  }
+]

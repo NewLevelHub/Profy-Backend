@@ -1,0 +1,198 @@
+[
+  {
+    "id": "universitet-imeni-shakarima-goroda-semey#description",
+    "kind": "university",
+    "university_key": "universitet-imeni-shakarima-goroda-semey",
+    "ru": "Государственный университет, основанный в 1934 году как ведущий образовательный и научный центр северо-восточного Казахстана. Предоставляет подготовку по 67 программам бакалавриата, 49 программам магистратуры и 11 докторским программам. Более 4,000 студентов обучаются по специальностям от информационных технологий до гуманитарных наук."
+  },
+  {
+    "id": "universitet-inostrannyh-yazykov-i-delovoy-karery#description",
+    "kind": "university",
+    "university_key": "universitet-inostrannyh-yazykov-i-delovoy-karery",
+    "ru": "Университет иностранных языков и деловой карьеры — высшее учебное заведение в Казахстане, специализирующееся на подготовке специалистов в области иностранных языков и делового администрирования."
+  },
+  {
+    "id": "universitet-mezhdunarodnogo-biznesa-uib#description",
+    "kind": "university",
+    "university_key": "universitet-mezhdunarodnogo-biznesa-uib",
+    "ru": "Университет международного бизнеса им. Кенжегали Сагадиева (UIB) — один из ведущих частных университетов Казахстана в области бизнеса, права и цифровых технологий. Специализируется на международном бизнесе, праве, финансах, маркетинге и IT. 21 образовательная программа бакалавриата."
+  },
+  {
+    "id": "shymkentskiy-universitet#description",
+    "kind": "university",
+    "university_key": "shymkentskiy-universitet",
+    "ru": "Шымкентский университет — высшее учебное заведение в городе Шымкент, Казахстан."
+  },
+  {
+    "id": "filial-anhalt-university-of-applied-sciences-v-gorode-almaty#description",
+    "kind": "university",
+    "university_key": "filial-anhalt-university-of-applied-sciences-v-gorode-almaty",
+    "ru": "Филиал немецкого Университета прикладных наук Анхальт (Anhalt University of Applied Sciences) открыт в Алматы на базе Энергетического университета. Это первое немецкое учреждение, преподающее по немецким образовательным программам в Казахстане. Преподавание ведется полностью на английском языке под руководством немецких преподавателей, при постепенном переходе к подготовленным казахским коллегам. Выпускники получают двойной диплом - казахстанский и европейский диплом немецкого образца."
+  },
+  {
+    "id": "filial-mai-natsionalnyy-issledovatelskiy-universitet-v-gorode-baykonur#description",
+    "kind": "university",
+    "university_key": "filial-mai-natsionalnyy-issledovatelskiy-universitet-v-gorode-baykonur",
+    "ru": "Филиал Московского авиационного института (МАИ) под названием «Восход» работает в Байконуре. Это единственное государственное высшее учебное заведение в городе Байконуре, функционирующее в соответствии с Федеральным законом Российской Федерации об образовании. Университет готовит специалистов в области авиационного конструирования, испытаний летательных аппаратов, вычислительных систем и информационных технологий. Филиал обслуживает как студентов, получающих образовательные гранты Казахстана, так и студентов, обучающихся на платной основе."
+  },
+  {
+    "id": "filial-mgimo-mid-rossii-v-gorode-astana#description",
+    "kind": "university",
+    "university_key": "filial-mgimo-mid-rossii-v-gorode-astana",
+    "ru": "Филиал Московского государственного института международных отношений (МГИМО) открыт в Астане и начал приём студентов в сентябре 2025 года. Университет предлагает программы бакалавриата и магистратуры в области экономики, бизнес-информатики и глобальных рынков. Преподавание ведется профессорами МГИМО и специалистами из Казахстана, прошедшими переподготовку по методам МГИМО. Выпускники получают российский государственный диплом, идентичный дипломам МГИМО в Российской Федерации."
+  },
+  {
+    "id": "filial-niyau-mifi-v-gorode-almaty#description",
+    "kind": "university",
+    "university_key": "filial-niyau-mifi-v-gorode-almaty",
+    "ru": "Филиал Национального исследовательского ядерного университета МИФИ (Россия), открыт в Алматы 2 сентября 2022 года на базе Казахского национального университета имени аль-Фараби. Занимает лидирующую позицию в подготовке специалистов в сфере информационных технологий и ядерных технологий. Представляет образовательное сотрудничество между ведущим российским вузом и системой образования Казахстана."
+  },
+  {
+    "id": "filial-rhtu-imeni-d-i-mendeleeva-v-gorode-taraz#description",
+    "kind": "university",
+    "university_key": "filial-rhtu-imeni-d-i-mendeleeva-v-gorode-taraz",
+    "ru": "Филиал Российского химико-технологического университета имени Д.И. Менделеева открыт в 2024 году в городе Тараз на базе Университета имени М.Х. Дулати при поддержке компании КазФосфат. Филиал готовит специалистов в области химической технологии, особенно производства минеральных удобрений. Студенты обучаются первые два года в филиале в Таразе, затем третий год учебы проводят в главном кампусе РХТУ в Москве. В 2025 году филиал получил международную институциональную аккредитацию на период 5 лет."
+  },
+  {
+    "id": "filial-universiteta-gazi-gazi-niversitesi-v-gorode-shymkent#description",
+    "kind": "university",
+    "university_key": "filial-universiteta-gazi-gazi-niversitesi-v-gorode-shymkent",
+    "ru": "Филиал турецкого Университета Гази (Gazi Üniversitesi) создаётся в Шымкенте на основе Южно-казахстанского педагогического университета имени О. Жанибекова. Соглашение о сотрудничестве подписано между советом по высшему образованию Турции (YÖK) и Министерством науки и высшего образования Казахстана. Университет сфокусирован на инженерных и педагогических программах. Приём студентов планируется начать в 2025-2026 учебном году."
+  },
+  {
+    "id": "ekibastuzskiy-inzhenerno-tehnicheskiy-institut-imeni-akademika-k-satpaeva#description",
+    "kind": "university",
+    "university_key": "ekibastuzskiy-inzhenerno-tehnicheskiy-institut-imeni-akademika-k-satpaeva",
+    "ru": "Экибастузский инженерно-технический институт имени академика К. Сатпаева основан в 1994 году с целью подготовки высококвалифицированных специалистов в топливно-энергетическом секторе. За двадцать лет своей деятельности подготовил около 6000 специалистов, успешно работающих в различных отраслях промышленности Казахстана и за рубежом."
+  },
+  {
+    "id": "yuzhno-kazahstanskiy-meditsinskiy-universitet-imeni-m-auezova#description",
+    "kind": "university",
+    "university_key": "yuzhno-kazahstanskiy-meditsinskiy-universitet-imeni-m-auezova",
+    "ru": "Южно-Казахстанский медицинский университет имени М. Ауэзова — высшее учебное заведение в городе Шымкент, Казахстан, специализирующееся на медицинском образовании."
+  },
+  {
+    "id": "yuzhno-kazahstanskiy-pedagogicheskiy-universitet-imeni-zbek-l-zh-n-bekov#description",
+    "kind": "university",
+    "university_key": "yuzhno-kazahstanskiy-pedagogicheskiy-universitet-imeni-zbek-l-zh-n-bekov",
+    "ru": "Южно-Казахстанский педагогический университет имени Өзбекәлі Жәнібеков является одним из старейших университетов в Южном Казахстане, основанный в 1937 году как учительский институт. Получил статус педагогического университета в 1954 году. Университет предлагает широкий спектр педагогических и гуманитарных программ на всех уровнях высшего образования."
+  },
+  {
+    "id": "yuzhno-kazahstanskiy-universitet-imeni-m-auezova#description",
+    "kind": "university",
+    "university_key": "yuzhno-kazahstanskiy-universitet-imeni-m-auezova",
+    "ru": "Государственный многопрофильный университет, основанный в 1943 году как Технологический институт строительных материалов. Получил современный статус в 1998 году. Один из крупнейших вузов Казахстана с более чем 21,000 студентами, обучающимися по 76 техническим и гуманитарным специальностям."
+  },
+  {
+    "id": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova#Бизнес-переводчик#description",
+    "kind": "program",
+    "university_key": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova",
+    "program_name": "Бизнес-переводчик",
+    "ru": "Расположен на побережье Каспийского моря, превосходная база для курортного дела, туризма и гостиничного менеджмента. Качественные программы по филологии и переводоведению, выпускники — ключевые управленцы в региональном туризме."
+  },
+  {
+    "id": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova#Биржевой брокер#description",
+    "kind": "program",
+    "university_key": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova",
+    "program_name": "Биржевой брокер",
+    "ru": "Многопрофильный университет в центре транзитных и коммерческих путей на Каспии. Инфраструктура для практического обучения предпринимательству, закупкам и коммерции, программы по международной торговле и управлению имущественными рисками."
+  },
+  {
+    "id": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova#Гид-экскурсовод#description",
+    "kind": "program",
+    "university_key": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova",
+    "program_name": "Гид-экскурсовод",
+    "ru": "Расположен на побережье Каспийского моря, превосходная база для курортного дела, туризма и гостиничного менеджмента. Качественные программы по филологии и переводоведению, выпускники — ключевые управленцы в региональном туризме."
+  },
+  {
+    "id": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova#Журналист#description",
+    "kind": "program",
+    "university_key": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova",
+    "program_name": "Журналист",
+    "ru": "Расположен на побережье Каспийского моря, превосходная база для курортного дела, туризма и гостиничного менеджмента. Качественные программы по филологии и переводоведению, выпускники — ключевые управленцы в региональном туризме."
+  },
+  {
+    "id": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova#Менеджер по продажам#description",
+    "kind": "program",
+    "university_key": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova",
+    "program_name": "Менеджер по продажам",
+    "ru": "Многопрофильный университет в центре транзитных и коммерческих путей на Каспии. Инфраструктура для практического обучения предпринимательству, закупкам и коммерции, программы по международной торговле и управлению имущественными рисками."
+  },
+  {
+    "id": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova#Писатель / Копирайтер#description",
+    "kind": "program",
+    "university_key": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova",
+    "program_name": "Писатель / Копирайтер",
+    "ru": "Расположен на побережье Каспийского моря, превосходная база для курортного дела, туризма и гостиничного менеджмента. Качественные программы по филологии и переводоведению, выпускники — ключевые управленцы в региональном туризме."
+  },
+  {
+    "id": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova#Предприниматель#description",
+    "kind": "program",
+    "university_key": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova",
+    "program_name": "Предприниматель",
+    "ru": "Многопрофильный университет в центре транзитных и коммерческих путей на Каспии. Инфраструктура для практического обучения предпринимательству, закупкам и коммерции, программы по международной торговле и управлению имущественными рисками."
+  },
+  {
+    "id": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova#Риелтор#description",
+    "kind": "program",
+    "university_key": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova",
+    "program_name": "Риелтор",
+    "ru": "Многопрофильный университет в центре транзитных и коммерческих путей на Каспии. Инфраструктура для практического обучения предпринимательству, закупкам и коммерции, программы по международной торговле и управлению имущественными рисками."
+  },
+  {
+    "id": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova#Секретарь-делопроизводитель#description",
+    "kind": "program",
+    "university_key": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova",
+    "program_name": "Секретарь-делопроизводитель",
+    "ru": "Расположен на побережье Каспийского моря, превосходная база для курортного дела, туризма и гостиничного менеджмента. Качественные программы по филологии и переводоведению, выпускники — ключевые управленцы в региональном туризме."
+  },
+  {
+    "id": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova#Специалист по закупкам#description",
+    "kind": "program",
+    "university_key": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova",
+    "program_name": "Специалист по закупкам",
+    "ru": "Многопрофильный университет в центре транзитных и коммерческих путей на Каспии. Инфраструктура для практического обучения предпринимательству, закупкам и коммерции, программы по международной торговле и управлению имущественными рисками."
+  },
+  {
+    "id": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova#Страховой агент#description",
+    "kind": "program",
+    "university_key": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova",
+    "program_name": "Страховой агент",
+    "ru": "Многопрофильный университет в центре транзитных и коммерческих путей на Каспии. Инфраструктура для практического обучения предпринимательству, закупкам и коммерции, программы по международной торговле и управлению имущественными рисками."
+  },
+  {
+    "id": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova#Страховой андеррайтер#description",
+    "kind": "program",
+    "university_key": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova",
+    "program_name": "Страховой андеррайтер",
+    "ru": "Многопрофильный университет в центре транзитных и коммерческих путей на Каспии. Инфраструктура для практического обучения предпринимательству, закупкам и коммерции, программы по международной торговле и управлению имущественными рисками."
+  },
+  {
+    "id": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova#Управляющий отелем / рестораном#description",
+    "kind": "program",
+    "university_key": "yessenov-university-kaspiyskiy-gosudarstvennyy-universitet-tehnologiy-i-inzhiniringa-im-sh-esenova",
+    "program_name": "Управляющий отелем / рестораном",
+    "ru": "Расположен на побережье Каспийского моря, превосходная база для курортного дела, туризма и гостиничного менеджмента. Качественные программы по филологии и переводоведению, выпускники — ключевые управленцы в региональном туризме."
+  },
+  {
+    "id": "voennyy-in-t-sil-vozdushnoy-oborony#Авиадиспетчер#description",
+    "kind": "program",
+    "university_key": "voennyy-in-t-sil-vozdushnoy-oborony",
+    "program_name": "Авиадиспетчер",
+    "ru": "Уникальное для всей Центральной Азии летное учебное заведение. Беспрецедентная практическая база: обучение на авиационных симуляторах и реальных воздушных судах. Помимо пилотов, выпускает диспетчеров и инженеров по эксплуатации."
+  },
+  {
+    "id": "voennyy-in-t-sil-vozdushnoy-oborony#Директор по логистике#description",
+    "kind": "program",
+    "university_key": "voennyy-in-t-sil-vozdushnoy-oborony",
+    "program_name": "Директор по логистике",
+    "ru": "Уникальное для всей Центральной Азии летное учебное заведение. Беспрецедентная практическая база: обучение на авиационных симуляторах и реальных воздушных судах. Помимо пилотов, выпускает диспетчеров и инженеров по эксплуатации."
+  },
+  {
+    "id": "voennyy-in-t-sil-vozdushnoy-oborony#Машинист локомотива#description",
+    "kind": "program",
+    "university_key": "voennyy-in-t-sil-vozdushnoy-oborony",
+    "program_name": "Машинист локомотива",
+    "ru": "Уникальное для всей Центральной Азии летное учебное заведение. Беспрецедентная практическая база: обучение на авиационных симуляторах и реальных воздушных судах. Помимо пилотов, выпускает диспетчеров и инженеров по эксплуатации."
+  }
+]

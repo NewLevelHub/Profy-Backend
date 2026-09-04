@@ -1,0 +1,98 @@
+[
+  {
+    "id": "vrach-obschey-praktiki#first_steps#0",
+    "kind": "direction",
+    "slug": "vrach-obschey-praktiki",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "пообщайся с врачом в своей поликлинике и узнай о его работе"
+  },
+  {
+    "id": "vrach-obschey-praktiki#first_steps#1",
+    "kind": "direction",
+    "slug": "vrach-obschey-praktiki",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "пройди онлайн-курс по основам медицины"
+  },
+  {
+    "id": "vrach-obschey-praktiki#first_steps#2",
+    "kind": "direction",
+    "slug": "vrach-obschey-praktiki",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "проведи исследование о распространенных заболеваниях в своем регионе и подготовь презентацию о профилактике"
+  },
+  {
+    "id": "yurist-advokat#first_steps#0",
+    "kind": "direction",
+    "slug": "yurist-advokat",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "изучить основы гражданского и уголовного права через доступные учебные материалы"
+  },
+  {
+    "id": "yurist-advokat#first_steps#1",
+    "kind": "direction",
+    "slug": "yurist-advokat",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "посетить судебное заседание в качестве зрителя, чтобы увидеть, как проходит процесс"
+  },
+  {
+    "id": "yurist-advokat#first_steps#2",
+    "kind": "direction",
+    "slug": "yurist-advokat",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "написать небольшое юридическое заключение по вымышленному делу, основываясь на изученных материалах"
+  },
+  {
+    "id": "zhurnalist#first_steps#0",
+    "kind": "direction",
+    "slug": "zhurnalist",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "напиши небольшую статью о событии в своем городе"
+  },
+  {
+    "id": "zhurnalist#first_steps#1",
+    "kind": "direction",
+    "slug": "zhurnalist",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "проведи интервью с членом семьи или другом и запиши его"
+  },
+  {
+    "id": "zhurnalist#first_steps#2",
+    "kind": "direction",
+    "slug": "zhurnalist",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "создай блог или страницу в социальных сетях для публикации своих текстов"
+  },
+  {
+    "id": "zvukorezhisser#first_steps#0",
+    "kind": "direction",
+    "slug": "zvukorezhisser",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "записать голос или инструмент из разных точек комнаты и сравнить, где звук чище"
+  },
+  {
+    "id": "zvukorezhisser#first_steps#1",
+    "kind": "direction",
+    "slug": "zvukorezhisser",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "свести из нескольких дорожек простую композицию в бесплатном звуковом редакторе"
+  },
+  {
+    "id": "zvukorezhisser#first_steps#2",
+    "kind": "direction",
+    "slug": "zvukorezhisser",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "разобраться, как размер и обстановка комнаты меняют эхо, и попробовать заглушить его подручными средствами"
+  }
+]

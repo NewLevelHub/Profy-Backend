@@ -1,0 +1,482 @@
+[
+  {
+    "id": "administrator-baz-dannyh#first_steps#0",
+    "kind": "direction",
+    "slug": "administrator-baz-dannyh",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "создать простую базу данных для хранения информации о своих друзьях или книгах"
+  },
+  {
+    "id": "administrator-baz-dannyh#first_steps#1",
+    "kind": "direction",
+    "slug": "administrator-baz-dannyh",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "изучить основы SQL и написать несколько простых запросов"
+  },
+  {
+    "id": "administrator-baz-dannyh#first_steps#2",
+    "kind": "direction",
+    "slug": "administrator-baz-dannyh",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "поэкспериментировать с бесплатными программами для управления базами данных, например, SQLite или MySQL"
+  },
+  {
+    "id": "agronom#first_steps#0",
+    "kind": "direction",
+    "slug": "agronom",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "посмотреть видео о работе агронома в поле — от анализа почвы до подбора удобрений и планирования урожая"
+  },
+  {
+    "id": "agronom#first_steps#1",
+    "kind": "direction",
+    "slug": "agronom",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "провести простой эксперимент по выращиванию растений в домашних условиях"
+  },
+  {
+    "id": "agronom#first_steps#2",
+    "kind": "direction",
+    "slug": "agronom",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "изучить состав почвы в своем дворе и попробовать улучшить его с помощью удобрений"
+  },
+  {
+    "id": "akter#first_steps#0",
+    "kind": "direction",
+    "slug": "akter",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "участвовать в школьных театральных постановках"
+  },
+  {
+    "id": "akter#first_steps#1",
+    "kind": "direction",
+    "slug": "akter",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "записать короткое видео с монологом из любимого произведения"
+  },
+  {
+    "id": "akter#first_steps#2",
+    "kind": "direction",
+    "slug": "akter",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "посетить мастер-класс по актёрскому мастерству"
+  },
+  {
+    "id": "aktuariy#first_steps#0",
+    "kind": "direction",
+    "slug": "aktuariy",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "попробовать решить простые задачи по статистике и вероятности"
+  },
+  {
+    "id": "aktuariy#first_steps#1",
+    "kind": "direction",
+    "slug": "aktuariy",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "создать собственную модель для оценки рисков в игре или спорте"
+  },
+  {
+    "id": "aktuariy#first_steps#2",
+    "kind": "direction",
+    "slug": "aktuariy",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "поучаствовать в школьном проекте по финансам или страхованию"
+  },
+  {
+    "id": "analitik-dannyh#first_steps#0",
+    "kind": "direction",
+    "slug": "analitik-dannyh",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "собрать данные о своих оценках за год и проанализировать, в каких предметах ты лучше всего справлялся"
+  },
+  {
+    "id": "analitik-dannyh#first_steps#1",
+    "kind": "direction",
+    "slug": "analitik-dannyh",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "создать простую таблицу в Excel с данными о своих увлечениях и интересах"
+  },
+  {
+    "id": "analitik-dannyh#first_steps#2",
+    "kind": "direction",
+    "slug": "analitik-dannyh",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "попробовать визуализировать данные о погоде за неделю в виде графика или диаграммы"
+  },
+  {
+    "id": "animator-2d-3d#first_steps#0",
+    "kind": "direction",
+    "slug": "animator-2d-3d",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "создать простую анимацию с помощью онлайн-сервиса"
+  },
+  {
+    "id": "animator-2d-3d#first_steps#1",
+    "kind": "direction",
+    "slug": "animator-2d-3d",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "нарисовать комикс и анимировать его в приложении"
+  },
+  {
+    "id": "animator-2d-3d#first_steps#2",
+    "kind": "direction",
+    "slug": "animator-2d-3d",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "поучаствовать в школьном проекте по созданию мультфильма"
+  },
+  {
+    "id": "arheolog#first_steps#0",
+    "kind": "direction",
+    "slug": "arheolog",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "посетить местные археологические выставки или музеи и изучить экспонаты"
+  },
+  {
+    "id": "arheolog#first_steps#1",
+    "kind": "direction",
+    "slug": "arheolog",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "поучаствовать в волонтерских раскопках или проектах по сохранению исторического наследия"
+  },
+  {
+    "id": "arheolog#first_steps#2",
+    "kind": "direction",
+    "slug": "arheolog",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "создать мини-проект о древних цивилизациях, исследуя доступные источники информации и представляя результаты в классе"
+  },
+  {
+    "id": "arhitektor#first_steps#0",
+    "kind": "direction",
+    "slug": "arhitektor",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "создать свой проект небольшого здания или комнаты на бумаге"
+  },
+  {
+    "id": "arhitektor#first_steps#1",
+    "kind": "direction",
+    "slug": "arhitektor",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "посетить выставку архитектуры или архитектурный музей"
+  },
+  {
+    "id": "arhitektor#first_steps#2",
+    "kind": "direction",
+    "slug": "arhitektor",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "поучаствовать в школьном конкурсе на лучший проект здания"
+  },
+  {
+    "id": "arhivarius#first_steps#0",
+    "kind": "direction",
+    "slug": "arhivarius",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "посетить местный архив или библиотеку и понаблюдать за работой архивариуса"
+  },
+  {
+    "id": "arhivarius#first_steps#1",
+    "kind": "direction",
+    "slug": "arhivarius",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "собрать и упорядочить свои семейные документы или фотографии, создав небольшой архив"
+  },
+  {
+    "id": "arhivarius#first_steps#2",
+    "kind": "direction",
+    "slug": "arhivarius",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "написать небольшую статью о каком-либо историческом событии, используя архивные материалы из доступных источников."
+  },
+  {
+    "id": "astronom#first_steps#0",
+    "kind": "direction",
+    "slug": "astronom",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "вести дневник наблюдений за Луной и яркими планетами в течение месяца, зарисовывая их положение среди звёзд"
+  },
+  {
+    "id": "astronom#first_steps#1",
+    "kind": "direction",
+    "slug": "astronom",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "собрать телескоп или бинокль на штативе и найти по звёздной карте несколько объектов"
+  },
+  {
+    "id": "astronom#first_steps#2",
+    "kind": "direction",
+    "slug": "astronom",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "написать программу, которая по формулам считает положение планеты на небе в заданную дату"
+  },
+  {
+    "id": "auditor#first_steps#0",
+    "kind": "direction",
+    "slug": "auditor",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "попробуй составить простой бюджет для своей семьи или класса"
+  },
+  {
+    "id": "auditor#first_steps#1",
+    "kind": "direction",
+    "slug": "auditor",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "изучи основы бухгалтерского учета через доступные учебные материалы"
+  },
+  {
+    "id": "auditor#first_steps#2",
+    "kind": "direction",
+    "slug": "auditor",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "прочитай о том, как устроен процесс аудита компании, и разбери упрощённый учебный кейс аудиторской проверки"
+  },
+  {
+    "id": "aviadispetcher#first_steps#0",
+    "kind": "direction",
+    "slug": "aviadispetcher",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "поучаствовать в школьном проекте по моделированию аэропорта"
+  },
+  {
+    "id": "aviadispetcher#first_steps#1",
+    "kind": "direction",
+    "slug": "aviadispetcher",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "посмотреть видео о работе авиадиспетчеров и попробовать бесплатный симулятор управления воздушным движением"
+  },
+  {
+    "id": "aviadispetcher#first_steps#2",
+    "kind": "direction",
+    "slug": "aviadispetcher",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "изучить основы авиационной терминологии и составить словарь"
+  },
+  {
+    "id": "bibliotekar#first_steps#0",
+    "kind": "direction",
+    "slug": "bibliotekar",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "посетить местную библиотеку и понаблюдать за работой библиотекаря"
+  },
+  {
+    "id": "bibliotekar#first_steps#1",
+    "kind": "direction",
+    "slug": "bibliotekar",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "организовать мини-выставку книг на тему, которая интересна друзьям"
+  },
+  {
+    "id": "bibliotekar#first_steps#2",
+    "kind": "direction",
+    "slug": "bibliotekar",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "провести опрос среди одноклассников о любимых книгах и создать список рекомендаций"
+  },
+  {
+    "id": "biolog#first_steps#0",
+    "kind": "direction",
+    "slug": "biolog",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "собрать коллекцию листьев и изучить их виды"
+  },
+  {
+    "id": "biolog#first_steps#1",
+    "kind": "direction",
+    "slug": "biolog",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "провести простой эксперимент с ростом растений в разных условиях"
+  },
+  {
+    "id": "biolog#first_steps#2",
+    "kind": "direction",
+    "slug": "biolog",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "посетить местный зоопарк или ботанический сад и записать наблюдения о животных или растениях"
+  },
+  {
+    "id": "birzhevoy-broker#first_steps#0",
+    "kind": "direction",
+    "slug": "birzhevoy-broker",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "посетить финансовый семинар или вебинар"
+  },
+  {
+    "id": "birzhevoy-broker#first_steps#1",
+    "kind": "direction",
+    "slug": "birzhevoy-broker",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "создать виртуальный инвестиционный портфель и следить за его динамикой"
+  },
+  {
+    "id": "birzhevoy-broker#first_steps#2",
+    "kind": "direction",
+    "slug": "birzhevoy-broker",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "прочитать книги или статьи о фондовом рынке и инвестициях"
+  },
+  {
+    "id": "biznes-perevodchik#first_steps#0",
+    "kind": "direction",
+    "slug": "biznes-perevodchik",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "начать вести блог или дневник на иностранном языке"
+  },
+  {
+    "id": "biznes-perevodchik#first_steps#1",
+    "kind": "direction",
+    "slug": "biznes-perevodchik",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "перевести короткий текст или статью и показать его учителю"
+  },
+  {
+    "id": "biznes-perevodchik#first_steps#2",
+    "kind": "direction",
+    "slug": "biznes-perevodchik",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "поучаствовать в школьном проекте или конкурсе по переводу"
+  },
+  {
+    "id": "buhgalter#first_steps#0",
+    "kind": "direction",
+    "slug": "buhgalter",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "создать простой бюджет для своих карманных денег"
+  },
+  {
+    "id": "buhgalter#first_steps#1",
+    "kind": "direction",
+    "slug": "buhgalter",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "попробовать вести учет расходов за месяц"
+  },
+  {
+    "id": "buhgalter#first_steps#2",
+    "kind": "direction",
+    "slug": "buhgalter",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "изучить основы бухгалтерского учета через книги или онлайн-материалы"
+  },
+  {
+    "id": "burovoy-inzhener-neftegazovoe-delo#first_steps#0",
+    "kind": "direction",
+    "slug": "burovoy-inzhener-neftegazovoe-delo",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "посмотреть документальный фильм о том, как устроена буровая установка и как ведётся добыча нефти и газа"
+  },
+  {
+    "id": "burovoy-inzhener-neftegazovoe-delo#first_steps#1",
+    "kind": "direction",
+    "slug": "burovoy-inzhener-neftegazovoe-delo",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "создать модель буровой установки из конструктора или подручных материалов"
+  },
+  {
+    "id": "burovoy-inzhener-neftegazovoe-delo#first_steps#2",
+    "kind": "direction",
+    "slug": "burovoy-inzhener-neftegazovoe-delo",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "изучить основы геологии и составить простую карту месторождений в своем районе"
+  },
+  {
+    "id": "data-engineer#first_steps#0",
+    "kind": "direction",
+    "slug": "data-engineer",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "собрать в одну таблицу данные из нескольких разных файлов и привести их к единому виду"
+  },
+  {
+    "id": "data-engineer#first_steps#1",
+    "kind": "direction",
+    "slug": "data-engineer",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "написать скрипт, который каждый день сам скачивает какие-то открытые данные и сохраняет их"
+  },
+  {
+    "id": "data-engineer#first_steps#2",
+    "kind": "direction",
+    "slug": "data-engineer",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "изучить основы SQL и потренироваться соединять несколько таблиц запросами"
+  },
+  {
+    "id": "defektolog#first_steps#0",
+    "kind": "direction",
+    "slug": "defektolog",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "провести простое развивающее занятие с младшим ребёнком в семье: собрать по образцу узор, назвать предметы по картинкам"
+  },
+  {
+    "id": "defektolog#first_steps#1",
+    "kind": "direction",
+    "slug": "defektolog",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "понаблюдать за занятием в детском саду или центре и записать, какими приёмами взрослый удерживает внимание детей"
+  },
+  {
+    "id": "defektolog#first_steps#2",
+    "kind": "direction",
+    "slug": "defektolog",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "сделать набор карточек для развития речи и памяти и опробовать его на ком-то из младших"
+  }
+]

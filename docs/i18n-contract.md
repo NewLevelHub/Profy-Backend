@@ -631,6 +631,30 @@ per-locale строки) готова принять файл без измен�
   недоступен в рантайме (`SUPPORTED_LOCALES == ("ru",)` до KZ-603), так что
   `get_locale()` возвращает `"ru"` и фолбэк-ветка — единственная активная.
 
+## 14. CI-гарды локализации (KZ-602)
+
+Единственный PR-гейт для i18n (в репо нет CI на PR, только `cd.yml` на push).
+Workflow `.github/workflows/i18n-guard.yml` в обоих репозиториях, триггер
+`pull_request`.
+
+- **Фронт:** `npm run i18n:check` (парити `ru↔kk`, покрытие плюралов, свип
+  нелокализованной кириллицы вне каталога, синк школьных предметов BE↔FE) +
+  `npm run typecheck`. Список исключений — `scripts/i18n-exclude.json` (только
+  `admin/**` по KZ-210).
+- **Бэк:** postgres + redis сервисы → миграции → сид bank-контента (8 скриптов,
+  не вся CD-цепочка) → `pytest` целевого i18n-набора + `tests/guard/`.
+  - `tests/guard/test_i18n_leak.py`: (1) весь текст нарратива `kk`-отчёта
+    проходит `report_narrative_validator._check_language_kk` (нулевой RU-leak);
+    (2) `kk`-ответ `ProgramDetail` вне allowlist не содержит русских
+    слов-маркеров; (3) `ЕНТ`/`ҰБТ` не смешиваются в пределах локали
+    (`subjects.admission_terms`, каталоги `university_requirements`/`gap_analysis`,
+    глоссарий промпта).
+  - Конфиг гарда — `tests/data/i18n_guard_config.json` (`always_raw_fields`
+    — официальные названия/сырые данные вузов, навсегда; `catalog_temp_allowlist`
+    = `["description", "who_its_for"]` — **временно до KZ-504**, тест
+    `test_guard_config_temp_allowlist_is_only_kz504_pending_fields` не даёт
+    расширить; `ru_marker_words`; `ent_terms`).
+
 ---
 
 ## История решений
@@ -640,3 +664,4 @@ per-locale строки) готова принять файл без измен�
 | 2026-09-02 | Зафиксирован контракт; принято: react-i18next, вариант A хранения контента, `users.locale`, без feature-flag, описания вузов переводятся LLM-пакетно, админка `ru`-only. |
 | 2026-09-04 | KZ-501: каталог вузов/программ получает `*_i18n`-оверлеи поверх `ru`-колонки (не «вариант A»); read-side — `resolve_column_i18n`, в ответе — `description_locale` / `who_its_for_locale`. |
 | 2026-09-04 | KZ-503: `app/i18n/catalog/subjects.py` — единый дом школьных предметов (ключ = канон. рус. строка) + терминов ЕНТ/ҰБТ; глоссарий KZ-401 строится из него; `_subject_evidence` локализует имена предметов; синк BE↔FE тестами (`test_subjects_catalog.py` / `i18n-subjects.mjs`). |
+| 2026-09-04 | KZ-602: CI-гарды `.github/workflows/i18n-guard.yml` в обоих репо (PR-гейт); BE `tests/guard/` + конфиг `tests/data/i18n_guard_config.json` (RU-leak в нарративе/каталоге, `ЕНТ`↔`ҰБТ`). |

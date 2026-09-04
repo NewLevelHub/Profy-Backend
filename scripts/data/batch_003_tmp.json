@@ -1,0 +1,182 @@
+[
+  {
+    "id": "kyzylordinskiy-otkrytyy-universitet#description",
+    "kind": "university",
+    "university_key": "kyzylordinskiy-otkrytyy-universitet",
+    "ru": "Основана в 1998 году как Кызылординский инженерно-экономический институт. В 2009 года преобразована в гуманитарно-технический институт 'Ақмешіт', в 2023 переименована в Кызылординский открытый университет. Готовит востребованные кадры для промышленно-инновационного развития региона и страны с акцентом на профессиональную компетентность и личностное развитие."
+  },
+  {
+    "id": "tsentralno-aziatskiy-innovatsionnyy-universitet#description",
+    "kind": "university",
+    "university_key": "tsentralno-aziatskiy-innovatsionnyy-universitet",
+    "ru": "Центрально-Азиатский Инновационный Университет — высшее учебное заведение в Казахстане, расположенное в городе Шымкент предоставляющее образовательные программы в области инноваций и технологий."
+  },
+  {
+    "id": "meditsinskiy-universitet-astana#description",
+    "kind": "university",
+    "university_key": "meditsinskiy-universitet-astana",
+    "ru": "Один из крупнейших медицинских вузов Казахстана, основан 26 октября 1964 года как Целиноградский государственный медицинский институт. Входит в состав Национального медицинского холдинга, подчинён Министерству здравоохранения РК."
+  },
+  {
+    "id": "meditsinskiy-universitet-karagandy#description",
+    "kind": "university",
+    "university_key": "meditsinskiy-universitet-karagandy",
+    "ru": "Старейший исследовательский медицинский вуз страны, лидер в подготовке врачей, фармацевтов и медсестер. Высокотехнологичный симуляционный центр и собственные университетские клиники, сотни иностранных студентов."
+  },
+  {
+    "id": "mezhdunarodnaya-obrazovatelnaya-korporatsiya-kazgasa#description",
+    "kind": "university",
+    "university_key": "mezhdunarodnaya-obrazovatelnaya-korporatsiya-kazgasa",
+    "ru": "Международная образовательная корпорация (МОК) — правопреемник Казахской головной архитектурно-строительной академии (КазГАСА). Специализируется на строительных, архитектурных, дизайнерских и инженерных направлениях, а также на гуманитарных и экономических программах. 45 образовательных программ бакалавриата."
+  },
+  {
+    "id": "mezhdunarodnyy-tarazskiy-universitet-imeni-sherhana-murtazy#description",
+    "kind": "university",
+    "university_key": "mezhdunarodnyy-tarazskiy-universitet-imeni-sherhana-murtazy",
+    "ru": "Международный Таразский университет имени Шерхана Муртазы основан в 2008 году на базе Таразского инновационно-гуманитарного университета (TIGU), который был создан на основе Таразского института Казахско-турецкого университета имени А. Ясауи. Университет является крупным научным центром, чья деятельность способствует развитию экономики региона и страны в целом."
+  },
+  {
+    "id": "mezhdunarodnyy-gumanitarno-tehnicheskiy-institut#description",
+    "kind": "university",
+    "university_key": "mezhdunarodnyy-gumanitarno-tehnicheskiy-institut",
+    "ru": "International Humanitarian and Technical Institute is a higher education institution in Kazakhstan, located in Almaty, providing education in humanitarian and technical sciences."
+  },
+  {
+    "id": "mezhdunarodnyy-inzhenerno-tehnologicheskiy-universitet-mitu#description",
+    "kind": "university",
+    "university_key": "mezhdunarodnyy-inzhenerno-tehnologicheskiy-universitet-mitu",
+    "ru": "Международный инженерно-технологический университет (МИТУ) — вуз, специализирующийся на инженерных, технологических и естественнонаучных направлениях. Основан в 2000 году. Предлагает программы по IT, биотехнологии, электроэнергетике и радиоэлектронике. 25 образовательных программ бакалавриата."
+  },
+  {
+    "id": "mezhdunarodnyy-kazahsko-turetskiy-universitet-imeni-hodzhi-ahmeda-yasavi#description",
+    "kind": "university",
+    "university_key": "mezhdunarodnyy-kazahsko-turetskiy-universitet-imeni-hodzhi-ahmeda-yasavi",
+    "ru": "Khoja Ahmed Yasawi International Kazakh-Turkish University is a higher education institution in Turkestan, Kazakhstan, established to develop education and science in cooperation between Kazakhstan and Turkey."
+  },
+  {
+    "id": "mezhdunarodnyy-transportno-gumanitarnyy-universitet#description",
+    "kind": "university",
+    "university_key": "mezhdunarodnyy-transportno-gumanitarnyy-universitet",
+    "ru": "Международный транспортно-гуманитарный университет основан в 2000 году под первоначальным названием 'Казахский университет путей сообщения'. В 2023 году переименован в МТГУ. Университет подготавливает специалистов для транспортного комплекса, коммуникаций, строительства и других секторов экономики Казахстана, активно сотрудничает с ведущими транспортными организациями и иностранными университетами."
+  },
+  {
+    "id": "mezhdunarodnyy-universitet-informatsionnyh-tehnologiy-muit#description",
+    "kind": "university",
+    "university_key": "mezhdunarodnyy-universitet-informatsionnyh-tehnologiy-muit",
+    "ru": "Международный университет информационных технологий (МУИТ, IITU) — специализированный IT-университет Алматы. Предлагает программы по программной инженерии, кибербезопасности, телекоммуникациям, компьютерным наукам и математическому моделированию. 31 образовательная программа бакалавриата."
+  },
+  {
+    "id": "mezhdunarodnyy-universitet-turizma-i-gostepriimstva#description",
+    "kind": "university",
+    "university_key": "mezhdunarodnyy-universitet-turizma-i-gostepriimstva",
+    "ru": "International University of Tourism and Hospitality is a higher education institution in Kazakhstan specializing in training specialists in tourism and hotel business."
+  },
+  {
+    "id": "nazarbaev-universitet#description",
+    "kind": "university",
+    "university_key": "nazarbaev-universitet",
+    "ru": "Ведущий исследовательский университет Казахстана, основан в 2010 году по инициативе Первого Президента РК. Единственный вуз страны с полностью автономным статусом, англоязычным обучением и учебными программами, разработанными совместно с топ-30 университетами мира (Duke, UPenn, UCL, Cambridge и др.). 8 школ, собственная система здравоохранения NU Medicine."
+  },
+  {
+    "id": "pavlodarskiy-pedagogicheskiy-universitet-imeni-lkey-mar-lan#description",
+    "kind": "university",
+    "university_key": "pavlodarskiy-pedagogicheskiy-universitet-imeni-lkey-mar-lan",
+    "ru": "Ведущий центр педагогического образования, занимающий 3-е место среди педагогических университетов Казахстана в национальных рейтингах. Входит в ТОП-10 лучших педагогических вузов страны. Успешно прошла институциональную и специализированную аккредитацию от независимых аккредитационных агентств AQUIN (Германия) и NKAOKO (Казахстан)."
+  },
+  {
+    "id": "pedagogicheskiy-institut-imeni-umirzaka-sultangazina#description",
+    "kind": "university",
+    "university_key": "pedagogicheskiy-institut-imeni-umirzaka-sultangazina",
+    "ru": "Педагогический институт имени Умирзака Султангазина — высшее учебное заведение в городе Костанай, Казахстан, специализирующееся на педагогическом образовании."
+  },
+  {
+    "id": "regionalnyy-innovatsionnyy-universitet#description",
+    "kind": "university",
+    "university_key": "regionalnyy-innovatsionnyy-universitet",
+    "ru": "Региональный инновационный университет — высшее учебное заведение в городе Шымкент, Казахстан, предоставляющее образовательные программы в области инноваций и технологий."
+  },
+  {
+    "id": "regionalnyy-sotsialno-innovatsionnyy-universitet#description",
+    "kind": "university",
+    "university_key": "regionalnyy-sotsialno-innovatsionnyy-universitet",
+    "ru": "Региональный социально-инновационный университет — высшее учебное заведение в Казахстане, расположенное в городе Алматы, специализирующееся на социально-инновационных направлениях образования."
+  },
+  {
+    "id": "rudnenskiy-industrialnyy-institut#description",
+    "kind": "university",
+    "university_key": "rudnenskiy-industrialnyy-institut",
+    "ru": "Рудненский индустриальный институт — высшее учебное заведение в городе Рудный, Казахстан, специализирующееся на техническом и инженерном образовании."
+  },
+  {
+    "id": "tsentralno-kazahstanskaya-akademiya#description",
+    "kind": "university",
+    "university_key": "tsentralno-kazahstanskaya-akademiya",
+    "ru": "Центрально-Казахстанская академия — высшее учебное заведение в городе Караганда, Казахстан."
+  },
+  {
+    "id": "severo-kazahstanskiy-universitet-imeni-manasha-kozybaeva#description",
+    "kind": "university",
+    "university_key": "severo-kazahstanskiy-universitet-imeni-manasha-kozybaeva",
+    "ru": "История восходит к 1937 году с основания учительского института. Единственный государственный многопрофильный университет Северо-Казахстанской области. Один из старейших вузов Казахстана с 89-летней историей. Впервые вошёл в престижный мировой рейтинг QS. С 2022 года имеет стратегическое партнёрство с Университетом Аризоны."
+  },
+  {
+    "id": "tarazskiy-universitet-imeni-m-h-dulati#description",
+    "kind": "university",
+    "university_key": "tarazskiy-universitet-imeni-m-h-dulati",
+    "ru": "Региональный университет, основанный в 1998 году в результате объединения трех высших учебных заведений. Является ведущим образовательным центром Южного Казахстана, предлагающим подготовку по 82 программам бакалавриата, 42 программам магистратуры и 7 докторским программам."
+  },
+  {
+    "id": "toraygyrov-universitet-tou#description",
+    "kind": "university",
+    "university_key": "toraygyrov-universitet-tou",
+    "ru": "Крупнейший академический центр северо-восточного Казахстана, развивающий инженерные и ИТ-дисциплины с упором на интеграцию информационных технологий в энергетику и металлургию. Есть лаборатории по блокчейн-инженерии и анализу данных."
+  },
+  {
+    "id": "universitet-miras#description",
+    "kind": "university",
+    "university_key": "universitet-miras",
+    "ru": "Университет «Мирас» — частный вуз в Шымкенте, основанный в 1997 году, с обучением на казахском, русском и английском языках по ключевым направлениям экономики, права, IT и педагогики."
+  },
+  {
+    "id": "universitet-turan-astana#description",
+    "kind": "university",
+    "university_key": "universitet-turan-astana",
+    "ru": "Часть образовательной корпорации «Туран». Открыт в 1998 году, в 2004 году выделен в самостоятельный вуз «Туран-Астана». Один из первых вузов страны, внедривших кредитную технологию обучения."
+  },
+  {
+    "id": "universitet-turan#description",
+    "kind": "university",
+    "university_key": "universitet-turan",
+    "ru": "Университет «Туран» — одно из ведущих частных учебных заведений Казахстана, основанное в 1992 году. Предлагает широкий спектр программ по IT, праву, международным отношениям, туризму и ресторанному бизнесу. 27 образовательных программ бакалавриата."
+  },
+  {
+    "id": "universitet-kimep#description",
+    "kind": "university",
+    "university_key": "universitet-kimep",
+    "ru": "Казахстанский институт менеджмента, экономики и прогнозирования (КИМЭП) — один из первых частных вузов Казахстана, основан в 1992 году. Специализируется на бизнесе, праве, международных отношениях и журналистике. Обучение преимущественно на английском. 17 образовательных программ бакалавриата."
+  },
+  {
+    "id": "universitet-narhoz#description",
+    "kind": "university",
+    "university_key": "universitet-narhoz",
+    "ru": "Университет Нархоз — один из ведущих экономических университетов Казахстана. Основан в 1963 году как Алматинский институт народного хозяйства. Предлагает программы по финансам, менеджменту, маркетингу, праву, IT и экологии. 40 образовательных программ бакалавриата."
+  },
+  {
+    "id": "universitet-imeni-alihana-bokeyhana#description",
+    "kind": "university",
+    "university_key": "universitet-imeni-alihana-bokeyhana",
+    "ru": "Государственный некоммерческий университет, основанный в 1998 году. В сентябре 2021 года Казахский гуманитарно-правовой инновационный университет был переименован в Alikhan Bokeikhan University. Крупнейшее многопрофильное учебное заведение региона, обслуживающее более 7,500 студентов по 58 образовательным программам."
+  },
+  {
+    "id": "universitet-imeni-zhubanova-ahmetuly-tasheneva#description",
+    "kind": "university",
+    "university_key": "universitet-imeni-zhubanova-ahmetuly-tasheneva",
+    "ru": "Университет основан в 1998 году как Сырдарьинский университет, позже переименован в честь выдающегося государственного деятеля Жумабека Ахметулы Ташенева. С 2022-2023 академического года начал деятельность в городе Шымкент. Обслуживает около 8,614 студентов по 61 программе бакалавриата и 9 программам магистратуры."
+  },
+  {
+    "id": "universitet-imeni-m-s-narikbaeva#description",
+    "kind": "university",
+    "university_key": "universitet-imeni-m-s-narikbaeva",
+    "ru": "Первый частный вуз на пространстве СНГ и в Центральной Азии, получивший британскую институциональную аккредитацию QAA Global Quality Award. Основан в 1994 году. Специализация на праве, экономике, гуманитарных науках и бизнесе; обучение на казахском, русском и английском."
+  }
+]

@@ -1,0 +1,482 @@
+[
+  {
+    "id": "biznes-perevodchik#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "biznes-perevodchik",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "литература"
+  },
+  {
+    "id": "biznes-perevodchik#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "biznes-perevodchik",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "обществознание"
+  },
+  {
+    "id": "buhgalter#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "buhgalter",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "математика"
+  },
+  {
+    "id": "buhgalter#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "buhgalter",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "информатика"
+  },
+  {
+    "id": "buhgalter#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "buhgalter",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "экономика"
+  },
+  {
+    "id": "buhgalter#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "buhgalter",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "burovoy-inzhener-neftegazovoe-delo#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "burovoy-inzhener-neftegazovoe-delo",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "математика"
+  },
+  {
+    "id": "burovoy-inzhener-neftegazovoe-delo#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "burovoy-inzhener-neftegazovoe-delo",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "физика"
+  },
+  {
+    "id": "burovoy-inzhener-neftegazovoe-delo#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "burovoy-inzhener-neftegazovoe-delo",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "география"
+  },
+  {
+    "id": "burovoy-inzhener-neftegazovoe-delo#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "burovoy-inzhener-neftegazovoe-delo",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "информатика"
+  },
+  {
+    "id": "data-engineer#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "data-engineer",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "информатика"
+  },
+  {
+    "id": "data-engineer#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "data-engineer",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "математика"
+  },
+  {
+    "id": "data-engineer#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "data-engineer",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "иностранный язык"
+  },
+  {
+    "id": "defektolog#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "defektolog",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "биология"
+  },
+  {
+    "id": "defektolog#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "defektolog",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "русский язык"
+  },
+  {
+    "id": "defektolog#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "defektolog",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "обществознание"
+  },
+  {
+    "id": "devops-inzhener#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "devops-inzhener",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "информатика"
+  },
+  {
+    "id": "devops-inzhener#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "devops-inzhener",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "математика"
+  },
+  {
+    "id": "devops-inzhener#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "devops-inzhener",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "иностранный язык"
+  },
+  {
+    "id": "diplomat#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "diplomat",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "история"
+  },
+  {
+    "id": "diplomat#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "diplomat",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "обществознание"
+  },
+  {
+    "id": "diplomat#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "diplomat",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "иностранный язык"
+  },
+  {
+    "id": "diplomat#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "diplomat",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "география"
+  },
+  {
+    "id": "direktor-po-logistike#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "direktor-po-logistike",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "математика"
+  },
+  {
+    "id": "direktor-po-logistike#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "direktor-po-logistike",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "информатика"
+  },
+  {
+    "id": "direktor-po-logistike#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "direktor-po-logistike",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "экономика"
+  },
+  {
+    "id": "direktor-po-logistike#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "direktor-po-logistike",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "обществознание"
+  },
+  {
+    "id": "direktor-po-marketingu#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "direktor-po-marketingu",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "Обществознание"
+  },
+  {
+    "id": "direktor-po-marketingu#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "direktor-po-marketingu",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "Иностранный язык"
+  },
+  {
+    "id": "direktor-po-marketingu#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "direktor-po-marketingu",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "Информатика"
+  },
+  {
+    "id": "direktor-po-marketingu#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "direktor-po-marketingu",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "Русский/казахский язык"
+  },
+  {
+    "id": "dizayner-interera#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "dizayner-interera",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "изобразительное искусство"
+  },
+  {
+    "id": "dizayner-interera#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "dizayner-interera",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "математика"
+  },
+  {
+    "id": "dizayner-interera#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "dizayner-interera",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "технология"
+  },
+  {
+    "id": "dizayner-interera#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "dizayner-interera",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "информатика"
+  },
+  {
+    "id": "ekonomist-analitik#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "ekonomist-analitik",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "математика"
+  },
+  {
+    "id": "ekonomist-analitik#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "ekonomist-analitik",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "информатика"
+  },
+  {
+    "id": "ekonomist-analitik#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "ekonomist-analitik",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "экономика"
+  },
+  {
+    "id": "ekonomist-analitik#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "ekonomist-analitik",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "обществознание"
+  },
+  {
+    "id": "epidemiolog#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "epidemiolog",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "биология"
+  },
+  {
+    "id": "epidemiolog#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "epidemiolog",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "математика"
+  },
+  {
+    "id": "epidemiolog#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "epidemiolog",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "химия"
+  },
+  {
+    "id": "event-menedzher#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "event-menedzher",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "event-menedzher#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "event-menedzher",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "информатика"
+  },
+  {
+    "id": "event-menedzher#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "event-menedzher",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "обществознание"
+  },
+  {
+    "id": "farmatsevt#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "farmatsevt",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "биология"
+  },
+  {
+    "id": "farmatsevt#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "farmatsevt",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "химия"
+  },
+  {
+    "id": "farmatsevt#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "farmatsevt",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "математика"
+  },
+  {
+    "id": "farmatsevt#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "farmatsevt",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "filolog-lingvist#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "filolog-lingvist",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "русский язык"
+  },
+  {
+    "id": "filolog-lingvist#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "filolog-lingvist",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "литература"
+  },
+  {
+    "id": "filolog-lingvist#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "filolog-lingvist",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "иностранный язык"
+  },
+  {
+    "id": "finansovyy-analitik#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "finansovyy-analitik",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "математика"
+  },
+  {
+    "id": "finansovyy-analitik#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "finansovyy-analitik",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "информатика"
+  },
+  {
+    "id": "finansovyy-analitik#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "finansovyy-analitik",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "экономика"
+  },
+  {
+    "id": "finansovyy-analitik#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "finansovyy-analitik",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "обществознание"
+  },
+  {
+    "id": "finansovyy-konsultant#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "finansovyy-konsultant",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "математика"
+  },
+  {
+    "id": "finansovyy-konsultant#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "finansovyy-konsultant",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "экономика"
+  },
+  {
+    "id": "finansovyy-konsultant#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "finansovyy-konsultant",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "информатика"
+  },
+  {
+    "id": "finansovyy-konsultant#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "finansovyy-konsultant",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "русский/казахский язык"
+  }
+]

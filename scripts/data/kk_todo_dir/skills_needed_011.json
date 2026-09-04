@@ -1,0 +1,482 @@
+[
+  {
+    "id": "trener-po-sportu#skills_needed#0",
+    "kind": "direction",
+    "slug": "trener-po-sportu",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "планировать и организовывать тренировки"
+  },
+  {
+    "id": "trener-po-sportu#skills_needed#1",
+    "kind": "direction",
+    "slug": "trener-po-sportu",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "анализировать физическую подготовку спортсменов"
+  },
+  {
+    "id": "trener-po-sportu#skills_needed#2",
+    "kind": "direction",
+    "slug": "trener-po-sportu",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "объяснять технику выполнения упражнений"
+  },
+  {
+    "id": "trener-po-sportu#skills_needed#3",
+    "kind": "direction",
+    "slug": "trener-po-sportu",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "мотивировать и поддерживать спортсменов"
+  },
+  {
+    "id": "trener-po-sportu#skills_needed#4",
+    "kind": "direction",
+    "slug": "trener-po-sportu",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "работать в команде с другими тренерами и специалистами"
+  },
+  {
+    "id": "upravlyayuschiy-fermerskim-hozyaystvom#skills_needed#0",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-fermerskim-hozyaystvom",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "планировать и организовывать рабочие процессы"
+  },
+  {
+    "id": "upravlyayuschiy-fermerskim-hozyaystvom#skills_needed#1",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-fermerskim-hozyaystvom",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "анализировать состояние сельскохозяйственных культур и животных"
+  },
+  {
+    "id": "upravlyayuschiy-fermerskim-hozyaystvom#skills_needed#2",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-fermerskim-hozyaystvom",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "управлять бюджетом и финансами хозяйства"
+  },
+  {
+    "id": "upravlyayuschiy-fermerskim-hozyaystvom#skills_needed#3",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-fermerskim-hozyaystvom",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "работать с сельскохозяйственной техникой"
+  },
+  {
+    "id": "upravlyayuschiy-fermerskim-hozyaystvom#skills_needed#4",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-fermerskim-hozyaystvom",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "решать проблемы и принимать решения в нестандартных ситуациях"
+  },
+  {
+    "id": "upravlyayuschiy-otelem-restoranom#skills_needed#0",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-otelem-restoranom",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "управлять командой сотрудников"
+  },
+  {
+    "id": "upravlyayuschiy-otelem-restoranom#skills_needed#1",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-otelem-restoranom",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "разрабатывать и внедрять стандарты обслуживания"
+  },
+  {
+    "id": "upravlyayuschiy-otelem-restoranom#skills_needed#2",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-otelem-restoranom",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "анализировать финансовые показатели"
+  },
+  {
+    "id": "upravlyayuschiy-otelem-restoranom#skills_needed#3",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-otelem-restoranom",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "решать конфликтные ситуации"
+  },
+  {
+    "id": "upravlyayuschiy-otelem-restoranom#skills_needed#4",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-otelem-restoranom",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "планировать мероприятия и акции"
+  },
+  {
+    "id": "urbanist-gradostroitel#skills_needed#0",
+    "kind": "direction",
+    "slug": "urbanist-gradostroitel",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "анализировать, как люди перемещаются и пользуются пространством"
+  },
+  {
+    "id": "urbanist-gradostroitel#skills_needed#1",
+    "kind": "direction",
+    "slug": "urbanist-gradostroitel",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "читать и создавать карты и схемы территории"
+  },
+  {
+    "id": "urbanist-gradostroitel#skills_needed#2",
+    "kind": "direction",
+    "slug": "urbanist-gradostroitel",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "учитывать интересы разных групп жителей"
+  },
+  {
+    "id": "urbanist-gradostroitel#skills_needed#3",
+    "kind": "direction",
+    "slug": "urbanist-gradostroitel",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "представлять последствия решений на годы вперёд"
+  },
+  {
+    "id": "urbanist-gradostroitel#skills_needed#4",
+    "kind": "direction",
+    "slug": "urbanist-gradostroitel",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "понятно объяснять проект и собирать обратную связь"
+  },
+  {
+    "id": "ux-ui-dizayner#skills_needed#0",
+    "kind": "direction",
+    "slug": "ux-ui-dizayner",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "выяснять задачи и трудности пользователей"
+  },
+  {
+    "id": "ux-ui-dizayner#skills_needed#1",
+    "kind": "direction",
+    "slug": "ux-ui-dizayner",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "проектировать структуру экранов и переходы между ними"
+  },
+  {
+    "id": "ux-ui-dizayner#skills_needed#2",
+    "kind": "direction",
+    "slug": "ux-ui-dizayner",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "рисовать понятный и аккуратный интерфейс"
+  },
+  {
+    "id": "ux-ui-dizayner#skills_needed#3",
+    "kind": "direction",
+    "slug": "ux-ui-dizayner",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "собирать прототипы и тестировать их на людях"
+  },
+  {
+    "id": "ux-ui-dizayner#skills_needed#4",
+    "kind": "direction",
+    "slug": "ux-ui-dizayner",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "работать в программах для дизайна интерфейсов"
+  },
+  {
+    "id": "veterinar#skills_needed#0",
+    "kind": "direction",
+    "slug": "veterinar",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение работать с животными"
+  },
+  {
+    "id": "veterinar#skills_needed#1",
+    "kind": "direction",
+    "slug": "veterinar",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "проведение медицинских осмотров"
+  },
+  {
+    "id": "veterinar#skills_needed#2",
+    "kind": "direction",
+    "slug": "veterinar",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "постановка диагнозов"
+  },
+  {
+    "id": "veterinar#skills_needed#3",
+    "kind": "direction",
+    "slug": "veterinar",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "проведение операций"
+  },
+  {
+    "id": "veterinar#skills_needed#4",
+    "kind": "direction",
+    "slug": "veterinar",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "объяснение владельцам животных рекомендаций по уходу"
+  },
+  {
+    "id": "voennyy-ofitser#skills_needed#0",
+    "kind": "direction",
+    "slug": "voennyy-ofitser",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "принимать решения быстро и брать за них ответственность"
+  },
+  {
+    "id": "voennyy-ofitser#skills_needed#1",
+    "kind": "direction",
+    "slug": "voennyy-ofitser",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "вести за собой и организовывать людей"
+  },
+  {
+    "id": "voennyy-ofitser#skills_needed#2",
+    "kind": "direction",
+    "slug": "voennyy-ofitser",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "держать физическую форму и выносливость"
+  },
+  {
+    "id": "voennyy-ofitser#skills_needed#3",
+    "kind": "direction",
+    "slug": "voennyy-ofitser",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "разбираться в тактике, технике и уставах"
+  },
+  {
+    "id": "voennyy-ofitser#skills_needed#4",
+    "kind": "direction",
+    "slug": "voennyy-ofitser",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "сохранять хладнокровие в стрессовой обстановке"
+  },
+  {
+    "id": "vospitatel-detskogo-sada#skills_needed#0",
+    "kind": "direction",
+    "slug": "vospitatel-detskogo-sada",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение работать с детьми"
+  },
+  {
+    "id": "vospitatel-detskogo-sada#skills_needed#1",
+    "kind": "direction",
+    "slug": "vospitatel-detskogo-sada",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "разработка и проведение развивающих занятий"
+  },
+  {
+    "id": "vospitatel-detskogo-sada#skills_needed#2",
+    "kind": "direction",
+    "slug": "vospitatel-detskogo-sada",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "навыки организации игр и мероприятий"
+  },
+  {
+    "id": "vospitatel-detskogo-sada#skills_needed#3",
+    "kind": "direction",
+    "slug": "vospitatel-detskogo-sada",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "обеспечение безопасности детей"
+  },
+  {
+    "id": "vospitatel-detskogo-sada#skills_needed#4",
+    "kind": "direction",
+    "slug": "vospitatel-detskogo-sada",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "умение общаться с родителями"
+  },
+  {
+    "id": "vrach-obschey-praktiki#skills_needed#0",
+    "kind": "direction",
+    "slug": "vrach-obschey-praktiki",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение проводить медицинские осмотры"
+  },
+  {
+    "id": "vrach-obschey-praktiki#skills_needed#1",
+    "kind": "direction",
+    "slug": "vrach-obschey-praktiki",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "анализировать результаты лабораторных исследований"
+  },
+  {
+    "id": "vrach-obschey-praktiki#skills_needed#2",
+    "kind": "direction",
+    "slug": "vrach-obschey-praktiki",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "объяснять пациентам диагноз и лечение"
+  },
+  {
+    "id": "vrach-obschey-praktiki#skills_needed#3",
+    "kind": "direction",
+    "slug": "vrach-obschey-praktiki",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "принимать решения в экстренных ситуациях"
+  },
+  {
+    "id": "vrach-obschey-praktiki#skills_needed#4",
+    "kind": "direction",
+    "slug": "vrach-obschey-praktiki",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "составлять планы лечения"
+  },
+  {
+    "id": "yurist-advokat#skills_needed#0",
+    "kind": "direction",
+    "slug": "yurist-advokat",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение анализировать и интерпретировать законы"
+  },
+  {
+    "id": "yurist-advokat#skills_needed#1",
+    "kind": "direction",
+    "slug": "yurist-advokat",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "навыки составления юридических документов"
+  },
+  {
+    "id": "yurist-advokat#skills_needed#2",
+    "kind": "direction",
+    "slug": "yurist-advokat",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "умение вести переговоры"
+  },
+  {
+    "id": "yurist-advokat#skills_needed#3",
+    "kind": "direction",
+    "slug": "yurist-advokat",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "способность аргументировать свою позицию"
+  },
+  {
+    "id": "yurist-advokat#skills_needed#4",
+    "kind": "direction",
+    "slug": "yurist-advokat",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "внимание к деталям"
+  },
+  {
+    "id": "zhurnalist#skills_needed#0",
+    "kind": "direction",
+    "slug": "zhurnalist",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "умение писать четко и понятно"
+  },
+  {
+    "id": "zhurnalist#skills_needed#1",
+    "kind": "direction",
+    "slug": "zhurnalist",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "навыки интервьюирования"
+  },
+  {
+    "id": "zhurnalist#skills_needed#2",
+    "kind": "direction",
+    "slug": "zhurnalist",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "исследовательские способности"
+  },
+  {
+    "id": "zhurnalist#skills_needed#3",
+    "kind": "direction",
+    "slug": "zhurnalist",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "критическое мышление"
+  },
+  {
+    "id": "zhurnalist#skills_needed#4",
+    "kind": "direction",
+    "slug": "zhurnalist",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "умение работать с информацией и источниками"
+  },
+  {
+    "id": "zvukorezhisser#skills_needed#0",
+    "kind": "direction",
+    "slug": "zvukorezhisser",
+    "field": "skills_needed",
+    "_index": 0,
+    "ru": "слышать детали звука и различать оттенки звучания"
+  },
+  {
+    "id": "zvukorezhisser#skills_needed#1",
+    "kind": "direction",
+    "slug": "zvukorezhisser",
+    "field": "skills_needed",
+    "_index": 1,
+    "ru": "работать с микрофонами и звуковым оборудованием"
+  },
+  {
+    "id": "zvukorezhisser#skills_needed#2",
+    "kind": "direction",
+    "slug": "zvukorezhisser",
+    "field": "skills_needed",
+    "_index": 2,
+    "ru": "сводить и обрабатывать дорожки в программе"
+  },
+  {
+    "id": "zvukorezhisser#skills_needed#3",
+    "kind": "direction",
+    "slug": "zvukorezhisser",
+    "field": "skills_needed",
+    "_index": 3,
+    "ru": "разбираться в физике звука и акустике помещения"
+  },
+  {
+    "id": "zvukorezhisser#skills_needed#4",
+    "kind": "direction",
+    "slug": "zvukorezhisser",
+    "field": "skills_needed",
+    "_index": 4,
+    "ru": "быстро находить причину помех и шумов"
+  }
+]

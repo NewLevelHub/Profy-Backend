@@ -1,0 +1,482 @@
+[
+  {
+    "id": "inzhener-tehnolog-mashinostroenie#first_steps#0",
+    "kind": "direction",
+    "slug": "inzhener-tehnolog-mashinostroenie",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "взять простую деталь и расписать по шагам, как её сделать из заготовки: что отпилить, просверлить, обточить"
+  },
+  {
+    "id": "inzhener-tehnolog-mashinostroenie#first_steps#1",
+    "kind": "direction",
+    "slug": "inzhener-tehnolog-mashinostroenie",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "поработать руками с материалом — выпилить и обработать деталь по чертежу с заданными размерами"
+  },
+  {
+    "id": "inzhener-tehnolog-mashinostroenie#first_steps#2",
+    "kind": "direction",
+    "slug": "inzhener-tehnolog-mashinostroenie",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "разобраться, чем отличаются токарный, фрезерный и сверлильный станки и что каждый умеет"
+  },
+  {
+    "id": "iskusstvoved#first_steps#0",
+    "kind": "direction",
+    "slug": "iskusstvoved",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "посетить местные художественные выставки и написать о них отзыв"
+  },
+  {
+    "id": "iskusstvoved#first_steps#1",
+    "kind": "direction",
+    "slug": "iskusstvoved",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "создать мини-выставку своих рисунков или фотографий и пригласить друзей"
+  },
+  {
+    "id": "iskusstvoved#first_steps#2",
+    "kind": "direction",
+    "slug": "iskusstvoved",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "изучить биографии известных художников и представить их в виде презентации"
+  },
+  {
+    "id": "issledovatel-v-oblasti-biotehnologiy#first_steps#0",
+    "kind": "direction",
+    "slug": "issledovatel-v-oblasti-biotehnologiy",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "провести простые эксперименты с растениями, наблюдая за их ростом при разных условиях"
+  },
+  {
+    "id": "issledovatel-v-oblasti-biotehnologiy#first_steps#1",
+    "kind": "direction",
+    "slug": "issledovatel-v-oblasti-biotehnologiy",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "изучить основы генетики и попробовать создать генетическую карту своего любимого растения"
+  },
+  {
+    "id": "issledovatel-v-oblasti-biotehnologiy#first_steps#2",
+    "kind": "direction",
+    "slug": "issledovatel-v-oblasti-biotehnologiy",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "посетить местную лабораторию или научный центр, чтобы узнать о работе исследователей"
+  },
+  {
+    "id": "istorik#first_steps#0",
+    "kind": "direction",
+    "slug": "istorik",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "восстановить историю своей семьи или дома по документам, фотографиям и рассказам родственников"
+  },
+  {
+    "id": "istorik#first_steps#1",
+    "kind": "direction",
+    "slug": "istorik",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "взять одно событие и сравнить, как его описывают несколько разных источников"
+  },
+  {
+    "id": "istorik#first_steps#2",
+    "kind": "direction",
+    "slug": "istorik",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "сходить в местный музей и разобрать, как по одному экспонату делают выводы о времени"
+  },
+  {
+    "id": "kompozitor#first_steps#0",
+    "kind": "direction",
+    "slug": "kompozitor",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "написать короткую мелодию на несколько тактов и записать её нотами или в бесплатном нотном редакторе"
+  },
+  {
+    "id": "kompozitor#first_steps#1",
+    "kind": "direction",
+    "slug": "kompozitor",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "сочинить музыкальную тему для конкретного персонажа или места и объяснить, почему она такая"
+  },
+  {
+    "id": "kompozitor#first_steps#2",
+    "kind": "direction",
+    "slug": "kompozitor",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "разобрать любимую композицию на слои — бас, аккорды, мелодия — и попробовать собрать похожую"
+  },
+  {
+    "id": "kreditnyy-analitik#first_steps#0",
+    "kind": "direction",
+    "slug": "kreditnyy-analitik",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "создать простой бюджет для себя или своей семьи"
+  },
+  {
+    "id": "kreditnyy-analitik#first_steps#1",
+    "kind": "direction",
+    "slug": "kreditnyy-analitik",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "провести анализ финансовых предложений разных банков"
+  },
+  {
+    "id": "kreditnyy-analitik#first_steps#2",
+    "kind": "direction",
+    "slug": "kreditnyy-analitik",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "изучить основные термины в области кредитования и финансов"
+  },
+  {
+    "id": "landshaftnyy-dizayner#first_steps#0",
+    "kind": "direction",
+    "slug": "landshaftnyy-dizayner",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "создать мини-проект по озеленению своего двора или школьного участка"
+  },
+  {
+    "id": "landshaftnyy-dizayner#first_steps#1",
+    "kind": "direction",
+    "slug": "landshaftnyy-dizayner",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "посетить местный парк и сделать фотографии интересных ландшафтных решений"
+  },
+  {
+    "id": "landshaftnyy-dizayner#first_steps#2",
+    "kind": "direction",
+    "slug": "landshaftnyy-dizayner",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "попробовать нарисовать план своего идеального сада с учетом различных растений и элементов дизайна"
+  },
+  {
+    "id": "lesnichiy#first_steps#0",
+    "kind": "direction",
+    "slug": "lesnichiy",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "посетить местный лес и сделать заметки о его состоянии"
+  },
+  {
+    "id": "lesnichiy#first_steps#1",
+    "kind": "direction",
+    "slug": "lesnichiy",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "провести небольшое исследование о растениях и животных в своем районе"
+  },
+  {
+    "id": "lesnichiy#first_steps#2",
+    "kind": "direction",
+    "slug": "lesnichiy",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "поучаствовать в волонтерских акциях по озеленению или очистке лесов"
+  },
+  {
+    "id": "logist#first_steps#0",
+    "kind": "direction",
+    "slug": "logist",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "спланировать доставку посылки из другого города: сравнить службы по цене и срокам и выбрать лучшую"
+  },
+  {
+    "id": "logist#first_steps#1",
+    "kind": "direction",
+    "slug": "logist",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "составить оптимальный маршрут по нескольким адресам на карте, чтобы пройти их за минимальное время"
+  },
+  {
+    "id": "logist#first_steps#2",
+    "kind": "direction",
+    "slug": "logist",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "организовать логистику школьного мероприятия: что, куда и когда привезти"
+  },
+  {
+    "id": "logoped#first_steps#0",
+    "kind": "direction",
+    "slug": "logoped",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "пообщайся с логопедом и узнай о его работе"
+  },
+  {
+    "id": "logoped#first_steps#1",
+    "kind": "direction",
+    "slug": "logoped",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "попробуй провести мини-занятие с другом или членом семьи, используя простые речевые упражнения"
+  },
+  {
+    "id": "logoped#first_steps#2",
+    "kind": "direction",
+    "slug": "logoped",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "прочитай книги или статьи о развитии речи у детей и взрослых"
+  },
+  {
+    "id": "marketolog#first_steps#0",
+    "kind": "direction",
+    "slug": "marketolog",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "провести опрос среди одноклассников о каком-то продукте и собрать выводы, что им важно при выборе"
+  },
+  {
+    "id": "marketolog#first_steps#1",
+    "kind": "direction",
+    "slug": "marketolog",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "разобрать рекламу известного бренда и объяснить, на какую аудиторию и эмоцию она рассчитана"
+  },
+  {
+    "id": "marketolog#first_steps#2",
+    "kind": "direction",
+    "slug": "marketolog",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "продвинуть небольшое дело — продажу выпечки или услугу — и замерить, какое объявление принесло больше откликов"
+  },
+  {
+    "id": "mashinist-lokomotiva#first_steps#0",
+    "kind": "direction",
+    "slug": "mashinist-lokomotiva",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "посетить железнодорожный музей или экскурсию на вокзал"
+  },
+  {
+    "id": "mashinist-lokomotiva#first_steps#1",
+    "kind": "direction",
+    "slug": "mashinist-lokomotiva",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "пообщаться с машинистом локомотива и задать ему вопросы о работе"
+  },
+  {
+    "id": "mashinist-lokomotiva#first_steps#2",
+    "kind": "direction",
+    "slug": "mashinist-lokomotiva",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "попробовать составить расписание движения поездов для вымышленного маршрута"
+  },
+  {
+    "id": "matematik#first_steps#0",
+    "kind": "direction",
+    "slug": "matematik",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "решить несколько задач из школьного учебника по математике на тему, которая интересует"
+  },
+  {
+    "id": "matematik#first_steps#1",
+    "kind": "direction",
+    "slug": "matematik",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "поучаствовать в математических олимпиадах или конкурсах"
+  },
+  {
+    "id": "matematik#first_steps#2",
+    "kind": "direction",
+    "slug": "matematik",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "создать простой проект, например, модель для расчета бюджета на месяц"
+  },
+  {
+    "id": "mediator-konfliktolog#first_steps#0",
+    "kind": "direction",
+    "slug": "mediator-konfliktolog",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "выступить посредником в небольшом бытовом споре между знакомыми: дать каждому высказаться и помочь найти компромисс"
+  },
+  {
+    "id": "mediator-konfliktolog#first_steps#1",
+    "kind": "direction",
+    "slug": "mediator-konfliktolog",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "разобрать конфликт из книги или фильма и расписать интересы каждой стороны"
+  },
+  {
+    "id": "mediator-konfliktolog#first_steps#2",
+    "kind": "direction",
+    "slug": "mediator-konfliktolog",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "потренировать активное слушание: пересказывать собеседнику его мысль, пока он не согласится, что понят верно"
+  },
+  {
+    "id": "meditsinskaya-sestra-medbrat#first_steps#0",
+    "kind": "direction",
+    "slug": "meditsinskaya-sestra-medbrat",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "помогать родным и знакомым в уходе за больными"
+  },
+  {
+    "id": "meditsinskaya-sestra-medbrat#first_steps#1",
+    "kind": "direction",
+    "slug": "meditsinskaya-sestra-medbrat",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "посмотреть видео или прочитать о типичном рабочем дне медсестры в больнице"
+  },
+  {
+    "id": "meditsinskaya-sestra-medbrat#first_steps#2",
+    "kind": "direction",
+    "slug": "meditsinskaya-sestra-medbrat",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "принять участие в волонтерских проектах в больницах или поликлиниках"
+  },
+  {
+    "id": "meditsinskiy-laboratornyy-tehnolog#first_steps#0",
+    "kind": "direction",
+    "slug": "meditsinskiy-laboratornyy-tehnolog",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "научиться пользоваться микроскопом: приготовить препарат (лук, волос, капля воды из пруда) и зарисовать увиденное"
+  },
+  {
+    "id": "meditsinskiy-laboratornyy-tehnolog#first_steps#1",
+    "kind": "direction",
+    "slug": "meditsinskiy-laboratornyy-tehnolog",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "провести серию измерений одного и того же и посчитать, насколько результаты разбросаны"
+  },
+  {
+    "id": "meditsinskiy-laboratornyy-tehnolog#first_steps#2",
+    "kind": "direction",
+    "slug": "meditsinskiy-laboratornyy-tehnolog",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "разобраться, что показывает общий анализ крови и почему по нему многое видно"
+  },
+  {
+    "id": "menedzher-po-prodazham#first_steps#0",
+    "kind": "direction",
+    "slug": "menedzher-po-prodazham",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "попробуй продать что-то своим друзьям или знакомым, например, самодельные вещи"
+  },
+  {
+    "id": "menedzher-po-prodazham#first_steps#1",
+    "kind": "direction",
+    "slug": "menedzher-po-prodazham",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "посети местный магазин и понаблюдай за работой продавцов"
+  },
+  {
+    "id": "menedzher-po-prodazham#first_steps#2",
+    "kind": "direction",
+    "slug": "menedzher-po-prodazham",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "создай мини-презентацию товара, который тебе нравится, и расскажи о нем друзьям"
+  },
+  {
+    "id": "metallurg#first_steps#0",
+    "kind": "direction",
+    "slug": "metallurg",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "изучить, из какой руды и как получают железо, и нарисовать всю цепочку от карьера до стального листа"
+  },
+  {
+    "id": "metallurg#first_steps#1",
+    "kind": "direction",
+    "slug": "metallurg",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "сравнить свойства разных металлов дома: гнётся, ржавеет, проводит тепло, и записать наблюдения"
+  },
+  {
+    "id": "metallurg#first_steps#2",
+    "kind": "direction",
+    "slug": "metallurg",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "разобраться, чем отличается чугун от стали и почему добавки меняют свойства сплава"
+  },
+  {
+    "id": "meteorolog#first_steps#0",
+    "kind": "direction",
+    "slug": "meteorolog",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "наблюдать за погодой в своем регионе и записывать изменения"
+  },
+  {
+    "id": "meteorolog#first_steps#1",
+    "kind": "direction",
+    "slug": "meteorolog",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "создать простой график погоды за неделю"
+  },
+  {
+    "id": "meteorolog#first_steps#2",
+    "kind": "direction",
+    "slug": "meteorolog",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "попробовать составить прогноз погоды на основе своих наблюдений"
+  },
+  {
+    "id": "mobile-razrabotchik#first_steps#0",
+    "kind": "direction",
+    "slug": "mobile-razrabotchik",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "собрать простое приложение — список дел, таймер, счётчик — и запустить его на своём телефоне"
+  },
+  {
+    "id": "mobile-razrabotchik#first_steps#1",
+    "kind": "direction",
+    "slug": "mobile-razrabotchik",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "добавить в приложение сохранение данных, чтобы они не пропадали после закрытия"
+  },
+  {
+    "id": "mobile-razrabotchik#first_steps#2",
+    "kind": "direction",
+    "slug": "mobile-razrabotchik",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "переделать интерфейс так, чтобы он одинаково хорошо выглядел на маленьком и большом экране"
+  }
+]

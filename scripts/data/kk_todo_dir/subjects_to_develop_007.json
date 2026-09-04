@@ -1,0 +1,482 @@
+[
+  {
+    "id": "spetsialist-po-mediakommunikatsiyam#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "spetsialist-po-mediakommunikatsiyam",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "литература"
+  },
+  {
+    "id": "spetsialist-po-mediakommunikatsiyam#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "spetsialist-po-mediakommunikatsiyam",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "обществознание"
+  },
+  {
+    "id": "spetsialist-po-rabote-s-molodezhyu#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "spetsialist-po-rabote-s-molodezhyu",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "психология"
+  },
+  {
+    "id": "spetsialist-po-rabote-s-molodezhyu#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "spetsialist-po-rabote-s-molodezhyu",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "социология"
+  },
+  {
+    "id": "spetsialist-po-rabote-s-molodezhyu#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "spetsialist-po-rabote-s-molodezhyu",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "spetsialist-po-rabote-s-molodezhyu#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "spetsialist-po-rabote-s-molodezhyu",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "обществознание"
+  },
+  {
+    "id": "spetsialist-po-standartizatsii-i-sertifikatsii#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "spetsialist-po-standartizatsii-i-sertifikatsii",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "математика"
+  },
+  {
+    "id": "spetsialist-po-standartizatsii-i-sertifikatsii#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "spetsialist-po-standartizatsii-i-sertifikatsii",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "физика"
+  },
+  {
+    "id": "spetsialist-po-standartizatsii-i-sertifikatsii#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "spetsialist-po-standartizatsii-i-sertifikatsii",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "информатика"
+  },
+  {
+    "id": "spetsialist-po-standartizatsii-i-sertifikatsii#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "spetsialist-po-standartizatsii-i-sertifikatsii",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "обществознание"
+  },
+  {
+    "id": "spetsialist-po-tamozhennomu-delu#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "spetsialist-po-tamozhennomu-delu",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "математика"
+  },
+  {
+    "id": "spetsialist-po-tamozhennomu-delu#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "spetsialist-po-tamozhennomu-delu",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "информатика"
+  },
+  {
+    "id": "spetsialist-po-tamozhennomu-delu#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "spetsialist-po-tamozhennomu-delu",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "обществознание"
+  },
+  {
+    "id": "spetsialist-po-tamozhennomu-delu#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "spetsialist-po-tamozhennomu-delu",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "иностранный язык"
+  },
+  {
+    "id": "spetsialist-po-zakupkam#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "spetsialist-po-zakupkam",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "математика"
+  },
+  {
+    "id": "spetsialist-po-zakupkam#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "spetsialist-po-zakupkam",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "информатика"
+  },
+  {
+    "id": "spetsialist-po-zakupkam#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "spetsialist-po-zakupkam",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "экономика"
+  },
+  {
+    "id": "spetsialist-po-zakupkam#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "spetsialist-po-zakupkam",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "spetsialist-tehnicheskoy-podderzhki#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "spetsialist-tehnicheskoy-podderzhki",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "информатика"
+  },
+  {
+    "id": "spetsialist-tehnicheskoy-podderzhki#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "spetsialist-tehnicheskoy-podderzhki",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "математика"
+  },
+  {
+    "id": "spetsialist-tehnicheskoy-podderzhki#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "spetsialist-tehnicheskoy-podderzhki",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "spetsialist-tehnicheskoy-podderzhki#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "spetsialist-tehnicheskoy-podderzhki",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "физика"
+  },
+  {
+    "id": "sportivnyy-menedzher-agent#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "sportivnyy-menedzher-agent",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "обществознание"
+  },
+  {
+    "id": "sportivnyy-menedzher-agent#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "sportivnyy-menedzher-agent",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "математика"
+  },
+  {
+    "id": "sportivnyy-menedzher-agent#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "sportivnyy-menedzher-agent",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "физическая культура"
+  },
+  {
+    "id": "stomatolog#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "stomatolog",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "биология"
+  },
+  {
+    "id": "stomatolog#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "stomatolog",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "химия"
+  },
+  {
+    "id": "stomatolog#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "stomatolog",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "физика"
+  },
+  {
+    "id": "stomatolog#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "stomatolog",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "strahovoy-agent#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "strahovoy-agent",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "математика"
+  },
+  {
+    "id": "strahovoy-agent#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "strahovoy-agent",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "обществознание"
+  },
+  {
+    "id": "strahovoy-agent#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "strahovoy-agent",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "strahovoy-agent#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "strahovoy-agent",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "информатика"
+  },
+  {
+    "id": "strahovoy-anderrayter#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "strahovoy-anderrayter",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "математика"
+  },
+  {
+    "id": "strahovoy-anderrayter#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "strahovoy-anderrayter",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "информатика"
+  },
+  {
+    "id": "strahovoy-anderrayter#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "strahovoy-anderrayter",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "обществознание"
+  },
+  {
+    "id": "strahovoy-anderrayter#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "strahovoy-anderrayter",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "русский/казахский язык"
+  },
+  {
+    "id": "stsenarist#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "stsenarist",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "литература"
+  },
+  {
+    "id": "stsenarist#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "stsenarist",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "русский язык"
+  },
+  {
+    "id": "stsenarist#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "stsenarist",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "история"
+  },
+  {
+    "id": "sudmedekspert-kriminalist#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "sudmedekspert-kriminalist",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "биология"
+  },
+  {
+    "id": "sudmedekspert-kriminalist#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "sudmedekspert-kriminalist",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "химия"
+  },
+  {
+    "id": "sudmedekspert-kriminalist#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "sudmedekspert-kriminalist",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "физика"
+  },
+  {
+    "id": "sudya#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "sudya",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "обществознание"
+  },
+  {
+    "id": "sudya#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "sudya",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "история"
+  },
+  {
+    "id": "sudya#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "sudya",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "русский язык"
+  },
+  {
+    "id": "tehnolog-pischevogo-proizvodstva#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "tehnolog-pischevogo-proizvodstva",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "биология"
+  },
+  {
+    "id": "tehnolog-pischevogo-proizvodstva#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "tehnolog-pischevogo-proizvodstva",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "химия"
+  },
+  {
+    "id": "tehnolog-pischevogo-proizvodstva#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "tehnolog-pischevogo-proizvodstva",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "математика"
+  },
+  {
+    "id": "tehnolog-pischevogo-proizvodstva#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "tehnolog-pischevogo-proizvodstva",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "физика"
+  },
+  {
+    "id": "teolog-religioved#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "teolog-religioved",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "история"
+  },
+  {
+    "id": "teolog-religioved#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "teolog-religioved",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "обществознание"
+  },
+  {
+    "id": "teolog-religioved#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "teolog-religioved",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "литература"
+  },
+  {
+    "id": "trener-po-sportu#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "trener-po-sportu",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "физкультура"
+  },
+  {
+    "id": "trener-po-sportu#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "trener-po-sportu",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "биология"
+  },
+  {
+    "id": "trener-po-sportu#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "trener-po-sportu",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "психология"
+  },
+  {
+    "id": "trener-po-sportu#subjects_to_develop#3",
+    "kind": "direction",
+    "slug": "trener-po-sportu",
+    "field": "subjects_to_develop",
+    "_index": 3,
+    "ru": "математика"
+  },
+  {
+    "id": "upravlyayuschiy-fermerskim-hozyaystvom#subjects_to_develop#0",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-fermerskim-hozyaystvom",
+    "field": "subjects_to_develop",
+    "_index": 0,
+    "ru": "биология"
+  },
+  {
+    "id": "upravlyayuschiy-fermerskim-hozyaystvom#subjects_to_develop#1",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-fermerskim-hozyaystvom",
+    "field": "subjects_to_develop",
+    "_index": 1,
+    "ru": "математика"
+  },
+  {
+    "id": "upravlyayuschiy-fermerskim-hozyaystvom#subjects_to_develop#2",
+    "kind": "direction",
+    "slug": "upravlyayuschiy-fermerskim-hozyaystvom",
+    "field": "subjects_to_develop",
+    "_index": 2,
+    "ru": "информатика"
+  }
+]

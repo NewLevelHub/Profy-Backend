@@ -1,0 +1,482 @@
+[
+  {
+    "id": "modeler#first_steps#0",
+    "kind": "direction",
+    "slug": "modeler",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "создать свою коллекцию одежды из бумаги или ткани"
+  },
+  {
+    "id": "modeler#first_steps#1",
+    "kind": "direction",
+    "slug": "modeler",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "посетить выставку моды или дизайнерские показы"
+  },
+  {
+    "id": "modeler#first_steps#2",
+    "kind": "direction",
+    "slug": "modeler",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "поэкспериментировать с созданием одежды для кукол или друзей"
+  },
+  {
+    "id": "modnyy-stilist#first_steps#0",
+    "kind": "direction",
+    "slug": "modnyy-stilist",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "собрать несколько разных образов из своего гардероба под конкретные поводы и сфотографировать их"
+  },
+  {
+    "id": "modnyy-stilist#first_steps#1",
+    "kind": "direction",
+    "slug": "modnyy-stilist",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "разобрать образы с обложек или из фильмов: почему вещи сочетаются и какое впечатление создают"
+  },
+  {
+    "id": "modnyy-stilist#first_steps#2",
+    "kind": "direction",
+    "slug": "modnyy-stilist",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "помочь другу обновить гардероб: разобрать вещи, найти удачные сочетания, составить список недостающего"
+  },
+  {
+    "id": "muzykant-ispolnitel#first_steps#0",
+    "kind": "direction",
+    "slug": "muzykant-ispolnitel",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "научиться играть на музыкальном инструменте"
+  },
+  {
+    "id": "muzykant-ispolnitel#first_steps#1",
+    "kind": "direction",
+    "slug": "muzykant-ispolnitel",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "составить и записать свою мелодию"
+  },
+  {
+    "id": "muzykant-ispolnitel#first_steps#2",
+    "kind": "direction",
+    "slug": "muzykant-ispolnitel",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "посетить местные концерты и пообщаться с музыкантами"
+  },
+  {
+    "id": "nalogovyy-konsultant#first_steps#0",
+    "kind": "direction",
+    "slug": "nalogovyy-konsultant",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "изучить основы налогового законодательства своей страны"
+  },
+  {
+    "id": "nalogovyy-konsultant#first_steps#1",
+    "kind": "direction",
+    "slug": "nalogovyy-konsultant",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "попробовать составить простую налоговую декларацию для вымышленного клиента"
+  },
+  {
+    "id": "nalogovyy-konsultant#first_steps#2",
+    "kind": "direction",
+    "slug": "nalogovyy-konsultant",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "посетить семинар или вебинар по налогообложению"
+  },
+  {
+    "id": "neyrobiolog#first_steps#0",
+    "kind": "direction",
+    "slug": "neyrobiolog",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "проверить на друзьях простые опыты про восприятие: время реакции, иллюзии зрения, объём кратковременной памяти"
+  },
+  {
+    "id": "neyrobiolog#first_steps#1",
+    "kind": "direction",
+    "slug": "neyrobiolog",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "выучить строение нейрона и нарисовать по памяти, как сигнал идёт от одной клетки к другой"
+  },
+  {
+    "id": "neyrobiolog#first_steps#2",
+    "kind": "direction",
+    "slug": "neyrobiolog",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "поставить опыт с рефлексами и записать, как реакция меняется от условий: усталость, отвлечение"
+  },
+  {
+    "id": "notarius#first_steps#0",
+    "kind": "direction",
+    "slug": "notarius",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "изучить, какие сделки по закону требуют нотариуса и почему именно они"
+  },
+  {
+    "id": "notarius#first_steps#1",
+    "kind": "direction",
+    "slug": "notarius",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "составить по образцу простую доверенность и проверить, все ли обязательные части на месте"
+  },
+  {
+    "id": "notarius#first_steps#2",
+    "kind": "direction",
+    "slug": "notarius",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "разобрать, чем заверенная копия документа отличается от обычной и где это важно"
+  },
+  {
+    "id": "nutritsiolog-dietolog#first_steps#0",
+    "kind": "direction",
+    "slug": "nutritsiolog-dietolog",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "записать всё, что съедаешь за неделю, и разобрать, чего в рационе мало, а чего слишком много"
+  },
+  {
+    "id": "nutritsiolog-dietolog#first_steps#1",
+    "kind": "direction",
+    "slug": "nutritsiolog-dietolog",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "составить сбалансированное меню на день из доступных продуктов и посчитать его состав"
+  },
+  {
+    "id": "nutritsiolog-dietolog#first_steps#2",
+    "kind": "direction",
+    "slug": "nutritsiolog-dietolog",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "разобраться по этикеткам двух похожих продуктов, чем они отличаются по составу"
+  },
+  {
+    "id": "okeanolog-gidrolog#first_steps#0",
+    "kind": "direction",
+    "slug": "okeanolog-gidrolog",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "выбрать ручей или реку рядом с домом и в течение месяца измерять уровень воды после дождей и в сушь"
+  },
+  {
+    "id": "okeanolog-gidrolog#first_steps#1",
+    "kind": "direction",
+    "slug": "okeanolog-gidrolog",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "измерить прозрачность и температуру воды в водоёме в разных местах и сравнить результаты"
+  },
+  {
+    "id": "okeanolog-gidrolog#first_steps#2",
+    "kind": "direction",
+    "slug": "okeanolog-gidrolog",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "построить дома модель водосбора и посмотреть, как рельеф направляет сток воды"
+  },
+  {
+    "id": "pedagog-psiholog#first_steps#0",
+    "kind": "direction",
+    "slug": "pedagog-psiholog",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "провести с младшими детьми игру на сотрудничество и понаблюдать, кто как себя ведёт"
+  },
+  {
+    "id": "pedagog-psiholog#first_steps#1",
+    "kind": "direction",
+    "slug": "pedagog-psiholog",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "потренировать навык поддержки: выслушать человека и помочь ему назвать, что он чувствует"
+  },
+  {
+    "id": "pedagog-psiholog#first_steps#2",
+    "kind": "direction",
+    "slug": "pedagog-psiholog",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "разобрать по книге про возрастную психологию, что важно для ребёнка в разном возрасте"
+  },
+  {
+    "id": "pediatr#first_steps#0",
+    "kind": "direction",
+    "slug": "pediatr",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "выучить, какие навыки появляются у ребёнка на первом году жизни и в каком примерно порядке"
+  },
+  {
+    "id": "pediatr#first_steps#1",
+    "kind": "direction",
+    "slug": "pediatr",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "разобраться, зачем нужны прививки и как работает иммунитет"
+  },
+  {
+    "id": "pediatr#first_steps#2",
+    "kind": "direction",
+    "slug": "pediatr",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "потренироваться объяснять что-то сложное так, чтобы понял младший ребёнок"
+  },
+  {
+    "id": "pilot-grazhdanskoy-aviatsii#first_steps#0",
+    "kind": "direction",
+    "slug": "pilot-grazhdanskoy-aviatsii",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "посмотреть видео из кабины пилота (cockpit view) о том, как проходит типичный рейс — от взлёта до посадки"
+  },
+  {
+    "id": "pilot-grazhdanskoy-aviatsii#first_steps#1",
+    "kind": "direction",
+    "slug": "pilot-grazhdanskoy-aviatsii",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "пройти курсы по основам авиации или аэронавтики"
+  },
+  {
+    "id": "pilot-grazhdanskoy-aviatsii#first_steps#2",
+    "kind": "direction",
+    "slug": "pilot-grazhdanskoy-aviatsii",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "попробовать симулятор полетов, чтобы понять основы управления самолетом"
+  },
+  {
+    "id": "pisatel-kopirayter#first_steps#0",
+    "kind": "direction",
+    "slug": "pisatel-kopirayter",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "начать вести личный блог на интересную тему"
+  },
+  {
+    "id": "pisatel-kopirayter#first_steps#1",
+    "kind": "direction",
+    "slug": "pisatel-kopirayter",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "написать короткие рассказы или статьи и делиться ими с друзьями"
+  },
+  {
+    "id": "pisatel-kopirayter#first_steps#2",
+    "kind": "direction",
+    "slug": "pisatel-kopirayter",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "изучить основы копирайтинга и попробовать написать рекламный текст для вымышленного продукта"
+  },
+  {
+    "id": "politseyskiy#first_steps#0",
+    "kind": "direction",
+    "slug": "politseyskiy",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "пообщайся с местными полицейскими, узнай о их работе"
+  },
+  {
+    "id": "politseyskiy#first_steps#1",
+    "kind": "direction",
+    "slug": "politseyskiy",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "посети мероприятия по безопасности в своем районе"
+  },
+  {
+    "id": "politseyskiy#first_steps#2",
+    "kind": "direction",
+    "slug": "politseyskiy",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "прими участие в школьном проекте по правопорядку или безопасности"
+  },
+  {
+    "id": "pr-menedzher#first_steps#0",
+    "kind": "direction",
+    "slug": "pr-menedzher",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "создать свой блог или страницу в социальных сетях и регулярно публиковать интересные материалы"
+  },
+  {
+    "id": "pr-menedzher#first_steps#1",
+    "kind": "direction",
+    "slug": "pr-menedzher",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "организовать небольшое мероприятие для друзей или одноклассников и продумать его рекламу"
+  },
+  {
+    "id": "pr-menedzher#first_steps#2",
+    "kind": "direction",
+    "slug": "pr-menedzher",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "написать пресс-релиз о каком-либо событии в школе или районе и отправить его в местные СМИ."
+  },
+  {
+    "id": "predprinimatel#first_steps#0",
+    "kind": "direction",
+    "slug": "predprinimatel",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "придумать идею для небольшого бизнеса и составить план её реализации"
+  },
+  {
+    "id": "predprinimatel#first_steps#1",
+    "kind": "direction",
+    "slug": "predprinimatel",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "пообщаться с местными предпринимателями и узнать об их опыте"
+  },
+  {
+    "id": "predprinimatel#first_steps#2",
+    "kind": "direction",
+    "slug": "predprinimatel",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "создать простой сайт или страницу в соцсетях для продвижения своей идеи"
+  },
+  {
+    "id": "prepodavatel-iskusstva#first_steps#0",
+    "kind": "direction",
+    "slug": "prepodavatel-iskusstva",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "создать собственный художественный проект, например, нарисовать картину или сделать скульптуру"
+  },
+  {
+    "id": "prepodavatel-iskusstva#first_steps#1",
+    "kind": "direction",
+    "slug": "prepodavatel-iskusstva",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "посетить местные художественные выставки и написать о своих впечатлениях"
+  },
+  {
+    "id": "prepodavatel-iskusstva#first_steps#2",
+    "kind": "direction",
+    "slug": "prepodavatel-iskusstva",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "попробовать провести мастер-класс для друзей или семьи по рисованию или другому виду искусства"
+  },
+  {
+    "id": "prepodavatel-vuza#first_steps#0",
+    "kind": "direction",
+    "slug": "prepodavatel-vuza",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "провести мини-урок для друзей или младших школьников по интересной теме"
+  },
+  {
+    "id": "prepodavatel-vuza#first_steps#1",
+    "kind": "direction",
+    "slug": "prepodavatel-vuza",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "написать небольшую статью или эссе на тему, которая интересует, и обсудить её с учителями"
+  },
+  {
+    "id": "prepodavatel-vuza#first_steps#2",
+    "kind": "direction",
+    "slug": "prepodavatel-vuza",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "посетить открытые лекции в вузах или онлайн-курсы по интересующей специальности"
+  },
+  {
+    "id": "prodakt-menedzher#first_steps#0",
+    "kind": "direction",
+    "slug": "prodakt-menedzher",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "взять знакомое приложение, собрать отзывы пользователей и составить список из трёх улучшений по важности"
+  },
+  {
+    "id": "prodakt-menedzher#first_steps#1",
+    "kind": "direction",
+    "slug": "prodakt-menedzher",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "довести до конца небольшой командный проект, ведя список задач и сроки"
+  },
+  {
+    "id": "prodakt-menedzher#first_steps#2",
+    "kind": "direction",
+    "slug": "prodakt-menedzher",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "провести несколько интервью с людьми о том, как они решают какую-то бытовую задачу, и найти общую проблему"
+  },
+  {
+    "id": "proektnyy-menedzher#first_steps#0",
+    "kind": "direction",
+    "slug": "proektnyy-menedzher",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "организовать реальное мероприятие — поход, концерт, турнир: составить план задач, сроки и ответственных"
+  },
+  {
+    "id": "proektnyy-menedzher#first_steps#1",
+    "kind": "direction",
+    "slug": "proektnyy-menedzher",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "провести проект по доске задач со столбцами надо сделать, в работе, готово"
+  },
+  {
+    "id": "proektnyy-menedzher#first_steps#2",
+    "kind": "direction",
+    "slug": "proektnyy-menedzher",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "после завершения любого дела разобрать, что пошло не по плану и почему"
+  },
+  {
+    "id": "proforientolog-karernyy-konsultant#first_steps#0",
+    "kind": "direction",
+    "slug": "proforientolog-karernyy-konsultant",
+    "field": "first_steps",
+    "_index": 0,
+    "ru": "взять интервью у нескольких взрослых о том, как они пришли к своей профессии, и поискать общее"
+  },
+  {
+    "id": "proforientolog-karernyy-konsultant#first_steps#1",
+    "kind": "direction",
+    "slug": "proforientolog-karernyy-konsultant",
+    "field": "first_steps",
+    "_index": 1,
+    "ru": "провести для друга разбор: расспросить про интересы и вместе набросать пару подходящих направлений"
+  },
+  {
+    "id": "proforientolog-karernyy-konsultant#first_steps#2",
+    "kind": "direction",
+    "slug": "proforientolog-karernyy-konsultant",
+    "field": "first_steps",
+    "_index": 2,
+    "ru": "разобрать одну профессию до деталей: чем занят человек по часам, что нравится и что тяжело"
+  }
+]
