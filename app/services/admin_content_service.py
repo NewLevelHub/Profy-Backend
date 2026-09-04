@@ -33,7 +33,12 @@ from app.schemas.admin_content import (
     AdminQuestionPairUpdateRequest,
     AdminQuestionUpdateRequest,
 )
-from app.services.admin_lock import AdminOverrideValidationError, apply_overrides, has_overrides
+from app.services.admin_lock import (
+    AdminOverrideValidationError,
+    apply_overrides,
+    clear_overrides,
+    has_overrides,
+)
 from app.services.admin_listing import SortOrder, order_by_clause
 
 
@@ -56,6 +61,27 @@ async def _update_by_id(
     if validate is not None:
         validate(row, updates)
     apply_overrides(row, updates)
+    await db.commit()
+    await db.refresh(row)
+    return row
+
+
+async def _clear_overrides_by_id(
+    db: AsyncSession, model, row_id: uuid.UUID, not_found_msg: str, field: str | None = None
+):
+    """Undo one override, or every override on the row when `field` is None.
+
+    Asking to clear a field that carries no override is reported rather than
+    quietly succeeding: the caller believes an edit exists there, and the only
+    honest answers are "removed it" or "there wasn't one"."""
+    row = await _get_by_id(db, model, row_id)
+    if row is None:
+        raise ValueError(not_found_msg)
+
+    cleared = clear_overrides(row, None if field is None else [field])
+    if field is not None and not cleared:
+        raise ValueError(f"Field '{field}' is not overridden on this row")
+
     await db.commit()
     await db.refresh(row)
     return row
@@ -224,6 +250,12 @@ async def update_question(
     )
 
 
+async def clear_question_overrides(
+    db: AsyncSession, question_id: uuid.UUID, field: str | None = None
+) -> Question:
+    return await _clear_overrides_by_id(db, Question, question_id, "Question not found", field)
+
+
 # --- Question pairs ---
 
 
@@ -340,6 +372,15 @@ async def update_question_pair(
     return await _build_pair_detail(db, pair)
 
 
+async def clear_question_pair_overrides(
+    db: AsyncSession, pair_id: uuid.UUID, field: str | None = None
+) -> AdminQuestionPairDetail:
+    pair = await _clear_overrides_by_id(
+        db, QuestionPair, pair_id, "Question pair not found", field
+    )
+    return await _build_pair_detail(db, pair)
+
+
 # --- Motivation statements ---
 
 
@@ -423,6 +464,14 @@ async def update_motivation_statement(
     )
 
 
+async def clear_motivation_statement_overrides(
+    db: AsyncSession, statement_id: uuid.UUID, field: str | None = None
+) -> MotivationStatement:
+    return await _clear_overrides_by_id(
+        db, MotivationStatement, statement_id, "Motivation statement not found", field
+    )
+
+
 # --- Motivation pairs ---
 
 
@@ -496,6 +545,14 @@ async def update_motivation_pair(
     db: AsyncSession, pair_id: uuid.UUID, data: AdminMotivationPairUpdateRequest
 ) -> MotivationPair:
     return await _update_by_id(db, MotivationPair, pair_id, data, "Motivation pair not found")
+
+
+async def clear_motivation_pair_overrides(
+    db: AsyncSession, pair_id: uuid.UUID, field: str | None = None
+) -> MotivationPair:
+    return await _clear_overrides_by_id(
+        db, MotivationPair, pair_id, "Motivation pair not found", field
+    )
 
 
 # --- Directions ---
@@ -645,4 +702,13 @@ async def update_direction(
     db: AsyncSession, direction_id: uuid.UUID, data: AdminDirectionUpdateRequest
 ) -> AdminDirectionDetail:
     direction = await _update_by_id(db, Direction, direction_id, data, "Direction not found")
+    return await _build_direction_detail(db, direction)
+
+
+async def clear_direction_overrides(
+    db: AsyncSession, direction_id: uuid.UUID, field: str | None = None
+) -> AdminDirectionDetail:
+    direction = await _clear_overrides_by_id(
+        db, Direction, direction_id, "Direction not found", field
+    )
     return await _build_direction_detail(db, direction)

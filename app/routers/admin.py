@@ -559,3 +559,197 @@ async def update_direction(
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+# --- Undoing admin edits ----------------------------------------------------
+#
+# A PATCH on question-bank content records an override that a resync composes
+# back over the bank on every deploy, so without these an accidental edit was
+# permanent and only reachable by hand in the database
+# (docs/admin-backend-requests-pro-242.md §4). Clearing an override restores
+# the bank value captured when the field was first edited.
+
+
+@router.delete("/questions/{row_id}/overrides", response_model=AdminQuestionDetail)
+async def clear_question_overrides(
+    row_id: uuid.UUID,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Drop every override on the row, putting it fully back under the bank."""
+    try:
+        return await admin_content_service.clear_question_overrides(db, row_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.delete("/questions/{row_id}/overrides/{field}", response_model=AdminQuestionDetail)
+async def clear_question_override_field(
+    row_id: uuid.UUID,
+    field: str,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await admin_content_service.clear_question_overrides(db, row_id, field)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.delete("/question-pairs/{row_id}/overrides", response_model=AdminQuestionPairDetail)
+async def clear_question_pair_overrides(
+    row_id: uuid.UUID,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Drop every override on the row, putting it fully back under the bank."""
+    try:
+        return await admin_content_service.clear_question_pair_overrides(db, row_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.delete("/question-pairs/{row_id}/overrides/{field}", response_model=AdminQuestionPairDetail)
+async def clear_question_pair_override_field(
+    row_id: uuid.UUID,
+    field: str,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await admin_content_service.clear_question_pair_overrides(db, row_id, field)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.delete("/motivation-statements/{row_id}/overrides", response_model=AdminMotivationStatementDetail)
+async def clear_motivation_statement_overrides(
+    row_id: uuid.UUID,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Drop every override on the row, putting it fully back under the bank."""
+    try:
+        return await admin_content_service.clear_motivation_statement_overrides(db, row_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.delete("/motivation-statements/{row_id}/overrides/{field}", response_model=AdminMotivationStatementDetail)
+async def clear_motivation_statement_override_field(
+    row_id: uuid.UUID,
+    field: str,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await admin_content_service.clear_motivation_statement_overrides(db, row_id, field)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.delete("/motivation-pairs/{row_id}/overrides", response_model=AdminMotivationPairDetail)
+async def clear_motivation_pair_overrides(
+    row_id: uuid.UUID,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Drop every override on the row, putting it fully back under the bank."""
+    try:
+        return await admin_content_service.clear_motivation_pair_overrides(db, row_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.delete("/motivation-pairs/{row_id}/overrides/{field}", response_model=AdminMotivationPairDetail)
+async def clear_motivation_pair_override_field(
+    row_id: uuid.UUID,
+    field: str,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await admin_content_service.clear_motivation_pair_overrides(db, row_id, field)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.delete("/directions/{row_id}/overrides", response_model=AdminDirectionDetail)
+async def clear_direction_overrides(
+    row_id: uuid.UUID,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Drop every override on the row, putting it fully back under the bank."""
+    try:
+        return await admin_content_service.clear_direction_overrides(db, row_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.delete("/directions/{row_id}/overrides/{field}", response_model=AdminDirectionDetail)
+async def clear_direction_override_field(
+    row_id: uuid.UUID,
+    field: str,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await admin_content_service.clear_direction_overrides(db, row_id, field)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+# `University`/`Program` use admin_locked_fields instead of value-carrying
+# overrides: the lock stores only the field's name, so unlocking cannot undo
+# the edit — it returns the field to the next seed run's control.
+
+
+@router.delete("/universities/{university_id}/locks", response_model=AdminUniversityDetail)
+async def unlock_university_fields(
+    university_id: uuid.UUID,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await admin_university_service.unlock_university_fields(db, university_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.delete("/universities/{university_id}/locks/{field}", response_model=AdminUniversityDetail)
+async def unlock_university_field(
+    university_id: uuid.UUID,
+    field: str,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await admin_university_service.unlock_university_fields(db, university_id, field)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.delete("/programs/{program_id}/locks", response_model=AdminProgramDetail)
+async def unlock_program_fields(
+    program_id: uuid.UUID,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await admin_university_service.unlock_program_fields(db, program_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.delete("/programs/{program_id}/locks/{field}", response_model=AdminProgramDetail)
+async def unlock_program_field(
+    program_id: uuid.UUID,
+    field: str,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await admin_university_service.unlock_program_fields(db, program_id, field)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

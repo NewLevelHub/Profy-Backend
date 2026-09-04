@@ -1,10 +1,27 @@
 import uuid
+from typing import Any
 
 from pydantic import BaseModel
 
 from app.models.motivation import MotivationCategory
 from app.models.profile import AgeGroup
 from app.models.question import BigFiveDomain, HollandType, Keyed, MIType, QuestionInstrument
+
+
+class AdminFieldOverride(BaseModel):
+    """One admin edit to a bank-seeded field, with what it replaced.
+
+    `bank_value` is what the content bank had at the time, kept so the UI can
+    show "было / стало" and offer a revert that works immediately.
+
+    It is absent on overrides written before that was recorded, where the
+    original is unknown; reverting those still drops the override and lets the
+    next seed run restore the bank's own value. Absence and null are different
+    things here — several overridable columns (icon, short_text, frame) are
+    nullable, so a null bank_value is a real value to put back."""
+
+    value: Any = None
+    bank_value: Any = None
 
 
 # --- Questions (RIASEC / Big Five / MI, one shared table) ---
@@ -46,7 +63,7 @@ class AdminQuestionDetail(BaseModel):
     icon: str | None
     order: int
     age_tier: AgeGroup
-    overrides: dict
+    overrides: dict[str, AdminFieldOverride]
 
     model_config = {"from_attributes": True}
 
@@ -124,7 +141,7 @@ class AdminQuestionPairDetail(BaseModel):
     option_b_text: str | None
     option_a_icon: str | None
     option_b_icon: str | None
-    overrides: dict
+    overrides: dict[str, AdminFieldOverride]
 
     model_config = {"from_attributes": True}
 
@@ -167,7 +184,7 @@ class AdminMotivationStatementDetail(BaseModel):
     category: MotivationCategory
     text: str
     text_junior: str | None
-    overrides: dict
+    overrides: dict[str, AdminFieldOverride]
 
     model_config = {"from_attributes": True}
 
@@ -213,7 +230,7 @@ class AdminMotivationPairDetail(BaseModel):
     category_b: MotivationCategory
     text_a: str
     text_b: str
-    overrides: dict
+    overrides: dict[str, AdminFieldOverride]
 
     model_config = {"from_attributes": True}
 
@@ -281,7 +298,7 @@ class AdminDirectionDetail(BaseModel):
     subjects_to_develop: list
     first_steps: list
     programs: list[AdminDirectionProgram] = []
-    overrides: dict
+    overrides: dict[str, AdminFieldOverride]
 
     model_config = {"from_attributes": True}
 

@@ -12,7 +12,7 @@ from app.schemas.admin_university import (
     AdminUniversityUpdateRequest,
     AdminProgramUpdateRequest,
 )
-from app.services.admin_lock import lock_fields
+from app.services.admin_lock import lock_fields, unlock_fields
 from app.services.admin_listing import SortOrder, order_by_clause
 
 
@@ -167,3 +167,41 @@ async def update_program(
     await db.commit()
     await db.refresh(program)
     return program
+
+
+async def _unlock_row(db: AsyncSession, row, field: str | None):
+    """Put a hand-edited field back under seed control.
+
+    A lock never recorded the value it replaced (only the field name), so
+    unlocking restores nothing by itself — it makes the field eligible for
+    the next seed run to overwrite, which is the only recovery path a lock
+    has ever had. Reported as such rather than pretending to be an undo."""
+    removed = unlock_fields(row, None if field is None else [field])
+    if field is not None and not removed:
+        raise ValueError(f"Field '{field}' is not locked on this row")
+
+    await db.commit()
+    await db.refresh(row)
+    return row
+
+
+async def unlock_university_fields(
+    db: AsyncSession, university_id: uuid.UUID, field: str | None = None
+) -> University:
+    result = await db.execute(select(University).where(University.id == university_id))
+    university = result.scalar_one_or_none()
+    if university is None:
+        raise ValueError("University not found")
+    return await _unlock_row(db, university, field)
+
+
+async def unlock_program_fields(
+    db: AsyncSession, program_id: uuid.UUID, field: str | None = None
+) -> Program:
+    result = await db.execute(
+        select(Program).options(selectinload(Program.university)).where(Program.id == program_id)
+    )
+    program = result.scalar_one_or_none()
+    if program is None:
+        raise ValueError("Program not found")
+    return await _unlock_row(db, program, field)
