@@ -45,6 +45,14 @@ class AdminUniversityListItem(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class AdminUniversityCountry(BaseModel):
+    """One entry of the country filter's option list. Counts come with it so
+    the picker can say how much each option actually covers."""
+
+    country: str
+    universities_count: int
+
+
 class AdminUniversityListResponse(BaseModel):
     items: list[AdminUniversityListItem]
     total: int

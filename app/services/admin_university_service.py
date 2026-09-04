@@ -7,13 +7,14 @@ from sqlalchemy.orm import selectinload
 from app.models.program import Program
 from app.models.university import University
 from app.schemas.admin_university import (
+    AdminUniversityCountry,
     AdminUniversityListItem,
     AdminUniversityListResponse,
     AdminUniversityUpdateRequest,
     AdminProgramUpdateRequest,
 )
 from app.services.admin_lock import AdminNothingToClearError, lock_fields, unlock_fields
-from app.services.admin_listing import SortOrder, order_by_clause
+from app.services.admin_listing import SortOrder, order_by_clause, ru_text
 
 
 # `programs_count` is an aggregate, not a column, so it can only be ordered by
@@ -21,9 +22,11 @@ from app.services.admin_listing import SortOrder, order_by_clause
 _PROGRAMS_COUNT = func.count(Program.id)
 
 UNIVERSITY_SORT_FIELDS = {
-    "name": University.name,
-    "city": University.city,
-    "country": University.country,
+    # Russian-language columns need the ICU collation, or "sort by name" opens
+    # on the Latin-named half of the catalog — see admin_listing.ru_text.
+    "name": ru_text(University.name),
+    "city": ru_text(University.city),
+    "country": ru_text(University.country),
     "ranking": University.ranking,
     "uniranks_kz_rank": University.uniranks_kz_rank,
     "updated_at": University.updated_at,
@@ -59,6 +62,7 @@ async def list_universities(
     search: str | None = None,
     country: str | None = None,
     has_ranking: bool | None = None,
+    has_programs: bool | None = None,
     sort: str | None = None,
     order: SortOrder | None = None,
 ) -> AdminUniversityListResponse:
@@ -71,6 +75,11 @@ async def list_universities(
         filters.append(
             University.ranking.isnot(None) if has_ranking else University.ranking.is_(None)
         )
+    if has_programs is not None:
+        # A university with no programs can be recommended to nobody — it is
+        # invisible to students. Worth being able to list, not just to notice.
+        clause = University.programs.any()
+        filters.append(clause if has_programs else ~clause)
 
     # Total count
     total_result = await db.execute(select(func.count()).select_from(University).where(*filters))
@@ -87,7 +96,7 @@ async def list_universities(
                 sort,
                 order,
                 allowed=UNIVERSITY_SORT_FIELDS,
-                default=(University.name.asc(),),
+                default=(ru_text(University.name).asc(),),
                 tiebreaker=University.id.asc(),
             )
         )
@@ -205,3 +214,20 @@ async def unlock_program_fields(
     if program is None:
         raise ValueError("Program not found")
     return await _unlock_row(db, program, field)
+
+
+async def list_countries(db: AsyncSession) -> list[AdminUniversityCountry]:
+    """Every country present in the catalog, most-populated first.
+
+    The country filter needs the full set of values, which a page of 20 rows
+    cannot supply — the admin used to get it by downloading the whole catalog
+    and counting client-side. One grouped query replaces that."""
+    result = await db.execute(
+        select(University.country, func.count())
+        .group_by(University.country)
+        .order_by(func.count().desc(), ru_text(University.country).asc())
+    )
+    return [
+        AdminUniversityCountry(country=country, universities_count=count)
+        for country, count in result.all()
+    ]

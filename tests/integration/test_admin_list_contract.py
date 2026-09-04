@@ -542,3 +542,80 @@ async def test_motivation_statements_can_be_fetched_one_triplet_at_a_time(
 
     assert result.total == 3
     assert [i.order for i in result.items] == [0, 1, 2]
+
+
+# --- collation and facets ---------------------------------------------------
+
+
+async def test_cyrillic_names_sort_alphabetically_not_by_byte_value(
+    db_session: AsyncSession,
+) -> None:
+    """Postgres' default collation puts every Latin-named row ahead of every
+    Cyrillic one — that is why sorting 252 universities by name used to open on
+    "Aalto University" and push all 111 Kazakh ones to page six."""
+    marker = _marker()
+    await _university(db_session, f"{marker} Ярославский", country=marker)
+    await _university(db_session, f"{marker} Zeta University", country=marker)
+    await _university(db_session, f"{marker} Академия", country=marker)
+
+    result = await admin_university_service.list_universities(
+        db_session, country=marker, sort="name", order="asc", limit=100
+    )
+
+    assert [i.name.split(" ", 1)[1] for i in result.items] == [
+        "Академия",
+        "Ярославский",
+        "Zeta University",
+    ]
+
+
+async def test_default_order_uses_the_same_collation(db_session: AsyncSession) -> None:
+    """An unsorted list is what an admin sees first, so the default order is
+    the one that mattered most in the original complaint."""
+    marker = _marker()
+    await _university(db_session, f"{marker} Ярославский", country=marker)
+    await _university(db_session, f"{marker} Академия", country=marker)
+
+    result = await admin_university_service.list_universities(
+        db_session, country=marker, limit=100
+    )
+
+    assert [i.name.split(" ", 1)[1] for i in result.items] == ["Академия", "Ярославский"]
+
+
+async def test_has_programs_filter_finds_universities_no_student_can_reach(
+    db_session: AsyncSession,
+) -> None:
+    marker = _marker()
+    empty = await _university(db_session, f"{marker} empty", country=marker)
+    busy = await _university(db_session, f"{marker} busy", country=marker)
+    db_session.add(Program(university_id=busy.id, name=f"P {uuid.uuid4()}", language="ru"))
+    await db_session.flush()
+
+    without = await admin_university_service.list_universities(
+        db_session, country=marker, has_programs=False, limit=100
+    )
+    with_programs = await admin_university_service.list_universities(
+        db_session, country=marker, has_programs=True, limit=100
+    )
+
+    assert [i.id for i in without.items] == [empty.id]
+    assert [i.id for i in with_programs.items] == [busy.id]
+
+
+async def test_country_facet_lists_options_with_their_counts(
+    db_session: AsyncSession,
+) -> None:
+    """The country filter needs every value, which a page of 20 rows cannot
+    supply — this replaces downloading the whole catalog to count them."""
+    marker = _marker()
+    await _university(db_session, f"{marker} a", country=marker)
+    await _university(db_session, f"{marker} b", country=marker)
+
+    countries = await admin_university_service.list_countries(db_session)
+    entry = next(c for c in countries if c.country == marker)
+
+    assert entry.universities_count == 2
+    # Most-populated first, so the real catalog's countries lead the list.
+    counts = [c.universities_count for c in countries]
+    assert counts == sorted(counts, reverse=True)

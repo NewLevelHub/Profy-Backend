@@ -21,6 +21,7 @@ from app.schemas.admin import (
     AdminUserStatsResponse,
 )
 from app.schemas.admin_university import (
+    AdminUniversityCountry,
     AdminUniversityListResponse,
     AdminUniversityDetail,
     AdminUniversityUpdateRequest,
@@ -250,6 +251,9 @@ async def list_universities(
     ),
     country: str | None = Query(default=None),
     has_ranking: bool | None = Query(default=None),
+    has_programs: bool | None = Query(
+        default=None, description="false = universities no student can ever be matched to"
+    ),
     sort: str | None = _SORT_QUERY,
     order: SortOrder = _ORDER_QUERY,
     _: User = Depends(get_current_admin_user),
@@ -262,9 +266,21 @@ async def list_universities(
         search=search,
         country=country,
         has_ranking=has_ranking,
+        has_programs=has_programs,
         sort=sort,
         order=order,
     )
+
+
+@router.get("/universities/countries", response_model=list[AdminUniversityCountry])
+async def list_university_countries(
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Options for the country filter. A page of 20 rows cannot supply them,
+    and downloading the whole catalog to count them client-side is what this
+    replaces."""
+    return await admin_university_service.list_countries(db)
 
 
 @router.get("/universities/{university_id}", response_model=AdminUniversityDetail)

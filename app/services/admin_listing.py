@@ -24,6 +24,22 @@ either wrong is invisible until an admin notices the list lying to them:
 from typing import Any, Literal, Sequence
 
 from sqlalchemy import nulls_last
+from sqlalchemy.sql.elements import ColumnElement
+
+# Postgres' default collation orders by byte value, which puts every
+# Latin-named row ahead of every Cyrillic one: sorting the 252 universities by
+# name started with "Aalto University" and pushed all 111 Kazakh ones — the
+# main working slice — to page six of thirteen. ICU's Russian collation orders
+# Cyrillic as a reader expects, matching what the admin frontend used to do
+# locally with localeCompare('ru') over a fully downloaded catalog.
+#
+# Shipped with postgres:16-alpine, the image all three environments run.
+RU_COLLATION = "ru-RU-x-icu"
+
+
+def ru_text(column: ColumnElement) -> ColumnElement:
+    """Wrap a Russian-language text column so it sorts alphabetically."""
+    return column.collate(RU_COLLATION)
 
 SortOrder = Literal["asc", "desc"]
 

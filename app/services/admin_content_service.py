@@ -40,7 +40,7 @@ from app.services.admin_lock import (
     clear_overrides,
     has_overrides,
 )
-from app.services.admin_listing import SortOrder, order_by_clause
+from app.services.admin_listing import SortOrder, order_by_clause, ru_text
 
 
 async def _get_by_id(db: AsyncSession, model, row_id: uuid.UUID):
@@ -179,7 +179,9 @@ QUESTION_SORT_FIELDS = {
     "order": Question.order,
     "instrument": Question.instrument,
     "age_tier": Question.age_tier,
-    "text": Question.text,
+    # Russian text needs the ICU collation or it sorts by byte value — see
+    # admin_listing.ru_text.
+    "text": ru_text(Question.text),
 }
 
 
@@ -389,7 +391,7 @@ MOTIVATION_STATEMENT_SORT_FIELDS = {
     "triplet_index": MotivationStatement.triplet_index,
     "order": MotivationStatement.order,
     "category": MotivationStatement.category,
-    "text": MotivationStatement.text,
+    "text": ru_text(MotivationStatement.text),
 }
 
 
@@ -633,8 +635,10 @@ async def _programs_count_by_direction(
 
 
 DIRECTION_SORT_FIELDS = {
-    "name": Direction.name,
+    "name": ru_text(Direction.name),
     "holland_code": Direction.holland_code,
+    # Slug is ASCII by construction (the seed transliterates), so the default
+    # collation is already correct for it.
     "slug": Direction.slug,
 }
 
@@ -682,7 +686,7 @@ async def list_directions(
             sort,
             order,
             allowed=DIRECTION_SORT_FIELDS,
-            default=(Direction.name.asc(),),
+            default=(ru_text(Direction.name).asc(),),
             tiebreaker=Direction.id.asc(),
         ),
         page,
