@@ -136,10 +136,17 @@ async def update_me(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    locale_changed = current_user.locale != body.locale
     current_user.locale = body.locale
     current_user.locale_explicit = True
     await db.commit()
     await db.refresh(current_user)
+    if locale_changed:
+        # The report is generated in the owner's language (KZ-403/405); drop
+        # the cached owner-locale pointer + per-locale report cache so the
+        # next /result read resolves the new language (KZ-406).
+        from app.services import report_service
+        await report_service.invalidate_owner_locale_cache(current_user.id, db)
     return current_user
 
 

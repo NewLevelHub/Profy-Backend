@@ -179,12 +179,24 @@ def _stored_interest_instrument(profile: dict) -> str:
     return "riasec" if any(key in riasec_service.HOLLAND_ORDER for key in profile) else "mi"
 
 
-async def _resolve_owner_locale(assessment_id: uuid.UUID, db: AsyncSession) -> str:
+async def _resolve_owner_locale(
+    assessment_id: uuid.UUID, db: AsyncSession, redis: aioredis.Redis
+) -> str:
     """The report renders in the *artifact owner's* language (`users.locale`),
     never the locale of whoever opened `/results` — an admin on `ru` must
     still see a `kk` student's report in `kk`. `kk` isn't a SUPPORTED_LOCALES
     value pre-KZ-603, so it's read straight off the row (KNOWN_LOCALES-gated)
-    and applied through `i18n.use_locale`, not the request-locale machinery."""
+    and applied through `i18n.use_locale`, not the request-locale machinery.
+
+    Cached in Redis (`owner_locale_cache_key`): the value changes only on
+    retake or `PATCH /auth/me`, both of which delete this key, so the hot
+    `GET /result` poll path avoids a 2-join query before every cache hit.
+    """
+    loc_key = assessment_shared.owner_locale_cache_key(assessment_id)
+    cached = await _cache_get(redis, loc_key)
+    if cached in KNOWN_LOCALES:
+        return cached
+
     owner_locale = (
         await db.execute(
             select(User.locale)
@@ -194,7 +206,9 @@ async def _resolve_owner_locale(assessment_id: uuid.UUID, db: AsyncSession) -> s
             .where(Assessment.id == assessment_id)
         )
     ).scalar_one_or_none()
-    return owner_locale if owner_locale in KNOWN_LOCALES else DEFAULT_LOCALE
+    resolved = owner_locale if owner_locale in KNOWN_LOCALES else DEFAULT_LOCALE
+    await _cache_set(redis, loc_key, resolved)
+    return resolved
 
 
 def _shape_response(analysis: AnalysisResult, *, locale: str = DEFAULT_LOCALE) -> ResultResponseV2:
@@ -294,7 +308,7 @@ async def build_report(
     assessment_id: uuid.UUID, db: AsyncSession
 ) -> ResultResponseV2:
     redis = _get_redis()
-    locale = await _resolve_owner_locale(assessment_id, db)
+    locale = await _resolve_owner_locale(assessment_id, db, redis)
     cache_key = _cache_key(assessment_id, locale)
 
     cached_response = await _cache_get_response(redis, cache_key)
@@ -509,7 +523,7 @@ async def get_report(
     assessment_id: uuid.UUID, db: AsyncSession
 ) -> ResultResponseV2 | None:
     redis = _get_redis()
-    locale = await _resolve_owner_locale(assessment_id, db)
+    locale = await _resolve_owner_locale(assessment_id, db, redis)
     cache_key = _cache_key(assessment_id, locale)
 
     cached_response = await _cache_get_response(redis, cache_key)
@@ -530,3 +544,32 @@ async def get_report(
     response = _shape_response(analysis, locale=locale)
     await _cache_set(redis, cache_key, response.model_dump_json())
     return response
+
+
+async def has_report_in_any_locale(assessment_id: uuid.UUID, db: AsyncSession) -> bool:
+    """True when a report exists for *some* locale but possibly not the
+    owner's current one — the KZ-406 "switched language, needs lazy
+    regeneration" case, distinct from "no report at all". Lets the /result
+    router return a specific error_code instead of a bare 404."""
+    row = await db.execute(
+        select(AnalysisResult.id).where(AnalysisResult.assessment_id == assessment_id).limit(1)
+    )
+    return row.scalar_one_or_none() is not None
+
+
+async def invalidate_owner_locale_cache(user_id: uuid.UUID, db: AsyncSession) -> None:
+    """Drop the cached owner-locale pointer (and the per-locale report cache
+    entries) for every assessment this user owns. Called from `PATCH /auth/me`
+    when `users.locale` changes: the report itself is keyed per-locale so a
+    switch never *serves* the wrong language, but `_resolve_owner_locale`'s
+    Redis cache would otherwise keep pointing `/result` at the old locale's
+    key until it expired."""
+    rows = await db.execute(
+        select(Assessment.id)
+        .join(Profile, Profile.id == Assessment.profile_id)
+        .where(Profile.user_id == user_id)
+    )
+    redis = _get_redis()
+    keys = [k for aid in rows.scalars().all() for k in assessment_shared.report_cache_keys(aid)]
+    if keys:
+        await assessment_shared.safe_redis_delete(redis, *keys)

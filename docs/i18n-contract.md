@@ -495,11 +495,32 @@ per-locale строки) готова принять файл без измен�
   локалями идентичны — регенерируется только текст (`test_ai_artifact_locale_key.py`).
 - Тест: `tests/integration/test_ai_artifact_locale_key.py`.
 
-### KZ-406 (план)
+### KZ-406 — реализовано (backend + фронт-механизм)
 
-Ленивая регенерация при смене языка: `get_report` вернул `None` для локали
-владельца → фронт показывает оверлей генерации и зовёт `build_report`.
-`ru`-строка при переключении не удаляется.
+- `GET /result/{id}` при отсутствии строки на локали владельца: `404` +
+  `error_code="report_locale_not_generated"`, если отчёт есть на другой
+  локали (`report_service.has_report_in_any_locale`), иначе обычный
+  `"Report not found"`.
+- Ленивая регенерация уже работает через KZ-405: `POST /result/generate` →
+  `build_report` создаёт строку на локали владельца, не трогая другую.
+  `ru`-строка при переключении не удаляется (удаляет только retake).
+- **Перф**: `_resolve_owner_locale` кэширует локаль владельца в Redis
+  (`assessment_shared.owner_locale_cache_key` → `report:v4:loc:{id}`), чтобы
+  горячий `GET /result` (поллинг ~2с при генерации + каждая загрузка страницы)
+  не делал join `assessment→profile→user` перед каждым попаданием в кэш.
+  Инвалидируется на retake и в `PATCH /auth/me` при смене `users.locale`
+  (`report_service.invalidate_owner_locale_cache` — чистит loc-указатель +
+  per-locale report-кэш всех ассессментов пользователя).
+- Фронт (`Profy-Frontend/src/pages/results/hooks/useResults.ts`): локаль
+  владельца (`useLocaleStore.locale`, сырое значение — может быть `kk` до
+  KZ-603) входит в `queryKey`; смена языка → рефетч → `GET` 404 → `queryFn`
+  прозрачно зовёт `POST /generate` (тот же путь, что и при первой
+  генерации); `clearReport()` на смену локали, чтобы устаревший
+  in-memory-отчёт не затенял новый. Пока дремлет — переключатель языка
+  включит KZ-603.
+- Контракт: `docs/frontend-result-api-contract.md` §8a.
+- Тесты: `test_result_locale.py::test_get_report_signals_locale_not_generated_vs_not_found`,
+  `test_ai_artifact_locale_key.py`.
 
 ## 10. Язык в LLM-промптах
 

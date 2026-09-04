@@ -118,3 +118,49 @@ async def test_get_report_does_not_fall_back_to_another_locale(
     # the ru row is untouched
     rows = await _rows(db_session, assessment.id)
     assert [r.locale for r in rows] == ["ru"]
+
+
+async def test_owner_locale_is_cached_and_hot_reads_skip_the_join(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Perf (review finding): _resolve_owner_locale caches the owner locale in
+    Redis so the polled GET /result hot path doesn't run the
+    assessment->profile->user join before every cache hit."""
+    assessment, user = await _senior_assessment(db_session, locale="ru")
+    _llm_off_complete(monkeypatch)
+    await report_service.build_report(assessment.id, db_session)
+
+    redis = assessment_shared.get_redis()
+    loc_key = assessment_shared.owner_locale_cache_key(assessment.id)
+    assert await redis.get(loc_key) == "ru"
+
+    # a warm read resolves locale straight from Redis — prove it by pointing
+    # the cached value at a locale the DB does not have and seeing it honored
+    await redis.set(loc_key, "kk")
+    from app.services import report_service as rs
+    resolved = await rs._resolve_owner_locale(assessment.id, db_session, redis)
+    assert resolved == "kk"
+
+
+async def test_patch_auth_me_locale_change_clears_the_owner_locale_cache(
+    client, db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.services import auth_service
+
+    assessment, user = await _senior_assessment(db_session, locale="ru")
+    _llm_off_complete(monkeypatch)
+    await report_service.build_report(assessment.id, db_session)
+    await db_session.commit()
+
+    redis = assessment_shared.get_redis()
+    loc_key = assessment_shared.owner_locale_cache_key(assessment.id)
+    ru_report_key = assessment_shared.report_cache_key(assessment.id, "ru")
+    assert await redis.get(loc_key) == "ru"
+    assert await redis.get(ru_report_key) is not None
+
+    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user.id)}"}
+    r = await client.patch("/api/v1/auth/me", json={"locale": "kk"}, headers=headers)
+    assert r.status_code == 200
+
+    assert await redis.get(loc_key) is None
+    assert await redis.get(ru_report_key) is None

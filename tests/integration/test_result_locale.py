@@ -8,6 +8,7 @@ import uuid
 from unittest.mock import AsyncMock
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.assessment import Assessment, AssessmentGoal
@@ -121,3 +122,63 @@ async def test_ru_owner_report_is_unaffected(
         "Реалистичный", "Исследовательский", "Артистичный",
         "Социальный", "Предприимчивый", "Конвенциональный",
     } for item in response.interest_map)
+
+
+async def test_get_report_signals_locale_not_generated_vs_not_found(
+    client, db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """KZ-406: GET /result 404 distinguishes 'exists in another locale, needs
+    lazy regen' (error_code) from 'no report at all'."""
+    from app.services import auth_service
+
+    # (a) never generated -> plain 404 "Report not found"
+    assessment_a = await _kk_assessment(db_session, AgeGroup.senior, 16)
+    profile_a = (await db_session.execute(
+        select(Profile).where(Profile.id == assessment_a.profile_id)
+    )).scalar_one()
+    headers_a = {"Authorization": f"Bearer {auth_service.create_jwt_token(profile_a.user_id)}"}
+    await db_session.commit()
+
+    r = await client.get(f"/api/v1/result/{assessment_a.id}", headers=headers_a)
+    assert r.status_code == 404
+    body = r.json()
+    assert body["detail"] == "Report not found"
+    assert body.get("error_code") is None
+
+    # (b) a ru row exists, owner is now kk -> 404 with the KZ-406 code
+    assessment_b, user_b = await _senior_ru_then_kk(db_session, monkeypatch)
+    headers_b = {"Authorization": f"Bearer {auth_service.create_jwt_token(user_b.id)}"}
+    await db_session.commit()
+
+    r = await client.get(f"/api/v1/result/{assessment_b.id}", headers=headers_b)
+    assert r.status_code == 404
+    assert r.json()["error_code"] == "report_locale_not_generated"
+
+
+async def _senior_ru_then_kk(db_session, monkeypatch):
+    """A senior assessment with a `ru` AnalysisResult row whose owner is now kk."""
+    from app.models.user import User as _User
+    assessment, user = await _senior_assessment_ru(db_session)
+    _force_complete_llm_off(monkeypatch, senior=True)
+    await report_service.build_report(assessment.id, db_session)  # -> ru row
+    user.locale = "kk"
+    await db_session.flush()
+    for key in assessment_shared.report_cache_keys(assessment.id):
+        await assessment_shared.get_redis().delete(key)
+    return assessment, user
+
+
+async def _senior_assessment_ru(db_session):
+    from app.models.user import User as _User
+    user = _User(email=f"{uuid.uuid4()}@example.com", hashed_password="x",
+                 is_active=True, is_verified=True)  # ru
+    db_session.add(user)
+    await db_session.flush()
+    profile = Profile(user_id=user.id, name="Тест", age=16, grade=9, city="Алматы",
+                      country="Казахстан", language="ru", age_group=AgeGroup.senior)
+    db_session.add(profile)
+    await db_session.flush()
+    a = Assessment(profile_id=profile.id, goal=AssessmentGoal.explore)
+    db_session.add(a)
+    await db_session.flush()
+    return a, user

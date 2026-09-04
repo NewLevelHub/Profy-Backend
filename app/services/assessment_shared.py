@@ -58,10 +58,21 @@ def report_cache_key(assessment_id: uuid.UUID, locale: str = DEFAULT_LOCALE) -> 
     return f"{REPORT_CACHE_KEY_PREFIX}:{locale}:{assessment_id}"
 
 
+def owner_locale_cache_key(assessment_id: uuid.UUID) -> str:
+    """Caches the report's owner locale (`users.locale`) so the hot
+    `GET /result` path — polled ~every 2s during generation and on every
+    results-page load — doesn't run a 2-join `assessment→profile→user` query
+    before every cache hit. Invalidated on retake and on `PATCH /auth/me`
+    (the only ways the owner locale changes)."""
+    return f"{REPORT_CACHE_KEY_PREFIX}:loc:{assessment_id}"
+
+
 def report_cache_keys(assessment_id: uuid.UUID) -> list[str]:
-    """Every locale's report cache key — retake / invalidation must clear all,
-    not just the one the retaking client happens to be on."""
-    return [report_cache_key(assessment_id, loc) for loc in KNOWN_LOCALES]
+    """Every per-locale report cache key + the owner-locale pointer — retake /
+    invalidation must clear all, not just the one the retaking client is on."""
+    return [report_cache_key(assessment_id, loc) for loc in KNOWN_LOCALES] + [
+        owner_locale_cache_key(assessment_id)
+    ]
 
 
 def get_redis() -> aioredis.Redis:
