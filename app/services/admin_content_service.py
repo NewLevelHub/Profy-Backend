@@ -1,10 +1,11 @@
 import uuid
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
 from app.models.direction import Direction
-from app.models.motivation import MotivationStatement
+from app.models.motivation import MotivationCategory, MotivationStatement
 from app.models.motivation_pair import MotivationPair
 from app.models.profile import AgeGroup
 from app.models.program import Program, program_directions
@@ -33,6 +34,7 @@ from app.schemas.admin_content import (
     AdminQuestionUpdateRequest,
 )
 from app.services.admin_lock import AdminOverrideValidationError, apply_overrides, has_overrides
+from app.services.admin_listing import SortOrder, order_by_clause
 
 
 async def _get_by_id(db: AsyncSession, model, row_id: uuid.UUID):
@@ -108,18 +110,50 @@ async def _load_questions_by_id(
     return {q.id: q for q in result.scalars().all()}
 
 
-async def _count_and_paginate(db: AsyncSession, model, filters: list, order_by: tuple, page: int, limit: int):
+def _overrides_filter(model, has_overrides_value: bool):
+    """"Show me everything that was edited by hand" — the slice an admin wants
+    before a deploy, since a resync composes overrides back on top of the bank
+    (docs/admin-questions-content-overrides-plan.md). An untouched row holds
+    an empty JSONB object, not null."""
+    return model.overrides != {} if has_overrides_value else model.overrides == {}
+
+
+async def _count_and_paginate(
+    db: AsyncSession,
+    model,
+    filters: list,
+    order_by: list,
+    page: int,
+    limit: int,
+    joins: tuple = (),
+):
     """Shared count-then-paginate body for all 5 list_X functions below — only
-    the model, filters, and ordering differ per content type."""
-    total_result = await db.execute(select(func.count()).select_from(model).where(*filters))
+    the model, filters, joins and ordering differ per content type. `joins`
+    are applied to the count query too, or a filter that lives on a joined
+    table would make `total` disagree with the page it describes."""
+    count_query = select(func.count()).select_from(model)
+    query = select(model)
+    for target, onclause in joins:
+        count_query = count_query.join(target, onclause)
+        query = query.join(target, onclause)
+
+    total_result = await db.execute(count_query.where(*filters))
     total = total_result.scalar_one()
 
-    query = select(model).where(*filters).order_by(*order_by).offset((page - 1) * limit).limit(limit)
+    query = query.where(*filters).order_by(*order_by).offset((page - 1) * limit).limit(limit)
     result = await db.execute(query)
     return total, result.scalars().all()
 
 
 # --- Questions ---
+
+
+QUESTION_SORT_FIELDS = {
+    "order": Question.order,
+    "instrument": Question.instrument,
+    "age_tier": Question.age_tier,
+    "text": Question.text,
+}
 
 
 async def list_questions(
@@ -128,6 +162,9 @@ async def list_questions(
     instrument: QuestionInstrument | None = None,
     age_tier: AgeGroup | None = None,
     search: str | None = None,
+    has_overrides_filter: bool | None = None,
+    sort: str | None = None,
+    order: SortOrder | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> AdminQuestionListResponse:
@@ -137,10 +174,24 @@ async def list_questions(
     if age_tier:
         filters.append(Question.age_tier == age_tier)
     if search:
-        filters.append(Question.text.ilike(f"%{search.strip()}%"))
+        like = f"%{search.strip()}%"
+        filters.append(or_(Question.text.ilike(like), Question.short_text.ilike(like)))
+    if has_overrides_filter is not None:
+        filters.append(_overrides_filter(Question, has_overrides_filter))
 
     total, rows = await _count_and_paginate(
-        db, Question, filters, (Question.instrument.asc(), Question.order.asc()), page, limit
+        db,
+        Question,
+        filters,
+        order_by_clause(
+            sort,
+            order,
+            allowed=QUESTION_SORT_FIELDS,
+            default=(Question.instrument.asc(), Question.order.asc()),
+            tiebreaker=Question.id.asc(),
+        ),
+        page,
+        limit,
     )
 
     items = [
@@ -176,22 +227,67 @@ async def update_question(
 # --- Question pairs ---
 
 
+QUESTION_PAIR_SORT_FIELDS = {
+    "pair_index": QuestionPair.pair_index,
+    "instrument": QuestionPair.instrument,
+    "age_tier": QuestionPair.age_tier,
+}
+
+
 async def list_question_pairs(
     db: AsyncSession,
     *,
     instrument: QuestionInstrument | None = None,
     age_tier: AgeGroup | None = None,
+    search: str | None = None,
+    has_overrides_filter: bool | None = None,
+    sort: str | None = None,
+    order: SortOrder | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> AdminQuestionPairListResponse:
     filters = []
+    joins: tuple = ()
     if instrument:
         filters.append(QuestionPair.instrument == instrument)
     if age_tier:
         filters.append(QuestionPair.age_tier == age_tier)
+    if has_overrides_filter is not None:
+        filters.append(_overrides_filter(QuestionPair, has_overrides_filter))
+    if search:
+        # Search the text a student would actually see, which for a pair
+        # without an override is the linked question's own wording — matching
+        # only the override columns would silently skip every junior pair,
+        # since junior pairs leave both overrides null.
+        like = f"%{search.strip()}%"
+        q_a = aliased(Question)
+        q_b = aliased(Question)
+        joins = (
+            (q_a, QuestionPair.question_a_id == q_a.id),
+            (q_b, QuestionPair.question_b_id == q_b.id),
+        )
+        filters.append(
+            or_(
+                QuestionPair.frame.ilike(like),
+                func.coalesce(QuestionPair.option_a_text, q_a.short_text, q_a.text).ilike(like),
+                func.coalesce(QuestionPair.option_b_text, q_b.short_text, q_b.text).ilike(like),
+            )
+        )
 
     total, rows = await _count_and_paginate(
-        db, QuestionPair, filters, (QuestionPair.instrument.asc(), QuestionPair.pair_index.asc()), page, limit
+        db,
+        QuestionPair,
+        filters,
+        order_by_clause(
+            sort,
+            order,
+            allowed=QUESTION_PAIR_SORT_FIELDS,
+            default=(QuestionPair.instrument.asc(), QuestionPair.pair_index.asc()),
+            tiebreaker=QuestionPair.id.asc(),
+        ),
+        page,
+        limit,
+        joins=joins,
     )
 
     questions = await _load_questions_by_id(
@@ -247,17 +343,53 @@ async def update_question_pair(
 # --- Motivation statements ---
 
 
+MOTIVATION_STATEMENT_SORT_FIELDS = {
+    "triplet_index": MotivationStatement.triplet_index,
+    "order": MotivationStatement.order,
+    "category": MotivationStatement.category,
+    "text": MotivationStatement.text,
+}
+
+
 async def list_motivation_statements(
     db: AsyncSession,
     *,
+    search: str | None = None,
+    triplet_index: int | None = None,
+    category: MotivationCategory | None = None,
+    has_overrides_filter: bool | None = None,
+    sort: str | None = None,
+    order: SortOrder | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> AdminMotivationStatementListResponse:
+    filters = []
+    if search:
+        like = f"%{search.strip()}%"
+        filters.append(
+            or_(MotivationStatement.text.ilike(like), MotivationStatement.text_junior.ilike(like))
+        )
+    if triplet_index is not None:
+        # A triplet is the real unit of meaning here: its three statements must
+        # carry three different categories, and nothing server-side enforces
+        # that yet, so an admin editing one of them needs to see the other two.
+        filters.append(MotivationStatement.triplet_index == triplet_index)
+    if category is not None:
+        filters.append(MotivationStatement.category == category)
+    if has_overrides_filter is not None:
+        filters.append(_overrides_filter(MotivationStatement, has_overrides_filter))
+
     total, rows = await _count_and_paginate(
         db,
         MotivationStatement,
-        [],
-        (MotivationStatement.triplet_index.asc(), MotivationStatement.order.asc()),
+        filters,
+        order_by_clause(
+            sort,
+            order,
+            allowed=MOTIVATION_STATEMENT_SORT_FIELDS,
+            default=(MotivationStatement.triplet_index.asc(), MotivationStatement.order.asc()),
+            tiebreaker=MotivationStatement.id.asc(),
+        ),
         page,
         limit,
     )
@@ -294,14 +426,50 @@ async def update_motivation_statement(
 # --- Motivation pairs ---
 
 
+MOTIVATION_PAIR_SORT_FIELDS = {
+    "pair_index": MotivationPair.pair_index,
+    "category_a": MotivationPair.category_a,
+}
+
+
 async def list_motivation_pairs(
     db: AsyncSession,
     *,
+    search: str | None = None,
+    category: MotivationCategory | None = None,
+    has_overrides_filter: bool | None = None,
+    sort: str | None = None,
+    order: SortOrder | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> AdminMotivationPairListResponse:
+    filters = []
+    if search:
+        like = f"%{search.strip()}%"
+        filters.append(or_(MotivationPair.text_a.ilike(like), MotivationPair.text_b.ilike(like)))
+    if category is not None:
+        # Both sides of a Harter pair are poles of the SAME category, so one
+        # parameter covers the row — matching either column keeps this correct
+        # even if that invariant is ever relaxed.
+        filters.append(
+            or_(MotivationPair.category_a == category, MotivationPair.category_b == category)
+        )
+    if has_overrides_filter is not None:
+        filters.append(_overrides_filter(MotivationPair, has_overrides_filter))
+
     total, rows = await _count_and_paginate(
-        db, MotivationPair, [], (MotivationPair.pair_index.asc(),), page, limit
+        db,
+        MotivationPair,
+        filters,
+        order_by_clause(
+            sort,
+            order,
+            allowed=MOTIVATION_PAIR_SORT_FIELDS,
+            default=(MotivationPair.pair_index.asc(),),
+            tiebreaker=MotivationPair.id.asc(),
+        ),
+        page,
+        limit,
     )
 
     items = [
@@ -367,18 +535,62 @@ async def _programs_count_by_direction(
     return {direction_id: count for direction_id, count in result.all()}
 
 
+DIRECTION_SORT_FIELDS = {
+    "name": Direction.name,
+    "holland_code": Direction.holland_code,
+    "slug": Direction.slug,
+}
+
+
+def _catalog_filled_clause():
+    """SQL twin of _empty_catalog_fields() above — kept next to it so the
+    filter and the per-row flag can't drift apart. The four list columns
+    default to `[]`, never null, so jsonb_array_length is always safe."""
+    return and_(
+        Direction.description != "",
+        *(
+            func.jsonb_array_length(getattr(Direction, field)) > 0
+            for field in _DIRECTION_CATALOG_FIELDS
+            if field != "description"
+        ),
+    )
+
+
 async def list_directions(
     db: AsyncSession,
     *,
     search: str | None = None,
+    catalog_filled: bool | None = None,
+    has_overrides_filter: bool | None = None,
+    sort: str | None = None,
+    order: SortOrder | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> AdminDirectionListResponse:
     filters = []
     if search:
-        filters.append(Direction.name.ilike(f"%{search.strip()}%"))
+        like = f"%{search.strip()}%"
+        filters.append(or_(Direction.name.ilike(like), Direction.slug.ilike(like)))
+    if catalog_filled is not None:
+        clause = _catalog_filled_clause()
+        filters.append(clause if catalog_filled else ~clause)
+    if has_overrides_filter is not None:
+        filters.append(_overrides_filter(Direction, has_overrides_filter))
 
-    total, rows = await _count_and_paginate(db, Direction, filters, (Direction.name.asc(),), page, limit)
+    total, rows = await _count_and_paginate(
+        db,
+        Direction,
+        filters,
+        order_by_clause(
+            sort,
+            order,
+            allowed=DIRECTION_SORT_FIELDS,
+            default=(Direction.name.asc(),),
+            tiebreaker=Direction.id.asc(),
+        ),
+        page,
+        limit,
+    )
 
     counts = await _programs_count_by_direction(db, [d.id for d in rows])
 

@@ -7,7 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import get_current_admin_user
 from app.models.assessment import AssessmentGoal, AssessmentStatus
+from app.models.motivation import MotivationCategory
 from app.services.admin_lock import AdminOverrideValidationError
+from app.services.admin_listing import AdminSortFieldError, SortOrder
 from app.models.user import User
 from app.schemas.admin import (
     AdminAssessmentDetailResponse,
@@ -52,6 +54,13 @@ from app.services import (
 
 router = APIRouter(tags=["admin"])
 
+# Every list endpoint takes the same two parameters; the set of values `sort`
+# accepts is per-endpoint (services/admin_*_service.py: *_SORT_FIELDS) and an
+# unknown one is a 422, not a silently ignored request.
+_SORT_QUERY = Query(default=None, description="Field to sort by; see 422 body for the allowed set")
+_ORDER_QUERY = Query(default="asc")
+
+
 
 @router.get("/users", response_model=AdminUserListResponse)
 async def list_users(
@@ -61,11 +70,21 @@ async def list_users(
     age_group: AgeGroup | None = Query(default=None),
     status: AssessmentStatus | None = Query(default=None),
     goal: AssessmentGoal | None = Query(default=None),
+    sort: str | None = _SORT_QUERY,
+    order: SortOrder = _ORDER_QUERY,
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     return await admin_service.list_users(
-        db, page=page, limit=limit, search=search, age_group=age_group, status=status, goal=goal
+        db,
+        page=page,
+        limit=limit,
+        search=search,
+        age_group=age_group,
+        status=status,
+        goal=goal,
+        sort=sort,
+        order=order,
     )
 
 
@@ -139,29 +158,80 @@ async def export_assessment(
 async def list_feedback(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
+    search: str | None = Query(default=None, description="Substring of the free-text comment"),
+    score_min: int | None = Query(default=None, ge=1, le=5),
+    score_max: int | None = Query(default=None, ge=1, le=5),
+    age_group: AgeGroup | None = Query(default=None),
+    section: str | None = Query(default=None, description="One entry of helpful_sections"),
+    has_comment: bool | None = Query(default=None),
+    sort: str | None = _SORT_QUERY,
+    order: SortOrder = _ORDER_QUERY,
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await admin_service.list_feedback(db, page=page, limit=limit)
+    return await admin_service.list_feedback(
+        db,
+        page=page,
+        limit=limit,
+        search=search,
+        score_min=score_min,
+        score_max=score_max,
+        age_group=age_group,
+        section=section,
+        has_comment=has_comment,
+        sort=sort,
+        order=order,
+    )
 
 
 @router.get("/feedback/stats", response_model=AdminFeedbackStatsResponse)
 async def get_feedback_stats(
+    search: str | None = Query(default=None),
+    score_min: int | None = Query(default=None, ge=1, le=5),
+    score_max: int | None = Query(default=None, ge=1, le=5),
+    age_group: AgeGroup | None = Query(default=None),
+    section: str | None = Query(default=None),
+    has_comment: bool | None = Query(default=None),
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await admin_service.get_feedback_stats(db)
+    """Same filters as GET /admin/feedback, so the summary describes exactly
+    the rows the table is showing rather than always the whole table."""
+    return await admin_service.get_feedback_stats(
+        db,
+        search=search,
+        score_min=score_min,
+        score_max=score_max,
+        age_group=age_group,
+        section=section,
+        has_comment=has_comment,
+    )
 
 
 @router.get("/universities", response_model=AdminUniversityListResponse)
 async def list_universities(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
-    search: str | None = Query(default=None),
+    search: str | None = Query(
+        default=None, description="Matches name, short name, city or any alias"
+    ),
+    country: str | None = Query(default=None),
+    has_ranking: bool | None = Query(default=None),
+    sort: str | None = _SORT_QUERY,
+    order: SortOrder = _ORDER_QUERY,
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await admin_university_service.list_universities(db, page=page, limit=limit, search=search)
+    return await admin_university_service.list_universities(
+        db,
+        page=page,
+        limit=limit,
+        search=search,
+        country=country,
+        has_ranking=has_ranking,
+        sort=sort,
+        order=order,
+    )
 
 
 @router.get("/universities/{university_id}", response_model=AdminUniversityDetail)
@@ -221,11 +291,24 @@ async def list_questions(
     instrument: QuestionInstrument | None = Query(default=None),
     age_tier: AgeGroup | None = Query(default=None),
     search: str | None = Query(default=None),
+    has_overrides: bool | None = Query(
+        default=None, description="Only rows edited by hand (or only untouched ones)"
+    ),
+    sort: str | None = _SORT_QUERY,
+    order: SortOrder = _ORDER_QUERY,
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     return await admin_content_service.list_questions(
-        db, instrument=instrument, age_tier=age_tier, search=search, page=page, limit=limit
+        db,
+        instrument=instrument,
+        age_tier=age_tier,
+        search=search,
+        has_overrides_filter=has_overrides,
+        sort=sort,
+        order=order,
+        page=page,
+        limit=limit,
     )
 
 
@@ -262,11 +345,25 @@ async def list_question_pairs(
     limit: int = Query(default=20, ge=1, le=100),
     instrument: QuestionInstrument | None = Query(default=None),
     age_tier: AgeGroup | None = Query(default=None),
+    search: str | None = Query(
+        default=None, description="Matches the frame and the option texts a student sees"
+    ),
+    has_overrides: bool | None = Query(default=None),
+    sort: str | None = _SORT_QUERY,
+    order: SortOrder = _ORDER_QUERY,
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     return await admin_content_service.list_question_pairs(
-        db, instrument=instrument, age_tier=age_tier, page=page, limit=limit
+        db,
+        instrument=instrument,
+        age_tier=age_tier,
+        search=search,
+        has_overrides_filter=has_overrides,
+        sort=sort,
+        order=order,
+        page=page,
+        limit=limit,
     )
 
 
@@ -301,10 +398,28 @@ async def update_question_pair(
 async def list_motivation_statements(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
+    search: str | None = Query(default=None, description="Matches text or text_junior"),
+    triplet_index: int | None = Query(
+        default=None, description="Show one whole triplet — its three statements"
+    ),
+    category: MotivationCategory | None = Query(default=None),
+    has_overrides: bool | None = Query(default=None),
+    sort: str | None = _SORT_QUERY,
+    order: SortOrder = _ORDER_QUERY,
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await admin_content_service.list_motivation_statements(db, page=page, limit=limit)
+    return await admin_content_service.list_motivation_statements(
+        db,
+        search=search,
+        triplet_index=triplet_index,
+        category=category,
+        has_overrides_filter=has_overrides,
+        sort=sort,
+        order=order,
+        page=page,
+        limit=limit,
+    )
 
 
 @router.get(
@@ -344,10 +459,24 @@ async def update_motivation_statement(
 async def list_motivation_pairs(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
+    search: str | None = Query(default=None, description="Matches text_a or text_b"),
+    category: MotivationCategory | None = Query(default=None),
+    has_overrides: bool | None = Query(default=None),
+    sort: str | None = _SORT_QUERY,
+    order: SortOrder = _ORDER_QUERY,
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await admin_content_service.list_motivation_pairs(db, page=page, limit=limit)
+    return await admin_content_service.list_motivation_pairs(
+        db,
+        search=search,
+        category=category,
+        has_overrides_filter=has_overrides,
+        sort=sort,
+        order=order,
+        page=page,
+        limit=limit,
+    )
 
 
 @router.get("/motivation-pairs/{pair_id}", response_model=AdminMotivationPairDetail)
@@ -383,11 +512,26 @@ async def update_motivation_pair(
 async def list_directions(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
-    search: str | None = Query(default=None),
+    search: str | None = Query(default=None, description="Matches name or slug"),
+    catalog_filled: bool | None = Query(
+        default=None, description="false = rows with at least one empty catalog field"
+    ),
+    has_overrides: bool | None = Query(default=None),
+    sort: str | None = _SORT_QUERY,
+    order: SortOrder = _ORDER_QUERY,
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await admin_content_service.list_directions(db, search=search, page=page, limit=limit)
+    return await admin_content_service.list_directions(
+        db,
+        search=search,
+        catalog_filled=catalog_filled,
+        has_overrides_filter=has_overrides,
+        sort=sort,
+        order=order,
+        page=page,
+        limit=limit,
+    )
 
 
 @router.get("/directions/{direction_id}", response_model=AdminDirectionDetail)

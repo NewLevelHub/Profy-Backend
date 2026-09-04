@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult
@@ -31,6 +31,7 @@ from app.schemas.profile import ProfileResponse
 from app.schemas.admin_result import AdminAnalysisResultResponse
 from app.schemas.roadmap import RoadmapResponse
 from app.services import bigfive_content, motivation_service
+from app.services.admin_listing import SortOrder, order_by_clause
 from app.services.age_tiers import visible_tiers
 from app.services.goal_overlay_service import _get_effective_goal_and_scenario
 from app.services.riasec_content import LIKERT_LABELS as RIASEC_LIKERT_LABELS
@@ -92,6 +93,27 @@ def _user_base_query(*, needs_distinct: bool):
     return query
 
 
+# The status of the user's most recent assessment, as a correlated subquery,
+# so the column the list already displays can also be sorted on. Same "latest"
+# rule _build_user_list_items uses to fill it in (newest by created_at), which
+# is what keeps the sorted order consistent with the value shown in the row.
+_LATEST_ASSESSMENT_STATUS = (
+    select(Assessment.status)
+    .where(Assessment.profile_id == Profile.id)
+    .order_by(Assessment.created_at.desc())
+    .limit(1)
+    .correlate(Profile)
+    .scalar_subquery()
+)
+
+USER_SORT_FIELDS = {
+    "created_at": User.created_at,
+    "email": User.email,
+    "age_group": Profile.age_group,
+    "latest_assessment_status": _LATEST_ASSESSMENT_STATUS,
+}
+
+
 async def list_users(
     db: AsyncSession,
     *,
@@ -101,6 +123,8 @@ async def list_users(
     age_group: AgeGroup | None = None,
     status: AssessmentStatus | None = None,
     goal: AssessmentGoal | None = None,
+    sort: str | None = None,
+    order: SortOrder | None = None,
 ) -> AdminUserListResponse:
     filters, needs_distinct = _build_user_filters(
         search=search, age_group=age_group, status=status, goal=goal
@@ -112,10 +136,25 @@ async def list_users(
     total_result = await db.execute(select(func.count()).select_from(count_query.subquery()))
     total = total_result.scalar_one()
 
-    query = _user_base_query(needs_distinct=needs_distinct).where(*filters).order_by(User.created_at.desc())
+    order_by = order_by_clause(
+        sort,
+        order,
+        allowed=USER_SORT_FIELDS,
+        default=(User.created_at.desc(),),
+        tiebreaker=User.id.asc(),
+    )
+
+    query = _user_base_query(needs_distinct=needs_distinct).where(*filters)
     if needs_distinct:
+        # SELECT DISTINCT requires every ORDER BY expression to be in the
+        # select list. User's own columns are there via the entity, but a sort
+        # on the profile's age group or on the latest-assessment subquery is
+        # not — Postgres rejects the query outright unless it is added.
+        sort_column = USER_SORT_FIELDS.get(sort) if sort else None
+        if sort_column is not None:
+            query = query.add_columns(sort_column)
         query = query.distinct()
-    query = query.offset((page - 1) * limit).limit(limit)
+    query = query.order_by(*order_by).offset((page - 1) * limit).limit(limit)
     users_result = await db.execute(query)
     users = users_result.scalars().all()
 
@@ -544,18 +583,105 @@ async def _enrich_feedback_rows(
     return items
 
 
+FEEDBACK_SORT_FIELDS = {
+    "created_at": ProductFeedback.created_at,
+    "relevance_score": ProductFeedback.relevance_score,
+}
+
+
+def _has_comment_clause():
+    """A comment that is present but blank is nothing to read, so it counts as
+    "no comment" — the point of the filter is to skip rows with nothing but a
+    score on them."""
+    return and_(ProductFeedback.comment.isnot(None), func.btrim(ProductFeedback.comment) != "")
+
+
+def _build_feedback_filters(
+    *,
+    search: str | None = None,
+    score_min: int | None = None,
+    score_max: int | None = None,
+    age_group: AgeGroup | None = None,
+    section: str | None = None,
+    has_comment: bool | None = None,
+) -> tuple[list, tuple]:
+    """Filter clauses for the feedback list/stats queries, plus the joins they
+    need. `age_group` is not stored on the feedback row — it lives on the
+    profile behind the assessment — so filtering by it joins through both and
+    therefore drops feedback whose assessment was deleted (assessment_id is
+    SET NULL): those rows have no knowable age group, and silently counting
+    them as a match would be worse than excluding them."""
+    filters = []
+    joins: tuple = ()
+
+    if score_min is not None:
+        filters.append(ProductFeedback.relevance_score >= score_min)
+    if score_max is not None:
+        filters.append(ProductFeedback.relevance_score <= score_max)
+    if has_comment is not None:
+        clause = _has_comment_clause()
+        filters.append(clause if has_comment else ~clause)
+    if search:
+        filters.append(ProductFeedback.comment.ilike(f"%{search.strip()}%"))
+    if section:
+        # helpful_sections is a JSONB array of frontend-owned strings; `@>`
+        # asks "does this array contain that element", not a text match.
+        filters.append(ProductFeedback.helpful_sections.contains([section]))
+    if age_group is not None:
+        joins = (
+            (Assessment, ProductFeedback.assessment_id == Assessment.id),
+            (Profile, Assessment.profile_id == Profile.id),
+        )
+        filters.append(Profile.age_group == age_group)
+
+    return filters, joins
+
+
+def _feedback_query(filters: list, joins: tuple):
+    query = select(ProductFeedback)
+    for target, onclause in joins:
+        query = query.join(target, onclause)
+    return query.where(*filters)
+
+
 async def list_feedback(
     db: AsyncSession,
     *,
     page: int = 1,
     limit: int = 20,
+    search: str | None = None,
+    score_min: int | None = None,
+    score_max: int | None = None,
+    age_group: AgeGroup | None = None,
+    section: str | None = None,
+    has_comment: bool | None = None,
+    sort: str | None = None,
+    order: SortOrder | None = None,
 ) -> AdminFeedbackListResponse:
-    total_result = await db.execute(select(func.count()).select_from(ProductFeedback))
-    total = total_result.scalar_one()
+    filters, joins = _build_feedback_filters(
+        search=search,
+        score_min=score_min,
+        score_max=score_max,
+        age_group=age_group,
+        section=section,
+        has_comment=has_comment,
+    )
+
+    count_query = select(func.count()).select_from(ProductFeedback)
+    for target, onclause in joins:
+        count_query = count_query.join(target, onclause)
+    total = (await db.execute(count_query.where(*filters))).scalar_one()
 
     feedback_result = await db.execute(
-        select(ProductFeedback)
-        .order_by(ProductFeedback.created_at.desc())
+        _feedback_query(filters, joins).order_by(
+            *order_by_clause(
+                sort,
+                order,
+                allowed=FEEDBACK_SORT_FIELDS,
+                default=(ProductFeedback.created_at.desc(),),
+                tiebreaker=ProductFeedback.id.asc(),
+            )
+        )
         .offset((page - 1) * limit)
         .limit(limit)
     )
@@ -578,14 +704,34 @@ def _breakdown(items: list[AdminFeedbackListItem], key_fn) -> list[FeedbackBreak
     ]
 
 
-async def get_feedback_stats(db: AsyncSession) -> AdminFeedbackStatsResponse:
+async def get_feedback_stats(
+    db: AsyncSession,
+    *,
+    search: str | None = None,
+    score_min: int | None = None,
+    score_max: int | None = None,
+    age_group: AgeGroup | None = None,
+    section: str | None = None,
+    has_comment: bool | None = None,
+) -> AdminFeedbackStatsResponse:
     """TZ_Profi.md §28.4: aggregate by age group / scenario / top direction.
     Feedback volume is admin-only, low-traffic data — in-Python aggregation
     over all rows (via the same enrichment `list_feedback` uses) is simpler
     and more honest than a raw SQL GROUP BY, since `scenario` isn't a stored
     column, it's derived the same way the student's own results page derives
-    it."""
-    feedback_result = await db.execute(select(ProductFeedback))
+    it.
+
+    Takes the same filters as `list_feedback` so the summary describes the
+    rows currently on screen. Unfiltered, it still describes everything."""
+    filters, joins = _build_feedback_filters(
+        search=search,
+        score_min=score_min,
+        score_max=score_max,
+        age_group=age_group,
+        section=section,
+        has_comment=has_comment,
+    )
+    feedback_result = await db.execute(_feedback_query(filters, joins))
     feedback_rows = list(feedback_result.scalars().all())
     if not feedback_rows:
         return AdminFeedbackStatsResponse(total=0)

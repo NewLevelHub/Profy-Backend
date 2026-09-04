@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -13,6 +13,42 @@ from app.schemas.admin_university import (
     AdminProgramUpdateRequest,
 )
 from app.services.admin_lock import lock_fields
+from app.services.admin_listing import SortOrder, order_by_clause
+
+
+# `programs_count` is an aggregate, not a column, so it can only be ordered by
+# the same COUNT() the SELECT already computes — hence the separate entry.
+_PROGRAMS_COUNT = func.count(Program.id)
+
+UNIVERSITY_SORT_FIELDS = {
+    "name": University.name,
+    "city": University.city,
+    "country": University.country,
+    "ranking": University.ranking,
+    "uniranks_kz_rank": University.uniranks_kz_rank,
+    "updated_at": University.updated_at,
+    "programs_count": _PROGRAMS_COUNT,
+}
+
+
+def _search_clause(search: str):
+    """Matches name, short name, city and any alias.
+
+    Name-only search was the reason a university could not be found by its
+    city or by the abbreviation everyone actually calls it — `aliases` is a
+    JSONB array of strings, so each element is unnested and matched on its
+    own rather than by pattern-matching the array's JSON text (which would
+    also match punctuation and escapes).
+    """
+    like = f"%{search.strip()}%"
+    alias = func.jsonb_array_elements_text(University.aliases).table_valued("value")
+    alias_match = select(1).select_from(alias).where(alias.c.value.ilike(like)).exists()
+    return or_(
+        University.name.ilike(like),
+        University.short_name.ilike(like),
+        University.city.ilike(like),
+        alias_match,
+    )
 
 
 async def list_universities(
@@ -21,10 +57,20 @@ async def list_universities(
     page: int = 1,
     limit: int = 20,
     search: str | None = None,
+    country: str | None = None,
+    has_ranking: bool | None = None,
+    sort: str | None = None,
+    order: SortOrder | None = None,
 ) -> AdminUniversityListResponse:
     filters = []
     if search:
-        filters.append(University.name.ilike(f"%{search.strip()}%"))
+        filters.append(_search_clause(search))
+    if country:
+        filters.append(University.country == country)
+    if has_ranking is not None:
+        filters.append(
+            University.ranking.isnot(None) if has_ranking else University.ranking.is_(None)
+        )
 
     # Total count
     total_result = await db.execute(select(func.count()).select_from(University).where(*filters))
@@ -32,11 +78,19 @@ async def list_universities(
 
     # Main query
     query = (
-        select(University, func.count(Program.id).label("programs_count"))
+        select(University, _PROGRAMS_COUNT.label("programs_count"))
         .outerjoin(Program)
         .where(*filters)
         .group_by(University.id)
-        .order_by(University.name.asc())
+        .order_by(
+            *order_by_clause(
+                sort,
+                order,
+                allowed=UNIVERSITY_SORT_FIELDS,
+                default=(University.name.asc(),),
+                tiebreaker=University.id.asc(),
+            )
+        )
         .offset((page - 1) * limit)
         .limit(limit)
     )
