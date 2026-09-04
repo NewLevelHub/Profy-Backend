@@ -1155,8 +1155,13 @@ async def _upsert_direction_roadmap(
     roadmap.subjects_to_focus = plan.subjects_to_focus
     roadmap.university_track = plan.university_track.model_dump()
     roadmap.university_requirements = [r.model_dump() for r in plan.university_requirements]
+    # mode="json" because ProgramFit.program_id is a uuid.UUID and this column
+    # is JSONB — a plain model_dump() hands asyncpg a UUID object, which
+    # json.dumps refuses ("Object of type UUID is not JSON serializable"),
+    # failing every by-program direction roadmap at insert time. The other
+    # model_dump() calls above carry only str/int/list fields.
     roadmap.program_fit = (
-        plan.program_fit.model_dump() if plan.program_fit is not None else None
+        plan.program_fit.model_dump(mode="json") if plan.program_fit is not None else None
     )
     roadmap.additional_resources = resource_catalog.resources_for_category(category)
     # Always set explicitly (including back to None) — a row previously
