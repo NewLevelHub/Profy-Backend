@@ -499,8 +499,12 @@ per-locale строки) готова принять файл без измен�
 
 - `GET /result/{id}` при отсутствии строки на локали владельца: `404` +
   `error_code="report_locale_not_generated"`, если отчёт есть на другой
-  локали (`report_service.has_report_in_any_locale`), иначе обычный
-  `"Report not found"`.
+  локали, иначе обычный `"Report not found"`. Роутер зовёт
+  `report_service.resolve_report()` — 3-состояние (`OK` /
+  `LOCALE_NOT_GENERATED` / `NOT_FOUND`) из **одного** запроса: на ассессмент
+  ≤ `len(KNOWN_LOCALES)` строк, поэтому `select` без фильтра по локали стоит
+  столько же, сколько прежний с фильтром, но заодно показывает, есть ли строка
+  на другой локали — без второго near-duplicate `SELECT` на каждом ~2с поллинге.
 - Ленивая регенерация уже работает через KZ-405: `POST /result/generate` →
   `build_report` создаёт строку на локали владельца, не трогая другую.
   `ru`-строка при переключении не удаляется (удаляет только retake).
@@ -510,17 +514,27 @@ per-locale строки) готова принять файл без измен�
   не делал join `assessment→profile→user` перед каждым попаданием в кэш.
   Инвалидируется на retake и в `PATCH /auth/me` при смене `users.locale`
   (`report_service.invalidate_owner_locale_cache` — чистит loc-указатель +
-  per-locale report-кэш всех ассессментов пользователя).
+  per-locale report-кэш всех ассессментов пользователя). TTL указателя —
+  короткий (`OWNER_LOCALE_CACHE_TTL`, 5 мин), **не** 24ч отчёта: инвалидация
+  best-effort (`safe_redis_delete` глотает `RedisError`), поэтому молча
+  пропущенный `DELETE` не должен держать не тот язык сутки — указатель дёшево
+  пересчитать одним запросом.
 - Фронт (`Profy-Frontend/src/pages/results/hooks/useResults.ts`): локаль
   владельца (`useLocaleStore.locale`, сырое значение — может быть `kk` до
   KZ-603) входит в `queryKey`; смена языка → рефетч → `GET` 404 → `queryFn`
-  прозрачно зовёт `POST /generate` (тот же путь, что и при первой
-  генерации); `clearReport()` на смену локали, чтобы устаревший
-  in-memory-отчёт не затенял новый. Пока дремлет — переключатель языка
-  включит KZ-603.
+  прозрачно зовёт `POST /generate` (тот же путь, что и при первой генерации).
+  Отчёт **не стирается** императивно при смене локали: `result`-стор помнит
+  локаль, под которой отчёт получен (`reportLocale`, `null` = «текущая», как
+  ставит `ResultLoadingPage` сразу после генерации); при несовпадении хук
+  просто перестаёт считать сохранённый отчёт актуальным для гейта запроса, но
+  продолжает показывать его как fallback, пока не придёт новый — упавший
+  рефетч (5xx) больше не оставляет пустую страницу с ошибкой, а адаптация
+  серверной локали после логина (LocaleGate `ru→kk`) не сносит только что
+  сгенерированный отчёт. Пока дремлет — переключатель языка включит KZ-603.
 - Контракт: `docs/frontend-result-api-contract.md` §8a.
 - Тесты: `test_result_locale.py::test_get_report_signals_locale_not_generated_vs_not_found`,
-  `test_ai_artifact_locale_key.py`.
+  `test_ai_artifact_locale_key.py` (в т.ч. `test_resolve_report_three_state_from_one_query`,
+  `test_owner_locale_pointer_uses_a_short_ttl`).
 
 ## 10. Язык в LLM-промптах
 
@@ -554,13 +568,35 @@ per-locale строки) готова принять файл без измен�
   `src/pages/admin/**` и `src/shared/ui/admin/**` — в списке исключений CI-гарда
   (тикет KZ-210).
 
-## 12. Требования приёмной кампании
+## 12. Требования приёмной кампании и школьные предметы (KZ-503)
 
-Термины и аббревиатуры приёма имеют казахскую форму: `ЕНТ` → `ҰБТ`,
-«профильные предметы» → «бейіндік пәндер», «пороговый балл» → «шекті балл».
-`ЕНТ` и `ҰБТ` не смешиваются в пределах одной локали (проверяется CI-гардом
-KZ-602). Единый справочник школьных/ЕНТ-предметов `subject_code → {ru, kk}` —
-тикет KZ-503.
+**Термины приёма.** Единственный бэкенд-дом пары ЕНТ/ҰБТ —
+`app/i18n/catalog/subjects.py::admission_terms` (`ent`, `profile_subjects`,
+`threshold_score`, `creative_exam`; `RU`/`KK`). Глоссарий ИИ-промптов
+(`app/prompts/_locale.py::glossary_block`, KZ-401) строит правило
+«`ЕНТ` орнына `ҰБТ`, …» из этого каталога — своей копии терминов не держит.
+`ЕНТ` и `ҰБТ` не смешиваются в пределах одной локали (CI-гард KZ-602).
+
+**Школьные предметы.** `app/i18n/catalog/subjects.py::school_subjects` —
+`{канон. рус. строка → отображаемое имя}`, `RU`/`KK`. Ключ = точное значение,
+которое фронт кладёт в `profiles.subjects_liked` / `subjects_easy`
+(`SUBJECT_OPTIONS[].value` в `ProfileSetupPage.tsx`, отображение — код
+`subject.*` в `onboarding.json`). Рус. строка — **локаль-независимый ключ
+матчинга**; каталог только резолвит её в имя.
+
+- Синхронизация BE↔FE: 13 канонических строк. Бэк — `subjects.py`, тест
+  `tests/unit/test_subjects_catalog.py` (набор заморожен). Фронт —
+  `scripts/i18n-subjects.mjs` (в `npm run i18n:check`): каждый `value` в
+  каноническом наборе, каждый `key` резолвится в ru и kk, `ru` строка ==
+  `value`. Правка списка — обе стороны сразу.
+- Потребитель на бэке: `report_narrative_context._subject_evidence` —
+  `text` = имя предмета в локали владельца отчёта (`tr("subjects")` под
+  `i18n.use_locale()`), `source_id` остаётся на канонической рус. строке
+  (стабильность/дедуп evidence-id). Кастомный предмет вне списка — как есть.
+- Гэп-анализ (`gap_analysis_service`) предметные строки не показывает:
+  `GapItem.requirement` — это сырой ключ `requirements` (англ.), `comment`
+  уже локализован каталогом `gap_analysis` (KZ-307). `Program.requirements.exams`
+  / `notes` — сырые ru-данные вузов (не UI-копия, исключены как KZ-206).
 
 ## 13. Каталог вузов/программ — `*_i18n`-оверлеи (KZ-501)
 
@@ -603,3 +639,4 @@ KZ-602). Единый справочник школьных/ЕНТ-предме�
 |---|---|
 | 2026-09-02 | Зафиксирован контракт; принято: react-i18next, вариант A хранения контента, `users.locale`, без feature-flag, описания вузов переводятся LLM-пакетно, админка `ru`-only. |
 | 2026-09-04 | KZ-501: каталог вузов/программ получает `*_i18n`-оверлеи поверх `ru`-колонки (не «вариант A»); read-side — `resolve_column_i18n`, в ответе — `description_locale` / `who_its_for_locale`. |
+| 2026-09-04 | KZ-503: `app/i18n/catalog/subjects.py` — единый дом школьных предметов (ключ = канон. рус. строка) + терминов ЕНТ/ҰБТ; глоссарий KZ-401 строится из него; `_subject_evidence` локализует имена предметов; синк BE↔FE тестами (`test_subjects_catalog.py` / `i18n-subjects.mjs`). |

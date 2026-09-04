@@ -103,13 +103,22 @@ def glossary_block(locale: str, direction_slug: str | None = None) -> str:
     if locale != "kk":
         return ""
 
+    # Admission-term pairs come from the single backend catalog (KZ-503) so the
+    # prompt rule can't drift from the rest of the codebase.
+    from app.i18n.catalog import tr as _tr
+
+    _ru_terms = _tr("subjects", locale="ru")["admission_terms"]
+    _kk_terms = _tr("subjects", locale="kk")["admission_terms"]
+    _term_rule = ", ".join(
+        f"«{_ru_terms[key]}» орнына «{_kk_terms[key]}»"
+        for key in ("ent", "profile_subjects", "threshold_score")
+    )
+
     lines = [
         "ГЛОССАРИЙ ЖӘНЕ АТАУЛАР ЕРЕЖЕСІ:",
         "1. Университеттердің ресми атауларын транслитерациялама, өзгертпей сақта "
         "(мысалы: «Nazarbayev University», «СДУ», «ҚБТУ» және т.б.).",
-        "2. Қабылдау науқанының терминдері: «ЕНТ» орнына тек «ҰБТ», "
-        "«профильные предметы» орнына «бейіндік пәндер», "
-        "«пороговый балл» орнына «шекті балл».",
+        f"2. Қабылдау науқанының терминдері: {_term_rule}.",
         "3. Ғылыми және техникалық терминдердің дәлдігін сақта.",
         "4. Кәсіптердің бекітілген қазақша атауларын қатаң қолдан:",
     ]

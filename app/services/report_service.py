@@ -1,6 +1,7 @@
 import logging
 import uuid
 from datetime import datetime, timezone
+from enum import Enum
 
 import redis.asyncio as aioredis
 from fastapi import HTTPException, status
@@ -47,6 +48,14 @@ logger = logging.getLogger(__name__)
 
 CACHE_TTL = 60 * 60 * 24  # 24 hours
 
+# The owner-locale pointer (`_resolve_owner_locale`) is a cheap 2-join query to
+# recompute, and its invalidation on retake / PATCH /auth/me is best-effort
+# (`safe_redis_delete` swallows RedisError). A short TTL bounds how long a
+# silently-missed delete can keep `/result` pointed at the previous language —
+# instead of the full 24h report TTL — while still being long enough that the
+# ~2s GET /result poll during generation is served entirely from cache.
+OWNER_LOCALE_CACHE_TTL = 60 * 5  # 5 minutes
+
 _redis: aioredis.Redis | None = None
 
 
@@ -74,9 +83,11 @@ async def _cache_get(redis: aioredis.Redis, key: str) -> str | None:
         return None
 
 
-async def _cache_set(redis: aioredis.Redis, key: str, value: str) -> None:
+async def _cache_set(
+    redis: aioredis.Redis, key: str, value: str, *, ttl: int = CACHE_TTL
+) -> None:
     try:
-        await redis.setex(key, CACHE_TTL, value)
+        await redis.setex(key, ttl, value)
     except aioredis.RedisError:
         logger.warning("redis set failed for key=%s — response served without caching", key, exc_info=True)
 
@@ -188,9 +199,12 @@ async def _resolve_owner_locale(
     value pre-KZ-603, so it's read straight off the row (KNOWN_LOCALES-gated)
     and applied through `i18n.use_locale`, not the request-locale machinery.
 
-    Cached in Redis (`owner_locale_cache_key`): the value changes only on
-    retake or `PATCH /auth/me`, both of which delete this key, so the hot
-    `GET /result` poll path avoids a 2-join query before every cache hit.
+    Cached in Redis (`owner_locale_cache_key`, short `OWNER_LOCALE_CACHE_TTL`):
+    the value changes only on retake or `PATCH /auth/me`, both of which delete
+    this key, so the hot `GET /result` poll path avoids a 2-join query before
+    every cache hit. The TTL is short (not the report's 24h) because that
+    delete is best-effort — a silently-missed one must not pin the wrong
+    language for a day.
     """
     loc_key = assessment_shared.owner_locale_cache_key(assessment_id)
     cached = await _cache_get(redis, loc_key)
@@ -207,7 +221,7 @@ async def _resolve_owner_locale(
         )
     ).scalar_one_or_none()
     resolved = owner_locale if owner_locale in KNOWN_LOCALES else DEFAULT_LOCALE
-    await _cache_set(redis, loc_key, resolved)
+    await _cache_set(redis, loc_key, resolved, ttl=OWNER_LOCALE_CACHE_TTL)
     return resolved
 
 
@@ -519,42 +533,62 @@ async def build_report(
     return response
 
 
-async def get_report(
+class ReportLookup(str, Enum):
+    """Outcome of a `/result` read (KZ-406), resolved from a single query."""
+
+    OK = "ok"
+    # A report exists, but only in a locale other than the owner's current one
+    # — the "switched language, needs lazy regeneration" case.
+    LOCALE_NOT_GENERATED = "locale_not_generated"
+    NOT_FOUND = "not_found"
+
+
+async def resolve_report(
     assessment_id: uuid.UUID, db: AsyncSession
-) -> ResultResponseV2 | None:
+) -> tuple[ResultResponseV2 | None, ReportLookup]:
+    """`/result` read with a 3-state outcome: the owner-locale report, or a
+    signal distinguishing "a report exists only in another locale" (KZ-406
+    lazy regen) from "no report at all". Both cases are derived from one
+    query, so the ~2s GET /result poll during generation never runs a second
+    near-duplicate SELECT on top of it."""
     redis = _get_redis()
     locale = await _resolve_owner_locale(assessment_id, db, redis)
     cache_key = _cache_key(assessment_id, locale)
 
     cached_response = await _cache_get_response(redis, cache_key)
     if cached_response is not None:
-        return cached_response
+        return cached_response, ReportLookup.OK
 
-    result = await db.execute(
-        select(AnalysisResult).where(
-            AnalysisResult.assessment_id == assessment_id,
-            AnalysisResult.locale == locale,
+    # No locale filter: an assessment has at most len(KNOWN_LOCALES) rows, so
+    # this costs the same as the old locale-filtered SELECT but also reveals
+    # whether a *different* locale's report exists — without a second query.
+    rows = (
+        await db.execute(
+            select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
         )
-    )
-    analysis = result.scalar_one_or_none()
+    ).scalars().all()
+    if not rows:
+        return None, ReportLookup.NOT_FOUND
+
+    analysis = next((row for row in rows if row.locale == locale), None)
     if analysis is None:
-        # No row for the owner's locale — KZ-406 will lazily (re)generate it.
-        # Do NOT fall back to another locale's row.
-        return None
+        # A report exists, just not for the owner's current locale — KZ-406
+        # will lazily (re)generate it. Do NOT fall back to another locale's row.
+        return None, ReportLookup.LOCALE_NOT_GENERATED
+
     response = _shape_response(analysis, locale=locale)
     await _cache_set(redis, cache_key, response.model_dump_json())
+    return response, ReportLookup.OK
+
+
+async def get_report(
+    assessment_id: uuid.UUID, db: AsyncSession
+) -> ResultResponseV2 | None:
+    """The owner-locale report, or None when there is none for that locale
+    (whether or not one exists in another locale). Callers that must tell
+    those two apart use `resolve_report`."""
+    response, _ = await resolve_report(assessment_id, db)
     return response
-
-
-async def has_report_in_any_locale(assessment_id: uuid.UUID, db: AsyncSession) -> bool:
-    """True when a report exists for *some* locale but possibly not the
-    owner's current one — the KZ-406 "switched language, needs lazy
-    regeneration" case, distinct from "no report at all". Lets the /result
-    router return a specific error_code instead of a bare 404."""
-    row = await db.execute(
-        select(AnalysisResult.id).where(AnalysisResult.assessment_id == assessment_id).limit(1)
-    )
-    return row.scalar_one_or_none() is not None
 
 
 async def invalidate_owner_locale_cache(user_id: uuid.UUID, db: AsyncSession) -> None:

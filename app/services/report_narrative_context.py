@@ -15,6 +15,7 @@ so it has nothing flow-specific to know about.
 """
 import re
 
+from app.i18n.catalog import tr
 from app.models.artifact import Artifact
 from app.models.profile import AgeGroup
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
@@ -106,8 +107,17 @@ def _thinking_style_evidence(thinking_style: dict[str, float]) -> list[EvidenceI
 
 
 def _subject_evidence(subjects: list[str], source_type: str) -> list[EvidenceItem]:
+    # `name` is the canonical Russian subject string stored on the profile —
+    # keep it as the (stable, locale-independent) source_id, but show the
+    # locale-resolved name (KZ-503). `tr()` reads the locale the caller set
+    # via i18n.use_locale(); an off-list custom subject passes through as-is.
+    school_subjects = tr("subjects")["school_subjects"]
     return [
-        EvidenceItem(source_id=f"{source_type}:{name}", source_type=source_type, text=name)
+        EvidenceItem(
+            source_id=f"{source_type}:{name}",
+            source_type=source_type,
+            text=school_subjects.get(name, name),
+        )
         for name in subjects
     ]
 

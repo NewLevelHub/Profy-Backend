@@ -120,6 +120,54 @@ async def test_get_report_does_not_fall_back_to_another_locale(
     assert [r.locale for r in rows] == ["ru"]
 
 
+async def test_resolve_report_three_state_from_one_query(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Review finding: the /result 404 branch must not run a second
+    near-duplicate SELECT on every ~2s poll. `resolve_report` returns the
+    locale distinction (LOCALE_NOT_GENERATED vs NOT_FOUND) from one query."""
+    from app.services.report_service import ReportLookup
+
+    # nothing generated -> NOT_FOUND
+    assessment, user = await _senior_assessment(db_session, locale="ru")
+    resp, outcome = await report_service.resolve_report(assessment.id, db_session)
+    assert (resp, outcome) == (None, ReportLookup.NOT_FOUND)
+
+    # ru row exists, owner switched to kk -> LOCALE_NOT_GENERATED
+    _llm_off_complete(monkeypatch)
+    await report_service.build_report(assessment.id, db_session)
+    user.locale = "kk"
+    await db_session.flush()
+    redis = assessment_shared.get_redis()
+    for key in assessment_shared.report_cache_keys(assessment.id):
+        await redis.delete(key)
+
+    resp, outcome = await report_service.resolve_report(assessment.id, db_session)
+    assert (resp, outcome) == (None, ReportLookup.LOCALE_NOT_GENERATED)
+
+    # kk row now generated -> OK
+    await report_service.build_report(assessment.id, db_session)
+    resp, outcome = await report_service.resolve_report(assessment.id, db_session)
+    assert outcome is ReportLookup.OK and resp is not None
+
+
+async def test_owner_locale_pointer_uses_a_short_ttl(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Review finding: the owner-locale pointer must not inherit the report's
+    24h TTL — a best-effort invalidation that silently fails would otherwise
+    pin the wrong language for a day."""
+    assessment, user = await _senior_assessment(db_session, locale="ru")
+    _llm_off_complete(monkeypatch)
+    await report_service.build_report(assessment.id, db_session)
+
+    redis = assessment_shared.get_redis()
+    loc_key = assessment_shared.owner_locale_cache_key(assessment.id)
+    ttl = await redis.ttl(loc_key)
+    assert 0 < ttl <= report_service.OWNER_LOCALE_CACHE_TTL
+    assert report_service.OWNER_LOCALE_CACHE_TTL < report_service.CACHE_TTL
+
+
 async def test_owner_locale_is_cached_and_hot_reads_skip_the_join(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
