@@ -59,6 +59,18 @@ async def _lookup_google_user(google_id: str, email: str, db: AsyncSession) -> U
     return result.scalar_one_or_none()
 
 
+def _adopt_as_google_verified(user: User, google_id: str) -> None:
+    if not user.is_verified:
+        # An unverified row could have been created by someone else
+        # squatting on this email with a password of their choosing —
+        # Google's verification of the email is trustworthy, the
+        # row's existing password is not. Clear it so that password
+        # stops granting access once we adopt the row as verified.
+        user.hashed_password = None
+    user.google_id = google_id
+    user.is_verified = True
+
+
 async def login_or_register_google(token: str, db: AsyncSession) -> tuple[User, str]:
     claims = await verify_google_id_token(token)
     google_id, email = claims["sub"], claims["email"].strip().lower()
@@ -66,15 +78,7 @@ async def login_or_register_google(token: str, db: AsyncSession) -> tuple[User, 
     user = await _lookup_google_user(google_id, email, db)
 
     if user:
-        if not user.is_verified:
-            # An unverified row could have been created by someone else
-            # squatting on this email with a password of their choosing —
-            # Google's verification of the email is trustworthy, the
-            # row's existing password is not. Clear it so that password
-            # stops granting access once we adopt the row as verified.
-            user.hashed_password = None
-        user.google_id = google_id
-        user.is_verified = True
+        _adopt_as_google_verified(user, google_id)
         await db.commit()
         await db.refresh(user)
         return user, create_jwt_token(user.id)
@@ -89,11 +93,18 @@ async def login_or_register_google(token: str, db: AsyncSession) -> tuple[User, 
         # insert; the loser hits a unique-constraint violation here instead
         # of finding the row, so recover by re-fetching the winner's row
         # rather than surfacing a 500 for what the user experiences as an
-        # ordinary login.
+        # ordinary login. The same violation is also reachable when the race
+        # is against a *password* signup on this email instead of a second
+        # Google login — apply the same squatting-adoption logic as the
+        # `if user:` branch above, or an attacker's password set moments
+        # earlier would still grant access to the row Google just verified.
         await db.rollback()
         user = await _lookup_google_user(google_id, email, db)
         if user is None:
             raise
+        _adopt_as_google_verified(user, google_id)
+        await db.commit()
+        await db.refresh(user)
         return user, create_jwt_token(user.id)
 
     await db.refresh(user)

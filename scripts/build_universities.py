@@ -32,6 +32,13 @@ Design
 * Never sets `name_normalized` (DB-computed), `cost_*` or `ranking_label` /
   `uniranks_*` (deliberately not in the snapshot). `world_rank` -> `ranking`.
 
+* UPSERT skips any field an admin has manually edited via /admin/universities
+  or /admin/programs (`admin_locked_fields`, see app/services/admin_lock.py
+  and docs/admin-edit-lock-plan.md) — this loader replaced the ~30-script
+  pipeline where every individual overwrite-if-different script checked
+  `is_locked()` itself; the check has to live here now since this is the
+  only place left that overwrites-if-different for these two tables.
+
 Requires `directions` to already be seeded (scripts/seed_riasec_directions.py)
 — profession tags reference Direction rows by slug; an unknown slug is
 reported and skipped, never invented.
@@ -61,6 +68,7 @@ from app.models.direction_roadmap import DirectionRoadmap
 from app.models.program import Program
 from app.models.university import University
 from app.models.university_external_ref import UniversityExternalRef
+from app.services.admin_lock import is_locked
 
 SNAPSHOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "university_snapshot.clean.json")
 
@@ -117,6 +125,24 @@ def program_id(uni_id: uuid.UUID, name: str) -> uuid.UUID:
     return uuid.uuid5(NAMESPACE, f"{uni_id}:{_norm_program(name)}")
 
 
+def apply_synced_fields(row, updates: dict) -> tuple[bool, int]:
+    """Set `row`'s columns from `updates`, skipping any field an admin has
+    manually edited (`admin_lock.is_locked`) so a redeploy doesn't silently
+    revert it. Shared by the University and Program upsert branches below.
+    Returns (changed, locked_skips)."""
+    changed = False
+    locked_skips = 0
+    for f, v in updates.items():
+        if is_locked(row, f):
+            if getattr(row, f) != v:
+                locked_skips += 1
+            continue
+        if getattr(row, f) != v:
+            setattr(row, f, v)
+            changed = True
+    return changed, locked_skips
+
+
 class Stats:
     def __init__(self):
         self.uni_ins = self.uni_upd = self.uni_del = 0
@@ -130,6 +156,8 @@ class Stats:
         self.progs_per_slug: Counter = Counter()
         self.professions_empty: list[str] = []
         self.professions_thin: list[tuple[str, int]] = []
+        self.uni_locked_skips = 0
+        self.prog_locked_skips = 0
 
     def touched(self) -> int:
         return (self.uni_ins + self.uni_upd + self.uni_del + self.prog_ins
@@ -158,6 +186,9 @@ class Stats:
         if self.professions_thin:
             out += ("SNAP-5: professions with 1-2 tagged programs: "
                     + ", ".join(f"{s}={n}" for s, n in sorted(self.professions_thin)) + "\n")
+        if self.uni_locked_skips or self.prog_locked_skips:
+            out += (f"admin-locked fields skipped (not overwritten): "
+                    f"universities={self.uni_locked_skips}  programs={self.prog_locked_skips}\n")
         return out
 
 
@@ -262,9 +293,9 @@ async def main() -> int:
                 existing_unis[uid] = uni
                 st.uni_ins += 1
             else:
-                if any(getattr(uni, f) != v for f, v in d.items()):
-                    for f, v in d.items():
-                        setattr(uni, f, v)
+                changed, skips = apply_synced_fields(uni, d)
+                st.uni_locked_skips += skips
+                if changed:
                     st.uni_upd += 1
 
             for ref in rec.get("external_refs") or []:
@@ -313,10 +344,9 @@ async def main() -> int:
                 else:
                     changed = prog.university_id != uid
                     prog.university_id = uid
-                    for f, v in pd.items():
-                        if getattr(prog, f) != v:
-                            setattr(prog, f, v)
-                            changed = True
+                    field_changed, skips = apply_synced_fields(prog, pd)
+                    changed = changed or field_changed
+                    st.prog_locked_skips += skips
                     if {x.slug for x in prog.directions} != {x.slug for x in new_dirs}:
                         prog.directions = new_dirs
                         changed = True
