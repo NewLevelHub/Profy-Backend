@@ -17,6 +17,7 @@ from app.schemas.admin import (
     AdminFeedbackStatsResponse,
     AdminUserDetailResponse,
     AdminUserListResponse,
+    AdminUserStatsResponse,
 )
 from app.schemas.admin_university import (
     AdminUniversityListResponse,
@@ -70,6 +71,9 @@ async def list_users(
     age_group: AgeGroup | None = Query(default=None),
     status: AssessmentStatus | None = Query(default=None),
     goal: AssessmentGoal | None = Query(default=None),
+    inactive_days: int | None = Query(
+        default=None, ge=1, description="Only users not seen for at least this many days"
+    ),
     sort: str | None = _SORT_QUERY,
     order: SortOrder = _ORDER_QUERY,
     _: User = Depends(get_current_admin_user),
@@ -83,9 +87,23 @@ async def list_users(
         age_group=age_group,
         status=status,
         goal=goal,
+        inactive_days=inactive_days,
         sort=sort,
         order=order,
     )
+
+
+@router.get("/users/stats", response_model=AdminUserStatsResponse)
+async def get_user_stats(
+    inactive_days: int = Query(
+        default=admin_service.DEFAULT_INACTIVE_DAYS,
+        ge=1,
+        description="How long without being seen counts as abandoning a diagnostic",
+    ),
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await admin_service.get_user_stats(db, inactive_days=inactive_days)
 
 
 @router.get("/users/export")

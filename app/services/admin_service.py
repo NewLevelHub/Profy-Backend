@@ -1,6 +1,7 @@
 import uuid
+from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult
@@ -24,6 +25,7 @@ from app.schemas.admin import (
     AdminUserDetailResponse,
     AdminUserListItem,
     AdminUserListResponse,
+    AdminUserStatsResponse,
     FeedbackBreakdownItem,
 )
 from app.schemas.artifact import ArtifactItem
@@ -64,6 +66,7 @@ def _build_user_filters(
     age_group: AgeGroup | None,
     status: AssessmentStatus | None,
     goal: AssessmentGoal | None,
+    inactive_days: int | None = None,
 ) -> tuple[list, bool]:
     """Filter clauses for the admin users list/export query, plus whether an
     Assessment join is needed. `status`/`goal` match "this user has AT LEAST
@@ -78,6 +81,12 @@ def _build_user_filters(
         filters.append(User.email.ilike(f"%{search.strip()}%"))
     if age_group is not None:
         filters.append(Profile.age_group == age_group)
+    if inactive_days is not None:
+        # A user never seen at all counts as inactive: this filter answers
+        # "who has gone quiet", and "no record of them ever being here" is the
+        # strongest possible yes.
+        cutoff = datetime.now(timezone.utc) - timedelta(days=inactive_days)
+        filters.append(or_(User.last_active_at.is_(None), User.last_active_at < cutoff))
     needs_distinct = status is not None or goal is not None
     if status is not None:
         filters.append(Assessment.status == status)
@@ -108,6 +117,7 @@ _LATEST_ASSESSMENT_STATUS = (
 
 USER_SORT_FIELDS = {
     "created_at": User.created_at,
+    "last_active_at": User.last_active_at,
     "email": User.email,
     "age_group": Profile.age_group,
     "latest_assessment_status": _LATEST_ASSESSMENT_STATUS,
@@ -123,11 +133,12 @@ async def list_users(
     age_group: AgeGroup | None = None,
     status: AssessmentStatus | None = None,
     goal: AssessmentGoal | None = None,
+    inactive_days: int | None = None,
     sort: str | None = None,
     order: SortOrder | None = None,
 ) -> AdminUserListResponse:
     filters, needs_distinct = _build_user_filters(
-        search=search, age_group=age_group, status=status, goal=goal
+        search=search, age_group=age_group, status=status, goal=goal, inactive_days=inactive_days
     )
 
     count_query = _user_base_query(needs_distinct=needs_distinct).with_only_columns(User.id).where(*filters)
@@ -169,12 +180,13 @@ async def export_users(
     age_group: AgeGroup | None = None,
     status: AssessmentStatus | None = None,
     goal: AssessmentGoal | None = None,
+    inactive_days: int | None = None,
 ) -> list[AdminUserListItem]:
     """Same filters as `list_users`, no pagination — for CSV export. Raises
     ExportTooLargeError instead of running an unbounded query if the
     filtered result set is bigger than EXPORT_MAX_ROWS."""
     filters, needs_distinct = _build_user_filters(
-        search=search, age_group=age_group, status=status, goal=goal
+        search=search, age_group=age_group, status=status, goal=goal, inactive_days=inactive_days
     )
 
     count_query = _user_base_query(needs_distinct=needs_distinct).with_only_columns(User.id).where(*filters)
@@ -260,6 +272,7 @@ async def _build_user_list_items(db: AsyncSession, users: list[User]) -> list[Ad
                 is_active=user.is_active,
                 is_admin=user.is_admin,
                 created_at=user.created_at,
+                last_active_at=user.last_active_at,
                 has_profile=profile is not None,
                 profile_name=profile.name if profile else None,
                 age_group=profile.age_group.value if profile else None,
@@ -355,6 +368,7 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
         is_active=user.is_active,
         is_admin=user.is_admin,
         created_at=user.created_at,
+        last_active_at=user.last_active_at,
         profile=ProfileResponse.model_validate(profile) if profile else None,
         artifacts=artifacts,
         assessments=assessments,
@@ -691,6 +705,63 @@ async def list_feedback(
     return AdminFeedbackListResponse(items=items, total=total, page=page, limit=limit)
 
 
+DEFAULT_INACTIVE_DAYS = 7
+
+
+async def get_user_stats(
+    db: AsyncSession, *, inactive_days: int = DEFAULT_INACTIVE_DAYS
+) -> AdminUserStatsResponse:
+    """Whole-table counts the users list cannot produce from one page of 20.
+
+    "Abandoned" means an assessment still in progress whose owner has not been
+    seen for `inactive_days`. Users with no recorded activity fall back to the
+    assessment's own start time, so accounts that predate activity tracking
+    are judged by when they started rather than being silently counted as
+    active (which a plain NULL comparison would do)."""
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=inactive_days)
+    # Fixed at 7 days on purpose: it is a signup-rate figure named after its
+    # own window, and must not silently follow the unrelated inactivity
+    # threshold the caller chose.
+    signup_cutoff = now - timedelta(days=7)
+
+    total = (await db.execute(select(func.count()).select_from(User))).scalar_one()
+    signups_last_7d = (
+        await db.execute(
+            select(func.count()).select_from(User).where(User.created_at >= signup_cutoff)
+        )
+    ).scalar_one()
+
+    completed = (
+        await db.execute(
+            select(func.count())
+            .select_from(Assessment)
+            .where(Assessment.status == AssessmentStatus.completed)
+        )
+    ).scalar_one()
+
+    abandoned = (
+        await db.execute(
+            select(func.count())
+            .select_from(Assessment)
+            .join(Profile, Assessment.profile_id == Profile.id)
+            .join(User, Profile.user_id == User.id)
+            .where(
+                Assessment.status == AssessmentStatus.in_progress,
+                func.coalesce(User.last_active_at, Assessment.created_at) < cutoff,
+            )
+        )
+    ).scalar_one()
+
+    return AdminUserStatsResponse(
+        total=total,
+        signups_last_7d=signups_last_7d,
+        completed_diagnostics=completed,
+        abandoned_diagnostics=abandoned,
+        inactive_days_threshold=inactive_days,
+    )
+
+
 def _breakdown(items: list[AdminFeedbackListItem], key_fn) -> list[FeedbackBreakdownItem]:
     groups: dict[str, list[int]] = {}
     for item in items:
@@ -733,8 +804,9 @@ async def get_feedback_stats(
     )
     feedback_result = await db.execute(_feedback_query(filters, joins))
     feedback_rows = list(feedback_result.scalars().all())
+    empty_histogram = {str(score): 0 for score in range(1, 6)}
     if not feedback_rows:
-        return AdminFeedbackStatsResponse(total=0)
+        return AdminFeedbackStatsResponse(total=0, score_counts=empty_histogram)
 
     items = await _enrich_feedback_rows(db, feedback_rows)
 
@@ -743,9 +815,18 @@ async def get_feedback_stats(
         for section in item.helpful_sections:
             section_counts[section] = section_counts.get(section, 0) + 1
 
+    score_counts = dict(empty_histogram)
+    for item in items:
+        key = str(item.relevance_score)
+        # Every score in the DB should be 1-5 (enforced by the submit schema),
+        # but the column has no CHECK constraint, so an out-of-range value is
+        # counted under its own key rather than dropped from the histogram.
+        score_counts[key] = score_counts.get(key, 0) + 1
+
     return AdminFeedbackStatsResponse(
         total=len(items),
         avg_relevance_score=round(sum(i.relevance_score for i in items) / len(items), 2),
+        score_counts=score_counts,
         by_age_group=_breakdown(items, lambda i: i.age_group),
         by_scenario=_breakdown(items, lambda i: i.scenario),
         by_top_direction=_breakdown(items, lambda i: i.top_direction_name),
