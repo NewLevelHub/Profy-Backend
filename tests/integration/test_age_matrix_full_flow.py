@@ -217,6 +217,16 @@ def _patch_counting_functions(
     if bigfive_counts is not None:
         monkeypatch.setattr(bigfive_service, "question_counts", AsyncMock(return_value=bigfive_counts))
     monkeypatch.setattr(bigfive_service, "facet_counts", AsyncMock(return_value=facet_counts or {}))
+    # Neutralize the acquiescence correction: balanced keying + a midpoint
+    # grand mean make `_acquiescence_shift` exactly 0, so raw_scores/normalize
+    # stay the clean reproducible percentages this test reasons about (the
+    # correction itself is covered by tests/unit/test_bigfive_service.py).
+    monkeypatch.setattr(
+        bigfive_service, "keying_counts",
+        AsyncMock(return_value={d: (0, 0) for d in bigfive_service.BIGFIVE_ORDER}),
+    )
+    monkeypatch.setattr(bigfive_service, "facet_keying_counts", AsyncMock(return_value={}))
+    monkeypatch.setattr(bigfive_service, "grand_mean", AsyncMock(return_value=3.0))
 
 
 def _patch_completion_gate(

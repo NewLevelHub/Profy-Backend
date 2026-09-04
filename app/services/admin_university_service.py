@@ -12,6 +12,7 @@ from app.schemas.admin_university import (
     AdminUniversityUpdateRequest,
     AdminProgramUpdateRequest,
 )
+from app.services.admin_lock import lock_fields
 
 
 async def list_universities(
@@ -80,6 +81,7 @@ async def update_university(
     updates = data.model_dump(exclude_unset=True)
     for key, value in updates.items():
         setattr(university, key, value)
+    lock_fields(university, updates.keys())
 
     university.updated_at = datetime.now(timezone.utc)
     await db.commit()
@@ -104,6 +106,7 @@ async def update_program(
     updates = data.model_dump(exclude_unset=True)
     for key, value in updates.items():
         setattr(program, key, value)
+    lock_fields(program, updates.keys())
 
     program.updated_at = datetime.now(timezone.utc)
     await db.commit()

@@ -714,7 +714,7 @@ _ADDITIONAL_SPECIALTY_PROFESSIONS: dict[str, list[str]] = {
     "3D Animation and Visual Effects": ["geymdizayner"],
     "Режиссура анимации": ["geymdizayner"],
     "Режиссура анимационного фильма": ["geymdizayner"],
-    "Медиакоммуникации": ["tehnicheskiy-pisatel"],
+    "Медиакоммуникации": ["spetsialist-po-mediakommunikatsiyam"],
 
     # --- Law: a law bachelor is the educational path to all of these ---
     "Юриспруденция": ["sudya", "prokuror", "notarius", "mediator-konfliktolog"],

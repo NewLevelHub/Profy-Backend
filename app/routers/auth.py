@@ -33,6 +33,8 @@ _FORGOT_IP_LIMIT = 3
 _FORGOT_IP_WINDOW = 600        # 10 минут
 _FORGOT_EMAIL_LIMIT = 3
 _FORGOT_EMAIL_WINDOW = 600
+_REGISTER_IP_LIMIT = 5
+_REGISTER_IP_WINDOW = 600      # 10 минут
 
 
 def _get_redis() -> aioredis.Redis:
@@ -40,6 +42,10 @@ def _get_redis() -> aioredis.Redis:
     if _redis is None:
         _redis = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
     return _redis
+
+
+def _client_ip(request: Request) -> str:
+    return request.client.host if request.client else "unknown"
 
 
 async def _check_rate_limit(key: str, limit: int, window: int) -> None:
@@ -55,7 +61,9 @@ async def _check_rate_limit(key: str, limit: int, window: int) -> None:
 
 
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
-async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+async def register(body: RegisterRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    client_ip = _client_ip(request)
+    await _check_rate_limit(f"register_ip:{client_ip}", _REGISTER_IP_LIMIT, _REGISTER_IP_WINDOW)
     try:
         return await auth_service.register(body.email, body.password, db)
     except ValueError as exc:
@@ -126,7 +134,7 @@ async def me(current_user: User = Depends(get_current_user)):
 
 @router.post("/forgot-password", status_code=status.HTTP_200_OK)
 async def forgot_password(body: ForgotPasswordRequest, request: Request, db: AsyncSession = Depends(get_db)):
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = _client_ip(request)
     await _check_rate_limit(f"forgot_pwd_ip:{client_ip}", _FORGOT_IP_LIMIT, _FORGOT_IP_WINDOW)
     await _check_rate_limit(f"forgot_pwd_email:{body.email}", _FORGOT_EMAIL_LIMIT, _FORGOT_EMAIL_WINDOW)
 

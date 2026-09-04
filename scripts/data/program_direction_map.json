@@ -1,0 +1,3863 @@
+{
+  "_meta": {
+    "note": "program name (normalised) -> [direction_slug]. Merged from specialty_profession_map.py + jinaq/specialty_direction_review.json, plus hand-added keys. Applied by apply_program_direction_map.py --into <snapshot>.",
+    "keys": 1093,
+    "distinct_slugs": 144
+  },
+  "map": {
+    "3d animation and visual effects": [
+      "animator-2d-3d",
+      "geymdizayner"
+    ],
+    "6-летняя программа \"doctor of medicine\" (undergraduate medical program)": [
+      "hirurg",
+      "pediatr",
+      "psihiatr",
+      "vrach-obschey-praktiki"
+    ],
+    "accounting with ai": [
+      "buhgalter"
+    ],
+    "acting for film": [
+      "akter"
+    ],
+    "aerospace engineering": [
+      "inzhener-konstruktor"
+    ],
+    "agricultural management (farm management)": [
+      "upravlyayuschiy-fermerskim-hozyaystvom"
+    ],
+    "agriculture": [
+      "agronom"
+    ],
+    "agronomy": [
+      "agronom"
+    ],
+    "ai and machine learning": [
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "ai business": [
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "ai specialization": [
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "air traffic control": [
+      "aviadispetcher"
+    ],
+    "aircraft construction and testing": [
+      "inzhener-konstruktor",
+      "inzhener-mehanik"
+    ],
+    "analysis and modeling of socio-economic and business processes": [
+      "ekonomist-analitik",
+      "matematik"
+    ],
+    "animal science": [
+      "upravlyayuschiy-fermerskim-hozyaystvom"
+    ],
+    "anthropology": [
+      "arheolog",
+      "istorik"
+    ],
+    "applied linguistics": [
+      "biznes-perevodchik",
+      "filolog-lingvist"
+    ],
+    "applied mathematics and computer science": [
+      "matematik"
+    ],
+    "applied mathematics and informatics": [
+      "matematik"
+    ],
+    "architectural design": [
+      "arhitektor",
+      "dizayner-interera"
+    ],
+    "architecture": [
+      "arhitektor"
+    ],
+    "artificial intelligence": [
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "artificial intelligence and frontier systems (ai+x)": [
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "atmospheric science (meteorology)": [
+      "meteorolog"
+    ],
+    "aviation (professional pilot)": [
+      "pilot-grazhdanskoy-aviatsii"
+    ],
+    "bachelor in nursing": [
+      "meditsinskaya-sestra-medbrat"
+    ],
+    "bachelor of business": [
+      "predprinimatel",
+      "proektnyy-menedzher"
+    ],
+    "bachelor of business administration": [
+      "predprinimatel",
+      "proektnyy-menedzher"
+    ],
+    "bachelor of engineering": [
+      "inzhener-elektrik",
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-stroitel"
+    ],
+    "bachelor of information technology": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "bachelor of medical science": [
+      "hirurg",
+      "psihiatr",
+      "vrach-obschey-praktiki"
+    ],
+    "bachelor of science in biology": [
+      "biolog"
+    ],
+    "bachelor of science in computer science": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "big data analysis": [
+      "analitik-dannyh"
+    ],
+    "biological sciences": [
+      "biolog",
+      "genetik",
+      "neyrobiolog"
+    ],
+    "biology": [
+      "biolog"
+    ],
+    "biotechnical and medical systems and devices": [
+      "issledovatel-v-oblasti-biotehnologiy"
+    ],
+    "biotechnology": [
+      "issledovatel-v-oblasti-biotehnologiy"
+    ],
+    "business": [
+      "predprinimatel"
+    ],
+    "business administration": [
+      "predprinimatel"
+    ],
+    "business administration (bba)": [
+      "predprinimatel"
+    ],
+    "business administration - global logistics": [
+      "direktor-po-logistike",
+      "logist"
+    ],
+    "business analytics": [
+      "analitik-dannyh"
+    ],
+    "business and management": [
+      "predprinimatel"
+    ],
+    "business management": [
+      "proektnyy-menedzher"
+    ],
+    "business management/administration": [
+      "predprinimatel"
+    ],
+    "chemical and materials engineering": [
+      "himik",
+      "inzhener-himik"
+    ],
+    "chemical engineering": [
+      "inzhener-himik"
+    ],
+    "chemistry": [
+      "himik"
+    ],
+    "civil and environmental engineering": [
+      "inzhener-stroitel"
+    ],
+    "civil engineering": [
+      "inzhener-stroitel"
+    ],
+    "computer engineering": [
+      "razrabotchik-programmnogo-obespecheniya",
+      "sistemnyy-administrator"
+    ],
+    "computer science": [
+      "mobile-razrabotchik",
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "computer science (software engineering)": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "computer science and computer engineering": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "computer technology and software": [
+      "devops-inzhener",
+      "qa-inzhener-testirovschik",
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "computing systems and technologies": [
+      "devops-inzhener",
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "content, marketing and data analysis (media)": [
+      "direktor-po-marketingu"
+    ],
+    "cybersecurity": [
+      "inzhener-po-kiberbezopasnosti",
+      "sistemnyy-administrator"
+    ],
+    "data analytics": [
+      "analitik-dannyh"
+    ],
+    "data engineer": [
+      "data-engineer"
+    ],
+    "data science": [
+      "analitik-dannyh",
+      "data-engineer"
+    ],
+    "database administration": [
+      "administrator-baz-dannyh"
+    ],
+    "dentistry": [
+      "stomatolog"
+    ],
+    "design": [
+      "graficheskiy-dizayner"
+    ],
+    "devops-инженер": [
+      "devops-inzhener"
+    ],
+    "digital journalism": [
+      "zhurnalist"
+    ],
+    "digital public administration": [
+      "gosudarstvennyy-sluzhaschiy"
+    ],
+    "digital technologies in nuclear power engineering": [
+      "inzhener-elektrik"
+    ],
+    "digital бизнес": [
+      "predprinimatel"
+    ],
+    "digital маркетинг": [
+      "direktor-po-marketingu",
+      "marketolog"
+    ],
+    "digital-маркетинг": [
+      "direktor-po-marketingu",
+      "marketolog"
+    ],
+    "ecology and nature management": [
+      "inzhener-ekolog"
+    ],
+    "economics": [
+      "ekonomist-analitik"
+    ],
+    "economics and data science": [
+      "analitik-dannyh",
+      "data-engineer",
+      "ekonomist-analitik"
+    ],
+    "economics and management": [
+      "ekonomist-analitik"
+    ],
+    "economy": [
+      "ekonomist-analitik"
+    ],
+    "electric power engineering": [
+      "inzhener-elektrik",
+      "inzhener-energetik"
+    ],
+    "electrical and computer engineering": [
+      "inzhener-elektrik"
+    ],
+    "electrical engineering": [
+      "inzhener-elektrik"
+    ],
+    "electrical engineering and electronics": [
+      "inzhener-elektrik"
+    ],
+    "electronic and electrical engineering": [
+      "inzhener-elektrik"
+    ],
+    "electronic engineering": [
+      "inzhener-elektrik"
+    ],
+    "energy and environmental engineering (энергетика и экологическая инженерия)": [
+      "inzhener-elektrik"
+    ],
+    "energy policy and international trade": [
+      "diplomat",
+      "ekonomist-analitik"
+    ],
+    "engineering": [
+      "inzhener-elektrik",
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-stroitel"
+    ],
+    "engineering sciences": [
+      "inzhener-elektrik",
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-stroitel"
+    ],
+    "environmental engineering": [
+      "inzhener-ekolog"
+    ],
+    "environmental science": [
+      "inzhener-ekolog"
+    ],
+    "eurasian business (двойной диплом с hkust)": [
+      "predprinimatel"
+    ],
+    "event-менеджер": [
+      "event-menedzher"
+    ],
+    "fashion design": [
+      "modeler",
+      "modnyy-stilist"
+    ],
+    "fashion-индустрия: технологии и конструирование": [
+      "modeler",
+      "modnyy-stilist"
+    ],
+    "filmmaking": [
+      "rezhisser",
+      "stsenarist"
+    ],
+    "finance": [
+      "finansovyy-analitik",
+      "finansovyy-konsultant",
+      "finansovyy-kontroler",
+      "investitsionnyy-bankir"
+    ],
+    "financial economics and financial technologies": [
+      "finansovyy-analitik",
+      "investitsionnyy-bankir"
+    ],
+    "fintech ai": [
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "fintech and artificial intelligence": [
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "food science": [
+      "tehnolog-pischevogo-proizvodstva"
+    ],
+    "food science and technology": [
+      "tehnolog-pischevogo-proizvodstva"
+    ],
+    "food technology": [
+      "tehnolog-pischevogo-proizvodstva"
+    ],
+    "forestry": [
+      "lesnichiy"
+    ],
+    "game design": [
+      "geymdizayner"
+    ],
+    "geodesy and surveying": [
+      "geodezist"
+    ],
+    "geology": [
+      "geolog"
+    ],
+    "geology/exploration geology": [
+      "geolog"
+    ],
+    "global mineral-raw material and energy markets": [
+      "ekonomist-analitik"
+    ],
+    "graphic design": [
+      "graficheskiy-dizayner"
+    ],
+    "healthtech ai": [
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "history": [
+      "arheolog",
+      "istorik",
+      "prepodavatel-vuza"
+    ],
+    "hospitality": [
+      "upravlyayuschiy-otelem-restoranom"
+    ],
+    "hospitality management": [
+      "upravlyayuschiy-otelem-restoranom"
+    ],
+    "hr-менеджер": [
+      "hr-menedzher"
+    ],
+    "humanities": [
+      "filolog-lingvist",
+      "istorik"
+    ],
+    "industrial design": [
+      "dizayner-interera",
+      "graficheskiy-dizayner"
+    ],
+    "industrial internet of things": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "industrial management": [
+      "menedzher-po-prodazham"
+    ],
+    "informatics": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "information and communication technologies": [
+      "razrabotchik-programmnogo-obespecheniya",
+      "sistemnyy-administrator"
+    ],
+    "information security": [
+      "inzhener-po-kiberbezopasnosti"
+    ],
+    "information systems": [
+      "sistemnyy-analitik"
+    ],
+    "information systems (systems analysis)": [
+      "sistemnyy-analitik"
+    ],
+    "information systems and technologies": [
+      "sistemnyy-analitik"
+    ],
+    "information technology": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "information technology (systems administration)": [
+      "sistemnyy-administrator"
+    ],
+    "interior design": [
+      "dizayner-interera"
+    ],
+    "international business": [
+      "predprinimatel"
+    ],
+    "international journalism": [
+      "zhurnalist"
+    ],
+    "international law": [
+      "yurist-advokat"
+    ],
+    "international law (международное право)": [
+      "diplomat",
+      "yurist-advokat"
+    ],
+    "international relations": [
+      "diplomat"
+    ],
+    "it (information technology, бизнес-профиль)": [
+      "prodakt-menedzher",
+      "sistemnyy-analitik"
+    ],
+    "it design": [
+      "graficheskiy-dizayner",
+      "ux-ui-dizayner"
+    ],
+    "it entrepreneurship": [
+      "predprinimatel"
+    ],
+    "it management": [
+      "prodakt-menedzher",
+      "sistemnyy-analitik"
+    ],
+    "it в бизнесе": [
+      "prodakt-menedzher",
+      "sistemnyy-analitik"
+    ],
+    "it маркетинг": [
+      "direktor-po-marketingu",
+      "marketolog"
+    ],
+    "it энергетика": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "it-менеджмент": [
+      "prodakt-menedzher",
+      "sistemnyy-analitik"
+    ],
+    "it-направления": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "it-технологии в сфере сервиса": [
+      "spetsialist-tehnicheskoy-podderzhki"
+    ],
+    "it-юрист": [
+      "yurist-advokat"
+    ],
+    "journalism": [
+      "zhurnalist"
+    ],
+    "jurisprudence": [
+      "yurist-advokat"
+    ],
+    "law": [
+      "yurist-advokat"
+    ],
+    "law (юриспруденция)": [
+      "notarius",
+      "prokuror",
+      "sudya",
+      "yurist-advokat"
+    ],
+    "laws": [
+      "yurist-advokat"
+    ],
+    "linguistics (tesol) and translation technologies": [
+      "biznes-perevodchik"
+    ],
+    "logistics (логистика)": [
+      "direktor-po-logistike",
+      "logist"
+    ],
+    "logistics and supply chain management": [
+      "direktor-po-logistike",
+      "logist"
+    ],
+    "management": [
+      "menedzher-po-prodazham",
+      "proektnyy-menedzher"
+    ],
+    "management in tourism and hospitality": [
+      "upravlyayuschiy-otelem-restoranom"
+    ],
+    "marketing": [
+      "direktor-po-marketingu",
+      "marketolog"
+    ],
+    "mathematical and computational science": [
+      "matematik"
+    ],
+    "mathematical and software support for information systems": [
+      "qa-inzhener-testirovschik",
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "mathematics": [
+      "matematik"
+    ],
+    "mba global business (executive)": [
+      "predprinimatel"
+    ],
+    "mechanical and aerospace engineering": [
+      "inzhener-mehanik"
+    ],
+    "mechanical engineering": [
+      "inzhener-mehanik"
+    ],
+    "mechatronics робототехника": [
+      "inzhener-mehanik",
+      "inzhener-po-avtomatizatsii-i-robototehnike"
+    ],
+    "media technologies": [
+      "zhurnalist"
+    ],
+    "medicine": [
+      "vrach-obschey-praktiki"
+    ],
+    "military science": [
+      "voennyy-ofitser"
+    ],
+    "mining and minerals engineering": [
+      "geolog",
+      "gornyy-inzhener"
+    ],
+    "mining engineering": [
+      "geolog",
+      "gornyy-inzhener"
+    ],
+    "mobile computing (мобильные вычисления)": [
+      "mobile-razrabotchik",
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "mobile-разработчик": [
+      "mobile-razrabotchik"
+    ],
+    "multilateral institutions and global technology development management": [
+      "diplomat",
+      "proektnyy-menedzher"
+    ],
+    "natural sciences": [
+      "biolog",
+      "fizik",
+      "himik"
+    ],
+    "nursing": [
+      "meditsinskaya-sestra-medbrat"
+    ],
+    "oil and gas engineering": [
+      "burovoy-inzhener-neftegazovoe-delo",
+      "gornyy-inzhener"
+    ],
+    "pedagogical education": [
+      "shkolnyy-uchitel"
+    ],
+    "pedagogy": [
+      "shkolnyy-uchitel"
+    ],
+    "pedagogy and methodology of primary education": [
+      "shkolnyy-uchitel"
+    ],
+    "petroleum engineering": [
+      "burovoy-inzhener-neftegazovoe-delo"
+    ],
+    "pharmacy": [
+      "farmatsevt"
+    ],
+    "philology": [
+      "filolog-lingvist"
+    ],
+    "physical ai": [
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "physics": [
+      "astronom",
+      "fizik",
+      "matematik"
+    ],
+    "political science and international relations": [
+      "diplomat",
+      "gosudarstvennyy-sluzhaschiy"
+    ],
+    "pr-менеджер": [
+      "pr-menedzher"
+    ],
+    "pr-менеджмент": [
+      "pr-menedzher"
+    ],
+    "preschool education and upbringing": [
+      "vospitatel-detskogo-sada"
+    ],
+    "process engineering": [
+      "inzhener-mehanik"
+    ],
+    "psychology": [
+      "psiholog-konsultant"
+    ],
+    "public administration": [
+      "gosudarstvennyy-sluzhaschiy"
+    ],
+    "public health": [
+      "epidemiolog"
+    ],
+    "qa-инженер (тестировщик)": [
+      "qa-inzhener-testirovschik"
+    ],
+    "radio engineering": [
+      "inzhener-elektrik"
+    ],
+    "railway engineering": [
+      "inzhener-mehanik"
+    ],
+    "robotics engineering": [
+      "inzhener-mehanik",
+      "inzhener-po-avtomatizatsii-i-robototehnike"
+    ],
+    "screenwriting": [
+      "pisatel-kopirayter",
+      "stsenarist"
+    ],
+    "smart city / govtech ai": [
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "smart security technologies": [
+      "sistemnyy-administrator"
+    ],
+    "smart technologies": [
+      "sistemnyy-administrator"
+    ],
+    "smart технологии": [
+      "sistemnyy-administrator"
+    ],
+    "social sciences": [
+      "sotsialnyy-rabotnik"
+    ],
+    "social work": [
+      "sotsialnyy-rabotnik"
+    ],
+    "sociology": [
+      "psiholog-issledovatel"
+    ],
+    "software engineering": [
+      "mobile-razrabotchik",
+      "qa-inzhener-testirovschik",
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "systems engineering": [
+      "inzhener-konstruktor",
+      "sistemnyy-analitik"
+    ],
+    "theater directing": [
+      "rezhisser"
+    ],
+    "tourism": [
+      "gid-ekskursovod"
+    ],
+    "translation studies": [
+      "biznes-perevodchik"
+    ],
+    "travel management and data analysis": [
+      "gid-ekskursovod"
+    ],
+    "ux/ui-дизайнер": [
+      "ux-ui-dizayner"
+    ],
+    "veterinary medicine": [
+      "veterinar"
+    ],
+    "world languages, literature and culture": [
+      "shkolnyy-uchitel"
+    ],
+    "авиадиспетчер": [
+      "aviadispetcher"
+    ],
+    "авиационная техника": [
+      "inzhener-konstruktor",
+      "inzhener-mehanik"
+    ],
+    "автоматизация и робототехника": [
+      "inzhener-po-avtomatizatsii-i-robototehnike"
+    ],
+    "автоматизация и управление": [
+      "inzhener-mehanik",
+      "inzhener-po-avtomatizatsii-i-robototehnike"
+    ],
+    "автоматизация технологических процессов и производств": [
+      "inzhener-po-avtomatizatsii-i-robototehnike"
+    ],
+    "автомобили, путевые и строительные машины": [
+      "inzhener-mehanik"
+    ],
+    "аграрная техника и технология": [
+      "inzhener-mehanik"
+    ],
+    "аграрный ai": [
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "аграрный факультет": [
+      "agronom"
+    ],
+    "агробизнес": [
+      "agronom"
+    ],
+    "агробиологические науки": [
+      "agronom"
+    ],
+    "агробиология": [
+      "agronom"
+    ],
+    "агроинженерия": [
+      "inzhener-mehanik"
+    ],
+    "агроном": [
+      "agronom"
+    ],
+    "агрономия": [
+      "agronom"
+    ],
+    "адаптивная физическая культура и спорт": [
+      "reabilitolog-ergoterapevt",
+      "trener-po-sportu"
+    ],
+    "администратор баз данных": [
+      "administrator-baz-dannyh"
+    ],
+    "аквакультура": [
+      "veterinar"
+    ],
+    "аквакультура и водные биоресурсы": [
+      "veterinar"
+    ],
+    "актерское искусство": [
+      "akter"
+    ],
+    "актуарий": [
+      "aktuariy"
+    ],
+    "актёр": [
+      "akter"
+    ],
+    "акупунктура и массаж": [
+      "fizioterapevt-massazhist"
+    ],
+    "аналитик данных": [
+      "analitik-dannyh"
+    ],
+    "аналитика big data": [
+      "analitik-dannyh"
+    ],
+    "аналитика бизнес данных": [
+      "analitik-dannyh"
+    ],
+    "английская литература": [
+      "filolog-lingvist"
+    ],
+    "английская литература и язык": [
+      "filolog-lingvist"
+    ],
+    "английская филология": [
+      "filolog-lingvist"
+    ],
+    "английский язык": [
+      "shkolnyy-uchitel"
+    ],
+    "английский язык и литература": [
+      "filolog-lingvist"
+    ],
+    "аниматор (2d/3d)": [
+      "animator-2d-3d"
+    ],
+    "анимация": [
+      "animator-2d-3d"
+    ],
+    "аппаратные средства защиты информации": [
+      "sistemnyy-administrator"
+    ],
+    "арт-менеджмент": [
+      "event-menedzher"
+    ],
+    "арт-менеджмент, продюсирование": [
+      "event-menedzher"
+    ],
+    "артист ансамбля танца": [
+      "horeograf"
+    ],
+    "артист балета": [
+      "horeograf"
+    ],
+    "археолог": [
+      "arheolog"
+    ],
+    "архивариус": [
+      "arhivarius"
+    ],
+    "архитектор": [
+      "arhitektor"
+    ],
+    "архитектура": [
+      "arhitektor",
+      "urbanist-gradostroitel"
+    ],
+    "архитектурно-строительный": [
+      "inzhener-stroitel",
+      "urbanist-gradostroitel"
+    ],
+    "астроном": [
+      "astronom"
+    ],
+    "астрофизика": [
+      "astronom",
+      "fizik",
+      "matematik"
+    ],
+    "аудиовизуальные устройства и медиапроизводство": [
+      "rezhisser",
+      "zvukorezhisser"
+    ],
+    "аудиопроизводство": [
+      "rezhisser",
+      "zvukorezhisser"
+    ],
+    "аудит и налогообложение": [
+      "auditor",
+      "nalogovyy-konsultant"
+    ],
+    "аудитор": [
+      "auditor"
+    ],
+    "аэрокосмическая инженерия": [
+      "inzhener-konstruktor"
+    ],
+    "бакалавр бизнес-администрирования": [
+      "predprinimatel"
+    ],
+    "бакалавр бизнеса": [
+      "predprinimatel"
+    ],
+    "бакалавр богословия": [
+      "teolog-religioved"
+    ],
+    "бакалавр в области бизнеса и управления": [
+      "predprinimatel",
+      "proektnyy-menedzher"
+    ],
+    "бакалавр в области дизайна интерьера": [
+      "dizayner-interera"
+    ],
+    "бакалавр в области информационных технологий": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "бакалавр в области компьютерных наук": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "бакалавр в области управления бизнесом": [
+      "predprinimatel"
+    ],
+    "бакалавр военных наук": [
+      "voennyy-ofitser"
+    ],
+    "бакалавр гуманитарных наук": [
+      "filolog-lingvist",
+      "istorik"
+    ],
+    "бакалавр делового администрирования": [
+      "predprinimatel"
+    ],
+    "бакалавр делового администрирования (bba)": [
+      "predprinimatel"
+    ],
+    "бакалавр дизайна": [
+      "graficheskiy-dizayner"
+    ],
+    "бакалавр дизайна (bdes)": [
+      "graficheskiy-dizayner"
+    ],
+    "бакалавр естественных наук": [
+      "biolog",
+      "fizik",
+      "himik"
+    ],
+    "бакалавр здравоохранения": [
+      "vrach-obschey-praktiki"
+    ],
+    "бакалавр инженерии": [
+      "inzhener-elektrik",
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-stroitel"
+    ],
+    "бакалавр инженерии (электротехника)": [
+      "inzhener-elektrik"
+    ],
+    "бакалавр инженерных наук": [
+      "inzhener-elektrik",
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-stroitel"
+    ],
+    "бакалавр информационных технологий": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "бакалавр искусств в области бизнеса": [
+      "predprinimatel"
+    ],
+    "бакалавр искусств в области биологии": [
+      "biolog"
+    ],
+    "бакалавр искусств в области коммуникаций": [
+      "spetsialist-po-mediakommunikatsiyam"
+    ],
+    "бакалавр искусств в области психологии": [
+      "psiholog-konsultant"
+    ],
+    "бакалавр компьютерных наук": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "бакалавр медицины": [
+      "vrach-obschey-praktiki"
+    ],
+    "бакалавр медицины и здравоохранения": [
+      "vrach-obschey-praktiki"
+    ],
+    "бакалавр медицины и хирургии": [
+      "hirurg"
+    ],
+    "бакалавр наук (bsc) в области компьютерных наук": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "бакалавр наук в области бизнеса": [
+      "predprinimatel"
+    ],
+    "бакалавр наук в области биологии": [
+      "biolog"
+    ],
+    "бакалавр наук в области биомедицинских наук": [
+      "biolog"
+    ],
+    "бакалавр наук в области военных наук": [
+      "voennyy-ofitser"
+    ],
+    "бакалавр наук в области здравоохранения": [
+      "vrach-obschey-praktiki"
+    ],
+    "бакалавр наук в области инженерии": [
+      "inzhener-elektrik",
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-stroitel"
+    ],
+    "бакалавр наук в области информатики": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "бакалавр наук в области компьютерных наук": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "бакалавр наук в области образования": [
+      "shkolnyy-uchitel"
+    ],
+    "бакалавр наук в области психологии": [
+      "psiholog-konsultant"
+    ],
+    "бакалавр наук в области сестринского дела": [
+      "meditsinskaya-sestra-medbrat"
+    ],
+    "бакалавр наук о здоровье": [
+      "epidemiolog"
+    ],
+    "бакалавр образования": [
+      "shkolnyy-uchitel"
+    ],
+    "бакалавр права": [
+      "yurist-advokat"
+    ],
+    "бакалавр психологии": [
+      "psiholog-konsultant"
+    ],
+    "бакалавр сестринского дела": [
+      "meditsinskaya-sestra-medbrat"
+    ],
+    "бакалавр социальных наук": [
+      "sotsialnyy-rabotnik"
+    ],
+    "бакалавриат по бизнес-администрированию": [
+      "predprinimatel"
+    ],
+    "бакалавриат по бизнес-администрированию (business administration)": [
+      "predprinimatel",
+      "proektnyy-menedzher"
+    ],
+    "бакалавриат по бизнес-менеджменту": [
+      "predprinimatel",
+      "proektnyy-menedzher"
+    ],
+    "бакалавриат по биологии": [
+      "biolog"
+    ],
+    "бакалавриат по военной истории и политологии": [
+      "istorik",
+      "voennyy-ofitser"
+    ],
+    "бакалавриат по инженерии": [
+      "inzhener-elektrik",
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-stroitel"
+    ],
+    "бакалавриат по информатике": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "бакалавриат по искусству и дизайну": [
+      "graficheskiy-dizayner"
+    ],
+    "бакалавриат по истории": [
+      "istorik"
+    ],
+    "бакалавриат по компьютерным наукам": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "бакалавриат по образованию": [
+      "shkolnyy-uchitel"
+    ],
+    "бакалавриат по праву": [
+      "yurist-advokat"
+    ],
+    "бакалавриат по психологии": [
+      "psiholog-konsultant"
+    ],
+    "бакалавриат по экономике": [
+      "ekonomist-analitik"
+    ],
+    "бакалавриат по экономике и управлению": [
+      "ekonomist-analitik"
+    ],
+    "балетмейстерское искусство": [
+      "horeograf"
+    ],
+    "банковское дело и финансы": [
+      "finansovyy-konsultant",
+      "investitsionnyy-bankir"
+    ],
+    "безопасность жизнедеятельности": [
+      "spasatel-mchs"
+    ],
+    "безопасность жизнедеятельности и защита окружающей среды": [
+      "inzhener-ekolog",
+      "spasatel-mchs"
+    ],
+    "библейские и теологические исследования": [
+      "teolog-religioved"
+    ],
+    "библейские исследования": [
+      "teolog-religioved"
+    ],
+    "библиотекарь": [
+      "bibliotekar"
+    ],
+    "библиотечное дело": [
+      "arhivarius",
+      "bibliotekar"
+    ],
+    "бизнес администрация": [
+      "predprinimatel",
+      "proektnyy-menedzher"
+    ],
+    "бизнес администрирование": [
+      "predprinimatel",
+      "sekretar-deloproizvoditel",
+      "spetsialist-po-kadrovomu-deloproizvodstvu"
+    ],
+    "бизнес аналитика и искусственный интеллект": [
+      "analitik-dannyh",
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "бизнес и маркетинг": [
+      "direktor-po-marketingu",
+      "marketolog"
+    ],
+    "бизнес и менеджмент": [
+      "predprinimatel"
+    ],
+    "бизнес и управление": [
+      "predprinimatel"
+    ],
+    "бизнес право": [
+      "yurist-advokat"
+    ],
+    "бизнес, управление и право": [
+      "predprinimatel",
+      "yurist-advokat"
+    ],
+    "бизнес-администрация": [
+      "predprinimatel",
+      "proektnyy-menedzher"
+    ],
+    "бизнес-администрирование": [
+      "predprinimatel",
+      "proektnyy-menedzher",
+      "sekretar-deloproizvoditel",
+      "spetsialist-po-kadrovomu-deloproizvodstvu"
+    ],
+    "бизнес-информатика": [
+      "analitik-dannyh",
+      "sistemnyy-analitik"
+    ],
+    "бизнес-менеджмент": [
+      "predprinimatel",
+      "proektnyy-menedzher"
+    ],
+    "бизнес-переводчик": [
+      "biznes-perevodchik"
+    ],
+    "бизнес-право": [
+      "yurist-advokat"
+    ],
+    "бизнес-предпринимательство и инновации": [
+      "predprinimatel"
+    ],
+    "бизнес-экономика": [
+      "ekonomist-analitik"
+    ],
+    "биоинженерия и биоинформатика": [
+      "genetik",
+      "issledovatel-v-oblasti-biotehnologiy"
+    ],
+    "биолог": [
+      "biolog"
+    ],
+    "биологические науки": [
+      "biolog"
+    ],
+    "биология": [
+      "biolog",
+      "genetik",
+      "neyrobiolog"
+    ],
+    "биомедицинская инженерия": [
+      "meditsinskiy-laboratornyy-tehnolog"
+    ],
+    "биомедицинские науки": [
+      "biolog",
+      "meditsinskiy-laboratornyy-tehnolog"
+    ],
+    "биотехнологии": [
+      "issledovatel-v-oblasti-biotehnologiy"
+    ],
+    "биотехнология": [
+      "genetik",
+      "issledovatel-v-oblasti-biotehnologiy"
+    ],
+    "биофизика": [
+      "biolog",
+      "neyrobiolog"
+    ],
+    "биржевой брокер": [
+      "birzhevoy-broker"
+    ],
+    "бурение скважин": [
+      "burovoy-inzhener-neftegazovoe-delo"
+    ],
+    "буровой инженер (нефтегазовое дело)": [
+      "burovoy-inzhener-neftegazovoe-delo"
+    ],
+    "бухгалтер": [
+      "buhgalter"
+    ],
+    "бухгалтерия": [
+      "buhgalter"
+    ],
+    "бухгалтерия и аудит": [
+      "auditor",
+      "buhgalter"
+    ],
+    "бухгалтерский учет": [
+      "buhgalter"
+    ],
+    "бухгалтерский учет и аудит": [
+      "auditor",
+      "buhgalter",
+      "finansovyy-kontroler"
+    ],
+    "бухгалтерский учет и финансы": [
+      "buhgalter",
+      "finansovyy-kontroler",
+      "nalogovyy-konsultant"
+    ],
+    "бухгалтерский учет, анализ и аудит": [
+      "buhgalter"
+    ],
+    "бухгалтерский учёт": [
+      "buhgalter"
+    ],
+    "вагонное хозяйство": [
+      "mashinist-lokomotiva"
+    ],
+    "ветеринар": [
+      "veterinar"
+    ],
+    "ветеринария": [
+      "veterinar"
+    ],
+    "ветеринарная безопасность": [
+      "veterinar"
+    ],
+    "ветеринарная медицина": [
+      "veterinar"
+    ],
+    "ветеринарная санитария": [
+      "veterinar"
+    ],
+    "водное хозяйство и мелиорация": [
+      "agronom",
+      "okeanolog-gidrolog"
+    ],
+    "водоснабжение и канализация": [
+      "inzhener-stroitel"
+    ],
+    "военная медицина": [
+      "voennyy-ofitser",
+      "vrach-obschey-praktiki"
+    ],
+    "военное дело": [
+      "voennyy-ofitser"
+    ],
+    "военные науки": [
+      "voennyy-ofitser"
+    ],
+    "военный (офицер)": [
+      "voennyy-ofitser"
+    ],
+    "вокальное искусство": [
+      "muzykant-ispolnitel"
+    ],
+    "воспитатель детского сада": [
+      "vospitatel-detskogo-sada"
+    ],
+    "востоковедение": [
+      "biznes-perevodchik",
+      "diplomat"
+    ],
+    "врач общей практики": [
+      "vrach-obschey-praktiki"
+    ],
+    "высоконагруженные информационные системы с искусственным интеллектом": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "вычислительная инженерия": [
+      "devops-inzhener",
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "вычислительная техника и программное обеспечение": [
+      "devops-inzhener",
+      "qa-inzhener-testirovschik",
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "геймдизайнер": [
+      "geymdizayner"
+    ],
+    "генетик": [
+      "genetik"
+    ],
+    "география": [
+      "okeanolog-gidrolog",
+      "shkolnyy-uchitel"
+    ],
+    "география-история": [
+      "shkolnyy-uchitel"
+    ],
+    "геодезист": [
+      "geodezist"
+    ],
+    "геодезия и картография": [
+      "geodezist"
+    ],
+    "геолог": [
+      "geolog"
+    ],
+    "геология": [
+      "geolog"
+    ],
+    "геология и разведка месторождений": [
+      "geolog"
+    ],
+    "геология и разведка месторождений полезных ископаемых": [
+      "geolog"
+    ],
+    "геология и разведка ресурсов": [
+      "geolog"
+    ],
+    "геофизика": [
+      "geolog"
+    ],
+    "гид-экскурсовод": [
+      "gid-ekskursovod"
+    ],
+    "гидротехническое строительство в водном хозяйстве": [
+      "inzhener-stroitel",
+      "okeanolog-gidrolog"
+    ],
+    "глобальный менеджмент": [
+      "predprinimatel"
+    ],
+    "горное дело": [
+      "geolog",
+      "gornyy-inzhener"
+    ],
+    "горный инженер": [
+      "gornyy-inzhener"
+    ],
+    "гостеприимство": [
+      "upravlyayuschiy-otelem-restoranom"
+    ],
+    "государственное и местное управление": [
+      "gosudarstvennyy-sluzhaschiy"
+    ],
+    "государственное и региональное управление": [
+      "gosudarstvennyy-sluzhaschiy"
+    ],
+    "государственное управление": [
+      "gosudarstvennyy-sluzhaschiy"
+    ],
+    "государственный служащий": [
+      "gosudarstvennyy-sluzhaschiy"
+    ],
+    "градостроительство": [
+      "urbanist-gradostroitel"
+    ],
+    "гражданская инженерия": [
+      "inzhener-stroitel"
+    ],
+    "гражданское строительство": [
+      "inzhener-stroitel"
+    ],
+    "графика": [
+      "graficheskiy-dizayner"
+    ],
+    "графический дизайн": [
+      "graficheskiy-dizayner",
+      "illyustrator",
+      "ux-ui-dizayner"
+    ],
+    "графический дизайн (иллюстрация)": [
+      "graficheskiy-dizayner",
+      "illyustrator",
+      "ux-ui-dizayner"
+    ],
+    "графический дизайнер": [
+      "graficheskiy-dizayner"
+    ],
+    "гуманитарные науки": [
+      "filolog-lingvist",
+      "istorik"
+    ],
+    "декоративное искусство": [
+      "hudozhnik",
+      "illyustrator"
+    ],
+    "декоративное искусство и этнодизайн": [
+      "hudozhnik"
+    ],
+    "дефектолог": [
+      "defektolog"
+    ],
+    "дефектология": [
+      "defektolog",
+      "logoped"
+    ],
+    "дизайн": [
+      "graficheskiy-dizayner",
+      "ux-ui-dizayner"
+    ],
+    "дизайн интерьера": [
+      "dizayner-interera"
+    ],
+    "дизайн среды и интерьера": [
+      "dizayner-interera"
+    ],
+    "дизайнер интерьера": [
+      "dizayner-interera"
+    ],
+    "диплом по христианскому служению": [
+      "teolog-religioved"
+    ],
+    "дипломат": [
+      "diplomat"
+    ],
+    "директор по логистике": [
+      "direktor-po-logistike"
+    ],
+    "директор по маркетингу": [
+      "direktor-po-marketingu"
+    ],
+    "дирижирование": [
+      "kompozitor",
+      "muzykant-ispolnitel"
+    ],
+    "дирижирование (оркестровое)": [
+      "muzykant-ispolnitel"
+    ],
+    "дирижирование (хоровое)": [
+      "muzykant-ispolnitel"
+    ],
+    "дирижирование военно-духовым оркестром": [
+      "muzykant-ispolnitel"
+    ],
+    "добыча полезных ископаемых": [
+      "geolog",
+      "gornyy-inzhener"
+    ],
+    "дошкольное образование": [
+      "vospitatel-detskogo-sada"
+    ],
+    "дошкольное образование и воспитание": [
+      "vospitatel-detskogo-sada"
+    ],
+    "дошкольное обучение и воспитание": [
+      "vospitatel-detskogo-sada"
+    ],
+    "дроны и автономные системы": [
+      "inzhener-mehanik"
+    ],
+    "естественные науки": [
+      "biolog",
+      "fizik",
+      "himik"
+    ],
+    "естественные науки и спорт": [
+      "biolog",
+      "trener-po-sportu"
+    ],
+    "естественные науки, математика и статистика": [
+      "matematik"
+    ],
+    "живопись": [
+      "hudozhnik"
+    ],
+    "животноводство": [
+      "upravlyayuschiy-fermerskim-hozyaystvom",
+      "veterinar"
+    ],
+    "журналист": [
+      "zhurnalist"
+    ],
+    "журналистика": [
+      "pisatel-kopirayter",
+      "zhurnalist"
+    ],
+    "журналистика и коммуникации": [
+      "zhurnalist"
+    ],
+    "журналистика и медиа": [
+      "zhurnalist"
+    ],
+    "журналистика: аналитика и расследования": [
+      "zhurnalist"
+    ],
+    "журналистики и политологии": [
+      "zhurnalist"
+    ],
+    "защита растений": [
+      "agronom"
+    ],
+    "защищенные высокопроизводительные вычислительные системы": [
+      "sistemnyy-administrator"
+    ],
+    "звукорежиссёр": [
+      "zvukorezhisser"
+    ],
+    "здравоохранение": [
+      "epidemiolog"
+    ],
+    "зоотехния": [
+      "upravlyayuschiy-fermerskim-hozyaystvom",
+      "veterinar"
+    ],
+    "изобразительное искусство": [
+      "hudozhnik",
+      "illyustrator"
+    ],
+    "изобразительное искусство и черчение": [
+      "hudozhnik",
+      "illyustrator"
+    ],
+    "иллюстратор": [
+      "illyustrator"
+    ],
+    "инвестиционный банкир": [
+      "investitsionnyy-bankir"
+    ],
+    "инженер по автоматизации и робототехнике": [
+      "inzhener-po-avtomatizatsii-i-robototehnike"
+    ],
+    "инженер по кибербезопасности": [
+      "inzhener-po-kiberbezopasnosti"
+    ],
+    "инженер-конструктор": [
+      "inzhener-konstruktor"
+    ],
+    "инженер-механик": [
+      "inzhener-mehanik"
+    ],
+    "инженер-строитель": [
+      "inzhener-stroitel"
+    ],
+    "инженер-технолог (машиностроение)": [
+      "inzhener-tehnolog-mashinostroenie"
+    ],
+    "инженер-химик": [
+      "inzhener-himik"
+    ],
+    "инженер-эколог": [
+      "inzhener-ekolog"
+    ],
+    "инженер-электрик": [
+      "inzhener-elektrik"
+    ],
+    "инженер-энергетик": [
+      "inzhener-energetik"
+    ],
+    "инженерия": [
+      "inzhener-elektrik",
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-stroitel"
+    ],
+    "инженерия в области телекоммуникаций": [
+      "inzhener-elektrik"
+    ],
+    "инженерия и логистика": [
+      "inzhener-mehanik",
+      "logist"
+    ],
+    "инженерия материалов": [
+      "metallurg"
+    ],
+    "инженерия окружающей среды": [
+      "inzhener-ekolog"
+    ],
+    "инженерия подвижного состава": [
+      "mashinist-lokomotiva"
+    ],
+    "инженерия программного обеспечения": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "инженерия программного обеспечения (software engineering)": [
+      "mobile-razrabotchik",
+      "qa-inzhener-testirovschik",
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "инженерия сельскохозяйственных машин": [
+      "inzhener-mehanik"
+    ],
+    "инженерия строительных материалов и управление качеством": [
+      "inzhener-stroitel"
+    ],
+    "инженерная математика": [
+      "matematik"
+    ],
+    "инженерная экология": [
+      "inzhener-ekolog"
+    ],
+    "инженерное дело": [
+      "inzhener-elektrik",
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-stroitel"
+    ],
+    "инженерное дело в военной технике": [
+      "voennyy-ofitser"
+    ],
+    "инженерные науки": [
+      "inzhener-elektrik",
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-stroitel"
+    ],
+    "инженерные системы водоснабжения": [
+      "inzhener-stroitel"
+    ],
+    "инженерные специальности": [
+      "inzhener-elektrik",
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-stroitel"
+    ],
+    "инженерные, обрабатывающие и строительные отрасли": [
+      "inzhener-elektrik",
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-stroitel"
+    ],
+    "инновационное производство строительных материалов": [
+      "inzhener-stroitel"
+    ],
+    "инновационные технологии в водном хозяйстве": [
+      "agronom",
+      "inzhener-stroitel"
+    ],
+    "инновационный менеджмент": [
+      "predprinimatel"
+    ],
+    "иностранная филология": [
+      "biznes-perevodchik",
+      "shkolnyy-uchitel"
+    ],
+    "иностранная филология (восточные языки: китайский, корейский, японский, арабский, турецкий)": [
+      "biznes-perevodchik"
+    ],
+    "иностранная филология (европейские языки: английский/французский, испанский, немецкий)": [
+      "biznes-perevodchik"
+    ],
+    "иностранные языки": [
+      "shkolnyy-uchitel"
+    ],
+    "иностранные языки (английский)": [
+      "biznes-perevodchik",
+      "filolog-lingvist"
+    ],
+    "иностранные языки и литература": [
+      "filolog-lingvist"
+    ],
+    "иностранный язык: два иностранных языка": [
+      "shkolnyy-uchitel"
+    ],
+    "инструментальное исполнительство": [
+      "muzykant-ispolnitel"
+    ],
+    "инструментальное исполнительство (духовые и ударные инструменты)": [
+      "muzykant-ispolnitel"
+    ],
+    "инструментальное исполнительство (классическая гитара)": [
+      "muzykant-ispolnitel"
+    ],
+    "инструментальное исполнительство (струнные инструменты)": [
+      "muzykant-ispolnitel"
+    ],
+    "инструментальное исполнительство (фортепиано)": [
+      "muzykant-ispolnitel"
+    ],
+    "интеллектуальная робототехника": [
+      "inzhener-mehanik",
+      "inzhener-po-avtomatizatsii-i-robototehnike"
+    ],
+    "интеллектуальные технологии транспортных процессов": [
+      "inzhener-mehanik"
+    ],
+    "интерьерный дизайн": [
+      "dizayner-interera"
+    ],
+    "информатика": [
+      "razrabotchik-programmnogo-obespecheniya",
+      "sistemnyy-analitik"
+    ],
+    "информатика (computer science)": [
+      "mobile-razrabotchik",
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "информатика и вычислительная техника": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "информатика и инженерия": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "информационная безопасность": [
+      "inzhener-po-kiberbezopasnosti"
+    ],
+    "информационно-коммуникационные технологии": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "информационно-программные системы": [
+      "mobile-razrabotchik",
+      "qa-inzhener-testirovschik",
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "информационные бизнес-системы": [
+      "prodakt-menedzher",
+      "sistemnyy-analitik"
+    ],
+    "информационные и вычислительные науки": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "информационные и коммуникационные технологии": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "информационные науки": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "информационные системы": [
+      "administrator-baz-dannyh",
+      "data-engineer",
+      "sistemnyy-analitik"
+    ],
+    "информационные системы в бизнесе": [
+      "prodakt-menedzher",
+      "sistemnyy-analitik"
+    ],
+    "информационные системы и it-решения по отраслям": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "информационные системы и связь": [
+      "administrator-baz-dannyh",
+      "data-engineer",
+      "sistemnyy-analitik"
+    ],
+    "информационные системы и технологии": [
+      "razrabotchik-programmnogo-obespecheniya",
+      "sistemnyy-analitik"
+    ],
+    "информационные технологии": [
+      "razrabotchik-programmnogo-obespecheniya",
+      "sistemnyy-administrator"
+    ],
+    "информационные технологии в военном деле": [
+      "voennyy-ofitser"
+    ],
+    "информационные технологии в обороне": [
+      "voennyy-ofitser"
+    ],
+    "информационные технологии в строительстве": [
+      "inzhener-stroitel"
+    ],
+    "информационные технологии в экономике": [
+      "sistemnyy-analitik"
+    ],
+    "информационные технологии в электроэнергетике": [
+      "inzhener-elektrik"
+    ],
+    "информационные технологии и защита данных": [
+      "inzhener-po-kiberbezopasnosti",
+      "sistemnyy-administrator"
+    ],
+    "информационный инжиниринг в экономике": [
+      "ekonomist-analitik"
+    ],
+    "информационных технологий": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "инфраструктура трубопроводов": [
+      "burovoy-inzhener-neftegazovoe-delo",
+      "inzhener-stroitel"
+    ],
+    "искусственный интеллект": [
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "искусственный интеллект и анализ данных": [
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "искусство": [
+      "graficheskiy-dizayner",
+      "hudozhnik"
+    ],
+    "искусство и гуманитарные науки": [
+      "filolog-lingvist",
+      "istorik"
+    ],
+    "искусство и дизайн": [
+      "dizayner-interera",
+      "graficheskiy-dizayner"
+    ],
+    "искусствовед": [
+      "iskusstvoved"
+    ],
+    "искусствоведение": [
+      "iskusstvoved"
+    ],
+    "исламоведение": [
+      "prepodavatel-vuza",
+      "teolog-religioved"
+    ],
+    "исследователь в области биотехнологий": [
+      "issledovatel-v-oblasti-biotehnologiy"
+    ],
+    "историк": [
+      "istorik"
+    ],
+    "история": [
+      "arheolog",
+      "istorik",
+      "prepodavatel-vuza"
+    ],
+    "история и культурное наследие": [
+      "istorik"
+    ],
+    "история и образование": [
+      "istorik",
+      "shkolnyy-uchitel"
+    ],
+    "история казахстана": [
+      "istorik",
+      "shkolnyy-uchitel"
+    ],
+    "история-история": [
+      "shkolnyy-uchitel"
+    ],
+    "казахский язык": [
+      "shkolnyy-uchitel"
+    ],
+    "казахский язык и литература": [
+      "filolog-lingvist",
+      "shkolnyy-uchitel"
+    ],
+    "казахский-английский языки и лингвистика": [
+      "biznes-perevodchik",
+      "filolog-lingvist"
+    ],
+    "кибер безопасность": [
+      "inzhener-po-kiberbezopasnosti",
+      "sistemnyy-administrator"
+    ],
+    "кибербезопасность": [
+      "inzhener-po-kiberbezopasnosti",
+      "sistemnyy-administrator"
+    ],
+    "кибербезопасность цифровых систем": [
+      "inzhener-po-kiberbezopasnosti",
+      "sistemnyy-administrator"
+    ],
+    "кинематография": [
+      "rezhisser"
+    ],
+    "китайский язык и культура": [
+      "filolog-lingvist"
+    ],
+    "китайский язык и литература": [
+      "filolog-lingvist"
+    ],
+    "клиническая медицина": [
+      "vrach-obschey-praktiki"
+    ],
+    "клиническая психология": [
+      "psihiatr",
+      "psiholog-konsultant"
+    ],
+    "когнитивные науки": [
+      "neyrobiolog",
+      "psiholog-issledovatel"
+    ],
+    "коммуникации": [
+      "pr-menedzher",
+      "zhurnalist"
+    ],
+    "коммуникация": [
+      "spetsialist-po-mediakommunikatsiyam"
+    ],
+    "коммуникация и медиа": [
+      "pr-menedzher",
+      "zhurnalist"
+    ],
+    "композитор": [
+      "kompozitor"
+    ],
+    "композиция": [
+      "kompozitor",
+      "muzykant-ispolnitel"
+    ],
+    "компьютерная безопасность": [
+      "inzhener-po-kiberbezopasnosti",
+      "sistemnyy-administrator"
+    ],
+    "компьютерная инженерия": [
+      "devops-inzhener",
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "компьютерные науки": [
+      "analitik-dannyh",
+      "mobile-razrabotchik",
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "компьютерные науки и инженерия": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "компьютерные науки с искусственным интеллектом": [
+      "razrabotchik-programmnogo-obespecheniya",
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "конвергентная журналистика": [
+      "zhurnalist"
+    ],
+    "контрольно-измерительные приборы и системы в робототехнике": [
+      "inzhener-mehanik",
+      "inzhener-po-avtomatizatsii-i-robototehnike"
+    ],
+    "корейский язык и литература": [
+      "filolog-lingvist"
+    ],
+    "корпоративное право": [
+      "notarius",
+      "yurist-advokat"
+    ],
+    "корпоративные финансы": [
+      "finansovyy-analitik",
+      "finansovyy-kontroler",
+      "investitsionnyy-bankir"
+    ],
+    "кредитный аналитик": [
+      "kreditnyy-analitik"
+    ],
+    "криминалистика": [
+      "sudmedekspert-kriminalist"
+    ],
+    "криптология": [
+      "inzhener-po-kiberbezopasnosti",
+      "sistemnyy-administrator"
+    ],
+    "культурно-досуговая работа": [
+      "sotsialnyy-rabotnik"
+    ],
+    "культурология": [
+      "prepodavatel-vuza"
+    ],
+    "ландшафтный дизайн и озеленение": [
+      "landshaftnyy-dizayner"
+    ],
+    "ландшафтный дизайнер": [
+      "landshaftnyy-dizayner"
+    ],
+    "лесничий": [
+      "lesnichiy"
+    ],
+    "лесное хозяйство": [
+      "lesnichiy"
+    ],
+    "летная эксплуатация гражданских вертолётов (пилот)": [
+      "pilot-grazhdanskoy-aviatsii"
+    ],
+    "летная эксплуатация гражданских самолётов (пилот)": [
+      "pilot-grazhdanskoy-aviatsii"
+    ],
+    "лечебное дело": [
+      "vrach-obschey-praktiki"
+    ],
+    "лингвистика": [
+      "filolog-lingvist"
+    ],
+    "литература": [
+      "filolog-lingvist",
+      "pisatel-kopirayter"
+    ],
+    "лицензия по праву": [
+      "yurist-advokat"
+    ],
+    "лицензия по экономике и управлению": [
+      "ekonomist-analitik"
+    ],
+    "логист": [
+      "logist"
+    ],
+    "логистика": [
+      "direktor-po-logistike",
+      "logist"
+    ],
+    "логистика (по отраслям)": [
+      "direktor-po-logistike",
+      "logist",
+      "spetsialist-po-zakupkam"
+    ],
+    "логистика и транспорт": [
+      "logist"
+    ],
+    "логистика и управление цепями поставок": [
+      "direktor-po-logistike",
+      "logist"
+    ],
+    "логистика на транспорте": [
+      "direktor-po-logistike",
+      "logist"
+    ],
+    "логопед": [
+      "logoped"
+    ],
+    "локомотивное хозяйство": [
+      "mashinist-lokomotiva"
+    ],
+    "лётная эксплуатация воздушного транспорта (пилот)": [
+      "pilot-grazhdanskoy-aviatsii"
+    ],
+    "магистр богословия": [
+      "teolog-religioved"
+    ],
+    "магистр делового администрирования (mba)": [
+      "predprinimatel",
+      "proektnyy-menedzher"
+    ],
+    "магистр здравоохранения": [
+      "epidemiolog"
+    ],
+    "магистр информационных технологий": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "магистр наук в области биологии": [
+      "biolog"
+    ],
+    "магистр наук в области компьютерных наук": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "магистр образования": [
+      "shkolnyy-uchitel"
+    ],
+    "магистр права": [
+      "yurist-advokat"
+    ],
+    "магистр социальной работы": [
+      "sotsialnyy-rabotnik"
+    ],
+    "магистр финансов": [
+      "finansovyy-analitik"
+    ],
+    "магистратура по бизнес-администрированию (mba)": [
+      "predprinimatel"
+    ],
+    "магистратура по биологии": [
+      "biolog"
+    ],
+    "магистратура по здравоохранению": [
+      "epidemiolog"
+    ],
+    "магистратура по инженерии": [
+      "inzhener-elektrik",
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-stroitel"
+    ],
+    "магистратура по информатике": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "магистратура по компьютерным наукам": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "магистратура по международному бизнесу": [
+      "predprinimatel"
+    ],
+    "магистратура по международным отношениям": [
+      "diplomat"
+    ],
+    "магистратура по менеджменту": [
+      "proektnyy-menedzher"
+    ],
+    "магистратура по праву": [
+      "yurist-advokat"
+    ],
+    "магистратура по психологии": [
+      "psiholog-konsultant"
+    ],
+    "магистратура по теологии": [
+      "teolog-religioved"
+    ],
+    "магистратура по экологии и устойчивому развитию": [
+      "inzhener-ekolog"
+    ],
+    "магистратура по экономике": [
+      "ekonomist-analitik"
+    ],
+    "маркетинг": [
+      "direktor-po-marketingu",
+      "marketolog"
+    ],
+    "маркетинг и бизнес аналитика": [
+      "analitik-dannyh",
+      "direktor-po-marketingu",
+      "marketolog"
+    ],
+    "маркетолог": [
+      "marketolog"
+    ],
+    "математик": [
+      "matematik"
+    ],
+    "математика": [
+      "matematik"
+    ],
+    "математическое и компьютерное моделирование": [
+      "matematik"
+    ],
+    "материаловедение и инженерия": [
+      "metallurg"
+    ],
+    "машинист локомотива": [
+      "mashinist-lokomotiva"
+    ],
+    "машиностроение": [
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-tehnolog-mashinostroenie"
+    ],
+    "машины и аппараты химических производств": [
+      "inzhener-himik",
+      "inzhener-mehanik"
+    ],
+    "машины энергетического оборудования": [
+      "inzhener-mehanik"
+    ],
+    "медиа и коммуникации": [
+      "spetsialist-po-mediakommunikatsiyam"
+    ],
+    "медиакоммуникации": [
+      "spetsialist-po-mediakommunikatsiyam",
+      "zhurnalist"
+    ],
+    "медиатор / конфликтолог": [
+      "mediator-konfliktolog"
+    ],
+    "медико-профилактическое дело": [
+      "epidemiolog",
+      "meditsinskiy-laboratornyy-tehnolog",
+      "vrach-obschey-praktiki"
+    ],
+    "медицина": [
+      "vrach-obschey-praktiki"
+    ],
+    "медицина и здравоохранение": [
+      "vrach-obschey-praktiki"
+    ],
+    "медицина и хирургия": [
+      "hirurg"
+    ],
+    "медицинская биология": [
+      "biolog",
+      "genetik",
+      "meditsinskiy-laboratornyy-tehnolog",
+      "neyrobiolog"
+    ],
+    "медицинская биотехнология": [
+      "issledovatel-v-oblasti-biotehnologiy"
+    ],
+    "медицинская биохимия": [
+      "meditsinskiy-laboratornyy-tehnolog"
+    ],
+    "медицинская информатика": [
+      "analitik-dannyh"
+    ],
+    "медицинская лабораторная диагностика": [
+      "meditsinskiy-laboratornyy-tehnolog"
+    ],
+    "медицинская лабораторная техника": [
+      "meditsinskiy-laboratornyy-tehnolog"
+    ],
+    "медицинская сестра / медбрат": [
+      "meditsinskaya-sestra-medbrat"
+    ],
+    "медицинская сестринская деятельность": [
+      "meditsinskaya-sestra-medbrat"
+    ],
+    "медицинская сестринская помощь": [
+      "meditsinskaya-sestra-medbrat"
+    ],
+    "медицинские науки": [
+      "vrach-obschey-praktiki"
+    ],
+    "медицинский лабораторный технолог": [
+      "meditsinskiy-laboratornyy-tehnolog"
+    ],
+    "международная журналистика": [
+      "zhurnalist"
+    ],
+    "международная торговля": [
+      "predprinimatel"
+    ],
+    "международная экономика и торговля": [
+      "ekonomist-analitik"
+    ],
+    "международное право": [
+      "yurist-advokat"
+    ],
+    "международное право и безопасность": [
+      "diplomat"
+    ],
+    "международное право, юрист-международник со знанием двух иностранных языков": [
+      "diplomat",
+      "yurist-advokat"
+    ],
+    "международное экономическое право": [
+      "yurist-advokat"
+    ],
+    "международные отношения": [
+      "diplomat"
+    ],
+    "международный бизнес": [
+      "biznes-perevodchik",
+      "predprinimatel"
+    ],
+    "международный бизнес и экономика": [
+      "ekonomist-analitik"
+    ],
+    "международный бизнес-менеджмент": [
+      "predprinimatel"
+    ],
+    "международный туризм": [
+      "gid-ekskursovod"
+    ],
+    "международных отношений": [
+      "diplomat"
+    ],
+    "межкультурно-коммуникативный перевод": [
+      "biznes-perevodchik"
+    ],
+    "менеджер по продажам": [
+      "menedzher-po-prodazham"
+    ],
+    "менеджмент": [
+      "menedzher-po-prodazham",
+      "proektnyy-menedzher",
+      "rieltor"
+    ],
+    "менеджмент и маркетинг": [
+      "direktor-po-marketingu",
+      "marketolog"
+    ],
+    "менеджмент и управление": [
+      "proektnyy-menedzher"
+    ],
+    "менеджмент предприятий": [
+      "predprinimatel"
+    ],
+    "металлург": [
+      "metallurg"
+    ],
+    "металлургия": [
+      "metallurg"
+    ],
+    "метеоролог": [
+      "meteorolog"
+    ],
+    "методика обучения начальных классов": [
+      "shkolnyy-uchitel"
+    ],
+    "методика преподавания": [
+      "shkolnyy-uchitel"
+    ],
+    "методология образования": [
+      "shkolnyy-uchitel"
+    ],
+    "механизация сельского хозяйства": [
+      "inzhener-mehanik"
+    ],
+    "механико-математический": [
+      "matematik"
+    ],
+    "механическая инженерия": [
+      "inzhener-konstruktor",
+      "inzhener-mehanik"
+    ],
+    "мировая экономика": [
+      "ekonomist-analitik"
+    ],
+    "мода и дизайн": [
+      "modeler"
+    ],
+    "мода и текстиль": [
+      "modeler"
+    ],
+    "мода, дизайн": [
+      "modeler",
+      "modnyy-stilist"
+    ],
+    "модельер": [
+      "modeler"
+    ],
+    "модный стилист": [
+      "modnyy-stilist"
+    ],
+    "морская инженерия": [
+      "inzhener-mehanik"
+    ],
+    "морская техника": [
+      "inzhener-mehanik"
+    ],
+    "музыка": [
+      "muzykant-ispolnitel"
+    ],
+    "музыкальная педагогика": [
+      "prepodavatel-iskusstva"
+    ],
+    "музыкальное искусство": [
+      "muzykant-ispolnitel"
+    ],
+    "музыкальное исполнительство": [
+      "muzykant-ispolnitel"
+    ],
+    "музыкальное образование": [
+      "kompozitor",
+      "prepodavatel-iskusstva"
+    ],
+    "музыкант-исполнитель": [
+      "muzykant-ispolnitel"
+    ],
+    "музыковедение": [
+      "iskusstvoved",
+      "kompozitor"
+    ],
+    "музыкознание": [
+      "muzykant-ispolnitel"
+    ],
+    "музыкология": [
+      "muzykant-ispolnitel"
+    ],
+    "наземный электрический транспорт и зарядная инфраструктура": [
+      "inzhener-elektrik"
+    ],
+    "налоговый консультант": [
+      "nalogovyy-konsultant"
+    ],
+    "нанотехнология текстиля": [
+      "modeler"
+    ],
+    "наука о данных": [
+      "analitik-dannyh",
+      "data-engineer"
+    ],
+    "наука о растениях и технологии": [
+      "agronom"
+    ],
+    "науки о жизни": [
+      "biolog"
+    ],
+    "национальная безопасность": [
+      "voennyy-ofitser"
+    ],
+    "начальное образование": [
+      "shkolnyy-uchitel"
+    ],
+    "начальное образование на английском языке": [
+      "shkolnyy-uchitel"
+    ],
+    "начальное образование с информационно-коммуникационными технологиями": [
+      "shkolnyy-uchitel"
+    ],
+    "нейробиолог": [
+      "neyrobiolog"
+    ],
+    "немецкий язык": [
+      "shkolnyy-uchitel"
+    ],
+    "нефтегазовое дело": [
+      "burovoy-inzhener-neftegazovoe-delo"
+    ],
+    "нефтяная инженерия": [
+      "burovoy-inzhener-neftegazovoe-delo"
+    ],
+    "нефтяная инженерия (upc)": [
+      "burovoy-inzhener-neftegazovoe-delo"
+    ],
+    "нефтяная техника": [
+      "burovoy-inzhener-neftegazovoe-delo"
+    ],
+    "новые медиа (new media)": [
+      "zhurnalist"
+    ],
+    "нотариус": [
+      "notarius"
+    ],
+    "нутрициолог / диетолог": [
+      "nutritsiolog-dietolog"
+    ],
+    "обеспечение авиационной безопасности": [
+      "aviadispetcher"
+    ],
+    "обогащение полезных ископаемых": [
+      "geolog",
+      "gornyy-inzhener",
+      "metallurg"
+    ],
+    "обработка полезных ископаемых": [
+      "geolog",
+      "gornyy-inzhener",
+      "metallurg"
+    ],
+    "образование": [
+      "prepodavatel-vuza",
+      "shkolnyy-uchitel"
+    ],
+    "образование и педагогика": [
+      "shkolnyy-uchitel"
+    ],
+    "обслуживание воздушного движения и аэронавигационное обеспечение полетов": [
+      "aviadispetcher"
+    ],
+    "обслуживание наземного радиоэлектронного оборудования аэропортов": [
+      "inzhener-elektrik"
+    ],
+    "общая медицина": [
+      "hirurg",
+      "pediatr",
+      "psihiatr",
+      "vrach-obschey-praktiki"
+    ],
+    "общественное здоровье": [
+      "epidemiolog",
+      "nutritsiolog-dietolog",
+      "vrach-obschey-praktiki"
+    ],
+    "общественное здравоохранение": [
+      "epidemiolog",
+      "nutritsiolog-dietolog",
+      "vrach-obschey-praktiki"
+    ],
+    "общественные науки": [
+      "sotsialnyy-rabotnik"
+    ],
+    "обществоведение": [
+      "shkolnyy-uchitel"
+    ],
+    "обществознание": [
+      "shkolnyy-uchitel"
+    ],
+    "океанолог / гидролог": [
+      "okeanolog-gidrolog"
+    ],
+    "окружающая среда и устойчивое развитие": [
+      "inzhener-ekolog"
+    ],
+    "операторское искусство": [
+      "fotograf"
+    ],
+    "операторское искусство и фотоискусство": [
+      "fotograf"
+    ],
+    "организационная психология": [
+      "hr-menedzher",
+      "proforientolog-karernyy-konsultant",
+      "psiholog-issledovatel"
+    ],
+    "организация авиационных перевозок": [
+      "direktor-po-logistike"
+    ],
+    "организация авиационных перевозок и логистика": [
+      "aviadispetcher",
+      "direktor-po-logistike"
+    ],
+    "организация аэропортовой деятельности": [
+      "aviadispetcher"
+    ],
+    "организация движения": [
+      "direktor-po-logistike"
+    ],
+    "организация дорожного движения": [
+      "direktor-po-logistike"
+    ],
+    "организация и безопасность дорожного движения": [
+      "direktor-po-logistike"
+    ],
+    "организация перевозок и логистика на транспорте": [
+      "direktor-po-logistike",
+      "logist"
+    ],
+    "организация перевозок, движения и эксплуатации транспорта": [
+      "direktor-po-logistike"
+    ],
+    "организация перевозок, движения и эксплуатация транспорта": [
+      "direktor-po-logistike"
+    ],
+    "организация транспорта и логистика": [
+      "direktor-po-logistike",
+      "logist"
+    ],
+    "охотоведение и звероводство": [
+      "lesnichiy"
+    ],
+    "педагог — тренер по qazaq kuresi": [
+      "trener-po-sportu"
+    ],
+    "педагог — тренер по настольным видам спорта (шахматы)": [
+      "trener-po-sportu"
+    ],
+    "педагог-психолог": [
+      "pedagog-psiholog"
+    ],
+    "педагогика": [
+      "shkolnyy-uchitel"
+    ],
+    "педагогика и искусство": [
+      "prepodavatel-iskusstva"
+    ],
+    "педагогика и методика начального образования": [
+      "shkolnyy-uchitel"
+    ],
+    "педагогика и методика начального обучения": [
+      "shkolnyy-uchitel"
+    ],
+    "педагогика и образование": [
+      "shkolnyy-uchitel"
+    ],
+    "педагогика и психология": [
+      "pedagog-psiholog",
+      "proforientolog-karernyy-konsultant",
+      "psiholog-konsultant",
+      "shkolnyy-uchitel"
+    ],
+    "педагогика и психология с полиязычием": [
+      "pedagog-psiholog",
+      "shkolnyy-uchitel"
+    ],
+    "педагогика спортивного бального танца": [
+      "horeograf"
+    ],
+    "педагогика хореографии": [
+      "horeograf"
+    ],
+    "педагогика хореографического искусства": [
+      "horeograf"
+    ],
+    "педагогические науки": [
+      "shkolnyy-uchitel"
+    ],
+    "педагогическое образование": [
+      "shkolnyy-uchitel"
+    ],
+    "педиатр": [
+      "pediatr"
+    ],
+    "педиатрия": [
+      "pediatr",
+      "vrach-obschey-praktiki"
+    ],
+    "перевод и интерпретация": [
+      "biznes-perevodchik"
+    ],
+    "перевод и переводоведение": [
+      "biznes-perevodchik"
+    ],
+    "переводоведение": [
+      "biznes-perevodchik"
+    ],
+    "переводческое дело": [
+      "biznes-perevodchik"
+    ],
+    "переводческое дело (английский, французский, испанский, немецкий, китайский, корейский, арабский)": [
+      "biznes-perevodchik"
+    ],
+    "переводческое дело (восточные языки)": [
+      "biznes-perevodchik"
+    ],
+    "переводческое дело (западные языки)": [
+      "biznes-perevodchik"
+    ],
+    "переводческое дело (китайский, турецкий)": [
+      "biznes-perevodchik"
+    ],
+    "пилот гражданской авиации": [
+      "pilot-grazhdanskoy-aviatsii"
+    ],
+    "писатель / копирайтер": [
+      "pisatel-kopirayter"
+    ],
+    "пищевая инженерия": [
+      "nutritsiolog-dietolog",
+      "tehnolog-pischevogo-proizvodstva"
+    ],
+    "пищевая технология": [
+      "nutritsiolog-dietolog",
+      "tehnolog-pischevogo-proizvodstva"
+    ],
+    "плодоовощеводство и агропочвоведение": [
+      "agronom"
+    ],
+    "подготовка учителей биологии": [
+      "shkolnyy-uchitel"
+    ],
+    "подготовка учителей физической культуры": [
+      "shkolnyy-uchitel",
+      "trener-po-sportu"
+    ],
+    "подготовка учителя физической культуры и инструктора-методиста по массовой физкультурно-оздоровительной работе": [
+      "trener-po-sportu"
+    ],
+    "подготовка учителя физической культуры и тренера по конным видам спорта": [
+      "trener-po-sportu"
+    ],
+    "подготовка учителя физической культуры и тренера по национальным видам спорта, спортивным играм": [
+      "trener-po-sportu"
+    ],
+    "политические массовые коммуникации": [
+      "zhurnalist"
+    ],
+    "политология": [
+      "gosudarstvennyy-sluzhaschiy"
+    ],
+    "полицейский": [
+      "politseyskiy"
+    ],
+    "почвоведение": [
+      "agronom"
+    ],
+    "почвоведение и агрохимия": [
+      "agronom"
+    ],
+    "право": [
+      "notarius",
+      "prokuror",
+      "sudya",
+      "yurist-advokat"
+    ],
+    "право и правоохранительная деятельность": [
+      "politseyskiy",
+      "sudmedekspert-kriminalist"
+    ],
+    "правовое обеспечение экономической безопасности": [
+      "yurist-advokat"
+    ],
+    "правовое регулирование экономики": [
+      "yurist-advokat"
+    ],
+    "правоохранительная деятельность": [
+      "politseyskiy",
+      "sudmedekspert-kriminalist"
+    ],
+    "практическая психология": [
+      "proforientolog-karernyy-konsultant",
+      "psiholog-konsultant"
+    ],
+    "предприниматель": [
+      "predprinimatel"
+    ],
+    "преподавание языков и литературы": [
+      "shkolnyy-uchitel"
+    ],
+    "преподаватель вуза": [
+      "prepodavatel-vuza"
+    ],
+    "преподаватель искусства": [
+      "prepodavatel-iskusstva"
+    ],
+    "приборостроение": [
+      "inzhener-konstruktor",
+      "inzhener-mehanik"
+    ],
+    "прикладная информатика": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "прикладная лингвистика": [
+      "biznes-perevodchik",
+      "filolog-lingvist"
+    ],
+    "прикладная математика": [
+      "matematik"
+    ],
+    "прикладная математика и информатика": [
+      "matematik",
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "прикладной искусственный интеллект": [
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "природопользование": [
+      "inzhener-ekolog"
+    ],
+    "программная инженерия": [
+      "mobile-razrabotchik",
+      "qa-inzhener-testirovschik",
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "программное обеспечение": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "программы для иностранных студентов": [
+      "predprinimatel"
+    ],
+    "продакт-менеджер": [
+      "prodakt-menedzher"
+    ],
+    "проектный менеджер": [
+      "proektnyy-menedzher"
+    ],
+    "производственная логистика": [
+      "direktor-po-logistike",
+      "logist"
+    ],
+    "прокурор": [
+      "prokuror"
+    ],
+    "промышленное и гражданское строительство": [
+      "inzhener-stroitel"
+    ],
+    "промышленный ai": [
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "промышленный дизайн": [
+      "graficheskiy-dizayner",
+      "ux-ui-dizayner"
+    ],
+    "профессионально-ориентированные иностранные языки": [
+      "biznes-perevodchik",
+      "filolog-lingvist"
+    ],
+    "профессиональное образование": [
+      "shkolnyy-uchitel"
+    ],
+    "профессиональное обучение": [
+      "shkolnyy-uchitel"
+    ],
+    "профориентолог / карьерный консультант": [
+      "proforientolog-karernyy-konsultant"
+    ],
+    "психиатр": [
+      "psihiatr"
+    ],
+    "психолог-исследователь": [
+      "psiholog-issledovatel"
+    ],
+    "психолог-консультант": [
+      "psiholog-konsultant"
+    ],
+    "психологические особенности развития личности": [
+      "pedagog-psiholog",
+      "psiholog-konsultant"
+    ],
+    "психологическое консультирование": [
+      "proforientolog-karernyy-konsultant",
+      "psiholog-konsultant"
+    ],
+    "психология": [
+      "proforientolog-karernyy-konsultant",
+      "psiholog-issledovatel",
+      "psiholog-konsultant"
+    ],
+    "психология образования": [
+      "pedagog-psiholog"
+    ],
+    "путейское хозяйство": [
+      "inzhener-stroitel"
+    ],
+    "радиотехника": [
+      "inzhener-elektrik"
+    ],
+    "радиотехника и электроника": [
+      "inzhener-elektrik"
+    ],
+    "радиотехника, электроника и телекоммуникации": [
+      "inzhener-elektrik"
+    ],
+    "радиотехнические системы передачи информации": [
+      "sistemnyy-administrator"
+    ],
+    "разработка месторождений нефти и газа": [
+      "burovoy-inzhener-neftegazovoe-delo"
+    ],
+    "разработка программного обеспечения и защита информации": [
+      "qa-inzhener-testirovschik",
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "разработчик программного обеспечения": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "расчет и проектирование зданий и сооружений": [
+      "arhitektor",
+      "inzhener-stroitel"
+    ],
+    "реабилитолог / эрготерапевт": [
+      "reabilitolog-ergoterapevt"
+    ],
+    "регионоведение": [
+      "diplomat"
+    ],
+    "режиссура": [
+      "rezhisser"
+    ],
+    "режиссура анимации": [
+      "animator-2d-3d",
+      "geymdizayner"
+    ],
+    "режиссура анимационного фильма": [
+      "animator-2d-3d",
+      "geymdizayner"
+    ],
+    "режиссура кино и телевидения": [
+      "rezhisser",
+      "stsenarist"
+    ],
+    "режиссура театра": [
+      "rezhisser"
+    ],
+    "режиссура, арт-менеджмент": [
+      "event-menedzher",
+      "rezhisser"
+    ],
+    "режиссёр": [
+      "rezhisser"
+    ],
+    "резидентура": [
+      "vrach-obschey-praktiki"
+    ],
+    "резидентура по медицинским специальнос": [
+      "vrach-obschey-praktiki"
+    ],
+    "резидентура по медицинским специальностям": [
+      "vrach-obschey-praktiki"
+    ],
+    "реклама и pr": [
+      "pr-menedzher"
+    ],
+    "реклама и маркетинговые коммуникации": [
+      "marketolog",
+      "pr-menedzher"
+    ],
+    "реклама и цифровой маркетинг": [
+      "direktor-po-marketingu",
+      "marketolog",
+      "pr-menedzher"
+    ],
+    "рекреация и спортивно-оздоровительный туризм": [
+      "gid-ekskursovod",
+      "trener-po-sportu"
+    ],
+    "религиоведение": [
+      "prepodavatel-vuza",
+      "teolog-religioved"
+    ],
+    "ресторанное дело и гостиничный бизнес": [
+      "upravlyayuschiy-otelem-restoranom"
+    ],
+    "ресторанный и гостиничный бизнес": [
+      "upravlyayuschiy-otelem-restoranom"
+    ],
+    "ресторанный и отельный бизнес": [
+      "upravlyayuschiy-otelem-restoranom"
+    ],
+    "риелтор": [
+      "rieltor"
+    ],
+    "робототехника и мехатроника": [
+      "inzhener-mehanik",
+      "inzhener-po-avtomatizatsii-i-robototehnike"
+    ],
+    "русский язык и литература": [
+      "filolog-lingvist",
+      "shkolnyy-uchitel"
+    ],
+    "санитарное просвещение": [
+      "epidemiolog"
+    ],
+    "связи с общественностью": [
+      "pr-menedzher"
+    ],
+    "связь с общественностью": [
+      "pr-menedzher"
+    ],
+    "сейсмология": [
+      "geolog"
+    ],
+    "секретарь-делопроизводитель": [
+      "sekretar-deloproizvoditel"
+    ],
+    "сельское хозяйство": [
+      "agronom"
+    ],
+    "сестринское дело": [
+      "meditsinskaya-sestra-medbrat"
+    ],
+    "сестринское дело (включая кинезитерапию, эрготерапию)": [
+      "meditsinskaya-sestra-medbrat",
+      "reabilitolog-ergoterapevt"
+    ],
+    "сетевая безопасность": [
+      "inzhener-po-kiberbezopasnosti",
+      "sistemnyy-administrator"
+    ],
+    "сети связи": [
+      "sistemnyy-administrator"
+    ],
+    "системный администратор": [
+      "sistemnyy-administrator"
+    ],
+    "системный анализ": [
+      "sistemnyy-analitik"
+    ],
+    "системный аналитик": [
+      "sistemnyy-analitik"
+    ],
+    "системы автоматизации": [
+      "inzhener-mehanik",
+      "inzhener-po-avtomatizatsii-i-robototehnike"
+    ],
+    "системы информационной безопасности": [
+      "inzhener-po-kiberbezopasnosti",
+      "sistemnyy-administrator"
+    ],
+    "скульптура": [
+      "hudozhnik"
+    ],
+    "следственно-криминалистическая деятельность": [
+      "politseyskiy",
+      "sudmedekspert-kriminalist"
+    ],
+    "социальная педагогика": [
+      "sotsialnyy-rabotnik"
+    ],
+    "социальная педагогика и самопознание": [
+      "sotsialnyy-rabotnik"
+    ],
+    "социальная работа": [
+      "mediator-konfliktolog",
+      "sotsialnyy-rabotnik",
+      "spetsialist-po-rabote-s-molodezhyu"
+    ],
+    "социальная работа в здравоохранении": [
+      "sotsialnyy-rabotnik"
+    ],
+    "социальные науки": [
+      "sotsialnyy-rabotnik"
+    ],
+    "социальные науки, журналистика и информация": [
+      "zhurnalist"
+    ],
+    "социальный работник": [
+      "sotsialnyy-rabotnik"
+    ],
+    "социология": [
+      "mediator-konfliktolog",
+      "psiholog-issledovatel"
+    ],
+    "спасатель мчс": [
+      "spasatel-mchs"
+    ],
+    "специализированные программы среднего профессионального образования": [
+      "predprinimatel"
+    ],
+    "специалист по закупкам": [
+      "spetsialist-po-zakupkam"
+    ],
+    "специалист по искусственному интеллекту": [
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "специалист по кадровому делопроизводству": [
+      "spetsialist-po-kadrovomu-deloproizvodstvu"
+    ],
+    "специалист по медиакоммуникациям": [
+      "spetsialist-po-mediakommunikatsiyam"
+    ],
+    "специалист по работе с молодёжью": [
+      "spetsialist-po-rabote-s-molodezhyu"
+    ],
+    "специалист по стандартизации и сертификации": [
+      "spetsialist-po-standartizatsii-i-sertifikatsii"
+    ],
+    "специалист по таможенному делу": [
+      "spetsialist-po-tamozhennomu-delu"
+    ],
+    "специалист технической поддержки": [
+      "spetsialist-tehnicheskoy-podderzhki"
+    ],
+    "специальная педагогика и психология": [
+      "defektolog",
+      "logoped",
+      "pedagog-psiholog"
+    ],
+    "специальное образование": [
+      "defektolog",
+      "logoped"
+    ],
+    "спортивная подготовка": [
+      "sportivnyy-menedzher-agent",
+      "trener-po-sportu"
+    ],
+    "спортивная реабилитация": [
+      "fizioterapevt-massazhist",
+      "reabilitolog-ergoterapevt"
+    ],
+    "спортивная тренировка": [
+      "trener-po-sportu"
+    ],
+    "спортивный менеджер / агент": [
+      "sportivnyy-menedzher-agent"
+    ],
+    "стандартизация": [
+      "spetsialist-po-standartizatsii-i-sertifikatsii"
+    ],
+    "стандартизация и сертификация": [
+      "spetsialist-po-standartizatsii-i-sertifikatsii"
+    ],
+    "стандартизация и сертификация (по отраслям)": [
+      "spetsialist-po-standartizatsii-i-sertifikatsii"
+    ],
+    "стандартизация, метрология и сертификация (по пищевой отрасли)": [
+      "spetsialist-po-standartizatsii-i-sertifikatsii",
+      "tehnolog-pischevogo-proizvodstva"
+    ],
+    "стандартизация, сертификация и метрология": [
+      "spetsialist-po-standartizatsii-i-sertifikatsii"
+    ],
+    "статистика": [
+      "analitik-dannyh"
+    ],
+    "стоматолог": [
+      "stomatolog"
+    ],
+    "стоматология": [
+      "stomatolog"
+    ],
+    "стоматология и протезирование": [
+      "stomatolog"
+    ],
+    "страховой агент": [
+      "strahovoy-agent"
+    ],
+    "страховой андеррайтер": [
+      "strahovoy-anderrayter"
+    ],
+    "строительство": [
+      "geodezist",
+      "inzhener-stroitel"
+    ],
+    "строительство автомобильных дорог и аэродромов": [
+      "inzhener-stroitel"
+    ],
+    "строительство газонефтепроводов и газонефтехранилищ": [
+      "burovoy-inzhener-neftegazovoe-delo",
+      "inzhener-stroitel"
+    ],
+    "строительство мостов и тоннелей": [
+      "inzhener-stroitel"
+    ],
+    "судебно-прокурорская деятельность": [
+      "prokuror",
+      "sudya",
+      "yurist-advokat"
+    ],
+    "судмедэксперт / криминалист": [
+      "sudmedekspert-kriminalist"
+    ],
+    "судовождение": [
+      "mashinist-lokomotiva"
+    ],
+    "судья": [
+      "sudya"
+    ],
+    "сценарист": [
+      "stsenarist"
+    ],
+    "сценическое искусство": [
+      "akter"
+    ],
+    "сценография": [
+      "hudozhnik"
+    ],
+    "таможенное дело": [
+      "spetsialist-po-tamozhennomu-delu"
+    ],
+    "таможенное оформление и таможенный контроль": [
+      "spetsialist-po-tamozhennomu-delu"
+    ],
+    "театр": [
+      "akter"
+    ],
+    "театральное искусство": [
+      "akter"
+    ],
+    "театроведение": [
+      "rezhisser"
+    ],
+    "текстильная технология": [
+      "modeler"
+    ],
+    "телекоммуникации": [
+      "sistemnyy-administrator"
+    ],
+    "телекоммуникационные сети и системы": [
+      "sistemnyy-administrator"
+    ],
+    "телекоммуникационные системы и сети": [
+      "sistemnyy-administrator"
+    ],
+    "телекоммуникационные системы и сети ж.д.связи": [
+      "sistemnyy-administrator"
+    ],
+    "телекоммуникационные технологии": [
+      "sistemnyy-administrator"
+    ],
+    "телекоммуникация": [
+      "sistemnyy-administrator"
+    ],
+    "телематика": [
+      "sistemnyy-administrator"
+    ],
+    "теолог / религиовед": [
+      "teolog-religioved"
+    ],
+    "теология": [
+      "prepodavatel-vuza",
+      "teolog-religioved"
+    ],
+    "теплогазоснабжение и вентиляция": [
+      "inzhener-stroitel"
+    ],
+    "теплоэнергетика": [
+      "inzhener-elektrik",
+      "inzhener-energetik"
+    ],
+    "теплоэнергетика и теплотехника": [
+      "inzhener-energetik"
+    ],
+    "теплоэнергетическая инженерия": [
+      "inzhener-elektrik",
+      "inzhener-energetik"
+    ],
+    "техническая механика": [
+      "inzhener-konstruktor",
+      "inzhener-mehanik"
+    ],
+    "техническая эксплуатация летательных аппаратов и двигателей": [
+      "inzhener-mehanik"
+    ],
+    "техническая эксплуатация систем авионики летательных аппаратов": [
+      "inzhener-mehanik"
+    ],
+    "технолог пищевого производства": [
+      "tehnolog-pischevogo-proizvodstva"
+    ],
+    "технологии": [
+      "inzhener-mehanik",
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "технологии искусственного интеллекта": [
+      "spetsialist-po-iskusstvennomu-intellektu"
+    ],
+    "технологические машины и оборудование": [
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-tehnolog-mashinostroenie"
+    ],
+    "технологические машины и оборудование (по отраслям)": [
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-tehnolog-mashinostroenie"
+    ],
+    "технология и конструирование изделий легкой промышленности": [
+      "modeler"
+    ],
+    "технология и конструирование изделий лёгкой промышленности": [
+      "modeler"
+    ],
+    "технология машиностроения": [
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-tehnolog-mashinostroenie"
+    ],
+    "технология моды": [
+      "modeler",
+      "modnyy-stilist"
+    ],
+    "технология перерабатывающих производств (по отраслям)": [
+      "tehnolog-pischevogo-proizvodstva"
+    ],
+    "технология пищевых продуктов": [
+      "nutritsiolog-dietolog",
+      "tehnolog-pischevogo-proizvodstva"
+    ],
+    "технология продовольственных продуктов": [
+      "nutritsiolog-dietolog",
+      "tehnolog-pischevogo-proizvodstva"
+    ],
+    "технология продовольственных продуктов (по отраслям)": [
+      "tehnolog-pischevogo-proizvodstva"
+    ],
+    "технология производства": [
+      "inzhener-tehnolog-mashinostroenie",
+      "tehnolog-pischevogo-proizvodstva"
+    ],
+    "технология производства и переработки сельскохозяйственной продукции": [
+      "tehnolog-pischevogo-proizvodstva"
+    ],
+    "технология производства продуктов животноводства": [
+      "upravlyayuschiy-fermerskim-hozyaystvom",
+      "veterinar"
+    ],
+    "технология промышленного и гражданского строительства": [
+      "inzhener-stroitel"
+    ],
+    "технология редких и радиоактивных элементов": [
+      "himik",
+      "inzhener-himik",
+      "metallurg"
+    ],
+    "технология транспортных процессов в авиации": [
+      "aviadispetcher"
+    ],
+    "технология фармацевтического производства": [
+      "farmatsevt"
+    ],
+    "техносферная безопасность": [
+      "spasatel-mchs"
+    ],
+    "традиционное музыкальное искусство": [
+      "muzykant-ispolnitel"
+    ],
+    "традиционное музыкальное искусство (домбра)": [
+      "muzykant-ispolnitel"
+    ],
+    "традиционное музыкальное искусство (кобыз и баян)": [
+      "muzykant-ispolnitel"
+    ],
+    "традиционное музыкальное искусство (народное пение)": [
+      "muzykant-ispolnitel"
+    ],
+    "транспорт": [
+      "inzhener-mehanik",
+      "logist"
+    ],
+    "транспорт, транспортная техника и технологии": [
+      "inzhener-mehanik"
+    ],
+    "транспортная логистика": [
+      "direktor-po-logistike",
+      "logist"
+    ],
+    "транспортно-энергетический": [
+      "inzhener-elektrik"
+    ],
+    "транспортное машиностроение": [
+      "inzhener-mehanik"
+    ],
+    "транспортное строительство": [
+      "inzhener-stroitel"
+    ],
+    "транспортные системы": [
+      "direktor-po-logistike",
+      "logist"
+    ],
+    "транспортные услуги": [
+      "logist"
+    ],
+    "тренер по спорту": [
+      "trener-po-sportu"
+    ],
+    "туризм": [
+      "gid-ekskursovod",
+      "upravlyayuschiy-otelem-restoranom"
+    ],
+    "туризм и гостеприимство": [
+      "gid-ekskursovod",
+      "upravlyayuschiy-otelem-restoranom"
+    ],
+    "туризм и гостиничное дело": [
+      "upravlyayuschiy-otelem-restoranom"
+    ],
+    "туризм и рекреация": [
+      "upravlyayuschiy-otelem-restoranom"
+    ],
+    "тюркология": [
+      "biznes-perevodchik"
+    ],
+    "управление": [
+      "predprinimatel",
+      "proektnyy-menedzher"
+    ],
+    "управление воздушным движением": [
+      "aviadispetcher"
+    ],
+    "управление информационными технологиями": [
+      "prodakt-menedzher",
+      "sistemnyy-analitik"
+    ],
+    "управление образованием": [
+      "shkolnyy-uchitel"
+    ],
+    "управляющий отелем / рестораном": [
+      "upravlyayuschiy-otelem-restoranom"
+    ],
+    "управляющий фермерским хозяйством": [
+      "upravlyayuschiy-fermerskim-hozyaystvom"
+    ],
+    "урановое дело": [
+      "geolog"
+    ],
+    "урбанист / градостроитель": [
+      "urbanist-gradostroitel"
+    ],
+    "учет и аудит": [
+      "auditor",
+      "buhgalter",
+      "finansovyy-kontroler"
+    ],
+    "учет и аудит по acca": [
+      "auditor",
+      "buhgalter",
+      "finansovyy-kontroler"
+    ],
+    "учитель информатики": [
+      "shkolnyy-uchitel"
+    ],
+    "учитель информатики/математики и др.": [
+      "shkolnyy-uchitel"
+    ],
+    "учитель математики": [
+      "shkolnyy-uchitel"
+    ],
+    "учитель физической культуры и тренер по видам спорта": [
+      "trener-po-sportu"
+    ],
+    "учёт и аудит": [
+      "auditor",
+      "buhgalter",
+      "finansovyy-kontroler"
+    ],
+    "факультет гуманитарных наук": [
+      "filolog-lingvist",
+      "istorik"
+    ],
+    "факультет естественных наук": [
+      "biolog",
+      "fizik",
+      "himik"
+    ],
+    "факультет инженерии": [
+      "inzhener-elektrik",
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-stroitel"
+    ],
+    "факультет компьютерных систем и профессионального образования": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "факультет медицины": [
+      "vrach-obschey-praktiki"
+    ],
+    "факультет образования": [
+      "shkolnyy-uchitel"
+    ],
+    "факультет сельского хозяйства": [
+      "agronom"
+    ],
+    "факультет управления земельными ресурсами, архитектуры и дизайна": [
+      "arhitektor",
+      "urbanist-gradostroitel"
+    ],
+    "факультет экономики и управления": [
+      "ekonomist-analitik"
+    ],
+    "фармацевт": [
+      "farmatsevt"
+    ],
+    "фармация": [
+      "farmatsevt"
+    ],
+    "физик": [
+      "fizik"
+    ],
+    "физика": [
+      "astronom",
+      "fizik",
+      "matematik"
+    ],
+    "физика элементарных частиц и космофизика": [
+      "astronom",
+      "fizik",
+      "matematik"
+    ],
+    "физиотерапевт / массажист": [
+      "fizioterapevt-massazhist"
+    ],
+    "физиотерапия": [
+      "fizioterapevt-massazhist"
+    ],
+    "физиотерапия и реабилитация": [
+      "fizioterapevt-massazhist"
+    ],
+    "физическая культура": [
+      "shkolnyy-uchitel",
+      "sportivnyy-menedzher-agent",
+      "trener-po-sportu"
+    ],
+    "физическая культура и спорт": [
+      "sportivnyy-menedzher-agent",
+      "trener-po-sportu"
+    ],
+    "филолог-лингвист": [
+      "filolog-lingvist"
+    ],
+    "филологический": [
+      "biznes-perevodchik",
+      "filolog-lingvist"
+    ],
+    "филология": [
+      "biznes-perevodchik",
+      "filolog-lingvist"
+    ],
+    "филология (русский язык и литература)": [
+      "filolog-lingvist"
+    ],
+    "филология и журналистика": [
+      "biznes-perevodchik",
+      "zhurnalist"
+    ],
+    "филология иностранных языков": [
+      "biznes-perevodchik",
+      "shkolnyy-uchitel"
+    ],
+    "философия": [
+      "prepodavatel-vuza"
+    ],
+    "философия и теология": [
+      "teolog-religioved"
+    ],
+    "финансовая аналитика": [
+      "finansovyy-analitik",
+      "finansovyy-kontroler",
+      "kreditnyy-analitik"
+    ],
+    "финансовая математика": [
+      "aktuariy",
+      "finansovyy-analitik"
+    ],
+    "финансовая экономика": [
+      "ekonomist-analitik",
+      "finansovyy-konsultant"
+    ],
+    "финансовые рынки и финансовые институты": [
+      "birzhevoy-broker",
+      "investitsionnyy-bankir",
+      "strahovoy-agent",
+      "strahovoy-anderrayter"
+    ],
+    "финансовый аналитик": [
+      "finansovyy-analitik"
+    ],
+    "финансовый консультант": [
+      "finansovyy-konsultant"
+    ],
+    "финансовый контролёр": [
+      "finansovyy-kontroler"
+    ],
+    "финансы": [
+      "finansovyy-analitik",
+      "finansovyy-konsultant",
+      "finansovyy-kontroler",
+      "investitsionnyy-bankir"
+    ],
+    "финансы и бухгалтерский учет": [
+      "buhgalter",
+      "finansovyy-analitik"
+    ],
+    "финансы и инвестиции": [
+      "finansovyy-konsultant",
+      "investitsionnyy-bankir"
+    ],
+    "финансы и кредит": [
+      "finansovyy-analitik"
+    ],
+    "финансы и экономика": [
+      "ekonomist-analitik",
+      "finansovyy-konsultant"
+    ],
+    "фитнес и рекреация": [
+      "sportivnyy-menedzher-agent",
+      "trener-po-sportu"
+    ],
+    "фотограф": [
+      "fotograf"
+    ],
+    "фотография": [
+      "fotograf"
+    ],
+    "французский язык": [
+      "shkolnyy-uchitel"
+    ],
+    "французский язык и литература": [
+      "filolog-lingvist"
+    ],
+    "химик": [
+      "himik"
+    ],
+    "химическая инженерия": [
+      "inzhener-himik"
+    ],
+    "химическая инженерия и технологии": [
+      "inzhener-himik"
+    ],
+    "химическая технология": [
+      "himik",
+      "inzhener-himik"
+    ],
+    "химическая технология органических веществ": [
+      "himik",
+      "inzhener-himik",
+      "tehnolog-pischevogo-proizvodstva"
+    ],
+    "химия": [
+      "himik"
+    ],
+    "хирург": [
+      "hirurg"
+    ],
+    "хореограф": [
+      "horeograf"
+    ],
+    "хореография": [
+      "horeograf"
+    ],
+    "христианское образование": [
+      "shkolnyy-uchitel"
+    ],
+    "художественное образование": [
+      "prepodavatel-iskusstva"
+    ],
+    "художник": [
+      "hudozhnik"
+    ],
+    "цифровая логистика": [
+      "direktor-po-logistike",
+      "logist"
+    ],
+    "цифровая энергетика": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "цифровая юриспруденция": [
+      "notarius",
+      "sudya",
+      "yurist-advokat"
+    ],
+    "цифровое кинопроизводство (digital filmmaking)": [
+      "rezhisser",
+      "stsenarist"
+    ],
+    "цифровые агросистемы и комплексы": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "цифровые технологии в агропромышленном комплексе": [
+      "razrabotchik-programmnogo-obespecheniya"
+    ],
+    "школьный учитель": [
+      "shkolnyy-uchitel"
+    ],
+    "экологические науки": [
+      "inzhener-ekolog"
+    ],
+    "экология": [
+      "inzhener-ekolog",
+      "meteorolog",
+      "okeanolog-gidrolog"
+    ],
+    "экология и безопасность технолога": [
+      "inzhener-ekolog"
+    ],
+    "экология и окружающая среда": [
+      "inzhener-ekolog"
+    ],
+    "экология и охрана окружающей среды": [
+      "inzhener-ekolog"
+    ],
+    "экология и природные ресурсы": [
+      "inzhener-ekolog"
+    ],
+    "экология и природопользование": [
+      "inzhener-ekolog"
+    ],
+    "экономика": [
+      "ekonomist-analitik",
+      "finansovyy-analitik"
+    ],
+    "экономика и аудит": [
+      "auditor",
+      "ekonomist-analitik",
+      "finansovyy-kontroler"
+    ],
+    "экономика и менеджмент": [
+      "ekonomist-analitik"
+    ],
+    "экономика и менеджмент (по отраслям)": [
+      "ekonomist-analitik"
+    ],
+    "экономика и наука о данных": [
+      "analitik-dannyh",
+      "data-engineer",
+      "ekonomist-analitik"
+    ],
+    "экономика и управление": [
+      "ekonomist-analitik"
+    ],
+    "экономико-математическое и компьютерное моделирование": [
+      "ekonomist-analitik",
+      "matematik"
+    ],
+    "экономист-аналитик": [
+      "ekonomist-analitik"
+    ],
+    "экономический": [
+      "ekonomist-analitik"
+    ],
+    "экономический факультет": [
+      "ekonomist-analitik"
+    ],
+    "эксплуатация судовых энергетических установок": [
+      "inzhener-elektrik"
+    ],
+    "электроника и телекоммуникации": [
+      "inzhener-elektrik"
+    ],
+    "электроника и электротехника": [
+      "inzhener-elektrik"
+    ],
+    "электронная инженерия": [
+      "inzhener-elektrik"
+    ],
+    "электронный бизнес": [
+      "predprinimatel"
+    ],
+    "электротехника": [
+      "inzhener-elektrik"
+    ],
+    "электротехника и автоматизация": [
+      "inzhener-elektrik"
+    ],
+    "электротехника и информационные технологии": [
+      "inzhener-elektrik"
+    ],
+    "электротехника и электроника": [
+      "inzhener-elektrik"
+    ],
+    "электротехническая инженерия": [
+      "inzhener-elektrik"
+    ],
+    "электроэнергетика": [
+      "inzhener-elektrik",
+      "inzhener-energetik"
+    ],
+    "электроэнергетика и электротехника": [
+      "inzhener-energetik"
+    ],
+    "энергетика": [
+      "inzhener-elektrik",
+      "inzhener-energetik"
+    ],
+    "энергетическая и экологическая техника": [
+      "inzhener-elektrik",
+      "inzhener-energetik"
+    ],
+    "энергообеспечение сельского хозяйства": [
+      "inzhener-elektrik"
+    ],
+    "энергосистемы": [
+      "inzhener-elektrik",
+      "inzhener-energetik"
+    ],
+    "эпидемиолог": [
+      "epidemiolog"
+    ],
+    "эстрадное искусство": [
+      "muzykant-ispolnitel",
+      "zvukorezhisser"
+    ],
+    "юридическая деятельность в сфере защиты прав человека": [
+      "yurist-advokat"
+    ],
+    "юридический": [
+      "notarius",
+      "prokuror",
+      "sudya",
+      "yurist-advokat"
+    ],
+    "юриспруденция": [
+      "mediator-konfliktolog",
+      "notarius",
+      "prokuror",
+      "sudya",
+      "yurist-advokat"
+    ],
+    "юриспруденция: государственное управление": [
+      "gosudarstvennyy-sluzhaschiy"
+    ],
+    "юриспруденция: правоохранительная деятельность": [
+      "politseyskiy",
+      "sudmedekspert-kriminalist"
+    ],
+    "юриспруденция: предпринимательское право": [
+      "notarius",
+      "yurist-advokat"
+    ],
+    "юрист / адвокат": [
+      "yurist-advokat"
+    ],
+    "японский язык и культура": [
+      "filolog-lingvist"
+    ]
+  },
+  "category_fallback": {
+    "ADVERTISING": [
+      "marketolog",
+      "pr-menedzher"
+    ],
+    "AGRICULTURE": [
+      "agronom"
+    ],
+    "ANIMATION": [
+      "animator-2d-3d"
+    ],
+    "ARCHITECTURE": [
+      "arhitektor"
+    ],
+    "ARTS_DESIGN": [
+      "graficheskiy-dizayner",
+      "hudozhnik"
+    ],
+    "BUSINESS_ADMINISTRATION": [
+      "menedzher-po-prodazham",
+      "predprinimatel",
+      "proektnyy-menedzher"
+    ],
+    "COMMUNICATION": [
+      "pr-menedzher",
+      "zhurnalist"
+    ],
+    "CREATIVE_WRITING": [
+      "pisatel-kopirayter",
+      "stsenarist"
+    ],
+    "DANCE": [
+      "horeograf"
+    ],
+    "DIGITAL_ART": [
+      "animator-2d-3d",
+      "hudozhnik"
+    ],
+    "ECONOMICS": [
+      "ekonomist-analitik",
+      "finansovyy-analitik"
+    ],
+    "EDUCATION": [
+      "shkolnyy-uchitel"
+    ],
+    "ENGINEERING": [
+      "inzhener-elektrik",
+      "inzhener-konstruktor",
+      "inzhener-mehanik",
+      "inzhener-stroitel"
+    ],
+    "ENVIRONMENTAL_STUDIES": [
+      "inzhener-ekolog"
+    ],
+    "FASHION_DESIGN": [
+      "modeler",
+      "modnyy-stilist"
+    ],
+    "FILM_THEATER": [
+      "akter",
+      "rezhisser"
+    ],
+    "FINE_ARTS": [
+      "hudozhnik"
+    ],
+    "GAME_DESIGN": [
+      "geymdizayner"
+    ],
+    "GRAPHIC_DESIGN": [
+      "graficheskiy-dizayner"
+    ],
+    "HEALTH_MEDICINE": [
+      "meditsinskaya-sestra-medbrat",
+      "vrach-obschey-praktiki"
+    ],
+    "HISTORY": [
+      "istorik"
+    ],
+    "HUMANITIES": [
+      "filolog-lingvist",
+      "istorik"
+    ],
+    "INDUSTRIAL_DESIGN": [
+      "graficheskiy-dizayner"
+    ],
+    "INFORMATION_TECHNOLOGY": [
+      "razrabotchik-programmnogo-obespecheniya",
+      "sistemnyy-analitik"
+    ],
+    "INTERIOR_DESIGN": [
+      "dizayner-interera"
+    ],
+    "JOURNALISM": [
+      "zhurnalist"
+    ],
+    "LAW": [
+      "yurist-advokat"
+    ],
+    "LINGUISTICS": [
+      "biznes-perevodchik",
+      "filolog-lingvist"
+    ],
+    "MARKETING": [
+      "marketolog"
+    ],
+    "MATHEMATICS": [
+      "matematik"
+    ],
+    "MEDIA_STUDIES": [
+      "spetsialist-po-mediakommunikatsiyam",
+      "zhurnalist"
+    ],
+    "MUSIC": [
+      "muzykant-ispolnitel"
+    ],
+    "NATURAL_SCIENCES": [
+      "biolog",
+      "fizik",
+      "himik"
+    ],
+    "PHILOSOPHY": [
+      "prepodavatel-vuza",
+      "gosudarstvennyy-sluzhaschiy",
+      "ekonomist-analitik"
+    ],
+    "POLITICAL_SCIENCE": [
+      "diplomat",
+      "gosudarstvennyy-sluzhaschiy"
+    ],
+    "PRODUCT_DESIGN": [
+      "graficheskiy-dizayner"
+    ],
+    "PSYCHOLOGY": [
+      "pedagog-psiholog",
+      "psiholog-konsultant"
+    ],
+    "PUBLIC_RELATIONS": [
+      "pr-menedzher"
+    ],
+    "SOCIAL_SCIENCES": [
+      "sotsialnyy-rabotnik"
+    ],
+    "TEXTILE_DESIGN": [
+      "modeler"
+    ],
+    "VISUAL_ARTS": [
+      "hudozhnik"
+    ]
+  }
+}

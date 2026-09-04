@@ -20,6 +20,7 @@ from app.database import async_session
 from app.models.profile import AgeGroup
 from app.models.question import Question, QuestionInstrument
 from app.models.question_pair import QuestionPair
+from app.services.admin_lock import has_overrides, sync_fields
 from scripts.question_pairing import PAIRS
 
 
@@ -57,20 +58,13 @@ async def main() -> None:
                 if existing.question_b_id != question_b_id:
                     existing.question_b_id = question_b_id
                     changed = True
-                if existing.frame != data["frame"]:
-                    existing.frame = data["frame"]
-                    changed = True
-                if existing.option_a_text != data.get("option_a_text"):
-                    existing.option_a_text = data.get("option_a_text")
-                    changed = True
-                if existing.option_b_text != data.get("option_b_text"):
-                    existing.option_b_text = data.get("option_b_text")
-                    changed = True
-                if existing.option_a_icon != data.get("option_a_icon"):
-                    existing.option_a_icon = data.get("option_a_icon")
-                    changed = True
-                if existing.option_b_icon != data.get("option_b_icon"):
-                    existing.option_b_icon = data.get("option_b_icon")
+                if sync_fields(existing, {
+                    "frame": data["frame"],
+                    "option_a_text": data.get("option_a_text"),
+                    "option_b_text": data.get("option_b_text"),
+                    "option_a_icon": data.get("option_a_icon"),
+                    "option_b_icon": data.get("option_b_icon"),
+                }):
                     changed = True
                 if changed:
                     updated += 1
@@ -93,7 +87,7 @@ async def main() -> None:
             inserted += 1
 
         for key, pair in existing_by_key.items():
-            if key not in live_keys:
+            if key not in live_keys and not has_overrides(pair):
                 await db.delete(pair)
                 deleted += 1
 

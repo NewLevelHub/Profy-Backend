@@ -32,7 +32,9 @@ docker compose exec api pytest tests/unit/test_riasec_service.py::test_name -v
 docker compose exec api pytest tests/integration      # integration/ vs unit/
 ```
 
-There is no CI workflow that runs tests or lint on pull requests — `cd.yml`/`cd-dev.yml` only deploy on push to `main`/`dev`. Running `pytest` locally/in a container before opening a PR is the only check that happens.
+There is no CI workflow that runs tests or lint on pull requests — `cd.yml`/`cd-dev.yml` only deploy on push to `main`/`dev`. Running `pytest` locally/in a container before opening a PR is the only automated check that happens.
+
+Before opening a PR, also run `git review-main` (optionally `git review-main high` for a deeper pass) — a local git alias for `scripts/review-before-main.sh`, which runs Claude Code's `/code-review` in headless mode. It picks the diff base to match the two-stage workflow (`feature -> dev`, then `dev -> main`): on `dev` it reviews against `main`; on any other branch it reviews against `dev` (not `main`, which would also include everything already unreleased on `dev`). It excludes `scripts/data/**` and `university-data/**` from the diff (static data dumps, not reviewable logic — they're normally ~97% of a `dev...main` diff's line count and just burn tokens for nothing). The alias itself isn't part of the repo (git aliases live in `.git/config`/`~/.gitconfig`, personal per machine) — set it up once per clone, scoped to this repo only (not `--global`, to avoid clashing with an unrelated `review-main` alias in other repos): `git config alias.review-main '!bash scripts/review-before-main.sh'`.
 
 ## Architecture
 
@@ -41,6 +43,10 @@ There is no CI workflow that runs tests or lint on pull requests — `cd.yml`/`c
 RIASEC/Big Five/MI questions, forced-choice question pairs, motivation statements/pairs, and RIASEC directions are defined in static Python "bank" files (`scripts/riasec_question_bank.py`, `scripts/bigfive_question_bank.py`, `scripts/motivation_statement_bank.py`, `scripts/motivation_pair_bank.py`, etc.), not edited directly in the DB. The corresponding `scripts/seed_*.py` script is a **self-healing full resync**, run on every CD deploy: it diffs and overwrites the DB row's fields to match the bank, inserts missing rows, and **deletes any DB row whose key is no longer in the bank**. To change this content, edit the bank file and re-run its seed script — do not hand-edit these rows in the DB, a redeploy will revert or delete them. (`University`/`Program` rows are different: seed scripts there only fill currently-empty fields or use narrower overwrite conditions, and never delete rows — see `scripts/seed_kz_universities.py` vs. `scripts/seed_92_professions_universities.py` for the two different patterns in use.)
 
 The CD pipeline (`.github/workflows/cd.yml`, `cd-dev.yml`) runs ~25 of these seed/backfill/apply scripts sequentially after every deploy, in a fixed order — most are idempotent no-ops once their target state is reached, but a few overwrite-if-different rather than fill-if-empty, so re-ordering them or assuming any one is side-effect-free needs checking the individual script.
+
+#### Review/data files must reference rows by a portable key, never a bare row UUID
+
+Any review/data file under `scripts/data/**` (or `scripts/*review*.json`) that points at a `University`/`Program` row MUST carry a cross-DB-portable key — `slug` / `university_slug` (curated rows), `jinaq_external_id` (jinaq rows, resolved via `university_external_refs`), or `ror_id`; a `Program` also needs its *name* to resolve under that University. A bare `University.id` / `Program.id` is a per-database random `uuid4()` and resolves to nothing on any other DB (a fresh local copy, prod's first import run) — the apply script then silently no-ops on every entry. Resolve rows through `scripts/entity_resolver.py` (`resolve_university` / `resolve_program`), not a hand-rolled `where(University.id == ...)`. Enforced by `tests/unit/test_review_files_portable_keys.py`; background and the affected-script audit are in `docs/content-pipeline-id-resolution-audit.md`.
 
 ### Assessment: age tiers and multiple instruments
 

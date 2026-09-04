@@ -355,17 +355,22 @@ async def build_report(
         matched = await riasec_service.matched_careers(code, db)
         careers = [_career_dict(d, score) for d, score in matched]
 
-    bf_raw = await bigfive_service.raw_scores(assessment_id, db, age_group)
+    # grand_mean is the same query for both raw_scores() and facet_raw() below
+    # (same assessment_id/age_group) — fetch it once here instead of each
+    # function independently re-running it.
+    bf_mean_answer = await bigfive_service.grand_mean(assessment_id, db, age_group)
+
+    bf_raw = await bigfive_service.raw_scores(assessment_id, db, age_group, mean_answer=bf_mean_answer)
     bf_counts = await bigfive_service.question_counts(db, age_group)
     bigfive_scores = bigfive_service.normalize(bf_raw, bf_counts)
 
-    bf_facet_raw = await bigfive_service.facet_raw(assessment_id, db, age_group)
+    bf_facet_raw = await bigfive_service.facet_raw(assessment_id, db, age_group, mean_answer=bf_mean_answer)
     bf_facet_counts = await bigfive_service.facet_counts(db, age_group)
     bf_facet_norm = bigfive_service.facet_normalize(bf_facet_raw, bf_facet_counts)
     thinking_style = thinking_style_service.compute(bf_facet_norm)
 
-    personality_highlights = strength_phrases(bigfive_scores)
     personality_profile, personality_notes = bigfive_content.build_personality_profile(bigfive_scores)
+    personality_highlights = strength_phrases(personality_profile)
 
     # Junior/middle answer the Harter-format pairs instead of the 3-way
     # MOST/LEAST triplets (senior) — different tables/scoring, same shape.

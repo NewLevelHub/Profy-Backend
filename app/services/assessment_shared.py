@@ -28,10 +28,13 @@ _redis: aioredis.Redis | None = None
 
 # Single source of truth for the report cache key — report_service.py reads/
 # writes this, invalidate_retake() below must delete the exact same key.
-# Versioned (v2, was bare "report:{id}") so a pre-rollout v1-shaped payload
-# can never be read back as v2: the old prefix is simply never addressed
-# again by any code path, not filtered out at read time.
-REPORT_CACHE_KEY_PREFIX = "report:v2"
+# Versioned (was bare "report:{id}", then "report:v2") so a pre-rollout
+# payload can never be read back under new semantics: the old prefix is
+# simply never addressed again by any code path, not filtered out at read
+# time. Bumped to v3 alongside the Big Five relative-tiering / acquiescence
+# correction rework — the response shape is unchanged but the personality
+# levels a cached v2 payload carries are the old absolute-cutoff ones.
+REPORT_CACHE_KEY_PREFIX = "report:v3"
 
 # Same versioning principle for the goal roadmap cache — bumped 2026-08-18
 # alongside the portrait/recommended_paths prompt rework, so no stale

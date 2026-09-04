@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -43,6 +43,10 @@ class MotivationStatement(Base):
     # "show `text` to everyone", which is what happens for middle/senior
     # always, and for junior until this is seeded.
     text_junior: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Field-name -> admin-edited value, composed on top of the bank content
+    # by scripts/seed_motivation_statements.py at resync time (see
+    # docs/admin-questions-content-overrides-plan.md).
+    overrides: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
 
 class MotivationResponse(Base):

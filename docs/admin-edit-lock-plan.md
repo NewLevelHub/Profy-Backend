@@ -1,5 +1,35 @@
 # Protect admin-edited university/program data from redeploy overwrites
 
+## Status: implemented (branch `fix/google-oauth-review-findings`)
+
+All 6 sections below are done: `app/services/admin_lock.py`, the
+`admin_locked_fields` column + migration `42f3568179a9`, `lock_fields()`
+wired into `update_university`/`update_program`, the field exposed on both
+detail schemas, and all six scripts patched. Verified manually (PATCH locks
+a field, the affected script skips+logs it and leaves the admin value
+intact, an unlocked field on the same row still updates normally) plus new
+automated coverage in `tests/unit/test_admin_university_lock.py`.
+
+### Follow-up: 4 more scripts patched (branch `pro-227`)
+
+The original audit below only covered the ~25 scripts already wired into
+`cd.yml` at the time. Adding the jinaq import pipeline to `cd.yml`
+(`import_jinaq_universities.py` and friends) surfaced 4 more scripts with
+the same overwrite-if-different pattern, none of which existed when this
+plan was written — patched the same way (`is_locked()` guard, skip + log):
+
+| Script | Field guarded |
+|---|---|
+| `apply_uniranks_world_rank.py` | `uniranks_world_rank` (University) — same field `apply_uniranks_kz_2027.py` already guarded, different source table |
+| `apply_researched_kz_admission_data.py` | `facilities` (University), `requirements` (Program) |
+| `apply_kz_university_merge.py` | `name`, `short_name` (University) — only the `rename_to` branch, which renames the jinaq-side row before merge/delete |
+| `apply_specialty_names_from_review.py` | `name` (Program) — only the name write; the direction-merge that follows it is unaffected |
+
+`import_jinaq_universities.py`, `apply_jinaq_specialty_directions.py`,
+`merge_kazguu_into_mnu.py`, `apply_foreign_university_dedup.py` needed no
+changes — fill-if-empty, insert-only, or FK-reassignment-only by
+construction, same standard as the original "safe" column below.
+
 ## Context
 
 Admin already has PATCH endpoints for editing universities and programs

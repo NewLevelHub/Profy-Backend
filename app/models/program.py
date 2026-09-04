@@ -127,6 +127,10 @@ class Program(Base):
     # not "unverified" — most current facts predate this column and won't
     # have an entry; only write here going forward.
     fact_sources: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    # Top-level column names an admin has explicitly PATCHed at least once via
+    # /admin/programs/{id} — see University.admin_locked_fields for the full
+    # rationale (same mechanism, same docs/admin-edit-lock-plan.md).
+    admin_locked_fields: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
 
     university: Mapped["University"] = relationship("University", back_populates="programs")
 

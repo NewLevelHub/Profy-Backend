@@ -1,0 +1,1986 @@
+{
+  "_meta": {
+    "note": "SNAP-7. Set `confirmed: true` on a pair that is one institution; normalize pass 3 keeps the Russian name, English -> aliases, keeper = richer row. `subunits` need a separate merge-into-parent / keep decision.",
+    "candidate_pairs": 49,
+    "candidate_subunits": 0,
+    "reviewed": "assistant"
+  },
+  "pairs": [
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "griffith-university-aviation",
+        "name": "Griffith University",
+        "country": "Австралия",
+        "city": "Брисбен / Голд-Кост",
+        "ror_id": "02sc3r913",
+        "jinaq_id": null,
+        "programs": 4,
+        "tagged_programs": 4
+      },
+      "ru": {
+        "slug": "universitet-griffit",
+        "name": "Университет Гриффит",
+        "country": "Австралия",
+        "city": "Брисбен",
+        "ror_id": null,
+        "jinaq_id": "159",
+        "programs": 5,
+        "tagged_programs": 4
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "nazarbayev-university",
+        "name": "Nazarbayev University",
+        "country": "Казахстан",
+        "city": "Астана",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 24,
+        "tagged_programs": 24
+      },
+      "ru": {
+        "slug": "nazarbaev-universitet",
+        "name": "Назарбаев Университет",
+        "country": "Казахстан",
+        "city": "Астана",
+        "ror_id": null,
+        "jinaq_id": "1",
+        "programs": 16,
+        "tagged_programs": 3
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "the-university-of-adelaide",
+        "name": "The University of Adelaide",
+        "country": "Австралия",
+        "city": "Аделаида",
+        "ror_id": null,
+        "jinaq_id": "120",
+        "programs": 3,
+        "tagged_programs": 3
+      },
+      "ru": {
+        "slug": "universitet-adelaidy",
+        "name": "Университет Аделаиды",
+        "country": "Австралия",
+        "city": "Аделаида",
+        "ror_id": null,
+        "jinaq_id": "171",
+        "programs": 5,
+        "tagged_programs": 3
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "the-university-of-edinburgh",
+        "name": "The University of Edinburgh",
+        "country": "Великобритания",
+        "city": "Эдинбург",
+        "ror_id": null,
+        "jinaq_id": "65",
+        "programs": 3,
+        "tagged_programs": 2
+      },
+      "ru": {
+        "slug": "university-of-edinburgh",
+        "name": "University of Edinburgh",
+        "country": "Великобритания",
+        "city": "Эдинбург",
+        "ror_id": "01nrxwf90",
+        "jinaq_id": null,
+        "programs": 15,
+        "tagged_programs": 9
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "the-university-of-melbourne",
+        "name": "The University of Melbourne",
+        "country": "Австралия",
+        "city": "Мельбурн",
+        "ror_id": null,
+        "jinaq_id": "117",
+        "programs": 8,
+        "tagged_programs": 2
+      },
+      "ru": {
+        "slug": "university-of-melbourne",
+        "name": "University of Melbourne",
+        "country": "Австралия",
+        "city": "Мельбурн",
+        "ror_id": "01ej9dk98",
+        "jinaq_id": null,
+        "programs": 33,
+        "tagged_programs": 27
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "the-university-of-queensland",
+        "name": "The University of Queensland",
+        "country": "Австралия",
+        "city": "Брисбен",
+        "ror_id": null,
+        "jinaq_id": "118",
+        "programs": 3,
+        "tagged_programs": 2
+      },
+      "ru": {
+        "slug": "university-of-queensland",
+        "name": "University of Queensland",
+        "country": "Австралия",
+        "city": "Брисбен",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 7,
+        "tagged_programs": 7
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "the-university-of-western-australia",
+        "name": "The University of Western Australia",
+        "country": "Австралия",
+        "city": "Перт",
+        "ror_id": null,
+        "jinaq_id": "119",
+        "programs": 3,
+        "tagged_programs": 2
+      },
+      "ru": {
+        "slug": "university-of-western-australia",
+        "name": "University of Western Australia",
+        "country": "Австралия",
+        "city": "Перт",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 7,
+        "tagged_programs": 5
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "toronto-metropolitan-university",
+        "name": "Toronto Metropolitan University",
+        "country": "Канада",
+        "city": "Торонто",
+        "ror_id": "05g13zd79",
+        "jinaq_id": null,
+        "programs": 5,
+        "tagged_programs": 4
+      },
+      "ru": {
+        "slug": "universitet-toronto-metropoliten",
+        "name": "Университет Торонто Метрополитен",
+        "country": "Канада",
+        "city": "Торонто",
+        "ror_id": null,
+        "jinaq_id": "238",
+        "programs": 4,
+        "tagged_programs": 3
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "tsinghua-university",
+        "name": "Tsinghua University",
+        "country": "Китай",
+        "city": "Пекин",
+        "ror_id": "03cve4549",
+        "jinaq_id": "92",
+        "programs": 24,
+        "tagged_programs": 8
+      },
+      "ru": {
+        "slug": "universitet-tsinhua",
+        "name": "Университет Цинхуа",
+        "country": "Китай",
+        "city": "Пекин",
+        "ror_id": null,
+        "jinaq_id": "297",
+        "programs": 5,
+        "tagged_programs": 4
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "university-of-reading",
+        "name": "University of Reading",
+        "country": "Великобритания",
+        "city": "Рединг",
+        "ror_id": "05v62cm79",
+        "jinaq_id": null,
+        "programs": 14,
+        "tagged_programs": 12
+      },
+      "ru": {
+        "slug": "universitet-redinga",
+        "name": "Университет Рединга",
+        "country": "Великобритания",
+        "city": "Рединг",
+        "ror_id": null,
+        "jinaq_id": "1711",
+        "programs": 4,
+        "tagged_programs": 3
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 0.80",
+      "en": {
+        "slug": "yessenov-university",
+        "name": "Yessenov University (Каспийский государственный университет технологий и инжиниринга им. Ш. Есенова)",
+        "country": "Казахстан",
+        "city": "Актау",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 13,
+        "tagged_programs": 13
+      },
+      "ru": {
+        "slug": "kaspiyskiy-universitet-tehnologiy-i-inzhiniringa-imeni-sh-esenova",
+        "name": "Каспийский университет технологий и инжиниринга имени Ш. Есенова",
+        "country": "Казахстан",
+        "city": "Актау",
+        "ror_id": null,
+        "jinaq_id": "1054",
+        "programs": 8,
+        "tagged_programs": 6
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "aktyubinskiy-regionalnyy-universitet",
+        "name": "Актюбинский региональный университет имени К.Жубанова",
+        "country": "Казахстан",
+        "city": "Актобе",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 17,
+        "tagged_programs": 15
+      },
+      "ru": {
+        "slug": "aktyubinskiy-regionalnyy-universitet-imeni-k-zhubanova",
+        "name": "Актюбинский региональный университет имени К. Жубанова",
+        "country": "Казахстан",
+        "city": "Актобе",
+        "ror_id": null,
+        "jinaq_id": "1017",
+        "programs": 9,
+        "tagged_programs": 0
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 0.75",
+      "en": {
+        "slug": "almatinskij-gumanitarno-ekonomicheskij-universitet",
+        "name": "Алматинский гуманитарно-экономический университет (АГЭУ)",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 14,
+        "tagged_programs": 14
+      },
+      "ru": {
+        "slug": "almatinskiy-gumanitarno-ekonomicheskiy-universitet",
+        "name": "Алматинский гуманитарно-экономический университет",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": "959",
+        "programs": 7,
+        "tagged_programs": 3
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 0.75",
+      "en": {
+        "slug": "almatinskij-universitet-energetiki-i-svyazi",
+        "name": "Алматинский университет энергетики и связи (АУЭС)",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 16,
+        "tagged_programs": 16
+      },
+      "ru": {
+        "slug": "almatinskiy-universitet-energetiki-i-svyazi",
+        "name": "Алматинский университет энергетики и связи",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": "985",
+        "programs": 9,
+        "tagged_programs": 3
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": false,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "ankarskiy-universitet-nauk",
+        "name": "Анкарский университет наук",
+        "country": "Турция",
+        "city": "Анкара",
+        "ror_id": null,
+        "jinaq_id": "2150",
+        "programs": 3,
+        "tagged_programs": 3
+      },
+      "ru": {
+        "slug": "ankarskiy-universitet",
+        "name": "Анкарский университет",
+        "country": "Турция",
+        "city": "Анкара",
+        "ror_id": null,
+        "jinaq_id": "2154",
+        "programs": 5,
+        "tagged_programs": 5
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "arkalykskiy-pedagogicheskiy-universitet",
+        "name": "Аркалыкский педагогический университет имени Ыбырай Алтынсарин",
+        "country": "Казахстан",
+        "city": "Аркалык",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 13,
+        "tagged_programs": 13
+      },
+      "ru": {
+        "slug": "arkalykskiy-pedagogicheskiy-institut-imeni-ybyraya-altynsarina",
+        "name": "Аркалыкский педагогический институт имени Ыбырая Алтынсарина",
+        "country": "Казахстан",
+        "city": "Аркалык",
+        "ror_id": null,
+        "jinaq_id": "1041",
+        "programs": 10,
+        "tagged_programs": 9
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 0.80",
+      "en": {
+        "slug": "atyrauskiy-universitet-nefti-i-gaza",
+        "name": "Атырауский университет нефти и газа имени Сафи Утебаева",
+        "country": "Казахстан",
+        "city": "Атырау",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 13,
+        "tagged_programs": 13
+      },
+      "ru": {
+        "slug": "atyrauskiy-universitet-nefti-i-gaza-imeni-s-utebaeva",
+        "name": "Атырауский университет нефти и газа имени С. Утебаева",
+        "country": "Казахстан",
+        "city": "Атырау",
+        "ror_id": null,
+        "jinaq_id": "1020",
+        "programs": 9,
+        "tagged_programs": 1
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 0.75",
+      "en": {
+        "slug": "vostochno-kazahstanskiy-tehnicheskiy-universitet-imeni-d-serikbaeva",
+        "name": "Восточно-Казахстанский технический университет имени Д. Серикбаева",
+        "country": "Казахстан",
+        "city": "Усть-Каменогорск",
+        "ror_id": null,
+        "jinaq_id": "1022",
+        "programs": 10,
+        "tagged_programs": 3
+      },
+      "ru": {
+        "slug": "vktu-ust-kamenogorsk",
+        "name": "Восточно-Казахстанский технический университет",
+        "country": "Казахстан",
+        "city": "Усть-Каменогорск",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 8,
+        "tagged_programs": 5
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "vostochno-kazakhstanskiy-universitet",
+        "name": "Восточно-Казахстанский университет имени Сарсена Аманжолова",
+        "country": "Казахстан",
+        "city": "Усть-Каменогорск",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 16,
+        "tagged_programs": 13
+      },
+      "ru": {
+        "slug": "vostochno-kazahstanskiy-gosudarstvennyy-universitet-imeni-sarsena-amanzholova",
+        "name": "Восточно-Казахстанский государственный университет имени Сарсена Аманжолова",
+        "country": "Казахстан",
+        "city": "Усть-Каменогорск",
+        "ror_id": null,
+        "jinaq_id": "1027",
+        "programs": 10,
+        "tagged_programs": 8
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "evraziyskiy-natsionalnyy-universitet-imeni-l-n-gumileva",
+        "name": "Евразийский национальный университет имени Л.Н. Гумилева",
+        "country": "Казахстан",
+        "city": "Астана",
+        "ror_id": null,
+        "jinaq_id": "999",
+        "programs": 8,
+        "tagged_programs": 4
+      },
+      "ru": {
+        "slug": "enu",
+        "name": "Евразийский национальный университет им. Л.Н. Гумилёва",
+        "country": "Казахстан",
+        "city": "Астана",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 9,
+        "tagged_programs": 9
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 0.83",
+      "en": {
+        "slug": "egipetskiy-universitet-islamskoy-kultury-nur-mubarak-v-kazahstane",
+        "name": "Египетский университет исламской культуры «Нур-Мубарак» в Казахстане",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": "961",
+        "programs": 5,
+        "tagged_programs": 2
+      },
+      "ru": {
+        "slug": "egipetskij-universitet-islamskoj-kultury-nur-mubarak",
+        "name": "Египетский университет исламской культуры «Нур-Мубарак»",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 5,
+        "tagged_programs": 5
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 0.80",
+      "en": {
+        "slug": "zapadno-kazahstanskiy-meditsinskiy-universitet-imeni-marata-ospanova",
+        "name": "Западно-Казахстанский медицинский университет имени Марата Оспанова",
+        "country": "Казахстан",
+        "city": "Актобе",
+        "ror_id": null,
+        "jinaq_id": "1018",
+        "programs": 5,
+        "tagged_programs": 5
+      },
+      "ru": {
+        "slug": "zapadno-kazakhstanskiy-meditsinskiy-universitet",
+        "name": "Западно-Казахстанский медицинский университет имени М.Оспанова",
+        "country": "Казахстан",
+        "city": "Актобе",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 8,
+        "tagged_programs": 6
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 0.75",
+      "en": {
+        "slug": "kazahskaya-akademiya-sporta-i-turizma",
+        "name": "Казахская академия спорта и туризма (КАСТ)",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 7,
+        "tagged_programs": 7
+      },
+      "ru": {
+        "slug": "kazahskaya-akademiya-sporta-i-turizma-2",
+        "name": "Казахская академия спорта и туризма",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": "974",
+        "programs": 6,
+        "tagged_programs": 3
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 0.80",
+      "en": {
+        "slug": "kazahskaya-natsionalnaya-akademiya-iskusstv-imeni-t-zhurgenova",
+        "name": "Казахская национальная академия искусств имени Т. Жургенова",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": "962",
+        "programs": 7,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": "kazahskaya-naczionalnaya-akademiya-iskusstv",
+        "name": "Казахская национальная академия искусств им. Т. Жургенова (КазНАИ)",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 15,
+        "tagged_programs": 15
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "kazahskaya-natsionalnaya-konservatoriya-imeni-kurmangazy",
+        "name": "Казахская национальная консерватория имени Курмангазы",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": "963",
+        "programs": 8,
+        "tagged_programs": 2
+      },
+      "ru": {
+        "slug": "kazahskaya-naczionalnaya-konservatoriya-im-kurmangazy",
+        "name": "Казахская национальная консерватория им. Курмангазы",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 15,
+        "tagged_programs": 15
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 0.75",
+      "en": {
+        "slug": "kazahskiy-agrotehnicheskiy-universitet-imeni-sakena-seyfullina",
+        "name": "Казахский агротехнический университет имени Сакена Сейфуллина",
+        "country": "Казахстан",
+        "city": "Астана",
+        "ror_id": null,
+        "jinaq_id": "1002",
+        "programs": 7,
+        "tagged_programs": 3
+      },
+      "ru": {
+        "slug": "kazatu",
+        "name": "Казахский агротехнический исследовательский университет им. С. Сейфуллина",
+        "country": "Казахстан",
+        "city": "Астана",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 7,
+        "tagged_programs": 7
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 0.75",
+      "en": {
+        "slug": "kazahskiy-natsionalnyy-zhenskiy-pedagogicheskiy-universitet",
+        "name": "Казахский национальный женский педагогический университет",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": "969",
+        "programs": 6,
+        "tagged_programs": 4
+      },
+      "ru": {
+        "slug": "kazahskij-gosudarstvennyj-zhenskij-pedagogicheskij-universitet",
+        "name": "Казахский государственный женский педагогический университет (КГЖПУ)",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 12,
+        "tagged_programs": 12
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 0.75",
+      "en": {
+        "slug": "kazahskiy-natsionalnyy-meditsinskiy-universitet-imeni-s-d-asfendiyarova",
+        "name": "Казахский национальный медицинский университет имени С.Д. Асфендиярова",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": "970",
+        "programs": 10,
+        "tagged_programs": 7
+      },
+      "ru": {
+        "slug": "kazahskij-naczionalnyj-mediczinskij-universitet-im-s-d-asfendiyarova",
+        "name": "Казахский национальный медицинский университет им. С.Д. Асфендиярова (КазНМУ)",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 8,
+        "tagged_programs": 8
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 0.75",
+      "en": {
+        "slug": "kazahskiy-natsionalnyy-pedagogicheskiy-universitet-imeni-abaya",
+        "name": "Казахский национальный педагогический университет имени Абая",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": "972",
+        "programs": 7,
+        "tagged_programs": 4
+      },
+      "ru": {
+        "slug": "kazahskij-naczionalnyj-pedagogicheskij-universitet-im-abaya",
+        "name": "Казахский национальный педагогический университет им. Абая (КазНПУ)",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 18,
+        "tagged_programs": 18
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "kazahskiy-universitet-mezhdunarodnyh-otnosheniy-i-mirovyh-yazykov-imeni-abylay-hana",
+        "name": "Казахский университет международных отношений и мировых языков имени Абылай хана",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": "975",
+        "programs": 10,
+        "tagged_programs": 5
+      },
+      "ru": {
+        "slug": "kazahskij-universitet-mezhdunarodnyh-otnoshenij-i-mirovyh-yazykov",
+        "name": "Казахский университет международных отношений и мировых языков им. Абылай хана",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 15,
+        "tagged_programs": 15
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "kazahskiy-universitet-tehnologii-i-biznesa-imeni-k-kulazhanova",
+        "name": "Казахский университет технологии и бизнеса имени К. Кулажанова",
+        "country": "Казахстан",
+        "city": "Астана",
+        "ror_id": null,
+        "jinaq_id": "1001",
+        "programs": 6,
+        "tagged_programs": 1
+      },
+      "ru": {
+        "slug": "kazutb",
+        "name": "Казахский университет технологии и бизнеса им. К. Кулажанова",
+        "country": "Казахстан",
+        "city": "Астана",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 27,
+        "tagged_programs": 27
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 0.75",
+      "en": {
+        "slug": "kazahstansko-britanskij-tehnicheskij-universitet",
+        "name": "Казахстанско-Британский технический университет (КБТУ)",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 14,
+        "tagged_programs": 14
+      },
+      "ru": {
+        "slug": "kazahstansko-britanskiy-tehnicheskiy-universitet",
+        "name": "Казахстанско-Британский Технический Университет",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": "954",
+        "programs": 8,
+        "tagged_programs": 0
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 0.75",
+      "en": {
+        "slug": "kazahstansko-rossijskij-mediczinskij-universitet",
+        "name": "Казахстанско-Российский медицинский университет (КРМУ)",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 3,
+        "tagged_programs": 3
+      },
+      "ru": {
+        "slug": "kazahstansko-rossiyskiy-meditsinskiy-universitet",
+        "name": "Казахстанско-Российский медицинский университет",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": "979",
+        "programs": 6,
+        "tagged_programs": 5
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": false,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "kaliforniyskiy-universitet-v-los-andzhelese",
+        "name": "Калифорнийский университет в Лос-Анджелесе",
+        "country": "США",
+        "city": "Лос-Анджелес",
+        "ror_id": null,
+        "jinaq_id": "1755",
+        "programs": 5,
+        "tagged_programs": 5
+      },
+      "ru": {
+        "slug": "kaliforniyskiy-gosudarstvennyy-universitet-v-los-andzhelese",
+        "name": "Калифорнийский государственный университет в Лос-Анджелесе",
+        "country": "США",
+        "city": "Лос-Анджелес",
+        "ror_id": null,
+        "jinaq_id": "1766",
+        "programs": 4,
+        "tagged_programs": 4
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "karsu-buketova",
+        "name": "Карагандинский университет имени академика Е.А. Букетова",
+        "country": "Казахстан",
+        "city": "Караганда",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 19,
+        "tagged_programs": 19
+      },
+      "ru": {
+        "slug": "karagandinskiy-gosudarstvennyy-universitet-imeni-akademika-e-a-buketova",
+        "name": "Карагандинский государственный университет имени академика Е. А. Букетова",
+        "country": "Казахстан",
+        "city": "Караганда",
+        "ror_id": null,
+        "jinaq_id": "1039",
+        "programs": 6,
+        "tagged_programs": 4
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "kostanaiskiy-sotsialno-tekhnicheskiy-universitet-aldamzhar",
+        "name": "Костанайский социально-технический университет имени академика Зулхарнай Алдамжар",
+        "country": "Казахстан",
+        "city": "Костанай",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 23,
+        "tagged_programs": 22
+      },
+      "ru": {
+        "slug": "kostanayskiy-sotsialno-tehnicheskiy-universitet-imeni-akademika-zulkarnay-aldamzhara",
+        "name": "Костанайский социально-технический университет имени академика Зулкарнай Алдамжара",
+        "country": "Казахстан",
+        "city": "Костанай",
+        "ror_id": null,
+        "jinaq_id": "1046",
+        "programs": 5,
+        "tagged_programs": 5
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 0.75",
+      "en": {
+        "slug": "mezhdunarodnyj-universitet-informaczionnyh-tehnologij",
+        "name": "Международный университет информационных технологий (МУИТ)",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 14,
+        "tagged_programs": 14
+      },
+      "ru": {
+        "slug": "mezhdunarodnyy-universitet-informatsionnyh-tehnologiy",
+        "name": "Международный университет информационных технологий",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": "984",
+        "programs": 4,
+        "tagged_programs": 4
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": false,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "omskiy-gosudarstvennyy-tehnicheskiy-universitet",
+        "name": "Омский государственный технический университет",
+        "country": "Россия",
+        "city": "Омск",
+        "ror_id": null,
+        "jinaq_id": "1224",
+        "programs": 7,
+        "tagged_programs": 7
+      },
+      "ru": {
+        "slug": "natsionalnyy-issledovatelskiy-tomskiy-politehnicheskiy-universitet",
+        "name": "Национальный исследовательский Томский политехнический университет",
+        "country": "Россия",
+        "city": "Томск",
+        "ror_id": null,
+        "jinaq_id": "1221",
+        "programs": 6,
+        "tagged_programs": 4
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": false,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "panevropeyskiy-universitet",
+        "name": "Панъевропейский университет",
+        "country": "Чехия",
+        "city": "Прага",
+        "ror_id": null,
+        "jinaq_id": "476",
+        "programs": 4,
+        "tagged_programs": 4
+      },
+      "ru": {
+        "slug": "evropeyskiy-issledovatelskiy-universitet",
+        "name": "Европейский исследовательский университет",
+        "country": "Чехия",
+        "city": "Прага",
+        "ror_id": null,
+        "jinaq_id": "473",
+        "programs": 3,
+        "tagged_programs": 3
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": false,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "pekinskiy-tehnologicheskiy-universitet",
+        "name": "Пекинский технологический университет",
+        "country": "Китай",
+        "city": "Пекин",
+        "ror_id": null,
+        "jinaq_id": "298",
+        "programs": 4,
+        "tagged_programs": 3
+      },
+      "ru": {
+        "slug": "pekinskiy-tehnologicheskiy-institut",
+        "name": "Пекинский технологический институт",
+        "country": "Китай",
+        "city": "Пекин",
+        "ror_id": null,
+        "jinaq_id": "299",
+        "programs": 4,
+        "tagged_programs": 3
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": false,
+      "hint": "name-core similarity 0.75",
+      "en": {
+        "slug": "pekinskiy-universitet-nauki-i-tehnologii",
+        "name": "Пекинский университет науки и технологии",
+        "country": "Китай",
+        "city": "Пекин",
+        "ror_id": null,
+        "jinaq_id": "294",
+        "programs": 4,
+        "tagged_programs": 3
+      },
+      "ru": {
+        "slug": "pekinskiy-institut-elektronnoy-nauki-i-tehnologii",
+        "name": "Пекинский институт электронной науки и технологии",
+        "country": "Китай",
+        "city": "Пекин",
+        "ror_id": null,
+        "jinaq_id": "310",
+        "programs": 3,
+        "tagged_programs": 2
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "rudnenskiy-industrialnyy-universitet",
+        "name": "Рудненский индустриальный университет",
+        "country": "Казахстан",
+        "city": "Рудный",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 2,
+        "tagged_programs": 2
+      },
+      "ru": {
+        "slug": "rudnenskiy-industrialnyy-institut",
+        "name": "Рудненский индустриальный институт",
+        "country": "Казахстан",
+        "city": "Рудный",
+        "ror_id": null,
+        "jinaq_id": "1045",
+        "programs": 6,
+        "tagged_programs": 3
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": false,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "universitet-dong-i",
+        "name": "Университет Донг-И",
+        "country": "Южная Корея",
+        "city": "Пусан",
+        "ror_id": null,
+        "jinaq_id": "1378",
+        "programs": 4,
+        "tagged_programs": 3
+      },
+      "ru": {
+        "slug": "universitet-don-a",
+        "name": "Университет Дон-А",
+        "country": "Южная Корея",
+        "city": "Пусан",
+        "ror_id": null,
+        "jinaq_id": "1377",
+        "programs": 4,
+        "tagged_programs": 4
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": false,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "chesterskiy-universitet",
+        "name": "Честерский университет",
+        "country": "Великобритания",
+        "city": "Честер",
+        "ror_id": null,
+        "jinaq_id": "1693",
+        "programs": 4,
+        "tagged_programs": 2
+      },
+      "ru": {
+        "slug": "vinchesterskiy-universitet",
+        "name": "Винчестерский университет",
+        "country": "Великобритания",
+        "city": "Винчестер",
+        "ror_id": null,
+        "jinaq_id": "1723",
+        "programs": 4,
+        "tagged_programs": 0
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": false,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "chesterskiy-universitet",
+        "name": "Честерский университет",
+        "country": "Великобритания",
+        "city": "Честер",
+        "ror_id": null,
+        "jinaq_id": "1693",
+        "programs": 4,
+        "tagged_programs": 2
+      },
+      "ru": {
+        "slug": "manchesterskiy-universitet",
+        "name": "Манчестерский университет",
+        "country": "Великобритания",
+        "city": "Манчестер",
+        "ror_id": null,
+        "jinaq_id": "1708",
+        "programs": 4,
+        "tagged_programs": 3
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": false,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "shanhayskiy-tehnologicheskiy-universitet",
+        "name": "Шанхайский технологический университет",
+        "country": "Китай",
+        "city": "Шанхай",
+        "ror_id": null,
+        "jinaq_id": "391",
+        "programs": 3,
+        "tagged_programs": 1
+      },
+      "ru": {
+        "slug": "shanhayskiy-tehnologicheskiy-institut",
+        "name": "Шанхайский технологический институт",
+        "country": "Китай",
+        "city": "Шанхай",
+        "ror_id": null,
+        "jinaq_id": "364",
+        "programs": 3,
+        "tagged_programs": 3
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "shanhayskiy-universitet-mezhdunarodnyh-issledovaniy",
+        "name": "Шанхайский университет международных исследований",
+        "country": "Китай",
+        "city": "Шанхай",
+        "ror_id": null,
+        "jinaq_id": "371",
+        "programs": 4,
+        "tagged_programs": 4
+      },
+      "ru": {
+        "slug": "shanhayskiy-mezhdunarodnyy-universitet-issledovaniy",
+        "name": "Шанхайский международный университет исследований",
+        "country": "Китай",
+        "city": "Шанхай",
+        "ror_id": null,
+        "jinaq_id": "390",
+        "programs": 3,
+        "tagged_programs": 3
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": false,
+      "hint": "name-core similarity 0.75",
+      "en": {
+        "slug": "yuzhno-kazahstanskiy-gosudarstvennyy-universitet-imeni-m-auezova",
+        "name": "Южно-Казахстанский государственный университет имени М. Ауэзова",
+        "country": "Казахстан",
+        "city": "Шымкент",
+        "ror_id": null,
+        "jinaq_id": "1071",
+        "programs": 6,
+        "tagged_programs": 5
+      },
+      "ru": {
+        "slug": "yuzhno-kazahstanskiy-meditsinskiy-universitet-imeni-m-auezova",
+        "name": "Южно-Казахстанский медицинский университет имени М. Ауэзова",
+        "country": "Казахстан",
+        "city": "Шымкент",
+        "ror_id": null,
+        "jinaq_id": "1069",
+        "programs": 5,
+        "tagged_programs": 5
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "hint": "name-core similarity 1.00",
+      "en": {
+        "slug": "yuzhno-kazakhstanskiy-universitet-auezova",
+        "name": "Южно-Казахстанский университет имени М. Ауэзова",
+        "country": "Казахстан",
+        "city": "Шымкент",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 13,
+        "tagged_programs": 12
+      },
+      "ru": {
+        "slug": "yuzhno-kazahstanskiy-gosudarstvennyy-universitet-imeni-m-auezova",
+        "name": "Южно-Казахстанский государственный университет имени М. Ауэзова",
+        "country": "Казахстан",
+        "city": "Шымкент",
+        "ror_id": null,
+        "jinaq_id": "1071",
+        "programs": 6,
+        "tagged_programs": 5
+      },
+      "reviewed_by": "assistant"
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "re-added: prev-confirmed, not resurfaced by stricter generator",
+      "en": {
+        "slug": null,
+        "name": "Alikhan Bokeikhan University",
+        "country": "Казахстан",
+        "city": "Семей",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Университет имени Алихана Бокейхана",
+        "country": "Казахстан",
+        "city": "Семей",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "re-added: prev-confirmed, not resurfaced by stricter generator",
+      "en": {
+        "slug": null,
+        "name": "Korkyt Ata Kyzylorda University",
+        "country": "Казахстан",
+        "city": "Кызылорда",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Кызылординский государственный университет имени Коркыт Ата",
+        "country": "Казахстан",
+        "city": "Кызылорда",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "re-added: prev-confirmed, not resurfaced by stricter generator",
+      "en": {
+        "slug": null,
+        "name": "Kyzylorda Bolashak University",
+        "country": "Казахстан",
+        "city": "Кызылорда",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Кызылординский Университет «Болашак»",
+        "country": "Казахстан",
+        "city": "Кызылорда",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "re-added: prev-confirmed, not resurfaced by stricter generator",
+      "en": {
+        "slug": null,
+        "name": "Astana Medical University",
+        "country": "Казахстан",
+        "city": "Астана",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Медицинский университет Астана",
+        "country": "Казахстан",
+        "city": "Астана",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "re-added: prev-confirmed, not resurfaced by stricter generator",
+      "en": {
+        "slug": null,
+        "name": "Esil University",
+        "country": "Казахстан",
+        "city": "Астана",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Есильский университет",
+        "country": "Казахстан",
+        "city": "Астана",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "re-added: prev-confirmed, not resurfaced by stricter generator",
+      "en": {
+        "slug": null,
+        "name": "Khoja Ahmed Yasawi International Kazakh-Turkish University",
+        "country": "Казахстан",
+        "city": "Туркестан",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Международный казахско-турецкий университет имени Ходжи Ахмеда Ясави",
+        "country": "Казахстан",
+        "city": "Туркестан",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "re-added: prev-confirmed, not resurfaced by stricter generator",
+      "en": {
+        "slug": null,
+        "name": "The University of Manchester — Alliance Manchester Business School",
+        "country": "Великобритания",
+        "city": "Манчестер",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Манчестерский университет",
+        "country": "Великобритания",
+        "city": "Манчестер",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "re-added: prev-confirmed, not resurfaced by stricter generator",
+      "en": {
+        "slug": null,
+        "name": "University of Illinois Urbana-Champaign — Gies College of Business",
+        "country": "США",
+        "city": "Урбана-Шампейн",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Университет Иллинойса в Урбана-Шампейн",
+        "country": "США",
+        "city": "Урбана-Шампейн",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "re-added: prev-confirmed, not resurfaced by stricter generator",
+      "en": {
+        "slug": null,
+        "name": "National University of Singapore — NUS Business School",
+        "country": "Сингапур",
+        "city": "Сингапур",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Национальный университет Сингапура",
+        "country": "Сингапур",
+        "city": "Сингапур",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "KZ dup (English-curated / Russian-jinaq), hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Казахский национальный университет им. аль-Фараби (КазНУ)",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "КазНУ им. аль-Фараби",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "KZ dup (English-curated / Russian-jinaq), hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Казахстанско-Американский университет КИМЭП",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Университет КИМЭП",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "KZ dup (English-curated / Russian-jinaq), hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Алматы Менеджмент Университет",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Алматинский институт менеджмента (АИМ, AlmaU)",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "KZ dup (English-curated / Russian-jinaq), hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Атырауский университет имени Халела Досмухамедова",
+        "country": "Казахстан",
+        "city": "Атырау",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Атырауский университет имени Х. Досмухамедова",
+        "country": "Казахстан",
+        "city": "Атырау",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "KZ dup (English-curated / Russian-jinaq), hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Де Монтфорт Юниверсити Казахстан (DMU Kazakhstan)",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Де Монтфорт Университет Казахстан",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "KZ dup (English-curated / Russian-jinaq), hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Таразский университет имени М.Х. Дулати",
+        "country": "Казахстан",
+        "city": "Тараз",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Таразский государственный педагогический университет имени М. Х. Дулати",
+        "country": "Казахстан",
+        "city": "Тараз",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "KZ dup (English-curated / Russian-jinaq), hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Международный Таразский университет имени Шерхана Муртазы",
+        "country": "Казахстан",
+        "city": "Тараз",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Таразский инновационный университет имени Шерхана Муртазы",
+        "country": "Казахстан",
+        "city": "Тараз",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "KZ dup (English-curated / Russian-jinaq), hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Университет имени Жубанова Ахметулы Ташенева",
+        "country": "Казахстан",
+        "city": "Шымкент",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Университет имени Жумабека Ахметулы Ташенева",
+        "country": "Казахстан",
+        "city": "Шымкент",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "KZ dup (English-curated / Russian-jinaq), hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Университет международного бизнеса (UIB)",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Университет международного бизнеса имени Кенжегали Сагадиева",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "KZ dup (English-curated / Russian-jinaq), hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Университет имени Шакарима города Семей",
+        "country": "Казахстан",
+        "city": "Семей",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Шакаримский университет",
+        "country": "Казахстан",
+        "city": "Семей",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "KZ dup (English-curated / Russian-jinaq), hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Костанайский региональный университет",
+        "country": "Казахстан",
+        "city": "Костанай",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Костанайский региональный университет имени Ахмета Байтурсынова",
+        "country": "Казахстан",
+        "city": "Костанай",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "KZ dup (English-curated / Russian-jinaq), hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Академия «Bolashaq»",
+        "country": "Казахстан",
+        "city": "Караганда",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Карагандинская академия «Bolashaq»",
+        "country": "Казахстан",
+        "city": "Караганда",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "KZ dup (English-curated / Russian-jinaq), hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Карагандинский технический университет (КарТУ)",
+        "country": "Казахстан",
+        "city": "Караганда",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Карагандинский государственный технический университет имени Абылкаса Сагинова",
+        "country": "Казахстан",
+        "city": "Караганда",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "KZ dup (English-curated / Russian-jinaq), hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Медицинский университет Караганды",
+        "country": "Казахстан",
+        "city": "Караганда",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Карагандинский государственный медицинский университет",
+        "country": "Казахстан",
+        "city": "Караганда",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "KZ dup (English-curated / Russian-jinaq), hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Некоммерческое акционерное общество «Медицинский университет Семей»",
+        "country": "Казахстан",
+        "city": "Семей",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Казахский медицинский университет «Семей»",
+        "country": "Казахстан",
+        "city": "Семей",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "KZ dup (English-curated / Russian-jinaq), hand-checked",
+      "en": {
+        "slug": null,
+        "name": "ALT UNIVERSITY им. Мухаметжана Тынышпаева",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Казахский университет транспорта и коммуникаций имени М. Тынышпаева",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "KZ dup (English-curated / Russian-jinaq), hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Maqsut Narikbayev University",
+        "country": "Казахстан",
+        "city": "Астана",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Университет имени М. С. Нарикбаева",
+        "country": "Казахстан",
+        "city": "Астана",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "KZ dup (English-curated / Russian-jinaq), hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Торайгыров Университет (ToU)",
+        "country": "Казахстан",
+        "city": "Павлодар",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Павлодарский государственный университет имени С. Торайгырова",
+        "country": "Казахстан",
+        "city": "Павлодар",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Astana IT University",
+        "country": "Казахстан",
+        "city": "Астана",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Астана IT Университет",
+        "country": "Казахстан",
+        "city": "Астана",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Академия гражданской авиации (АГА)",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Казахская академия гражданской авиации",
+        "country": "Казахстан",
+        "city": "Алматы",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    },
+    {
+      "confirmed": true,
+      "reviewed_by": "assistant",
+      "hint": "hand-checked",
+      "en": {
+        "slug": null,
+        "name": "Сеульский национальный университет",
+        "country": "Южная Корея",
+        "city": "Сеул",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      },
+      "ru": {
+        "slug": null,
+        "name": "Seoul National University (SNU)",
+        "country": "Южная Корея",
+        "city": "Сеул",
+        "ror_id": null,
+        "jinaq_id": null,
+        "programs": 0,
+        "tagged_programs": 0
+      }
+    }
+  ],
+  "subunits": []
+}

@@ -20,6 +20,7 @@ from sqlalchemy import select
 from app.database import async_session
 from app.models.profile import AgeGroup
 from app.models.question import MIType, Question, QuestionInstrument
+from app.services.admin_lock import has_overrides, sync_fields
 from scripts.mi_question_bank import QUESTIONS
 
 
@@ -43,22 +44,13 @@ async def main() -> None:
             age_tier = AgeGroup(data["age_tier"])
 
             if existing is not None:
-                changed = False
-                if existing.mi_category != category:
-                    existing.mi_category = category
-                    changed = True
-                if existing.text != data["text"]:
-                    existing.text = data["text"]
-                    changed = True
-                if existing.age_tier != age_tier:
-                    existing.age_tier = age_tier
-                    changed = True
-                if existing.short_text != data.get("short_text"):
-                    existing.short_text = data.get("short_text")
-                    changed = True
-                if existing.icon != data.get("icon"):
-                    existing.icon = data.get("icon")
-                    changed = True
+                changed = sync_fields(existing, {
+                    "mi_category": category,
+                    "text": data["text"],
+                    "age_tier": age_tier,
+                    "short_text": data.get("short_text"),
+                    "icon": data.get("icon"),
+                })
                 if changed:
                     updated += 1
                 else:
@@ -79,7 +71,7 @@ async def main() -> None:
             inserted += 1
 
         for order, question in existing_by_order.items():
-            if order not in live_orders:
+            if order not in live_orders and not has_overrides(question):
                 await db.delete(question)
                 deleted += 1
 
