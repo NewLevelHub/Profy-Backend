@@ -14,6 +14,11 @@ Idempotent:
     instead).
   - Program matched by (university_id, name) — reruns don't duplicate.
 
+KZ-501: writes only the `ru` `description` columns, never the `*_i18n` override
+maps (`University.description_i18n`, `Program.description_i18n`,
+`Program.who_its_for_i18n`) — those are filled incrementally by KZ-504's batch
+translation and survive a re-run here untouched.
+
 Run inside the api container:
   docker exec profi-backend-api-1 python scripts/seed_92_professions_universities.py [--dry-run]
 """

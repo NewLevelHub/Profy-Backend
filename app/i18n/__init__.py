@@ -199,3 +199,29 @@ def pick_locale(mapping: Mapping[str, str] | None, locale: str | None = None) ->
         f"no text for locale {loc!r} and no {DEFAULT_LOCALE!r} fallback "
         f"in mapping with keys {sorted(mapping) if mapping else []}"
     )
+
+
+def resolve_column_i18n(
+    overrides: Mapping[str, str] | None,
+    base_ru: str | None,
+    locale: str | None = None,
+) -> tuple[str | None, str]:
+    """Resolve a text column whose ``ru`` value lives in the base column and
+    whose non-``ru`` translations live in a sibling ``*_i18n`` JSON map (KZ-501,
+    ``University.description`` / ``Program.description`` / ``who_its_for``).
+
+    Returns ``(text, resolved_locale)`` — the override when the requested locale
+    has a non-empty entry, otherwise the ``ru`` base (``resolved_locale`` is
+    then ``"ru"``). Unlike :func:`pick_locale` this never raises: the base value
+    may legitimately be ``None`` (no description at all) and a missing
+    translation is expected until KZ-504 backfills it. A genuine
+    locale→``ru`` fallback (locale asked, base served) is tallied.
+    """
+    loc = locale or get_locale()
+    if loc != DEFAULT_LOCALE and overrides:
+        value = overrides.get(loc)
+        if value:
+            return value, loc
+        if base_ru:
+            record_fallback(loc)
+    return base_ru, DEFAULT_LOCALE
