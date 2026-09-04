@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.data import resource_catalog
 from app.errors import AppError
+from app.i18n import DEFAULT_LOCALE
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentGoal
@@ -564,7 +565,10 @@ async def generate_roadmap(
 
     # Load matched directions from stored analysis result
     result_row = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        select(AnalysisResult)
+        .where(AnalysisResult.assessment_id == assessment_id)
+        .order_by((AnalysisResult.locale == DEFAULT_LOCALE).desc())  # KZ-405: prefer ru row
+        .limit(1)
     )
     analysis = result_row.scalar_one_or_none()
     directions_raw: list = analysis.careers if analysis else []
@@ -1060,7 +1064,10 @@ async def generate_direction_roadmap_for_program(
     program, university = program_university
 
     analysis_row = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        select(AnalysisResult)
+        .where(AnalysisResult.assessment_id == assessment_id)
+        .order_by((AnalysisResult.locale == DEFAULT_LOCALE).desc())  # KZ-405: prefer ru row
+        .limit(1)
     )
     analysis = analysis_row.scalar_one_or_none()
     careers: list = analysis.careers if analysis else []

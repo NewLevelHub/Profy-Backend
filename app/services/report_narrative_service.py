@@ -189,39 +189,45 @@ async def generate_report_narrative(
 ) -> tuple[ReportNarrativeOutput, bool]:
     """Returns (narrative, is_ai_generated). Never raises — always resolves
     to a valid narrative, falling back deterministically on any failure."""
+    if not llm_client.is_enabled():
+        # Deterministic narrative is the *intended* path when the LLM is off,
+        # not a fallback event — don't touch llm.fallback / log a warning, or
+        # the validation-fallback rate alerts fire purely because a config
+        # flag is off (nothing was generated, nothing failed validation).
+        return build_fallback_narrative(context, locale=language), False
+
     had_language_mismatch = False
-    if llm_client.is_enabled():
-        messages = prompt.build_messages(context, language=language)
-        last_raw: dict | None = None
-        for attempt in range(1, MAX_ATTEMPTS + 1):
-            try:
-                raw = await llm_client.complete_json(
-                    messages, prompt.NARRATIVE_JSON_SCHEMA, "report_narrative"
-                )
-                output = ReportNarrativeOutput.model_validate(raw)
-            except (llm_client.LLMError, ValidationError, TypeError) as exc:
-                _log_generation_error(attempt, exc)
-                continue
+    messages = prompt.build_messages(context, language=language)
+    last_raw: dict | None = None
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        try:
+            raw = await llm_client.complete_json(
+                messages, prompt.NARRATIVE_JSON_SCHEMA, "report_narrative"
+            )
+            output = ReportNarrativeOutput.model_validate(raw)
+        except (llm_client.LLMError, ValidationError, TypeError) as exc:
+            _log_generation_error(attempt, exc)
+            continue
 
-            issues = validate(output, context, language=language)
-            _log_attempt(attempt, issues)
-            if not issues:
-                return output, True
+        issues = validate(output, context, language=language)
+        _log_attempt(attempt, issues)
+        if not issues:
+            return output, True
 
-            if any(issue.code == "LANGUAGE_MISMATCH" for issue in issues):
-                had_language_mismatch = True
-                record_language_mismatch(language)
+        if any(issue.code == "LANGUAGE_MISMATCH" for issue in issues):
+            had_language_mismatch = True
+            record_language_mismatch(language)
 
-            last_raw = raw
+        last_raw = raw
 
-            if attempt < MAX_ATTEMPTS:
-                # Corrective retry: quote the model's own mistake back to it
-                # instead of blindly resending the identical prompt (see
-                # _correction_message docstring for why this matters).
-                messages = messages + [
-                    {"role": "assistant", "content": json.dumps(last_raw, ensure_ascii=False)},
-                    {"role": "user", "content": _correction_message(issues, language=language)},
-                ]
+        if attempt < MAX_ATTEMPTS:
+            # Corrective retry: quote the model's own mistake back to it
+            # instead of blindly resending the identical prompt (see
+            # _correction_message docstring for why this matters).
+            messages = messages + [
+                {"role": "assistant", "content": json.dumps(last_raw, ensure_ascii=False)},
+                {"role": "user", "content": _correction_message(issues, language=language)},
+            ]
 
     if had_language_mismatch:
         record_fallback("language")

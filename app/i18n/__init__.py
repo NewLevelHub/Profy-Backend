@@ -14,10 +14,11 @@ returns ``"ru"`` and ``set_locale("kk")`` stores ``"ru"``.
 
 from __future__ import annotations
 
+import contextlib
 import contextvars
 import logging
 import re
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 
 logger = logging.getLogger("app.i18n")
 
@@ -112,6 +113,28 @@ def set_locale(locale: str | None) -> str:
 def get_locale() -> str:
     """Current request locale. Safe to call from any service without a ``Request``."""
     return _current_locale.get()
+
+
+@contextlib.contextmanager
+def use_locale(locale: str | None) -> Iterator[str]:
+    """Force the current-locale contextvar for a block, **bypassing the
+    ``SUPPORTED_LOCALES`` runtime gate** (clamps to ``KNOWN_LOCALES`` instead).
+
+    For server-side artifact generation — the report narrative and its
+    deterministic fallback — which must render in the *artifact owner's*
+    locale (``users.locale``, which may be ``"kk"`` before KZ-603), not the
+    locale of whoever triggered the request (an admin on ``ru`` opening a
+    ``kk`` student's ``/results`` must still get the ``kk`` report). Every
+    KZ-307 accessor (``mi_labels()`` …) reads ``get_locale()``, so wrapping
+    the whole build in this is what makes the deterministic path actually
+    Kazakh. Restores the previous value on exit, exception-safe.
+    """
+    resolved = locale if locale in KNOWN_LOCALES else DEFAULT_LOCALE
+    token = _current_locale.set(resolved)
+    try:
+        yield resolved
+    finally:
+        _current_locale.reset(token)
 
 
 # ── Localized-content selection ─────────────────────────────────────────────────

@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.errors import AppError
-from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
+from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES, use_locale
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
@@ -131,6 +131,10 @@ async def _build_narrative(
     used for all three, not just strength_cards/thinking_style_notes, so a
     personalized summary and the cards it's consistent with never diverge
     into two independent generations."""
+    # Caller runs this whole block under i18n.use_locale(locale) so the
+    # KZ-307 accessors inside the context builder and the deterministic
+    # fallback resolve to the artifact owner's language. The AI prompt still
+    # gets `language=locale` explicitly.
     context = report_narrative_context.build_report_narrative_context(
         age_group=age_group,
         strengths=strengths,
@@ -175,14 +179,39 @@ def _stored_interest_instrument(profile: dict) -> str:
     return "riasec" if any(key in riasec_service.HOLLAND_ORDER for key in profile) else "mi"
 
 
-def _shape_response(analysis: AnalysisResult) -> ResultResponseV2:
+async def _resolve_owner_locale(assessment_id: uuid.UUID, db: AsyncSession) -> str:
+    """The report renders in the *artifact owner's* language (`users.locale`),
+    never the locale of whoever opened `/results` — an admin on `ru` must
+    still see a `kk` student's report in `kk`. `kk` isn't a SUPPORTED_LOCALES
+    value pre-KZ-603, so it's read straight off the row (KNOWN_LOCALES-gated)
+    and applied through `i18n.use_locale`, not the request-locale machinery."""
+    owner_locale = (
+        await db.execute(
+            select(User.locale)
+            .select_from(Assessment)
+            .join(Profile, Profile.id == Assessment.profile_id)
+            .join(User, User.id == Profile.user_id)
+            .where(Assessment.id == assessment_id)
+        )
+    ).scalar_one_or_none()
+    return owner_locale if owner_locale in KNOWN_LOCALES else DEFAULT_LOCALE
+
+
+def _shape_response(analysis: AnalysisResult, *, locale: str = DEFAULT_LOCALE) -> ResultResponseV2:
     """Rebuilds the v2 shape from an already-generated, already-stored row —
     no LLM call, no re-generation. `strength_cards`/`thinking_style_notes`
     are read back verbatim (already the final {title, description} shape,
     migration 0041); `careers`/`interest_map`/`is_flat_profile`/
     `exploration_activities` are recomputed from the other stored raw
     fields via report_v2_assembler — the same functions generation uses,
-    just fed from storage instead of a fresh context."""
+    just fed from storage instead of a fresh context. Those recompute
+    label/synthesis text, so the whole rebuild runs under the owner's
+    locale (KZ-403)."""
+    with use_locale(locale):
+        return _shape_response_inner(analysis)
+
+
+def _shape_response_inner(analysis: AnalysisResult) -> ResultResponseV2:
     instrument = _stored_interest_instrument(analysis.profile)
     effective_age_group = AgeGroup.junior if instrument == "mi" else AgeGroup.senior
     minimal_context = report_narrative_context.build_report_narrative_context(
@@ -264,19 +293,23 @@ async def _assert_assessment_complete(
 async def build_report(
     assessment_id: uuid.UUID, db: AsyncSession
 ) -> ResultResponseV2:
-    cache_key = _cache_key(assessment_id)
     redis = _get_redis()
+    locale = await _resolve_owner_locale(assessment_id, db)
+    cache_key = _cache_key(assessment_id, locale)
 
     cached_response = await _cache_get_response(redis, cache_key)
     if cached_response is not None:
         return cached_response
 
     existing_result = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        select(AnalysisResult).where(
+            AnalysisResult.assessment_id == assessment_id,
+            AnalysisResult.locale == locale,
+        )
     )
     existing = existing_result.scalar_one_or_none()
     if existing:
-        response = _shape_response(existing)
+        response = _shape_response(existing, locale=locale)
         await _cache_set(redis, cache_key, response.model_dump_json())
         return response
 
@@ -290,11 +323,14 @@ async def build_report(
     # primary mechanism.
     await _acquire_generation_lock(assessment_id, db)
     existing_result = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        select(AnalysisResult).where(
+            AnalysisResult.assessment_id == assessment_id,
+            AnalysisResult.locale == locale,
+        )
     )
     existing = existing_result.scalar_one_or_none()
     if existing:
-        response = _shape_response(existing)
+        response = _shape_response(existing, locale=locale)
         await _cache_set(redis, cache_key, response.model_dump_json())
         return response
 
@@ -313,11 +349,6 @@ async def build_report(
     profile = profile_result.scalar_one_or_none()
     age_group = profile.age_group if profile is not None else AgeGroup.senior
 
-    user = (
-        await db.execute(select(User).where(User.id == profile.user_id))
-    ).scalar_one_or_none() if profile else None
-    locale = user.locale if user and user.locale in KNOWN_LOCALES else DEFAULT_LOCALE
-
     # Gate before any write: an incomplete assessment must not flip to
     # `completed` and must not get a partial AnalysisResult.
     await _assert_assessment_complete(assessment_id, age_group, db)
@@ -327,138 +358,149 @@ async def build_report(
     )
     artifacts = list(artifacts_result.scalars().all())
 
-    if age_group == AgeGroup.junior:
-        # Junior (6-9) is not career-oriented (TZ_Profi.md §4.1) — RIASEC and
-        # its career matching are replaced with an MI-style "what to try"
-        # instrument. Big Five stays unchanged below for personality/thinking_style.
-        raw = await mi_service.raw_scores(assessment_id, db, age_group)
-        counts = await mi_service.question_counts(db, age_group)
-        profile_scores = mi_service.normalize(raw, counts)
-        aversion_counts = await mi_service.aversion(assessment_id, db, age_group)
+    # The whole scoring -> deterministic-text -> assemble pass renders in the
+    # artifact owner's language: development_plan, matched_careers,
+    # strength_phrases, the narrative (LLM or fallback) and assemble_result_v2
+    # all read get_locale() through the KZ-307 accessors. `kk` isn't a
+    # SUPPORTED_LOCALES value pre-KZ-603 so use_locale (KNOWN_LOCALES-gated)
+    # is what carries it, not set_locale. (KZ-401/KZ-403.)
+    with use_locale(locale):
+        if age_group == AgeGroup.junior:
+            # Junior (6-9) is not career-oriented (TZ_Profi.md §4.1) — RIASEC and
+            # its career matching are replaced with an MI-style "what to try"
+            # instrument. Big Five stays unchanged below for personality/thinking_style.
+            raw = await mi_service.raw_scores(assessment_id, db, age_group)
+            counts = await mi_service.question_counts(db, age_group)
+            profile_scores = mi_service.normalize(raw, counts)
+            aversion_counts = await mi_service.aversion(assessment_id, db, age_group)
 
-        code = mi_service.top_code(profile_scores)
-        meta = {
-            "differentiation": mi_service.differentiation(profile_scores),
-            "consistency": mi_service.consistency(profile_scores),
-            "aversion": aversion_counts,
-        }
-        strengths, weaknesses = mi_service.strengths_weaknesses(profile_scores, aversion_counts, counts)
-        plan = mi_service.development_plan(code, weaknesses, aversion_counts, counts)
-        careers: list[dict] = []
-    else:
-        raw = await riasec_service.raw_scores(assessment_id, db, age_group)
-        counts = await riasec_service.question_counts(db, age_group)
-        profile_scores = riasec_service.normalize(raw, counts)
-        aversion_counts = await riasec_service.aversion(assessment_id, db, age_group)
+            code = mi_service.top_code(profile_scores)
+            meta = {
+                "differentiation": mi_service.differentiation(profile_scores),
+                "consistency": mi_service.consistency(profile_scores),
+                "aversion": aversion_counts,
+            }
+            strengths, weaknesses = mi_service.strengths_weaknesses(profile_scores, aversion_counts, counts)
+            plan = mi_service.development_plan(code, weaknesses, aversion_counts, counts)
+            careers: list[dict] = []
+        else:
+            raw = await riasec_service.raw_scores(assessment_id, db, age_group)
+            counts = await riasec_service.question_counts(db, age_group)
+            profile_scores = riasec_service.normalize(raw, counts)
+            aversion_counts = await riasec_service.aversion(assessment_id, db, age_group)
 
-        code = riasec_service.top_code(profile_scores)
-        meta = {
-            "differentiation": riasec_service.differentiation(profile_scores),
-            "consistency": riasec_service.consistency(code[:2]),
-            "aversion": aversion_counts,
-        }
-        strengths, weaknesses = riasec_service.strengths_weaknesses(profile_scores, aversion_counts, counts)
-        plan = riasec_service.development_plan(code, weaknesses, aversion_counts, counts)
+            code = riasec_service.top_code(profile_scores)
+            meta = {
+                "differentiation": riasec_service.differentiation(profile_scores),
+                "consistency": riasec_service.consistency(code[:2]),
+                "aversion": aversion_counts,
+            }
+            strengths, weaknesses = riasec_service.strengths_weaknesses(profile_scores, aversion_counts, counts)
+            plan = riasec_service.development_plan(code, weaknesses, aversion_counts, counts)
 
-        matched = await riasec_service.matched_careers(code, db)
-        careers = [_career_dict(d, score) for d, score in matched]
+            matched = await riasec_service.matched_careers(code, db)
+            careers = [_career_dict(d, score) for d, score in matched]
 
-    bf_raw = await bigfive_service.raw_scores(assessment_id, db, age_group)
-    bf_counts = await bigfive_service.question_counts(db, age_group)
-    bigfive_scores = bigfive_service.normalize(bf_raw, bf_counts)
+        bf_raw = await bigfive_service.raw_scores(assessment_id, db, age_group)
+        bf_counts = await bigfive_service.question_counts(db, age_group)
+        bigfive_scores = bigfive_service.normalize(bf_raw, bf_counts)
 
-    bf_facet_raw = await bigfive_service.facet_raw(assessment_id, db, age_group)
-    bf_facet_counts = await bigfive_service.facet_counts(db, age_group)
-    bf_facet_norm = bigfive_service.facet_normalize(bf_facet_raw, bf_facet_counts)
-    thinking_style = thinking_style_service.compute(bf_facet_norm)
+        bf_facet_raw = await bigfive_service.facet_raw(assessment_id, db, age_group)
+        bf_facet_counts = await bigfive_service.facet_counts(db, age_group)
+        bf_facet_norm = bigfive_service.facet_normalize(bf_facet_raw, bf_facet_counts)
+        thinking_style = thinking_style_service.compute(bf_facet_norm)
 
-    personality_profile, personality_notes = bigfive_content.build_personality_profile(bigfive_scores)
-    personality_highlights = strength_phrases(personality_profile)
+        personality_profile, personality_notes = bigfive_content.build_personality_profile(bigfive_scores)
+        personality_highlights = strength_phrases(personality_profile)
 
-    # Junior/middle answer the Harter-format pairs instead of the 3-way
-    # MOST/LEAST triplets (senior) — different tables/scoring, same shape.
-    if age_group in (AgeGroup.junior, AgeGroup.middle):
-        mot_scores = await motivation_pair_service.raw_scores(assessment_id, db)
-    else:
-        mot_scores = await motivation_service.raw_scores(assessment_id, db)
-    mot_top = motivation_service.top_categories(mot_scores)
-    mot_highlights = motivation_highlight_phrases(mot_top)
+        # Junior/middle answer the Harter-format pairs instead of the 3-way
+        # MOST/LEAST triplets (senior) — different tables/scoring, same shape.
+        if age_group in (AgeGroup.junior, AgeGroup.middle):
+            mot_scores = await motivation_pair_service.raw_scores(assessment_id, db)
+        else:
+            mot_scores = await motivation_service.raw_scores(assessment_id, db)
+        mot_top = motivation_service.top_categories(mot_scores)
+        mot_highlights = motivation_highlight_phrases(mot_top)
 
-    # One narrative call feeds summary + strength_cards + thinking_style_notes
-    # together (LLM when enabled and valid, deterministic fallback otherwise
-    # — report_narrative_service never raises and never leaves any of the
-    # three empty/inconsistent with each other).
-    context, narrative = await _build_narrative(
-        age_group=age_group,
-        strengths=strengths,
-        personality_profile=personality_profile,
-        personality_notes=personality_notes,
-        thinking_style=thinking_style,
-        motivation_top=mot_top,
-        motivation_highlights=mot_highlights,
-        profile=profile,
-        artifacts=artifacts,
-        locale=locale,
-    )
-    strength_cards_stored = [card.model_dump(exclude={"evidence_ids"}) for card in narrative.strength_cards]
-    thinking_style_notes_stored = [
-        note.model_dump(exclude={"evidence_ids"}) for note in narrative.thinking_style_notes
-    ]
-
-    analysis = AnalysisResult(
-        assessment_id=assessment_id,
-        summary=narrative.summary,
-        profile=profile_scores,
-        code=code,
-        meta=meta,
-        careers=careers,
-        strengths=strengths,
-        weaknesses=weaknesses,
-        development_plan=plan,
-        big_five=bigfive_scores,
-        thinking_style=thinking_style,
-        personality_highlights=personality_highlights,
-        personality_profile=personality_profile,
-        personality_notes=personality_notes,
-        motivation=mot_scores,
-        motivation_top=mot_top,
-        motivation_highlights=mot_highlights,
-        strength_cards=strength_cards_stored,
-        thinking_style_notes=thinking_style_notes_stored,
-        final_analysis=narrative.final_analysis,
-        report_version=2,
-    )
-    db.add(analysis)
-    if assessment.status != AssessmentStatus.completed:
-        # Same transaction as the AnalysisResult insert below — either both
-        # land or neither does, so a completed-without-a-report assessment
-        # can no longer exist.
-        assessment.status = AssessmentStatus.completed
-        assessment.completed_at = datetime.now(timezone.utc)
-    try:
-        await db.commit()
-        await db.refresh(analysis)
-    except IntegrityError:
-        await db.rollback()
-        existing_result = await db.execute(
-            select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        # One narrative call feeds summary + strength_cards + thinking_style_notes
+        # together (LLM when enabled and valid, deterministic fallback otherwise
+        # — report_narrative_service never raises and never leaves any of the
+        # three empty/inconsistent with each other).
+        context, narrative = await _build_narrative(
+            age_group=age_group,
+            strengths=strengths,
+            personality_profile=personality_profile,
+            personality_notes=personality_notes,
+            thinking_style=thinking_style,
+            motivation_top=mot_top,
+            motivation_highlights=mot_highlights,
+            profile=profile,
+            artifacts=artifacts,
+            locale=locale,
         )
-        analysis = existing_result.scalar_one()
-        response = _shape_response(analysis)
-        await _cache_set(redis, cache_key, response.model_dump_json())
-        return response
+        strength_cards_stored = [card.model_dump(exclude={"evidence_ids"}) for card in narrative.strength_cards]
+        thinking_style_notes_stored = [
+            note.model_dump(exclude={"evidence_ids"}) for note in narrative.thinking_style_notes
+        ]
 
-    response = report_v2_assembler.assemble_result_v2(
-        assessment_id=assessment_id,
-        age_group=age_group,
-        context=context,
-        narrative=narrative,
-        profile_scores=profile_scores,
-        personality_profile=personality_profile,
-        differentiation=meta["differentiation"],
-        careers=careers,
-        created_at=analysis.created_at,
-    )
+        analysis = AnalysisResult(
+            assessment_id=assessment_id,
+            locale=locale,
+            summary=narrative.summary,
+            profile=profile_scores,
+            code=code,
+            meta=meta,
+            careers=careers,
+            strengths=strengths,
+            weaknesses=weaknesses,
+            development_plan=plan,
+            big_five=bigfive_scores,
+            thinking_style=thinking_style,
+            personality_highlights=personality_highlights,
+            personality_profile=personality_profile,
+            personality_notes=personality_notes,
+            motivation=mot_scores,
+            motivation_top=mot_top,
+            motivation_highlights=mot_highlights,
+            strength_cards=strength_cards_stored,
+            thinking_style_notes=thinking_style_notes_stored,
+            final_analysis=narrative.final_analysis,
+            report_version=2,
+        )
+        db.add(analysis)
+        if assessment.status != AssessmentStatus.completed:
+            # Same transaction as the AnalysisResult insert below — either both
+            # land or neither does, so a completed-without-a-report assessment
+            # can no longer exist.
+            assessment.status = AssessmentStatus.completed
+            assessment.completed_at = datetime.now(timezone.utc)
+        try:
+            await db.commit()
+            await db.refresh(analysis)
+        except IntegrityError:
+            await db.rollback()
+            existing_result = await db.execute(
+                select(AnalysisResult).where(
+                    AnalysisResult.assessment_id == assessment_id,
+                    AnalysisResult.locale == locale,
+                )
+            )
+            analysis = existing_result.scalar_one()
+            response = _shape_response(analysis, locale=locale)
+            await _cache_set(redis, cache_key, response.model_dump_json())
+            return response
+
+        response = report_v2_assembler.assemble_result_v2(
+            assessment_id=assessment_id,
+            age_group=age_group,
+            context=context,
+            narrative=narrative,
+            profile_scores=profile_scores,
+            personality_profile=personality_profile,
+            differentiation=meta["differentiation"],
+            careers=careers,
+            created_at=analysis.created_at,
+        )
     await _cache_set(redis, cache_key, response.model_dump_json())
     return response
 
@@ -466,19 +508,25 @@ async def build_report(
 async def get_report(
     assessment_id: uuid.UUID, db: AsyncSession
 ) -> ResultResponseV2 | None:
-    cache_key = _cache_key(assessment_id)
     redis = _get_redis()
+    locale = await _resolve_owner_locale(assessment_id, db)
+    cache_key = _cache_key(assessment_id, locale)
 
     cached_response = await _cache_get_response(redis, cache_key)
     if cached_response is not None:
         return cached_response
 
     result = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        select(AnalysisResult).where(
+            AnalysisResult.assessment_id == assessment_id,
+            AnalysisResult.locale == locale,
+        )
     )
     analysis = result.scalar_one_or_none()
     if analysis is None:
+        # No row for the owner's locale — KZ-406 will lazily (re)generate it.
+        # Do NOT fall back to another locale's row.
         return None
-    response = _shape_response(analysis)
+    response = _shape_response(analysis, locale=locale)
     await _cache_set(redis, cache_key, response.model_dump_json())
     return response

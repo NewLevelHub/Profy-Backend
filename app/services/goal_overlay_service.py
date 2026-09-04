@@ -225,7 +225,14 @@ async def get_or_create_goal_overlay(
     await _assert_assessment_complete(assessment_id, profile.age_group, db)
 
     # 5. Fetch AnalysisResult
-    stmt = select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+    # KZ-405: one row per locale — the overlay reads locale-invariant score
+    # fields, so pick the `ru` row deterministically.
+    stmt = (
+        select(AnalysisResult)
+        .where(AnalysisResult.assessment_id == assessment_id)
+        .order_by((AnalysisResult.locale == DEFAULT_LOCALE).desc())
+        .limit(1)
+    )
     res = await db.execute(stmt)
     analysis = res.scalar_one_or_none()
     if not analysis:

@@ -12,7 +12,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.i18n import DEFAULT_LOCALE
+from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.direction_inquiry import DirectionInquiry
@@ -35,7 +35,10 @@ _redis: aioredis.Redis | None = None
 # time. Bumped to v3 alongside the Big Five relative-tiering / acquiescence
 # correction rework — the response shape is unchanged but the personality
 # levels a cached v2 payload carries are the old absolute-cutoff ones.
-REPORT_CACHE_KEY_PREFIX = "report:v3"
+# Bumped to v4 for KZ-405: the key now carries the artifact locale
+# (`report:v4:{locale}:{assessment_id}`) so a `ru` and a `kk` report for the
+# same assessment don't clobber each other's cache entry.
+REPORT_CACHE_KEY_PREFIX = "report:v4"
 
 # Same versioning principle for the goal roadmap cache — bumped 2026-08-18
 # alongside the portrait/recommended_paths prompt rework, so no stale
@@ -51,8 +54,14 @@ ROADMAP_CACHE_KEY_PREFIX = "roadmap:v2"
 DIRECTION_ROADMAP_CACHE_KEY_PREFIX = "droadmap:v2"
 
 
-def report_cache_key(assessment_id: uuid.UUID) -> str:
-    return f"{REPORT_CACHE_KEY_PREFIX}:{assessment_id}"
+def report_cache_key(assessment_id: uuid.UUID, locale: str = DEFAULT_LOCALE) -> str:
+    return f"{REPORT_CACHE_KEY_PREFIX}:{locale}:{assessment_id}"
+
+
+def report_cache_keys(assessment_id: uuid.UUID) -> list[str]:
+    """Every locale's report cache key — retake / invalidation must clear all,
+    not just the one the retaking client happens to be on."""
+    return [report_cache_key(assessment_id, loc) for loc in KNOWN_LOCALES]
 
 
 def get_redis() -> aioredis.Redis:
@@ -141,11 +150,11 @@ async def invalidate_retake(
     the motivation ones only after checking the other phase)."""
     assessment_id = assessment.id
 
+    # KZ-405: there can be one row per locale — drop them all on retake.
     old_result = await db.execute(
         select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
     )
-    old_analysis = old_result.scalar_one_or_none()
-    if old_analysis is not None:
+    for old_analysis in old_result.scalars().all():
         await db.delete(old_analysis)
 
     # Reset goal changed count and secondary goals
@@ -158,7 +167,7 @@ async def invalidate_retake(
     await db.execute(GoalOverlay.__table__.delete().where(GoalOverlay.assessment_id == assessment_id))
     await invalidate_goal_overlay_cache(assessment_id, db)
 
-    await safe_redis_delete(redis, report_cache_key(assessment_id))
+    await safe_redis_delete(redis, *report_cache_keys(assessment_id))
     await invalidate_direction_flow(assessment, db, redis)
     await invalidate_goal_roadmap(assessment_id, db, redis)
 

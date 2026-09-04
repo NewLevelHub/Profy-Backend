@@ -27,7 +27,9 @@ from . import (
     goal_overlay,
     mi,
     motivation,
+    narrative_fallback,
     resource_catalog,
+    result_v2,
     riasec,
     thinking_style,
     university_requirements,
@@ -46,6 +48,8 @@ _AREAS: dict[str, Any] = {
     "goal_overlay": goal_overlay,
     "email": email,
     "validator": validator,
+    "narrative_fallback": narrative_fallback,
+    "result_v2": result_v2,
 }
 
 

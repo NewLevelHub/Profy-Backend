@@ -102,7 +102,11 @@ async def list_users(
             select(AnalysisResult).where(AnalysisResult.assessment_id.in_(completed_assessment_ids))
         )
         for analysis in analysis_result.scalars().all():
-            analysis_by_assessment[analysis.assessment_id] = analysis
+            # KZ-405: one row per locale — admin is ru-only, prefer the ru row,
+            # but still show a kk-only user's row if that's all there is.
+            prev = analysis_by_assessment.get(analysis.assessment_id)
+            if prev is None or analysis.locale == DEFAULT_LOCALE:
+                analysis_by_assessment[analysis.assessment_id] = analysis
 
     items: list[AdminUserListItem] = []
     for user in users:
@@ -340,7 +344,10 @@ async def get_assessment_detail(
 
     analysis_result = None
     analysis_row = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment.id)
+        select(AnalysisResult)
+        .where(AnalysisResult.assessment_id == assessment.id)
+        .order_by((AnalysisResult.locale == DEFAULT_LOCALE).desc())  # KZ-405: prefer ru row
+        .limit(1)
     )
     analysis = analysis_row.scalar_one_or_none()
     if analysis:
@@ -413,7 +420,11 @@ async def _enrich_feedback_rows(
         analysis_result = await db.execute(
             select(AnalysisResult).where(AnalysisResult.assessment_id.in_(assessment_ids))
         )
-        analysis_by_assessment = {a.assessment_id: a for a in analysis_result.scalars().all()}
+        analysis_by_assessment = {}
+        for a in analysis_result.scalars().all():  # KZ-405: prefer the ru row
+            prev = analysis_by_assessment.get(a.assessment_id)
+            if prev is None or a.locale == DEFAULT_LOCALE:
+                analysis_by_assessment[a.assessment_id] = a
 
     items: list[AdminFeedbackListItem] = []
     for fb in feedback_rows:

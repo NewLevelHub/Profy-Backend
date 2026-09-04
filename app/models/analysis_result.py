@@ -1,23 +1,36 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Text, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
 
 
 class AnalysisResult(Base):
     __tablename__ = "analysis_results"
+    # KZ-405: one report row per (assessment, locale) — a `ru` and a `kk`
+    # narrative for the same assessment coexist (KZ-406). Was a single-column
+    # UNIQUE on assessment_id.
+    __table_args__ = (
+        UniqueConstraint("assessment_id", "locale", name="uq_analysis_results_assessment_id_locale"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     assessment_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("assessments.id", ondelete="CASCADE"),
-        unique=True,
         nullable=False,
         index=True,
+    )
+    # Plain-string Enum (values, not a Python enum class) so `row.locale` is a
+    # str. `locale_enum` Postgres type is owned by Alembic (d80fbf5d1f43).
+    locale: Mapped[str] = mapped_column(
+        Enum(*KNOWN_LOCALES, name="locale_enum", create_type=False),
+        nullable=False,
+        server_default=DEFAULT_LOCALE,
     )
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     profile: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # {"R": 82.0, ...}

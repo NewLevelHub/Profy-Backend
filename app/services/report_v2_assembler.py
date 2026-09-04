@@ -23,6 +23,7 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
+from app.i18n.catalog import tr
 from app.models.profile import AgeGroup
 from app.schemas.report_narrative import ReportNarrativeOutput
 from app.schemas.report_narrative_context import ReportNarrativeContext
@@ -64,12 +65,8 @@ _GOOD_TIER_MAX_RANK = 3
 # shortened/uniform-tier career list (product decision, 2026-08-17): the
 # ranking itself is still real RIASEC-derived signal even when it's a close
 # call, so a flat profile shows the same ranked top-10 as everyone else.
-_FLAT_PROFILE_ARTIFACT_NOTE = (
-    " Отдельно ты рассказал(а) о своих увлечениях в профиле — когда баллы "
-    "по разным сферам близки друг к другу, как сейчас, эти увлечения могут "
-    "точнее говорить о твоих склонностях, чем сам тест. Стоит присмотреться "
-    "и к направлениям, связанным с ними, даже если их нет в списке ниже."
-)
+# The flat-profile artifact addendum text is catalog result_v2
+# ["flat_profile_artifact_note"] (KZ-403).
 
 
 def is_flat_profile(differentiation: float) -> bool:
@@ -97,19 +94,14 @@ def build_interest_map_note(items: list[StudentInterestMapItem]) -> str:
     contradictory (calling out "most notable" while also saying nothing
     stands out) and useless as a highlight. That case now falls through to
     the honest flat-profile message instead."""
+    t = tr("result_v2")
     high = [i.sphere for i in items if i.level == "high"]
     if high:
-        return f"Ярко выражено: {_join_ru(high)}. Остальные сферы проявляются тише — и это нормально."
+        return t["interest_map_note_high"].format(spheres=_join(high))
     medium = [i.sphere for i in items if i.level == "medium"]
     if medium and len(medium) < len(items) / 2:
-        return (
-            f"Заметнее всего проявляется: {_join_ru(medium)} — без резких пиков, "
-            f"интересы распределены довольно ровно."
-        )
-    return (
-        "Пока сложно выделить одну явно ведущую сферу — интересы распределены "
-        "довольно ровно, и это нормально: есть время присмотреться к разным направлениям."
-    )
+        return t["interest_map_note_medium"].format(spheres=_join(medium))
+    return t["interest_map_note_flat"]
 
 
 def build_interest_map(age_group: AgeGroup, profile_scores: dict[str, float]) -> list[StudentInterestMapItem]:
@@ -197,20 +189,15 @@ def build_personality_note(personality_profile: dict[str, float]) -> str:
         if trait in bigfive_content.GROWTH_ELIGIBLE_TRAITS
         and bands.get(trait) == "low"
     ]
+    t = tr("result_v2")
     sentences = []
     if high and len(high) < len(labels):
-        sentences.append(
-            f"Ярко выражено: {_join_ru(high)} — это то, что тебе, скорее всего, "
-            f"даётся естественнее всего."
-        )
+        sentences.append(t["personality_note_high"].format(traits=_join(high)))
     if low and len(low) < len(bigfive_content.GROWTH_ELIGIBLE_TRAITS):
-        sentences.append(f"Есть, над чем интересно поработать: {_join_ru(low)}.")
+        sentences.append(t["personality_note_low"].format(traits=_join(low)))
     if sentences:
         return " ".join(sentences)
-    return (
-        "Черты характера выражены сбалансированно, без одной резко доминирующей — "
-        "и это нормально, у характера не обязательно должна быть одна главная черта."
-    )
+    return t["personality_note_balanced"]
 
 
 def build_exploration_activities(context: ReportNarrativeContext) -> list[str]:
@@ -230,12 +217,12 @@ def build_exploration_activities(context: ReportNarrativeContext) -> list[str]:
     return [acts[0] for acts in mi_activities().values() if acts]
 
 
-def _join_ru(items: list[str]) -> str:
+def _join(items: list[str]) -> str:
     if not items:
         return ""
     if len(items) == 1:
         return items[0]
-    return ", ".join(items[:-1]) + " и " + items[-1]
+    return ", ".join(items[:-1]) + tr("result_v2")["list_conjunction"] + items[-1]
 
 
 def _matched_strengths_for(direction_code: str, context: ReportNarrativeContext) -> list[str]:
@@ -292,6 +279,7 @@ def build_riasec_careers(
     copy-pasted; once every variant has been used once, later cards also
     get the same skills_needed[0] clause as the matched-evidence dedup
     above, so a 6th+ fallback card still reads distinct from the 1st."""
+    t = tr("result_v2")
     top = careers[:10]
     result: list[StudentCareer] = []
     seen_evidence: set[tuple[str, ...]] = set()
@@ -301,16 +289,16 @@ def build_riasec_careers(
         matched_strengths = _matched_strengths_for(holland_code, context)
         skills_needed = list(career.get("skills_needed") or [])
         if matched_strengths:
-            why = f"Совпадает с тем, что у тебя выражено: {_join_ru(matched_strengths)}."
+            why = t["career_why_match"].format(strengths=_join(matched_strengths))
             evidence_key = tuple(matched_strengths)
             if evidence_key in seen_evidence and skills_needed:
-                why += f" Именно здесь особенно пригодится: {skills_needed[0]}."
+                why += t["career_why_skill_matched"].format(skill=skills_needed[0])
             seen_evidence.add(evidence_key)
         else:
             _why_variants = neutral_career_why_variants()
             why = _why_variants[fallback_uses % len(_why_variants)]
             if fallback_uses >= len(_why_variants) and skills_needed:
-                why += f" В этой сфере особенно ценится: {skills_needed[0]}."
+                why += t["career_why_skill_neutral"].format(skill=skills_needed[0])
             fallback_uses += 1
         # Direction.first_steps may hold several catalog entries, but the
         # student only ever sees one, as `try_now` — a separate "3 first
@@ -381,7 +369,7 @@ def assemble_result_v2(
         )
 
     if flat and any(e.source_type == "artifact" for e in context.evidence):
-        common["summary"] = common["summary"] + _FLAT_PROFILE_ARTIFACT_NOTE
+        common["summary"] = common["summary"] + tr("result_v2")["flat_profile_artifact_note"]
 
     return RiasecResultResponse(
         **common,

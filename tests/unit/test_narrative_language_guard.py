@@ -264,3 +264,121 @@ def test_russian_mode_behavior_unchanged():
     issues_en = validate(english_output, context, language="ru")
     assert any(i.code == "language" for i in issues_en)
     assert not any(i.code == "LANGUAGE_MISMATCH" for i in issues_en)
+
+
+# ─── 6. Kazakh quality guards, not just the language check (review finding) ────
+
+
+def _kk_output(*, summary: str, final_analysis: str,
+               card_title: str = "Зерттеушілік ойлау",
+               card_desc: str = "Сен күрделі мәселелерді талдап, түпкі себебін түсінуге тырысасың.") -> ReportNarrativeOutput:
+    base = _russian_narrative_output()
+    base.summary = summary
+    base.final_analysis = final_analysis
+    base.strength_cards = [NarrativeCard(title=card_title, description=card_desc,
+                                         evidence_ids=["personality:openness"])]
+    base.interests = [
+        InterestCard(category="R", title="Реалистік", tier="strong",
+                     description="Нақты практикалық міндеттер мен техникалық құралдарға қызығушылық."),
+        InterestCard(category="I", title="Зерттеушілік", tier="strong",
+                     description="Ғылыми ізденіс пен логикалық талдауды ұнату."),
+        InterestCard(category="A", title="Артистік", tier="steady",
+                     description="Шығармашылық пен өзін көрсетуге қызығушылық."),
+        InterestCard(category="S", title="Әлеуметтік", tier="steady",
+                     description="Адамдармен қарым-қатынас пен көмек."),
+        InterestCard(category="E", title="Кәсіпкерлік", tier="steady",
+                     description="Бастама көтеру мен ұйымдастыру."),
+        InterestCard(category="C", title="Конвенциялық", tier="steady",
+                     description="Ретпен, деректермен жұмыс."),
+    ]
+    base.thinking_style_notes = [NarrativeCard(
+        title="Саған жүйелі ойлау жақын",
+        description="Сен алдымен нақты рет құрып, сосын іске кірісесің; осындай "
+                    "адамдар күрделі істерде тәртіп орната алады.",
+        evidence_ids=["thinking_style:systematic"],
+    )]
+    base.motivation_narrative = MotivationNarrative(
+        title="Сені не қозғайды",
+        description="Іске деген қызығушылық пен жаңаны ашу.",
+        evidence_ids=["motivation:interest"],
+    )
+    base.career_narrative = []
+    return base
+
+
+_KK_SUMMARY_OK = (
+    "Жауаптарыңнан белгілі бір салалар саған қызық екені байқалады. "
+    "Тестте дұрыс не бұрыс жауап болмады — өзің сезінгендей жауап бердің. "
+    "Есептің әрі қарайғы бөлігінде саған не жақсы шығатыны талданған. "
+    "Мұның бәрі сенің өз жауаптарыңа сүйеніп жасалған. "
+    "Ең қатты жаныңа жақын нәрсеге назар аудар да, тәжірибеде байқап көр. "
+    "Есепті бастау нүктесі ретінде пайдалан."
+)
+_KK_FINAL_OK = (
+    "Бәрін біріктірсек: қызығушылықтарың сені қайда тартатынын көрсетеді. "
+    "Бұл бөлек фактілер емес, бір ғана сенің әртүрлі қырларың. "
+    "Байқауларды бөлек емес, бәрін бірге пайдалан."
+)
+
+
+def test_kazakh_condescending_phrase_is_flagged():
+    out = _kk_output(
+        summary=_KK_SUMMARY_OK,
+        final_analysis=_KK_FINAL_OK,
+        card_desc="Өкінішке орай, бұл мамандық саған арналмаған, басқасын таңдаған дұрыс.",
+    )
+    issues = validate(out, _sample_context(), language="kk")
+    assert any(i.code == "banned_phrase" for i in issues), issues
+
+
+def test_kazakh_junior_career_term_is_flagged():
+    ctx = ReportNarrativeContext(
+        age_group=AgeGroup.junior.value, interest_instrument="mi",
+        categories=[], evidence=[],
+    )
+    out = _kk_output(
+        summary=_KK_SUMMARY_OK.replace("салалар", "мамандықтар және емтихан"),
+        final_analysis=_KK_FINAL_OK,
+    )
+    issues = validate(out, ctx, language="kk")
+    assert any(i.code == "junior_career_term" for i in issues), issues
+
+
+def test_kazakh_disclaimer_paraphrase_is_flagged():
+    out = _kk_output(
+        summary=_KK_SUMMARY_OK + " Бұл түпкілікті таңдау емес, тек мүмкін бағыттардың картасы.",
+        final_analysis=_KK_FINAL_OK,
+    )
+    issues = validate(out, _sample_context(), language="kk")
+    assert any(i.code == "summary_duplicates_disclaimer" for i in issues), issues
+
+
+def test_kazakh_card_with_allowed_latin_proper_nouns_is_not_language_mismatch():
+    """Review finding: a mostly-Kazakh card citing 'Nazarbayev University' /
+    'Data Engineer' must not trip the Cyrillic-ratio check (step 1)."""
+    kk_with_latin = [
+        "Nazarbayev University-де оқуды жалғастырып, кейін Data Engineer "
+        "мамандығын игеруге болады — бұл саған қызық сала.",
+        "DevOps және IT бағытында тәжірибе жинақтап, жобаларға қатыс.",
+    ]
+    assert _check_language_kk(kk_with_latin) == []
+
+
+def test_actually_english_text_still_flagged_despite_allowlist():
+    english = [
+        "You are good at solving abstract problems and analysing complex "
+        "systems, and you enjoy scientific research and logical experiments.",
+    ]
+    issues = _check_language_kk(english)
+    assert issues and issues[0].code == "LANGUAGE_MISMATCH"
+
+
+def test_ru_banned_vocab_unaffected_by_kk_additions():
+    """The kk sets are additive — ru validation must be byte-identical."""
+    out = _russian_narrative_output()
+    out.strength_cards = [NarrativeCard(
+        title="Тест", description="Это твоя слабая сторона, тебе не подходит эта профессия.",
+        evidence_ids=["personality:openness"],
+    )]
+    issues = validate(out, _sample_context(), language="ru")
+    assert sum(1 for i in issues if i.code == "banned_phrase") >= 2

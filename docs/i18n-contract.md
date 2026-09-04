@@ -420,21 +420,86 @@ per-locale строки) готова принять файл без измен�
   `Accept-Language: kk`, сброс по `users.locale`.
 - **Вычитка носителем** — `ProfOr/Тикеты-локализация-KZ/KZ-308-вычитка-kk.md`.
 
+### KZ-403 — детерминированные фолбэки отчёта (kk)
+
+- **Область: только `/results`.** В проекте ИИ-генерация используется лишь для
+  текста отчёта на `/results`; генерация роадмапов не используется, поэтому
+  фолбэк-шаблоны в `roadmap_builder.py` НЕ трогали (см. AC ниже).
+- `i18n.use_locale(locale)` — новый контекст-менеджер: форсирует
+  `_current_locale` в обход `SUPPORTED_LOCALES` (клампит по `KNOWN_LOCALES`),
+  восстанавливает при выходе. Нужен потому, что все аксессоры KZ-307
+  (`mi_labels()`, `riasec_strength_phrases()`, `development_plan()` …) читают
+  `get_locale()`, а `kk` до KZ-603 не проходит `set_locale()`.
+- Строки детерминированного нарратива → `app/i18n/catalog/narrative_fallback.py`
+  (`RU`/`KK`, ~34 листовых ключа; шаблоны с плейсхолдерами
+  `{verb}`/`{adjectives}`/`{cues}`/`{impact}`/`{label}`/`{hint}`/`{name}`/`{clauses}`).
+  `report_narrative_fallback.py` полностью параметризован по `locale`.
+- Синтез-строки result_v2 (`build_interest_map_note`, `build_personality_note`,
+  career-«why», flat-profile-примечание, `_join`) →
+  `app/i18n/catalog/result_v2.py` (`RU`/`KK`, 11 ключей).
+- `report_service.build_report` и `get_report`/`_shape_response` резолвят локаль
+  **владельца артефакта** (`_resolve_owner_locale` → `users.locale`, не локаль
+  читателя) и оборачивают весь проход scoring→текст→assemble в `use_locale`.
+- `ru`-вывод байт-в-байт как раньше (`tr(area, locale="ru")` отдаёт `RU`;
+  снапшот-тесты `test_fallback_narrative_locale.py::test_ru_output_is_unchanged_snapshot`,
+  `test_report_v2_assembler.py`).
+- Тесты: `tests/unit/test_fallback_narrative_locale.py` (валидность по
+  построению для kk на 3 возрастах, отсутствие ru-доминантных полей, 5-6
+  предложений в summary, все плейсхолдеры заполнены, ru-снапшот);
+  `tests/integration/test_result_locale.py` (kk-владелец → казахский `/results`
+  end-to-end, включая холодный кэш / reshape; ru не затронут).
+- **Вычитка носителем** — `ProfOr/Тикеты-локализация-KZ/KZ-403-вычитка-kk.md`.
+- Правки по ревью (2026-09-04):
+  - `student_context.py` — локаль гейтится `SUPPORTED_LOCALES` (не `KNOWN_LOCALES`):
+    единственные потребители — мёртвые roadmap/inquiry-промпт-билдеры без
+    `use_locale`-обёртки, `kk` там дал бы полу-переведённый артефакт. Матчит
+    `app/dependencies.py`.
+  - `report_narrative_validator.py` — kk-ветки не только у `_check_language`:
+    `BANNED_PHRASES_KK`, `JUNIOR_CAREER_TERMS_KK`, `_FRAME_PHRASE_SUBSTRINGS_KK`
+    (проверяются вместе с `ru`-наборами при `language="kk"`). `_check_language_kk`
+    step 1: перед Cyrillic-ratio вырезаются разрешённые латинские имена
+    (`_ALLOWED_LATIN_TOKENS` — глоссарий `_locale`: Nazarbayev University,
+    Data Engineer, DevOps…), чтобы валидный kk-текст с 2-3 именами собственными
+    не ловил ложный `LANGUAGE_MISMATCH` → сожжённые ретраи → `ru`-фолбэк.
+  - `report_narrative_service.py` — при `llm_client.is_enabled() == False`
+    ранний `return` детерминированного нарратива **без** `record_fallback` и
+    warning (LLM выключен — это штатный путь, не «фолбэк-инцидент»; алерты на
+    долю validation-fallback больше не скачут от одного флага).
+
 ## 9. Хранение ИИ-артефактов — с ключом локали
 
-Сгенерированные LLM тексты (нарратив отчёта, роадмапы по цели и направлению,
-direction inquiry) кэшируются в Redis и/или персистятся в БД **с привязкой к
-локали**: `ru` и `kk` не делят одну строку/ключ.
+**В проекте единственный живой ИИ-артефакт — нарратив отчёта на `/results`**
+(роадмапы и direction inquiry — мёртвый код). Он персистится в `analysis_results`
+и кэшируется в Redis **с привязкой к локали**: `ru` и `kk` не делят одну
+строку/ключ.
 
-- Redis-ключи ИИ-кэша содержат `locale`.
-- Таблицы `analysis_result`, `direction_roadmap`, `direction_inquiry` (и, где
-  применимо, `roadmap`) получают колонку `locale` + `locale` в уникальном индексе.
-- Чтение артефакта на локали, для которой он не сгенерирован → сигнал «нужно
-  сгенерировать» (ленивая генерация), а не отдача другой локали.
-- Детерминированные части (счёт тестов, топ-профессии, career-matching) при смене
-  языка **не пересчитываются** — регенерируется только текст.
+### KZ-405 — реализовано
 
-Детали — тикеты KZ-405 (ключ локали), KZ-406 (ленивая регенерация).
+- `analysis_results.locale` (`locale_enum`, `NOT NULL`, `server_default 'ru'`);
+  одиночный `UNIQUE(assessment_id)` → составной
+  `UNIQUE(assessment_id, locale)` + обычный lookup-индекс. Миграция
+  `a1c5e9d2b7f4`, обратима. Существующие строки → `'ru'`.
+- Redis-ключ: `report_cache_key(assessment_id, locale)` →
+  `report:v4:{locale}:{assessment_id}` (bump v3→v4). `report_cache_keys()` —
+  список по всем `KNOWN_LOCALES`; retake / инвалидация чистят все локали.
+- `report_service.build_report` / `get_report` резолвят локаль владельца
+  (`_resolve_owner_locale`), строят ключ и `select(AnalysisResult).where(
+  assessment_id==…, locale==loc)`; `INSERT` пишет `locale=locale`. Нет строки на
+  нужной локали → `get_report` возвращает `None` (сигнал для KZ-406), **не**
+  отдаёт чужую локаль. `retake` (`assessment_shared`) удаляет все локаль-строки.
+- Остальные читатели `AnalysisResult` (админка ×3, gap-анализ, goal-overlay,
+  мёртвые roadmap/inquiry) читают только локаль-инвариантные поля (баллы, коды) —
+  детерминированно берут `ru`-строку: `.order_by((locale==ru).desc()).limit(1)`
+  для `scalar_one*`, prefer-ru в bulk-словарях. Не падают на `MultipleResultsFound`.
+- Детерминированные части (счёт тестов, топ-профессии, career-matching) между
+  локалями идентичны — регенерируется только текст (`test_ai_artifact_locale_key.py`).
+- Тест: `tests/integration/test_ai_artifact_locale_key.py`.
+
+### KZ-406 (план)
+
+Ленивая регенерация при смене языка: `get_report` вернул `None` для локали
+владельца → фронт показывает оверлей генерации и зовёт `build_report`.
+`ru`-строка при переключении не удаляется.
 
 ## 10. Язык в LLM-промптах
 

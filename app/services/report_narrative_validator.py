@@ -49,6 +49,34 @@ JUNIOR_CAREER_TERMS: tuple[str, ...] = (
     "экзамен", "зарплат", "резюме", "собеседован", "диплом",
 )
 
+# KZ-402/KZ-403: the quality guards below match Russian substrings; a Kazakh
+# narrative (AI or fallback) needs the same checks in Kazakh. Kept separate,
+# not merged, so ru output is byte-unaffected. Both sets are checked for a
+# `kk` narrative (a kk answer that code-switches into a Russian banned
+# phrase is still bad).
+BANNED_PHRASES_KK: tuple[str, ...] = (
+    "сен гуманитарийсің", "сен технарьсің", "сен шығармашыл тұлғасың",
+    "сенің типің —", "сенің тұлғаң —", "тұлғасына жатасың",
+    "сен интровертсің", "сен экстравертсің",
+    "сенде қабілет жоқ", "саған берілмейді", "бұл сенікі емес",
+    "саған қиын болады", "сен алмайсың", "қолыңнан келмейді",
+    "саған сай келмейді", "бұл мамандық саған арналмаған",
+    "баруға тұрмайды", "басқасын таңдаған дұрыс",
+    "болуың керек", "таңдау керек", "сенің мамандығың —",
+    "төмен нәтиже", "әлсіз жағың", "әлсіз тұс", "нашар көрсеткіш",
+    "жеткіліксіз", "толық сәтсіздік", "артта қалу",
+    "көпшіліктен жақсырақ", "құрдастарыңнан нашар", "жасына орташа деңгей",
+    "міндетті түрде түсесің", "мүмкіндігің жоғары", "түсу ықтималдығы",
+    "табысқа жетесің", "қазір бастамасаң", "қазірдің өзінде артта қалдың",
+    "уақыт тым аз қалды",
+    "диагноз", "бұзылыс", "синдром", "психикалық жағдай",
+)
+
+JUNIOR_CAREER_TERMS_KK: tuple[str, ...] = (
+    "мамандық", "мансап", "университет", "жоғары оқу орны", "оқуға түсу",
+    "емтихан", "ұбт", "жалақы", "түйіндеме", "диплом", "сұхбат",
+)
+
 _MAX_CAREER_CARDS = 3
 
 # Not exact TZ numbers (the TZ gives relative guidance — "объём в 2-3 раза
@@ -126,12 +154,30 @@ def _all_texts(output: ReportNarrativeOutput) -> list[str]:
 
 _MIN_LETTERS_TO_JUDGE = 15
 
+# Latin tokens the kk glossary (app/prompts/_locale.py: _LATIN_PROFESSION_TERMS
+# + glossary rule 1 "университеттердің ресми атауларын сақта") explicitly tells
+# the model to KEEP untranslated. Stripped before the Cyrillic-ratio check so
+# a mostly-Kazakh card that cites "Nazarbayev University" or "Data Engineer"
+# isn't flagged LANGUAGE_MISMATCH (which would burn retries and fall a valid
+# answer back to Russian). A genuinely English/Russian answer still trips the
+# ratio on its non-allowlisted Latin, and steps 2-3 catch Russian vocabulary.
+_ALLOWED_LATIN_TOKENS: frozenset[str] = frozenset({
+    "data", "engineer", "devops", "mobile", "ux", "ui", "qa", "hr", "pr",
+    "event", "nazarbayev", "university", "science", "excel", "kimep", "sdu",
+    "kbtu", "aitu", "narxoz", "it", "ai", "ml",
+})
+_ALLOWED_LATIN_RE = re.compile(
+    r"\b(?:" + "|".join(sorted(_ALLOWED_LATIN_TOKENS, key=len, reverse=True)) + r")\b",
+    re.IGNORECASE,
+)
+
 
 def _check_language_kk(texts: list[str]) -> list[ValidationIssue]:
-    # 1. Cyrillic alphabet ratio check
+    # 1. Cyrillic alphabet ratio check (allowlisted Latin proper nouns removed)
     for text in texts:
-        cyrillic = _CYRILLIC_KK_RE.findall(text)
-        letters = cyrillic + _LATIN_RE.findall(text)
+        probe = _ALLOWED_LATIN_RE.sub(" ", text)
+        cyrillic = _CYRILLIC_KK_RE.findall(probe)
+        letters = cyrillic + _LATIN_RE.findall(probe)
         if len(letters) < _MIN_LETTERS_TO_JUDGE:
             continue
         ratio = len(cyrillic) / len(letters)
@@ -197,14 +243,20 @@ def _check_language(texts: list[str], language: str) -> list[ValidationIssue]:
     return []
 
 
-def _check_banned_vocabulary(texts: list[str], age_group: AgeGroup) -> list[ValidationIssue]:
+def _check_banned_vocabulary(
+    texts: list[str], age_group: AgeGroup, language: str = "ru"
+) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     lowered = [t.lower() for t in texts]
-    for phrase in BANNED_PHRASES:
+
+    banned = BANNED_PHRASES + (BANNED_PHRASES_KK if language == "kk" else ())
+    for phrase in banned:
         if any(phrase in t for t in lowered):
             issues.append(ValidationIssue("banned_phrase", phrase))
+
     if age_group == AgeGroup.junior:
-        for term in JUNIOR_CAREER_TERMS:
+        junior_terms = JUNIOR_CAREER_TERMS + (JUNIOR_CAREER_TERMS_KK if language == "kk" else ())
+        for term in junior_terms:
             if any(term in t for t in lowered):
                 issues.append(ValidationIssue("junior_career_term", term))
     return issues
@@ -368,16 +420,27 @@ _FRAME_PHRASE_SUBSTRINGS: tuple[str, ...] = (
     "карта возможных направлений",
 )
 
+# Kazakh paraphrase of the same disclaimer idea (KZ-403). The kk DISCLAIMER
+# text itself is TBD; these are the substrings a kk narrative would use if it
+# re-stated the "not a final choice / a map of possible directions" framing.
+_FRAME_PHRASE_SUBSTRINGS_KK: tuple[str, ...] = (
+    "түпкілікті таңдау емес",
+    "мүмкін бағыттардың картасы",
+)
 
-def _check_no_disclaimer_duplicate(output: ReportNarrativeOutput) -> list[ValidationIssue]:
+
+def _check_no_disclaimer_duplicate(
+    output: ReportNarrativeOutput, language: str = "ru"
+) -> list[ValidationIssue]:
     """Applies to both summary and final_analysis — same reasoning either
     way: DISCLAIMER already carries this exact idea, shown unconditionally
     on the page, so writing it again anywhere in the LLM's own text
     duplicates that line."""
+    phrases = _FRAME_PHRASE_SUBSTRINGS + (_FRAME_PHRASE_SUBSTRINGS_KK if language == "kk" else ())
     issues: list[ValidationIssue] = []
     for field_name, text in (("summary", output.summary), ("final_analysis", output.final_analysis)):
         lowered = text.lower()
-        for phrase in _FRAME_PHRASE_SUBSTRINGS:
+        for phrase in phrases:
             if phrase in lowered:
                 code = "summary_duplicates_disclaimer" if field_name == "summary" else "final_analysis_duplicates_disclaimer"
                 issues.append(ValidationIssue(code, phrase))
@@ -446,7 +509,7 @@ def validate(
 
     issues: list[ValidationIssue] = []
     issues += _check_language(texts, language)
-    issues += _check_banned_vocabulary(texts, age_group)
+    issues += _check_banned_vocabulary(texts, age_group, language)
     issues += _check_no_new_numbers(texts)
     issues += _check_evidence_ids(output, context)
     issues += _check_interests(output, context)
@@ -459,6 +522,6 @@ def validate(
     issues += _check_motivation_grounding(output, context)
     issues += _check_summary_sentence_count(output)
     issues += _check_final_analysis_sentence_count(output)
-    issues += _check_no_disclaimer_duplicate(output)
+    issues += _check_no_disclaimer_duplicate(output, language)
     issues += _check_lengths(output, age_group)
     return issues
