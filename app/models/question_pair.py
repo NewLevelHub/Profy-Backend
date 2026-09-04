@@ -1,7 +1,7 @@
 import uuid
 
 from sqlalchemy import Enum, ForeignKey, Integer, String
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -68,3 +68,7 @@ class QuestionPair(Base):
     # all, so its pairs leave these null.
     option_a_icon: Mapped[str | None] = mapped_column(String, nullable=True)
     option_b_icon: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Field-name -> admin-edited value, composed on top of the bank content
+    # by scripts/seed_question_pairs.py at resync time (see
+    # docs/admin-questions-content-overrides-plan.md).
+    overrides: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)

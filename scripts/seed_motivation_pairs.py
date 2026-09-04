@@ -4,7 +4,8 @@ Run inside Docker: docker-compose exec api python scripts/seed_motivation_pairs.
 
 Idempotent, self-healing: upserts by `(pair_index, locale)`, deletes any DB row
 whose `(pair_index, locale)` is no longer present in PAIRS *for that locale* —
-same pattern as the other seed scripts.
+same pattern as the other seed scripts. Admin-overridden fields/rows are
+preserved (admin_lock.sync_fields / has_overrides).
 
 Localized (KZ-301/KZ-305): each pair carries `text_a` / `text_b` as
 `{locale: str}`; `LOCALES` lists the bank's locales. One logical pair = one row
@@ -23,6 +24,7 @@ from sqlalchemy import select
 from app.models.motivation import MotivationCategory
 from app.models.motivation_pair import MotivationPair
 from app.database import async_session
+from app.services.admin_lock import has_overrides, sync_fields
 from scripts.motivation_pair_bank import LOCALES, PAIRS
 
 
@@ -47,19 +49,12 @@ async def main() -> None:
 
                 existing = existing_by_key.get(data["pair_index"])
                 if existing is not None:
-                    changed = False
-                    if existing.category_a != category_a:
-                        existing.category_a = category_a
-                        changed = True
-                    if existing.category_b != category_b:
-                        existing.category_b = category_b
-                        changed = True
-                    if existing.text_a != text_a:
-                        existing.text_a = text_a
-                        changed = True
-                    if existing.text_b != text_b:
-                        existing.text_b = text_b
-                        changed = True
+                    changed = sync_fields(existing, {
+                        "category_a": category_a,
+                        "category_b": category_b,
+                        "text_a": text_a,
+                        "text_b": text_b,
+                    })
                     updated += changed
                     skipped += not changed
                     continue
@@ -77,7 +72,7 @@ async def main() -> None:
                 inserted += 1
 
             for key, pair in existing_by_key.items():
-                if key not in live_keys:
+                if key not in live_keys and not has_overrides(pair):
                     await db.delete(pair)
                     deleted += 1
 

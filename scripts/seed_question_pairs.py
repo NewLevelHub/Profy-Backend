@@ -8,6 +8,7 @@ docker-compose exec api python scripts/seed_question_pairs.py
 Idempotent, self-healing: upserts by `(instrument, pair_index, locale)`,
 deletes any DB row whose `(instrument, pair_index, locale)` is no longer present
 in PAIRS *for that locale* — same pattern as the other seed scripts.
+Admin-overridden text/rows are preserved (admin_lock.sync_fields / has_overrides).
 
 Localized (KZ-301/KZ-304): each pair's `frame` / `option_a_text` /
 `option_b_text` is `{locale: str}` (icons shared); `PAIR_LOCALES` lists the
@@ -26,6 +27,7 @@ from app.database import async_session
 from app.models.profile import AgeGroup
 from app.models.question import Question, QuestionInstrument
 from app.models.question_pair import QuestionPair
+from app.services.admin_lock import has_overrides, sync_fields
 from scripts.question_pairing import PAIR_LOCALES, PAIRS
 
 
@@ -76,19 +78,24 @@ async def main() -> None:
                 existing = existing_by_key.get((instrument, data["pair_index"]))
                 if existing is not None:
                     changed = False
+                    # Structural refs are never admin-overridable — sync directly.
                     for attr, value in (
                         ("age_tier", age_tier),
                         ("question_a_id", question_a_id),
                         ("question_b_id", question_b_id),
-                        ("frame", frame),
-                        ("option_a_text", option_a_text),
-                        ("option_b_text", option_b_text),
-                        ("option_a_icon", option_a_icon),
-                        ("option_b_icon", option_b_icon),
                     ):
                         if getattr(existing, attr) != value:
                             setattr(existing, attr, value)
                             changed = True
+                    # Displayed text/icons respect admin overrides.
+                    if sync_fields(existing, {
+                        "frame": frame,
+                        "option_a_text": option_a_text,
+                        "option_b_text": option_b_text,
+                        "option_a_icon": option_a_icon,
+                        "option_b_icon": option_b_icon,
+                    }):
+                        changed = True
                     updated += changed
                     skipped += not changed
                     continue
@@ -109,7 +116,7 @@ async def main() -> None:
                 inserted += 1
 
             for key, pair in existing_by_key.items():
-                if key not in live_keys:
+                if key not in live_keys and not has_overrides(pair):
                     await db.delete(pair)
                     deleted += 1
 

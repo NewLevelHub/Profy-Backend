@@ -60,7 +60,7 @@ def _acquiescence_shift(minus_count: int, plus_count: int, mean_answer: float) -
     return (minus_count - plus_count) * (mean_answer - _SCALE_MIDPOINT)
 
 
-async def _grand_mean(assessment_id: uuid.UUID, db: AsyncSession, age_group: AgeGroup) -> float:
+async def grand_mean(assessment_id: uuid.UUID, db: AsyncSession, age_group: AgeGroup) -> float:
     """Respondent's mean answer (raw 1-5, before reverse-keying) across every
     Big Five item they were shown — the acquiescence estimate. Midpoint
     (3.0) when there are no responses, so the correction is a no-op."""
@@ -136,10 +136,19 @@ async def facet_keying_counts(
 
 
 async def raw_scores(
-    assessment_id: uuid.UUID, db: AsyncSession, age_group: AgeGroup
+    assessment_id: uuid.UUID,
+    db: AsyncSession,
+    age_group: AgeGroup,
+    *,
+    mean_answer: float | None = None,
 ) -> dict[str, float]:
     """Per-domain reverse-keyed sum, then acquiescence-corrected (see module
-    docstring). Float, not int, because the correction is fractional."""
+    docstring). Float, not int, because the correction is fractional.
+
+    `mean_answer` lets a caller that also needs `facet_raw()` for the same
+    (assessment_id, age_group) pass in the grand mean it already fetched
+    once, instead of this function and `facet_raw()` each re-running the
+    identical query. Left as None, it's computed here."""
     result = await db.execute(
         select(Question.bigfive_domain, func.sum(_SCORE_EXPR))
         .join(UserResponse, UserResponse.question_id == Question.id)
@@ -152,7 +161,8 @@ async def raw_scores(
     )
     sums = {d.value: float(s) for d, s in result.all()}
 
-    mean_answer = await _grand_mean(assessment_id, db, age_group)
+    if mean_answer is None:
+        mean_answer = await grand_mean(assessment_id, db, age_group)
     keying = await keying_counts(db, age_group)
     return {
         d: sums.get(d, 0.0) + _acquiescence_shift(keying[d][1], keying[d][0], mean_answer)
@@ -180,10 +190,15 @@ def _clamp(value: float) -> float:
 
 
 async def facet_raw(
-    assessment_id: uuid.UUID, db: AsyncSession, age_group: AgeGroup
+    assessment_id: uuid.UUID,
+    db: AsyncSession,
+    age_group: AgeGroup,
+    *,
+    mean_answer: float | None = None,
 ) -> dict[tuple[str, int], float]:
     """Per-(domain, facet) reverse-keyed sum, acquiescence-corrected with the
-    facet-level keying split — same treatment as `raw_scores`."""
+    facet-level keying split — same treatment as `raw_scores`, including the
+    optional precomputed `mean_answer` (see its docstring)."""
     result = await db.execute(
         select(Question.bigfive_domain, Question.facet, func.sum(_SCORE_EXPR))
         .join(UserResponse, UserResponse.question_id == Question.id)
@@ -196,7 +211,8 @@ async def facet_raw(
     )
     sums = {(d.value, f): float(s) for d, f, s in result.all()}
 
-    mean_answer = await _grand_mean(assessment_id, db, age_group)
+    if mean_answer is None:
+        mean_answer = await grand_mean(assessment_id, db, age_group)
     keying = await facet_keying_counts(db, age_group)
     return {
         key: total + _acquiescence_shift(keying.get(key, (0, 0))[1], keying.get(key, (0, 0))[0], mean_answer)

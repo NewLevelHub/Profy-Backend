@@ -1,9 +1,8 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
-from app.models.profile import GPA_SCALE_MAX, GpaScale
 from app.schemas.artifact import ArtifactItem
 from app.schemas.certificate import CertificateItem
 
@@ -13,14 +12,10 @@ from app.schemas.certificate import CertificateItem
 # compiles with Rust's `regex` crate, which supports \p{L} natively.
 NAME_PATTERN = r"^[\p{L}\s'-]+$"
 
-
-def _check_gpa_pair(gpa_value: float | None, gpa_scale: GpaScale | None) -> None:
-    if (gpa_value is None) != (gpa_scale is None):
-        raise ValueError("gpa_value and gpa_scale must be provided together")
-    if gpa_value is not None and gpa_scale is not None:
-        max_value = GPA_SCALE_MAX[gpa_scale]
-        if not (0 <= gpa_value <= max_value):
-            raise ValueError(f"gpa_value must be between 0 and {max_value} for scale {gpa_scale.value}")
+# NOTE: the `profiles.gpa_value` / `gpa_scale` columns still exist (see
+# app/models/profile.py) but are no longer part of the profile API — GPA was
+# dropped from the product surface (pro-236). These schemas neither accept
+# nor return them; only exam certificates are collected now.
 
 
 class ProfileCreateRequest(BaseModel):
@@ -52,17 +47,6 @@ class ProfileCreateRequest(BaseModel):
     # app/services/certificate_service.py instead. `None` = not managing
     # certificates here; any list (including `[]`) replaces them wholesale.
     certificates: list[CertificateItem] | None = None
-    # A single scalar pair (unlike artifacts/certificates, which are lists) —
-    # GPA lives directly on the Profile row. Both fields are optional
-    # together (a profile with no GPA yet) but must be provided as a pair;
-    # see `_check_gpa_pair`.
-    gpa_value: float | None = Field(None, ge=0)
-    gpa_scale: GpaScale | None = None
-
-    @model_validator(mode="after")
-    def _validate_gpa(self) -> "ProfileCreateRequest":
-        _check_gpa_pair(self.gpa_value, self.gpa_scale)
-        return self
 
 
 class ProfileUpdateRequest(BaseModel):
@@ -83,16 +67,6 @@ class ProfileUpdateRequest(BaseModel):
     artifacts: list[ArtifactItem] | None = None
     # Same semantics as `artifacts`, backed by certificate_service instead.
     certificates: list[CertificateItem] | None = None
-    # `None` for both means "leave GPA untouched" (same as any other scalar
-    # field on this request, via `exclude_none=True` in profile_service). A
-    # provided pair replaces the stored value; see `_check_gpa_pair`.
-    gpa_value: float | None = Field(None, ge=0)
-    gpa_scale: GpaScale | None = None
-
-    @model_validator(mode="after")
-    def _validate_gpa(self) -> "ProfileUpdateRequest":
-        _check_gpa_pair(self.gpa_value, self.gpa_scale)
-        return self
 
 
 class ProfileResponse(BaseModel):
@@ -116,8 +90,6 @@ class ProfileResponse(BaseModel):
     subjects_easy: list[str]
     subjects_hard: list[str]
     age_group: str
-    gpa_value: float | None = None
-    gpa_scale: GpaScale | None = None
     created_at: datetime
     updated_at: datetime
     artifacts: list[ArtifactItem] = []

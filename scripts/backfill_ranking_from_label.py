@@ -7,6 +7,17 @@ created, so existing rows seeded before the parser fix keep their old
 (sometimes wrong, mixing subject/national ranks into the "global" field)
 value until this backfill runs.
 
+NOT wired into cd.yml/cd-dev.yml — removed from both pipelines (along with
+7 sibling one-time backfill_*.py scripts) once it had already corrected
+every existing row in production; a completed backfill is a no-op forever
+after (parse_ranking(ranking_label) stops disagreeing with ranking), so
+running it on every future deploy serves no purpose. Kept here as a manual/
+on-demand tool for whenever the parser itself changes again — the
+is_locked(uni, "ranking") guard below (and
+tests/unit/test_admin_university_lock.py::test_backfill_ranking_from_label_skips_locked_field)
+protect an admin's PATCH-edited ranking on THAT run, not as a standing
+production guarantee, since the script doesn't currently run on its own.
+
 Dry-run by default — prints every row whose ranking would change, does not
 write anything. Pass --apply to actually UPDATE the database.
 
@@ -24,6 +35,7 @@ from sqlalchemy import select
 
 from app.database import async_session
 from app.models.university import University
+from app.services.admin_lock import is_locked
 from scripts.seed_92_professions_universities import parse_ranking
 
 
@@ -41,6 +53,9 @@ async def main() -> None:
         for uni in universities:
             new_ranking = parse_ranking(uni.ranking_label)
             if new_ranking != uni.ranking:
+                if is_locked(uni, "ranking"):
+                    print(f"Skipping ranking for {uni.name!r} ({uni.slug}) — admin-locked")
+                    continue
                 changed += 1
                 print(
                     f"{'[would update]' if not apply else '[updating]'} "

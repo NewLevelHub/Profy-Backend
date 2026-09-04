@@ -73,6 +73,13 @@ class University(Base):
     # University and Program facts are checked independently and at
     # different times.
     fact_sources: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    # Top-level column names an admin has explicitly PATCHed at least once via
+    # /admin/universities/{id} — auto-populated by admin_lock.lock_fields, not
+    # admin-settable directly. Seed/backfill scripts that overwrite-if-different
+    # (not fill-if-empty) must check admin_lock.is_locked() before writing a
+    # locked field, so a redeploy doesn't silently revert a manual edit. See
+    # docs/admin-edit-lock-plan.md.
+    admin_locked_fields: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
 
     programs: Mapped[list["Program"]] = relationship("Program", back_populates="university", lazy="selectin")
     images: Mapped[list["UniversityImage"]] = relationship(

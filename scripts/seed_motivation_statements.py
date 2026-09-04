@@ -5,6 +5,7 @@ Run inside Docker: docker-compose exec api python scripts/seed_motivation_statem
 Idempotent, self-healing: upserts by `(triplet_index, order, locale)`, deletes
 any DB row whose `(triplet_index, order, locale)` is no longer present in
 STATEMENTS *for that locale* — same pattern as seed_riasec_questions.py.
+Admin-overridden fields/rows are preserved (admin_lock.sync_fields / has_overrides).
 
 Localized (KZ-301/KZ-305): each statement carries `text` / `text_junior` as
 `{locale: str}`; `LOCALES` lists the bank's locales. One logical statement =
@@ -21,6 +22,7 @@ from sqlalchemy import select
 
 from app.database import async_session
 from app.models.motivation import MotivationCategory, MotivationStatement
+from app.services.admin_lock import has_overrides, sync_fields
 from scripts.motivation_statement_bank import LOCALES, STATEMENTS
 
 
@@ -46,16 +48,11 @@ async def main() -> None:
 
                 existing = existing_by_key.get((data["triplet_index"], data["order"]))
                 if existing is not None:
-                    changed = False
-                    if existing.category != category:
-                        existing.category = category
-                        changed = True
-                    if existing.text != text:
-                        existing.text = text
-                        changed = True
-                    if existing.text_junior != text_junior:
-                        existing.text_junior = text_junior
-                        changed = True
+                    changed = sync_fields(existing, {
+                        "category": category,
+                        "text": text,
+                        "text_junior": text_junior,
+                    })
                     updated += changed
                     skipped += not changed
                     continue
@@ -73,7 +70,7 @@ async def main() -> None:
                 inserted += 1
 
             for key, statement in existing_by_key.items():
-                if key not in live_keys:
+                if key not in live_keys and not has_overrides(statement):
                     await db.delete(statement)
                     deleted += 1
 

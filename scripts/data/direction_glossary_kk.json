@@ -780,12 +780,6 @@
   "name_kk": "Судья"
  },
  {
-  "slug": "tehnicheskiy-pisatel",
-  "holland_code": "ICA",
-  "name_ru": "Технический писатель",
-  "name_kk": "Техникалық құжаттама маманы"
- },
- {
   "slug": "tehnolog-pischevogo-proizvodstva",
   "holland_code": "RCI",
   "name_ru": "Технолог пищевого производства",

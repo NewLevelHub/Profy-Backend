@@ -31,6 +31,7 @@ from sqlalchemy import select
 
 from app.database import async_session
 from app.models.direction import Direction
+from app.services.admin_lock import sync_fields
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 # ordered: ru first, so the kk-from-ru bootstrap below sees fresh ru content,
@@ -64,9 +65,11 @@ async def _apply_file(db, locale: str, path: str) -> None:
         if direction is None:
             missing.append(entry["slug"])
             continue
-        for field in _CONTENT_FIELDS:
-            setattr(direction, field, entry[field])
-        updated += 1
+        # sync_fields (not raw setattr) so an admin PATCH /admin/directions/{id}
+        # edit to these 4 fields survives a reseed — see
+        # docs/admin-questions-content-overrides-plan.md.
+        if sync_fields(direction, {field: entry[field] for field in _CONTENT_FIELDS}):
+            updated += 1
 
     print(f"[{locale}] Updated {updated}/{len(reviewed)} directions.")
     if missing:

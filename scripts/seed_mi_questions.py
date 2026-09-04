@@ -7,7 +7,8 @@ docker-compose exec api python scripts/seed_mi_questions.py
 Idempotent, self-healing: upserts by `(order, locale)`, deletes any mi DB row
 whose `(order, locale)` is no longer present in QUESTIONS *for that locale* —
 same pattern as seed_riasec_questions.py/seed_bigfive_questions.py. Only touches
-instrument='mi'.
+instrument='mi'. Admin-overridden fields/rows are preserved
+(admin_lock.sync_fields / has_overrides).
 
 Localized (KZ-301/KZ-304): every bank item carries `text` / `short_text` as
 `{locale: str}`; `LOCALES` lists the bank's locales. One logical question =
@@ -25,6 +26,7 @@ from sqlalchemy import select
 from app.database import async_session
 from app.models.profile import AgeGroup
 from app.models.question import MIType, Question, QuestionInstrument
+from app.services.admin_lock import has_overrides, sync_fields
 from scripts.mi_question_bank import LOCALES, QUESTIONS
 
 
@@ -53,22 +55,13 @@ async def main() -> None:
 
                 existing = existing_by_order.get(data["order"])
                 if existing is not None:
-                    changed = False
-                    if existing.mi_category != category:
-                        existing.mi_category = category
-                        changed = True
-                    if existing.text != text:
-                        existing.text = text
-                        changed = True
-                    if existing.age_tier != age_tier:
-                        existing.age_tier = age_tier
-                        changed = True
-                    if existing.short_text != short_text:
-                        existing.short_text = short_text
-                        changed = True
-                    if existing.icon != icon:
-                        existing.icon = icon
-                        changed = True
+                    changed = sync_fields(existing, {
+                        "mi_category": category,
+                        "text": text,
+                        "age_tier": age_tier,
+                        "short_text": short_text,
+                        "icon": icon,
+                    })
                     updated += changed
                     skipped += not changed
                     continue
@@ -88,7 +81,7 @@ async def main() -> None:
                 inserted += 1
 
             for order, question in existing_by_order.items():
-                if order not in live_orders:
+                if order not in live_orders and not has_overrides(question):
                     await db.delete(question)
                     deleted += 1
 

@@ -38,3 +38,8 @@ class Direction(Base):
     skills_needed: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     subjects_to_develop: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     first_steps: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    # Field-name -> admin-edited value for name/holland_code, composed on top
+    # of the bank content by scripts/seed_riasec_directions.py at resync time
+    # (see docs/admin-questions-content-overrides-plan.md). The other fields
+    # above are never touched by that script so need no override bookkeeping.
+    overrides: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)

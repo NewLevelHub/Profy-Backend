@@ -135,4 +135,35 @@ priority to chase down without evidence it's actually happening.
   DB with both a clean case and a colliding pair — see PR for the exact
   output.
 
-**#5–#10 still open** — deferred, not urgent (see rationale above).
+**#5–#9 fixed** (same branch):
+- #5: `verify_google_id_token` now also catches `google.auth.exceptions.GoogleAuthError`
+  (the base class `TransportError` and issuer-validation failures actually
+  raise), so a transient JWKS-fetch failure surfaces as a clean `ValueError`
+  (-> 400) instead of an unhandled 500. Covered by
+  `test_verify_google_id_token_wraps_transient_google_auth_error`.
+- #6: `verify_google_id_token` now checks for the `email` claim explicitly
+  and raises `ValueError` instead of letting `claims["email"]` raise
+  `KeyError`. Covered by `test_verify_google_id_token_rejects_missing_email_claim`.
+- #7: the new-user insert in `login_or_register_google` now catches
+  `IntegrityError` on commit, rolls back, and re-fetches the row the
+  concurrent request won instead of surfacing a 500 — the loser of the race
+  gets a normal successful login. Covered by
+  `test_login_or_register_google_recovers_from_concurrent_insert_race`.
+- #8: `bf4109ec3b43`'s `downgrade()` now backfills any `NULL hashed_password`
+  row with an unusable placeholder before re-adding the `NOT NULL`
+  constraint, so it no longer fails once a Google-only account exists.
+  Verified manually: inserted a Google-only user, ran
+  `alembic downgrade a06b39fb621e`, confirmed it completed instead of
+  raising a not-null violation.
+- #9: new migration `d896a3811d5b_drop_redundant_google_id_index.py` drops
+  `ix_users_google_id` — `uq_users_google_id`'s implicit unique index already
+  covers that column. Verified via `\d users` that only the unique
+  constraint's index remains after upgrading.
+
+- #10: the module-level `requests.Session` singleton is replaced with a
+  `threading.local()`-scoped `google_requests.Request()` — each
+  `asyncio.to_thread` worker thread now gets its own private session
+  (created once, reused across calls on that thread) instead of sharing one
+  across every concurrent request.
+
+All 10 findings are now resolved.

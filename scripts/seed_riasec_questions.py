@@ -26,6 +26,7 @@ from sqlalchemy import select
 from app.database import async_session
 from app.models.profile import AgeGroup
 from app.models.question import HollandType, Question, QuestionInstrument
+from app.services.admin_lock import has_overrides, sync_fields
 from scripts.riasec_question_bank import LOCALES, QUESTIONS
 
 
@@ -58,22 +59,13 @@ async def main() -> None:
 
                 existing = existing_by_order.get(data["order"])
                 if existing is not None:
-                    changed = False
-                    if existing.riasec_type != riasec_type:
-                        existing.riasec_type = riasec_type
-                        changed = True
-                    if existing.text != text:
-                        existing.text = text
-                        changed = True
-                    if existing.age_tier != age_tier:
-                        existing.age_tier = age_tier
-                        changed = True
-                    if existing.short_text != short_text:
-                        existing.short_text = short_text
-                        changed = True
-                    if existing.icon != icon:
-                        existing.icon = icon
-                        changed = True
+                    changed = sync_fields(existing, {
+                        "riasec_type": riasec_type,
+                        "text": text,
+                        "age_tier": age_tier,
+                        "short_text": short_text,
+                        "icon": icon,
+                    })
                     updated += changed
                     skipped += not changed
                     continue
@@ -85,7 +77,7 @@ async def main() -> None:
                 inserted += 1
 
             for order, question in existing_by_order.items():
-                if order not in live_orders:
+                if order not in live_orders and not has_overrides(question):
                     await db.delete(question)
                     deleted += 1
 

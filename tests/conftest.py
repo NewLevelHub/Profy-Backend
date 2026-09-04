@@ -93,6 +93,21 @@ async def _dispose_engine_pool_per_loop() -> AsyncGenerator[None, None]:
             await module._redis.aclose()
             module._redis = None
 
+    # Redis data (unlike the DB, which each test rolls back) otherwise persists
+    # across tests — notably the auth router's `_check_rate_limit` counters
+    # (`register_ip:*`, `forgot_pwd_*`, `verify_*`), which accumulate over a
+    # run and make a later test's first `/register` or `/forgot-password` 429.
+    # Flush between tests so every test starts from clean Redis state.
+    import redis.asyncio as _aioredis
+
+    from app.config import settings as _settings
+
+    _flush_client = _aioredis.from_url(_settings.REDIS_URL)
+    try:
+        await _flush_client.flushdb()
+    finally:
+        await _flush_client.aclose()
+
 
 @pytest_asyncio.fixture
 async def client(db_session: AsyncSession) -> AsyncGenerator[httpx.AsyncClient, None]:

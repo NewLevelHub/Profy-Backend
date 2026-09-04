@@ -186,11 +186,14 @@ async def test_get_pairs_kk_serves_translated_frame_and_options(
 async def test_directions_kk_names_and_shared_slug(db_session: AsyncSession) -> None:
     """KZ-306: every direction has a `kk` name row; `slug` / `holland_code` are
     shared (not per-locale), so career matching is locale-invariant."""
+    from scripts.riasec_professions import PROFESSIONS
+    expected = len({p["title"] for p in PROFESSIONS})  # title-deduped bank size
+
     rows = (await db_session.execute(select(Direction))).scalars().all()
     ru = {d.slug: d for d in rows if d.locale == "ru"}
     kk = {d.slug: d for d in rows if d.locale == "kk"}
 
-    assert set(kk) == set(ru) and len(kk) == 145
+    assert set(kk) == set(ru) and len(kk) == len(ru) == expected
     for slug, kk_d in kk.items():
         assert kk_d.holland_code == ru[slug].holland_code
         assert kk_d.name  # non-empty kk name

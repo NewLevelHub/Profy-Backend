@@ -19,6 +19,7 @@ from sqlalchemy import select
 
 from app.database import async_session
 from app.models.university import University
+from app.services.admin_lock import is_locked
 
 NOT_RANKED_SLUGS = [
     "almaty-management-university",
@@ -69,6 +70,10 @@ async def main() -> None:
                 continue
 
             if university.uniranks_note != "Н/Р":
+                if is_locked(university, "uniranks_note"):
+                    print(f"Skipping uniranks_note for {slug} — admin-locked")
+                    unchanged += 1
+                    continue
                 updated += 1
                 if dry_run:
                     print(f"[would update] {slug} -> uniranks_note='Н/Р'")

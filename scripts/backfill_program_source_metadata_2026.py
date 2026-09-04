@@ -4,6 +4,12 @@ that were modified by scripts/apply_grant_admission_data_2026.py.
 
 Key rules:
 - Reads scripts/data/db_updates_2026.json
+- Resolves each program by university slug + program name (via
+  scripts/entity_resolver.py), NOT by the dict key — that key is a snapshot
+  of Program.id (a per-database random uuid4()) taken from whatever DB the
+  file was generated against, so it resolves to nothing on any other
+  database (see docs/content-pipeline-id-resolution-audit.md). Every value
+  in the file already carries `slug` + `name`, which do resolve.
 - Skips programs if program.updated_at is not None (does not overwrite real admin updates)
 - Sets source_url and updated_at based on payload keys
 - Supports --dry-run
@@ -17,12 +23,10 @@ from datetime import datetime, timezone
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _ROOT)
 
-from sqlalchemy import select
-
 from app.database import async_session
-from app.models.program import Program
+from scripts.entity_resolver import resolve_program, resolve_university
 
-DATA_PATH = "scripts/data/db_updates_2026.json"
+DATA_PATH = os.path.join(_ROOT, "scripts", "data", "db_updates_2026.json")
 
 
 async def main() -> None:
@@ -34,13 +38,22 @@ async def main() -> None:
     async with async_session() as db:
         updated = 0
         unchanged = 0
+        skipped_no_key = 0
         missing: list[str] = []
 
         for program_id, payload in updates.items():
-            result = await db.execute(select(Program).where(Program.id == program_id))
-            program = result.scalar_one_or_none()
+            slug = payload.get("slug")
+            name = payload.get("name")
+            if not slug or not name:
+                skipped_no_key += 1
+                continue
+
+            university, _ = await resolve_university(db, slug=slug)
+            program = await resolve_program(db, university=university, name=name) if university else None
             if program is None:
-                missing.append(f"{payload.get('slug')} / {payload.get('name')} ({program_id})")
+                # program_id kept in the message only as a breadcrumb back to
+                # the source file — it is not what we matched on.
+                missing.append(f"{slug} / {name} (snapshot id {program_id})")
                 continue
 
             # Skip if already updated/verified by an admin
@@ -58,7 +71,7 @@ async def main() -> None:
             if source_url:
                 updated += 1
                 if dry_run:
-                    print(f"[would backfill] {payload.get('slug')} / {payload.get('name')} -> {source_url}")
+                    print(f"[would backfill] {slug} / {name} -> {source_url}")
                 else:
                     program.updated_at = datetime.now(timezone.utc)
                     program.source_url = source_url
@@ -68,9 +81,12 @@ async def main() -> None:
         if not dry_run:
             await db.commit()
 
-        print(f"\n{'DRY RUN — ' if dry_run else ''}programs updated: {updated}, unchanged: {unchanged}, missing: {len(missing)}")
+        print(
+            f"\n{'DRY RUN — ' if dry_run else ''}programs updated: {updated}, "
+            f"unchanged: {unchanged}, missing: {len(missing)}, skipped (no slug/name): {skipped_no_key}"
+        )
         if missing:
-            print("Missing program IDs (not found in DB):")
+            print("Not found on this DB (resolved by slug + name):")
             for m in missing:
                 print(f"  - {m}")
 

@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -54,6 +54,10 @@ class MotivationPair(Base):
     )
     text_a: Mapped[str] = mapped_column(String, nullable=False)
     text_b: Mapped[str] = mapped_column(String, nullable=False)
+    # Field-name -> admin-edited value, composed on top of the bank content
+    # by scripts/seed_motivation_pairs.py at resync time (see
+    # docs/admin-questions-content-overrides-plan.md).
+    overrides: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
 
 class MotivationPairResponse(Base):

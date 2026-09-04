@@ -39,8 +39,7 @@ async def create_profile(
 ) -> ProfileResponse:
     """Create the caller's Profile, optionally saving their artifact and/or
     certificate selections in the same request/transaction (`data.artifacts`,
-    `data.certificates`). `gpa_value`/`gpa_scale` are plain Profile columns,
-    written by `profile_service.create_profile` itself.
+    `data.certificates`).
 
     All writes commit together: if artifact/certificate persistence fails
     after the profile insert has been flushed, nothing is committed and the

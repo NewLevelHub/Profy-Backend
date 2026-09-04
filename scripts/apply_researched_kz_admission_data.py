@@ -48,6 +48,7 @@ from sqlalchemy.orm import selectinload
 from app.database import async_session
 from app.models.program import Program
 from app.models.university import University
+from app.services.admin_lock import is_locked
 
 DATA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "researched_kz_admission_data.json")
 
@@ -107,12 +108,19 @@ async def main(*, dry_run: bool) -> None:
                 continue
 
             is_no_ent = entry["category"] == "no_ent"
-            facilities = dict(university.facilities or {})
-            facilities["requires_ent"] = not is_no_ent
-            university.facilities = facilities
+            if is_locked(university, "facilities"):
+                print(f"Skipping facilities for {entry['university']!r} ({slug}) — admin-locked")
+            else:
+                facilities = dict(university.facilities or {})
+                facilities["requires_ent"] = not is_no_ent
+                university.facilities = facilities
 
             note_text = entry["notes"][0] if entry.get("notes") else None
             for program in university.programs:
+                if is_locked(program, "requirements"):
+                    print(f"Skipping requirements for program {program.id} ({slug}) — admin-locked")
+                    continue
+
                 requirements = dict(program.requirements or {})
 
                 if is_no_ent:

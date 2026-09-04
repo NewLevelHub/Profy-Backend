@@ -47,6 +47,7 @@ from app.database import async_session
 from app.models.direction import Direction
 from app.models.program import Program
 from app.models.university import University
+from app.services.admin_lock import is_locked
 from scripts.specialty_profession_map import GARBAGE_SPECIALTIES, SPECIALTY_TO_PROFESSIONS
 
 from almaty_universities_data import ALMATY_UNIVERSITIES
@@ -163,22 +164,42 @@ async def main() -> None:
                 uni_inserted += 1
             else:
                 changed = False
-                if not existing_uni.slug:
+                if not existing_uni.slug and not is_locked(existing_uni, "slug"):
                     existing_uni.slug = record["slug"]
                     changed = True
-                if not existing_uni.ovpo_code and record.get("ovpo_code"):
+                if (
+                    not existing_uni.ovpo_code
+                    and record.get("ovpo_code")
+                    and not is_locked(existing_uni, "ovpo_code")
+                ):
                     existing_uni.ovpo_code = record["ovpo_code"]
                     changed = True
-                if not existing_uni.description and record.get("description"):
+                if (
+                    not existing_uni.description
+                    and record.get("description")
+                    and not is_locked(existing_uni, "description")
+                ):
                     existing_uni.description = record["description"]
                     changed = True
-                if not existing_uni.short_name and record.get("short_name"):
+                if (
+                    not existing_uni.short_name
+                    and record.get("short_name")
+                    and not is_locked(existing_uni, "short_name")
+                ):
                     existing_uni.short_name = record["short_name"]
                     changed = True
-                if not existing_uni.aliases and record.get("aliases"):
+                if (
+                    not existing_uni.aliases
+                    and record.get("aliases")
+                    and not is_locked(existing_uni, "aliases")
+                ):
                     existing_uni.aliases = record["aliases"]
                     changed = True
-                if not existing_uni.location and record.get("location"):
+                if (
+                    not existing_uni.location
+                    and record.get("location")
+                    and not is_locked(existing_uni, "location")
+                ):
                     existing_uni.location = record["location"]
                     changed = True
                 if changed:
@@ -297,12 +318,18 @@ async def main() -> None:
                         # {"notes": [...]}). Merge instead: only touch the
                         # `notes` key, leave every other key whatever it is.
                         if existing_prog.requirements.get("notes") != admission_notes:
-                            existing_prog.requirements = {**existing_prog.requirements, "notes": admission_notes}
-                            changed = True
+                            if is_locked(existing_prog, "requirements"):
+                                print(f"Skipping requirements for {existing_prog.id} — admin-locked")
+                            else:
+                                existing_prog.requirements = {**existing_prog.requirements, "notes": admission_notes}
+                                changed = True
                         for field, value in prog_data.items():
                             if field == "requirements":
                                 continue
                             if getattr(existing_prog, field) != value:
+                                if is_locked(existing_prog, field):
+                                    print(f"Skipping {field} for {existing_prog.id} — admin-locked")
+                                    continue
                                 setattr(existing_prog, field, value)
                                 changed = True
                         if {d.slug for d in existing_prog.directions} != set(profession_slugs):
