@@ -116,7 +116,7 @@ def test_glossary_block_kk_contains_rules():
     assert "Nazarbayev University" in kk_block
     assert "ҰБТ" in kk_block
     assert "бейіндік пәндер" in kk_block
-    assert "шекті балл" in kk_block
+    assert "шектік балл" in kk_block
     assert "Data Engineer" in kk_block
     assert "Mobile-әзірлеуші" in kk_block
     assert "QA-инженер (тестілеуші)" in kk_block

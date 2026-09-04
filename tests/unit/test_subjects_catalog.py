@@ -44,7 +44,7 @@ def test_admission_terms_ent_pair():
     assert subjects.RU["admission_terms"]["ent"] == "ЕНТ"
     assert subjects.KK["admission_terms"]["ent"] == "ҰБТ"
     assert subjects.KK["admission_terms"]["profile_subjects"] == "бейіндік пәндер"
-    assert subjects.KK["admission_terms"]["threshold_score"] == "шекті балл"
+    assert subjects.KK["admission_terms"]["threshold_score"] == "шектік балл"
 
 
 def test_tr_resolves_by_locale():

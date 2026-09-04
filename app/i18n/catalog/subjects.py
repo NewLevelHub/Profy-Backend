@@ -56,7 +56,7 @@ KK = {
     "admission_terms": {
         "ent": "ҰБТ",
         "profile_subjects": "бейіндік пәндер",
-        "threshold_score": "шекті балл",
+        "threshold_score": "шектік балл",
         "creative_exam": "шығармашылық емтихан",
     },
 }
