@@ -7,12 +7,17 @@ from app.models.direction import Direction
 from app.models.motivation import MotivationStatement
 from app.models.motivation_pair import MotivationPair
 from app.models.profile import AgeGroup
+from app.models.program import Program, program_directions
 from app.models.question import Question, QuestionInstrument
 from app.models.question_pair import QuestionPair
+from app.models.university import University
 from app.schemas.admin_content import (
+    AdminDirectionDetail,
     AdminDirectionListItem,
     AdminDirectionListResponse,
+    AdminDirectionProgram,
     AdminDirectionUpdateRequest,
+    AdminLinkedQuestion,
     AdminMotivationPairListItem,
     AdminMotivationPairListResponse,
     AdminMotivationPairUpdateRequest,
@@ -21,6 +26,7 @@ from app.schemas.admin_content import (
     AdminMotivationStatementUpdateRequest,
     AdminQuestionListItem,
     AdminQuestionListResponse,
+    AdminQuestionPairDetail,
     AdminQuestionPairListItem,
     AdminQuestionPairListResponse,
     AdminQuestionPairUpdateRequest,
@@ -75,6 +81,31 @@ def _validate_question_update(row: Question, updates: dict) -> None:
             f"{type_field} cannot be null on a {row.instrument.value} question — "
             "scoring groups responses by this field for every student."
         )
+
+
+def _effective_option_text(override: str | None, question: Question | None) -> str:
+    """The text a student actually sees for one side of a forced-choice pair.
+    Mirrors question_pair_service._to_option() exactly — if the two ever
+    disagree, the admin list stops showing what the test shows, which is the
+    whole point of surfacing it. `question` is None only if the FK row went
+    missing, which the ON DELETE CASCADE makes unreachable in practice."""
+    if override:
+        return override
+    if question is None:
+        return ""
+    return question.short_text or question.text
+
+
+async def _load_questions_by_id(
+    db: AsyncSession, question_ids: set[uuid.UUID]
+) -> dict[uuid.UUID, Question]:
+    """One batched SELECT for every question referenced by a page of pairs —
+    the alternative the frontend had to use (a detail request per row) is the
+    N+1 this whole change exists to remove."""
+    if not question_ids:
+        return {}
+    result = await db.execute(select(Question).where(Question.id.in_(question_ids)))
+    return {q.id: q for q in result.scalars().all()}
 
 
 async def _count_and_paginate(db: AsyncSession, model, filters: list, order_by: tuple, page: int, limit: int):
@@ -163,12 +194,19 @@ async def list_question_pairs(
         db, QuestionPair, filters, (QuestionPair.instrument.asc(), QuestionPair.pair_index.asc()), page, limit
     )
 
+    questions = await _load_questions_by_id(
+        db, {p.question_a_id for p in rows} | {p.question_b_id for p in rows}
+    )
+
     items = [
         AdminQuestionPairListItem(
             id=p.id,
             instrument=p.instrument,
             age_tier=p.age_tier,
             pair_index=p.pair_index,
+            frame=p.frame,
+            option_a_text=_effective_option_text(p.option_a_text, questions.get(p.question_a_id)),
+            option_b_text=_effective_option_text(p.option_b_text, questions.get(p.question_b_id)),
             has_overrides=has_overrides(p),
         )
         for p in rows
@@ -177,14 +215,33 @@ async def list_question_pairs(
     return AdminQuestionPairListResponse(items=items, total=total, page=page, limit=limit)
 
 
-async def get_question_pair_detail(db: AsyncSession, pair_id: uuid.UUID) -> QuestionPair | None:
-    return await _get_by_id(db, QuestionPair, pair_id)
+async def _build_pair_detail(db: AsyncSession, pair: QuestionPair) -> AdminQuestionPairDetail:
+    """Detail keeps the raw override columns (null = "falls back") and adds the
+    two linked questions, so the form can show what an empty override resolves
+    to without the caller fetching each question itself."""
+    questions = await _load_questions_by_id(db, {pair.question_a_id, pair.question_b_id})
+    detail = AdminQuestionPairDetail.model_validate(pair)
+    detail.question_a = _linked_question(questions.get(pair.question_a_id))
+    detail.question_b = _linked_question(questions.get(pair.question_b_id))
+    return detail
+
+
+def _linked_question(question: Question | None) -> AdminLinkedQuestion | None:
+    return None if question is None else AdminLinkedQuestion.model_validate(question)
+
+
+async def get_question_pair_detail(
+    db: AsyncSession, pair_id: uuid.UUID
+) -> AdminQuestionPairDetail | None:
+    pair = await _get_by_id(db, QuestionPair, pair_id)
+    return None if pair is None else await _build_pair_detail(db, pair)
 
 
 async def update_question_pair(
     db: AsyncSession, pair_id: uuid.UUID, data: AdminQuestionPairUpdateRequest
-) -> QuestionPair:
-    return await _update_by_id(db, QuestionPair, pair_id, data, "Question pair not found")
+) -> AdminQuestionPairDetail:
+    pair = await _update_by_id(db, QuestionPair, pair_id, data, "Question pair not found")
+    return await _build_pair_detail(db, pair)
 
 
 # --- Motivation statements ---
@@ -253,6 +310,8 @@ async def list_motivation_pairs(
             pair_index=p.pair_index,
             category_a=p.category_a,
             category_b=p.category_b,
+            text_a=p.text_a,
+            text_b=p.text_b,
             has_overrides=has_overrides(p),
         )
         for p in rows
@@ -274,6 +333,40 @@ async def update_motivation_pair(
 # --- Directions ---
 
 
+# The descriptive half of a Direction — everything except name/slug/
+# holland_code, which the RIASEC seed always fills. These five are seeded
+# empty and filled by a later content pass, so "how much of the catalog is
+# actually written" is a per-field question, not a per-row one. All five feed
+# report_service and the two direction LLM prompts; an empty one silently
+# degrades those, which is why the gap is reported instead of rendered blank.
+_DIRECTION_CATALOG_FIELDS = (
+    "description",
+    "professions",
+    "skills_needed",
+    "subjects_to_develop",
+    "first_steps",
+)
+
+
+def _empty_catalog_fields(direction: Direction) -> list[str]:
+    return [f for f in _DIRECTION_CATALOG_FIELDS if not getattr(direction, f)]
+
+
+async def _programs_count_by_direction(
+    db: AsyncSession, direction_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, int]:
+    """Counts straight off the `program_directions` association — one grouped
+    query for the whole page rather than a correlated subquery per row."""
+    if not direction_ids:
+        return {}
+    result = await db.execute(
+        select(program_directions.c.direction_id, func.count())
+        .where(program_directions.c.direction_id.in_(direction_ids))
+        .group_by(program_directions.c.direction_id)
+    )
+    return {direction_id: count for direction_id, count in result.all()}
+
+
 async def list_directions(
     db: AsyncSession,
     *,
@@ -287,25 +380,57 @@ async def list_directions(
 
     total, rows = await _count_and_paginate(db, Direction, filters, (Direction.name.asc(),), page, limit)
 
-    items = [
-        AdminDirectionListItem(
-            id=d.id,
-            name=d.name,
-            slug=d.slug,
-            holland_code=d.holland_code,
-            has_overrides=has_overrides(d),
+    counts = await _programs_count_by_direction(db, [d.id for d in rows])
+
+    items = []
+    for d in rows:
+        empty_fields = _empty_catalog_fields(d)
+        items.append(
+            AdminDirectionListItem(
+                id=d.id,
+                name=d.name,
+                slug=d.slug,
+                holland_code=d.holland_code,
+                programs_count=counts.get(d.id, 0),
+                catalog_filled=not empty_fields,
+                empty_catalog_fields=empty_fields,
+                has_overrides=has_overrides(d),
+            )
         )
-        for d in rows
-    ]
 
     return AdminDirectionListResponse(items=items, total=total, page=page, limit=limit)
 
 
-async def get_direction_detail(db: AsyncSession, direction_id: uuid.UUID) -> Direction | None:
-    return await _get_by_id(db, Direction, direction_id)
+async def _build_direction_detail(db: AsyncSession, direction: Direction) -> AdminDirectionDetail:
+    result = await db.execute(
+        select(Program.id, Program.name, University.id, University.name)
+        .join(program_directions, program_directions.c.program_id == Program.id)
+        .join(University, Program.university_id == University.id)
+        .where(program_directions.c.direction_id == direction.id)
+        .order_by(University.name.asc(), Program.name.asc())
+    )
+    detail = AdminDirectionDetail.model_validate(direction)
+    detail.programs = [
+        AdminDirectionProgram(
+            id=program_id,
+            name=program_name,
+            university_id=university_id,
+            university_name=university_name,
+        )
+        for program_id, program_name, university_id, university_name in result.all()
+    ]
+    return detail
+
+
+async def get_direction_detail(
+    db: AsyncSession, direction_id: uuid.UUID
+) -> AdminDirectionDetail | None:
+    direction = await _get_by_id(db, Direction, direction_id)
+    return None if direction is None else await _build_direction_detail(db, direction)
 
 
 async def update_direction(
     db: AsyncSession, direction_id: uuid.UUID, data: AdminDirectionUpdateRequest
-) -> Direction:
-    return await _update_by_id(db, Direction, direction_id, data, "Direction not found")
+) -> AdminDirectionDetail:
+    direction = await _update_by_id(db, Direction, direction_id, data, "Direction not found")
+    return await _build_direction_detail(db, direction)

@@ -5,11 +5,18 @@ from pydantic import BaseModel
 
 
 class AdminUniversityListItem(BaseModel):
+    """`ranking` alone is not comparable across rows — one Integer column
+    holds a QS world position, a national tier and a field-specific rank at
+    once (see University.ranking). `ranking_label` is the string the source
+    actually gave ("#28 (QS World)", "Top-20 (Нац. рейтинг)"), and is the only
+    honest thing to show next to the number in a list."""
+
     id: uuid.UUID
     name: str
     city: str
     country: str
     ranking: int | None
+    ranking_label: str | None
     uniranks_kz_rank: int | None
     uniranks_note: str | None
     updated_at: datetime | None

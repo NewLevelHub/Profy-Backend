@@ -67,10 +67,22 @@ class AdminQuestionUpdateRequest(BaseModel):
 
 
 class AdminQuestionPairListItem(BaseModel):
+    """`option_a_text`/`option_b_text` here are the **effective** option texts
+    — what the student actually sees — resolved through the same fallback
+    chain as question_pair_service._to_option(): pair override, else the
+    linked Question's short_text, else its text. They are never null, unlike
+    the same-named *raw override* columns on AdminQuestionPairDetail below,
+    which are what a PATCH writes. Editing forms must read the detail
+    endpoint: prefilling a form from this list would turn a displayed
+    fallback into a real override on the first save."""
+
     id: uuid.UUID
     instrument: QuestionInstrument
     age_tier: AgeGroup
     pair_index: int
+    frame: str | None
+    option_a_text: str
+    option_b_text: str
     has_overrides: bool
 
     model_config = {"from_attributes": True}
@@ -85,6 +97,19 @@ class AdminQuestionPairListResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class AdminLinkedQuestion(BaseModel):
+    """The Question a pair option points at, inlined so the admin can see the
+    fallback text/icon an empty override resolves to without a second request
+    per option."""
+
+    id: uuid.UUID
+    text: str
+    short_text: str | None
+    icon: str | None
+
+    model_config = {"from_attributes": True}
+
+
 class AdminQuestionPairDetail(BaseModel):
     id: uuid.UUID
     instrument: QuestionInstrument
@@ -92,6 +117,8 @@ class AdminQuestionPairDetail(BaseModel):
     pair_index: int
     question_a_id: uuid.UUID
     question_b_id: uuid.UUID
+    question_a: AdminLinkedQuestion | None = None
+    question_b: AdminLinkedQuestion | None = None
     frame: str | None
     option_a_text: str | None
     option_b_text: str | None
@@ -155,10 +182,16 @@ class AdminMotivationStatementUpdateRequest(BaseModel):
 
 
 class AdminMotivationPairListItem(BaseModel):
+    """Nine categories over eighteen pairs means category_a/category_b alone
+    identify no row uniquely — each label pair occurs exactly twice. text_a/
+    text_b are the only fields that tell two rows apart in a list."""
+
     id: uuid.UUID
     pair_index: int
     category_a: MotivationCategory
     category_b: MotivationCategory
+    text_a: str
+    text_b: str
     has_overrides: bool
 
     model_config = {"from_attributes": True}
@@ -196,10 +229,19 @@ class AdminMotivationPairUpdateRequest(BaseModel):
 
 
 class AdminDirectionListItem(BaseModel):
+    """`empty_catalog_fields` names the descriptive fields that are still
+    empty on this row (of description/professions/skills_needed/
+    subjects_to_develop/first_steps), so the list can mark half-filled
+    directions instead of hiding the gap until someone opens the detail.
+    `catalog_filled` is just "that list is empty"."""
+
     id: uuid.UUID
     name: str
     slug: str
     holland_code: str
+    programs_count: int
+    catalog_filled: bool
+    empty_catalog_fields: list[str]
     has_overrides: bool
 
     model_config = {"from_attributes": True}
@@ -214,6 +256,20 @@ class AdminDirectionListResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class AdminDirectionProgram(BaseModel):
+    """A program mapped to this direction through `program_directions`. The
+    mapping drives career matching, so an admin editing a direction needs to
+    see what it currently pulls in — until now the table existed but was
+    invisible from the admin side."""
+
+    id: uuid.UUID
+    name: str
+    university_id: uuid.UUID
+    university_name: str
+
+    model_config = {"from_attributes": True}
+
+
 class AdminDirectionDetail(BaseModel):
     id: uuid.UUID
     name: str
@@ -224,6 +280,7 @@ class AdminDirectionDetail(BaseModel):
     skills_needed: list
     subjects_to_develop: list
     first_steps: list
+    programs: list[AdminDirectionProgram] = []
     overrides: dict
 
     model_config = {"from_attributes": True}
