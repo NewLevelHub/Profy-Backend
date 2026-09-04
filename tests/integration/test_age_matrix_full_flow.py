@@ -226,7 +226,7 @@ def _patch_counting_functions(
         AsyncMock(return_value={d: (0, 0) for d in bigfive_service.BIGFIVE_ORDER}),
     )
     monkeypatch.setattr(bigfive_service, "facet_keying_counts", AsyncMock(return_value={}))
-    monkeypatch.setattr(bigfive_service, "_grand_mean", AsyncMock(return_value=3.0))
+    monkeypatch.setattr(bigfive_service, "grand_mean", AsyncMock(return_value=3.0))
 
 
 def _patch_completion_gate(

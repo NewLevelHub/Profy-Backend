@@ -1,7 +1,8 @@
 """admin_locked_fields: a PATCH via admin_university_service must record which
-top-level fields it touched, and the six seed/backfill scripts that overwrite-
-if-different (not fill-if-empty) must skip any field already locked instead of
-reverting a manual edit on the next deploy. See docs/admin-edit-lock-plan.md."""
+top-level fields it touched, and every seed/backfill/build script that
+overwrites-if-different (not fill-if-empty) must skip any field already
+locked instead of reverting a manual edit on the next deploy. See
+docs/admin-edit-lock-plan.md."""
 
 import uuid
 
@@ -113,3 +114,42 @@ async def test_backfill_ranking_from_label_skips_locked_field(
 
     await db_session.refresh(university)
     assert university.ranking == 5  # not reverted to the label-parsed 701
+
+
+async def test_build_universities_skips_locked_fields(db_session: AsyncSession) -> None:
+    """build_universities.py is the sole University/Program resync path left
+    in cd.yml/cd-dev.yml (replaced the ~30-script pipeline, see its module
+    docstring) — its apply_synced_fields() upsert helper must respect
+    admin_locked_fields the same way every script it replaced did, or the
+    next deploy silently reverts a manual admin edit.
+
+    Deliberately does NOT call build_universities.main() — that also runs
+    the PRUNE phase against every University/Program row in the DB this test
+    suite is pointed at (see tests/conftest.py: db_session binds the real
+    app.database.engine, not a disposable one), which would try to delete
+    every real seeded row not in a hand-built one-university snapshot."""
+    from scripts.build_universities import apply_synced_fields
+
+    university = University(
+        name="Lock Test Uni",
+        country="Kazakhstan",
+        city="Almaty",
+        description="admin-written description",
+    )
+    db_session.add(university)
+    await db_session.commit()
+    await db_session.refresh(university)
+
+    await admin_university_service.update_university(
+        db_session, university.id, AdminUniversityUpdateRequest(description="admin-written description")
+    )
+    assert is_locked(university, "description")
+
+    changed, skips = apply_synced_fields(
+        university, {"description": "snapshot description", "city": "Astana"}
+    )
+
+    assert changed is True  # city still synced
+    assert skips == 1
+    assert university.description == "admin-written description"  # not reverted
+    assert university.city == "Astana"  # unlocked fields still sync normally

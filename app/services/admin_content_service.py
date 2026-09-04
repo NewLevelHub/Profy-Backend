@@ -26,7 +26,7 @@ from app.schemas.admin_content import (
     AdminQuestionPairUpdateRequest,
     AdminQuestionUpdateRequest,
 )
-from app.services.admin_lock import apply_overrides
+from app.services.admin_lock import AdminOverrideValidationError, apply_overrides, has_overrides
 
 
 async def _get_by_id(db: AsyncSession, model, row_id: uuid.UUID):
@@ -37,15 +37,55 @@ async def _get_by_id(db: AsyncSession, model, row_id: uuid.UUID):
     return result.scalar_one_or_none()
 
 
-async def _update_by_id(db: AsyncSession, model, row_id: uuid.UUID, data, not_found_msg: str):
+async def _update_by_id(
+    db: AsyncSession, model, row_id: uuid.UUID, data, not_found_msg: str, validate=None
+):
     row = await _get_by_id(db, model, row_id)
     if row is None:
         raise ValueError(not_found_msg)
 
-    apply_overrides(row, data.model_dump(exclude_unset=True))
+    updates = data.model_dump(exclude_unset=True)
+    if validate is not None:
+        validate(row, updates)
+    apply_overrides(row, updates)
     await db.commit()
     await db.refresh(row)
     return row
+
+
+# A Question's own-instrument taxonomy field (riasec_type/bigfive_domain/
+# mi_category) is nullable at the DB level only because the three
+# instruments share one table — each is null for the OTHER two instruments'
+# rows, never for its own. riasec_service.py/bigfive_service.py/mi_service.py
+# all do `{t.value: c for t, c in ...}` after grouping by that column, which
+# crashes with AttributeError on a None key. AdminQuestionUpdateRequest's
+# fields are typed `| None` only so PATCHing an unrelated field doesn't force
+# resending them (exclude_unset) — an explicit null must still be rejected.
+_INSTRUMENT_TYPE_FIELD = {
+    QuestionInstrument.riasec: "riasec_type",
+    QuestionInstrument.big_five: "bigfive_domain",
+    QuestionInstrument.mi: "mi_category",
+}
+
+
+def _validate_question_update(row: Question, updates: dict) -> None:
+    type_field = _INSTRUMENT_TYPE_FIELD.get(row.instrument)
+    if type_field and type_field in updates and updates[type_field] is None:
+        raise AdminOverrideValidationError(
+            f"{type_field} cannot be null on a {row.instrument.value} question — "
+            "scoring groups responses by this field for every student."
+        )
+
+
+async def _count_and_paginate(db: AsyncSession, model, filters: list, order_by: tuple, page: int, limit: int):
+    """Shared count-then-paginate body for all 5 list_X functions below — only
+    the model, filters, and ordering differ per content type."""
+    total_result = await db.execute(select(func.count()).select_from(model).where(*filters))
+    total = total_result.scalar_one()
+
+    query = select(model).where(*filters).order_by(*order_by).offset((page - 1) * limit).limit(limit)
+    result = await db.execute(query)
+    return total, result.scalars().all()
 
 
 # --- Questions ---
@@ -68,17 +108,9 @@ async def list_questions(
     if search:
         filters.append(Question.text.ilike(f"%{search.strip()}%"))
 
-    total_result = await db.execute(select(func.count()).select_from(Question).where(*filters))
-    total = total_result.scalar_one()
-
-    query = (
-        select(Question)
-        .where(*filters)
-        .order_by(Question.instrument.asc(), Question.order.asc())
-        .offset((page - 1) * limit)
-        .limit(limit)
+    total, rows = await _count_and_paginate(
+        db, Question, filters, (Question.instrument.asc(), Question.order.asc()), page, limit
     )
-    result = await db.execute(query)
 
     items = [
         AdminQuestionListItem(
@@ -90,9 +122,9 @@ async def list_questions(
             riasec_type=q.riasec_type,
             bigfive_domain=q.bigfive_domain,
             mi_category=q.mi_category,
-            has_overrides=bool(q.overrides),
+            has_overrides=has_overrides(q),
         )
-        for q in result.scalars().all()
+        for q in rows
     ]
 
     return AdminQuestionListResponse(items=items, total=total, page=page, limit=limit)
@@ -105,7 +137,9 @@ async def get_question_detail(db: AsyncSession, question_id: uuid.UUID) -> Quest
 async def update_question(
     db: AsyncSession, question_id: uuid.UUID, data: AdminQuestionUpdateRequest
 ) -> Question:
-    return await _update_by_id(db, Question, question_id, data, "Question not found")
+    return await _update_by_id(
+        db, Question, question_id, data, "Question not found", validate=_validate_question_update
+    )
 
 
 # --- Question pairs ---
@@ -125,17 +159,9 @@ async def list_question_pairs(
     if age_tier:
         filters.append(QuestionPair.age_tier == age_tier)
 
-    total_result = await db.execute(select(func.count()).select_from(QuestionPair).where(*filters))
-    total = total_result.scalar_one()
-
-    query = (
-        select(QuestionPair)
-        .where(*filters)
-        .order_by(QuestionPair.instrument.asc(), QuestionPair.pair_index.asc())
-        .offset((page - 1) * limit)
-        .limit(limit)
+    total, rows = await _count_and_paginate(
+        db, QuestionPair, filters, (QuestionPair.instrument.asc(), QuestionPair.pair_index.asc()), page, limit
     )
-    result = await db.execute(query)
 
     items = [
         AdminQuestionPairListItem(
@@ -143,9 +169,9 @@ async def list_question_pairs(
             instrument=p.instrument,
             age_tier=p.age_tier,
             pair_index=p.pair_index,
-            has_overrides=bool(p.overrides),
+            has_overrides=has_overrides(p),
         )
-        for p in result.scalars().all()
+        for p in rows
     ]
 
     return AdminQuestionPairListResponse(items=items, total=total, page=page, limit=limit)
@@ -170,16 +196,14 @@ async def list_motivation_statements(
     page: int = 1,
     limit: int = 20,
 ) -> AdminMotivationStatementListResponse:
-    total_result = await db.execute(select(func.count()).select_from(MotivationStatement))
-    total = total_result.scalar_one()
-
-    query = (
-        select(MotivationStatement)
-        .order_by(MotivationStatement.triplet_index.asc(), MotivationStatement.order.asc())
-        .offset((page - 1) * limit)
-        .limit(limit)
+    total, rows = await _count_and_paginate(
+        db,
+        MotivationStatement,
+        [],
+        (MotivationStatement.triplet_index.asc(), MotivationStatement.order.asc()),
+        page,
+        limit,
     )
-    result = await db.execute(query)
 
     items = [
         AdminMotivationStatementListItem(
@@ -188,9 +212,9 @@ async def list_motivation_statements(
             order=s.order,
             category=s.category,
             text=s.text,
-            has_overrides=bool(s.overrides),
+            has_overrides=has_overrides(s),
         )
-        for s in result.scalars().all()
+        for s in rows
     ]
 
     return AdminMotivationStatementListResponse(items=items, total=total, page=page, limit=limit)
@@ -219,16 +243,9 @@ async def list_motivation_pairs(
     page: int = 1,
     limit: int = 20,
 ) -> AdminMotivationPairListResponse:
-    total_result = await db.execute(select(func.count()).select_from(MotivationPair))
-    total = total_result.scalar_one()
-
-    query = (
-        select(MotivationPair)
-        .order_by(MotivationPair.pair_index.asc())
-        .offset((page - 1) * limit)
-        .limit(limit)
+    total, rows = await _count_and_paginate(
+        db, MotivationPair, [], (MotivationPair.pair_index.asc(),), page, limit
     )
-    result = await db.execute(query)
 
     items = [
         AdminMotivationPairListItem(
@@ -236,9 +253,9 @@ async def list_motivation_pairs(
             pair_index=p.pair_index,
             category_a=p.category_a,
             category_b=p.category_b,
-            has_overrides=bool(p.overrides),
+            has_overrides=has_overrides(p),
         )
-        for p in result.scalars().all()
+        for p in rows
     ]
 
     return AdminMotivationPairListResponse(items=items, total=total, page=page, limit=limit)
@@ -268,17 +285,7 @@ async def list_directions(
     if search:
         filters.append(Direction.name.ilike(f"%{search.strip()}%"))
 
-    total_result = await db.execute(select(func.count()).select_from(Direction).where(*filters))
-    total = total_result.scalar_one()
-
-    query = (
-        select(Direction)
-        .where(*filters)
-        .order_by(Direction.name.asc())
-        .offset((page - 1) * limit)
-        .limit(limit)
-    )
-    result = await db.execute(query)
+    total, rows = await _count_and_paginate(db, Direction, filters, (Direction.name.asc(),), page, limit)
 
     items = [
         AdminDirectionListItem(
@@ -286,9 +293,9 @@ async def list_directions(
             name=d.name,
             slug=d.slug,
             holland_code=d.holland_code,
-            has_overrides=bool(d.overrides),
+            has_overrides=has_overrides(d),
         )
-        for d in result.scalars().all()
+        for d in rows
     ]
 
     return AdminDirectionListResponse(items=items, total=total, page=page, limit=limit)
