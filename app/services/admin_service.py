@@ -257,11 +257,14 @@ async def _build_user_list_items(db: AsyncSession, users: list[User]) -> list[Ad
         latest_analysis = analysis_by_assessment.get(latest_completed.id) if latest_completed else None
         # RIASEC is only meaningful for middle/senior — junior's instrument
         # is MI, deliberately left blank here rather than mixing shapes.
+        is_junior = bool(profile and profile.age_group == AgeGroup.junior)
         riasec = (
-            dict(latest_analysis.profile)
-            if latest_analysis and profile and profile.age_group != AgeGroup.junior
-            else None
+            dict(latest_analysis.profile) if latest_analysis and not is_junior else None
         )
+        # Same stored `profile` dict, but keyed by MI category instead of
+        # Holland letter for junior — the two shapes are kept in separate
+        # fields rather than mixed into one column set.
+        mi = dict(latest_analysis.profile) if latest_analysis and is_junior else None
         big_five = dict(latest_analysis.big_five) if latest_analysis else None
 
         items.append(
@@ -276,10 +279,13 @@ async def _build_user_list_items(db: AsyncSession, users: list[User]) -> list[Ad
                 has_profile=profile is not None,
                 profile_name=profile.name if profile else None,
                 age_group=profile.age_group.value if profile else None,
+                city=profile.city if profile else None,
+                grade=profile.grade if profile else None,
                 assessments_count=len(assessments),
                 latest_assessment_status=latest.status.value if latest else None,
                 latest_assessment_goal=latest.goal.value if latest else None,
                 riasec=riasec,
+                mi=mi,
                 big_five=big_five,
             )
         )

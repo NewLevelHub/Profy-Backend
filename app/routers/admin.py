@@ -1,4 +1,5 @@
 import uuid
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi import status as http_status
@@ -112,12 +113,18 @@ async def export_users(
     age_group: AgeGroup | None = Query(default=None),
     status: AssessmentStatus | None = Query(default=None),
     goal: AssessmentGoal | None = Query(default=None),
+    inactive_days: int | None = Query(default=None, ge=1),
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     try:
         items = await admin_service.export_users(
-            db, search=search, age_group=age_group, status=status, goal=goal
+            db,
+            search=search,
+            age_group=age_group,
+            status=status,
+            goal=goal,
+            inactive_days=inactive_days,
         )
     except admin_service.ExportTooLargeError as e:
         # `status` (the query param above) shadows the fastapi `status`
@@ -165,10 +172,18 @@ async def export_assessment(
     if not detail:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
     zip_bytes = admin_export_service.assessment_detail_to_zip(detail)
+    filename = admin_export_service.assessment_export_filename(detail)
     return Response(
         content=zip_bytes,
         media_type="application/zip",
-        headers={"Content-Disposition": f"attachment; filename=assessment_{assessment_id}.zip"},
+        # filename* (RFC 5987) carries the UTF-8 name; plain filename stays as
+        # a fallback for clients that ignore it. Names here are Russian.
+        headers={
+            "Content-Disposition": (
+                f"attachment; filename=assessment_{assessment_id}.zip; "
+                f"filename*=UTF-8''{quote(filename)}"
+            )
+        },
     )
 
 

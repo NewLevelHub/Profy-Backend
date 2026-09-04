@@ -24,6 +24,10 @@ class AdminUserListItem(BaseModel):
     has_profile: bool
     profile_name: str | None = None
     age_group: str | None = None
+    # A product for Kazakhstan makes "where do our users live" an obvious
+    # question of any export, and neither field was reachable from this list.
+    city: str | None = None
+    grade: int | None = None
     assessments_count: int = 0
     latest_assessment_status: str | None = None
     latest_assessment_goal: str | None = None
@@ -35,6 +39,11 @@ class AdminUserListItem(BaseModel):
     # flipped/relabeled `personality_profile` — admin sees true raw numbers,
     # same convention DiagnosticSummaryBlock already uses for RIASEC.
     riasec: dict[str, float] | None = None
+    # Junior's interest instrument is MI, not RIASEC, so `riasec` is None for
+    # every junior. Without this the export showed a completed junior
+    # diagnostic as eleven empty score columns — indistinguishable from a
+    # broken row rather than from a different instrument.
+    mi: dict[str, float] | None = None
     big_five: dict[str, float] | None = None
 
 
