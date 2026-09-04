@@ -16,6 +16,7 @@ import logging
 
 from pydantic import ValidationError
 
+from app.i18n.catalog import tr
 from app.prompts import report_narrative as prompt
 from app.schemas.report_narrative import ReportNarrativeOutput
 from app.schemas.report_narrative_context import ReportNarrativeContext
@@ -26,6 +27,24 @@ from app.services.report_narrative_validator import ValidationIssue, validate
 logger = logging.getLogger(__name__)
 
 MAX_ATTEMPTS = 3  # 1 initial + 2 retries
+
+_metric_counts: dict[str, int] = {}
+
+
+def record_language_mismatch(locale: str) -> None:
+    key = f"llm.language_mismatch:locale={locale}"
+    _metric_counts[key] = _metric_counts.get(key, 0) + 1
+    logger.warning("llm.language_mismatch locale=%s", locale)
+
+
+def record_fallback(reason: str) -> None:
+    key = f"llm.fallback:reason={reason}"
+    _metric_counts[key] = _metric_counts.get(key, 0) + 1
+    logger.warning("llm.fallback reason=%s", reason)
+
+
+def metric_counts() -> dict[str, int]:
+    return dict(_metric_counts)
 
 
 def _log_attempt(attempt: int, issues: list[ValidationIssue]) -> None:
@@ -130,7 +149,7 @@ _CORRECTION_HINTS: dict[str, str] = {
 }
 
 
-def _correction_message(issues: list[ValidationIssue]) -> str:
+def _correction_message(issues: list[ValidationIssue], *, language: str = "ru") -> str:
     """Turns this attempt's failures into feedback for the next one. A blind
     retry (same prompt, same mistake) measurably never recovers from a
     systematic misunderstanding — e.g. gpt-4o-mini reliably leaves
@@ -143,16 +162,24 @@ def _correction_message(issues: list[ValidationIssue]) -> str:
     issue.detail here is fine to send back to the model — it's exactly the
     context it needs to fix itself — but the caller must keep logging codes
     only, never detail (see module docstring)."""
+    catalog = tr("validator", locale=language)
+    header = catalog.get("correction_header", "Твой предыдущий ответ не прошёл проверку. Конкретные проблемы:\n")
+    footer = catalog.get(
+        "correction_footer",
+        "\n\nПришли новый полный JSON-ответ по той же схеме, который "
+        "исправляет именно эти проблемы — не меняй остальное без необходимости.",
+    )
     lines = []
     for issue in issues:
-        hint = _CORRECTION_HINTS.get(issue.code)
-        lines.append(f"- {hint.format(detail=issue.detail)}" if hint else f"- {issue.code}: {issue.detail}")
-    return (
-        "Твой предыдущий ответ не прошёл проверку. Конкретные проблемы:\n"
-        + "\n".join(lines)
-        + "\n\nПришли новый полный JSON-ответ по той же схеме, который "
-        "исправляет именно эти проблемы — не меняй остальное без необходимости."
-    )
+        hint = catalog.get(issue.code) or _CORRECTION_HINTS.get(issue.code)
+        if hint:
+            try:
+                lines.append(f"- {hint.format(detail=issue.detail)}")
+            except Exception:
+                lines.append(f"- {hint}")
+        else:
+            lines.append(f"- {issue.code}: {issue.detail}")
+    return header + "\n".join(lines) + footer
 
 
 async def generate_report_narrative(
@@ -162,6 +189,7 @@ async def generate_report_narrative(
 ) -> tuple[ReportNarrativeOutput, bool]:
     """Returns (narrative, is_ai_generated). Never raises — always resolves
     to a valid narrative, falling back deterministically on any failure."""
+    had_language_mismatch = False
     if llm_client.is_enabled():
         messages = prompt.build_messages(context, language=language)
         last_raw: dict | None = None
@@ -179,6 +207,11 @@ async def generate_report_narrative(
             _log_attempt(attempt, issues)
             if not issues:
                 return output, True
+
+            if any(issue.code == "LANGUAGE_MISMATCH" for issue in issues):
+                had_language_mismatch = True
+                record_language_mismatch(language)
+
             last_raw = raw
 
             if attempt < MAX_ATTEMPTS:
@@ -187,11 +220,16 @@ async def generate_report_narrative(
                 # _correction_message docstring for why this matters).
                 messages = messages + [
                     {"role": "assistant", "content": json.dumps(last_raw, ensure_ascii=False)},
-                    {"role": "user", "content": _correction_message(issues)},
+                    {"role": "user", "content": _correction_message(issues, language=language)},
                 ]
 
+    if had_language_mismatch:
+        record_fallback("language")
+    else:
+        record_fallback("validation")
+
     logger.warning(
-        "report_narrative fallback age_group=%s interest_instrument=%s",
-        context.age_group, context.interest_instrument,
+        "report_narrative fallback age_group=%s interest_instrument=%s language=%s had_language_mismatch=%s",
+        context.age_group, context.interest_instrument, language, had_language_mismatch,
     )
-    return build_fallback_narrative(context), False
+    return build_fallback_narrative(context, locale=language), False

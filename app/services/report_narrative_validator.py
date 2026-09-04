@@ -71,10 +71,34 @@ _THINKING_STYLE_DESC_MAX_LEN = {AgeGroup.junior: 220, AgeGroup.middle: 480, AgeG
 _FINAL_ANALYSIS_MAX_LEN = {AgeGroup.junior: 400, AgeGroup.middle: 550, AgeGroup.senior: 650}
 
 _CYRILLIC_RE = re.compile(r"[а-яё]", re.IGNORECASE)
+_CYRILLIC_KK_RE = re.compile(r"[а-яёәғқңөұүһі]", re.IGNORECASE)
 _LATIN_RE = re.compile(r"[a-z]", re.IGNORECASE)
 _DIGIT_OR_PERCENT_RE = re.compile(r"[\d%]")
 _MIN_CYRILLIC_RATIO = 0.85
 _SENTENCE_END_RE = re.compile(r"[.!?]+(?=\s|$)")
+
+KK_SPECIFIC_CHARS: frozenset[str] = frozenset("әғқңөұүһі")
+
+RU_MARKER_WORDS: frozenset[str] = frozenset({
+    "и", "в", "не", "на", "с", "что", "как", "это", "по", "но", "к", "у", "ты",
+    "из", "за", "от", "о", "для", "или", "если", "когда", "только", "тебе",
+    "тебя", "твои", "твоя", "твой", "тобой", "твоем", "твоих", "очень", "также",
+    "так", "можно", "нужно", "будет", "было", "который", "которая", "которое",
+    "которые", "чтобы", "потому", "поэтому", "даже", "между", "через", "всегда",
+    "после", "перед", "более", "менее", "все", "всё", "всех", "всем", "свой",
+    "своей", "своего", "своих", "себя", "наш", "наша", "наше", "наши", "его",
+    "ее", "их", "еще", "уже", "где", "куда", "зачем", "почему", "раздел", "отчет",
+})
+
+KK_COMMON_WORDS: frozenset[str] = frozenset({
+    "және", "мен", "бен", "пен", "үшін", "туралы", "арқылы", "бойынша",
+    "себебі", "өйткені", "бірақ", "сондықтан", "егер", "онда", "қана", "ғана",
+    "емес", "болады", "болуы", "керек", "қажет", "тиіс", "мүмкін", "жақсы",
+    "жоғары", "төмен", "орташа", "бар", "жоқ", "бұл", "осы", "сол", "бір",
+    "екі", "үш", "әр", "барлық", "көп", "аз", "сен", "сенің", "саған",
+    "сенде", "сенен", "өзің", "өзіңнің", "мақсат", "бағыт", "дағды", "қабілет",
+    "нәтиже", "талдау", "жұмыс", "оқу", "білім", "мектеп", "жоба", "кезең",
+})
 # Product decision, 2026-08-17: summary must be 5-6 sentences, not the
 # earlier 3-5 — each new sentence must add real framing (see
 # report_narrative_fallback._summary's own docstring), not pad toward the
@@ -103,21 +127,73 @@ def _all_texts(output: ReportNarrativeOutput) -> list[str]:
 _MIN_LETTERS_TO_JUDGE = 15
 
 
-def _check_language(texts: list[str], language: str) -> list[ValidationIssue]:
-    if language != "ru":
-        # Only ru content/vocabulary exists to validate against right now
-        # (TZ_Profi.md §30 localization is future scope) — nothing to check.
-        return []
-    # Per-text, not aggregated: one field written in the wrong language must
-    # not be diluted into a passing ratio by every other (correct) field.
+def _check_language_kk(texts: list[str]) -> list[ValidationIssue]:
+    # 1. Cyrillic alphabet ratio check
     for text in texts:
-        cyrillic = _CYRILLIC_RE.findall(text)
+        cyrillic = _CYRILLIC_KK_RE.findall(text)
         letters = cyrillic + _LATIN_RE.findall(text)
         if len(letters) < _MIN_LETTERS_TO_JUDGE:
-            continue  # too short to judge reliably (e.g. a bare category title)
+            continue
         ratio = len(cyrillic) / len(letters)
         if ratio < _MIN_CYRILLIC_RATIO:
-            return [ValidationIssue("language", f"cyrillic ratio {ratio:.2f} below {_MIN_CYRILLIC_RATIO}")]
+            return [ValidationIssue("LANGUAGE_MISMATCH", f"cyrillic ratio {ratio:.2f} below {_MIN_CYRILLIC_RATIO}")]
+
+    # 2. Per-field Russian vs Kazakh markers check
+    for text in texts:
+        words = re.findall(r"[а-яёәғқңөұүһі]+", text.lower())
+        if len(words) < 4:
+            continue
+        ru_count = sum(1 for w in words if w in RU_MARKER_WORDS)
+        kk_chars_count = sum(1 for c in text.lower() if c in KK_SPECIFIC_CHARS)
+        kk_words_count = sum(1 for w in words if w in KK_COMMON_WORDS)
+        if ru_count >= 2 and kk_chars_count == 0 and kk_words_count == 0:
+            return [
+                ValidationIssue(
+                    "LANGUAGE_MISMATCH",
+                    f"Russian words detected in Kazakh narrative (ru_markers={ru_count}, kk_chars=0)",
+                )
+            ]
+
+    # 3. Whole response aggregated check
+    combined = " ".join(texts)
+    combined_words = re.findall(r"[а-яёәғқңөұүһі]+", combined.lower())
+    if len(combined_words) >= 10:
+        total_ru = sum(1 for w in combined_words if w in RU_MARKER_WORDS)
+        total_kk_chars = sum(1 for c in combined.lower() if c in KK_SPECIFIC_CHARS)
+        total_kk_words = sum(1 for w in combined_words if w in KK_COMMON_WORDS)
+        if total_ru >= 3 and total_ru > total_kk_chars + total_kk_words:
+            return [
+                ValidationIssue(
+                    "LANGUAGE_MISMATCH",
+                    f"Dominant Russian vocabulary in Kazakh response (ru={total_ru}, kk_chars={total_kk_chars}, kk_words={total_kk_words})",
+                )
+            ]
+        if total_kk_chars == 0 and (total_ru >= 2 or len(combined_words) >= 30):
+            return [
+                ValidationIssue(
+                    "LANGUAGE_MISMATCH",
+                    f"No Kazakh-specific characters found in response of {len(combined_words)} words",
+                )
+            ]
+
+    return []
+
+
+def _check_language(texts: list[str], language: str) -> list[ValidationIssue]:
+    if language == "ru":
+        # Per-text, not aggregated: one field written in the wrong language must
+        # not be diluted into a passing ratio by every other (correct) field.
+        for text in texts:
+            cyrillic = _CYRILLIC_RE.findall(text)
+            letters = cyrillic + _LATIN_RE.findall(text)
+            if len(letters) < _MIN_LETTERS_TO_JUDGE:
+                continue  # too short to judge reliably (e.g. a bare category title)
+            ratio = len(cyrillic) / len(letters)
+            if ratio < _MIN_CYRILLIC_RATIO:
+                return [ValidationIssue("language", f"cyrillic ratio {ratio:.2f} below {_MIN_CYRILLIC_RATIO}")]
+        return []
+    if language == "kk":
+        return _check_language_kk(texts)
     return []
 
 

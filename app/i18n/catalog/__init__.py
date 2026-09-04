@@ -31,6 +31,7 @@ from . import (
     riasec,
     thinking_style,
     university_requirements,
+    validator,
 )
 
 _AREAS: dict[str, Any] = {
@@ -44,6 +45,7 @@ _AREAS: dict[str, Any] = {
     "resource_catalog": resource_catalog,
     "goal_overlay": goal_overlay,
     "email": email,
+    "validator": validator,
 }
 
 

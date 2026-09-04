@@ -10,6 +10,7 @@ every fact is reused verbatim from ReportNarrativeContext.evidence, nothing
 here is invented, so a validator failure on this output would mean the
 validator itself is wrong (see tests/unit/test_report_narrative_fallback.py).
 """
+from app.i18n import DEFAULT_LOCALE
 from app.models.profile import AgeGroup
 from app.schemas.report_narrative import (
     InterestCard,
@@ -304,7 +305,9 @@ def _final_analysis(context: ReportNarrativeContext, age_group: AgeGroup) -> str
     )
 
 
-def build_fallback_narrative(context: ReportNarrativeContext) -> ReportNarrativeOutput:
+def build_fallback_narrative(
+    context: ReportNarrativeContext, *, locale: str = DEFAULT_LOCALE
+) -> ReportNarrativeOutput:
     age_group = AgeGroup(context.age_group)
     return ReportNarrativeOutput(
         summary=_summary(age_group),
