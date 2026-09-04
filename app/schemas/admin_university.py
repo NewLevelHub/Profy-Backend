@@ -3,6 +3,26 @@ from datetime import datetime
 from decimal import Decimal
 from pydantic import BaseModel
 
+from app.schemas.roadmap import ProgramGrant
+
+
+class AdminProgramGrant(ProgramGrant):
+    """One grant/scholarship entry of `Program.grants`.
+
+    The shape was undocumented and untyped, so the admin edited grants as raw
+    JSON in a textarea: one typo and the save failed, or worse, saved a
+    structure nothing downstream could read. It is the same `ProgramGrant`
+    the roadmap already builds from these rows — `name` plus optional
+    `amount`/`conditions` — which is what all 1309 programs carrying grants
+    actually hold today (every live entry has `name` and nothing else).
+
+    Extra keys are preserved rather than dropped: a read-edit-write round trip
+    through the admin must not silently delete a field some importer added
+    that this schema has not learned about yet.
+    """
+
+    model_config = {"extra": "allow"}
+
 
 class AdminUniversityListItem(BaseModel):
     """`ranking` alone is not comparable across rows — one Integer column
@@ -94,6 +114,37 @@ class AdminUniversityBrief(BaseModel):
 
 
 class AdminProgramDetail(BaseModel):
+    """`requirements` and `deadlines` stay open dicts because several
+    importers write into the same two columns, but the keys that legally
+    appear in `requirements` are these — the second half of
+    docs/admin-backend-requests-pro-242.md §8, which asked for exactly this
+    list so a save cannot quietly drop one:
+
+    ``exams``           list[str]  — entrance exams / subject pairs
+    ``notes``           list[str]  — free-text admission notes (on every row)
+    ``min_ent_threshold`` int      — state-grant eligibility bar (ЕНТ)
+    ``min_ent``         int        — older name for the same bar
+    ``min_ent_paid``    int        — bar for the paid track
+    ``admission_scores_2026`` list — real grant-winning scores, disjoint from
+                                     ``min_ent_threshold`` by seed source
+    ``grant_scores``    dict       — per-category grant scores
+    ``grants_allocated_count`` int
+    ``min_gpa`` float, ``min_sat`` int, ``min_ielts`` float
+    ``needs_essay`` / ``needs_recommendations`` / ``needs_interview`` bool
+    ``needs_portfolio`` bool
+    ``source_required_documents`` list[str]
+    ``extracurriculars`` list[str]
+    ``duration_years`` int, ``has_dual_degree`` bool
+    ``cost_label`` str
+
+    Live data currently uses only ``notes`` (2437 programs), ``exams`` and
+    ``min_ent_threshold`` (~1220 each) and ``admission_scores_2026`` (118);
+    the rest are read by app/services/university_requirements.py and written
+    by the scripts/apply_*.py importers. `deadlines` is empty on every row
+    today. Both are saved as a whole-object replace, so an editing form must
+    merge into the original rather than send only the keys it knows.
+    """
+
     id: uuid.UUID
     university_id: uuid.UUID
     name: str
@@ -104,7 +155,7 @@ class AdminProgramDetail(BaseModel):
     who_its_for: str | None
     requirements: dict
     deadlines: dict
-    grants: list
+    grants: list[AdminProgramGrant]
     created_at: datetime
     updated_at: datetime | None
     source_url: str | None
@@ -123,5 +174,5 @@ class AdminProgramUpdateRequest(BaseModel):
     who_its_for: str | None = None
     requirements: dict | None = None
     deadlines: dict | None = None
-    grants: list | None = None
+    grants: list[AdminProgramGrant] | None = None
     source_url: str | None = None

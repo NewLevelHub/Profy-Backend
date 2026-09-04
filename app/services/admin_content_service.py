@@ -456,9 +456,48 @@ async def get_motivation_statement_detail(
     return await _get_by_id(db, MotivationStatement, statement_id)
 
 
+async def _assert_triplet_categories_stay_unique(
+    db: AsyncSession, statement: MotivationStatement, updates: dict
+) -> None:
+    """The three statements of a triplet must carry three different
+    categories — the AG(2,3) generator in scripts/motivation_statement_bank.py
+    guarantees it for seeded content, but nothing did for an admin edit.
+
+    Until now the check was a line of UI text telling the admin the backend
+    would not verify this, on a screen that could not even show the other two
+    statements of the triplet. A duplicate silently breaks scoring: the pair
+    (MOST, LEAST) stops identifying two distinct motives."""
+    new_category = updates.get("category")
+    if new_category is None:
+        return
+
+    result = await db.execute(
+        select(MotivationStatement).where(
+            MotivationStatement.triplet_index == statement.triplet_index,
+            MotivationStatement.id != statement.id,
+            MotivationStatement.category == new_category,
+        )
+    )
+    clash = result.scalars().first()
+    if clash is not None:
+        raise AdminOverrideValidationError(
+            f"Category '{new_category.value}' is already used by statement #{clash.order} "
+            f"in triplet {statement.triplet_index} — the three statements of a triplet "
+            "must carry three different categories, or scoring cannot tell the picked "
+            "motives apart."
+        )
+
+
 async def update_motivation_statement(
     db: AsyncSession, statement_id: uuid.UUID, data: AdminMotivationStatementUpdateRequest
 ) -> MotivationStatement:
+    statement = await _get_by_id(db, MotivationStatement, statement_id)
+    if statement is None:
+        raise ValueError("Motivation statement not found")
+
+    await _assert_triplet_categories_stay_unique(
+        db, statement, data.model_dump(exclude_unset=True)
+    )
     return await _update_by_id(
         db, MotivationStatement, statement_id, data, "Motivation statement not found"
     )
