@@ -198,3 +198,8 @@ class AdminFeedbackStatsResponse(BaseModel):
     by_scenario: list[FeedbackBreakdownItem] = []
     by_top_direction: list[FeedbackBreakdownItem] = []
     helpful_section_counts: dict[str, int] = {}
+    # Reviews that named no useful section at all. Not derivable from
+    # `helpful_section_counts` (a review can name several, so the counts do not
+    # sum to a review count), and it is the figure that says whether a low
+    # section tally means "nothing helped" or just "few reviews".
+    no_sections_count: int = 0

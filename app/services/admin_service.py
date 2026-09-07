@@ -847,4 +847,5 @@ async def get_feedback_stats(
         by_scenario=_breakdown(items, lambda i: i.scenario),
         by_top_direction=_breakdown(items, lambda i: i.top_direction_name),
         helpful_section_counts=section_counts,
+        no_sections_count=sum(1 for i in items if not i.helpful_sections),
     )
