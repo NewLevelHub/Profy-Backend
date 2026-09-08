@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import case, delete, func, or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import noload, selectinload
 
 from app.models.direction import Direction
 from app.models.program import Program
@@ -144,13 +144,19 @@ async def get_program_by_id(db: AsyncSession, program_id: uuid.UUID) -> Program:
     return program
 
 
-async def get_program_detail(db: AsyncSession, program_id: uuid.UUID) -> ProgramDetail:
+async def get_program_detail(
+    db: AsyncSession,
+    program_id: uuid.UUID,
+    user_id: uuid.UUID | None = None,
+) -> ProgramDetail:
     """`ProgramDetail`, ready for the client — `requirements_summary` is the
     same clean, typed mapping the direction-roadmap prompt uses
     (app/services/university_requirements.py), not a re-derivation. Separate
     from `get_program_by_id` because that one returns the raw ORM `Program`
     for callers that need it as-is (gap-analysis)."""
     program = await get_program_by_id(db, program_id)
+    favorite_ids = await favorite_university_ids(db, user_id) if user_id else set()
+    university = _brief_with_favorite(program.university, favorite_ids)
     return ProgramDetail(
         id=program.id,
         name=program.name,
@@ -165,8 +171,11 @@ async def get_program_detail(db: AsyncSession, program_id: uuid.UUID) -> Program
         deadlines=program.deadlines,
         grants=program.grants,
         created_at=program.created_at,
-        university=UniversityBrief.model_validate(program.university),
+        university=university,
         requirements_summary=ureq.map_program_requirement(program, program.university),
+        cost_currency=program.cost_currency,
+        cost_per_year_min=program.cost_per_year_min,
+        cost_per_year_max=program.cost_per_year_max,
     )
 
 
@@ -247,6 +256,11 @@ async def list_universities(
     programs_count = func.count(Program.id)
     query = (
         select(University, programs_count.label("programs_count"))
+        # Catalogue rows only need the University columns + the aggregate
+        # count — without these noloads, selectin on `images` / `programs`
+        # (and then Program.directions) fires three extra round-trips per
+        # page for data the response never serializes.
+        .options(noload(University.images), noload(University.programs))
         .outerjoin(Program)
         .where(*filters)
         .group_by(University.id)

@@ -111,9 +111,14 @@ async def list_programs(
 @router.get("/programs/{program_id}", response_model=ProgramDetail)
 async def get_program(
     program_id: uuid.UUID,
+    current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ) -> ProgramDetail:
-    return await get_program_detail(db, program_id)
+    return await get_program_detail(
+        db,
+        program_id,
+        user_id=current_user.id if current_user else None,
+    )
 
 
 @router.get("/programs/{program_id}/gap-analysis", response_model=GapAnalysisResponse)

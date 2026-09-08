@@ -80,15 +80,24 @@ class ProgramBrief(BaseModel):
 
     @model_validator(mode="after")
     def convert_cost_to_usd(self) -> "ProgramBrief":
-        if self.cost_currency and (self.cost_per_year is not None or self.cost_per_year_min is not None):
+        # Idempotent: FastAPI re-validates an already-built ProgramBrief on
+        # response serialization. Without flipping the currency to USD after
+        # the first pass, a second pass would divide the already-USD amount
+        # by the original rate again (960000 KZT → 2000 → 4).
+        if (
+            self.cost_currency
+            and self.cost_currency.upper() != "USD"
+            and (self.cost_per_year is not None or self.cost_per_year_min is not None)
+        ):
             base_cost = self.cost_per_year
             if self.cost_per_year_min is not None and self.cost_per_year_max is not None:
                 base_cost = (self.cost_per_year_min + self.cost_per_year_max) / 2
-            
+
             if base_cost is not None:
                 rate = CURRENCY_RATES_PER_USD.get(self.cost_currency.upper(), 1.0)
                 usd_cost = float(base_cost) / rate
                 self.cost_per_year = Decimal(str(round(usd_cost)))
+                self.cost_currency = "USD"
         return self
 
 
@@ -125,15 +134,22 @@ class ProgramDetail(BaseModel):
 
     @model_validator(mode="after")
     def convert_cost_to_usd(self) -> "ProgramDetail":
-        if self.cost_currency and (self.cost_per_year is not None or self.cost_per_year_min is not None):
+        # Same idempotency contract as ProgramBrief.convert_cost_to_usd —
+        # see that docstring. Without it, response re-validation double-divides.
+        if (
+            self.cost_currency
+            and self.cost_currency.upper() != "USD"
+            and (self.cost_per_year is not None or self.cost_per_year_min is not None)
+        ):
             base_cost = self.cost_per_year
             if self.cost_per_year_min is not None and self.cost_per_year_max is not None:
                 base_cost = (self.cost_per_year_min + self.cost_per_year_max) / 2
-            
+
             if base_cost is not None:
                 rate = CURRENCY_RATES_PER_USD.get(self.cost_currency.upper(), 1.0)
                 usd_cost = float(base_cost) / rate
                 self.cost_per_year = Decimal(str(round(usd_cost)))
+                self.cost_currency = "USD"
         return self
 
 
