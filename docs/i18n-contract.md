@@ -618,12 +618,20 @@ per-locale строки) готова принять файл без измен�
   `ProgramDetail` — ещё и `who_its_for_locale` (`"kk"` / `"ru"` — что реально
   отдано). Фронт по расхождению `*_locale != UI-локаль` показывает
   неблокирующую плашку «описание только на русском» (KZ-502).
-- **Заполнение.** Оверлеи наполняет пакетный LLM-перевод KZ-504 (идемпотентно:
-  уже заполненные ключи не трогает). Seed-скрипты вузов
-  (`seed_kz_universities.py`, `seed_92_professions_universities.py`) пишут
-  только `ru`-колонки и `*_i18n` не касаются — перевод переживает их повторный
-  прогон. При изменении `ru`-описания перевод для этой строки надо перегенерить
-  (перезапуск KZ-504-скрипта по изменённым строкам — см. тикет KZ-504).
+- **Заполнение — один файл, один скрипт.**
+  `scripts/data/catalog_descriptions_kk.json` — единственный источник kk-перевода
+  описаний вузов/программ: `{ "universities": [ {slugs, ru, kk} ], "programs":
+  [ {rows, ru, kk} ] }`, по одной записи на уникальную `ru`-строку (правишь `kk`
+  на месте). `scripts/apply_catalog_descriptions_kk.py` с подкомандами: `apply`
+  (файл → `description_i18n['kk']`, идемпотентно, `ru`-колонки не трогает; строки
+  ссылаются на ряды портабельным ключом через `entity_resolver`),
+  `dump` (ряды БД без перевода → `catalog_descriptions_kk.todo.json`),
+  `merge` (заполненный todo → назад в основной файл, с проверкой, что `kk`
+  действительно казахский). В runbook — единственная строка `apply` в `start.sh`
+  сразу после `build_universities.py`; `cd.yml` / `cd-dev.yml` не менялись.
+  `build_universities.py` пишет только `ru`-колонки, `*_i18n` не касается —
+  перевод переживает пересборку каталога. Направления (`direction_content_review_kk.json`)
+  идут отдельно, через `apply_direction_content.py` (нулевых новых строк в runbook).
 - Мелкие поля (`cost_label`, `ranking_label`, `location`, город/страна) `*_i18n`
   не получают — форматируются/локализуются на фронте справочником (KZ-502 /
   KZ-209).
@@ -665,3 +673,4 @@ Workflow `.github/workflows/i18n-guard.yml` в обоих репозитория
 | 2026-09-04 | KZ-501: каталог вузов/программ получает `*_i18n`-оверлеи поверх `ru`-колонки (не «вариант A»); read-side — `resolve_column_i18n`, в ответе — `description_locale` / `who_its_for_locale`. |
 | 2026-09-04 | KZ-503: `app/i18n/catalog/subjects.py` — единый дом школьных предметов (ключ = канон. рус. строка) + терминов ЕНТ/ҰБТ; глоссарий KZ-401 строится из него; `_subject_evidence` локализует имена предметов; синк BE↔FE тестами (`test_subjects_catalog.py` / `i18n-subjects.mjs`). |
 | 2026-09-04 | KZ-602: CI-гарды `.github/workflows/i18n-guard.yml` в обоих репо (PR-гейт); BE `tests/guard/` + конфиг `tests/data/i18n_guard_config.json` (RU-leak в нарративе/каталоге, `ЕНТ`↔`ҰБТ`). |
+| 2026-09-08 | KZ-504/505: авторинг-скрипты kk-каталога свёрнуты в один `scripts/apply_catalog_descriptions_kk.py` (`apply`/`dump`/`merge`); `catalog_descriptions_kk.json` переведён в секционный distinct-формат (2357 вузов + 185 программ на 2399+1398 рядов); удалены `export_catalog_kk_todo.py`, `kz505_slice.py`, `kz505_apply.py`, `apply_direction_fields_kk.py`, `apply_direction_subjects_kk.py` и весь батч-мусор `scripts/data/{kk_*,batch_*}`; `start.sh` +1 строка (`apply`) после `build_universities.py`, CD не тронут. `description_i18n['kk']` применён локально: 2399 вузов + 1398 программ. |
