@@ -52,6 +52,11 @@ class UniversityBrief(BaseModel):
     # never a stored column, so a storage/CDN vendor swap never needs a DB
     # backfill.
     image_url: str | None = None
+    # Whether the *requesting* user starred this university (PRO-265). Not an
+    # ORM column and not derivable from the University row alone — the
+    # service fills it in after model_validate, per caller, and it stays
+    # False for anonymous callers.
+    is_favorite: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -130,3 +135,42 @@ class ProgramDetail(BaseModel):
                 usd_cost = float(base_cost) / rate
                 self.cost_per_year = Decimal(str(round(usd_cost)))
         return self
+
+
+class UniversityListItem(UniversityBrief):
+    """A catalogue row. `programs_count` is the aggregate the list query
+    already computes — a university with zero programs can be recommended to
+    nobody, so the number is worth showing rather than hiding."""
+
+    programs_count: int = 0
+
+
+class UniversityListResponse(BaseModel):
+    """Same {items, total, page, limit} envelope the admin lists use. The
+    other public list endpoints return a bare array with no total, which is
+    exactly why they can't be paginated — this one is not repeating that."""
+
+    items: list[UniversityListItem]
+    total: int
+    page: int
+    limit: int
+
+
+class UniversityCountry(BaseModel):
+    """One entry of the catalogue's country filter, with how many
+    universities sit behind it — a filter with nothing behind it is worse
+    than no filter."""
+
+    country: str
+    count: int
+
+
+class UniversityDetail(UniversityBrief):
+    """The university's own page. Deliberately does NOT expose
+    `fact_sources`, `admin_locked_fields`, `ovpo_code` or `slug` — those are
+    editorial/admin plumbing, not student-facing facts."""
+
+    contacts: dict
+    facilities: dict
+    source_url: str | None = None
+    programs: list[ProgramBrief] = []
