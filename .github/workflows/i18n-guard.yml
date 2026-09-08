@@ -73,6 +73,7 @@ jobs:
           tests/unit/test_i18n.py
           tests/unit/test_i18n_catalog.py
           tests/unit/test_subjects_catalog.py
+          tests/unit/test_apply_catalog_kk.py
           tests/unit/test_prompt_locale.py
           tests/unit/test_narrative_language_guard.py
           tests/unit/test_fallback_narrative_locale.py

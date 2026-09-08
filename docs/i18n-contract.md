@@ -45,11 +45,13 @@
 - **Переведено и вычитано носителем:** весь UI (react-i18next, 9 namespace'ов,
   ~1140 ключей ru↔kk), детерминированный нарратив отчёта, письма (верификация +
   сброс), лендинг (KZ-213), справочники предметов/терминов ЕНТ↔ҰБТ (KZ-503),
-  описания направлений (144) и **все** описания вузов (2399) и программ (1398) —
-  `description_i18n['kk']` (KZ-504/505).
+  описания направлений (144), **все** описания вузов (2399) и программ (1398) —
+  `description_i18n['kk']` (KZ-504/505), и **имена 125 казахстанских вузов** —
+  `name_i18n['kk']` (KZ-206 follow-up).
 - **Остаётся на `ru` намеренно:** админка `/admin/*` (KZ-210); сырые данные
-  вузов — `exams`/`notes`/`grants`/официальные названия (KZ-206); `roadmap` и
-  direction inquiry — dead code, не в проде (KZ-403/404).
+  вузов — `exams`/`notes`/`grants` (KZ-206); имена **иностранных** вузов и
+  **названия программ** (`Program.name`) — пока не в объёме перевода; `roadmap`
+  и direction inquiry — dead code, не в проде (KZ-403/404).
 - **ИИ-генерация нарратива на реальном `kk`-ключе LLM (KZ-407) — отложена**:
   ключа нет, в проде работает детерминированный фолбэк (он на `kk`). Включить
   вместе с ключом; следить за `llm.language_mismatch{locale=kk}` (KZ-402).
@@ -455,7 +457,13 @@ per-locale строки) готова принять файл без измен�
   `report_narrative_fallback.py` полностью параметризован по `locale`.
 - Синтез-строки result_v2 (`build_interest_map_note`, `build_personality_note`,
   career-«why», flat-profile-примечание, `_join`) →
-  `app/i18n/catalog/result_v2.py` (`RU`/`KK`, 11 ключей).
+  `app/i18n/catalog/result_v2.py` (`RU`/`KK`, 13 ключей).
+- Серверные фиксированные врезки `disclaimer` / `exploration_note` (не LLM,
+  не персонализируются): схема `result_v2.py` держит их как ru-дефолты поля,
+  но `report_v2_assembler.build_fixed_framings()` теперь заполняет поля из
+  каталога (`result_v2.py` ключи `disclaimer`/`exploration_note`) в обеих
+  сборках — свежая генерация и пересборка из строки в `_shape_response`. До
+  этого `kk`-отчёт всегда показывал их по-русски.
 - `report_service.build_report` и `get_report`/`_shape_response` резолвят локаль
   **владельца артефакта** (`_resolve_owner_locale` → `users.locale`, не локаль
   читателя) и оборачивают весь проход scoring→текст→assemble в `use_locale`.
@@ -513,6 +521,33 @@ per-locale строки) готова принять файл без измен�
 - Детерминированные части (счёт тестов, топ-профессии, career-matching) между
   локалями идентичны — регенерируется только текст (`test_ai_artifact_locale_key.py`).
 - Тест: `tests/integration/test_ai_artifact_locale_key.py`.
+
+### Вторая локаль — перевод, а не вторая генерация (2026-09-08)
+
+Раньше каждая локаль генерировалась LLM «с нуля»: `ru` и `kk` отчёты по одному
+и тому же ученику получались **разными по смыслу** (LLM недетерминирована —
+разный выбор evidence, разные формулировки). Пользователь при смене языка ждёт
+«тот же отчёт на другом языке».
+
+- `report_service._build_narrative` теперь: если для ассессмента уже есть
+  `AnalysisResult` в **другой** локали (`_find_primary_analysis` — предпочитает
+  `ru`, иначе самую раннюю), новая локаль строится через
+  `report_narrative_service.translate_report_narrative` — **один** LLM-вызов,
+  который переводит 4 персистентных текстовых поля primary-нарратива
+  (`summary`, `final_analysis`, `strength_cards[]`, `thinking_style_notes[]`) в
+  целевой язык. Промпт — `app/prompts/report_narrative_translate.py`
+  (переиспользует `language_directive` + `glossary_block` KZ-401). Только
+  **первая** локаль генерируется с нуля.
+- Валидация перевода — лёгкая: `_check_language` + `_check_banned_vocabulary` +
+  проверка, что число карточек не изменилось. Структура/evidence наследуются от
+  primary, который уже прошёл полный `validate()`.
+- Провал (не тот язык / изменил структуру / LLM недоступен) → детерминированный
+  фолбэк `build_fallback_narrative(context, target_locale)`, метрика
+  `llm.fallback:reason=translate`.
+- Транзиентные секции (`interests` / `motivation_narrative` / `career_narrative`)
+  не переводятся — они и так пересобираются детерминированно при каждом чтении
+  (`_shape_response`).
+- Тест: `test_result_locale.py::test_second_locale_translates_the_first_narrative_not_regenerates`.
 
 ### KZ-406 — реализовано (backend + фронт-механизм)
 
@@ -620,11 +655,29 @@ per-locale строки) готова принять файл без измен�
 ## 13. Каталог вузов/программ — `*_i18n`-оверлеи (KZ-501)
 
 Свободный текст каталога (`University.description`, `Program.description`,
-`Program.who_its_for`) хранит **одну** русскую строку в основной колонке. Рядом
-— nullable `JSONB`-оверлей `{"kk": "..."}` (`*_i18n`), в котором лежат только
-не-`ru` переводы; `ru` в оверлей не дублируется. Это НЕ «вариант A» (там строка
-на локаль в отдельной таблице) — здесь одна строка, а перевод навешивается
-поверх.
+`Program.who_its_for`) и — для вузов Казахстана — официальные имена
+(`University.name` — миграция `e3f8a1c4d5b9`; `Program.name` — миграция
+`f4a1b8c6e2d7`; обе 2026-09-08) хранят **одну** русскую строку в основной
+колонке. Рядом — nullable `JSONB`-оверлей `{"kk": "..."}` (`*_i18n` /
+`name_i18n`), в котором лежат только не-`ru` переводы; `ru` в оверлей не
+дублируется. Это НЕ «вариант A» (там строка на локаль в отдельной таблице) —
+здесь одна строка, а перевод навешивается поверх.
+
+- **Имена вузов и программ (`name_i18n`).** По KZ-206 официальные названия —
+  «сырые данные», но у казахстанских вузов и их программ («направлений»,
+  `Program.name` — заголовок карточки в списке вузов) казахская форма
+  ожидаема на `kk`-странице. `name_i18n['kk']` наполнен для всех **125** KZ-вузов
+  (секция `university_names`) и **764** уникальных названий программ KZ-вузов
+  (секция `program_names`, покрывает 1591 ряд `programs`) в
+  `catalog_descriptions_kk.json` — LLM-перевод, вычитка носителем. Иностранные
+  вузы и латинские названия `name_i18n` не получают; `name_locale = "ru"`.
+  109 названий программ совпадают в `ru`/`kk` (международные термины —
+  «Биология», «Информатика») — оверлей их всё равно несёт, `name_locale = "kk"`.
+  Read-side — тот же `resolve_column_i18n` в `_university_brief` /
+  `_program_brief` / `get_program_detail`; в ответе
+  `UniversityBrief.name_locale`, `ProgramBrief.name_locale`,
+  `ProgramDetail.name_locale`. Админка (`admin_university_service`, `/admin/*`) —
+  без изменений, `ru`-only (KZ-210).
 
 - **Read-side.** `app/i18n.resolve_column_i18n(overrides, base_ru, locale)` →
   `(text, resolved_locale)`: отдаёт оверлей, если для локали есть непустое
@@ -703,3 +756,5 @@ Workflow `.github/workflows/i18n-guard.yml` в обоих репозитория
 | 2026-09-08 | KZ-504/505: авторинг-скрипты kk-каталога свёрнуты в один `scripts/apply_catalog_descriptions_kk.py` (`apply`/`dump`/`merge`); `catalog_descriptions_kk.json` переведён в секционный distinct-формат (2357 вузов + 185 программ на 2399+1398 рядов); удалены `export_catalog_kk_todo.py`, `kz505_slice.py`, `kz505_apply.py`, `apply_direction_fields_kk.py`, `apply_direction_subjects_kk.py` и весь батч-мусор `scripts/data/{kk_*,batch_*}`; `start.sh` +1 строка (`apply`) после `build_universities.py`, CD не тронут. `description_i18n['kk']` применён локально: 2399 вузов + 1398 программ. |
 | 2026-09-08 | KZ-601: `docs/qa-kz-e2e-checklist.md` (ручная матрица) + `tests/integration/test_kz_e2e_smoke.py` (8 автотестов kk-пути, в i18n-guard). KZ-602 закрыт: `catalog_temp_allowlist` пуст, `_TEMP_KEYS == set()`. Локально: 200 passed на i18n-наборе гарда, полный BE — 549 passed / 6 pre-existing. |
 | 2026-09-08 | **KZ-603: `kk` включён.** `SUPPORTED_LOCALES = ("ru", "kk")` (BE `app/i18n/__init__.py`) + `['ru', 'kk']` (FE `src/shared/store/locale.ts`); `test_i18n.py` обновлён (`kk` теперь резолвится обычным путём); заметка команде — §2. Без миграции (`locale_enum` уже знал `kk`). Откат — `revert`. Ручной прогон носителем в прод — за командой выкатки. |
+| 2026-09-08 | KZ-206 follow-up: `universities.name_i18n` (миграция `e3f8a1c4d5b9`) — казахские официальные имена 125 KZ-вузов (секция `university_names` в `catalog_descriptions_kk.json`, вычитка носителем). `_university_brief` резолвит `name` через `resolve_column_i18n`; `UniversityBrief.name_locale`. `apply_catalog_descriptions_kk.py` получил секцию/`--kind name`. 550 passed / 6 pre-existing. |
+| 2026-09-08 | KZ-206 follow-up (2): `programs.name_i18n` (миграция `f4a1b8c6e2d7`) — казахские названия **764** уникальных программ («направлений») KZ-вузов (секция `program_names`, 1591 ряд). `_program_brief` / `get_program_detail` резолвят `name`; `ProgramBrief.name_locale` / `ProgramDetail.name_locale`. `apply_catalog_descriptions_kk.py --kind progname`. `is_kazakh_name` ослаблена (допускает `kk == ru` для международных терминов). FE тип `ProgramBrief.name_locale`, компоненты не тронуты. |

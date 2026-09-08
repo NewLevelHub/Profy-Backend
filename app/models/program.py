@@ -100,6 +100,11 @@ class Program(Base):
     # absent, so an empty map changes no response.
     description_i18n: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     who_its_for_i18n: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    # {"kk": "..."} — per-locale override of `name` (the field-of-study title,
+    # base column holds `ru`). Filled for Kazakhstan universities' programs only,
+    # by scripts/apply_catalog_descriptions_kk.py from the `program_names`
+    # section. Same fallback rule; `ru` never duplicated here.
+    name_i18n: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     # Legacy field from an early data pass — populated for only ~9 of 2442
     # programs. Display-only (shown on the program detail page when
     # non-empty), never used in matching/scoring. Don't add new logic that

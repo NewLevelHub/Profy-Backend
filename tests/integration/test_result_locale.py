@@ -11,6 +11,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
@@ -153,6 +154,102 @@ async def test_get_report_signals_locale_not_generated_vs_not_found(
     r = await client.get(f"/api/v1/result/{assessment_b.id}", headers=headers_b)
     assert r.status_code == 404
     assert r.json()["error_code"] == "report_locale_not_generated"
+
+
+async def test_second_locale_translates_the_first_narrative_not_regenerates(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Variant A: once a report exists in one locale, the other locale is a
+    one-call *translation* of it, not a fresh independent generation — so ru
+    and kk say the same thing."""
+    # 1. ru report first (LLM off -> deterministic ru narrative)
+    assessment, user = await _senior_assessment_ru(db_session)
+    _force_complete_llm_off(monkeypatch, senior=True)
+    ru_report = await report_service.build_report(assessment.id, db_session)
+    ru_row = (await db_session.execute(
+        select(AnalysisResult).where(
+            AnalysisResult.assessment_id == assessment.id, AnalysisResult.locale == "ru"
+        )
+    )).scalar_one()
+
+    # 2. owner switches to kk; mock the LLM as a pure translator
+    user.locale = "kk"
+    await db_session.flush()
+    for key in assessment_shared.report_cache_keys(assessment.id):
+        await assessment_shared.get_redis().delete(key)
+
+    translated = {
+        "summary": "Сенің жауаптарың қазақ тілінде талданды: жаңа нәрсені зерттеуге, "
+                   "жүйелі әрекет етуге және бастама көтеруге бейімсің. Осы қасиеттер "
+                   "әртүрлі бағытта дамуға негіз болады. Нәтиже — қатаң үкім емес. "
+                   "Оны бір жылда қайта қарауға болады.",
+        "final_analysis": "Қызығушылықтарың мен ойлау стилің бір-бірін толықтырады. "
+                          "Мотивацияң да сол бағытты нығайтады. Есепті бөлімдер осыны "
+                          "біртұтас көрсетеді.",
+        "strength_cards": [
+            {"title": c["title"], "description": "Қазақша аударма: " + c["description"][:40]}
+            for c in ru_row.strength_cards
+        ],
+        "thinking_style_notes": [
+            {"title": n["title"], "description": "Қазақша аударма: " + n["description"][:40]}
+            for n in ru_row.thinking_style_notes
+        ],
+    }
+    complete_json = AsyncMock(return_value=translated)
+    monkeypatch.setattr(llm_client, "is_enabled", lambda: True)
+    monkeypatch.setattr(llm_client, "complete_json", complete_json)
+
+    kk_report = await report_service.build_report(assessment.id, db_session)
+
+    # exactly one LLM call — a translation, not the full generation pipeline
+    assert complete_json.await_count == 1
+    assert complete_json.await_args.args[2] == "report_narrative_translate"
+    # the kk report carries the translated text, same card count as ru
+    assert kk_report.summary == translated["summary"]
+    assert kk_report.final_analysis == translated["final_analysis"]
+    assert len(kk_report.strength_cards) == len(ru_report.strength_cards)
+    # ru row untouched
+    assert ru_row.summary == ru_report.summary
+
+
+async def test_translation_works_kk_to_ru_and_rejects_a_kazakh_leak(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The translate path is symmetric: a kk-first report translates into ru
+    on a switch. A translation that stays half-Kazakh is rejected and falls
+    back to the deterministic ru narrative."""
+    # kk report first (LLM off -> deterministic kk narrative)
+    assessment, user = await _senior_assessment_ru(db_session)
+    user.locale = "kk"
+    await db_session.flush()
+    _force_complete_llm_off(monkeypatch, senior=True)
+    kk_report = await report_service.build_report(assessment.id, db_session)
+    assert _is_kk(kk_report.summary)
+
+    # switch to ru; first mock returns a BAD (still-Kazakh) translation
+    user.locale = "ru"
+    await db_session.flush()
+    for key in assessment_shared.report_cache_keys(assessment.id):
+        await assessment_shared.get_redis().delete(key)
+
+    kk_row = (await db_session.execute(
+        select(AnalysisResult).where(
+            AnalysisResult.assessment_id == assessment.id, AnalysisResult.locale == "kk"
+        )
+    )).scalar_one()
+    still_kazakh = {
+        "summary": kk_row.summary,          # unchanged -> still Kazakh
+        "final_analysis": kk_row.final_analysis,
+        "strength_cards": [dict(c) for c in kk_row.strength_cards],
+        "thinking_style_notes": [dict(n) for n in kk_row.thinking_style_notes],
+    }
+    monkeypatch.setattr(llm_client, "is_enabled", lambda: True)
+    monkeypatch.setattr(llm_client, "complete_json", AsyncMock(return_value=still_kazakh))
+
+    ru_report = await report_service.build_report(assessment.id, db_session)
+    # rejected as a kk leak -> deterministic ru fallback, not the Kazakh text
+    assert not _is_kk(ru_report.summary)
+    assert ru_report.summary != kk_row.summary
 
 
 async def _senior_ru_then_kk(db_session, monkeypatch):

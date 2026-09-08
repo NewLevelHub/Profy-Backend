@@ -154,13 +154,15 @@ async def test_direction_detail_serves_real_kazakh_content(db_session: AsyncSess
 # ── program description overlay (KZ-501/505) ────────────────────────────────
 
 async def _program_with(db: AsyncSession, *, kk_desc: str | None, kk_who: str | None):
-    uni = University(name="Тест Университеті", country="Қазақстан", city="Астана",
+    uni = University(name="Тестовый университет", country="Қазақстан", city="Астана",
+                     name_i18n={"kk": "Сынақ университеті"},
                      description="Русское описание вуза",
                      description_i18n={"kk": "Университеттің қазақ тіліндегі сипаттамасы."})
     db.add(uni)
     await db.flush()
     program = Program(
-        university_id=uni.id, name=f"Бағдарлама {uuid.uuid4().hex[:6]}", language="қазақша",
+        university_id=uni.id, name=f"Программа {uuid.uuid4().hex[:6]}", language="қазақша",
+        name_i18n={"kk": "Бағдарлама"},
         description="Русское описание программы",
         description_i18n=({"kk": kk_desc} if kk_desc else None),
         who_its_for="Русский «для кого»",
@@ -185,6 +187,51 @@ async def test_program_detail_serves_kk_description_overlay(db_session: AsyncSes
     _assert_kk_prose("program.description", detail.description)
     _assert_kk_prose("program.who_its_for", detail.who_its_for)
     _assert_kk_prose("program.university.description", detail.university.description)
+    # KZ-206 follow-up: Kazakhstan university + program names served in Kazakh
+    assert detail.university.name == "Сынақ университеті"
+    assert detail.university.name_locale == "kk"
+    assert detail.name == "Бағдарлама" and detail.name_locale == "kk"
+
+
+async def test_kz_program_names_are_localized_from_the_catalog(db_session: AsyncSession) -> None:
+    """A real seeded Kazakhstan program with name_i18n['kk'] is served under
+    its Kazakh field-of-study name on a kk request; ru is unchanged."""
+    prog_id = (await db_session.execute(
+        select(Program.id).join(University)
+        .where(Program.name_i18n.isnot(None),
+               University.country.in_(["Казахстан", "Қазақстан"]))
+        .limit(1)
+    )).scalar_one_or_none()
+    assert prog_id is not None, "no seeded KZ program with name_i18n — run apply_catalog_descriptions_kk.py"
+
+    detail_kk = await university_service.get_program_detail(db_session, prog_id, locale="kk")
+    detail_ru = await university_service.get_program_detail(db_session, prog_id, locale="ru")
+    assert detail_kk.name_locale == "kk" and detail_ru.name_locale == "ru"
+    assert detail_ru.name != "" and detail_kk.name != ""
+    # the kk name is what the catalog put in name_i18n (may equal ru for
+    # internationally-identical terms like "Биология" — still tagged kk)
+    row = (await db_session.execute(
+        select(Program).where(Program.id == prog_id)
+    )).scalar_one()
+    assert detail_kk.name == row.name_i18n["kk"]
+
+
+async def test_kz_university_names_are_localized_from_the_catalog(db_session: AsyncSession) -> None:
+    """A real seeded Kazakhstan university with a name_i18n['kk'] override is
+    served under its Kazakh official name on a kk request; a university without
+    the override (foreign) falls back to `name` with name_locale='ru'."""
+    kz = (await db_session.execute(
+        select(University)
+        .where(University.name_i18n.isnot(None), University.country.in_(["Казахстан", "Қазақстан"]))
+        .limit(1)
+    )).scalars().first()
+    assert kz is not None, "no seeded KZ university with name_i18n — run apply_catalog_descriptions_kk.py"
+
+    brief_kk = university_service._university_brief(kz, "kk")
+    brief_ru = university_service._university_brief(kz, "ru")
+    assert brief_kk.name == kz.name_i18n["kk"] != kz.name
+    assert brief_kk.name_locale == "kk"
+    assert brief_ru.name == kz.name and brief_ru.name_locale == "ru"
 
 
 async def test_untranslated_field_reports_ru_locale_for_the_badge(db_session: AsyncSession) -> None:

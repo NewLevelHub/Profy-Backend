@@ -420,9 +420,10 @@ _FRAME_PHRASE_SUBSTRINGS: tuple[str, ...] = (
     "карта возможных направлений",
 )
 
-# Kazakh paraphrase of the same disclaimer idea (KZ-403). The kk DISCLAIMER
-# text itself is TBD; these are the substrings a kk narrative would use if it
-# re-stated the "not a final choice / a map of possible directions" framing.
+# Kazakh paraphrase of the same disclaimer idea (KZ-403). The kk disclaimer
+# text lives in app/i18n/catalog/result_v2.py (`disclaimer` key); these are
+# the substrings a kk narrative would use if it re-stated the "not a final
+# choice / a map of possible directions" framing.
 _FRAME_PHRASE_SUBSTRINGS_KK: tuple[str, ...] = (
     "түпкілікті таңдау емес",
     "мүмкін бағыттардың картасы",

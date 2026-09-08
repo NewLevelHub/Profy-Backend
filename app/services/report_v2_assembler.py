@@ -81,6 +81,17 @@ def _level(value: float) -> Literal["low", "medium", "high"]:
     return "low"
 
 
+def build_fixed_framings() -> dict[str, str]:
+    """The server-authored framing lines that carry zero personalization and
+    never come from the LLM (`disclaimer`, `exploration_note`). The schema
+    still defines them as field defaults in ru; filling the fields from the
+    catalog here is what lets a `kk` report actually show them in `kk`
+    (KZ-403 gap). Both assembly paths — fresh generation and the stored-row
+    rebuild in report_service._shape_response — merge this into `common`."""
+    t = tr("result_v2")
+    return {"disclaimer": t["disclaimer"], "exploration_note": t["exploration_note"]}
+
+
 def build_interest_map_note(items: list[StudentInterestMapItem]) -> str:
     """1-2 sentences summarizing the numeric map itself — deterministic,
     straight from the already-computed levels, nothing to personalize
@@ -350,6 +361,7 @@ def assemble_result_v2(
     common = dict(
         assessment_id=assessment_id,
         summary=narrative.summary,
+        **build_fixed_framings(),
         strength_cards=_map_cards(narrative.strength_cards),
         interest_map_note=build_interest_map_note(interest_map),
         thinking_style_notes=_map_thinking_notes(narrative.thinking_style_notes),

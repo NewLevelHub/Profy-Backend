@@ -37,6 +37,10 @@ CURRENCY_RATES_PER_USD: dict[str, float] = {
 class UniversityBrief(BaseModel):
     id: uuid.UUID
     name: str
+    # KZ-206 follow-up: "kk" when a Kazakh official name override exists for
+    # this (Kazakhstan) university, "ru" otherwise. Same badge rule as
+    # description_locale.
+    name_locale: str = DEFAULT_LOCALE
     short_name: str | None
     aliases: list[str]
     location: str | None
@@ -64,6 +68,9 @@ class UniversityBrief(BaseModel):
 class ProgramBrief(BaseModel):
     id: uuid.UUID
     name: str
+    # "kk" when a Kazakh program-name override is served (Kazakhstan
+    # universities), "ru" otherwise. Same badge rule as description_locale.
+    name_locale: str = DEFAULT_LOCALE
     profession_slugs: list[str]
     language: str
     cost_per_year: Decimal | None
@@ -96,6 +103,7 @@ class ProgramBrief(BaseModel):
 class ProgramDetail(BaseModel):
     id: uuid.UUID
     name: str
+    name_locale: str = DEFAULT_LOCALE
     profession_slugs: list[str]
     language: str
     cost_per_year: Decimal | None

@@ -42,7 +42,10 @@ from app.services import (
 )
 from app.services.bigfive_content import strength_phrases
 from app.services.motivation_content import highlight_phrases as motivation_highlight_phrases
-from app.services.report_narrative_service import generate_report_narrative
+from app.services.report_narrative_service import (
+    generate_report_narrative,
+    translate_report_narrative,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -124,8 +127,29 @@ def _career_dict(direction: Direction, match_score: int) -> dict:
     }
 
 
+async def _find_primary_analysis(
+    assessment_id: uuid.UUID, db: AsyncSession, *, exclude_locale: str
+) -> AnalysisResult | None:
+    """An already-generated report for this assessment in a *different*
+    locale, to translate from instead of generating a second one from
+    scratch. Prefers the `ru` row (source of truth), then the earliest
+    generated."""
+    rows = (
+        await db.execute(
+            select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        )
+    ).scalars().all()
+    others = [r for r in rows if r.locale != exclude_locale and r.summary]
+    if not others:
+        return None
+    others.sort(key=lambda r: (r.locale != DEFAULT_LOCALE, r.created_at))
+    return others[0]
+
+
 async def _build_narrative(
     *,
+    assessment_id: uuid.UUID,
+    db: AsyncSession,
     age_group: AgeGroup,
     strengths: list[str],
     personality_profile: dict[str, float],
@@ -137,11 +161,14 @@ async def _build_narrative(
     artifacts: list[Artifact],
     locale: str = DEFAULT_LOCALE,
 ) -> tuple[report_narrative_context.ReportNarrativeContext, ReportNarrativeOutput]:
-    """One LLM→validate→fallback call (report_narrative_service) produces
-    everything text-shaped: summary, strength_cards, thinking_style_notes —
-    used for all three, not just strength_cards/thinking_style_notes, so a
-    personalized summary and the cards it's consistent with never diverge
-    into two independent generations."""
+    """Produces everything text-shaped (summary, strength_cards,
+    thinking_style_notes, final_analysis) for this locale.
+
+    If a report already exists in another locale, that one's narrative is
+    *translated* into this locale with a single LLM call — so a `ru` and a
+    `kk` report say the same thing, not two independently generated takes.
+    Only the first-ever locale is generated from scratch. Either path ends
+    in a deterministic fallback (never raises, never leaves a field empty)."""
     # Caller runs this whole block under i18n.use_locale(locale) so the
     # KZ-307 accessors inside the context builder and the deterministic
     # fallback resolve to the artifact owner's language. The AI prompt still
@@ -158,6 +185,26 @@ async def _build_narrative(
         subjects_easy=list(profile.subjects_easy or []) if profile else [],
         artifacts=artifacts,
     )
+
+    primary = await _find_primary_analysis(assessment_id, db, exclude_locale=locale)
+    if primary is not None:
+        narrative, is_ai = await translate_report_narrative(
+            context,
+            source={
+                "summary": primary.summary,
+                "final_analysis": primary.final_analysis,
+                "strength_cards": [dict(c) for c in (primary.strength_cards or [])],
+                "thinking_style_notes": [dict(n) for n in (primary.thinking_style_notes or [])],
+            },
+            source_locale=primary.locale,
+            target_locale=locale,
+        )
+        logger.info(
+            "report_narrative translated from=%s to=%s is_ai=%s age_group=%s",
+            primary.locale, locale, is_ai, age_group.value,
+        )
+        return context, narrative
+
     narrative, is_ai = await generate_report_narrative(context, language=locale)
     logger.info(
         "report_narrative generated is_ai=%s age_group=%s locale=%s",
@@ -256,6 +303,9 @@ def _shape_response_inner(analysis: AnalysisResult) -> ResultResponseV2:
     common = dict(
         assessment_id=analysis.assessment_id,
         summary=analysis.summary,
+        # Server-authored framing lines resolved for the owner's locale — the
+        # schema default is ru-only (KZ-403). Runs inside use_locale() above.
+        **report_v2_assembler.build_fixed_framings(),
         strength_cards=[StudentStrengthCard.model_validate(c) for c in analysis.strength_cards],
         interest_map=interest_map,
         interest_map_note=report_v2_assembler.build_interest_map_note(interest_map),
@@ -460,6 +510,8 @@ async def build_report(
         # — report_narrative_service never raises and never leaves any of the
         # three empty/inconsistent with each other).
         context, narrative = await _build_narrative(
+            assessment_id=assessment_id,
+            db=db,
             age_group=age_group,
             strengths=strengths,
             personality_profile=personality_profile,

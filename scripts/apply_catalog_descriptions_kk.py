@@ -4,14 +4,20 @@
 ONE script, ONE data file: ``scripts/data/catalog_descriptions_kk.json``.
 
     {
-      "universities": [ {"slugs": ["nu"],            "ru": "...", "kk": "..."} ],
-      "programs":     [ {"rows":  [["nu", "Physics"]], "ru": "...", "kk": "..."} ]
+      "universities":     [ {"slugs": ["nu"],             "ru": "...", "kk": "..."} ],
+      "programs":         [ {"rows":  [["nu", "Physics"]], "ru": "...", "kk": "..."} ],
+      "university_names": [ {"slug":  "nu",                "ru": "...", "kk": "..."} ],
+      "program_names":    [ {"ru": "Юриспруденция", "kk": "...", "slugs": ["nu"]} ]
     }
 
-One entry per *distinct* RU string; ``slugs`` / ``rows`` list every catalog row
-it covers. ``ru`` is the source string (used both to locate the row and for
-native review); ``kk`` is what gets written. To fix a translation, edit ``kk``
-in place and re-run ``apply``.
+``universities`` / ``programs``: one entry per *distinct* RU description;
+``slugs`` / ``rows`` list every catalog row it covers. ``university_names`` /
+``program_names``: one entry per Kazakhstan university / distinct KZ program
+name whose ``name`` has a Kazakh form (KZ-206 follow-up) — written to
+``name_i18n['kk']``; ``slugs`` on a ``program_names`` entry are the
+universities that offer a program with that exact ``ru`` name. ``ru`` is the
+source string (used to locate the row and for native review); ``kk`` is what
+gets written. To fix a translation, edit ``kk`` in place and re-run ``apply``.
 
 Subcommands
 -----------
@@ -39,6 +45,7 @@ Run inside Docker:
 import argparse
 import asyncio
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -59,35 +66,72 @@ _KZ_COUNTRIES = ("Казахстан", "Қазақстан")
 _KK_CHARS = set("әғқңөұүһі")
 
 
+_CYRILLIC_RE = re.compile(r"[а-яёұүөқғңһәі]", re.IGNORECASE)
+# leading / trailing non-letter, non-Cyrillic characters on a token
+# ("IT," -> "IT", "«Нархоз»." -> "Нархоз", "2026)" -> "2026")
+_WORD_TRIM = re.compile(r"^[^\wЀ-ӿ]+|[^\wЀ-ӿ]+$")
+
+
 def is_kazakh(text: str) -> bool:
-    """Fuzzy heuristic shared with the other KZ-50x apply scripts: of the
-    non-Latin words in ``text``, at least a quarter must carry a
-    Kazakh-specific letter. Short strings are treated as suspicious."""
+    """Catch a value the translator left in *Russian*. Deliberately permissive
+    (it only gates whether the string is written to `description_i18n['kk']`):
+
+    * a very short string, or one with no Cyrillic words at all
+      ("Data Science, MBA"), passes — it is not Russian prose;
+    * Latin abbreviations / years are ignored even with attached punctuation
+      ("IT,", "MBA.", "2026)") so they don't dilute the Cyrillic ratio.
+
+    Only text whose Cyrillic words are mostly *without* a Kazakh-specific
+    letter is rejected. The real quality gate is `tests/guard/`."""
     text = (text or "").strip()
     if len(text) < 4:
-        return False
+        return True
     non_latin = kk = 0
-    for word in text.split():
-        if all(c.isalpha() and c.isascii() for c in word):
+    for raw in text.split():
+        word = _WORD_TRIM.sub("", raw)
+        if not word or word.isascii():  # Latin token, number, or pure punctuation
             continue
         non_latin += 1
         if any(c.lower() in _KK_CHARS for c in word):
             kk += 1
-    return non_latin > 0 and kk / non_latin >= 0.25
+    if non_latin == 0:
+        return True  # nothing Cyrillic to judge
+    return kk / non_latin >= 0.25
+
+
+def is_kazakh_name(kk: str, ru: str) -> bool:
+    """Loose sanity check for official names / field-of-study titles. Many are
+    valid Kazakh with no Kazakh-specific letter ("Кайнар академиясы") or
+    spelled identically in both languages ("Биология", "Информатика"), so the
+    `is_kazakh` heuristic is wrong here. Require only: non-empty and made of
+    real letters (Cyrillic or Latin), not whitespace/punctuation junk. These
+    are curated + native-reviewed anyway."""
+    kk = (kk or "").strip()
+    return len(kk) >= 2 and any(c.isalpha() for c in kk)
+
+
+_SECTIONS = ("universities", "programs", "university_names", "program_names")
 
 
 def _load_catalog() -> dict:
     if not CATALOG.exists():
-        return {"universities": [], "programs": []}
+        return {s: [] for s in _SECTIONS}
     data = json.loads(CATALOG.read_text(encoding="utf-8"))
-    data.setdefault("universities", [])
-    data.setdefault("programs", [])
+    for s in _SECTIONS:
+        data.setdefault(s, [])
     return data
 
 
 def _sort_catalog(data: dict) -> None:
-    data["universities"].sort(key=lambda e: e["slugs"][0])
-    data["programs"].sort(key=lambda e: (e["rows"][0][0], e["rows"][0][1]))
+    # `.get(..., [""])[0]` etc. keep an entry with an empty ref list sortable
+    # rather than raising IndexError (such an entry does nothing on `apply`,
+    # but must not crash the write).
+    data["universities"].sort(key=lambda e: (e.get("slugs") or [""])[0])
+    data["programs"].sort(
+        key=lambda e: tuple((e.get("rows") or [["", ""]])[0][:2])
+    )
+    data["university_names"].sort(key=lambda e: e.get("slug", ""))
+    data["program_names"].sort(key=lambda e: e.get("ru", ""))
 
 
 def _write_catalog(data: dict) -> None:
@@ -95,12 +139,13 @@ def _write_catalog(data: dict) -> None:
     ordered = {
         "_about": data.get("_about")
         or (
-            "KZ-504/505 Kazakh overlay for University.description / "
-            "Program.description. One entry per distinct RU string. Edit `kk` "
-            "in place; `apply` writes it to the description_i18n JSONB."
+            "KZ-504/505 Kazakh overlay for the university/program catalog. "
+            "`universities` / `programs`: one entry per distinct RU description. "
+            "`university_names` / `program_names`: name_i18n['kk'] for Kazakhstan "
+            "universities and their programs (KZ-206 follow-up). Edit `kk` in "
+            "place; `apply` writes it to JSONB."
         ),
-        "universities": data["universities"],
-        "programs": data["programs"],
+        **{s: data[s] for s in _SECTIONS},
     }
     CATALOG.write_text(
         json.dumps(ordered, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
@@ -126,14 +171,48 @@ def _portable_key(uni: University) -> str | None:
 
 # ── apply ───────────────────────────────────────────────────────────────────
 
-async def _apply(dry_run: bool) -> None:
+async def _apply(dry_run: bool) -> int:
     data = _load_catalog()
-    ok = {"uni": 0, "prog": 0}
-    miss = {"uni": 0, "prog": 0}
-    bad = {"uni": 0, "prog": 0}
+    ok = {"uni": 0, "prog": 0, "name": 0, "pname": 0}
+    miss = {"uni": 0, "prog": 0, "name": 0, "pname": 0}
+    bad = {"uni": 0, "prog": 0, "name": 0, "pname": 0}
     unresolved: list = []
 
     async with async_session() as db:
+        for entry in data["university_names"]:
+            kk = (entry.get("kk") or "").strip()
+            if not is_kazakh_name(kk, entry.get("ru", "")):
+                bad["name"] += 1
+                continue
+            uni, _by = await resolve_university(db, **_uni_kwargs(entry["slug"]))
+            if uni is None:
+                miss["name"] += 1
+                unresolved.append(entry["slug"])
+                continue
+            uni.name_i18n = {**(uni.name_i18n or {}), "kk": kk}
+            db.add(uni)
+            ok["name"] += 1
+
+        for entry in data["program_names"]:
+            kk = (entry.get("kk") or "").strip()
+            if not is_kazakh_name(kk, entry.get("ru", "")):
+                bad["pname"] += 1
+                continue
+            for slug in entry["slugs"]:
+                uni, _by = await resolve_university(db, **_uni_kwargs(slug))
+                prog = (
+                    await resolve_program(db, university=uni, name=entry["ru"])
+                    if uni is not None
+                    else None
+                )
+                if prog is None:
+                    miss["pname"] += 1
+                    unresolved.append([slug, entry["ru"]])
+                    continue
+                prog.name_i18n = {**(prog.name_i18n or {}), "kk": kk}
+                db.add(prog)
+                ok["pname"] += 1
+
         for entry in data["universities"]:
             kk = (entry.get("kk") or "").strip()
             if not is_kazakh(kk):
@@ -175,7 +254,15 @@ async def _apply(dry_run: bool) -> None:
             await db.commit()
 
     print(
-        f"universities: {ok['uni']} applied, {miss['uni']} unresolved, "
+        f"uni names:    {ok['name']} applied, {miss['name']} unresolved, "
+        f"{bad['name']} skipped (failed kk check)"
+    )
+    print(
+        f"prog names:   {ok['pname']} applied, {miss['pname']} unresolved, "
+        f"{bad['pname']} skipped (failed kk check)"
+    )
+    print(
+        f"uni descr:    {ok['uni']} applied, {miss['uni']} unresolved, "
         f"{bad['uni']} skipped (failed kk check)"
     )
     print(
@@ -184,16 +271,36 @@ async def _apply(dry_run: bool) -> None:
     )
     if dry_run:
         print("(--dry-run: rolled back, nothing written)")
-    if bad["uni"] or bad["prog"]:
-        # not fatal here — the CI guard (tests/guard) is the quality gate; this
-        # is a dev/CD bootstrap step and must not abort `start.sh`.
+    if any(bad.values()):
+        # a few bad values are the CI guard's job (tests/guard); a warning here
+        # is enough and must not abort `start.sh`.
         print("WARNING: some kk values look non-Kazakh and were NOT applied — "
               "run `merge`/native review to fix catalog_descriptions_kk.json")
+
+    total_entries = sum(len(data[s]) for s in _SECTIONS)
+    total_ok = sum(ok.values())
+    total_miss = sum(miss.values())
     if unresolved:
-        # a catalog row can legitimately reference a university/program that is
-        # absent from this particular DB snapshot — informational, not an error.
-        print(f"note: {len(unresolved)} row ref(s) did not resolve on this DB; "
+        # a catalog row can legitimately reference a university/program absent
+        # from this particular DB snapshot — informational up to a point.
+        print(f"note: {total_miss} row ref(s) did not resolve on this DB; "
               f"sample: {unresolved[:5]}")
+
+    # Hard fail: the file has entries but nothing landed in the DB. Almost
+    # always a stale catalog file or slug-canonicalization drift in
+    # build_universities.py (it has renamed ~220 slugs before). Without a
+    # non-zero exit `start.sh` / CD would sail past this and ship an empty
+    # Kazakh catalog, unnoticed until kk is turned on.
+    if total_entries and total_ok == 0:
+        print(f"ERROR: {total_entries} catalog entries but 0 applied — stale "
+              f"file or slug drift. Not treating this as success.")
+        return 2
+    # Soft alarm: most refs missed. Not fatal (a partial snapshot is legal),
+    # but it should be loud in the CD log.
+    if total_ok and total_miss > total_ok:
+        print(f"WARNING: {total_miss} refs unresolved vs {total_ok} applied — "
+              f"check the catalog file against this DB's slugs.")
+    return 0
 
 
 # ── dump ────────────────────────────────────────────────────────────────────
@@ -202,9 +309,44 @@ async def _dump(only_kz: bool, kinds: set[str]) -> None:
     data = _load_catalog()
     have_uni = {e["ru"].strip() for e in data["universities"]}
     have_prog = {e["ru"].strip() for e in data["programs"]}
-    todo: dict = {"universities": [], "programs": []}
+    have_name = {e["slug"] for e in data["university_names"]}
+    have_pname = {e["ru"].strip() for e in data["program_names"]}
+    todo: dict = {s: [] for s in _SECTIONS}
 
     async with async_session() as db:
+        if "name" in kinds:
+            q = select(University).where(University.name.op("~")("[А-Яа-яЁё]"))
+            if only_kz:
+                q = q.where(University.country.in_(_KZ_COUNTRIES))
+            names = []
+            for uni in (await db.execute(q)).scalars():
+                key = _portable_key(uni)
+                if key is None or key in have_name:
+                    continue
+                names.append({"slug": key, "ru": uni.name, "kk": ""})
+            todo["university_names"] = sorted(names, key=lambda e: e["slug"])
+
+        if "progname" in kinds:
+            q = (
+                select(Program, University)
+                .join(University, Program.university_id == University.id)
+                .where(Program.name.op("~")("[А-Яа-яЁё]"))
+            )
+            if only_kz:
+                q = q.where(University.country.in_(_KZ_COUNTRIES))
+            by_ru: dict[str, set[str]] = {}
+            for prog, uni in (await db.execute(q)).all():
+                ru = (prog.name or "").strip()
+                if not ru or ru in have_pname:
+                    continue
+                key = _portable_key(uni)
+                if key is not None:
+                    by_ru.setdefault(ru, set()).add(key)
+            todo["program_names"] = [
+                {"ru": ru, "kk": "", "slugs": sorted(keys)}
+                for ru, keys in sorted(by_ru.items())
+            ]
+
         if "university" in kinds:
             q = select(University).where(University.description.isnot(None))
             if only_kz:
@@ -246,11 +388,12 @@ async def _dump(only_kz: bool, kinds: set[str]) -> None:
     TODO.write_text(
         json.dumps(todo, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
-    n_u, n_p = len(todo["universities"]), len(todo["programs"])
-    if not n_u and not n_p:
+    counts = {s: len(todo[s]) for s in _SECTIONS}
+    if not any(counts.values()):
         print("nothing to translate — catalog is complete for this DB")
         return
-    print(f"wrote {TODO.name}: {n_u} universities + {n_p} programs still to translate")
+    print(f"wrote {TODO.name}: " + ", ".join(
+        f"{n} {s}" for s, n in counts.items() if n))
     print("fill in every empty \"kk\", then: "
           "python scripts/apply_catalog_descriptions_kk.py merge")
 
@@ -265,21 +408,78 @@ def _merge() -> int:
 
     added = updated = rejected = 0
     samples: list = []
+
+    def _reject(section: str, ru: str, kk: str, why: str) -> None:
+        nonlocal rejected
+        rejected += 1
+        if len(samples) < 15:
+            samples.append((section, why, ru[:50], kk[:50]))
+
+    # university_names: flat {slug, ru, kk}, keyed by slug (looser kk check).
+    names_index = {e["slug"]: e for e in data["university_names"]}
+    for entry in todo.get("university_names", []):
+        kk = (entry.get("kk") or "").strip()
+        if not kk:
+            continue
+        slug = (entry.get("slug") or "").strip()
+        if not slug:
+            _reject("university_names", entry.get("ru", ""), kk, "empty slug")
+            continue
+        if not is_kazakh_name(kk, entry.get("ru", "")):
+            _reject("university_names", entry.get("ru", ""), kk, "not kk")
+            continue
+        cur = names_index.get(slug)
+        if cur is None:
+            new = {"slug": slug, "ru": entry.get("ru", ""), "kk": kk}
+            data["university_names"].append(new)
+            names_index[slug] = new
+            added += 1
+        elif cur.get("kk") != kk:
+            cur["kk"] = kk
+            updated += 1
+
+    # program_names: {ru, kk, slugs}, keyed by ru name (looser kk check).
+    pn_index = {e["ru"].strip(): e for e in data["program_names"]}
+    for entry in todo.get("program_names", []):
+        kk = (entry.get("kk") or "").strip()
+        if not kk:
+            continue
+        ru = (entry.get("ru") or "").strip()
+        slugs = sorted(s for s in (entry.get("slugs") or []) if s)
+        if not is_kazakh_name(kk, ru):
+            _reject("program_names", ru, kk, "not kk")
+            continue
+        cur = pn_index.get(ru)
+        if cur is None:
+            if not slugs:
+                _reject("program_names", ru, kk, "empty slugs (new entry)")
+                continue
+            new = {"ru": ru, "kk": kk, "slugs": slugs}
+            data["program_names"].append(new)
+            pn_index[ru] = new
+            added += 1
+        else:
+            cur["slugs"] = sorted(set(cur.get("slugs", [])) | set(slugs))
+            if cur.get("kk") != kk:
+                cur["kk"] = kk
+                updated += 1
+
     for section, ref_key in (("universities", "slugs"), ("programs", "rows")):
         index = {e["ru"].strip(): e for e in data[section]}
         for entry in todo.get(section, []):
             kk = (entry.get("kk") or "").strip()
             if not kk:
                 continue
+            ru = (entry.get("ru") or "").strip()
+            refs = [r for r in (entry.get(ref_key) or []) if r]
             if not is_kazakh(kk):
-                rejected += 1
-                if len(samples) < 15:
-                    samples.append((section, entry["ru"][:60], kk[:60]))
+                _reject(section, ru, kk, "not kk")
                 continue
-            ru = entry["ru"].strip()
-            refs = entry.get(ref_key, [])
             cur = index.get(ru)
             if cur is None:
+                if not refs:
+                    _reject(section, ru, kk, "empty refs (new entry)")
+                    continue
                 new = {ref_key: sorted(refs), "ru": ru, "kk": kk}
                 data[section].append(new)
                 index[ru] = new
@@ -296,9 +496,9 @@ def _merge() -> int:
 
     _write_catalog(data)
     print(f"merged into {CATALOG.name}: +{added} new, {updated} kk changed, "
-          f"{rejected} rejected (not Kazakh)")
-    for s in samples:
-        print("  reject:", s)
+          f"{rejected} rejected")
+    for section, why, ru, kk in samples:
+        print(f"  reject [{section}] {why}: {ru!r} -> {kk!r}")
     return 1 if rejected else 0
 
 
@@ -316,15 +516,23 @@ def main() -> None:
 
     d = sub.add_parser("dump", help="DB rows lacking a kk translation -> todo file")
     d.add_argument("--only-kz", action="store_true", help="Kazakhstan universities only")
-    d.add_argument("--kind", choices=["university", "program", "all"], default="all")
+    d.add_argument(
+        "--kind",
+        choices=["university", "program", "name", "progname", "all"], default="all",
+        help="'name'/'progname' = University.name / Program.name overrides; "
+             "'university'/'program' = descriptions",
+    )
 
     sub.add_parser("merge", help="fold a filled-in todo file into the catalog file")
 
     args = ap.parse_args()
     if args.cmd == "apply":
-        asyncio.run(_apply(args.dry_run))
+        raise SystemExit(asyncio.run(_apply(args.dry_run)))
     elif args.cmd == "dump":
-        kinds = {"university", "program"} if args.kind == "all" else {args.kind}
+        kinds = (
+            {"university", "program", "name", "progname"}
+            if args.kind == "all" else {args.kind}
+        )
         asyncio.run(_dump(args.only_kz, kinds))
     elif args.cmd == "merge":
         raise SystemExit(_merge())

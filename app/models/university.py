@@ -60,6 +60,12 @@ class University(Base):
     # requested locale key is absent, so an empty map changes no response.
     # `ru` is never duplicated here.
     description_i18n: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    # {"kk": "..."} — per-locale override of `name` (which holds the `ru`
+    # official name, KZ-206). Filled for Kazakhstan universities only, by
+    # scripts/apply_catalog_descriptions_kk.py from the `university_names`
+    # section of catalog_descriptions_kk.json. Same fallback rule as
+    # description_i18n; `ru` is never duplicated here.
+    name_i18n: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

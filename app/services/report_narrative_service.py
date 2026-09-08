@@ -17,12 +17,19 @@ import logging
 from pydantic import ValidationError
 
 from app.i18n.catalog import tr
+from app.models.profile import AgeGroup
 from app.prompts import report_narrative as prompt
-from app.schemas.report_narrative import ReportNarrativeOutput
+from app.prompts import report_narrative_translate as translate_prompt
+from app.schemas.report_narrative import NarrativeCard, ReportNarrativeOutput
 from app.schemas.report_narrative_context import ReportNarrativeContext
 from app.services import llm_client
 from app.services.report_narrative_fallback import build_fallback_narrative
-from app.services.report_narrative_validator import ValidationIssue, validate
+from app.services.report_narrative_validator import (
+    ValidationIssue,
+    _check_banned_vocabulary,
+    _check_language,
+    validate,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -239,3 +246,112 @@ async def generate_report_narrative(
         context.age_group, context.interest_instrument, language, had_language_mismatch,
     )
     return build_fallback_narrative(context, locale=language), False
+
+
+def _translated_texts(raw: dict) -> list[str]:
+    cards = list(raw.get("strength_cards") or []) + list(raw.get("thinking_style_notes") or [])
+    return (
+        [raw.get("summary") or "", raw.get("final_analysis") or ""]
+        + [c.get("title") or "" for c in cards]
+        + [c.get("description") or "" for c in cards]
+    )
+
+
+_KK_SPECIFIC = set("әғқңөұүһі")
+
+
+def _kazakh_leak_into_ru(texts: list[str]) -> list[ValidationIssue]:
+    """`_check_language(..., "ru")` compares Cyrillic-vs-Latin and treats
+    Kazakh-only letters as neither, so a kk->ru translation that stayed
+    half-Kazakh slips through. Flag it if Kazakh-specific letters are more
+    than a rounding error of the Cyrillic mass (a couple of proper nouns
+    like «әл-Фараби» are fine)."""
+    blob = " ".join(texts).lower()
+    cyr = sum(1 for c in blob if "а" <= c <= "я" or c == "ё" or c in _KK_SPECIFIC)
+    kk = sum(1 for c in blob if c in _KK_SPECIFIC)
+    if cyr >= 40 and kk / cyr > 0.02:
+        return [ValidationIssue("LANGUAGE_MISMATCH", f"kk-specific letters {kk}/{cyr} in ru translation")]
+    return []
+
+
+async def translate_report_narrative(
+    context: ReportNarrativeContext,
+    *,
+    source: dict,
+    source_locale: str,
+    target_locale: str,
+) -> tuple[ReportNarrativeOutput, bool]:
+    """Render an already-generated & validated narrative (`source`: the primary
+    locale's stored `summary` / `final_analysis` / `strength_cards` /
+    `thinking_style_notes`) into `target_locale` with ONE LLM call, so both
+    locales' reports say the same thing instead of being two independent
+    generations.
+
+    Only the four persisted text fields are translated; the transient
+    interests / motivation / career narrative come from the deterministic
+    scaffold (they're rebuilt deterministically on every read anyway —
+    report_service._shape_response). Validation here is language + banned
+    vocabulary only: structure is inherited from the source, which already
+    passed the full `validate()`.
+
+    Returns `(ReportNarrativeOutput, is_ai)`. Falls back to the deterministic
+    narrative (in `target_locale`) on any failure — never raises."""
+    base = build_fallback_narrative(context, locale=target_locale)
+    if not llm_client.is_enabled():
+        return base, False
+
+    age_group = AgeGroup(context.age_group)
+    n_cards = len(source["strength_cards"])
+    n_notes = len(source["thinking_style_notes"])
+    messages = translate_prompt.build_messages(
+        source, source_locale=source_locale, target_locale=target_locale
+    )
+    last_raw: dict | None = None
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        try:
+            raw = await llm_client.complete_json(
+                messages, translate_prompt.TRANSLATE_JSON_SCHEMA, "report_narrative_translate"
+            )
+        except (llm_client.LLMError, TypeError) as exc:
+            _log_generation_error(attempt, exc)
+            continue
+
+        cards = list(raw.get("strength_cards") or [])
+        notes = list(raw.get("thinking_style_notes") or [])
+        structural = []
+        if len(cards) != n_cards or len(notes) != n_notes:
+            structural = [ValidationIssue("translate_structure_mismatch",
+                                          f"cards {len(cards)}/{n_cards} notes {len(notes)}/{n_notes}")]
+        texts = _translated_texts(raw)
+        issues = structural + _check_language(texts, target_locale) + \
+            _check_banned_vocabulary(texts, age_group, target_locale)
+        if target_locale == "ru":
+            issues += _kazakh_leak_into_ru(texts)
+        _log_attempt(attempt, issues)
+
+        if not issues:
+            return base.model_copy(update={
+                "summary": raw["summary"],
+                "final_analysis": raw["final_analysis"],
+                "strength_cards": [
+                    NarrativeCard(title=c["title"], description=c["description"]) for c in cards
+                ],
+                "thinking_style_notes": [
+                    NarrativeCard(title=n["title"], description=n["description"]) for n in notes
+                ],
+            }), True
+
+        if any(i.code == "LANGUAGE_MISMATCH" for i in issues):
+            record_language_mismatch(target_locale)
+        last_raw = raw
+        if attempt < MAX_ATTEMPTS:
+            messages = messages + [
+                {"role": "assistant", "content": json.dumps(last_raw, ensure_ascii=False)},
+                {"role": "user", "content": translate_prompt.correction_message(target_locale)},
+            ]
+
+    record_fallback("translate")
+    logger.warning(
+        "report_narrative translate fallback source=%s target=%s", source_locale, target_locale
+    )
+    return base, False

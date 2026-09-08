@@ -14,14 +14,23 @@ from app.services import university_requirements as ureq
 
 
 def _university_brief(university: University, locale: str) -> UniversityBrief:
-    """`UniversityBrief` with `description` resolved for `locale` (KZ-501):
-    the `kk` override when present, else the `ru` base column, with
-    `description_locale` reporting which was served."""
+    """`UniversityBrief` with `description` (KZ-501) and `name` (KZ-206
+    follow-up, Kazakhstan universities) resolved for `locale`: the `kk`
+    override when present, else the `ru` base column, with
+    `description_locale` / `name_locale` reporting which was served."""
     description, description_locale = resolve_column_i18n(
         university.description_i18n, university.description, locale
     )
+    name, name_locale = resolve_column_i18n(
+        university.name_i18n, university.name, locale
+    )
     return UniversityBrief.model_validate(university).model_copy(
-        update={"description": description, "description_locale": description_locale}
+        update={
+            "name": name,
+            "name_locale": name_locale,
+            "description": description,
+            "description_locale": description_locale,
+        }
     )
 
 
@@ -29,8 +38,11 @@ def _program_brief(program: Program, locale: str) -> ProgramBrief:
     description, description_locale = resolve_column_i18n(
         program.description_i18n, program.description, locale
     )
+    name, name_locale = resolve_column_i18n(program.name_i18n, program.name, locale)
     return ProgramBrief.model_validate(program).model_copy(
         update={
+            "name": name,
+            "name_locale": name_locale,
             "description": description,
             "description_locale": description_locale,
             "university": _university_brief(program.university, locale),
@@ -108,6 +120,7 @@ async def get_program_detail(
     override when present, else the `ru` base column, with `*_locale` fields
     reporting which was served."""
     program = await get_program_by_id(db, program_id)
+    name, name_locale = resolve_column_i18n(program.name_i18n, program.name, locale)
     description, description_locale = resolve_column_i18n(
         program.description_i18n, program.description, locale
     )
@@ -116,7 +129,8 @@ async def get_program_detail(
     )
     return ProgramDetail(
         id=program.id,
-        name=program.name,
+        name=name,
+        name_locale=name_locale,
         profession_slugs=program.profession_slugs,
         language=program.language,
         cost_per_year=program.cost_per_year,
