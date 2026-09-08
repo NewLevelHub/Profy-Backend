@@ -96,15 +96,21 @@ async def test_kk_report_narrative_has_no_russian_leak(
 # ── catalog ──────────────────────────────────────────────────────────────────
 
 async def _kk_program_detail(db: AsyncSession):
+    # ru base columns carry Russian; the kk overlay is what a kk request must
+    # get back. After KZ-505 there is no temp allowlist, so every free-text
+    # field the response exposes has to resolve to Kazakh.
     uni = University(name="Тест Университеті", country="Қазақстан", city="Алматы",
-                     description="Русское описание вуза")
+                     description="Русское описание вуза",
+                     description_i18n={"kk": "Университеттің қазақ тіліндегі сипаттамасы."})
     db.add(uni)
     direction = Direction(name="Бағыт", slug="guard-kz602", holland_code="RIA")
     db.add(direction)
     await db.flush()
     program = Program(university_id=uni.id, name="Информатика (бакалавр)", language="қазақша",
                       description="Русское описание программы",
+                      description_i18n={"kk": "Бағдарламаның қазақ тіліндегі сипаттамасы."},
                       who_its_for="Русский «для кого»",
+                      who_its_for_i18n={"kk": "Бұл бағдарлама нақты ғылымдарды ұнататындарға арналған."},
                       requirements={"exams": ["ҰБТ", "Математика"], "needs_essay": True},
                       deadlines={}, grants=[])
     program.directions = [direction]
@@ -165,7 +171,8 @@ def test_ent_and_ubt_do_not_mix_within_a_locale() -> None:
 # ── the allowlist itself ────────────────────────────────────────────────────
 
 def test_guard_config_temp_allowlist_is_only_kz504_pending_fields() -> None:
-    # When KZ-504 lands, `description` / `who_its_for` get real kk translations
-    # and this list must be emptied. If someone adds another field here, that
-    # is a red flag — the RU-leak guard should not be widened silently.
-    assert _TEMP_KEYS <= {"description", "who_its_for"}
+    # KZ-504/505 are done — every university/program description has a
+    # native-reviewed kk translation — so the temp allowlist is now EMPTY and
+    # must stay that way. A re-added key means a Russian leak is being hidden
+    # instead of fixed.
+    assert _TEMP_KEYS == set()

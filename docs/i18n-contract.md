@@ -5,7 +5,9 @@
 решения. Если код и этот документ расходятся — чинится расхождение (обычно
 обновляется документ, но решение принимается явно).
 
-Статус: **в работе**. `kk` ещё не включён для пользователей — см. «Выкатка».
+Статус: **`kk` включён** (KZ-603, 2026-09-08). Переключатель языка доступен
+пользователям; `normalize_locale`/`set_locale`/`get_locale` честно резолвят
+`kk`. Откат — `revert` PR KZ-603. См. «Выкатка».
 
 ---
 
@@ -20,26 +22,43 @@
 
 ## 2. Выкатка (без feature-flag)
 
-Флага `KZ_LOCALE_ENABLED` **нет**. Вместо него `kk` физически отсутствует в
-списке поддерживаемых локалей на протяжении всей разработки:
+Флага `KZ_LOCALE_ENABLED` **нет**. Всю разработку `kk` физически отсутствовал в
+списке поддерживаемых локалей, а **KZ-603 (2026-09-08)** одним маленьким PR
+добавил его в оба места:
 
-- бэкенд: `app/i18n.py` → `SUPPORTED_LOCALES = ("ru",)` (комментарий
-  `# KZ-603 добавляет "kk"`);
-- фронтенд: `src/shared/i18n/index.ts` → `supportedLngs: ['ru']` (тот же комментарий).
+- бэкенд: `app/i18n/__init__.py` → `SUPPORTED_LOCALES = ("ru", "kk")`;
+- фронтенд: `src/shared/store/locale.ts` → `SUPPORTED_LOCALES = ['ru', 'kk']`
+  (его же берёт `supportedLngs` в `src/shared/i18n/index.ts`).
 
-Пока `kk` не в этих списках:
-- `normalize_locale("kk")` возвращает `ru` — партиально готовый перевод недостижим
-  для пользователя;
-- компонент `LanguageSwitcher` рендерит `null` (при ≤ 1 реальной локали).
+Эффект: `normalize_locale("kk")` возвращает `kk`; `LanguageSwitcher` виден
+(условие `LOCALE_SWITCH_ENABLED = length > 1`). Откат — `revert` PR KZ-603:
+списки возвращаются к `("ru",)`, переключатель прячется, `kk`-контент остаётся
+в БД, просто не отдаётся. `locale_enum` в Postgres уже содержал `kk`
+(миграции `d80fbf5d1f43` + `a1c5e9d2b7f4`) — новой миграции KZ-603 не требует.
 
-Финальный тикет **KZ-603** одним маленьким PR добавляет `kk` в оба места (и этим
-же делает переключатель видимым). Мержится последним — после зелёных KZ-601
-(E2E) и KZ-602 (CI-гарды). Откат = `revert` этого PR.
+**До KZ-603** любой тикет эпика не должен был менять поведение для
+`ru`-пользователя; всё писалось как «`kk` рядом с `ru`», никогда «вместо».
+Полный порядок мержа — `00-ЭПИК-локализация-KZ.md`.
 
-**Следствие — порядок мержа обязателен.** Любой тикет эпика не должен менять
-поведение для `ru`-пользователя до KZ-603. Всё пишется как «`kk` рядом с `ru`»,
-никогда «вместо». Полный порядок — в `00-ЭПИК-локализация-KZ.md`, раздел
-«Порядок мержа».
+### Заметка команде — статус локализации на момент включения (2026-09-08)
+
+- **Переведено и вычитано носителем:** весь UI (react-i18next, 9 namespace'ов,
+  ~1140 ключей ru↔kk), детерминированный нарратив отчёта, письма (верификация +
+  сброс), лендинг (KZ-213), справочники предметов/терминов ЕНТ↔ҰБТ (KZ-503),
+  описания направлений (144) и **все** описания вузов (2399) и программ (1398) —
+  `description_i18n['kk']` (KZ-504/505).
+- **Остаётся на `ru` намеренно:** админка `/admin/*` (KZ-210); сырые данные
+  вузов — `exams`/`notes`/`grants`/официальные названия (KZ-206); `roadmap` и
+  direction inquiry — dead code, не в проде (KZ-403/404).
+- **ИИ-генерация нарратива на реальном `kk`-ключе LLM (KZ-407) — отложена**:
+  ключа нет, в проде работает детерминированный фолбэк (он на `kk`). Включить
+  вместе с ключом; следить за `llm.language_mismatch{locale=kk}` (KZ-402).
+- **Метрики (KZ-604) — не заведены**: в проекте нет системы аналитики. Когда
+  появится — `locale` в события воронки, счётчик `i18n.fallback{locale=kk}` из
+  `pick_locale` и фронтового `saveMissing`, `llm.language_mismatch`.
+- **E2E:** автотесты `tests/integration/test_kz_e2e_smoke.py` + гарды KZ-602
+  зелёные; ручной прогон носителем по `docs/qa-kz-e2e-checklist.md` — за тем,
+  кто ведёт выкатку в прод.
 
 ## 3. Разрешение локали запроса
 
@@ -650,7 +669,8 @@ Workflow `.github/workflows/i18n-guard.yml` в обоих репозитория
   `npm run typecheck`. Список исключений — `scripts/i18n-exclude.json` (только
   `admin/**` по KZ-210).
 - **Бэк:** postgres + redis сервисы → миграции → сид bank-контента (8 скриптов,
-  не вся CD-цепочка) → `pytest` целевого i18n-набора + `tests/guard/`.
+  не вся CD-цепочка) → `pytest` целевого i18n-набора + `tests/guard/` +
+  `tests/integration/test_kz_e2e_smoke.py` (KZ-601 автотесты).
   - `tests/guard/test_i18n_leak.py`: (1) весь текст нарратива `kk`-отчёта
     проходит `report_narrative_validator._check_language_kk` (нулевой RU-leak);
     (2) `kk`-ответ `ProgramDetail` вне allowlist не содержит русских
@@ -658,10 +678,17 @@ Workflow `.github/workflows/i18n-guard.yml` в обоих репозитория
     (`subjects.admission_terms`, каталоги `university_requirements`/`gap_analysis`,
     глоссарий промпта).
   - Конфиг гарда — `tests/data/i18n_guard_config.json` (`always_raw_fields`
-    — официальные названия/сырые данные вузов, навсегда; `catalog_temp_allowlist`
-    = `["description", "who_its_for"]` — **временно до KZ-504**, тест
-    `test_guard_config_temp_allowlist_is_only_kz504_pending_fields` не даёт
-    расширить; `ru_marker_words`; `ent_terms`).
+    — официальные названия/сырые данные вузов, навсегда; `ru_marker_words`;
+    `ent_terms`). `catalog_temp_allowlist` **пуст** с 2026-09-08 — KZ-504/505
+    залили `description_i18n['kk']` на все 2399 вузов + 1398 программ (перевод
+    + вычитка носителем), тест `test_guard_config_temp_allowlist_is_only_kz504_pending_fields`
+    теперь требует `_TEMP_KEYS == set()` (повторно добавленный ключ = скрытый
+    RU-leak).
+- **KZ-601 (`test_kz_e2e_smoke.py`):** нарратив отчёта на `kk` для junior /
+  middle / senior; отсутствие пустых/ключ-подобных секций; детали направления
+  на реальном сиде `kk`; overlay `description_i18n['kk']` программы +
+  `description_locale`; транзитная плашка при отсутствии перевода; gap-анализ
+  на `kk` (`ҰБТ`, не `ЕНТ`). Матрица ручного прогона — `docs/qa-kz-e2e-checklist.md`.
 
 ---
 
@@ -674,3 +701,5 @@ Workflow `.github/workflows/i18n-guard.yml` в обоих репозитория
 | 2026-09-04 | KZ-503: `app/i18n/catalog/subjects.py` — единый дом школьных предметов (ключ = канон. рус. строка) + терминов ЕНТ/ҰБТ; глоссарий KZ-401 строится из него; `_subject_evidence` локализует имена предметов; синк BE↔FE тестами (`test_subjects_catalog.py` / `i18n-subjects.mjs`). |
 | 2026-09-04 | KZ-602: CI-гарды `.github/workflows/i18n-guard.yml` в обоих репо (PR-гейт); BE `tests/guard/` + конфиг `tests/data/i18n_guard_config.json` (RU-leak в нарративе/каталоге, `ЕНТ`↔`ҰБТ`). |
 | 2026-09-08 | KZ-504/505: авторинг-скрипты kk-каталога свёрнуты в один `scripts/apply_catalog_descriptions_kk.py` (`apply`/`dump`/`merge`); `catalog_descriptions_kk.json` переведён в секционный distinct-формат (2357 вузов + 185 программ на 2399+1398 рядов); удалены `export_catalog_kk_todo.py`, `kz505_slice.py`, `kz505_apply.py`, `apply_direction_fields_kk.py`, `apply_direction_subjects_kk.py` и весь батч-мусор `scripts/data/{kk_*,batch_*}`; `start.sh` +1 строка (`apply`) после `build_universities.py`, CD не тронут. `description_i18n['kk']` применён локально: 2399 вузов + 1398 программ. |
+| 2026-09-08 | KZ-601: `docs/qa-kz-e2e-checklist.md` (ручная матрица) + `tests/integration/test_kz_e2e_smoke.py` (8 автотестов kk-пути, в i18n-guard). KZ-602 закрыт: `catalog_temp_allowlist` пуст, `_TEMP_KEYS == set()`. Локально: 200 passed на i18n-наборе гарда, полный BE — 549 passed / 6 pre-existing. |
+| 2026-09-08 | **KZ-603: `kk` включён.** `SUPPORTED_LOCALES = ("ru", "kk")` (BE `app/i18n/__init__.py`) + `['ru', 'kk']` (FE `src/shared/store/locale.ts`); `test_i18n.py` обновлён (`kk` теперь резолвится обычным путём); заметка команде — §2. Без миграции (`locale_enum` уже знал `kk`). Откат — `revert`. Ручной прогон носителем в прод — за командой выкатки. |

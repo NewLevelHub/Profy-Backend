@@ -1,8 +1,7 @@
 """Request-locale resolution — app/i18n.py. Pure logic, no DB/LLM.
 
-While "kk" is not yet in SUPPORTED_LOCALES (removed by KZ-603), every "kk" input
-resolves to the default "ru". The `kk -> kk` cases below are marked and flip to
-active in KZ-603.
+"kk" is in SUPPORTED_LOCALES since KZ-603 (2026-09-08), so every "kk" input now
+resolves to "kk" through the normal path (not just with allowed=KNOWN_LOCALES).
 """
 
 import pytest
@@ -36,12 +35,12 @@ def _clear_fallback_counts():
         ("RU", "ru"),
         ("  ru  ", "ru"),
         ("ru-RU", "ru"),
-        ("ru,kk;q=0.9", "ru"),
+        ("ru,kk;q=0.9", "ru"),  # ru (implicit q=1.0) outweighs kk;q=0.9
         ("ru-RU,ru;q=0.9,en;q=0.8", "ru"),
-        # kk not supported yet (KZ-603) -> falls back to ru
-        ("kk", DEFAULT_LOCALE),
-        ("kk-KZ", DEFAULT_LOCALE),
-        ("kk;q=0.9,ru;q=0.1", DEFAULT_LOCALE),
+        # kk is supported since KZ-603
+        ("kk", "kk"),
+        ("kk-KZ", "kk"),
+        ("kk;q=0.9,ru;q=0.1", "kk"),
         # unknown / junk -> default
         ("en", DEFAULT_LOCALE),
         ("de-DE,en;q=0.8", DEFAULT_LOCALE),
@@ -57,9 +56,12 @@ def test_normalize_locale(raw, expected):
 
 
 def test_normalize_locale_respects_q_weight_order():
-    # both supported? only "ru" is right now, so this just confirms ru wins
+    # en is unknown either way, so ru wins regardless of the q order
     assert normalize_locale("en;q=0.1, ru;q=0.9") == "ru"
     assert normalize_locale("en;q=0.9, ru;q=0.1") == "ru"
+    # kk now supported -> a higher-weighted kk beats ru
+    assert normalize_locale("ru;q=0.2, kk;q=0.9") == "kk"
+    assert normalize_locale("ru;q=0.9, kk;q=0.2") == "ru"
 
 
 @pytest.mark.parametrize(
@@ -83,19 +85,20 @@ def test_normalize_locale_q_weight_parsing(raw, expected):
 def test_set_locale_clamps_to_supported():
     assert set_locale("ru") == "ru"
     assert get_locale() == "ru"
-    # unsupported values are stored as the default, never raised on
-    assert set_locale("kk") == DEFAULT_LOCALE
+    # kk is supported since KZ-603
+    assert set_locale("kk") == "kk"
+    assert get_locale() == "kk"
+    # unsupported values are still stored as the default, never raised on
     assert set_locale("xx") == DEFAULT_LOCALE
     assert set_locale(None) == DEFAULT_LOCALE
     assert get_locale() == DEFAULT_LOCALE
 
 
-def test_kk_is_gated_until_enable_pr():
-    # KZ-603 flips this by adding "kk" to SUPPORTED_LOCALES; this guard test
-    # documents the current state so the change is deliberate.
-    assert "kk" not in SUPPORTED_LOCALES
-    # ...but the persistence layer already knows about it.
-    assert set(KNOWN_LOCALES) == {"ru", "kk"}
+def test_kk_is_supported():
+    # KZ-603 (2026-09-08) added "kk" to SUPPORTED_LOCALES — no feature flag.
+    # `revert` that PR to restore ("ru",); this guard makes the state explicit.
+    assert "kk" in SUPPORTED_LOCALES
+    assert set(SUPPORTED_LOCALES) == {"ru", "kk"} == set(KNOWN_LOCALES)
 
 
 @pytest.mark.parametrize(
@@ -182,5 +185,7 @@ def test_pick_locale_uses_kk_without_needing_ru():
 
 
 def test_pick_locale_defaults_to_current_request_locale():
-    set_locale("ru")  # SUPPORTED_LOCALES gate keeps this "ru" for now
+    set_locale("ru")
     assert pick_locale({"ru": "Привет", "kk": "Сәлем"}) == "Привет"
+    set_locale("kk")
+    assert pick_locale({"ru": "Привет", "kk": "Сәлем"}) == "Сәлем"

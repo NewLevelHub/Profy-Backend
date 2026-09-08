@@ -84,4 +84,5 @@ jobs:
           tests/integration/test_user_locale.py
           tests/integration/test_university_locale.py
           tests/integration/test_ai_artifact_locale_key.py
+          tests/integration/test_kz_e2e_smoke.py
           tests/guard/

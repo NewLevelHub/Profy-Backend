@@ -13,8 +13,8 @@
   },
 
   "catalog_temp_allowlist": {
-    "_comment": "TEMPORARY — free-text catalog descriptions still served in Russian until KZ-504 backfills description_i18n['kk']. Emptied when KZ-504 is done; test_guard_config_shrinks_after_kz504 fails loudly if entries remain past that point.",
-    "keys": ["description", "who_its_for"]
+    "_comment": "Was a TEMPORARY allowlist for free-text catalog descriptions served in Russian until KZ-504/505 backfilled description_i18n['kk']. KZ-505 is done (all 2399 universities + 1398 programs translated + native-reviewed, applied 2026-09-08), so this is now EMPTY. test_guard_config_temp_allowlist_is_only_kz504_pending_fields asserts it stays empty — a re-added key means a RU-leak is being hidden.",
+    "keys": []
   },
 
   "ru_marker_words": {

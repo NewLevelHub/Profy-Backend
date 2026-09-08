@@ -6,10 +6,11 @@ The locale of a request resolves as:
 
 See docs/i18n-contract.md for the full contract.
 
-`kk` is intentionally absent from ``SUPPORTED_LOCALES`` until the final enable PR
-(ticket KZ-603) — there is no feature flag, so a partially translated ``kk`` must
-stay unreachable for users. While ``kk`` is unsupported, ``normalize_locale("kk")``
-returns ``"ru"`` and ``set_locale("kk")`` stores ``"ru"``.
+``kk`` is enabled (ticket KZ-603, 2026-09-08) — there is no feature flag, so
+``normalize_locale`` / ``set_locale`` / ``get_locale`` now honour ``"kk"``
+everywhere. To roll back, ``revert`` that PR: this returns ``SUPPORTED_LOCALES``
+to ``("ru",)`` and ``kk`` becomes unreachable again (the ``kk`` content stays in
+the DB, just unserved).
 """
 
 from __future__ import annotations
@@ -24,10 +25,11 @@ logger = logging.getLogger("app.i18n")
 
 DEFAULT_LOCALE = "ru"
 
-# KZ-603 adds "kk" here (rollout without a feature flag). Keep this the single
-# gate: every other module asks SUPPORTED_LOCALES / normalize_locale, never
-# hardcodes the set.
-SUPPORTED_LOCALES: tuple[str, ...] = ("ru",)
+# KZ-603 (2026-09-08) added "kk" here — rollout without a feature flag. Keep
+# this the single gate: every other module asks SUPPORTED_LOCALES /
+# normalize_locale, never hardcodes the set. `revert` the KZ-603 PR to go back
+# to ("ru",).
+SUPPORTED_LOCALES: tuple[str, ...] = ("ru", "kk")
 
 # Every locale the DB / persistence layer accepts, regardless of the runtime
 # gate above. A user's stored choice may be "kk" before KZ-603 — it just isn't
