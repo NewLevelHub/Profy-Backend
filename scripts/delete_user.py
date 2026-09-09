@@ -11,7 +11,8 @@ no ON DELETE CASCADE, unlike everything under assessments):
      product_feedback.assessment_id
   3. profile
   4. user — cascades to password_resets, email_verifications,
-     product_feedback (by user_id)
+     product_feedback (by user_id), psychologist_student_assignments
+     (as psychologist_id or student_id)
 All in one transaction: either everything goes, or nothing does.
 """
 import asyncio
