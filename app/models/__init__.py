@@ -13,6 +13,7 @@ from app.models.product_feedback import ProductFeedback  # noqa: F401 — keep m
 from app.models.profile import Profile  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.program import Program  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.psychologist_assignment import PsychologistStudentAssignment  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.psychologist_note import PsychologistNote  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.question import Question  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.question_pair import QuestionPair  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.roadmap import Roadmap  # noqa: F401 — keep model imported so Alembic discovers it
@@ -28,8 +29,8 @@ __all__ = [
     "Direction", "DirectionInquiry", "DirectionRoadmap",
     "EmailVerificationToken", "MotivationPair", "MotivationPairResponse",
     "MotivationResponse", "MotivationStatement", "PasswordResetToken",
-    "ProductFeedback", "Profile", "Program", "PsychologistStudentAssignment",
-    "Question", "QuestionPair", "Roadmap",
+    "ProductFeedback", "Profile", "Program", "PsychologistNote",
+    "PsychologistStudentAssignment", "Question", "QuestionPair", "Roadmap",
     "University", "UniversityImage", "UniversityExternalRef",
     "User", "UserResponse", "GoalOverlay",
 ]
