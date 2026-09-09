@@ -1,9 +1,8 @@
-"""Psychologist access to assigned students (PRO-327 / Milestone 2).
+"""Psychologist access to assigned students and notes (PRO-327 / PRO-330).
 
-Scope is assignment-gated: a psychologist only sees students linked via
-`PsychologistStudentAssignment`. Missing assignment → not-found (404 at the
-router), never 403 — same pattern as `_require_profile_id` /
-`_require_assessment_access`.
+Student list/detail are assignment-gated. Notes use soft cutoff: create
+requires an active assignment; list/update/delete of notes the psychologist
+already owns do not — missing ownership → not-found (404), never 403.
 """
 
 from __future__ import annotations
@@ -16,10 +15,14 @@ from sqlalchemy.orm import aliased
 
 from app.models.profile import Profile
 from app.models.psychologist_assignment import PsychologistStudentAssignment
+from app.models.psychologist_note import PsychologistNote
 from app.models.user import User
 from app.schemas.admin import AdminUserDetailResponse
 from app.schemas.psychologist import (
     PsychologistAssessmentSummary,
+    PsychologistNoteCreate,
+    PsychologistNoteItem,
+    PsychologistNoteUpdate,
     PsychologistStudentDetailResponse,
     PsychologistStudentListItem,
 )
@@ -42,6 +45,18 @@ async def _require_assigned_student(
     if assignment is None:
         raise ValueError("Student not found")
     return assignment
+
+
+async def _require_own_note(
+    db: AsyncSession,
+    *,
+    psychologist_id: uuid.UUID,
+    note_id: uuid.UUID,
+) -> PsychologistNote:
+    note = await db.get(PsychologistNote, note_id)
+    if note is None or note.psychologist_id != psychologist_id:
+        raise ValueError("Note not found")
+    return note
 
 
 async def list_assigned_students(
@@ -116,3 +131,75 @@ async def get_assigned_student_detail(
         # Assignment pointed at a deleted user mid-request — treat as missing.
         raise ValueError("Student not found")
     return _to_psychologist_detail(detail)
+
+
+async def create_note(
+    db: AsyncSession,
+    *,
+    psychologist_id: uuid.UUID,
+    student_id: uuid.UUID,
+    body: PsychologistNoteCreate,
+) -> PsychologistNote:
+    # Soft cutoff: new notes require an active assignment.
+    await _require_assigned_student(
+        db, psychologist_id=psychologist_id, student_id=student_id
+    )
+    note = PsychologistNote(
+        psychologist_id=psychologist_id,
+        student_id=student_id,
+        content=body.content,
+    )
+    db.add(note)
+    await db.commit()
+    await db.refresh(note)
+    return note
+
+
+async def list_notes(
+    db: AsyncSession,
+    *,
+    psychologist_id: uuid.UUID,
+    student_id: uuid.UUID,
+) -> list[PsychologistNoteItem]:
+    # Soft cutoff: listing does not require a current assignment — only
+    # notes owned by this psychologist for this student are returned.
+    result = await db.execute(
+        select(PsychologistNote)
+        .where(
+            PsychologistNote.psychologist_id == psychologist_id,
+            PsychologistNote.student_id == student_id,
+        )
+        .order_by(PsychologistNote.created_at.desc())
+    )
+    return [
+        PsychologistNoteItem.model_validate(row) for row in result.scalars().all()
+    ]
+
+
+async def update_note(
+    db: AsyncSession,
+    *,
+    psychologist_id: uuid.UUID,
+    note_id: uuid.UUID,
+    body: PsychologistNoteUpdate,
+) -> PsychologistNote:
+    note = await _require_own_note(
+        db, psychologist_id=psychologist_id, note_id=note_id
+    )
+    note.content = body.content
+    await db.commit()
+    await db.refresh(note)
+    return note
+
+
+async def delete_note(
+    db: AsyncSession,
+    *,
+    psychologist_id: uuid.UUID,
+    note_id: uuid.UUID,
+) -> None:
+    note = await _require_own_note(
+        db, psychologist_id=psychologist_id, note_id=note_id
+    )
+    await db.delete(note)
+    await db.commit()
