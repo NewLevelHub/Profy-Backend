@@ -185,3 +185,30 @@ class AdminFeedbackStatsResponse(BaseModel):
     by_scenario: list[FeedbackBreakdownItem] = []
     by_top_direction: list[FeedbackBreakdownItem] = []
     helpful_section_counts: dict[str, int] = {}
+
+
+class PsychologistAssignmentCreate(BaseModel):
+    """Admin-only link between a psychologist and a student (PRO-326).
+
+    Role validation happens in the service layer on create — not here and
+    not as a DB constraint (see PsychologistStudentAssignment).
+    """
+
+    psychologist_id: uuid.UUID
+    student_id: uuid.UUID
+
+
+class PsychologistAssignmentItem(BaseModel):
+    id: uuid.UUID
+    psychologist_id: uuid.UUID
+    student_id: uuid.UUID
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class PsychologistAssignmentListResponse(BaseModel):
+    items: list[PsychologistAssignmentItem]
+    total: int
+    page: int
+    limit: int
