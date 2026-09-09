@@ -1,9 +1,9 @@
 # Три роли: ученик / админ / психолог — план интеграции
 
 ## Status: Milestone 1 implemented (branch `pro-281`); Milestone 2
-implemented across `pro-325` (model), `pro-326` (admin CRUD), `pro-327`
-(psychologist router), `pro-328` (tests + frontend contract); Milestone 3
-planned, not started
+implemented across `pro-325`–`pro-328`; Milestone 3 implemented across
+`pro-329` (model), `pro-330` (CRUD + soft cutoff), `pro-331` (tests +
+frontend contract)
 
 Milestone 1 (роль-инфраструктура) реализован и проверен: `UserRole` enum +
 `role` колонка на `User`, `is_admin` стал computed-property, миграция
@@ -17,11 +17,16 @@ failures не связанных с ролями (report narrative content, imag
 content-type mismatch, `UniversityRequirement` schema drift — воспроизведены
 и на коде до этого изменения через `git stash`).
 
-Milestones 2 (доступ психолога к назначенным ученикам) реализован:
+Milestone 2 (доступ психолога к назначенным ученикам) реализован:
 модель + admin CRUD + psychologist router + контракт
 `docs/frontend-psychologist-assignments-api-contract.md` и чеклист-тесты
-(`tests/integration/test_milestone2_assignments.py` и соседние). Milestone 3
-(заметки психолога) — ещё не начат, описан ниже как план.
+(`tests/integration/test_milestone2_assignments.py` и соседние).
+
+Milestone 3 (заметки психолога) реализован: модель `PsychologistNote`,
+CRUD со soft cutoff на `app/routers/psychologist.py`, контракт
+`docs/frontend-psychologist-notes-api-contract.md`, тесты
+`tests/integration/test_psychologist_notes.py` +
+`test_milestone3_notes.py`. Админский read заметок — вне скоупа.
 
 ## Context
 
@@ -177,11 +182,11 @@ Milestones 2 (доступ психолога к назначенным учен
 - Тесты: `tests/integration/test_admin_psychologist_assignments.py`,
   `test_psychologist_students.py`, чеклист
   `test_milestone2_assignments.py`.
-## Milestone 3 — Заметки психолога (planned)
+## Milestone 3 — Заметки психолога (done)
 
-- Новая модель `app/models/psychologist_note.py` — `PsychologistNote`
+- Модель `app/models/psychologist_note.py` — `PsychologistNote`
   (`psychologist_id`, `student_id`, `content: Text`, без уникальности —
-  заметок может быть много).
+  заметок может быть много). Миграция `7db53544fd3d`.
 - Двойная проверка при CRUD: (a) `note.psychologist_id == current_user.id`
   (иначе 404, не 403), (b) создание новой заметки требует активного
   назначения (`_require_assigned_student`) — **soft cutoff**: чтение/
@@ -189,6 +194,9 @@ Milestones 2 (доступ психолога к назначенным учен
   текущего статуса назначения.
 - Роуты в `app/routers/psychologist.py`: `POST/GET
   /students/{student_id}/notes`, `PATCH/DELETE /notes/{note_id}`.
+- Контракт: `docs/frontend-psychologist-notes-api-contract.md`.
+- Тесты: `tests/integration/test_psychologist_notes.py`, чеклист
+  `test_milestone3_notes.py`.
 - Админский доступ на чтение заметок (для надзора) — не запрошен, вне
   скоупа Milestone 3, добавляется отдельным PR при необходимости.
 
@@ -200,11 +208,16 @@ Milestones 2 (доступ психолога к назначенным учен
   tests/integration/test_admin_user_provisioning.py
   tests/integration/test_admin_psychologist_assignments.py
   tests/integration/test_psychologist_students.py
-  tests/integration/test_milestone2_assignments.py` — роли + назначения;
-  затем полный `pytest` — не должно быть новых падений относительно
-  baseline (8 pre-existing failures, см. Status выше).
+  tests/integration/test_milestone2_assignments.py
+  tests/integration/test_psychologist_notes.py
+  tests/integration/test_milestone3_notes.py` — роли + назначения +
+  заметки; затем полный `pytest` — не должно быть новых падений
+  относительно baseline (8 pre-existing failures, см. Status выше).
 - Ручная проверка через `/docs`: `POST /api/v1/admin/users` с
   `role=psychologist`, логин под этим пользователем, `GET
   /api/v1/psychologist/students` — пустой список до назначения, непустой
-  после `POST /api/v1/admin/psychologist-assignments` (Milestone 2).
-  Контракт для фронта: `docs/frontend-psychologist-assignments-api-contract.md`.
+  после `POST /api/v1/admin/psychologist-assignments` (Milestone 2); затем
+  `POST/GET .../notes` и soft cutoff после `DELETE` назначения
+  (Milestone 3).
+  Контракты: `docs/frontend-psychologist-assignments-api-contract.md`,
+  `docs/frontend-psychologist-notes-api-contract.md`.

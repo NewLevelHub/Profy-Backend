@@ -225,7 +225,8 @@ Authorization: Bearer <psychologist-token>
 
 ## 8. Что сознательно вне скоупа M2
 
-- Psychologist CRUD заметок — Milestone 3 (`PsychologistNote`).
+- Psychologist CRUD заметок — Milestone 3 (`PsychologistNote`); контракт:
+  `docs/frontend-psychologist-notes-api-contract.md`.
 - Полный assessment/report API для психолога.
 - Email/имя в admin list назначений (только UUID).
 - Пагинация на `GET /psychologist/students`.

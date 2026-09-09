@@ -1,4 +1,4 @@
-"""Psychologist notes CRUD + soft cutoff (PRO-330).
+"""Psychologist notes CRUD + soft cutoff (PRO-330 / checklist coverage for PRO-331).
 
 Create requires an active assignment; list/PATCH/DELETE of own notes remain
 allowed after the student is unassigned. Foreign note ids → 404, not 403.
