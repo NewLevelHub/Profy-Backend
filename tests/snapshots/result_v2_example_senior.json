@@ -78,6 +78,7 @@
   ],
   "interest_map_note": "Карта показывает, какие сферы проявляются ярче, а какие — тише. Это не оценка, а просто снимок текущего состояния.",
   "is_flat_profile": true,
+  "mac": null,
   "motivation_highlights": [
     "Тебе важно пробовать разное"
   ],
@@ -114,6 +115,7 @@
       "trait": "emotional_stability"
     }
   ],
+  "psychoemotional": null,
   "report_version": 2,
   "strength_cards": [
     {
@@ -127,5 +129,6 @@
       "description": "Короткое описание",
       "title": "Стиль 0"
     }
-  ]
+  ],
+  "validity": null
 }

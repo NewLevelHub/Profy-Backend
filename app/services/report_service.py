@@ -13,21 +13,27 @@ from app.config import settings
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
+from app.models.consent import CONSENT_SCOPE_PSYCH_BLOCK
 from app.models.direction import Direction
 from app.models.profile import AgeGroup, Profile
+from app.models.user import User
 from app.schemas.report_narrative import ReportNarrativeOutput
 from app.schemas.result_v2 import (
+    MacSection,
     MiResultResponse,
+    PsychoEmotionalSection,
     ResultResponseV2,
     ResultV2Adapter,
     RiasecResultResponse,
     StudentStrengthCard,
     StudentThinkingStyleNote,
+    ValiditySection,
 )
 from app.services import (
     assessment_shared,
     bigfive_content,
     bigfive_service,
+    consent_service,
     mi_service,
     motivation_pair_service,
     motivation_service,
@@ -258,7 +264,120 @@ async def _assert_assessment_complete(
         )
 
 
+# --------------------------------------------------------------------------
+# Psychology block (PRO-282 epic) — validity / psychoemotional / mac sections
+# --------------------------------------------------------------------------
+# THE single place that decides whether the psych-block sections appear in
+# /result. MVP (PRO-282 §3): always on — выводы видны и школьнику, и админу,
+# роли «Психолог» пока нет. PRO-321 сузит это ДО ОДНОЙ СТРОКИ::
+#
+#     return viewer is not None and viewer.role in (
+#         UserRole.psychologist, UserRole.admin
+#     )
+#
+# Никакой другой код видимость секций не решает — см. docs/psych-block-contract.md.
+def psych_sections_for(viewer: User | None, *, assessment_id: uuid.UUID) -> bool:
+    return True
+
+
+async def _build_validity_section(
+    assessment_id: uuid.UUID, db: AsyncSession, *, consent_ok: bool
+) -> ValiditySection | None:
+    """Фаза 1 «Достоверность протокола» (PRO-296…PRO-300) fills this with the
+    traffic-light indicator + breakdown. No lie-scale engine exists yet →
+    return None, /result carries `validity: null`. This is the ONLY seam
+    Фаза 1 plugs into — not a new call site inside build_report()."""
+    return None
+
+
+async def _build_psychoemotional_section(
+    assessment_id: uuid.UUID, db: AsyncSession, *, consent_ok: bool
+) -> PsychoEmotionalSection | None:
+    """Фаза 2 (PRO-307…PRO-309) fills this with the МЦВ metrics + the fixed
+    "шкала взрослая, ориентировочно" note. None until then."""
+    return None
+
+
+async def _build_mac_section(
+    assessment_id: uuid.UUID, db: AsyncSession, *, consent_ok: bool
+) -> MacSection | None:
+    """Фаза 3 (PRO-314…PRO-318) assembles this feed from the `mac_*` history
+    tables. No scoring, no AI (PRO-282 §4). None until then."""
+    return None
+
+
+async def _attach_psych_sections(
+    response: ResultResponseV2,
+    *,
+    viewer: User | None,
+    assessment_id: uuid.UUID,
+    db: AsyncSession,
+) -> ResultResponseV2:
+    """Attach the psych-block sections to an already-built main report.
+
+    Isolation contract (PRO-282 §4 / PRO-291): each section's calculation is
+    wrapped so a raised exception is logged and leaves that section `None` —
+    the RIASEC/BigFive/MI report is already assembled and is returned
+    untouched no matter what any block does. The base report is what gets
+    cached (in _build_report/_get_report); these sections are re-attached on
+    every request so the cache stays viewer-agnostic ahead of PRO-321."""
+    if not psych_sections_for(viewer, assessment_id=assessment_id):
+        return response
+
+    consent_ok = False
+    if viewer is not None:
+        try:
+            consent_ok = await consent_service.has_consent(
+                db,
+                user_id=viewer.id,
+                scope=CONSENT_SCOPE_PSYCH_BLOCK,
+                assessment_id=assessment_id,
+            )
+        except Exception:  # noqa: BLE001 — consent is a non-blocking annotation
+            logger.exception(
+                "consent lookup failed for assessment=%s — treating as not signed",
+                assessment_id,
+            )
+
+    # Resolved by name at call time (not a module-level dict) so a test /
+    # a future phase can monkeypatch an individual builder and have it take
+    # effect here.
+    builders = {
+        "validity": _build_validity_section,
+        "psychoemotional": _build_psychoemotional_section,
+        "mac": _build_mac_section,
+    }
+
+    updates: dict[str, object | None] = {}
+    for field, builder in builders.items():
+        try:
+            updates[field] = await builder(assessment_id, db, consent_ok=consent_ok)
+        except Exception:  # noqa: BLE001 — a block must never break the main report
+            logger.exception(
+                "psych section %r failed for assessment=%s — section omitted, "
+                "main RIASEC/BigFive/MI report unaffected",
+                field,
+                assessment_id,
+            )
+            updates[field] = None
+
+    return response.model_copy(update=updates)
+
+
 async def build_report(
+    assessment_id: uuid.UUID, db: AsyncSession, *, viewer: User | None = None
+) -> ResultResponseV2:
+    """Public entrypoint: build/load the main report, then attach the
+    isolated psych-block sections. `viewer` is optional so internal callers
+    that only need the report materialized (e.g. goal_overlay_service) keep
+    working unchanged."""
+    response = await _build_report(assessment_id, db)
+    return await _attach_psych_sections(
+        response, viewer=viewer, assessment_id=assessment_id, db=db
+    )
+
+
+async def _build_report(
     assessment_id: uuid.UUID, db: AsyncSession
 ) -> ResultResponseV2:
     cache_key = _cache_key(assessment_id)
@@ -460,6 +579,20 @@ async def build_report(
 
 
 async def get_report(
+    assessment_id: uuid.UUID, db: AsyncSession, *, viewer: User | None = None
+) -> ResultResponseV2 | None:
+    """Public entrypoint — see build_report(). Returns None (unchanged) when
+    no report exists yet; otherwise the report with psych-block sections
+    attached."""
+    response = await _get_report(assessment_id, db)
+    if response is None:
+        return None
+    return await _attach_psych_sections(
+        response, viewer=viewer, assessment_id=assessment_id, db=db
+    )
+
+
+async def _get_report(
     assessment_id: uuid.UUID, db: AsyncSession
 ) -> ResultResponseV2 | None:
     cache_key = _cache_key(assessment_id)

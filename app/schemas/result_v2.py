@@ -86,6 +86,41 @@ _MAX_CAREERS = 10
 _model_config = {"extra": "forbid"}
 
 
+# --- Psychology block sections (PRO-282 epic) -------------------------------
+# Skeleton only. Each section is `null` in /result until its phase lands the
+# calculation (validity → Фаза 1 PRO-296…300, psychoemotional → Фаза 2
+# PRO-307…309, mac → Фаза 3 PRO-314…318). Every phase extends its own model
+# below with concrete fields. `consent_ok` is the one field defined now — it
+# mirrors the stored parental consent (consent_service.has_consent, scope
+# "psych_block") and is a *flag*, not a gate: MVP (PRO-282 §3/§4) shows the
+# section regardless of its value. Section *visibility* is decided in
+# exactly one place — report_service.psych_sections_for — never here.
+
+
+class ValiditySection(BaseModel):
+    """«Достоверность протокола» ("шкала лжи")."""
+
+    consent_ok: bool = False
+    model_config = _model_config
+
+
+class PsychoEmotionalSection(BaseModel):
+    """«Психоэмоциональный тест» (МЦВ Собчик). Название «Люшер» в продукте
+    не используется (PRO-282 §4)."""
+
+    consent_ok: bool = False
+    model_config = _model_config
+
+
+class MacSection(BaseModel):
+    """МАК — метафорические ассоциативные карты. Без скоринга и
+    ИИ-интерпретации (PRO-282 §4): Фаза 3 наполняет это лентой
+    "стимул → карта → тексты", собранной из таблиц `mac_*`."""
+
+    consent_ok: bool = False
+    model_config = _model_config
+
+
 class StudentStrengthCard(BaseModel):
     title: str
     description: str
@@ -174,6 +209,16 @@ class _ResultResponseBase(BaseModel):
     # personalized when available, same pipeline as summary/strength_cards
     # (report_narrative_service), with a deterministic fallback either way.
     final_analysis: str = FINAL_ANALYSIS_FALLBACK
+    # Psychology block — see the *Section models above. `None` until the
+    # matching phase ships; attached by report_service._attach_psych_sections
+    # (isolated — a failing calculation is logged and leaves its section
+    # `None`, never breaking the main report). A plain default, so an already
+    # -cached response serialized before these fields existed still
+    # deserializes cleanly (ResultV2Adapter.validate_json in
+    # report_service.py) — same precedent as EXPLORATION_CLOSING_NOTE etc.
+    validity: ValiditySection | None = None
+    psychoemotional: PsychoEmotionalSection | None = None
+    mac: MacSection | None = None
     created_at: datetime
     model_config = _model_config
 
