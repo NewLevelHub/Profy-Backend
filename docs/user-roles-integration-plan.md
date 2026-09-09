@@ -1,6 +1,9 @@
 # Три роли: ученик / админ / психолог — план интеграции
 
-## Status: Milestone 1 implemented (branch `pro-281`), Milestones 2–3 planned, not started
+## Status: Milestone 1 implemented (branch `pro-281`); Milestone 2
+implemented across `pro-325` (model), `pro-326` (admin CRUD), `pro-327`
+(psychologist router), `pro-328` (tests + frontend contract); Milestone 3
+planned, not started
 
 Milestone 1 (роль-инфраструктура) реализован и проверен: `UserRole` enum +
 `role` колонка на `User`, `is_admin` стал computed-property, миграция
@@ -14,8 +17,11 @@ failures не связанных с ролями (report narrative content, imag
 content-type mismatch, `UniversityRequirement` schema drift — воспроизведены
 и на коде до этого изменения через `git stash`).
 
-Milestones 2 (доступ психолога к назначенным ученикам) и 3 (заметки
-психолога) — ещё не начаты, описаны ниже как план.
+Milestones 2 (доступ психолога к назначенным ученикам) реализован:
+модель + admin CRUD + psychologist router + контракт
+`docs/frontend-psychologist-assignments-api-contract.md` и чеклист-тесты
+(`tests/integration/test_milestone2_assignments.py` и соседние). Milestone 3
+(заметки психолога) — ещё не начат, описан ниже как план.
 
 ## Context
 
@@ -147,28 +153,30 @@ Milestones 2 (доступ психолога к назначенным учен
 замусоренной shared dev БД. При появлении следующей миграции — всегда
 перепроверять `alembic heads` заново, не доверять этому документу.
 
-## Milestone 2 — Доступ психолога к назначенным ученикам (planned)
+## Milestone 2 — Доступ психолога к назначенным ученикам (done)
 
-- Новая модель `app/models/psychologist_assignment.py` —
+- Модель `app/models/psychologist_assignment.py` —
   `PsychologistStudentAssignment` (`psychologist_id`, `student_id` →
   `users.id`, unique-constraint на пару). Роли участников валидируются на
-  уровне сервиса при создании (не в БД).
+  уровне сервиса при создании (не в БД). Миграция `e4ed44aa0d52`.
 - Admin CRUD для назначений (`app/routers/admin.py`, тот же
   `get_current_admin_user`): `POST/GET/DELETE
   /api/v1/admin/psychologist-assignments`, сервис
   `app/services/admin_psychologist_service.py`.
 - Психолог-роутер `app/routers/psychologist.py` (mount на
   `/api/v1/psychologist`): `app/services/psychologist_service.py` с
-  `_require_assigned_student()` — 404 (не 403) при отсутствии назначения,
-  тем же паттерном что `_require_profile_id`/`_require_assessment_access`
-  (`app/routers/assessment.py:19`).
+  `_require_assigned_student()` — 404 (не 403) при отсутствии назначения.
   - `GET /students` — список назначенных, узкая схема
     `PsychologistStudentListItem`.
   - `GET /students/{id}` — после `_require_assigned_student`, переиспользует
-    `admin_service.get_user_detail()`, оборачивает в отдельную
-    `PsychologistStudentDetailResponse` (не отдавать `AdminUserDetailResponse`
+    `admin_service.get_user_detail()`, оборачивает в
+    `PsychologistStudentDetailResponse` (не отдаёт `AdminUserDetailResponse`
     как есть).
-
+- Контракт для фронта:
+  `docs/frontend-psychologist-assignments-api-contract.md`.
+- Тесты: `tests/integration/test_admin_psychologist_assignments.py`,
+  `test_psychologist_students.py`, чеклист
+  `test_milestone2_assignments.py`.
 ## Milestone 3 — Заметки психолога (planned)
 
 - Новая модель `app/models/psychologist_note.py` — `PsychologistNote`
@@ -189,10 +197,14 @@ Milestones 2 (доступ психолога к назначенным учен
 - `docker compose exec api alembic upgrade head` / `alembic downgrade -1` —
   round-trip после каждой новой миграции.
 - `docker compose exec api pytest tests/unit/test_role_permissions.py
-  tests/integration/test_admin_user_provisioning.py` — целевые тесты роль-
-  инфраструктуры; затем полный `pytest` — не должно быть новых падений
-  относительно baseline (8 pre-existing failures, см. Status выше).
+  tests/integration/test_admin_user_provisioning.py
+  tests/integration/test_admin_psychologist_assignments.py
+  tests/integration/test_psychologist_students.py
+  tests/integration/test_milestone2_assignments.py` — роли + назначения;
+  затем полный `pytest` — не должно быть новых падений относительно
+  baseline (8 pre-existing failures, см. Status выше).
 - Ручная проверка через `/docs`: `POST /api/v1/admin/users` с
   `role=psychologist`, логин под этим пользователем, `GET
   /api/v1/psychologist/students` — пустой список до назначения, непустой
   после `POST /api/v1/admin/psychologist-assignments` (Milestone 2).
+  Контракт для фронта: `docs/frontend-psychologist-assignments-api-contract.md`.
