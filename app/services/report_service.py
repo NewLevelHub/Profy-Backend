@@ -9,25 +9,34 @@ from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
+from app.config import settings, validity_thresholds
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
+from app.models.assessment_validity import AssessmentValidity
+from app.models.consent import CONSENT_SCOPE_PSYCH_BLOCK
 from app.models.direction import Direction
 from app.models.profile import AgeGroup, Profile
+from app.models.psychoemotional_run import PsychoEmotionalRun
+from app.models.user import User
 from app.schemas.report_narrative import ReportNarrativeOutput
 from app.schemas.result_v2 import (
+    MacSection,
     MiResultResponse,
+    PsychoEmotionalHistoryItem,
+    PsychoEmotionalSection,
     ResultResponseV2,
     ResultV2Adapter,
     RiasecResultResponse,
     StudentStrengthCard,
     StudentThinkingStyleNote,
+    ValiditySection,
 )
 from app.services import (
     assessment_shared,
     bigfive_content,
     bigfive_service,
+    consent_service,
     mi_service,
     motivation_pair_service,
     motivation_service,
@@ -35,9 +44,12 @@ from app.services import (
     report_v2_assembler,
     riasec_service,
     thinking_style_service,
+    validity_service,
 )
 from app.services.bigfive_content import strength_phrases
 from app.services.motivation_content import highlight_phrases as motivation_highlight_phrases
+from app.services.psychoemotional import hints as psychoemotional_hints
+from app.services.psychoemotional import scoring as psychoemotional_scoring
 from app.services.report_narrative_service import generate_report_narrative
 
 logger = logging.getLogger(__name__)
@@ -258,7 +270,285 @@ async def _assert_assessment_complete(
         )
 
 
+# --------------------------------------------------------------------------
+# Psychology block (PRO-282 epic) — validity / psychoemotional / mac sections
+# --------------------------------------------------------------------------
+# THE single place that decides whether the psych-block sections appear in
+# /result. MVP (PRO-282 §3): always on — выводы видны и школьнику, и админу,
+# роли «Психолог» пока нет. PRO-321 сузит это ДО ОДНОЙ СТРОКИ::
+#
+#     return viewer is not None and viewer.role in (
+#         UserRole.psychologist, UserRole.admin
+#     )
+#
+# Никакой другой код видимость секций не решает — см. docs/psych-block-contract.md.
+def psych_sections_for(viewer: User | None, *, assessment_id: uuid.UUID) -> bool:
+    return True
+
+
+async def _build_validity_section(
+    assessment_id: uuid.UUID, db: AsyncSession, *, consent_ok: bool
+) -> ValiditySection | None:
+    """Фаза 1 «Достоверность протокола». Assembled from the
+    `assessment_validity` row written by validity_service (PRO-299) after a
+    completed battery. `None` (→ `/result` `validity: null`) until that row
+    exists — i.e. scoring failed, or an assessment reported before PRO-299
+    (retrospective compute is deliberately not done). PRO-300 maps the full
+    verdict here: traffic light, sd_raw + sd_level + applied bounds,
+    carelessness indices, failed traps, `thresholds_version`, `consent_ok`.
+    This is the ONLY seam Фаза 1 plugs into — not a new call site in
+    build_report()."""
+    row = (
+        await db.execute(
+            select(AssessmentValidity).where(
+                AssessmentValidity.assessment_id == assessment_id
+            )
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        return None
+    # `details.sd_bounds` are the bounds that were actually applied when the
+    # verdict was computed; fall back to the current config if an older row
+    # predates that key.
+    bounds = (row.details or {}).get("sd_bounds") or list(validity_thresholds.sd_bounds)
+    return ValiditySection(
+        consent_ok=consent_ok,
+        traffic_light=row.traffic_light.value,
+        sd_raw=row.sd_raw,
+        sd_level=row.sd_level.value,
+        sd_bounds=(int(bounds[0]), int(bounds[1])),
+        longstring_max=row.longstring_max,
+        irv=round(row.irv, 2),
+        infrequency_failed=row.infrequency_failed,
+        careless_flag=row.careless_flag,
+        thresholds_version=row.thresholds_version,
+    )
+
+
+def _psychoemotional_run_number(metrics: dict | None, field: str) -> int | None:
+    """`metrics[field]["value"|"score"]` для компактной строки динамики; `None`,
+    если то прохождение не было посчитано."""
+    if not metrics or field not in metrics:
+        return None
+    node = metrics[field] or {}
+    return node.get("value", node.get("score"))
+
+
+async def _build_psychoemotional_section(
+    assessment_id: uuid.UUID, db: AsyncSession, *, consent_ok: bool
+) -> PsychoEmotionalSection | None:
+    """Фаза 2 «Психоэмоциональный тест» — полный состав вывода специалисту
+    (§B8 / PRO-309). Собирается из ПОСЛЕДНЕЙ строки `psychoemotional_runs`
+    (история append-only) + всех предыдущих для динамики. `None`
+    (→ `/result` `psychoemotional: null`), пока прохождения нет либо последнее
+    не посчитано движком (PRO-307) — так же, как validity. Это единственный
+    шов Фазы 2, новых точек вызова в build_report() нет."""
+    rows = (
+        await db.execute(
+            select(PsychoEmotionalRun)
+            .where(PsychoEmotionalRun.assessment_id == assessment_id)
+            .order_by(PsychoEmotionalRun.created_at.asc())
+        )
+    ).scalars().all()
+    if not rows:
+        return None
+
+    latest = rows[-1]
+    m = latest.metrics or {}
+    if "pairs" not in m:  # сырое / не посчитанное / расчёт упал → секции нет
+        return None
+
+    split = m["split"]
+    anxiety = m["anxiety"]
+    compensation = m["compensation"]
+
+    history = [
+        PsychoEmotionalHistoryItem(
+            run_number=i + 1,
+            completed_at=run.created_at,
+            so=_psychoemotional_run_number(run.metrics, "so"),
+            anxiety_score=_psychoemotional_run_number(run.metrics, "anxiety"),
+            validity_flag=(
+                run.validity_flag.value if run.validity_flag is not None else None
+            ),
+        )
+        for i, run in enumerate(rows[:-1])
+    ]
+    history.reverse()  # новые прохождения сверху
+
+    return PsychoEmotionalSection(
+        consent_ok=consent_ok,
+        thresholds_version=latest.thresholds_version,
+        run_number=len(rows),
+        completed_at=latest.created_at,
+        history=history,
+        checkin=dict(latest.checkin or {}),
+        validity_flag=(
+            latest.validity_flag.value if latest.validity_flag is not None else None
+        ),
+        validity_reasons=list(latest.validity_reasons or []),
+        choice_1=list(latest.list1),
+        choice_2=list(latest.list2),
+        d_value=m["d"]["value"],
+        d_memory=m["d"]["memory"],
+        d_situationally_unstable=m["d"]["situationally_unstable"],
+        positional_pairs=[
+            {"sign": sign, "colors": m["pairs"][sign]}
+            for sign in ("plus", "cross", "equal", "minus")
+        ],
+        root_conflict=tuple(m["pairs"]["root_conflict"]),
+        split_pairs=[
+            {"colors": pair["colors"], "stable": pair["stable"]}
+            for pair in split["pairs"]
+        ],
+        split_count=split["split_count"],
+        instability=split["instability"],
+        anxiety={
+            "score": anxiety["score"],
+            "level": anxiety["level"],
+            "breakdown": {str(k): v for k, v in anxiety["breakdown"].items()},
+        },
+        compensation={
+            "score": compensation["score"],
+            "level": compensation["level"],
+            "breakdown": {str(k): v for k, v in compensation["breakdown"].items()},
+            "purple_forward": compensation["purple_forward"],
+            "purple_position": compensation["purple_position"],
+        },
+        so_value=m["so"]["value"],
+        so_level=m["so"]["level"],
+        vk_value=m["vk"]["value"],
+        vk_level=m["vk"]["level"],
+        structural=m["structural"],
+        black_first=list(latest.list2)[0] == 7,
+        hints=[
+            psychoemotional_hints.TEMPLATES[key]
+            for key in (latest.hint_keys or [])
+            if key in psychoemotional_hints.TEMPLATES
+        ],
+    )
+
+
+async def _build_mac_section(
+    assessment_id: uuid.UUID, db: AsyncSession, *, consent_ok: bool
+) -> MacSection | None:
+    """Фаза 3 (PRO-314…PRO-318) assembles this feed from the `mac_*` history
+    tables. No scoring, no AI (PRO-282 §4). None until then."""
+    return None
+
+
+async def _attach_psych_sections(
+    response: ResultResponseV2,
+    *,
+    viewer: User | None,
+    assessment_id: uuid.UUID,
+    db: AsyncSession,
+) -> ResultResponseV2:
+    """Attach the psych-block sections to an already-built main report.
+
+    Isolation contract (PRO-282 §4 / PRO-291): each section's calculation is
+    wrapped so a raised exception is logged and leaves that section `None` —
+    the RIASEC/BigFive/MI report is already assembled and is returned
+    untouched no matter what any block does. The base report is what gets
+    cached (in _build_report/_get_report); these sections are re-attached on
+    every request so the cache stays viewer-agnostic ahead of PRO-321."""
+    if not psych_sections_for(viewer, assessment_id=assessment_id):
+        return response
+
+    consent_ok = False
+    if viewer is not None:
+        try:
+            consent_ok = await consent_service.has_consent(
+                db,
+                user_id=viewer.id,
+                scope=CONSENT_SCOPE_PSYCH_BLOCK,
+                assessment_id=assessment_id,
+            )
+        except Exception:  # noqa: BLE001 — consent is a non-blocking annotation
+            logger.exception(
+                "consent lookup failed for assessment=%s — treating as not signed",
+                assessment_id,
+            )
+
+    # Resolved by name at call time (not a module-level dict) so a test /
+    # a future phase can monkeypatch an individual builder and have it take
+    # effect here.
+    builders = {
+        "validity": _build_validity_section,
+        "psychoemotional": _build_psychoemotional_section,
+        "mac": _build_mac_section,
+    }
+
+    updates: dict[str, object | None] = {}
+    for field, builder in builders.items():
+        try:
+            updates[field] = await builder(assessment_id, db, consent_ok=consent_ok)
+        except Exception:  # noqa: BLE001 — a block must never break the main report
+            logger.exception(
+                "psych section %r failed for assessment=%s — section omitted, "
+                "main RIASEC/BigFive/MI report unaffected",
+                field,
+                assessment_id,
+            )
+            updates[field] = None
+
+    return response.model_copy(update=updates)
+
+
+async def _run_validity_scoring(
+    assessment_id: uuid.UUID,
+    age_group: AgeGroup,
+    analysis: AnalysisResult,
+    db: AsyncSession,
+) -> None:
+    """Fire the PRO-299 validity scoring after the main report is committed.
+    Isolated: the report already persists, so a raised exception here only
+    loses the validity verdict — it is logged, the partial writes are rolled
+    back, and report generation continues."""
+    try:
+        await validity_service.score_and_store(
+            assessment_id, db, age_group=age_group, analysis=analysis
+        )
+    except Exception:  # noqa: BLE001 — validity must never break the main report
+        logger.exception(
+            "validity scoring failed for assessment=%s — verdict omitted, "
+            "main RIASEC/BigFive/MI report unaffected",
+            assessment_id,
+        )
+        await db.rollback()
+
+
+async def _run_psychoemotional_scoring(
+    assessment_id: uuid.UUID, db: AsyncSession
+) -> None:
+    """Fire the PRO-307 psychoemotional (МЦВ Собчик) metrics engine after the
+    main report is committed. Same isolation contract as validity above: any
+    failure is logged, partial writes rolled back, report generation continues."""
+    try:
+        await psychoemotional_scoring.score_and_store(assessment_id, db)
+    except Exception:  # noqa: BLE001 — must never break the main report
+        logger.exception(
+            "psychoemotional scoring failed for assessment=%s — metrics omitted, "
+            "main report unaffected",
+            assessment_id,
+        )
+        await db.rollback()
+
+
 async def build_report(
+    assessment_id: uuid.UUID, db: AsyncSession, *, viewer: User | None = None
+) -> ResultResponseV2:
+    """Public entrypoint: build/load the main report, then attach the
+    isolated psych-block sections. `viewer` is optional so internal callers
+    that only need the report materialized (e.g. goal_overlay_service) keep
+    working unchanged."""
+    response = await _build_report(assessment_id, db)
+    return await _attach_psych_sections(
+        response, viewer=viewer, assessment_id=assessment_id, db=db
+    )
+
+
+async def _build_report(
     assessment_id: uuid.UUID, db: AsyncSession
 ) -> ResultResponseV2:
     cache_key = _cache_key(assessment_id)
@@ -444,6 +734,22 @@ async def build_report(
         await _cache_set(redis, cache_key, response.model_dump_json())
         return response
 
+    # Read before the validity call below: if that call fails it does
+    # `db.rollback()`, which expires `analysis` and would turn a later
+    # attribute access into an async lazy-load error.
+    report_created_at = analysis.created_at
+
+    # Protocol-validity verdict (PRO-299) — the main report row is already
+    # committed above, so this is fully isolated: any failure is logged and
+    # swallowed and the RIASEC/BigFive/MI report below is returned regardless
+    # (эпик §4 / psych-block-spec.md §A / ТестЛжи.md §3.7).
+    await _run_validity_scoring(assessment_id, age_group, analysis, db)
+
+    # Psychoemotional (МЦВ Собчик) metrics (PRO-307) — same isolation.
+    # Re-fetches its own AnalysisResult, so `analysis` being expired by a
+    # validity rollback above is not a problem here.
+    await _run_psychoemotional_scoring(assessment_id, db)
+
     response = report_v2_assembler.assemble_result_v2(
         assessment_id=assessment_id,
         age_group=age_group,
@@ -453,13 +759,27 @@ async def build_report(
         personality_profile=personality_profile,
         differentiation=meta["differentiation"],
         careers=careers,
-        created_at=analysis.created_at,
+        created_at=report_created_at,
     )
     await _cache_set(redis, cache_key, response.model_dump_json())
     return response
 
 
 async def get_report(
+    assessment_id: uuid.UUID, db: AsyncSession, *, viewer: User | None = None
+) -> ResultResponseV2 | None:
+    """Public entrypoint — see build_report(). Returns None (unchanged) when
+    no report exists yet; otherwise the report with psych-block sections
+    attached."""
+    response = await _get_report(assessment_id, db)
+    if response is None:
+        return None
+    return await _attach_psych_sections(
+        response, viewer=viewer, assessment_id=assessment_id, db=db
+    )
+
+
+async def _get_report(
     assessment_id: uuid.UUID, db: AsyncSession
 ) -> ResultResponseV2 | None:
     cache_key = _cache_key(assessment_id)

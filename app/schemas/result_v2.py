@@ -86,6 +86,187 @@ _MAX_CAREERS = 10
 _model_config = {"extra": "forbid"}
 
 
+# --- Psychology block sections (PRO-282 epic) -------------------------------
+# Skeleton only. Each section is `null` in /result until its phase lands the
+# calculation (validity → Фаза 1 PRO-296…300, psychoemotional → Фаза 2
+# PRO-307…309, mac → Фаза 3 PRO-314…318). Every phase extends its own model
+# below with concrete fields. `consent_ok` is the one field defined now — it
+# mirrors the stored parental consent (consent_service.has_consent, scope
+# "psych_block") and is a *flag*, not a gate: MVP (PRO-282 §3/§4) shows the
+# section regardless of its value. Section *visibility* is decided in
+# exactly one place — report_service.psych_sections_for — never here.
+
+
+class ValiditySection(BaseModel):
+    """«Достоверность протокола» ("шкала лжи"). Assembled from the
+    `assessment_validity` row (report_service._build_validity_section) — the
+    whole section is `null` until validity_service (PRO-299) computes that
+    row. Never cached: re-attached on every /result request, so an old
+    cached report just carries `validity: null` and these required fields
+    never have to deserialize from stale data.
+
+    Specialist-facing verdict (PRO-300): traffic light + the numbers behind
+    it. The traffic light itself is `traffic_light`; `sd_level` is the
+    finer 0-8 / 9-15 / 16-20 band (9-15 is green — see psych-block-spec.md
+    §A5). Interpretation copy for the three states lives on the frontend
+    (psychValidity namespace)."""
+
+    consent_ok: bool = False
+    traffic_light: Literal["green", "yellow", "red"]
+    sd_raw: int  # 0-20 MC-SDS matches
+    sd_level: Literal["ok", "social_desirability", "high"]
+    sd_bounds: tuple[int, int]  # [ok_max, sd_max] applied — сколько до жёлтого
+    longstring_max: int
+    irv: float
+    infrequency_failed: int
+    careless_flag: bool
+    # Which app/data/validity_thresholds.json version produced the verdict —
+    # surfaced with the "пороги ориентировочны до локальной калибровки" note.
+    thresholds_version: int
+    model_config = _model_config
+
+
+# --- Психоэмоциональный тест: вложенные структуры вывода (§B8) --------------
+_PsychoAnxietyLevel = Literal["low", "moderate", "high", "very_high"]
+_PsychoCompensationLevel = Literal["low", "moderate", "high"]
+_PsychoSoLevel = Literal["norm", "elevated", "high"]
+_PsychoVkLevel = Literal["low_tone", "reduced", "balance", "overexcited"]
+
+
+class PsychoEmotionalPositionalPair(BaseModel):
+    """§B5.1 — пара цветов по позициям списка 2 с функциональным знаком."""
+
+    sign: Literal["plus", "cross", "equal", "minus"]
+    colors: tuple[int, int]  # ID цветов (0–7) на этих двух позициях
+    model_config = _model_config
+
+
+class PsychoEmotionalSplitPair(BaseModel):
+    """§B5.2 — пара из списка 1: `stable` → рядом в списке 2 `( )`,
+    иначе расщеплена `[ ]`."""
+
+    colors: tuple[int, int]
+    stable: bool
+    model_config = _model_config
+
+
+class PsychoEmotionalAnxiety(BaseModel):
+    """§B5.3 — индекс тревоги: сумма, уровень, вклад каждого основного цвета."""
+
+    score: int  # 0–12
+    level: _PsychoAnxietyLevel
+    breakdown: dict[str, int]  # color_id → вклад (0/1/2/3)
+    model_config = _model_config
+
+
+class PsychoEmotionalCompensation(BaseModel):
+    """§B5.4 — индекс компенсации: сумма, уровень, вклад доп. цветов + пометка
+    про фиолетовый (в подсчёт не входит)."""
+
+    score: int  # 0–9
+    level: _PsychoCompensationLevel
+    breakdown: dict[str, int]  # color_id → вклад (0/1/2/3)
+    purple_forward: bool  # фиолетовый (ID 5) на позициях 1–3
+    purple_position: int  # ранг фиолетового 1–8
+    model_config = _model_config
+
+
+class PsychoEmotionalStructural(BaseModel):
+    """§B5.8 — структурные индексы: только значения, зон нормы нет (направления
+    трактовки — статичный текст на фронте)."""
+
+    performance: int  # Р: меньше → выше работоспособность (6–21)
+    concentricity: int  # выше → на себя; ниже → вовне
+    heteronomy: int  # выше → пассивность/зависимость; ниже → инициативность
+    kkp: float  # конструктивность: ниже → ситуация переживается как невыносимая
+    model_config = _model_config
+
+
+class PsychoEmotionalHistoryItem(BaseModel):
+    """Компактная строка предыдущего прохождения для динамики (§B8)."""
+
+    run_number: int
+    completed_at: datetime
+    so: int | None  # None, если то прохождение не было посчитано
+    anxiety_score: int | None
+    validity_flag: Literal["ok", "caution", "low"] | None
+    model_config = _model_config
+
+
+class PsychoEmotionalSection(BaseModel):
+    """«Психоэмоциональный тест» (МЦВ Собчик). Название «Люшер» в продукте
+    не используется (PRO-282 §4). Собирается из ПОСЛЕДНЕЙ строки
+    `psychoemotional_runs` + всех предыдущих для динамики
+    (report_service._build_psychoemotional_section). `null`, пока последнее
+    прохождение не посчитано движком (PRO-307) — так же, как validity.
+
+    Полный состав вывода специалисту (§B8 / PRO-309): идентификация + динамика,
+    check-in, флаг достоверности прохождения, списки 1/2 + D, функциональные
+    пары с ( )/[ ], индексы тревоги / компенсации / СО / ВК с уровнями и
+    раскладками, структурные индексы без уровней, готовые тексты-подсказки.
+    Никогда не кэшируется — переприкрепляется на каждый запрос /result.
+    Постоянная пометка «шкала взрослая…» и тексты направлений структурных
+    индексов — на фронте (psychEmotional namespace, PRO-293)."""
+
+    consent_ok: bool = False
+    thresholds_version: int | None = None
+
+    # Идентификация прохождения + динамика (§B8)
+    run_number: int  # номер этого прохождения (1 = первое)
+    completed_at: datetime
+    history: list[PsychoEmotionalHistoryItem] = Field(default_factory=list)  # предыдущие, новые сверху
+
+    # Check-in — 3 ответа, в формулы не входят (форма — за контентом PRO-303)
+    checkin: dict = Field(default_factory=dict)
+
+    # Достоверность прохождения (§B7 / PRO-308) — считается отдельно от метрик,
+    # на них не влияет. `None` / [] пока прохождение не посчитано.
+    validity_flag: Literal["ok", "caution", "low"] | None = None
+    validity_reasons: list[str] = Field(default_factory=list)
+
+    # Списки выбора (цвета по позициям) + расхождение D (§B5.7)
+    choice_1: list[int]
+    choice_2: list[int]
+    d_value: int  # 0–32, чётное
+    d_memory: bool  # D = 0 — второй выбор по памяти
+    d_situationally_unstable: bool  # D ≥ 20 — трактовать метрики осторожно
+
+    # Функциональные пары (§B5.1–B5.2)
+    positional_pairs: list[PsychoEmotionalPositionalPair]
+    root_conflict: tuple[int, int]  # первый / последний цвет списка 2
+    split_pairs: list[PsychoEmotionalSplitPair]
+    split_count: int  # 0–4
+    instability: bool  # ≥ 3 расщеплённых
+
+    # Индексы
+    anxiety: PsychoEmotionalAnxiety
+    compensation: PsychoEmotionalCompensation
+    so_value: int  # 0–32
+    so_level: _PsychoSoLevel
+    vk_value: float  # 0.2–5.0
+    vk_level: _PsychoVkLevel
+    structural: PsychoEmotionalStructural
+
+    # Отдельный красный флаг (§B6): чёрный (ID 7) на позиции 1 — подростковый
+    # маркер риска, подсветка для беседы, не автоматический вывод.
+    black_first: bool
+
+    # Готовые тексты-подсказки специалисту, уже упорядочены по приоритету (§8).
+    # Статические шаблоны, без генерации ИИ.
+    hints: list[str] = Field(default_factory=list)
+
+    model_config = _model_config
+
+
+class MacSection(BaseModel):
+    """МАК — метафорические ассоциативные карты. Без скоринга и
+    ИИ-интерпретации (PRO-282 §4): Фаза 3 наполняет это лентой
+    "стимул → карта → тексты", собранной из таблиц `mac_*`."""
+
+    consent_ok: bool = False
+    model_config = _model_config
+
+
 class StudentStrengthCard(BaseModel):
     title: str
     description: str
@@ -174,6 +355,16 @@ class _ResultResponseBase(BaseModel):
     # personalized when available, same pipeline as summary/strength_cards
     # (report_narrative_service), with a deterministic fallback either way.
     final_analysis: str = FINAL_ANALYSIS_FALLBACK
+    # Psychology block — see the *Section models above. `None` until the
+    # matching phase ships; attached by report_service._attach_psych_sections
+    # (isolated — a failing calculation is logged and leaves its section
+    # `None`, never breaking the main report). A plain default, so an already
+    # -cached response serialized before these fields existed still
+    # deserializes cleanly (ResultV2Adapter.validate_json in
+    # report_service.py) — same precedent as EXPLORATION_CLOSING_NOTE etc.
+    validity: ValiditySection | None = None
+    psychoemotional: PsychoEmotionalSection | None = None
+    mac: MacSection | None = None
     created_at: datetime
     model_config = _model_config
 

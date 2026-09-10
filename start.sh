@@ -69,6 +69,8 @@ docker-compose exec api python scripts/seed_bigfive_questions.py
 # Ожидается: Total questions in bank: 120
 docker-compose exec api python scripts/seed_mi_questions.py
 # Ожидается: Total questions in bank: 48
+docker-compose exec api python scripts/seed_lie_scale_questions.py
+# Ожидается: Total validity items in banks: 25 (20 MC-SDS + 5 infrequency)
 docker-compose exec api python scripts/seed_question_pairs.py
 # Ожидается: Total pairs in bank: 67
 
