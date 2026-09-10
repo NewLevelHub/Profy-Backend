@@ -343,7 +343,7 @@ async def _build_psychoemotional_section(
     return PsychoEmotionalSection(
         consent_ok=consent_ok,
         thresholds_version=row.thresholds_version,
-        validity_flag=row.validity_flag.value,
+        validity_flag=row.validity_flag.value if row.validity_flag is not None else None,
     )
 
 

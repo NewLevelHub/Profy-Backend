@@ -67,7 +67,7 @@ def upgrade() -> None:
             server_default=sa.text("'{}'::jsonb"),
             nullable=False,
         ),
-        sa.Column("validity_flag", _VALIDITY_FLAG_ENUM, nullable=False),
+        sa.Column("validity_flag", _VALIDITY_FLAG_ENUM, nullable=True),
         sa.Column(
             "validity_reasons",
             postgresql.JSONB(astext_type=sa.Text()),
@@ -80,7 +80,7 @@ def upgrade() -> None:
             server_default=sa.text("'[]'::jsonb"),
             nullable=False,
         ),
-        sa.Column("thresholds_version", sa.Integer(), nullable=False),
+        sa.Column("thresholds_version", sa.Integer(), nullable=True),
         sa.Column(
             "tech_invalid",
             sa.Boolean(),

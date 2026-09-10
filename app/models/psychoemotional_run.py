@@ -65,16 +65,19 @@ class PsychoEmotionalRun(Base):
     metrics: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
     # --- Флаг достоверности прохождения (§B7) ---
-    validity_flag: Mapped[PsychoEmotionalValidityFlag] = mapped_column(
+    # NULL, пока движок (PRO-307/PRO-308) не посчитал: сырое прохождение
+    # сохраняет submit-эндпоинт (PRO-306), метрики и флаг наполняются потом.
+    validity_flag: Mapped[PsychoEmotionalValidityFlag | None] = mapped_column(
         Enum(PsychoEmotionalValidityFlag, name="psychoemotional_validity_flag_enum"),
-        nullable=False,
+        nullable=True,
     )
     validity_reasons: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
 
     # Ключи статических текстов-подсказок специалисту (psychoemotional-templates.md)
     hint_keys: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
 
-    thresholds_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    # NULL до расчёта метрик; тогда же проставляется применённая версия порогов.
+    thresholds_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # §6.1: вход не прошёл валидацию (не 8 уникальных ID 0–7) — не обрабатывается,
     # уходит в баг-репорт.
     tech_invalid: Mapped[bool] = mapped_column(
