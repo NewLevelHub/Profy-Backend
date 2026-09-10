@@ -162,7 +162,7 @@ class PsychoEmotionalThresholds(BaseModel):
     anxiety: dict[str, int]  # {low_max, moderate_max} — индекс тревоги 0–12
     compensation: dict[str, int]  # {norm_max, moderate_max} — индекс компенсации 0–9
     vk: dict[str, float]  # {exhaustion_max, norm_max} — ВК 0.2–5.0
-    validity: dict[str, float]  # circle_fast_sec / total_fast_sec / split_pairs_unstable / d_unstable / pause_min_sec
+    validity: dict[str, float]  # §B7 / PRO-308: median_dt_ms_mechanical / total_fast_sec / split_pairs_unstable / d_unstable / pause_min_sec
 
 
 def load_psychoemotional_thresholds(

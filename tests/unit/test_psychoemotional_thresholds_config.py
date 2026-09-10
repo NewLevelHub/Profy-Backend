@@ -17,11 +17,11 @@ def test_thresholds_load_from_the_shipped_file() -> None:
     assert isinstance(t, PsychoEmotionalThresholds)
     assert isinstance(t.version, int)
     assert set(t.so) >= {"norm_max", "elevated_max"}
-    assert set(t.anxiety) >= {"low_max", "moderate_max"}
-    assert set(t.compensation) >= {"norm_max", "moderate_max"}
-    assert set(t.vk) >= {"exhaustion_max", "norm_max"}
+    assert set(t.anxiety) >= {"low_max", "moderate_max", "high_max"}
+    assert set(t.compensation) >= {"low_max", "moderate_max"}
+    assert set(t.vk) >= {"low_tone_max", "reduced_max", "balance_max"}
     assert set(t.validity) >= {
-        "circle_fast_sec",
+        "median_dt_ms_mechanical",
         "total_fast_sec",
         "split_pairs_unstable",
         "d_unstable",
@@ -40,9 +40,9 @@ def test_shipped_file_is_valid_json_with_a_version() -> None:
 def test_bands_are_ordered() -> None:
     t = psychoemotional_thresholds
     assert t.so["norm_max"] < t.so["elevated_max"]
-    assert t.anxiety["low_max"] < t.anxiety["moderate_max"]
-    assert t.compensation["norm_max"] < t.compensation["moderate_max"]
-    assert t.vk["exhaustion_max"] < t.vk["norm_max"]
+    assert t.anxiety["low_max"] < t.anxiety["moderate_max"] < t.anxiety["high_max"]
+    assert t.compensation["low_max"] < t.compensation["moderate_max"]
+    assert t.vk["low_tone_max"] < t.vk["reduced_max"] < t.vk["balance_max"]
 
 
 def test_new_keys_need_no_code_change(tmp_path) -> None:

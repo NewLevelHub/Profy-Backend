@@ -23,6 +23,7 @@ from app.schemas.report_narrative import ReportNarrativeOutput
 from app.schemas.result_v2 import (
     MacSection,
     MiResultResponse,
+    PsychoEmotionalHistoryItem,
     PsychoEmotionalSection,
     ResultResponseV2,
     ResultV2Adapter,
@@ -47,6 +48,8 @@ from app.services import (
 )
 from app.services.bigfive_content import strength_phrases
 from app.services.motivation_content import highlight_phrases as motivation_highlight_phrases
+from app.services.psychoemotional import hints as psychoemotional_hints
+from app.services.psychoemotional import scoring as psychoemotional_scoring
 from app.services.report_narrative_service import generate_report_narrative
 
 logger = logging.getLogger(__name__)
@@ -322,28 +325,107 @@ async def _build_validity_section(
     )
 
 
+def _psychoemotional_run_number(metrics: dict | None, field: str) -> int | None:
+    """`metrics[field]["value"|"score"]` для компактной строки динамики; `None`,
+    если то прохождение не было посчитано."""
+    if not metrics or field not in metrics:
+        return None
+    node = metrics[field] or {}
+    return node.get("value", node.get("score"))
+
+
 async def _build_psychoemotional_section(
     assessment_id: uuid.UUID, db: AsyncSession, *, consent_ok: bool
 ) -> PsychoEmotionalSection | None:
-    """Фаза 2 «Психоэмоциональный тест» (PRO-305). Собирается из ПОСЛЕДНЕЙ
-    строки `psychoemotional_runs` (история append-only — повторное
-    прохождение добавляет строку). `None` (→ `/result` `psychoemotional:
-    null`), пока прохождения нет / оно не посчитано. PRO-309 добавит сюда
-    метрики + пометку «шкала взрослая, ориентировочно»."""
-    row = (
+    """Фаза 2 «Психоэмоциональный тест» — полный состав вывода специалисту
+    (§B8 / PRO-309). Собирается из ПОСЛЕДНЕЙ строки `psychoemotional_runs`
+    (история append-only) + всех предыдущих для динамики. `None`
+    (→ `/result` `psychoemotional: null`), пока прохождения нет либо последнее
+    не посчитано движком (PRO-307) — так же, как validity. Это единственный
+    шов Фазы 2, новых точек вызова в build_report() нет."""
+    rows = (
         await db.execute(
             select(PsychoEmotionalRun)
             .where(PsychoEmotionalRun.assessment_id == assessment_id)
-            .order_by(PsychoEmotionalRun.created_at.desc())
-            .limit(1)
+            .order_by(PsychoEmotionalRun.created_at.asc())
         )
-    ).scalar_one_or_none()
-    if row is None:
+    ).scalars().all()
+    if not rows:
         return None
+
+    latest = rows[-1]
+    m = latest.metrics or {}
+    if "pairs" not in m:  # сырое / не посчитанное / расчёт упал → секции нет
+        return None
+
+    split = m["split"]
+    anxiety = m["anxiety"]
+    compensation = m["compensation"]
+
+    history = [
+        PsychoEmotionalHistoryItem(
+            run_number=i + 1,
+            completed_at=run.created_at,
+            so=_psychoemotional_run_number(run.metrics, "so"),
+            anxiety_score=_psychoemotional_run_number(run.metrics, "anxiety"),
+            validity_flag=(
+                run.validity_flag.value if run.validity_flag is not None else None
+            ),
+        )
+        for i, run in enumerate(rows[:-1])
+    ]
+    history.reverse()  # новые прохождения сверху
+
     return PsychoEmotionalSection(
         consent_ok=consent_ok,
-        thresholds_version=row.thresholds_version,
-        validity_flag=row.validity_flag.value if row.validity_flag is not None else None,
+        thresholds_version=latest.thresholds_version,
+        run_number=len(rows),
+        completed_at=latest.created_at,
+        history=history,
+        checkin=dict(latest.checkin or {}),
+        validity_flag=(
+            latest.validity_flag.value if latest.validity_flag is not None else None
+        ),
+        validity_reasons=list(latest.validity_reasons or []),
+        choice_1=list(latest.list1),
+        choice_2=list(latest.list2),
+        d_value=m["d"]["value"],
+        d_memory=m["d"]["memory"],
+        d_situationally_unstable=m["d"]["situationally_unstable"],
+        positional_pairs=[
+            {"sign": sign, "colors": m["pairs"][sign]}
+            for sign in ("plus", "cross", "equal", "minus")
+        ],
+        root_conflict=tuple(m["pairs"]["root_conflict"]),
+        split_pairs=[
+            {"colors": pair["colors"], "stable": pair["stable"]}
+            for pair in split["pairs"]
+        ],
+        split_count=split["split_count"],
+        instability=split["instability"],
+        anxiety={
+            "score": anxiety["score"],
+            "level": anxiety["level"],
+            "breakdown": {str(k): v for k, v in anxiety["breakdown"].items()},
+        },
+        compensation={
+            "score": compensation["score"],
+            "level": compensation["level"],
+            "breakdown": {str(k): v for k, v in compensation["breakdown"].items()},
+            "purple_forward": compensation["purple_forward"],
+            "purple_position": compensation["purple_position"],
+        },
+        so_value=m["so"]["value"],
+        so_level=m["so"]["level"],
+        vk_value=m["vk"]["value"],
+        vk_level=m["vk"]["level"],
+        structural=m["structural"],
+        black_first=list(latest.list2)[0] == 7,
+        hints=[
+            psychoemotional_hints.TEMPLATES[key]
+            for key in (latest.hint_keys or [])
+            if key in psychoemotional_hints.TEMPLATES
+        ],
     )
 
 
@@ -431,6 +513,23 @@ async def _run_validity_scoring(
         logger.exception(
             "validity scoring failed for assessment=%s — verdict omitted, "
             "main RIASEC/BigFive/MI report unaffected",
+            assessment_id,
+        )
+        await db.rollback()
+
+
+async def _run_psychoemotional_scoring(
+    assessment_id: uuid.UUID, db: AsyncSession
+) -> None:
+    """Fire the PRO-307 psychoemotional (МЦВ Собчик) metrics engine after the
+    main report is committed. Same isolation contract as validity above: any
+    failure is logged, partial writes rolled back, report generation continues."""
+    try:
+        await psychoemotional_scoring.score_and_store(assessment_id, db)
+    except Exception:  # noqa: BLE001 — must never break the main report
+        logger.exception(
+            "psychoemotional scoring failed for assessment=%s — metrics omitted, "
+            "main report unaffected",
             assessment_id,
         )
         await db.rollback()
@@ -645,6 +744,11 @@ async def _build_report(
     # swallowed and the RIASEC/BigFive/MI report below is returned regardless
     # (эпик §4 / psych-block-spec.md §A / ТестЛжи.md §3.7).
     await _run_validity_scoring(assessment_id, age_group, analysis, db)
+
+    # Psychoemotional (МЦВ Собчик) metrics (PRO-307) — same isolation.
+    # Re-fetches its own AnalysisResult, so `analysis` being expired by a
+    # validity rollback above is not a problem here.
+    await _run_psychoemotional_scoring(assessment_id, db)
 
     response = report_v2_assembler.assemble_result_v2(
         assessment_id=assessment_id,

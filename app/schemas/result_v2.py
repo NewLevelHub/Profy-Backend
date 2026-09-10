@@ -126,17 +126,135 @@ class ValiditySection(BaseModel):
     model_config = _model_config
 
 
+# --- Психоэмоциональный тест: вложенные структуры вывода (§B8) --------------
+_PsychoAnxietyLevel = Literal["low", "moderate", "high", "very_high"]
+_PsychoCompensationLevel = Literal["low", "moderate", "high"]
+_PsychoSoLevel = Literal["norm", "elevated", "high"]
+_PsychoVkLevel = Literal["low_tone", "reduced", "balance", "overexcited"]
+
+
+class PsychoEmotionalPositionalPair(BaseModel):
+    """§B5.1 — пара цветов по позициям списка 2 с функциональным знаком."""
+
+    sign: Literal["plus", "cross", "equal", "minus"]
+    colors: tuple[int, int]  # ID цветов (0–7) на этих двух позициях
+    model_config = _model_config
+
+
+class PsychoEmotionalSplitPair(BaseModel):
+    """§B5.2 — пара из списка 1: `stable` → рядом в списке 2 `( )`,
+    иначе расщеплена `[ ]`."""
+
+    colors: tuple[int, int]
+    stable: bool
+    model_config = _model_config
+
+
+class PsychoEmotionalAnxiety(BaseModel):
+    """§B5.3 — индекс тревоги: сумма, уровень, вклад каждого основного цвета."""
+
+    score: int  # 0–12
+    level: _PsychoAnxietyLevel
+    breakdown: dict[str, int]  # color_id → вклад (0/1/2/3)
+    model_config = _model_config
+
+
+class PsychoEmotionalCompensation(BaseModel):
+    """§B5.4 — индекс компенсации: сумма, уровень, вклад доп. цветов + пометка
+    про фиолетовый (в подсчёт не входит)."""
+
+    score: int  # 0–9
+    level: _PsychoCompensationLevel
+    breakdown: dict[str, int]  # color_id → вклад (0/1/2/3)
+    purple_forward: bool  # фиолетовый (ID 5) на позициях 1–3
+    purple_position: int  # ранг фиолетового 1–8
+    model_config = _model_config
+
+
+class PsychoEmotionalStructural(BaseModel):
+    """§B5.8 — структурные индексы: только значения, зон нормы нет (направления
+    трактовки — статичный текст на фронте)."""
+
+    performance: int  # Р: меньше → выше работоспособность (6–21)
+    concentricity: int  # выше → на себя; ниже → вовне
+    heteronomy: int  # выше → пассивность/зависимость; ниже → инициативность
+    kkp: float  # конструктивность: ниже → ситуация переживается как невыносимая
+    model_config = _model_config
+
+
+class PsychoEmotionalHistoryItem(BaseModel):
+    """Компактная строка предыдущего прохождения для динамики (§B8)."""
+
+    run_number: int
+    completed_at: datetime
+    so: int | None  # None, если то прохождение не было посчитано
+    anxiety_score: int | None
+    validity_flag: Literal["ok", "caution", "low"] | None
+    model_config = _model_config
+
+
 class PsychoEmotionalSection(BaseModel):
     """«Психоэмоциональный тест» (МЦВ Собчик). Название «Люшер» в продукте
-    не используется (PRO-282 §4). Assembled from the LATEST `psychoemotional_runs`
-    row (report_service._build_psychoemotional_section); `null` until a run
-    is scored. PRO-305 wires the row lookup + `thresholds_version` /
-    `validity_flag`; the full metric display fields land with PRO-309."""
+    не используется (PRO-282 §4). Собирается из ПОСЛЕДНЕЙ строки
+    `psychoemotional_runs` + всех предыдущих для динамики
+    (report_service._build_psychoemotional_section). `null`, пока последнее
+    прохождение не посчитано движком (PRO-307) — так же, как validity.
+
+    Полный состав вывода специалисту (§B8 / PRO-309): идентификация + динамика,
+    check-in, флаг достоверности прохождения, списки 1/2 + D, функциональные
+    пары с ( )/[ ], индексы тревоги / компенсации / СО / ВК с уровнями и
+    раскладками, структурные индексы без уровней, готовые тексты-подсказки.
+    Никогда не кэшируется — переприкрепляется на каждый запрос /result.
+    Постоянная пометка «шкала взрослая…» и тексты направлений структурных
+    индексов — на фронте (psychEmotional namespace, PRO-293)."""
 
     consent_ok: bool = False
     thresholds_version: int | None = None
-    # Достоверность прохождения (§B7) — считается отдельно от метрик.
+
+    # Идентификация прохождения + динамика (§B8)
+    run_number: int  # номер этого прохождения (1 = первое)
+    completed_at: datetime
+    history: list[PsychoEmotionalHistoryItem] = Field(default_factory=list)  # предыдущие, новые сверху
+
+    # Check-in — 3 ответа, в формулы не входят (форма — за контентом PRO-303)
+    checkin: dict = Field(default_factory=dict)
+
+    # Достоверность прохождения (§B7 / PRO-308) — считается отдельно от метрик,
+    # на них не влияет. `None` / [] пока прохождение не посчитано.
     validity_flag: Literal["ok", "caution", "low"] | None = None
+    validity_reasons: list[str] = Field(default_factory=list)
+
+    # Списки выбора (цвета по позициям) + расхождение D (§B5.7)
+    choice_1: list[int]
+    choice_2: list[int]
+    d_value: int  # 0–32, чётное
+    d_memory: bool  # D = 0 — второй выбор по памяти
+    d_situationally_unstable: bool  # D ≥ 20 — трактовать метрики осторожно
+
+    # Функциональные пары (§B5.1–B5.2)
+    positional_pairs: list[PsychoEmotionalPositionalPair]
+    root_conflict: tuple[int, int]  # первый / последний цвет списка 2
+    split_pairs: list[PsychoEmotionalSplitPair]
+    split_count: int  # 0–4
+    instability: bool  # ≥ 3 расщеплённых
+
+    # Индексы
+    anxiety: PsychoEmotionalAnxiety
+    compensation: PsychoEmotionalCompensation
+    so_value: int  # 0–32
+    so_level: _PsychoSoLevel
+    vk_value: float  # 0.2–5.0
+    vk_level: _PsychoVkLevel
+    structural: PsychoEmotionalStructural
+
+    # Отдельный красный флаг (§B6): чёрный (ID 7) на позиции 1 — подростковый
+    # маркер риска, подсветка для беседы, не автоматический вывод.
+    black_first: bool
+
+    # Готовые тексты-подсказки специалисту, уже упорядочены по приоритету (§8).
+    # Статические шаблоны, без генерации ИИ.
+    hints: list[str] = Field(default_factory=list)
+
     model_config = _model_config
 
 

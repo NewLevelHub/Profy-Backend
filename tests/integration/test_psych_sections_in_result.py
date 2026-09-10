@@ -31,6 +31,8 @@ from app.services import (
     report_service,
     validity_service,
 )
+from app.services.psychoemotional import engine
+from app.services.psychoemotional import scoring as psychoemotional_scoring
 
 
 async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> tuple[User, Assessment]:
@@ -248,13 +250,24 @@ async def test_main_report_survives_a_validity_scoring_exception(
     assert response.validity is None
 
 
+_PE_L1 = [4, 3, 2, 1, 5, 6, 0, 7]
+_PE_L2 = [3, 4, 2, 0, 1, 5, 6, 7]  # §5.8 Аружан — SO 6, D 8, split 2
+
+
 def _psychoemotional_run(assessment_id, user_id, **overrides) -> PsychoEmotionalRun:
+    # `metrics` non-empty by default (real engine output for the seeded lists) →
+    # the PRO-307 scoring trigger treats it as already-scored and leaves it
+    # alone, and _build_psychoemotional_section (PRO-309) has a full row to
+    # render. Pass `metrics={}` for a raw (unscored) run.
+    l1 = overrides.get("list1", _PE_L1)
+    l2 = overrides.get("list2", _PE_L2)
     return PsychoEmotionalRun(**{
         "assessment_id": assessment_id,
         "user_id": user_id,
-        "list1": [4, 3, 2, 1, 5, 6, 0, 7],
-        "list2": [3, 4, 2, 0, 1, 5, 6, 7],
+        "list1": l1,
+        "list2": l2,
         "pause_actual_sec": 130,
+        "metrics": engine.compute(l1, l2).as_dict(),
         "validity_flag": PsychoEmotionalValidityFlag.ok,
         "thresholds_version": 1,
         **overrides,
@@ -304,3 +317,197 @@ async def test_psychoemotional_section_is_built_from_the_latest_run(
     latest = await report_service.build_report(assessment.id, db_session, viewer=user)
     assert latest.psychoemotional.thresholds_version == 2
     assert latest.psychoemotional.validity_flag == "ok"
+
+
+async def test_psychoemotional_section_carries_the_full_b8_composition(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """PRO-309: секция отдаёт весь состав §B8 по последней строке — списки 1/2 +
+    D, функц. пары с ( )/[ ], индексы с уровнями и раскладками, структурные
+    без уровней, check-in, тексты-подсказки, thresholds_version."""
+    user, assessment = await _make_assessment(db_session, AgeGroup.senior)
+    _force_complete_and_llm_disabled(monkeypatch)
+
+    db_session.add(_psychoemotional_run(
+        assessment.id, user.id,
+        checkin={"q1": "спокойно", "q2": "да", "q3": "обычно"},
+        hint_keys=["fn.plus.3", "fn.minus.7"],
+        validity_flag=PsychoEmotionalValidityFlag.ok,
+        validity_reasons=[],
+    ))
+    await db_session.flush()
+
+    section = (
+        await report_service.build_report(assessment.id, db_session, viewer=user)
+    ).psychoemotional
+    assert section is not None
+
+    assert section.run_number == 1
+    assert section.history == []
+    assert section.checkin == {"q1": "спокойно", "q2": "да", "q3": "обычно"}
+
+    assert section.choice_1 == _PE_L1
+    assert section.choice_2 == _PE_L2
+    assert section.d_value == 8 and section.d_memory is False
+
+    # §5.8 Аружан: +(3,4) ×(2,0) =(1,5) −(6,7), корневой конфликт 3/7
+    assert [(p.sign, list(p.colors)) for p in section.positional_pairs] == [
+        ("plus", [3, 4]), ("cross", [2, 0]), ("equal", [1, 5]), ("minus", [6, 7]),
+    ]
+    assert section.root_conflict == (3, 7)
+    assert len(section.split_pairs) == 4
+    assert section.split_count == 2 and section.instability is False
+
+    assert section.anxiety.score == 0 and section.anxiety.level == "low"
+    assert set(section.anxiety.breakdown) == {"1", "2", "3", "4"}
+    assert section.compensation.score == 0
+    assert section.compensation.purple_forward is False
+    assert section.so_value == 6 and section.so_level == "norm"
+    assert section.vk_value == 1.5 and section.vk_level == "balance"
+
+    # структурные — только значения, без уровней
+    assert section.structural.performance == sum(
+        _PE_L2.index(c) + 1 for c in (2, 3, 4)
+    )
+    assert not hasattr(section.structural, "level")
+
+    assert section.black_first is False
+    assert section.thresholds_version == 1
+    assert len(section.hints) == 2  # обе fn.* подсказки резолвнулись в текст
+    assert all(isinstance(h, str) and h for h in section.hints)
+
+
+async def test_psychoemotional_section_shows_previous_runs_as_dynamics(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """PRO-309: динамика — компактный список прошлых прохождений (СО, тревога,
+    флаг), новые сверху; секция всегда по последнему."""
+    user, assessment = await _make_assessment(db_session, AgeGroup.senior)
+    _force_complete_and_llm_disabled(monkeypatch)
+
+    db_session.add(_psychoemotional_run(
+        assessment.id, user.id,
+        validity_flag=PsychoEmotionalValidityFlag.caution,
+        created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+    ))
+    db_session.add(_psychoemotional_run(
+        assessment.id, user.id,
+        list2=[0, 7, 6, 3, 5, 1, 2, 4],  # контраст — SO высокий, тревога 6
+        validity_flag=PsychoEmotionalValidityFlag.ok,
+        created_at=datetime(2026, 2, 1, tzinfo=timezone.utc),
+    ))
+    await db_session.flush()
+
+    section = (
+        await report_service.build_report(assessment.id, db_session, viewer=user)
+    ).psychoemotional
+    assert section is not None
+    assert section.run_number == 2
+    assert section.so_level == "high"  # секция = последнее прохождение
+    assert len(section.history) == 1
+
+    prev = section.history[0]
+    assert prev.run_number == 1
+    assert prev.so == 6  # §5.8 Аружан
+    assert prev.anxiety_score == 0
+    assert prev.validity_flag == "caution"
+    assert prev.completed_at == datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+
+async def test_report_generation_scores_the_latest_raw_psychoemotional_run(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """PRO-307 trigger: a raw run (`metrics={}`) is scored on report
+    generation — metrics + hint_keys land on the row, a compact summary on
+    AnalysisResult.psychoemotional, thresholds_version stamped."""
+    from app.config import psychoemotional_thresholds
+    from app.models.analysis_result import AnalysisResult
+
+    user, assessment = await _make_assessment(db_session, AgeGroup.senior)
+    _force_complete_and_llm_disabled(monkeypatch)
+
+    db_session.add(_psychoemotional_run(assessment.id, user.id, metrics={}))
+    await db_session.flush()
+
+    response = await report_service.build_report(assessment.id, db_session, viewer=user)
+
+    run = (await db_session.execute(
+        select(PsychoEmotionalRun).where(
+            PsychoEmotionalRun.assessment_id == assessment.id
+        )
+    )).scalar_one()
+    assert run.metrics != {}
+    assert run.metrics["so"]["value"] == 6  # §5.8 Аружан
+    assert run.hint_keys  # непусто
+    assert run.thresholds_version == psychoemotional_thresholds.version
+
+    analysis = (await db_session.execute(
+        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment.id)
+    )).scalar_one()
+    assert analysis.psychoemotional["so"] == 6
+    assert analysis.psychoemotional["thresholds_version"] == psychoemotional_thresholds.version
+
+    assert response.psychoemotional is not None
+    assert response.psychoemotional.thresholds_version == psychoemotional_thresholds.version
+    assert response.summary  # main report intact
+
+
+async def test_report_generation_stores_and_serves_a_low_validity_flag(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """PRO-308: a raw run that trips 2+ behavioural signs (§B7) is scored on
+    report generation → `validity_flag='low'` + `validity_reasons` land on the
+    row, and the run is still saved and surfaced in the /result section (реш. 10
+    — a low flag never blocks or hides the run)."""
+    user, assessment = await _make_assessment(db_session, AgeGroup.senior)
+    _force_complete_and_llm_disabled(monkeypatch)
+
+    # список 2 == список 1 → D = 0 (identical_lists); пауза 10 с < 120 (pause_not_held).
+    db_session.add(_psychoemotional_run(
+        assessment.id, user.id,
+        metrics={},
+        list1=[4, 3, 2, 1, 5, 6, 0, 7],
+        list2=[4, 3, 2, 1, 5, 6, 0, 7],
+        pause_actual_sec=10,
+        validity_flag=None,
+    ))
+    await db_session.flush()
+
+    response = await report_service.build_report(assessment.id, db_session, viewer=user)
+
+    run = (await db_session.execute(
+        select(PsychoEmotionalRun).where(
+            PsychoEmotionalRun.assessment_id == assessment.id
+        )
+    )).scalar_one()
+    assert run.validity_flag == PsychoEmotionalValidityFlag.low
+    assert set(run.validity_reasons) == {"identical_lists", "pause_not_held"}
+    assert run.metrics != {}  # прохождение сохранено и посчитано, не отброшено
+
+    assert response.psychoemotional is not None
+    assert response.psychoemotional.validity_flag == "low"
+    assert set(response.psychoemotional.validity_reasons) == {
+        "identical_lists", "pause_not_held"
+    }
+    assert response.summary  # основной отчёт цел
+
+
+async def test_main_report_survives_a_psychoemotional_engine_exception(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user, assessment = await _make_assessment(db_session, AgeGroup.senior)
+    _force_complete_and_llm_disabled(monkeypatch)
+
+    db_session.add(_psychoemotional_run(assessment.id, user.id, metrics={}))
+    await db_session.flush()
+
+    async def _boom(*_a, **_k):
+        raise RuntimeError("МЦВ engine blew up")
+
+    monkeypatch.setattr(psychoemotional_scoring, "score_and_store", _boom)
+
+    response = await report_service.build_report(assessment.id, db_session, viewer=user)
+
+    assert isinstance(response, ResultResponseV2)
+    assert response.summary
+    assert response.interest_instrument == "riasec"
