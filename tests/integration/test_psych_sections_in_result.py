@@ -51,6 +51,24 @@ async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> tup
     return user, assessment
 
 
+def _validity_section(**overrides) -> ValiditySection:
+    """A fully-populated ValiditySection for stub builders (PRO-300 made the
+    verdict fields required)."""
+    return ValiditySection(**{
+        "consent_ok": False,
+        "traffic_light": "green",
+        "sd_raw": 4,
+        "sd_level": "ok",
+        "sd_bounds": (8, 15),
+        "longstring_max": 3,
+        "irv": 1.2,
+        "infrequency_failed": 0,
+        "careless_flag": False,
+        "thresholds_version": 2,
+        **overrides,
+    })
+
+
 def _force_complete_and_llm_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(assessment_shared, "likert_answered_count", AsyncMock(return_value=1))
     monkeypatch.setattr(assessment_shared, "likert_total_questions", AsyncMock(return_value=1))
@@ -110,7 +128,7 @@ async def test_psych_sections_for_is_the_single_visibility_switch(
     _force_complete_and_llm_disabled(monkeypatch)
 
     async def _stub_validity(*_args, **kwargs):
-        return ValiditySection(consent_ok=kwargs.get("consent_ok", False))
+        return _validity_section(consent_ok=kwargs.get("consent_ok", False))
 
     monkeypatch.setattr(report_service, "_build_validity_section", _stub_validity)
 
@@ -129,9 +147,9 @@ async def test_psych_sections_for_is_the_single_visibility_switch(
 async def test_validity_section_is_built_from_the_assessment_validity_row(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """PRO-297 wiring + PRO-299 trigger: generating the report computes the
-    `assessment_validity` row, and `_build_validity_section` (the real one,
-    not a stub) surfaces `thresholds_version` + `consent_ok` from it."""
+    """PRO-297 wiring + PRO-299 trigger + PRO-300 shape: generating the report
+    computes the `assessment_validity` row, and `_build_validity_section` (the
+    real one, not a stub) surfaces the full verdict from it."""
     from app.config import validity_thresholds
 
     user, assessment = await _make_assessment(db_session, AgeGroup.senior)
@@ -139,9 +157,16 @@ async def test_validity_section_is_built_from_the_assessment_validity_row(
 
     response = await report_service.build_report(assessment.id, db_session, viewer=user)
 
-    assert response.validity is not None
-    assert response.validity.thresholds_version == validity_thresholds.version
-    assert response.validity.consent_ok is False
+    section = response.validity
+    assert section is not None
+    assert section.thresholds_version == validity_thresholds.version
+    assert section.consent_ok is False
+    assert section.traffic_light in ("green", "yellow", "red")
+    assert section.sd_level in ("ok", "social_desirability", "high")
+    assert 0 <= section.sd_raw <= 20
+    assert tuple(section.sd_bounds) == tuple(validity_thresholds.sd_bounds)
+    assert section.longstring_max >= 0
+    assert isinstance(section.careless_flag, bool)
     assert response.summary  # main report untouched
 
     row = (await db_session.execute(
@@ -159,7 +184,7 @@ async def test_consent_ok_flows_from_a_recorded_consent(
     _force_complete_and_llm_disabled(monkeypatch)
 
     async def _echo_consent(_assessment_id, _db, *, consent_ok):
-        return ValiditySection(consent_ok=consent_ok)
+        return _validity_section(consent_ok=consent_ok)
 
     monkeypatch.setattr(report_service, "_build_validity_section", _echo_consent)
 

@@ -9,7 +9,7 @@ from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
+from app.config import settings, validity_thresholds
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
@@ -287,10 +287,11 @@ async def _build_validity_section(
 ) -> ValiditySection | None:
     """Фаза 1 «Достоверность протокола». Assembled from the
     `assessment_validity` row written by validity_service (PRO-299) after a
-    completed middle/senior battery — junior has no validity items so no row
-    is ever computed for it. `None` (→ `/result` `validity: null`) until that
-    row exists. PRO-300 maps the traffic-light + breakdown fields here; this
-    ticket (PRO-297) wires the row lookup + `thresholds_version` / `consent_ok`.
+    completed battery. `None` (→ `/result` `validity: null`) until that row
+    exists — i.e. scoring failed, or an assessment reported before PRO-299
+    (retrospective compute is deliberately not done). PRO-300 maps the full
+    verdict here: traffic light, sd_raw + sd_level + applied bounds,
+    carelessness indices, failed traps, `thresholds_version`, `consent_ok`.
     This is the ONLY seam Фаза 1 plugs into — not a new call site in
     build_report()."""
     row = (
@@ -302,8 +303,20 @@ async def _build_validity_section(
     ).scalar_one_or_none()
     if row is None:
         return None
+    # `details.sd_bounds` are the bounds that were actually applied when the
+    # verdict was computed; fall back to the current config if an older row
+    # predates that key.
+    bounds = (row.details or {}).get("sd_bounds") or list(validity_thresholds.sd_bounds)
     return ValiditySection(
         consent_ok=consent_ok,
+        traffic_light=row.traffic_light.value,
+        sd_raw=row.sd_raw,
+        sd_level=row.sd_level.value,
+        sd_bounds=(int(bounds[0]), int(bounds[1])),
+        longstring_max=row.longstring_max,
+        irv=round(row.irv, 2),
+        infrequency_failed=row.infrequency_failed,
+        careless_flag=row.careless_flag,
         thresholds_version=row.thresholds_version,
     )
 

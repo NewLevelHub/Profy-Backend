@@ -98,16 +98,31 @@ _model_config = {"extra": "forbid"}
 
 
 class ValiditySection(BaseModel):
-    """«Достоверность протокола» ("шкала лжи"). Populated from the
+    """«Достоверность протокола» ("шкала лжи"). Assembled from the
     `assessment_validity` row (report_service._build_validity_section) — the
-    section is `null` until validity_service (PRO-299) computes that row.
-    PRO-300 adds the display fields (traffic_light, sd_raw + sd_level,
-    carelessness indices, failed traps) on top of the two below."""
+    whole section is `null` until validity_service (PRO-299) computes that
+    row. Never cached: re-attached on every /result request, so an old
+    cached report just carries `validity: null` and these required fields
+    never have to deserialize from stale data.
+
+    Specialist-facing verdict (PRO-300): traffic light + the numbers behind
+    it. The traffic light itself is `traffic_light`; `sd_level` is the
+    finer 0-8 / 9-15 / 16-20 band (9-15 is green — see psych-block-spec.md
+    §A5). Interpretation copy for the three states lives on the frontend
+    (psychValidity namespace)."""
 
     consent_ok: bool = False
+    traffic_light: Literal["green", "yellow", "red"]
+    sd_raw: int  # 0-20 MC-SDS matches
+    sd_level: Literal["ok", "social_desirability", "high"]
+    sd_bounds: tuple[int, int]  # [ok_max, sd_max] applied — сколько до жёлтого
+    longstring_max: int
+    irv: float
+    infrequency_failed: int
+    careless_flag: bool
     # Which app/data/validity_thresholds.json version produced the verdict —
-    # surfaced so the section can show "пороги ориентировочны, версия N".
-    thresholds_version: int | None = None
+    # surfaced with the "пороги ориентировочны до локальной калибровки" note.
+    thresholds_version: int
     model_config = _model_config
 
 
