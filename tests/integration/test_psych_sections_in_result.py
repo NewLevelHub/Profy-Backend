@@ -11,11 +11,14 @@ import uuid
 from unittest.mock import AsyncMock
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.assessment import Assessment, AssessmentGoal
+from app.models.assessment_validity import AssessmentValidity
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
+from app.models.validity_calibration_log import ValidityCalibrationLog
 from app.schemas.result_v2 import ResultResponseV2, ValiditySection
 from app.services import (
     assessment_shared,
@@ -24,6 +27,7 @@ from app.services import (
     motivation_pair_service,
     motivation_service,
     report_service,
+    validity_service,
 )
 
 
@@ -66,10 +70,13 @@ async def test_result_carries_the_three_psych_sections(
     response = await report_service.build_report(assessment.id, db_session, viewer=user)
 
     dumped = response.model_dump()
-    # Present as keys (skeleton contract) — `null` until Фазы 1/2/3 ship.
     for section in ("validity", "psychoemotional", "mac"):
         assert section in dumped
-        assert dumped[section] is None
+    # validity is computed at report time now (PRO-299); psychoemotional / mac
+    # stay `null` until their phases ship.
+    assert dumped["validity"] is not None
+    assert dumped["psychoemotional"] is None
+    assert dumped["mac"] is None
 
 
 async def test_main_report_survives_a_broken_psych_block_calculation(
@@ -90,8 +97,10 @@ async def test_main_report_survives_a_broken_psych_block_calculation(
     assert response.interest_instrument == "riasec"
     assert len(response.interest_map) == 6
     assert response.psychoemotional is None  # broken block degraded to null
-    assert response.validity is None
     assert response.mac is None
+    # validity is computed independently of the psychoemotional builder — a
+    # crash in one section does not suppress another.
+    assert response.validity is not None
 
 
 async def test_psych_sections_for_is_the_single_visibility_switch(
@@ -117,6 +126,32 @@ async def test_psych_sections_for_is_the_single_visibility_switch(
     assert off.validity is None
 
 
+async def test_validity_section_is_built_from_the_assessment_validity_row(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """PRO-297 wiring + PRO-299 trigger: generating the report computes the
+    `assessment_validity` row, and `_build_validity_section` (the real one,
+    not a stub) surfaces `thresholds_version` + `consent_ok` from it."""
+    from app.config import validity_thresholds
+
+    user, assessment = await _make_assessment(db_session, AgeGroup.senior)
+    _force_complete_and_llm_disabled(monkeypatch)
+
+    response = await report_service.build_report(assessment.id, db_session, viewer=user)
+
+    assert response.validity is not None
+    assert response.validity.thresholds_version == validity_thresholds.version
+    assert response.validity.consent_ok is False
+    assert response.summary  # main report untouched
+
+    row = (await db_session.execute(
+        select(AssessmentValidity).where(
+            AssessmentValidity.assessment_id == assessment.id
+        )
+    )).scalar_one()
+    assert row.thresholds_version == validity_thresholds.version
+
+
 async def test_consent_ok_flows_from_a_recorded_consent(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -136,3 +171,51 @@ async def test_consent_ok_flows_from_a_recorded_consent(
     )
     after = await report_service.build_report(assessment.id, db_session, viewer=user)
     assert after.validity is not None and after.validity.consent_ok is True
+
+
+async def test_generating_the_report_computes_and_stores_the_validity_verdict(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """PRO-299 trigger: building the report for the first time runs
+    validity_service, landing an `assessment_validity` row + one
+    `validity_calibration_log` row."""
+    user, assessment = await _make_assessment(db_session, AgeGroup.senior)
+    _force_complete_and_llm_disabled(monkeypatch)
+
+    await report_service.build_report(assessment.id, db_session, viewer=user)
+
+    verdict = (await db_session.execute(
+        select(AssessmentValidity).where(
+            AssessmentValidity.assessment_id == assessment.id
+        )
+    )).scalar_one_or_none()
+    assert verdict is not None
+    assert verdict.thresholds_version is not None
+
+    calib = (await db_session.execute(
+        select(ValidityCalibrationLog).where(
+            ValidityCalibrationLog.assessment_id == assessment.id
+        )
+    )).scalars().all()
+    assert len(calib) == 1
+    assert calib[0].age_group == AgeGroup.senior
+
+
+async def test_main_report_survives_a_validity_scoring_exception(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user, assessment = await _make_assessment(db_session, AgeGroup.senior)
+    _force_complete_and_llm_disabled(monkeypatch)
+
+    async def _boom(*_args, **_kwargs):
+        raise RuntimeError("validity scoring blew up")
+
+    monkeypatch.setattr(validity_service, "score_and_store", _boom)
+
+    response = await report_service.build_report(assessment.id, db_session, viewer=user)
+
+    assert isinstance(response, ResultResponseV2)
+    assert response.summary  # main report fully intact
+    assert response.interest_instrument == "riasec"
+    # scoring failed → no assessment_validity row → section stays null
+    assert response.validity is None

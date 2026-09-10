@@ -34,4 +34,6 @@ async def get_questions(
     if owner_user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    return await question_service.get_all_questions(db, age_group)
+    return await question_service.get_all_questions(
+        db, age_group, assessment_id=assessment_id
+    )

@@ -13,6 +13,7 @@ from app.config import settings
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
+from app.models.assessment_validity import AssessmentValidity
 from app.models.consent import CONSENT_SCOPE_PSYCH_BLOCK
 from app.models.direction import Direction
 from app.models.profile import AgeGroup, Profile
@@ -41,6 +42,7 @@ from app.services import (
     report_v2_assembler,
     riasec_service,
     thinking_style_service,
+    validity_service,
 )
 from app.services.bigfive_content import strength_phrases
 from app.services.motivation_content import highlight_phrases as motivation_highlight_phrases
@@ -283,11 +285,27 @@ def psych_sections_for(viewer: User | None, *, assessment_id: uuid.UUID) -> bool
 async def _build_validity_section(
     assessment_id: uuid.UUID, db: AsyncSession, *, consent_ok: bool
 ) -> ValiditySection | None:
-    """Фаза 1 «Достоверность протокола» (PRO-296…PRO-300) fills this with the
-    traffic-light indicator + breakdown. No lie-scale engine exists yet →
-    return None, /result carries `validity: null`. This is the ONLY seam
-    Фаза 1 plugs into — not a new call site inside build_report()."""
-    return None
+    """Фаза 1 «Достоверность протокола». Assembled from the
+    `assessment_validity` row written by validity_service (PRO-299) after a
+    completed middle/senior battery — junior has no validity items so no row
+    is ever computed for it. `None` (→ `/result` `validity: null`) until that
+    row exists. PRO-300 maps the traffic-light + breakdown fields here; this
+    ticket (PRO-297) wires the row lookup + `thresholds_version` / `consent_ok`.
+    This is the ONLY seam Фаза 1 plugs into — not a new call site in
+    build_report()."""
+    row = (
+        await db.execute(
+            select(AssessmentValidity).where(
+                AssessmentValidity.assessment_id == assessment_id
+            )
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        return None
+    return ValiditySection(
+        consent_ok=consent_ok,
+        thresholds_version=row.thresholds_version,
+    )
 
 
 async def _build_psychoemotional_section(
@@ -362,6 +380,29 @@ async def _attach_psych_sections(
             updates[field] = None
 
     return response.model_copy(update=updates)
+
+
+async def _run_validity_scoring(
+    assessment_id: uuid.UUID,
+    age_group: AgeGroup,
+    analysis: AnalysisResult,
+    db: AsyncSession,
+) -> None:
+    """Fire the PRO-299 validity scoring after the main report is committed.
+    Isolated: the report already persists, so a raised exception here only
+    loses the validity verdict — it is logged, the partial writes are rolled
+    back, and report generation continues."""
+    try:
+        await validity_service.score_and_store(
+            assessment_id, db, age_group=age_group, analysis=analysis
+        )
+    except Exception:  # noqa: BLE001 — validity must never break the main report
+        logger.exception(
+            "validity scoring failed for assessment=%s — verdict omitted, "
+            "main RIASEC/BigFive/MI report unaffected",
+            assessment_id,
+        )
+        await db.rollback()
 
 
 async def build_report(
@@ -563,6 +604,17 @@ async def _build_report(
         await _cache_set(redis, cache_key, response.model_dump_json())
         return response
 
+    # Read before the validity call below: if that call fails it does
+    # `db.rollback()`, which expires `analysis` and would turn a later
+    # attribute access into an async lazy-load error.
+    report_created_at = analysis.created_at
+
+    # Protocol-validity verdict (PRO-299) — the main report row is already
+    # committed above, so this is fully isolated: any failure is logged and
+    # swallowed and the RIASEC/BigFive/MI report below is returned regardless
+    # (эпик §4 / psych-block-spec.md §A / ТестЛжи.md §3.7).
+    await _run_validity_scoring(assessment_id, age_group, analysis, db)
+
     response = report_v2_assembler.assemble_result_v2(
         assessment_id=assessment_id,
         age_group=age_group,
@@ -572,7 +624,7 @@ async def _build_report(
         personality_profile=personality_profile,
         differentiation=meta["differentiation"],
         careers=careers,
-        created_at=analysis.created_at,
+        created_at=report_created_at,
     )
     await _cache_set(redis, cache_key, response.model_dump_json())
     return response

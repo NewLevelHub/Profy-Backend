@@ -98,9 +98,16 @@ _model_config = {"extra": "forbid"}
 
 
 class ValiditySection(BaseModel):
-    """«Достоверность протокола» ("шкала лжи")."""
+    """«Достоверность протокола» ("шкала лжи"). Populated from the
+    `assessment_validity` row (report_service._build_validity_section) — the
+    section is `null` until validity_service (PRO-299) computes that row.
+    PRO-300 adds the display fields (traffic_light, sd_raw + sd_level,
+    carelessness indices, failed traps) on top of the two below."""
 
     consent_ok: bool = False
+    # Which app/data/validity_thresholds.json version produced the verdict —
+    # surfaced so the section can show "пороги ориентировочны, версия N".
+    thresholds_version: int | None = None
     model_config = _model_config
 
 
