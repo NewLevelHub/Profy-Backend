@@ -142,3 +142,35 @@ def load_validity_thresholds(
 
 
 validity_thresholds: ValidityThresholds = load_validity_thresholds()
+
+
+# --- Psychoemotional (МЦВ Собчик) thresholds (epic PRO-282, phase 2; PRO-305)
+# Same contract as validity_thresholds: soft-level cut-offs + run-validity
+# signal limits in a versioned JSON, edited without code changes
+# (psych-block-spec.md §B6/§B7). The engine (PRO-309) writes the applied
+# `version` onto psychoemotional_runs.thresholds_version.
+_PSYCHOEMOTIONAL_THRESHOLDS_PATH = (
+    Path(__file__).parent / "data" / "psychoemotional_thresholds.json"
+)
+
+
+class PsychoEmotionalThresholds(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="allow")
+
+    version: int
+    so: dict[str, int]  # {norm_max, elevated_max} — СО 0–32
+    anxiety: dict[str, int]  # {low_max, moderate_max} — индекс тревоги 0–12
+    compensation: dict[str, int]  # {norm_max, moderate_max} — индекс компенсации 0–9
+    vk: dict[str, float]  # {exhaustion_max, norm_max} — ВК 0.2–5.0
+    validity: dict[str, float]  # circle_fast_sec / total_fast_sec / split_pairs_unstable / d_unstable / pause_min_sec
+
+
+def load_psychoemotional_thresholds(
+    path: Path = _PSYCHOEMOTIONAL_THRESHOLDS_PATH,
+) -> PsychoEmotionalThresholds:
+    return PsychoEmotionalThresholds.model_validate(
+        json.loads(path.read_text(encoding="utf-8"))
+    )
+
+
+psychoemotional_thresholds: PsychoEmotionalThresholds = load_psychoemotional_thresholds()

@@ -17,6 +17,7 @@ from app.models.assessment_validity import AssessmentValidity
 from app.models.consent import CONSENT_SCOPE_PSYCH_BLOCK
 from app.models.direction import Direction
 from app.models.profile import AgeGroup, Profile
+from app.models.psychoemotional_run import PsychoEmotionalRun
 from app.models.user import User
 from app.schemas.report_narrative import ReportNarrativeOutput
 from app.schemas.result_v2 import (
@@ -324,9 +325,26 @@ async def _build_validity_section(
 async def _build_psychoemotional_section(
     assessment_id: uuid.UUID, db: AsyncSession, *, consent_ok: bool
 ) -> PsychoEmotionalSection | None:
-    """Фаза 2 (PRO-307…PRO-309) fills this with the МЦВ metrics + the fixed
-    "шкала взрослая, ориентировочно" note. None until then."""
-    return None
+    """Фаза 2 «Психоэмоциональный тест» (PRO-305). Собирается из ПОСЛЕДНЕЙ
+    строки `psychoemotional_runs` (история append-only — повторное
+    прохождение добавляет строку). `None` (→ `/result` `psychoemotional:
+    null`), пока прохождения нет / оно не посчитано. PRO-309 добавит сюда
+    метрики + пометку «шкала взрослая, ориентировочно»."""
+    row = (
+        await db.execute(
+            select(PsychoEmotionalRun)
+            .where(PsychoEmotionalRun.assessment_id == assessment_id)
+            .order_by(PsychoEmotionalRun.created_at.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        return None
+    return PsychoEmotionalSection(
+        consent_ok=consent_ok,
+        thresholds_version=row.thresholds_version,
+        validity_flag=row.validity_flag.value,
+    )
 
 
 async def _build_mac_section(

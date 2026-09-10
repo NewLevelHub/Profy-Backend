@@ -128,9 +128,15 @@ class ValiditySection(BaseModel):
 
 class PsychoEmotionalSection(BaseModel):
     """«Психоэмоциональный тест» (МЦВ Собчик). Название «Люшер» в продукте
-    не используется (PRO-282 §4)."""
+    не используется (PRO-282 §4). Assembled from the LATEST `psychoemotional_runs`
+    row (report_service._build_psychoemotional_section); `null` until a run
+    is scored. PRO-305 wires the row lookup + `thresholds_version` /
+    `validity_flag`; the full metric display fields land with PRO-309."""
 
     consent_ok: bool = False
+    thresholds_version: int | None = None
+    # Достоверность прохождения (§B7) — считается отдельно от метрик.
+    validity_flag: Literal["ok", "caution", "low"] | None = None
     model_config = _model_config
 
 

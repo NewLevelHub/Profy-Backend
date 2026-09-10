@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "comment": "Пороги психоэмоционального теста (МЦВ Собчик), v1 — предварительные, калибруются после >=500 прохождений (psych-block-spec.md §B6/§B7). Загружаются app.config.load_psychoemotional_thresholds; применённая version пишется в psychoemotional_runs.thresholds_version. Смена порога = правка значений + bump version, без изменения кода. Категоричных вердиктов в выводе нет — только мягкие уровни.",
+  "so": { "norm_max": 16, "elevated_max": 24 },
+  "anxiety": { "low_max": 2, "moderate_max": 5 },
+  "compensation": { "norm_max": 1, "moderate_max": 4 },
+  "vk": { "exhaustion_max": 0.9, "norm_max": 1.8 },
+  "validity": {
+    "circle_fast_sec": 10,
+    "total_fast_sec": 20,
+    "split_pairs_unstable": 3,
+    "d_unstable": 20,
+    "pause_min_sec": 120
+  }
+}

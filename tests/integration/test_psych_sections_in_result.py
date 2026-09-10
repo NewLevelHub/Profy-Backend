@@ -8,6 +8,7 @@ LLM is monkeypatched off explicitly (same reasoning as
 test_result_v2_fallback.py: this dev env has a working key).
 """
 import uuid
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock
 
 import pytest
@@ -17,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.assessment_validity import AssessmentValidity
 from app.models.profile import AgeGroup, Profile
+from app.models.psychoemotional_run import PsychoEmotionalRun, PsychoEmotionalValidityFlag
 from app.models.user import User
 from app.models.validity_calibration_log import ValidityCalibrationLog
 from app.schemas.result_v2 import ResultResponseV2, ValiditySection
@@ -244,3 +246,61 @@ async def test_main_report_survives_a_validity_scoring_exception(
     assert response.interest_instrument == "riasec"
     # scoring failed → no assessment_validity row → section stays null
     assert response.validity is None
+
+
+def _psychoemotional_run(assessment_id, user_id, **overrides) -> PsychoEmotionalRun:
+    return PsychoEmotionalRun(**{
+        "assessment_id": assessment_id,
+        "user_id": user_id,
+        "list1": [4, 3, 2, 1, 5, 6, 0, 7],
+        "list2": [3, 4, 2, 0, 1, 5, 6, 7],
+        "pause_actual_sec": 130,
+        "validity_flag": PsychoEmotionalValidityFlag.ok,
+        "thresholds_version": 1,
+        **overrides,
+    })
+
+
+async def test_psychoemotional_section_is_built_from_the_latest_run(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """PRO-305: no run → section null; a run → section carries
+    `thresholds_version` + `validity_flag`; a second run does NOT overwrite —
+    the section reflects the newest row."""
+    user, assessment = await _make_assessment(db_session, AgeGroup.senior)
+    _force_complete_and_llm_disabled(monkeypatch)
+
+    before = await report_service.build_report(assessment.id, db_session, viewer=user)
+    assert before.psychoemotional is None
+
+    db_session.add(_psychoemotional_run(
+        assessment.id, user.id, thresholds_version=1,
+        validity_flag=PsychoEmotionalValidityFlag.caution,
+        created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+    ))
+    await db_session.flush()
+
+    after = await report_service.build_report(assessment.id, db_session, viewer=user)
+    assert after.psychoemotional is not None
+    assert after.psychoemotional.thresholds_version == 1
+    assert after.psychoemotional.validity_flag == "caution"
+    assert after.summary  # main report untouched
+
+    # retake → new row, older one kept
+    db_session.add(_psychoemotional_run(
+        assessment.id, user.id, thresholds_version=2,
+        validity_flag=PsychoEmotionalValidityFlag.ok,
+        created_at=datetime(2026, 2, 1, tzinfo=timezone.utc),
+    ))
+    await db_session.flush()
+
+    rows = (await db_session.execute(
+        select(PsychoEmotionalRun).where(
+            PsychoEmotionalRun.assessment_id == assessment.id
+        )
+    )).scalars().all()
+    assert len(rows) == 2  # append-only history
+
+    latest = await report_service.build_report(assessment.id, db_session, viewer=user)
+    assert latest.psychoemotional.thresholds_version == 2
+    assert latest.psychoemotional.validity_flag == "ok"

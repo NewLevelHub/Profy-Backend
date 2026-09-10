@@ -13,6 +13,7 @@ from app.models.motivation_pair import MotivationPair, MotivationPairResponse  #
 from app.models.password_reset import PasswordResetToken  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.profile import Profile  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.program import Program  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.psychoemotional_run import PsychoEmotionalRun  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.question import Question  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.question_pair import QuestionPair  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.roadmap import Roadmap  # noqa: F401 — keep model imported so Alembic discovers it
@@ -30,7 +31,7 @@ __all__ = [
     "Direction", "DirectionInquiry", "DirectionRoadmap",
     "EmailVerificationToken", "MotivationPair", "MotivationPairResponse",
     "MotivationResponse", "MotivationStatement", "PasswordResetToken",
-    "Profile", "Program", "Question", "QuestionPair", "Roadmap",
+    "Profile", "Program", "PsychoEmotionalRun", "Question", "QuestionPair", "Roadmap",
     "University", "UniversityImage", "UniversityExternalRef",
     "User", "UserResponse", "ValidityCalibrationLog", "GoalOverlay",
     "ProductFeedback",
