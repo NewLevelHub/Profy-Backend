@@ -72,6 +72,20 @@ from app.services.admin_lock import is_locked
 
 SNAPSHOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "university_snapshot.clean.json")
 
+# Universities per commit in phase 2. The whole run used to be one
+# transaction from the first SELECT to the final commit (9+ minutes on a
+# real deploy, zero progress output) — if the deploy's SSH session got
+# killed mid-run (timeout, cancelled workflow) the orphaned process could
+# leave that entire transaction's row locks on `universities`/`programs`
+# held until something noticed the dead connection, which without a tuned
+# `idle_in_transaction_session_timeout` can take a very long time and has
+# required a full server reboot to clear in practice. Committing every
+# CHUNK_SIZE universities bounds how much a single interruption can leave
+# locked to one chunk instead of the whole snapshot, and the progress print
+# below means a slow-but-alive run is distinguishable from a stuck one in
+# the deploy log.
+CHUNK_SIZE = 200
+
 # Fixed namespace for uuid5 — DO NOT CHANGE (every id in every DB derives from it).
 NAMESPACE = uuid.UUID("6f4d9d2e-1c3a-5b7e-9f10-2a4c6e8b0d13")
 
@@ -262,7 +276,10 @@ async def main() -> int:
                     UniversityExternalRef.source == s, UniversityExternalRef.external_id == e))
             for chunk in (stale_uni[i:i + 5000] for i in range(0, len(stale_uni), 5000)):
                 await db.execute(delete(University).where(University.id.in_(chunk)))
-            await db.flush()
+            await db.commit()
+            if st.uni_del or st.prog_del or st.ref_del:
+                print(f"Pruned {st.uni_del} universities, {st.prog_del} programs, "
+                      f"{st.ref_del} external_refs", flush=True)
 
         existing_unis = {
             u.id: u for u in (await db.execute(select(University))).scalars().all()
@@ -278,7 +295,8 @@ async def main() -> int:
         }
 
         # ---- PHASE 2: upsert ---------------------------------------------------
-        for uid, rec, progs in recs:
+        print(f"Upserting {len(recs)} universities...", flush=True)
+        for i, (uid, rec, progs) in enumerate(recs, start=1):
             d = {f: rec.get(f) for f in UNIVERSITY_FIELDS}
             d["aliases"] = rec.get("aliases") or []
             d["contacts"] = rec.get("contacts") or {}
@@ -352,6 +370,10 @@ async def main() -> int:
                         changed = True
                     if changed:
                         st.prog_upd += 1
+
+            if not dry and i % CHUNK_SIZE == 0:
+                await db.commit()
+                print(f"  ... {i}/{len(recs)} universities committed", flush=True)
 
         st.professions_empty = [s for s in directions_by_slug if st.progs_per_slug[s] == 0]
         st.professions_thin = [(s, st.progs_per_slug[s]) for s in directions_by_slug
