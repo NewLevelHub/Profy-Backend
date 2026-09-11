@@ -19,7 +19,7 @@ from app.models.assessment import Assessment, AssessmentGoal
 from app.models.assessment_validity import AssessmentValidity
 from app.models.profile import AgeGroup, Profile
 from app.models.psychoemotional_run import PsychoEmotionalRun, PsychoEmotionalValidityFlag
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.validity_calibration_log import ValidityCalibrationLog
 from app.schemas.result_v2 import ResultResponseV2, ValiditySection
 from app.services import (
@@ -53,6 +53,18 @@ async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> tup
     db_session.add(assessment)
     await db_session.flush()
     return user, assessment
+
+
+async def _psych_viewer(db_session: AsyncSession) -> User:
+    """A psychologist viewer — psych_sections_for only attaches the sections
+    for a psychologist/admin (a student never sees them on their own /result)."""
+    viewer = User(
+        email=f"{uuid.uuid4()}@example.com", hashed_password="x",
+        is_active=True, is_verified=True, role=UserRole.psychologist,
+    )
+    db_session.add(viewer)
+    await db_session.flush()
+    return viewer
 
 
 def _validity_section(**overrides) -> ValiditySection:
@@ -89,7 +101,7 @@ async def test_result_carries_the_three_psych_sections(
     user, assessment = await _make_assessment(db_session, AgeGroup.senior)
     _force_complete_and_llm_disabled(monkeypatch)
 
-    response = await report_service.build_report(assessment.id, db_session, viewer=user)
+    response = await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
 
     dumped = response.model_dump()
     for section in ("validity", "psychoemotional", "mac"):
@@ -99,6 +111,28 @@ async def test_result_carries_the_three_psych_sections(
     assert dumped["validity"] is not None
     assert dumped["psychoemotional"] is None
     assert dumped["mac"] is None
+
+
+async def test_student_viewer_never_sees_psych_sections(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """PRO-321: a student's own /result carries no validity / psychoemotional
+    / mac — only a psychologist/admin viewer gets them."""
+    user, assessment = await _make_assessment(db_session, AgeGroup.senior)
+    _force_complete_and_llm_disabled(monkeypatch)
+
+    as_student = await report_service.build_report(
+        assessment.id, db_session, viewer=user  # role=student
+    )
+    assert as_student.summary
+    assert as_student.validity is None
+    assert as_student.psychoemotional is None
+    assert as_student.mac is None
+
+    as_psych = await report_service.build_report(
+        assessment.id, db_session, viewer=await _psych_viewer(db_session)
+    )
+    assert as_psych.validity is not None  # same report, now with the section
 
 
 async def test_main_report_survives_a_broken_psych_block_calculation(
@@ -112,7 +146,7 @@ async def test_main_report_survives_a_broken_psych_block_calculation(
 
     monkeypatch.setattr(report_service, "_build_psychoemotional_section", _boom)
 
-    response = await report_service.build_report(assessment.id, db_session, viewer=user)
+    response = await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
 
     assert isinstance(response, ResultResponseV2)
     assert response.summary  # main report fully intact
@@ -136,14 +170,14 @@ async def test_psych_sections_for_is_the_single_visibility_switch(
 
     monkeypatch.setattr(report_service, "_build_validity_section", _stub_validity)
 
-    on = await report_service.build_report(assessment.id, db_session, viewer=user)
+    on = await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
     assert on.validity is not None
 
     # Flip the one resolver → section withheld, main report still returned.
     # No cache-bust needed: the base report is cached, psych sections are
     # re-attached on every call.
     monkeypatch.setattr(report_service, "psych_sections_for", lambda *a, **k: False)
-    off = await report_service.build_report(assessment.id, db_session, viewer=user)
+    off = await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
     assert off.summary
     assert off.validity is None
 
@@ -159,7 +193,7 @@ async def test_validity_section_is_built_from_the_assessment_validity_row(
     user, assessment = await _make_assessment(db_session, AgeGroup.senior)
     _force_complete_and_llm_disabled(monkeypatch)
 
-    response = await report_service.build_report(assessment.id, db_session, viewer=user)
+    response = await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
 
     section = response.validity
     assert section is not None
@@ -192,13 +226,13 @@ async def test_consent_ok_flows_from_a_recorded_consent(
 
     monkeypatch.setattr(report_service, "_build_validity_section", _echo_consent)
 
-    before = await report_service.build_report(assessment.id, db_session, viewer=user)
+    before = await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
     assert before.validity is not None and before.validity.consent_ok is False
 
     await consent_service.record_consent(
         db_session, user_id=user.id, signed_by="Родитель", assessment_id=assessment.id
     )
-    after = await report_service.build_report(assessment.id, db_session, viewer=user)
+    after = await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
     assert after.validity is not None and after.validity.consent_ok is True
 
 
@@ -211,7 +245,7 @@ async def test_generating_the_report_computes_and_stores_the_validity_verdict(
     user, assessment = await _make_assessment(db_session, AgeGroup.senior)
     _force_complete_and_llm_disabled(monkeypatch)
 
-    await report_service.build_report(assessment.id, db_session, viewer=user)
+    await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
 
     verdict = (await db_session.execute(
         select(AssessmentValidity).where(
@@ -241,7 +275,7 @@ async def test_main_report_survives_a_validity_scoring_exception(
 
     monkeypatch.setattr(validity_service, "score_and_store", _boom)
 
-    response = await report_service.build_report(assessment.id, db_session, viewer=user)
+    response = await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
 
     assert isinstance(response, ResultResponseV2)
     assert response.summary  # main report fully intact
@@ -283,7 +317,7 @@ async def test_psychoemotional_section_is_built_from_the_latest_run(
     user, assessment = await _make_assessment(db_session, AgeGroup.senior)
     _force_complete_and_llm_disabled(monkeypatch)
 
-    before = await report_service.build_report(assessment.id, db_session, viewer=user)
+    before = await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
     assert before.psychoemotional is None
 
     db_session.add(_psychoemotional_run(
@@ -293,7 +327,7 @@ async def test_psychoemotional_section_is_built_from_the_latest_run(
     ))
     await db_session.flush()
 
-    after = await report_service.build_report(assessment.id, db_session, viewer=user)
+    after = await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
     assert after.psychoemotional is not None
     assert after.psychoemotional.thresholds_version == 1
     assert after.psychoemotional.validity_flag == "caution"
@@ -314,7 +348,7 @@ async def test_psychoemotional_section_is_built_from_the_latest_run(
     )).scalars().all()
     assert len(rows) == 2  # append-only history
 
-    latest = await report_service.build_report(assessment.id, db_session, viewer=user)
+    latest = await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
     assert latest.psychoemotional.thresholds_version == 2
     assert latest.psychoemotional.validity_flag == "ok"
 
@@ -338,7 +372,7 @@ async def test_psychoemotional_section_carries_the_full_b8_composition(
     await db_session.flush()
 
     section = (
-        await report_service.build_report(assessment.id, db_session, viewer=user)
+        await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
     ).psychoemotional
     assert section is not None
 
@@ -399,7 +433,7 @@ async def test_psychoemotional_section_shows_previous_runs_as_dynamics(
     await db_session.flush()
 
     section = (
-        await report_service.build_report(assessment.id, db_session, viewer=user)
+        await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
     ).psychoemotional
     assert section is not None
     assert section.run_number == 2
@@ -429,7 +463,7 @@ async def test_report_generation_scores_the_latest_raw_psychoemotional_run(
     db_session.add(_psychoemotional_run(assessment.id, user.id, metrics={}))
     await db_session.flush()
 
-    response = await report_service.build_report(assessment.id, db_session, viewer=user)
+    response = await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
 
     run = (await db_session.execute(
         select(PsychoEmotionalRun).where(
@@ -473,7 +507,7 @@ async def test_report_generation_stores_and_serves_a_low_validity_flag(
     ))
     await db_session.flush()
 
-    response = await report_service.build_report(assessment.id, db_session, viewer=user)
+    response = await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
 
     run = (await db_session.execute(
         select(PsychoEmotionalRun).where(
@@ -506,7 +540,7 @@ async def test_main_report_survives_a_psychoemotional_engine_exception(
 
     monkeypatch.setattr(psychoemotional_scoring, "score_and_store", _boom)
 
-    response = await report_service.build_report(assessment.id, db_session, viewer=user)
+    response = await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
 
     assert isinstance(response, ResultResponseV2)
     assert response.summary

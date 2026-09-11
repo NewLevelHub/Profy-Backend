@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
-from app.models.user import User
+from app.models.user import User, UserRole
 
 _bearer = HTTPBearer()
 
@@ -53,3 +53,30 @@ async def get_current_admin_user(
             detail="Admin access required",
         )
     return current_user
+
+
+async def get_current_student_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Gate for the assessment/profile/report flow — admin and psychologist
+    accounts (provisioned via POST /api/v1/admin/users, not self-registration)
+    have valid JWTs like any other user, but shouldn't be able to create a
+    Profile or take an assessment through the student-facing routers."""
+    if current_user.role != UserRole.student:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Student access required",
+        )
+    return current_user
+
+
+def require_role(*roles: UserRole):
+    async def _check(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient role",
+            )
+        return current_user
+
+    return _check

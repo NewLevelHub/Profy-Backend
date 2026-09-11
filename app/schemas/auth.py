@@ -4,6 +4,8 @@ from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, EmailStr, Field, field_validator
 
+from app.models.user import UserRole
+
 # Emails are matched case-insensitively everywhere (DB lookups, Google
 # account linking) — normalizing once at the request boundary keeps every
 # call site consistent instead of relying on each service function to do it.
@@ -40,6 +42,7 @@ class GoogleAuthRequest(BaseModel):
 class UserInfo(BaseModel):
     id: uuid.UUID
     email: str
+    role: UserRole = UserRole.student
     is_admin: bool = False
 
     model_config = {"from_attributes": True}
@@ -71,6 +74,7 @@ class UserResponse(BaseModel):
     email: str
     is_active: bool
     is_verified: bool
+    role: UserRole
     is_admin: bool
 
     model_config = {"from_attributes": True}

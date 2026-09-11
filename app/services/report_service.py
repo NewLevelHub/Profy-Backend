@@ -18,7 +18,7 @@ from app.models.consent import CONSENT_SCOPE_PSYCH_BLOCK
 from app.models.direction import Direction
 from app.models.profile import AgeGroup, Profile
 from app.models.psychoemotional_run import PsychoEmotionalRun
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.report_narrative import ReportNarrativeOutput
 from app.schemas.result_v2 import (
     MacSection,
@@ -273,17 +273,19 @@ async def _assert_assessment_complete(
 # --------------------------------------------------------------------------
 # Psychology block (PRO-282 epic) — validity / psychoemotional / mac sections
 # --------------------------------------------------------------------------
-# THE single place that decides whether the psych-block sections appear in
-# /result. MVP (PRO-282 §3): always on — выводы видны и школьнику, и админу,
-# роли «Психолог» пока нет. PRO-321 сузит это ДО ОДНОЙ СТРОКИ::
-#
-#     return viewer is not None and viewer.role in (
-#         UserRole.psychologist, UserRole.admin
-#     )
-#
-# Никакой другой код видимость секций не решает — см. docs/psych-block-contract.md.
-def psych_sections_for(viewer: User | None, *, assessment_id: uuid.UUID) -> bool:
-    return True
+# THE single place that decides whether the psych-block sections (validity /
+# psychoemotional / mac) appear in a report. Since the role system was merged
+# from pro-281 (PRO-321): only a psychologist or an admin viewer sees them —
+# a student's own /result never carries them. A psychologist reaches a
+# student's report through GET /api/v1/psychologist/students/{id}/result/{aid},
+# which passes the psychologist as `viewer`. Никакой другой код видимость
+# секций не решает — см. docs/user-roles-integration-plan.md.
+def psych_sections_for(
+    viewer_role: UserRole | None, *, assessment_id: uuid.UUID
+) -> bool:
+    # A plain role value, not the ORM `User` — `_run_*_scoring` may `rollback`
+    # and expire the viewer object before this runs.
+    return viewer_role in (UserRole.psychologist, UserRole.admin)
 
 
 async def _build_validity_section(
@@ -440,7 +442,7 @@ async def _build_mac_section(
 async def _attach_psych_sections(
     response: ResultResponseV2,
     *,
-    viewer: User | None,
+    viewer_role: UserRole | None,
     assessment_id: uuid.UUID,
     db: AsyncSession,
 ) -> ResultResponseV2:
@@ -452,23 +454,33 @@ async def _attach_psych_sections(
     untouched no matter what any block does. The base report is what gets
     cached (in _build_report/_get_report); these sections are re-attached on
     every request so the cache stays viewer-agnostic ahead of PRO-321."""
-    if not psych_sections_for(viewer, assessment_id=assessment_id):
+    if not psych_sections_for(viewer_role, assessment_id=assessment_id):
         return response
 
+    # `consent_ok` reflects the *student's* recorded parental consent, not the
+    # viewer's — a psychologist opening a student's report must see the
+    # student's consent state, not their own.
     consent_ok = False
-    if viewer is not None:
-        try:
+    try:
+        owner_id = (
+            await db.execute(
+                select(Profile.user_id)
+                .join(Assessment, Assessment.profile_id == Profile.id)
+                .where(Assessment.id == assessment_id)
+            )
+        ).scalar_one_or_none()
+        if owner_id is not None:
             consent_ok = await consent_service.has_consent(
                 db,
-                user_id=viewer.id,
+                user_id=owner_id,
                 scope=CONSENT_SCOPE_PSYCH_BLOCK,
                 assessment_id=assessment_id,
             )
-        except Exception:  # noqa: BLE001 — consent is a non-blocking annotation
-            logger.exception(
-                "consent lookup failed for assessment=%s — treating as not signed",
-                assessment_id,
-            )
+    except Exception:  # noqa: BLE001 — consent is a non-blocking annotation
+        logger.exception(
+            "consent lookup failed for assessment=%s — treating as not signed",
+            assessment_id,
+        )
 
     # Resolved by name at call time (not a module-level dict) so a test /
     # a future phase can monkeypatch an individual builder and have it take
@@ -542,9 +554,12 @@ async def build_report(
     isolated psych-block sections. `viewer` is optional so internal callers
     that only need the report materialized (e.g. goal_overlay_service) keep
     working unchanged."""
+    # Bind the role now — _build_report runs the psych-block scorers, which
+    # may rollback and expire `viewer` before _attach_psych_sections reads it.
+    viewer_role = viewer.role if viewer is not None else None
     response = await _build_report(assessment_id, db)
     return await _attach_psych_sections(
-        response, viewer=viewer, assessment_id=assessment_id, db=db
+        response, viewer_role=viewer_role, assessment_id=assessment_id, db=db
     )
 
 
@@ -771,11 +786,12 @@ async def get_report(
     """Public entrypoint — see build_report(). Returns None (unchanged) when
     no report exists yet; otherwise the report with psych-block sections
     attached."""
+    viewer_role = viewer.role if viewer is not None else None
     response = await _get_report(assessment_id, db)
     if response is None:
         return None
     return await _attach_psych_sections(
-        response, viewer=viewer, assessment_id=assessment_id, db=db
+        response, viewer_role=viewer_role, assessment_id=assessment_id, db=db
     )
 
 

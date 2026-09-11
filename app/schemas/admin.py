@@ -1,10 +1,12 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
+from app.models.user import UserRole
 from app.schemas.admin_result import AdminAnalysisResultResponse
 from app.schemas.artifact import ArtifactItem
+from app.schemas.auth import NormalizedEmail, _validate_password_complexity
 from app.schemas.profile import ProfileResponse
 from app.schemas.roadmap import RoadmapResponse
 
@@ -14,6 +16,7 @@ class AdminUserListItem(BaseModel):
     email: str
     is_verified: bool
     is_active: bool
+    role: UserRole
     is_admin: bool
     created_at: datetime
     has_profile: bool
@@ -57,11 +60,34 @@ class AdminUserDetailResponse(BaseModel):
     email: str
     is_verified: bool
     is_active: bool
+    role: UserRole
     is_admin: bool
     created_at: datetime
     profile: ProfileResponse | None = None
     artifacts: list[ArtifactItem] = []
     assessments: list[AdminAssessmentSummary] = []
+
+
+class AdminUserCreate(BaseModel):
+    """Admin-only provisioning of admin/psychologist accounts — self-registration
+    (POST /auth/register) remains the only path that creates a `student`."""
+
+    email: NormalizedEmail
+    password: str = Field(min_length=8)
+    role: UserRole
+    is_verified: bool = True
+
+    @field_validator("password")
+    @classmethod
+    def password_complexity(cls, v: str) -> str:
+        return _validate_password_complexity(v)
+
+    @field_validator("role")
+    @classmethod
+    def role_not_student(cls, v: UserRole) -> UserRole:
+        if v == UserRole.student:
+            raise ValueError("Use /auth/register to create student accounts")
+        return v
 
 
 class AdminResponseItem(BaseModel):

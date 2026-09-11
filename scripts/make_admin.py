@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sqlalchemy import select
 
 from app.database import async_session
-from app.models.user import User
+from app.models.user import User, UserRole
 
 
 async def main() -> None:
@@ -30,7 +30,15 @@ async def main() -> None:
             print(f"User not found: {email}")
             sys.exit(1)
 
-        user.is_admin = grant
+        if not grant and user.role != UserRole.admin:
+            print(f"{email} is not admin (role={user.role.value}) — nothing to revoke.")
+            sys.exit(0)
+
+        # `role` replaced the old standalone `is_admin` flag (pro-281) — it's
+        # exclusive, so revoking admin always lands on `student`, never on
+        # `psychologist`. If this user should become a psychologist instead,
+        # use POST /api/v1/admin/users or set role explicitly, not --revoke.
+        user.role = UserRole.admin if grant else UserRole.student
         await db.commit()
         print(f"Admin access {'granted to' if grant else 'revoked from'} {email}")
 

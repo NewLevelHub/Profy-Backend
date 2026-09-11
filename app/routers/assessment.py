@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_student_user
 from app.models.assessment import AssessmentGoal
 from app.models.user import User
 from app.schemas.assessment import AssessmentCreateRequest, AssessmentResponse
@@ -26,7 +26,7 @@ async def _require_profile_id(current_user: User, db: AsyncSession) -> uuid.UUID
 @router.post("/start", response_model=AssessmentResponse)
 async def start_assessment(
     data: AssessmentCreateRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> AssessmentResponse:
     profile_id = await _require_profile_id(current_user, db)
@@ -35,7 +35,7 @@ async def start_assessment(
 
 @router.get("/current", response_model=AssessmentResponse)
 async def get_current_assessment(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> AssessmentResponse:
     profile_id = await _require_profile_id(current_user, db)
@@ -49,7 +49,7 @@ async def get_current_assessment(
 async def submit_answers(
     assessment_id: uuid.UUID,
     data: SubmitAnswersRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> SubmitAnswersResponse:
     profile_id = await _require_profile_id(current_user, db)
@@ -67,7 +67,7 @@ class UpdateGoalRequest(BaseModel):
 async def update_goal(
     assessment_id: uuid.UUID,
     data: UpdateGoalRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> AssessmentResponse:
     profile_id = await _require_profile_id(current_user, db)

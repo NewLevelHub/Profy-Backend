@@ -11,7 +11,7 @@ from app.models.product_feedback import ProductFeedback
 from app.models.profile import AgeGroup, Profile
 from app.models.roadmap import Roadmap
 from app.models.question import Question, QuestionInstrument
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.user_response import UserResponse
 from app.schemas.admin import (
     AdminAssessmentDetailResponse,
@@ -21,6 +21,7 @@ from app.schemas.admin import (
     AdminFeedbackStatsResponse,
     AdminMotivationResponseItem,
     AdminResponseItem,
+    AdminUserCreate,
     AdminUserDetailResponse,
     AdminUserListItem,
     AdminUserListResponse,
@@ -30,7 +31,7 @@ from app.schemas.artifact import ArtifactItem
 from app.schemas.profile import ProfileResponse
 from app.schemas.admin_result import AdminAnalysisResultResponse
 from app.schemas.roadmap import RoadmapResponse
-from app.services import bigfive_content, motivation_service
+from app.services import auth_service, bigfive_content, motivation_service
 from app.services.age_tiers import visible_tiers
 from app.services.goal_overlay_service import _get_effective_goal_and_scenario
 from app.services.riasec_content import LIKERT_LABELS as RIASEC_LIKERT_LABELS
@@ -63,6 +64,7 @@ def _build_user_filters(
     age_group: AgeGroup | None,
     status: AssessmentStatus | None,
     goal: AssessmentGoal | None,
+    role: UserRole | None,
 ) -> tuple[list, bool]:
     """Filter clauses for the admin users list/export query, plus whether an
     Assessment join is needed. `status`/`goal` match "this user has AT LEAST
@@ -71,12 +73,21 @@ def _build_user_filters(
     reflecting the true latest, independent of this filter. A user can have
     multiple assessments matching, so joining Assessment needs `.distinct()`
     on the caller's side; `age_group` only needs the (always-present, 1:1)
-    Profile join, no distinct."""
+    Profile join, no distinct.
+
+    `role` defaults to `student` at the call sites below (not here) — this
+    endpoint predates the role system and every row used to be a student by
+    construction; now that admin/psychologist accounts exist (created via
+    POST /admin/users, pro-281), they'd otherwise show up here with an empty
+    profile and pollute `total`/the CSV export. Pass `role=None` explicitly
+    to see every role."""
     filters = []
     if search:
         filters.append(User.email.ilike(f"%{search.strip()}%"))
     if age_group is not None:
         filters.append(Profile.age_group == age_group)
+    if role is not None:
+        filters.append(User.role == role)
     needs_distinct = status is not None or goal is not None
     if status is not None:
         filters.append(Assessment.status == status)
@@ -101,9 +112,10 @@ async def list_users(
     age_group: AgeGroup | None = None,
     status: AssessmentStatus | None = None,
     goal: AssessmentGoal | None = None,
+    role: UserRole | None = UserRole.student,
 ) -> AdminUserListResponse:
     filters, needs_distinct = _build_user_filters(
-        search=search, age_group=age_group, status=status, goal=goal
+        search=search, age_group=age_group, status=status, goal=goal, role=role
     )
 
     count_query = _user_base_query(needs_distinct=needs_distinct).with_only_columns(User.id).where(*filters)
@@ -130,12 +142,13 @@ async def export_users(
     age_group: AgeGroup | None = None,
     status: AssessmentStatus | None = None,
     goal: AssessmentGoal | None = None,
+    role: UserRole | None = UserRole.student,
 ) -> list[AdminUserListItem]:
     """Same filters as `list_users`, no pagination — for CSV export. Raises
     ExportTooLargeError instead of running an unbounded query if the
     filtered result set is bigger than EXPORT_MAX_ROWS."""
     filters, needs_distinct = _build_user_filters(
-        search=search, age_group=age_group, status=status, goal=goal
+        search=search, age_group=age_group, status=status, goal=goal, role=role
     )
 
     count_query = _user_base_query(needs_distinct=needs_distinct).with_only_columns(User.id).where(*filters)
@@ -219,6 +232,7 @@ async def _build_user_list_items(db: AsyncSession, users: list[User]) -> list[Ad
                 email=user.email,
                 is_verified=user.is_verified,
                 is_active=user.is_active,
+                role=user.role,
                 is_admin=user.is_admin,
                 created_at=user.created_at,
                 has_profile=profile is not None,
@@ -314,12 +328,33 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
         email=user.email,
         is_verified=user.is_verified,
         is_active=user.is_active,
+        role=user.role,
         is_admin=user.is_admin,
         created_at=user.created_at,
         profile=ProfileResponse.model_validate(profile) if profile else None,
         artifacts=artifacts,
         assessments=assessments,
     )
+
+
+async def create_user(db: AsyncSession, body: AdminUserCreate) -> User:
+    """Admin-only provisioning of `admin`/`psychologist` accounts. Unlike
+    `auth_service.register`, this skips the email-verification-code flow
+    entirely — `is_verified` is set directly from the request body."""
+    result = await db.execute(select(User).where(User.email == body.email))
+    if result.scalar_one_or_none():
+        raise ValueError("Email already exists")
+
+    user = User(
+        email=body.email,
+        hashed_password=auth_service.hash_password(body.password),
+        role=body.role,
+        is_verified=body.is_verified,
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
 
 
 async def get_assessment_detail(
