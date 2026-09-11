@@ -40,7 +40,12 @@ ASTANA_UNIVERSITIES: list[UniversityRecord] = [
         "slug": "nazarbayev-university",
         "name": "Nazarbayev University",
         "short_name": "NU",
-        "aliases": ["NU"],
+        "aliases": [
+            "NU",
+            "Назарбаев Университет",
+            "Назарбаевский университет",
+            "Назарбаев",
+        ],
         "city": "Астана",
         "country": "Казахстан",
         "website": "https://nu.edu.kz",

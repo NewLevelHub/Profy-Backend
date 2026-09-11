@@ -19,9 +19,18 @@ class AdminUserListItem(BaseModel):
     role: UserRole
     is_admin: bool
     created_at: datetime
+    # Last seen, refreshed by any authenticated request (app/dependencies.py).
+    # None means never seen since this started being recorded — for accounts
+    # that predate it, the migration backfilled a floor from their newest
+    # assessment or answer, so None there means no assessment either.
+    last_active_at: datetime | None = None
     has_profile: bool
     profile_name: str | None = None
     age_group: str | None = None
+    # A product for Kazakhstan makes "where do our users live" an obvious
+    # question of any export, and neither field was reachable from this list.
+    city: str | None = None
+    grade: int | None = None
     assessments_count: int = 0
     latest_assessment_status: str | None = None
     latest_assessment_goal: str | None = None
@@ -33,6 +42,11 @@ class AdminUserListItem(BaseModel):
     # flipped/relabeled `personality_profile` — admin sees true raw numbers,
     # same convention DiagnosticSummaryBlock already uses for RIASEC.
     riasec: dict[str, float] | None = None
+    # Junior's interest instrument is MI, not RIASEC, so `riasec` is None for
+    # every junior. Without this the export showed a completed junior
+    # diagnostic as eleven empty score columns — indistinguishable from a
+    # broken row rather than from a different instrument.
+    mi: dict[str, float] | None = None
     big_five: dict[str, float] | None = None
 
 
@@ -41,6 +55,26 @@ class AdminUserListResponse(BaseModel):
     total: int
     page: int
     limit: int
+
+
+class AdminUserStatsResponse(BaseModel):
+    """Counts that cannot be derived from a page of the users list, because
+    each one is a question about the whole table — the reason the redesign
+    had to drop a "BROUGHT ON DIAGNOSTICS: NO DATA" tile rather than fill it
+    in on the client (docs/admin-backend-requests-pro-242.md §6).
+
+    `completed_diagnostics` and `abandoned_diagnostics` count ASSESSMENTS,
+    not users: one user can start several. `total` and `signups_last_7d`
+    count users."""
+
+    total: int
+    signups_last_7d: int
+    completed_diagnostics: int
+    abandoned_diagnostics: int
+    # Echoed back because it is a query parameter: "abandoned" is a judgement
+    # about a threshold, not a fact, and the number on screen should say which
+    # threshold produced it.
+    inactive_days_threshold: int
 
 
 class AdminAssessmentSummary(BaseModel):
@@ -63,6 +97,7 @@ class AdminUserDetailResponse(BaseModel):
     role: UserRole
     is_admin: bool
     created_at: datetime
+    last_active_at: datetime | None = None
     profile: ProfileResponse | None = None
     artifacts: list[ArtifactItem] = []
     assessments: list[AdminAssessmentSummary] = []
@@ -181,10 +216,19 @@ class AdminFeedbackStatsResponse(BaseModel):
 
     total: int
     avg_relevance_score: float | None = None
+    # Count per 1-5 score, keyed by the score as a string. The 1-5 histogram is
+    # the main chart of the feedback screen, and an average alone cannot
+    # reconstruct it — two very different distributions share a mean.
+    score_counts: dict[str, int] = {}
     by_age_group: list[FeedbackBreakdownItem] = []
     by_scenario: list[FeedbackBreakdownItem] = []
     by_top_direction: list[FeedbackBreakdownItem] = []
     helpful_section_counts: dict[str, int] = {}
+    # Reviews that named no useful section at all. Not derivable from
+    # `helpful_section_counts` (a review can name several, so the counts do not
+    # sum to a review count), and it is the figure that says whether a low
+    # section tally means "nothing helped" or just "few reviews".
+    no_sections_count: int = 0
 
 
 class PsychologistAssignmentCreate(BaseModel):

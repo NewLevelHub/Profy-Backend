@@ -34,6 +34,15 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+    # Last time this user was seen, refreshed from the authenticated-request
+    # dependency at most once every ACTIVITY_REFRESH_INTERVAL so an ordinary
+    # session doesn't turn every read into a write (app/dependencies.py).
+    # Distinct from `created_at`, which the admin users list showed under an
+    # "ACTIVITY" heading until PRO-242 renamed it to what it actually was —
+    # a registration date reading as "was here 2 days ago".
+    last_active_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
 
     # `is_admin` used to be its own mapped boolean column (see the
     # user_role_enum migration for the backfill from it). It's now derived
