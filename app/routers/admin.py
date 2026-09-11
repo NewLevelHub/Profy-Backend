@@ -1,4 +1,5 @@
 import uuid
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi import status as http_status
@@ -6,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_admin_user
+from app.i18n import KNOWN_LOCALES
 from app.models.assessment import AssessmentGoal, AssessmentStatus
 from app.services.admin_lock import AdminOverrideValidationError
 from app.models.user import User
@@ -214,6 +216,19 @@ async def update_program(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
+# Admin content lists show one row per (logical unit, locale) since KZ-301, so
+# every list endpoint below takes the same optional locale filter. Built from
+# KNOWN_LOCALES rather than a literal so the accepted set can't drift from
+# app/i18n (see the warning on KNOWN_LOCALES itself).
+AdminLocaleFilter = Annotated[
+    str | None,
+    Query(
+        pattern=f"^({'|'.join(KNOWN_LOCALES)})$",
+        description="Show only rows of this locale. Omit to list every locale.",
+    ),
+]
+
+
 @router.get("/questions", response_model=AdminQuestionListResponse)
 async def list_questions(
     page: int = Query(default=1, ge=1),
@@ -221,11 +236,12 @@ async def list_questions(
     instrument: QuestionInstrument | None = Query(default=None),
     age_tier: AgeGroup | None = Query(default=None),
     search: str | None = Query(default=None),
+    locale: AdminLocaleFilter = None,
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     return await admin_content_service.list_questions(
-        db, instrument=instrument, age_tier=age_tier, search=search, page=page, limit=limit
+        db, instrument=instrument, age_tier=age_tier, search=search, locale=locale, page=page, limit=limit
     )
 
 
@@ -262,11 +278,12 @@ async def list_question_pairs(
     limit: int = Query(default=20, ge=1, le=100),
     instrument: QuestionInstrument | None = Query(default=None),
     age_tier: AgeGroup | None = Query(default=None),
+    locale: AdminLocaleFilter = None,
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     return await admin_content_service.list_question_pairs(
-        db, instrument=instrument, age_tier=age_tier, page=page, limit=limit
+        db, instrument=instrument, age_tier=age_tier, locale=locale, page=page, limit=limit
     )
 
 
@@ -301,10 +318,11 @@ async def update_question_pair(
 async def list_motivation_statements(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
+    locale: AdminLocaleFilter = None,
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await admin_content_service.list_motivation_statements(db, page=page, limit=limit)
+    return await admin_content_service.list_motivation_statements(db, locale=locale, page=page, limit=limit)
 
 
 @router.get(
@@ -344,10 +362,11 @@ async def update_motivation_statement(
 async def list_motivation_pairs(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
+    locale: AdminLocaleFilter = None,
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await admin_content_service.list_motivation_pairs(db, page=page, limit=limit)
+    return await admin_content_service.list_motivation_pairs(db, locale=locale, page=page, limit=limit)
 
 
 @router.get("/motivation-pairs/{pair_id}", response_model=AdminMotivationPairDetail)
@@ -384,10 +403,11 @@ async def list_directions(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
     search: str | None = Query(default=None),
+    locale: AdminLocaleFilter = None,
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await admin_content_service.list_directions(db, search=search, page=page, limit=limit)
+    return await admin_content_service.list_directions(db, search=search, locale=locale, page=page, limit=limit)
 
 
 @router.get("/directions/{direction_id}", response_model=AdminDirectionDetail)
