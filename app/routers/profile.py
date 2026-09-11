@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_student_user
 from app.models.artifact import Artifact
 from app.models.certificate import Certificate
 from app.models.profile import Profile
@@ -33,7 +33,7 @@ def _to_response(
 @router.post("", response_model=ProfileResponse, status_code=status.HTTP_201_CREATED)
 async def create_profile(
     data: ProfileCreateRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> ProfileResponse:
     """Create the caller's Profile, optionally saving their artifact and/or
@@ -71,7 +71,7 @@ async def create_profile(
 
 @router.get("", response_model=ProfileResponse)
 async def get_profile(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> ProfileResponse:
     profile = await profile_service.get_profile(current_user.id, db)
@@ -85,7 +85,7 @@ async def get_profile(
 @router.put("", response_model=ProfileResponse)
 async def update_profile(
     data: ProfileUpdateRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> ProfileResponse:
     """Update the caller's Profile, optionally replacing their artifacts

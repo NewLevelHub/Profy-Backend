@@ -18,7 +18,7 @@ from app.dependencies import ACTIVITY_REFRESH_INTERVAL
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.product_feedback import ProductFeedback
 from app.models.profile import AgeGroup, Profile
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.services import admin_service, auth_service
 
 
@@ -29,7 +29,7 @@ async def admin_headers(db_session: AsyncSession) -> dict[str, str]:
         hashed_password="x",
         is_active=True,
         is_verified=True,
-        is_admin=True,
+        role=UserRole.admin,
     )
     db_session.add(admin)
     await db_session.flush()

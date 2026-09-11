@@ -9,8 +9,11 @@ from app.models.direction_roadmap import DirectionRoadmap  # noqa: F401 — keep
 from app.models.motivation import MotivationResponse, MotivationStatement  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.motivation_pair import MotivationPair, MotivationPairResponse  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.password_reset import PasswordResetToken  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.product_feedback import ProductFeedback  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.profile import Profile  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.program import Program  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.psychologist_assignment import PsychologistStudentAssignment  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.psychologist_note import PsychologistNote  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.question import Question  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.question_pair import QuestionPair  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.roadmap import Roadmap  # noqa: F401 — keep model imported so Alembic discovers it
@@ -21,14 +24,14 @@ from app.models.university_favorite import UniversityFavorite  # noqa: F401 — 
 from app.models.user import User  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.user_response import UserResponse  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.goal_overlay import GoalOverlay  # noqa: F401 — keep model imported so Alembic discovers it
-from app.models.product_feedback import ProductFeedback  # noqa: F401 — keep model imported so Alembic discovers it
 
 __all__ = [
     "Base", "AnalysisResult", "Artifact", "Assessment",
     "Direction", "DirectionInquiry", "DirectionRoadmap",
     "EmailVerificationToken", "MotivationPair", "MotivationPairResponse",
     "MotivationResponse", "MotivationStatement", "PasswordResetToken",
-    "Profile", "Program", "Question", "QuestionPair", "Roadmap",
+    "ProductFeedback", "Profile", "Program", "PsychologistNote",
+    "PsychologistStudentAssignment", "Question", "QuestionPair", "Roadmap",
     "University", "UniversityImage", "UniversityExternalRef", "UniversityFavorite",
-    "User", "UserResponse", "GoalOverlay", "ProductFeedback",
+    "User", "UserResponse", "GoalOverlay",
 ]

@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_student_user
 from app.models.assessment import Assessment
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
@@ -31,7 +31,7 @@ async def _require_profile_id(current_user: User, db: AsyncSession) -> uuid.UUID
 @router.get("/{assessment_id}/motivation-triplets", response_model=list[MotivationTripletResponse])
 async def get_motivation_triplets(
     assessment_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[MotivationTripletResponse]:
     row_result = await db.execute(
@@ -69,7 +69,7 @@ async def get_motivation_triplets(
 async def submit_motivation_answers(
     assessment_id: uuid.UUID,
     data: SubmitMotivationRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> SubmitMotivationResponse:
     profile_id = await _require_profile_id(current_user, db)

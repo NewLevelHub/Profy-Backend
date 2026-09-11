@@ -11,14 +11,18 @@ from app.models.assessment import AssessmentGoal, AssessmentStatus
 from app.models.motivation import MotivationCategory
 from app.services.admin_lock import AdminNothingToClearError, AdminOverrideValidationError
 from app.services.admin_listing import AdminSortFieldError, SortOrder
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.admin import (
     AdminAssessmentDetailResponse,
     AdminFeedbackListResponse,
     AdminFeedbackStatsResponse,
+    AdminUserCreate,
     AdminUserDetailResponse,
     AdminUserListResponse,
     AdminUserStatsResponse,
+    PsychologistAssignmentCreate,
+    PsychologistAssignmentItem,
+    PsychologistAssignmentListResponse,
 )
 from app.schemas.admin_university import (
     AdminUniversityCountry,
@@ -50,6 +54,7 @@ from app.schemas.admin_content import (
 from app.services import (
     admin_content_service,
     admin_export_service,
+    admin_psychologist_service,
     admin_service,
     admin_university_service,
     university_service,
@@ -73,6 +78,10 @@ async def list_users(
     age_group: AgeGroup | None = Query(default=None),
     status: AssessmentStatus | None = Query(default=None),
     goal: AssessmentGoal | None = Query(default=None),
+    # Defaults to student: this list predates the role system, and every
+    # row used to be a student by construction. Pass role=admin/psychologist
+    # explicitly to see staff accounts (created via POST /users below).
+    role: UserRole = Query(default=UserRole.student),
     inactive_days: int | None = Query(
         default=None, ge=1, description="Only users not seen for at least this many days"
     ),
@@ -89,10 +98,78 @@ async def list_users(
         age_group=age_group,
         status=status,
         goal=goal,
+        role=role,
         inactive_days=inactive_days,
         sort=sort,
         order=order,
     )
+
+
+@router.post("/users", response_model=AdminUserDetailResponse, status_code=status.HTTP_201_CREATED)
+async def create_user(
+    body: AdminUserCreate,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        user = await admin_service.create_user(db, body)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    detail = await admin_service.get_user_detail(db, user.id)
+    return detail
+
+
+@router.get(
+    "/psychologist-assignments",
+    response_model=PsychologistAssignmentListResponse,
+)
+async def list_psychologist_assignments(
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=20, ge=1, le=100),
+    psychologist_id: uuid.UUID | None = Query(default=None),
+    student_id: uuid.UUID | None = Query(default=None),
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await admin_psychologist_service.list_assignments(
+        db,
+        page=page,
+        limit=limit,
+        psychologist_id=psychologist_id,
+        student_id=student_id,
+    )
+
+
+@router.post(
+    "/psychologist-assignments",
+    response_model=PsychologistAssignmentItem,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_psychologist_assignment(
+    body: PsychologistAssignmentCreate,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await admin_psychologist_service.create_assignment(db, body)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.delete(
+    "/psychologist-assignments/{assignment_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_psychologist_assignment(
+    assignment_id: uuid.UUID,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        await admin_psychologist_service.delete_assignment(db, assignment_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/users/stats", response_model=AdminUserStatsResponse)
@@ -114,6 +191,7 @@ async def export_users(
     age_group: AgeGroup | None = Query(default=None),
     status: AssessmentStatus | None = Query(default=None),
     goal: AssessmentGoal | None = Query(default=None),
+    role: UserRole = Query(default=UserRole.student),
     inactive_days: int | None = Query(default=None, ge=1),
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
@@ -125,6 +203,7 @@ async def export_users(
             age_group=age_group,
             status=status,
             goal=goal,
+            role=role,
             inactive_days=inactive_days,
         )
     except admin_service.ExportTooLargeError as e:

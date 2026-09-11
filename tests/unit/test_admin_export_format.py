@@ -27,6 +27,7 @@ def _user_item(**overrides) -> AdminUserListItem:
         email="student@example.test",
         is_verified=True,
         is_active=True,
+        role="student",
         is_admin=False,
         created_at=datetime(2026, 9, 3, 9, 29, 27, 80528, tzinfo=timezone.utc),
         last_active_at=datetime(2026, 9, 4, 11, 5, tzinfo=timezone.utc),
@@ -78,6 +79,7 @@ def test_enum_keys_are_localized_the_way_the_screen_shows_them() -> None:
     assert _cell(csv_text, "Класс (группа)") == "10–11 класс"
     assert _cell(csv_text, "Цель последнего") == "Поступить в вуз"
     assert _cell(csv_text, "Статус последнего") == "Завершён"
+    assert _cell(csv_text, "Роль") == "Ученик"
 
 
 def test_an_unmapped_enum_value_falls_back_to_the_raw_key() -> None:

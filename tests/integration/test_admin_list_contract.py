@@ -22,7 +22,7 @@ from app.models.program import Program
 from app.models.question import Question, QuestionInstrument
 from app.models.question_pair import QuestionPair
 from app.models.university import University
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.services import admin_content_service, admin_service, admin_university_service, auth_service
 from app.services.admin_listing import AdminSortFieldError
 
@@ -36,7 +36,7 @@ async def admin_headers(db_session: AsyncSession) -> dict[str, str]:
         hashed_password="x",
         is_active=True,
         is_verified=True,
-        is_admin=True,
+        role=UserRole.admin,
     )
     db_session.add(admin)
     await db_session.flush()

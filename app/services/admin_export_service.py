@@ -53,6 +53,11 @@ _STATUS_LABELS = {
     "in_progress": "В процессе",
     "completed": "Завершён",
 }
+_ROLE_LABELS = {
+    "student": "Ученик",
+    "admin": "Администратор",
+    "psychologist": "Психолог",
+}
 _INSTRUMENT_LABELS = {
     "riasec": "RIASEC",
     "big_five": "Big Five",
@@ -91,6 +96,7 @@ _USER_COLUMNS = (
     "Email",
     "Почта подтверждена",
     "Аккаунт активен",
+    "Роль",
     "Администратор",
     "Регистрация" + _UTC_SUFFIX,
     "Последняя активность" + _UTC_SUFFIX,
@@ -134,6 +140,7 @@ def users_to_csv(items: list[AdminUserListItem]) -> str:
                 item.email,
                 _yes_no(item.is_verified),
                 _yes_no(item.is_active),
+                _label(_ROLE_LABELS, item.role.value),
                 _yes_no(item.is_admin),
                 _at(item.created_at),
                 _at(item.last_active_at),

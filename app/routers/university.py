@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
-from app.dependencies import get_current_user, get_current_user_optional
+from app.dependencies import get_current_student_user, get_current_user, get_current_user_optional
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
@@ -125,7 +125,7 @@ async def get_program(
 async def get_gap_analysis(
     program_id: uuid.UUID,
     assessment_id: uuid.UUID = Query(..., description="Assessment ID to use for scores"),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> GapAnalysisResponse:
     profile_result = await db.execute(select(Profile).where(Profile.user_id == current_user.id))
