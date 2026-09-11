@@ -1,0 +1,114 @@
+{
+  "version": 2,
+  "comment": "Демо-манифест PRO-315 v2 — 18 карт со страницы 1 ProfOr/МАК.pdf (набор энтузиастов, без лицензии), re-encoded .webp через scripts/export_mac_cards.py в MEDIA_DIR. Не финальная колода — PRO-311 (лицензированная колода 80-100) не закрыт.",
+  "cards": [
+    {
+      "image_path": "mac-cards/mac-01.webp",
+      "kind": "scenic",
+      "license": null,
+      "attribution": null
+    },
+    {
+      "image_path": "mac-cards/mac-02.webp",
+      "kind": "scenic",
+      "license": null,
+      "attribution": null
+    },
+    {
+      "image_path": "mac-cards/mac-03.webp",
+      "kind": "scenic",
+      "license": null,
+      "attribution": null
+    },
+    {
+      "image_path": "mac-cards/mac-04.webp",
+      "kind": "scenic",
+      "license": null,
+      "attribution": null
+    },
+    {
+      "image_path": "mac-cards/mac-05.webp",
+      "kind": "scenic",
+      "license": null,
+      "attribution": null
+    },
+    {
+      "image_path": "mac-cards/mac-06.webp",
+      "kind": "scenic",
+      "license": null,
+      "attribution": null
+    },
+    {
+      "image_path": "mac-cards/mac-07.webp",
+      "kind": "scenic",
+      "license": null,
+      "attribution": null
+    },
+    {
+      "image_path": "mac-cards/mac-08.webp",
+      "kind": "scenic",
+      "license": null,
+      "attribution": null
+    },
+    {
+      "image_path": "mac-cards/mac-09.webp",
+      "kind": "scenic",
+      "license": null,
+      "attribution": null
+    },
+    {
+      "image_path": "mac-cards/mac-10.webp",
+      "kind": "scenic",
+      "license": null,
+      "attribution": null
+    },
+    {
+      "image_path": "mac-cards/mac-11.webp",
+      "kind": "scenic",
+      "license": null,
+      "attribution": null
+    },
+    {
+      "image_path": "mac-cards/mac-12.webp",
+      "kind": "scenic",
+      "license": null,
+      "attribution": null
+    },
+    {
+      "image_path": "mac-cards/mac-13.webp",
+      "kind": "scenic",
+      "license": null,
+      "attribution": null
+    },
+    {
+      "image_path": "mac-cards/mac-14.webp",
+      "kind": "scenic",
+      "license": null,
+      "attribution": null
+    },
+    {
+      "image_path": "mac-cards/mac-15.webp",
+      "kind": "scenic",
+      "license": null,
+      "attribution": null
+    },
+    {
+      "image_path": "mac-cards/mac-16.webp",
+      "kind": "scenic",
+      "license": null,
+      "attribution": null
+    },
+    {
+      "image_path": "mac-cards/mac-17.webp",
+      "kind": "scenic",
+      "license": null,
+      "attribution": null
+    },
+    {
+      "image_path": "mac-cards/mac-18.webp",
+      "kind": "scenic",
+      "license": null,
+      "attribution": null
+    }
+  ]
+}

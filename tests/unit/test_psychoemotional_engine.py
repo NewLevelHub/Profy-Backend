@@ -102,14 +102,6 @@ def test_purple_forward_note_no_score() -> None:
     assert 5 not in engine.EXTRA_COLOR_IDS
 
 
-def test_structural_performance_direction() -> None:
-    # Р = поз(зел)+поз(кр)+поз(жёлт); меньше сумма → выше работоспособность
-    good = engine.compute(_NORM, [3, 4, 2, 1, 5, 6, 0, 7])  # кр/жёлт/зел впереди
-    poor = engine.compute(_NORM, [1, 5, 6, 0, 7, 3, 4, 2])  # кр/жёлт/зел в конце
-    assert good.structural["performance"] < poor.structural["performance"]
-    assert 6 <= good.structural["performance"] <= 21
-
-
 def test_tech_invalid_raises() -> None:
     with pytest.raises(engine.PsychoEmotionalTechInvalid):
         engine.compute([0, 0, 1, 2, 3, 4, 5, 6], _NORM)

@@ -128,18 +128,6 @@ def divergence(list1: list[int], list2: list[int]) -> int:
     return sum(abs(p1[cid] - p2[cid]) for cid in COLOR_IDS)
 
 
-def structural_indices(list2: list[int]) -> dict:
-    """§6.8 — вспомогательные, БЕЗ зон нормы. Позиция = ранг 1–8."""
-    pos = _positions(list2)
-    return {
-        # Р: меньше сумма → выше работоспособность (диапазон 6–21)
-        "performance": pos[_GREEN] + pos[_RED] + pos[_YELLOW],
-        "concentricity": (pos[_BLUE] + pos[_GREEN]) - (pos[_RED] + pos[_YELLOW]),
-        "heteronomy": (pos[_BLUE] + pos[_YELLOW]) - (pos[_GREEN] + pos[_RED]),
-        "kkp": round(pos[_BLACK] / (pos[_BLUE] + pos[_GREEN]), 3),
-    }
-
-
 # --- уровни по конфигу v1 ------------------------------------------------
 def _so_level(so: int) -> str:
     t = psychoemotional_thresholds.so
@@ -196,7 +184,6 @@ class PsychoEmotionalMetrics:
     d_value: int
     d_memory: bool
     d_situationally_unstable: bool
-    structural: dict
     thresholds_version: int
     anxiety_level: str = field(default="")
     compensation_level: str = field(default="")
@@ -215,7 +202,6 @@ class PsychoEmotionalMetrics:
                 "memory": self.d_memory,
                 "situationally_unstable": self.d_situationally_unstable,
             },
-            "structural": self.structural,
             "thresholds_version": self.thresholds_version,
         }
 
@@ -265,6 +251,5 @@ def compute(list1: list[int], list2: list[int]) -> PsychoEmotionalMetrics:
         d_value=d_value,
         d_memory=d_value == 0,
         d_situationally_unstable=d_value >= 20,
-        structural=structural_indices(list2),
         thresholds_version=psychoemotional_thresholds.version,
     )

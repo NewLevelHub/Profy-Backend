@@ -8,6 +8,9 @@ from app.models.consent import Consent  # noqa: F401 — keep model imported so 
 from app.models.direction import Direction  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.direction_inquiry import DirectionInquiry  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.direction_roadmap import DirectionRoadmap  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.mac import (  # noqa: F401 — keep model imported so Alembic discovers it
+    MacCard, MacExercise, MacNote, MacResponse, MacSession, MacSummary,
+)
 from app.models.motivation import MotivationResponse, MotivationStatement  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.motivation_pair import MotivationPair, MotivationPairResponse  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.password_reset import PasswordResetToken  # noqa: F401 — keep model imported so Alembic discovers it
@@ -32,6 +35,7 @@ __all__ = [
     "Direction", "DirectionInquiry", "DirectionRoadmap",
     "EmailVerificationToken", "MotivationPair", "MotivationPairResponse",
     "MotivationResponse", "MotivationStatement", "PasswordResetToken",
+    "MacCard", "MacExercise", "MacNote", "MacResponse", "MacSession", "MacSummary",
     "ProductFeedback", "Profile", "Program", "PsychoEmotionalRun",
     "PsychologistNote", "Question", "QuestionPair", "Roadmap",
     "University", "UniversityImage", "UniversityExternalRef",

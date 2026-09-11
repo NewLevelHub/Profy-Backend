@@ -24,17 +24,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
-from app.models.question import BigFiveDomain, MIType, Question, QuestionInstrument
+from app.models.question import BigFiveDomain, HollandType, MIType, Question, QuestionInstrument
 from app.models.user import User
+from app.schemas.response import AnswerItem
 from app.services import (
+    assessment_service,
     assessment_shared,
     llm_client,
     motivation_pair_service,
     motivation_service,
     report_service,
+    riasec_service,
 )
+from app.services.riasec_service import HOLLAND_ORDER
 
 _AGE_SAMPLE = {AgeGroup.junior: 8, AgeGroup.middle: 12, AgeGroup.senior: 16}
+_SENTINEL_BASE = 960_000
 
 
 async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> Assessment:
@@ -81,6 +86,28 @@ def _patch_senior_motivation(monkeypatch: pytest.MonkeyPatch, *, answered: int, 
 def _patch_pair_motivation(monkeypatch: pytest.MonkeyPatch, *, answered: int, total: int) -> None:
     monkeypatch.setattr(motivation_pair_service, "answered_count", AsyncMock(return_value=answered))
     monkeypatch.setattr(motivation_pair_service, "total_pairs", AsyncMock(return_value=total))
+
+
+async def _seed_riasec_dominant(
+    db: AsyncSession, assessment: Assessment, profile_id: uuid.UUID, *, dominant: str,
+) -> int:
+    """Real RIASEC Question rows (one per Holland letter), answered for real
+    with `dominant` scored high — riasec_service.strengths_weaknesses()
+    deliberately returns [] for a flat/all-zero profile (see its docstring),
+    which is what the monkeypatched-completion-counter shortcut alone
+    produces. Returns the seeded count, to patch likert_*_count with."""
+    answers = []
+    for i, letter in enumerate(HOLLAND_ORDER):
+        q = Question(
+            instrument=QuestionInstrument.riasec, riasec_type=HollandType(letter),
+            text=f"test-completion-gate-riasec-{letter}", age_tier=AgeGroup.senior,
+            order=_SENTINEL_BASE + i,
+        )
+        db.add(q)
+        await db.flush()
+        answers.append(AnswerItem(question_id=q.id, value=5 if letter == dominant else 2))
+    await assessment_service.submit_answers(assessment.id, answers, profile_id, db)
+    return len(answers)
 
 
 async def test_junior_incomplete_harter_returns_409_and_does_not_complete(
@@ -200,9 +227,15 @@ async def test_successful_generation_populates_v2_narrative_fields(
     off (see comment in the previous test) so this exercises the
     deterministic fallback builder, not a real model call."""
     assessment = await _make_assessment(db_session, AgeGroup.senior)
-    _patch_likert(monkeypatch, answered=1, total=1)
     _patch_senior_motivation(monkeypatch, answered=1, total=1)
     monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
+
+    seeded = await _seed_riasec_dominant(db_session, assessment, assessment.profile_id, dominant="R")
+    _patch_likert(monkeypatch, answered=seeded, total=seeded)
+    monkeypatch.setattr(
+        riasec_service, "question_counts",
+        AsyncMock(return_value={letter: 1 for letter in HOLLAND_ORDER}),
+    )
 
     await report_service.build_report(assessment.id, db_session)
 

@@ -82,7 +82,10 @@ async def test_uploads_new_photo_and_marks_it_primary(db_session: AsyncSession):
     images_result = await db_session.execute(select(UniversityImage).where(UniversityImage.university_id == university.id))
     image = images_result.scalar_one()
     assert image.is_primary is True
-    assert image.content_type == "image/png"
+    # The import pipeline re-encodes every source image to WebP
+    # (university_photo_import_service.optimize_image) — the PNG fed in here
+    # is the source format, not what ends up stored.
+    assert image.content_type == "image/webp"
 
 
 async def test_rerun_with_same_photo_is_idempotent_no_reupload(db_session: AsyncSession):

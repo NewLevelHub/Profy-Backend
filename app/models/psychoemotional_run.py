@@ -73,9 +73,6 @@ class PsychoEmotionalRun(Base):
     )
     validity_reasons: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
 
-    # Ключи статических текстов-подсказок специалисту (psychoemotional-templates.md)
-    hint_keys: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
-
     # NULL до расчёта метрик; тогда же проставляется применённая версия порогов.
     thresholds_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # §6.1: вход не прошёл валидацию (не 8 уникальных ID 0–7) — не обрабатывается,

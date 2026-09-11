@@ -358,14 +358,14 @@ async def test_psychoemotional_section_carries_the_full_b8_composition(
 ) -> None:
     """PRO-309: секция отдаёт весь состав §B8 по последней строке — списки 1/2 +
     D, функц. пары с ( )/[ ], индексы с уровнями и раскладками, структурные
-    без уровней, check-in, тексты-подсказки, thresholds_version."""
+    без уровней, check-in, thresholds_version. Текстов-подсказок в составе
+    нет — убраны продуктовым решением (адресат — дипломированный психолог)."""
     user, assessment = await _make_assessment(db_session, AgeGroup.senior)
     _force_complete_and_llm_disabled(monkeypatch)
 
     db_session.add(_psychoemotional_run(
         assessment.id, user.id,
         checkin={"q1": "спокойно", "q2": "да", "q3": "обычно"},
-        hint_keys=["fn.plus.3", "fn.minus.7"],
         validity_flag=PsychoEmotionalValidityFlag.ok,
         validity_reasons=[],
     ))
@@ -399,16 +399,9 @@ async def test_psychoemotional_section_carries_the_full_b8_composition(
     assert section.so_value == 6 and section.so_level == "norm"
     assert section.vk_value == 1.5 and section.vk_level == "balance"
 
-    # структурные — только значения, без уровней
-    assert section.structural.performance == sum(
-        _PE_L2.index(c) + 1 for c in (2, 3, 4)
-    )
-    assert not hasattr(section.structural, "level")
-
     assert section.black_first is False
     assert section.thresholds_version == 1
-    assert len(section.hints) == 2  # обе fn.* подсказки резолвнулись в текст
-    assert all(isinstance(h, str) and h for h in section.hints)
+    assert not hasattr(section, "hints")
 
 
 async def test_psychoemotional_section_shows_previous_runs_as_dynamics(
@@ -452,7 +445,7 @@ async def test_report_generation_scores_the_latest_raw_psychoemotional_run(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """PRO-307 trigger: a raw run (`metrics={}`) is scored on report
-    generation — metrics + hint_keys land on the row, a compact summary on
+    generation — metrics land on the row, a compact summary on
     AnalysisResult.psychoemotional, thresholds_version stamped."""
     from app.config import psychoemotional_thresholds
     from app.models.analysis_result import AnalysisResult
@@ -472,7 +465,6 @@ async def test_report_generation_scores_the_latest_raw_psychoemotional_run(
     )).scalar_one()
     assert run.metrics != {}
     assert run.metrics["so"]["value"] == 6  # §5.8 Аружан
-    assert run.hint_keys  # непусто
     assert run.thresholds_version == psychoemotional_thresholds.version
 
     analysis = (await db_session.execute(

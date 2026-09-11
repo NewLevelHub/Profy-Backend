@@ -1155,8 +1155,13 @@ async def _upsert_direction_roadmap(
     roadmap.subjects_to_focus = plan.subjects_to_focus
     roadmap.university_track = plan.university_track.model_dump()
     roadmap.university_requirements = [r.model_dump() for r in plan.university_requirements]
+    # mode="json" — program_fit.program_id is a uuid.UUID; a plain
+    # model_dump() leaves it as a UUID object, which the JSONB column's
+    # encoder can't serialize (only ever caught by a test, not in
+    # production, because the LLM-enabled program_fit path is rarely
+    # exercised locally — real bug, not just a stale fixture).
     roadmap.program_fit = (
-        plan.program_fit.model_dump() if plan.program_fit is not None else None
+        plan.program_fit.model_dump(mode="json") if plan.program_fit is not None else None
     )
     roadmap.additional_resources = resource_catalog.resources_for_category(category)
     # Always set explicitly (including back to None) — a row previously

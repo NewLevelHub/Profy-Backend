@@ -18,11 +18,71 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
+from app.models.question import HollandType, MIType, Question, QuestionInstrument
 from app.models.user import User
+from app.schemas.response import AnswerItem
 from app.schemas.result_v2 import DISCLAIMER, ResultResponseV2
-from app.services import assessment_shared, llm_client, motivation_pair_service, motivation_service, report_service
+from app.services import (
+    assessment_service,
+    assessment_shared,
+    llm_client,
+    mi_service,
+    motivation_pair_service,
+    motivation_service,
+    report_service,
+    riasec_service,
+)
+from app.services.mi_service import MI_ORDER
+from app.services.riasec_service import HOLLAND_ORDER
 
 _AGE_SAMPLE = {AgeGroup.junior: 8, AgeGroup.middle: 12, AgeGroup.senior: 16}
+
+# Sentinel order values far outside the real ~300 seeded questions in the
+# shared dev DB (same convention as test_age_matrix_full_flow.py) — these
+# rows must never collide with real bank content.
+_SENTINEL_BASE = 950_000
+
+
+async def _seed_riasec_dominant(
+    db: AsyncSession, assessment: Assessment, profile_id: uuid.UUID, *, dominant: str,
+) -> int:
+    """Real RIASEC Question rows (one per Holland letter) answered for real
+    through assessment_service, with `dominant` scored high and the rest
+    low — a genuinely completed battery has a real winner, unlike the
+    monkeypatched-completion-counter shortcut this file otherwise uses.
+    riasec_service.strengths_weaknesses() deliberately returns zero
+    strengths for an actually-flat profile (see its docstring) — the
+    "must return a non-empty strength_cards" acceptance bar this file
+    checks only holds for a real, non-flat one. Returns the seeded count,
+    to patch likert_total_questions/likert_answered_count with."""
+    answers = []
+    for i, letter in enumerate(HOLLAND_ORDER):
+        q = Question(
+            instrument=QuestionInstrument.riasec, riasec_type=HollandType(letter),
+            text=f"test-fallback-riasec-{letter}", age_tier=AgeGroup.senior, order=_SENTINEL_BASE + i,
+        )
+        db.add(q)
+        await db.flush()
+        answers.append(AnswerItem(question_id=q.id, value=5 if letter == dominant else 2))
+    await assessment_service.submit_answers(assessment.id, answers, profile_id, db)
+    return len(answers)
+
+
+async def _seed_mi_dominant(
+    db: AsyncSession, assessment: Assessment, profile_id: uuid.UUID, *, dominant: str,
+) -> int:
+    """Junior/MI equivalent of _seed_riasec_dominant — see its docstring."""
+    answers = []
+    for i, category in enumerate(MI_ORDER):
+        q = Question(
+            instrument=QuestionInstrument.mi, mi_category=MIType(category),
+            text=f"test-fallback-mi-{category}", age_tier=AgeGroup.junior, order=_SENTINEL_BASE + i,
+        )
+        db.add(q)
+        await db.flush()
+        answers.append(AnswerItem(question_id=q.id, value=5 if category == dominant else 2))
+    await assessment_service.submit_answers(assessment.id, answers, profile_id, db)
+    return len(answers)
 
 
 async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> Assessment:
@@ -63,6 +123,21 @@ async def test_disabled_llm_returns_full_v2_form_for_senior(
     assessment = await _make_assessment(db_session, AgeGroup.senior)
     _force_complete_and_llm_disabled(monkeypatch, senior=True)
 
+    # A real, non-flat RIASEC battery — riasec_service.strengths_weaknesses()
+    # deliberately returns [] for a flat/all-zero profile (see its
+    # docstring), which the monkeypatched-completion-counter shortcut alone
+    # produces, so `strength_cards` would legitimately be empty without this.
+    seeded = await _seed_riasec_dominant(db_session, assessment, assessment.profile_id, dominant="R")
+    monkeypatch.setattr(assessment_shared, "likert_answered_count", AsyncMock(return_value=seeded))
+    monkeypatch.setattr(assessment_shared, "likert_total_questions", AsyncMock(return_value=seeded))
+    # Normalization denominator — pinned to exactly the 1-per-letter this
+    # seeds, or raw_scores/normalize divides by the real ~150-question bank
+    # instead and every letter comes back near-zero regardless of answers.
+    monkeypatch.setattr(
+        riasec_service, "question_counts",
+        AsyncMock(return_value={letter: 1 for letter in HOLLAND_ORDER}),
+    )
+
     response = await report_service.build_report(assessment.id, db_session)
 
     assert isinstance(response, ResultResponseV2)
@@ -73,9 +148,6 @@ async def test_disabled_llm_returns_full_v2_form_for_senior(
     assert response.disclaimer == DISCLAIMER
     assert response.strength_cards
     assert response.exploration_activities == []
-    # careers may be empty only if no direction in the DB shares any Holland
-    # letter with this (all-zero-score) profile's tie-broken top code — but
-    # every field must still be well-formed either way.
     for career in response.careers:
         assert career.why
 
@@ -91,6 +163,15 @@ async def test_disabled_llm_returns_full_v2_form_for_junior(
 ) -> None:
     assessment = await _make_assessment(db_session, AgeGroup.junior)
     _force_complete_and_llm_disabled(monkeypatch, senior=False)
+
+    # Real, non-flat MI battery — see the matching comment in the senior test.
+    seeded = await _seed_mi_dominant(db_session, assessment, assessment.profile_id, dominant="verbal")
+    monkeypatch.setattr(assessment_shared, "likert_answered_count", AsyncMock(return_value=seeded))
+    monkeypatch.setattr(assessment_shared, "likert_total_questions", AsyncMock(return_value=seeded))
+    monkeypatch.setattr(
+        mi_service, "question_counts",
+        AsyncMock(return_value={category: 1 for category in MI_ORDER}),
+    )
 
     response = await report_service.build_report(assessment.id, db_session)
 

@@ -171,17 +171,6 @@ class PsychoEmotionalCompensation(BaseModel):
     model_config = _model_config
 
 
-class PsychoEmotionalStructural(BaseModel):
-    """§B5.8 — структурные индексы: только значения, зон нормы нет (направления
-    трактовки — статичный текст на фронте)."""
-
-    performance: int  # Р: меньше → выше работоспособность (6–21)
-    concentricity: int  # выше → на себя; ниже → вовне
-    heteronomy: int  # выше → пассивность/зависимость; ниже → инициативность
-    kkp: float  # конструктивность: ниже → ситуация переживается как невыносимая
-    model_config = _model_config
-
-
 class PsychoEmotionalHistoryItem(BaseModel):
     """Компактная строка предыдущего прохождения для динамики (§B8)."""
 
@@ -200,13 +189,18 @@ class PsychoEmotionalSection(BaseModel):
     (report_service._build_psychoemotional_section). `null`, пока последнее
     прохождение не посчитано движком (PRO-307) — так же, как validity.
 
-    Полный состав вывода специалисту (§B8 / PRO-309): идентификация + динамика,
+    Состав вывода специалисту (§B8 / PRO-309): идентификация + динамика,
     check-in, флаг достоверности прохождения, списки 1/2 + D, функциональные
     пары с ( )/[ ], индексы тревоги / компенсации / СО / ВК с уровнями и
-    раскладками, структурные индексы без уровней, готовые тексты-подсказки.
-    Никогда не кэшируется — переприкрепляется на каждый запрос /result.
-    Постоянная пометка «шкала взрослая…» и тексты направлений структурных
-    индексов — на фронте (psychEmotional namespace, PRO-293)."""
+    раскладками, структурные индексы без уровней. Никогда не кэшируется —
+    переприкрепляется на каждый запрос /result. Постоянная пометка «шкала
+    взрослая…» и тексты направлений структурных индексов — на фронте
+    (psychEmotional namespace, PRO-293).
+
+    Текстовые подсказки-гипотезы (был `hints: list[str]`, PRO-304/307) убраны
+    по решению владельца: адресат — дипломированный психолог, готовые
+    формулировки по ресёрчу ему не нужны и могут сбивать с толку. Трактовка
+    метрик/раскладок — целиком за специалистом."""
 
     consent_ok: bool = False
     thresholds_version: int | None = None
@@ -245,25 +239,43 @@ class PsychoEmotionalSection(BaseModel):
     so_level: _PsychoSoLevel
     vk_value: float  # 0.2–5.0
     vk_level: _PsychoVkLevel
-    structural: PsychoEmotionalStructural
 
     # Отдельный красный флаг (§B6): чёрный (ID 7) на позиции 1 — подростковый
     # маркер риска, подсветка для беседы, не автоматический вывод.
     black_first: bool
 
-    # Готовые тексты-подсказки специалисту, уже упорядочены по приоритету (§8).
-    # Статические шаблоны, без генерации ИИ.
-    hints: list[str] = Field(default_factory=list)
+    model_config = _model_config
 
+
+class MacFeedItem(BaseModel):
+    """Один пункт ленты §C: вопрос-стимул → карта(и) → дословный текст
+    ребёнка + нейтральный контекст, без выводов."""
+
+    exercise_code: str
+    exercise_title: str
+    stimulus_question: str
+    # Готовые абсолютные URL (STORAGE_PUBLIC_BASE_URL + mac_cards.image_path,
+    # см. app/integrations/storage/urls.py) — тот же приём, что у
+    # University.image_url. Файлы лежат в MEDIA_DIR, отдаются nginx `/media/`,
+    # не в этом репозитории и не во фронтенде.
+    card_image_urls: list[str]
+    followup_questions: list[str]
+    followup_answers: list[str]  # дословно, по одному на каждый followup_questions[i]
+    time_spent_ms: int
+    revision_count: int
     model_config = _model_config
 
 
 class MacSection(BaseModel):
     """МАК — метафорические ассоциативные карты. Без скоринга и
-    ИИ-интерпретации (PRO-282 §4): Фаза 3 наполняет это лентой
-    "стимул → карта → тексты", собранной из таблиц `mac_*`."""
+    ИИ-интерпретации (PRO-282 §4): лента "стимул → карта → тексты" из
+    последней `mac_sessions`. Сравнительный вид E4 и рабочее поле
+    специалиста (заметки/резюме, PRO-318) в этой версии не собраны —
+    E4/workspace не реализованы, см. отчёт по тикетам."""
 
     consent_ok: bool = False
+    completed: bool = False
+    feed: list[MacFeedItem] = Field(default_factory=list)
     model_config = _model_config
 
 

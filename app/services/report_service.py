@@ -10,17 +10,20 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings, validity_thresholds
+from app.integrations.storage.urls import build_public_url
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.assessment_validity import AssessmentValidity
 from app.models.consent import CONSENT_SCOPE_PSYCH_BLOCK
 from app.models.direction import Direction
+from app.models.mac import MacCard, MacExercise, MacResponse, MacSession
 from app.models.profile import AgeGroup, Profile
 from app.models.psychoemotional_run import PsychoEmotionalRun
 from app.models.user import User, UserRole
 from app.schemas.report_narrative import ReportNarrativeOutput
 from app.schemas.result_v2 import (
+    MacFeedItem,
     MacSection,
     MiResultResponse,
     PsychoEmotionalHistoryItem,
@@ -48,7 +51,6 @@ from app.services import (
 )
 from app.services.bigfive_content import strength_phrases
 from app.services.motivation_content import highlight_phrases as motivation_highlight_phrases
-from app.services.psychoemotional import hints as psychoemotional_hints
 from app.services.psychoemotional import scoring as psychoemotional_scoring
 from app.services.report_narrative_service import generate_report_narrative
 
@@ -421,22 +423,61 @@ async def _build_psychoemotional_section(
         so_level=m["so"]["level"],
         vk_value=m["vk"]["value"],
         vk_level=m["vk"]["level"],
-        structural=m["structural"],
         black_first=list(latest.list2)[0] == 7,
-        hints=[
-            psychoemotional_hints.TEMPLATES[key]
-            for key in (latest.hint_keys or [])
-            if key in psychoemotional_hints.TEMPLATES
-        ],
     )
 
 
 async def _build_mac_section(
     assessment_id: uuid.UUID, db: AsyncSession, *, consent_ok: bool
 ) -> MacSection | None:
-    """Фаза 3 (PRO-314…PRO-318) assembles this feed from the `mac_*` history
-    tables. No scoring, no AI (PRO-282 §4). None until then."""
-    return None
+    """Лента §C: по каждому упражнению — вопрос-стимул → карта(ы) →
+    дословные тексты, плюс нейтральный контекст (`time_spent_ms`/
+    `revision_count`). `None`, пока по ассессменту нет сессии МАК. Никакого
+    сравнительного вида E4 / рабочего поля специалиста — не реализованы в
+    этой версии (см. отчёт по тикетам PRO-314…318)."""
+    session = (
+        await db.execute(
+            select(MacSession).where(MacSession.assessment_id == assessment_id)
+        )
+    ).scalar_one_or_none()
+    if session is None:
+        return None
+
+    rows = (
+        await db.execute(
+            select(MacResponse, MacExercise)
+            .join(MacExercise, MacResponse.exercise_id == MacExercise.id)
+            .where(MacResponse.session_id == session.id)
+            .order_by(MacExercise.order)
+        )
+    ).all()
+    if not rows:
+        return None
+
+    card_ids = {uuid.UUID(cid) for response, _ in rows for cid in response.card_ids}
+    cards = (
+        await db.execute(select(MacCard).where(MacCard.id.in_(card_ids)))
+    ).scalars().all() if card_ids else []
+    url_by_id = {str(c.id): build_public_url(c.image_path) for c in cards}
+
+    feed = [
+        MacFeedItem(
+            exercise_code=exercise.code,
+            exercise_title=exercise.title,
+            stimulus_question=exercise.stimulus_question,
+            card_image_urls=[url_by_id[cid] for cid in response.card_ids if cid in url_by_id],
+            followup_questions=exercise.followup_questions,
+            followup_answers=response.followup_answers,
+            time_spent_ms=response.time_spent_ms,
+            revision_count=response.revision_count,
+        )
+        for response, exercise in rows
+    ]
+    return MacSection(
+        consent_ok=consent_ok,
+        completed=session.completed_at is not None,
+        feed=feed,
+    )
 
 
 async def _attach_psych_sections(

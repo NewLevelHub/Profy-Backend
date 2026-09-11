@@ -22,6 +22,20 @@ if [ -z "$(find "$MEDIA_DIR/universities" -maxdepth 1 -name '*.webp' -print -qui
   echo "         scripts/export_university_photos.py + scripts/generate_card_thumbnails.py."
 fi
 
+# МАК cards — same host-folder-via-nginx setup as university photos, just a
+# second subfolder of the same MEDIA_DIR (PRO-314/315). NOT in git — the
+# `mac-cards/` folder (18 .webp files as of the PRO-282 demo deck) is handed
+# over as a ready build artifact and dropped straight into MEDIA_DIR, same as
+# `universities/` already is; nothing here regenerates it from source.
+# Missing folder is not fatal — draw/response endpoints still work, the
+# report feed just has no image to show.
+mkdir -p "$MEDIA_DIR/mac-cards"
+if [ -z "$(find "$MEDIA_DIR/mac-cards" -maxdepth 1 -name '*.webp' -print -quit 2>/dev/null)" ]; then
+  echo "WARNING: no cards in '$MEDIA_DIR/mac-cards' — the МАК block will draw cards with no image."
+  echo "         Get the mac-cards/ folder from the team share, or rebuild it locally:"
+  echo "         scripts/export_mac_cards.py (reads MEDIA_DIR/mac-cards-raw/, not in git either)."
+fi
+
 # --remove-orphans clears the old minio / minio-init containers on machines
 # that ran the pre-filesystem stack.
 docker compose up -d --build --remove-orphans
@@ -58,6 +72,16 @@ set +e
   else
     echo "Photo check: '$MEDIA_DIR/universities' has no *.webp — build it with scripts/export_university_photos.py"
   fi
+
+  _mac_file=$(find "$MEDIA_DIR/mac-cards" -maxdepth 1 -name '*.webp' -print -quit 2>/dev/null)
+  if [ -n "$_mac_file" ]; then
+    _mac_name=$(basename "$_mac_file")
+    _code=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost/media/mac-cards/${_mac_name}")
+    echo "MAC card check: GET /media/mac-cards/${_mac_name} -> HTTP ${_code} (expect 200)"
+  else
+    echo "MAC card check: '$MEDIA_DIR/mac-cards' has no *.webp — get the folder from the team share"
+    echo "                or rebuild it locally with scripts/export_mac_cards.py"
+  fi
 }
 set -e
 
@@ -78,6 +102,12 @@ docker-compose exec api python scripts/seed_question_pairs.py
 docker-compose exec api python scripts/seed_motivation_statements.py
 docker-compose exec api python scripts/seed_motivation_pairs.py
 # Ожидается: Total pairs in bank: 18
+
+# МАК — колода + конфиг упражнений (PRO-314/315). Cards seed first: exercises
+# don't reference specific card ids, but keeping the deck in place before the
+# config is the safer order if that ever changes.
+docker-compose exec api python scripts/seed_mac_cards.py
+docker-compose exec api python scripts/seed_mac_exercises.py
 
 docker-compose exec api python scripts/seed_riasec_directions.py
 # Direction description/skills_needed/subjects_to_develop/first_steps — empty

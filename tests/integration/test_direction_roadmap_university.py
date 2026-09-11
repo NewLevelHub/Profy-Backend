@@ -150,10 +150,17 @@ async def test_program_row_for_direction_validates_membership(db_session: AsyncS
     db_session.add(university)
     await db_session.flush()
 
+    # Program.profession_slugs is now a read-only view over the M2M
+    # `directions` relationship (program_directions table) — tag membership
+    # by assigning an actual Direction row, not the old JSONB array kwarg.
+    other_direction = Direction(name="Other Direction", slug="other-direction", holland_code="RIA")
+    db_session.add(other_direction)
+    await db_session.flush()
+
     program = Program(
         university_id=university.id,
         name="Test Program",
-        profession_slugs=["other-direction"],
+        directions=[other_direction],
         language="ru",
     )
     db_session.add(program)
@@ -170,6 +177,23 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
 ):
     assessment = await _make_assessment(db_session, AssessmentGoal.profession)
 
+    # _upsert_direction_roadmap now takes the Direction row itself (reads
+    # .name/.skills_needed/.subjects_to_develop/.holland_code for the
+    # resource-catalog match) — a bare name string used to be enough.
+    # Transient (not persisted) is fine: the function only reads attributes.
+    direction = Direction(name="Architecture", slug=SLUG, holland_code="RIA")
+
+    # direction_roadmaps.program_id is FK-constrained to programs.id now —
+    # random uuid4()s (the old fixture) no longer insert. Program A/B must
+    # be real, persisted rows.
+    university = University(name="Test University", country="Казахстан", city="Алматы")
+    db_session.add(university)
+    await db_session.flush()
+    program_a = Program(university_id=university.id, name="Program A", language="ru")
+    program_b = Program(university_id=university.id, name="Program B", language="ru")
+    db_session.add_all([program_a, program_b])
+    await db_session.flush()
+
     plan_a = roadmap_builder._DirectionPlan(
         target=RoadmapTarget(role="Архитектор", why="Подходит", horizon_years=4),
         growth_focus=GrowthFocus(
@@ -183,7 +207,7 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
         university_track=UniversityTrack(specialties=["Архитектура"], prepare=["ЕНТ"]),
         university_requirements=[],
         program_fit=ProgramFit(
-            program_id=uuid.uuid4(),
+            program_id=program_a.id,
             program_name="Program A",
             university_name="University A",
             subjects=[],
@@ -203,7 +227,7 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
         university_track=UniversityTrack(specialties=["Архитектура"], prepare=["ЕНТ"]),
         university_requirements=[],
         program_fit=ProgramFit(
-            program_id=uuid.uuid4(),
+            program_id=program_b.id,
             program_name="Program B",
             university_name="University B",
             subjects=[],
@@ -214,7 +238,7 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
     roadmap_first = await roadmap_builder._upsert_direction_roadmap(
         assessment.id,
         SLUG,
-        "Architecture",
+        direction,
         plan_a,
         db_session,
         plan_a.program_fit.program_id,
@@ -224,7 +248,7 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
     roadmap_second = await roadmap_builder._upsert_direction_roadmap(
         assessment.id,
         SLUG,
-        "Architecture",
+        direction,
         plan_b,
         db_session,
         plan_b.program_fit.program_id,

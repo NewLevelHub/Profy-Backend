@@ -1,9 +1,15 @@
 """Триггер расчёта психоэмоционального теста (PRO-307). Вызывается из
 `report_service` при формировании основного отчёта — изолированно: исключение
 логируется, отчёт отдаётся. Наполняет ПОСЛЕДНЮЮ строку `psychoemotional_runs`
-(metrics + hint_keys + thresholds_version), флаг достоверности прохождения
+(metrics + thresholds_version), флаг достоверности прохождения
 (`validity_flag` + `validity_reasons`, §B7 / PRO-308) и свод в
 `AnalysisResult.psychoemotional`.
+
+Текстовые подсказки специалисту (был каталог `hints.py` / `psychoemotional_
+hints.json`, PRO-304/307) убраны по решению владельца: адресат раздела —
+дипломированный психолог, готовые формулировки, составленные по ресёрчу, ему
+не нужны и могут сбивать с толку. Метрики/раскладки остаются — трактовка
+целиком за специалистом.
 """
 import uuid
 
@@ -12,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult
 from app.models.psychoemotional_run import PsychoEmotionalRun
-from app.services.psychoemotional import engine, hints, validity
+from app.services.psychoemotional import engine, validity
 
 
 async def _latest_run(
@@ -44,9 +50,7 @@ async def score_and_store(
         await db.commit()
         return None
 
-    assembled = hints.assemble(metrics)
     run.metrics = metrics.as_dict()
-    run.hint_keys = assembled["hint_keys"]
     run.thresholds_version = metrics.thresholds_version
 
     # Флаг достоверности прохождения (§B7 / PRO-308) — считается тем же проходом,
