@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import engine, get_db
 from app.main import app as fastapi_app
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.services import (
     assessment_shared,
     auth_service,
@@ -112,4 +112,44 @@ async def test_user(db_session: AsyncSession) -> User:
 @pytest_asyncio.fixture
 async def auth_headers(test_user: User) -> dict[str, str]:
     token = auth_service.create_jwt_token(test_user.id)
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest_asyncio.fixture
+async def admin_user(db_session: AsyncSession) -> User:
+    user = User(
+        email=f"{uuid.uuid4()}@example.test",
+        hashed_password=auth_service.hash_password("Testpass123!"),
+        is_active=True,
+        is_verified=True,
+        role=UserRole.admin,
+    )
+    db_session.add(user)
+    await db_session.flush()
+    return user
+
+
+@pytest_asyncio.fixture
+async def admin_headers(admin_user: User) -> dict[str, str]:
+    token = auth_service.create_jwt_token(admin_user.id)
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest_asyncio.fixture
+async def psychologist_user(db_session: AsyncSession) -> User:
+    user = User(
+        email=f"{uuid.uuid4()}@example.test",
+        hashed_password=auth_service.hash_password("Testpass123!"),
+        is_active=True,
+        is_verified=True,
+        role=UserRole.psychologist,
+    )
+    db_session.add(user)
+    await db_session.flush()
+    return user
+
+
+@pytest_asyncio.fixture
+async def psychologist_headers(psychologist_user: User) -> dict[str, str]:
+    token = auth_service.create_jwt_token(psychologist_user.id)
     return {"Authorization": f"Bearer {token}"}

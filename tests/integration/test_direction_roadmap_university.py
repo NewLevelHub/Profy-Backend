@@ -150,12 +150,14 @@ async def test_program_row_for_direction_validates_membership(db_session: AsyncS
     db_session.add(university)
     await db_session.flush()
 
-    program = Program(
-        university_id=university.id,
-        name="Test Program",
-        profession_slugs=["other-direction"],
-        language="ru",
+    other_direction = Direction(
+        name="Other direction", slug=f"other-direction-{uuid.uuid4()}", holland_code="RIS"
     )
+    db_session.add(other_direction)
+    await db_session.flush()
+
+    program = Program(university_id=university.id, name="Test Program", language="ru")
+    program.directions = [other_direction]
     db_session.add(program)
     await db_session.flush()
 
@@ -170,6 +172,16 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
 ):
     assessment = await _make_assessment(db_session, AssessmentGoal.profession)
 
+    # direction_roadmaps.program_id is a real FK now, so the two plans have to
+    # point at rows that exist — a bare uuid4() is rejected at insert time.
+    university = University(name=f"Uni {uuid.uuid4()}", country="Казахстан", city="Алматы")
+    db_session.add(university)
+    await db_session.flush()
+    program_a = Program(university_id=university.id, name="Program A", language="ru")
+    program_b = Program(university_id=university.id, name="Program B", language="ru")
+    db_session.add_all([program_a, program_b])
+    await db_session.flush()
+
     plan_a = roadmap_builder._DirectionPlan(
         target=RoadmapTarget(role="Архитектор", why="Подходит", horizon_years=4),
         growth_focus=GrowthFocus(
@@ -183,7 +195,7 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
         university_track=UniversityTrack(specialties=["Архитектура"], prepare=["ЕНТ"]),
         university_requirements=[],
         program_fit=ProgramFit(
-            program_id=uuid.uuid4(),
+            program_id=program_a.id,
             program_name="Program A",
             university_name="University A",
             subjects=[],
@@ -203,7 +215,7 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
         university_track=UniversityTrack(specialties=["Архитектура"], prepare=["ЕНТ"]),
         university_requirements=[],
         program_fit=ProgramFit(
-            program_id=uuid.uuid4(),
+            program_id=program_b.id,
             program_name="Program B",
             university_name="University B",
             subjects=[],
@@ -211,10 +223,14 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
         ),
     )
 
+    direction = Direction(name="Architecture", slug=SLUG, holland_code="RIA")
+    db_session.add(direction)
+    await db_session.flush()
+
     roadmap_first = await roadmap_builder._upsert_direction_roadmap(
         assessment.id,
         SLUG,
-        "Architecture",
+        direction,
         plan_a,
         db_session,
         plan_a.program_fit.program_id,
@@ -224,7 +240,7 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
     roadmap_second = await roadmap_builder._upsert_direction_roadmap(
         assessment.id,
         SLUG,
-        "Architecture",
+        direction,
         plan_b,
         db_session,
         plan_b.program_fit.program_id,

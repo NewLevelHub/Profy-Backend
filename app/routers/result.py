@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_student_user
 from app.models.assessment import Assessment
 from app.models.profile import Profile
 from app.models.user import User
@@ -47,7 +47,7 @@ async def _require_assessment_access(
 @router.post("/generate", response_model=ResultV2Schema)
 async def generate_report(
     data: GenerateReportRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> ResultResponseV2:
     await _require_assessment_access(data.assessment_id, current_user, db)
@@ -57,7 +57,7 @@ async def generate_report(
 @router.get("/{assessment_id}", response_model=ResultV2Schema)
 async def get_report(
     assessment_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> ResultResponseV2:
     await _require_assessment_access(assessment_id, current_user, db)
@@ -72,7 +72,7 @@ async def get_report(
 @router.post("/feedback", response_model=ProductFeedbackResponse)
 async def submit_feedback(
     data: ProductFeedbackCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> ProductFeedbackResponse:
     await _require_assessment_access(data.assessment_id, current_user, db)
@@ -83,7 +83,7 @@ async def submit_feedback(
 async def get_goal_context(
     assessment_id: uuid.UUID,
     program_id: uuid.UUID | None = None,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> GoalOverlayResponse:
     from app.services import goal_overlay_service

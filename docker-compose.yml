@@ -1,6 +1,10 @@
 services:
   db:
     image: postgres:16-alpine
+    # See docker-compose.prod.yml for why: kills sessions left idling inside
+    # an open transaction (orphaned client) after 5 minutes instead of
+    # holding row locks indefinitely.
+    command: ["postgres", "-c", "idle_in_transaction_session_timeout=300000"]
     environment:
       POSTGRES_DB: profi_db
       POSTGRES_USER: profi_user
