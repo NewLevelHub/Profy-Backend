@@ -2,6 +2,7 @@
 import json
 
 from app.models.direction import Direction
+from app.prompts._locale import glossary_block, language_directive
 from app.schemas.student_context import StudentContext
 
 QUESTION_COUNT = 7
@@ -29,7 +30,11 @@ QUESTIONS_SCHEMA: dict = {
     },
 }
 
-_QUESTIONS_SYSTEM = f"""\
+
+def _questions_system(locale: str = "ru", direction_slug: str | None = None) -> str:
+    glossary = glossary_block(locale, direction_slug=direction_slug)
+    glossary_section = f"\n\n{glossary}" if glossary else ""
+    return f"""\
 Ты — тёплый карьерный наставник для подростков. По направлению и данным ученика \
 составь ровно {QUESTION_COUNT} наводящих вопросов: они помогают ребёнку понять, \
 подходит ли ему это направление и готов ли он в нём развиваться.
@@ -43,8 +48,8 @@ _QUESTIONS_SYSTEM = f"""\
 Опирайся на интересы, кружки/секции (artifacts) и предметы ученика — вопросы должны \
 быть про него. Тон по возрасту: middle — проще; senior — взрослее. Обращайся на «ты».
 Каждый вопрос ребёнок оценивает по шкале «Совсем не про меня … Точно про меня», поэтому \
-формулируй как утверждение. kind = interest | readiness. Язык — русский. Строго JSON.\
-"""
+формулируй как утверждение. kind = interest | readiness. {language_directive(locale)} Строго JSON.{glossary_section}"""
+
 
 # ─── Verdict ────────────────────────────────────────────────────────────────
 
@@ -59,14 +64,21 @@ VERDICT_SCHEMA: dict = {
     },
 }
 
-_VERDICT_SYSTEM = """\
+
+def _verdict_system(locale: str = "ru", direction_slug: str | None = None) -> str:
+    glossary = glossary_block(locale, direction_slug=direction_slug)
+    glossary_section = f"\n\n{glossary}" if glossary else ""
+    return f"""\
 Ты — тёплый наставник для подростков. На основе направления, данных ученика и его \
 ответов на наводящие вопросы дай короткий вывод. Тон оптимистичный, поддерживающий, \
 без давления. Обращайся на «ты».
 fit_summary — 2-3 предложения: насколько направление тебе подходит, опираясь на твои \
 ответы и интересы. readiness — одна из меток. note — 1 мягкий добрый совет, на что \
-обратить внимание. Язык — русский. Строго JSON.\
-"""
+обратить внимание. {language_directive(locale)} Строго JSON.{glossary_section}"""
+
+
+_QUESTIONS_SYSTEM = _questions_system("ru")
+_VERDICT_SYSTEM = _verdict_system("ru")
 
 
 def _direction_brief(direction: Direction) -> dict:
@@ -94,22 +106,24 @@ def _student_brief(context: StudentContext) -> dict:
 
 
 def build_questions_messages(
-    context: StudentContext, direction: Direction
+    context: StudentContext, direction: Direction, *, locale: str | None = None
 ) -> list[dict[str, str]]:
+    target_locale = locale or getattr(context, "locale", "ru")
     user = (
         f"НАПРАВЛЕНИЕ:\n{json.dumps(_direction_brief(direction), ensure_ascii=False)}\n\n"
         f"УЧЕНИК:\n{json.dumps(_student_brief(context), ensure_ascii=False)}\n\n"
         f"Составь {QUESTION_COUNT} наводящих вопросов по схеме."
     )
     return [
-        {"role": "system", "content": _QUESTIONS_SYSTEM},
+        {"role": "system", "content": _questions_system(target_locale, direction_slug=direction.slug)},
         {"role": "user", "content": user},
     ]
 
 
 def build_verdict_messages(
-    context: StudentContext, direction: Direction, qa: list[dict[str, str]]
+    context: StudentContext, direction: Direction, qa: list[dict[str, str]], *, locale: str | None = None
 ) -> list[dict[str, str]]:
+    target_locale = locale or getattr(context, "locale", "ru")
     user = (
         f"НАПРАВЛЕНИЕ:\n{json.dumps(_direction_brief(direction), ensure_ascii=False)}\n\n"
         f"УЧЕНИК:\n{json.dumps(_student_brief(context), ensure_ascii=False)}\n\n"
@@ -117,6 +131,6 @@ def build_verdict_messages(
         "Дай короткий вывод по схеме."
     )
     return [
-        {"role": "system", "content": _VERDICT_SYSTEM},
+        {"role": "system", "content": _verdict_system(target_locale, direction_slug=direction.slug)},
         {"role": "user", "content": user},
     ]

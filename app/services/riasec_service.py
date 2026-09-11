@@ -6,12 +6,14 @@ from typing import Literal
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n import DEFAULT_LOCALE
 from app.models.direction import Direction
 from app.models.profile import AgeGroup
 from app.models.question import HollandType, Question, QuestionInstrument
 from app.models.user_response import UserResponse
 from app.services.age_tiers import visible_tiers
-from app.services.riasec_content import TYPE_ACTIVITIES
+from app.services.content_locale import localized_rows
+from app.services.riasec_content import type_activities
 from app.services.scoring_levels import LEVEL_HIGH_MIN, LEVEL_LOW_MAX, LEVEL_MEDIUM_MIN
 
 HOLLAND_ORDER: list[str] = ["R", "I", "A", "S", "E", "C"]
@@ -33,6 +35,11 @@ async def question_counts(db: AsyncSession, age_group: AgeGroup) -> dict[str, in
         .where(
             Question.instrument == QuestionInstrument.riasec,
             Question.age_tier.in_(visible_tiers(age_group)),
+            # Structural count — pin to `ru`, the canonical always-complete set,
+            # so it never doubles when `kk` rows exist (KZ-301). Scores computed
+            # against `kk` answers still normalize correctly: counts are equal
+            # across locales by the seed's structural-parity guarantee.
+            Question.locale == DEFAULT_LOCALE,
         )
         .group_by(Question.riasec_type)
     )
@@ -138,8 +145,10 @@ def career_match_score(user_code: list[str], direction_code: str) -> int:
 async def matched_careers(
     user_code: list[str], db: AsyncSession, limit: int = 10
 ) -> list[tuple[Direction, int]]:
-    result = await db.execute(select(Direction))
-    directions = list(result.scalars().all())
+    # Display path (names/descriptions are shown): request locale, per-direction
+    # fallback to `ru` (KZ-301). holland_code is identical across locales, so
+    # match scores and ordering are locale-independent.
+    directions = await localized_rows(db, select(Direction), Direction, key="slug")
     scored = [(d, career_match_score(user_code, d.holland_code)) for d in directions]
     # Tie-break on slug (ascending) so equal scores don't depend on DB row
     # order — same convention as top_code's HOLLAND_ORDER tie-break above.
@@ -222,13 +231,13 @@ def development_plan(
     the single weakest type — unless the student explicitly dislikes it (aversion)."""
     reinforce: list[str] = []
     for letter in code:
-        reinforce.extend(TYPE_ACTIVITIES.get(letter, [])[:2])
+        reinforce.extend(type_activities().get(letter, [])[:2])
 
     compensate: list[str] = []
     for letter in weaknesses:
         if _aversion_ratio(letter, aversion_counts, counts) >= _AVERSION_DISQUALIFY_RATIO:
             continue
-        compensate = TYPE_ACTIVITIES.get(letter, [])[:2]
+        compensate = type_activities().get(letter, [])[:2]
         break
 
     return {"reinforce": reinforce, "compensate": compensate}

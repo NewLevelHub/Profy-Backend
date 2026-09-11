@@ -4,6 +4,8 @@ from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, EmailStr, Field, field_validator
 
+from app.i18n import KNOWN_LOCALES
+
 # Emails are matched case-insensitively everywhere (DB lookups, Google
 # account linking) — normalizing once at the request boundary keeps every
 # call site consistent instead of relying on each service function to do it.
@@ -41,6 +43,7 @@ class UserInfo(BaseModel):
     id: uuid.UUID
     email: str
     is_admin: bool = False
+    locale: str = "ru"
 
     model_config = {"from_attributes": True}
 
@@ -72,8 +75,24 @@ class UserResponse(BaseModel):
     is_active: bool
     is_verified: bool
     is_admin: bool
+    locale: str = "ru"
 
     model_config = {"from_attributes": True}
+
+
+class UpdateMeRequest(BaseModel):
+    """PATCH /auth/me — currently only the UI locale. Any value in
+    `KNOWN_LOCALES` is accepted and stored (a `kk` choice is honored only from
+    KZ-603 on); anything else is a 422."""
+
+    locale: str
+
+    @field_validator("locale")
+    @classmethod
+    def _known_locale(cls, v: str) -> str:
+        if v not in KNOWN_LOCALES:
+            raise ValueError(f"locale must be one of {sorted(KNOWN_LOCALES)}")
+        return v
 
 
 class ForgotPasswordRequest(BaseModel):

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
+from app.i18n import SUPPORTED_LOCALES, set_locale
 from app.models.user import User
 
 _bearer = HTTPBearer()
@@ -40,6 +41,13 @@ async def get_current_user(
 
     if user is None or not user.is_active:
         raise credentials_exception
+
+    # users.locale wins over the Accept-Language header the middleware already
+    # applied. getattr guard: the column arrives in KZ-103; this is a no-op
+    # until then, and until "kk" is a supported locale (KZ-603).
+    user_locale = getattr(user, "locale", None)
+    if user_locale in SUPPORTED_LOCALES:
+        set_locale(user_locale)
 
     return user
 

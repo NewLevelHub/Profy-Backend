@@ -12,6 +12,7 @@ from app.models.question import BigFiveDomain, HollandType, Keyed, MIType, Quest
 
 class AdminQuestionListItem(BaseModel):
     id: uuid.UUID
+    locale: str
     instrument: QuestionInstrument
     text: str
     order: int
@@ -35,6 +36,7 @@ class AdminQuestionListResponse(BaseModel):
 
 class AdminQuestionDetail(BaseModel):
     id: uuid.UUID
+    locale: str
     instrument: QuestionInstrument
     riasec_type: HollandType | None
     bigfive_domain: BigFiveDomain | None
@@ -68,6 +70,7 @@ class AdminQuestionUpdateRequest(BaseModel):
 
 class AdminQuestionPairListItem(BaseModel):
     id: uuid.UUID
+    locale: str
     instrument: QuestionInstrument
     age_tier: AgeGroup
     pair_index: int
@@ -87,6 +90,7 @@ class AdminQuestionPairListResponse(BaseModel):
 
 class AdminQuestionPairDetail(BaseModel):
     id: uuid.UUID
+    locale: str
     instrument: QuestionInstrument
     age_tier: AgeGroup
     pair_index: int
@@ -115,6 +119,7 @@ class AdminQuestionPairUpdateRequest(BaseModel):
 
 class AdminMotivationStatementListItem(BaseModel):
     id: uuid.UUID
+    locale: str
     triplet_index: int
     order: int
     category: MotivationCategory
@@ -135,6 +140,7 @@ class AdminMotivationStatementListResponse(BaseModel):
 
 class AdminMotivationStatementDetail(BaseModel):
     id: uuid.UUID
+    locale: str
     triplet_index: int
     order: int
     category: MotivationCategory
@@ -156,6 +162,7 @@ class AdminMotivationStatementUpdateRequest(BaseModel):
 
 class AdminMotivationPairListItem(BaseModel):
     id: uuid.UUID
+    locale: str
     pair_index: int
     category_a: MotivationCategory
     category_b: MotivationCategory
@@ -175,6 +182,7 @@ class AdminMotivationPairListResponse(BaseModel):
 
 class AdminMotivationPairDetail(BaseModel):
     id: uuid.UUID
+    locale: str
     pair_index: int
     category_a: MotivationCategory
     category_b: MotivationCategory
@@ -197,6 +205,7 @@ class AdminMotivationPairUpdateRequest(BaseModel):
 
 class AdminDirectionListItem(BaseModel):
     id: uuid.UUID
+    locale: str
     name: str
     slug: str
     holland_code: str
@@ -216,6 +225,7 @@ class AdminDirectionListResponse(BaseModel):
 
 class AdminDirectionDetail(BaseModel):
     id: uuid.UUID
+    locale: str
     name: str
     slug: str
     holland_code: str

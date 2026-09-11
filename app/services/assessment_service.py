@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+from app.errors import AppError
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
 from app.models.question import Question
@@ -211,8 +212,9 @@ async def update_assessment_goal(
     age_group = await assessment_shared.get_profile_age_group(assessment.profile_id, db)
     if age_group == AgeGroup.junior:
         if goal != AssessmentGoal.explore or any(g != AssessmentGoal.explore for g in secondary_goals):
-            raise HTTPException(
+            raise AppError(
                 status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="goal_not_allowed_for_junior",
                 detail="Для младшей возрастной группы доступна только цель 'исследовать себя'",
             )
     # Backend mirror of the frontend gate (ASSESSMENT_GOAL_ALLOWED_AGE_GROUPS in
@@ -225,8 +227,9 @@ async def update_assessment_goal(
         if goal == AssessmentGoal.university or any(
             g == AssessmentGoal.university for g in secondary_goals
         ):
-            raise HTTPException(
+            raise AppError(
                 status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="admission_goal_not_allowed_for_middle",
                 detail="Для учеников 5-8 классов поступление пока недоступно как цель",
             )
 
@@ -234,8 +237,9 @@ async def update_assessment_goal(
     is_primary_changing = (assessment.goal != goal)
     if is_primary_changing and assessment.status == AssessmentStatus.completed:
         if assessment.goal_changed_count >= 3:
-            raise HTTPException(
+            raise AppError(
                 status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="goal_change_limit_reached",
                 detail="Достигнут лимит смены целей (максимум 3 раза)",
             )
         assessment.goal_changed_count += 1

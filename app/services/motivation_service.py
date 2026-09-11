@@ -13,10 +13,12 @@ from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n import DEFAULT_LOCALE
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.motivation import MotivationResponse, MotivationStatement
 from app.schemas.motivation import MotivationAnswerItem, SubmitMotivationResponse
 from app.services import assessment_shared
+from app.services.content_locale import localized_rows
 from scripts.motivation_statement_bank import CATEGORIES as CATEGORY_ORDER
 
 _MOST_POINTS = 2
@@ -25,20 +27,26 @@ _LEAST_POINTS = 0
 
 
 async def triplets(db: AsyncSession) -> dict[int, list[MotivationStatement]]:
-    result = await db.execute(
-        select(MotivationStatement).order_by(
-            MotivationStatement.triplet_index, MotivationStatement.order
-        )
+    # Display path: request locale, per-statement fallback to `ru` (KZ-301).
+    stmt = select(MotivationStatement).order_by(
+        MotivationStatement.triplet_index, MotivationStatement.order
     )
     grouped: dict[int, list[MotivationStatement]] = {}
-    for statement in result.scalars().all():
+    rows = await localized_rows(
+        db, stmt, MotivationStatement, key=("triplet_index", "order")
+    )
+    for statement in rows:
         grouped.setdefault(statement.triplet_index, []).append(statement)
     return grouped
 
 
 async def total_triplets(db: AsyncSession) -> int:
+    # Structural count — pin to `ru`, the canonical always-complete set, so the
+    # completion denominator never doubles when `kk` rows are added (KZ-301).
     result = await db.execute(
-        select(func.count(func.distinct(MotivationStatement.triplet_index)))
+        select(func.count(func.distinct(MotivationStatement.triplet_index))).where(
+            MotivationStatement.locale == DEFAULT_LOCALE
+        )
     )
     return result.scalar_one()
 

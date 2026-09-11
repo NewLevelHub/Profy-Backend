@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+from app.models.content_locale_column import locale_column
 from app.models.profile import AgeGroup
 
 
@@ -57,6 +58,10 @@ class Question(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
+    # KZ-301: `order` is the natural key (unique per locale by construction —
+    # the seed dedupes on (order, locale) in Python, no DB constraint so
+    # fixtures can still use a "don't-care" order=0).
+    locale: Mapped[str] = locale_column()
     instrument: Mapped[QuestionInstrument] = mapped_column(
         Enum(QuestionInstrument, name="question_instrument_enum"),
         nullable=False,

@@ -12,11 +12,13 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n import DEFAULT_LOCALE, SUPPORTED_LOCALES
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment
 from app.models.direction_inquiry import DirectionInquiry
 from app.models.profile import Profile
+from app.models.user import User
 from app.schemas.student_context import (
     ContextArtifact,
     ContextCareer,
@@ -104,7 +106,10 @@ async def build_student_context(
 
     analysis = (
         await db.execute(
-            select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+            select(AnalysisResult)
+            .where(AnalysisResult.assessment_id == assessment_id)
+            .order_by((AnalysisResult.locale == DEFAULT_LOCALE).desc())  # KZ-405: prefer ru row
+            .limit(1)
         )
     ).scalar_one_or_none()
 
@@ -131,6 +136,20 @@ async def build_student_context(
     # inquiry) sees the effective goal, never the raw stored one.
     effective_goal = assessment_shared.get_effective_goal(profile.age_group, assessment.goal)
 
+    user = (
+        await db.execute(select(User).where(User.id == profile.user_id))
+    ).scalar_one_or_none()
+    # SUPPORTED_LOCALES, not KNOWN_LOCALES: the only consumers of this context
+    # are the goal-roadmap / direction-roadmap / direction-inquiry prompt
+    # builders. Those generation paths have no `use_locale()` wrapper, so a
+    # `kk` here would send a Kazakh language_directive while every get_locale()
+    # label in the same prompt stayed Russian — a half-translated artifact,
+    # and Kazakh AI output shipping before the KZ-603 enable PR. Keeping this
+    # gated to SUPPORTED_LOCALES (== ('ru',) until KZ-603) matches
+    # app/dependencies.py. If those paths are revived and wrapped like the
+    # report path (KZ-403), switch this back to KNOWN_LOCALES.
+    locale = user.locale if user and user.locale in SUPPORTED_LOCALES else DEFAULT_LOCALE
+
     return StudentContext(
         name=profile.name,
         age=profile.age,
@@ -139,6 +158,7 @@ async def build_student_context(
         city=profile.city,
         country=profile.country,
         language=profile.language,
+        locale=locale,
         subjects_liked=list(profile.subjects_liked or []),
         subjects_disliked=list(profile.subjects_disliked or []),
         subjects_easy=list(profile.subjects_easy or []),

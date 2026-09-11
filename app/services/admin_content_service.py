@@ -97,6 +97,7 @@ async def list_questions(
     instrument: QuestionInstrument | None = None,
     age_tier: AgeGroup | None = None,
     search: str | None = None,
+    locale: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> AdminQuestionListResponse:
@@ -107,14 +108,17 @@ async def list_questions(
         filters.append(Question.age_tier == age_tier)
     if search:
         filters.append(Question.text.ilike(f"%{search.strip()}%"))
+    if locale:
+        filters.append(Question.locale == locale)
 
     total, rows = await _count_and_paginate(
-        db, Question, filters, (Question.instrument.asc(), Question.order.asc()), page, limit
+        db, Question, filters, (Question.instrument.asc(), Question.order.asc(), Question.locale.asc()), page, limit
     )
 
     items = [
         AdminQuestionListItem(
             id=q.id,
+            locale=q.locale,
             instrument=q.instrument,
             text=q.text,
             order=q.order,
@@ -150,6 +154,7 @@ async def list_question_pairs(
     *,
     instrument: QuestionInstrument | None = None,
     age_tier: AgeGroup | None = None,
+    locale: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> AdminQuestionPairListResponse:
@@ -158,14 +163,17 @@ async def list_question_pairs(
         filters.append(QuestionPair.instrument == instrument)
     if age_tier:
         filters.append(QuestionPair.age_tier == age_tier)
+    if locale:
+        filters.append(QuestionPair.locale == locale)
 
     total, rows = await _count_and_paginate(
-        db, QuestionPair, filters, (QuestionPair.instrument.asc(), QuestionPair.pair_index.asc()), page, limit
+        db, QuestionPair, filters, (QuestionPair.instrument.asc(), QuestionPair.pair_index.asc(), QuestionPair.locale.asc()), page, limit
     )
 
     items = [
         AdminQuestionPairListItem(
             id=p.id,
+            locale=p.locale,
             instrument=p.instrument,
             age_tier=p.age_tier,
             pair_index=p.pair_index,
@@ -193,14 +201,19 @@ async def update_question_pair(
 async def list_motivation_statements(
     db: AsyncSession,
     *,
+    locale: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> AdminMotivationStatementListResponse:
+    filters = []
+    if locale:
+        filters.append(MotivationStatement.locale == locale)
+
     total, rows = await _count_and_paginate(
         db,
         MotivationStatement,
-        [],
-        (MotivationStatement.triplet_index.asc(), MotivationStatement.order.asc()),
+        filters,
+        (MotivationStatement.triplet_index.asc(), MotivationStatement.order.asc(), MotivationStatement.locale.asc()),
         page,
         limit,
     )
@@ -208,6 +221,7 @@ async def list_motivation_statements(
     items = [
         AdminMotivationStatementListItem(
             id=s.id,
+            locale=s.locale,
             triplet_index=s.triplet_index,
             order=s.order,
             category=s.category,
@@ -240,16 +254,22 @@ async def update_motivation_statement(
 async def list_motivation_pairs(
     db: AsyncSession,
     *,
+    locale: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> AdminMotivationPairListResponse:
+    filters = []
+    if locale:
+        filters.append(MotivationPair.locale == locale)
+
     total, rows = await _count_and_paginate(
-        db, MotivationPair, [], (MotivationPair.pair_index.asc(),), page, limit
+        db, MotivationPair, filters, (MotivationPair.pair_index.asc(), MotivationPair.locale.asc()), page, limit
     )
 
     items = [
         AdminMotivationPairListItem(
             id=p.id,
+            locale=p.locale,
             pair_index=p.pair_index,
             category_a=p.category_a,
             category_b=p.category_b,
@@ -278,18 +298,22 @@ async def list_directions(
     db: AsyncSession,
     *,
     search: str | None = None,
+    locale: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> AdminDirectionListResponse:
     filters = []
     if search:
         filters.append(Direction.name.ilike(f"%{search.strip()}%"))
+    if locale:
+        filters.append(Direction.locale == locale)
 
-    total, rows = await _count_and_paginate(db, Direction, filters, (Direction.name.asc(),), page, limit)
+    total, rows = await _count_and_paginate(db, Direction, filters, (Direction.name.asc(), Direction.locale.asc()), page, limit)
 
     items = [
         AdminDirectionListItem(
             id=d.id,
+            locale=d.locale,
             name=d.name,
             slug=d.slug,
             holland_code=d.holland_code,

@@ -20,10 +20,17 @@ import uuid
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n import DEFAULT_LOCALE
 from app.models.profile import AgeGroup
 from app.models.question import Keyed, Question, QuestionInstrument
 from app.models.user_response import UserResponse
 from app.services.age_tiers import visible_tiers
+
+# Structural counts pin to `ru`, the canonical always-complete question set, so
+# denominators never double once `kk` rows exist (KZ-301). The raw_scores /
+# facet_raw sums join user_responses, which already scope to the exact rows the
+# user answered, so those need no locale filter.
+_RU_ONLY = Question.locale == DEFAULT_LOCALE
 
 BIGFIVE_ORDER: list[str] = ["N", "E", "O", "A", "C"]
 
@@ -78,6 +85,7 @@ async def question_counts(db: AsyncSession, age_group: AgeGroup) -> dict[str, in
         .where(
             Question.instrument == QuestionInstrument.big_five,
             Question.age_tier.in_(visible_tiers(age_group)),
+            _RU_ONLY,
         )
         .group_by(Question.bigfive_domain)
     )
@@ -94,6 +102,7 @@ async def keying_counts(db: AsyncSession, age_group: AgeGroup) -> dict[str, tupl
         .where(
             Question.instrument == QuestionInstrument.big_five,
             Question.age_tier.in_(visible_tiers(age_group)),
+            _RU_ONLY,
         )
         .group_by(Question.bigfive_domain, Question.keyed)
     )
@@ -114,6 +123,7 @@ async def facet_keying_counts(
         .where(
             Question.instrument == QuestionInstrument.big_five,
             Question.age_tier.in_(visible_tiers(age_group)),
+            _RU_ONLY,
         )
         .group_by(Question.bigfive_domain, Question.facet, Question.keyed)
     )
@@ -216,6 +226,7 @@ async def facet_counts(db: AsyncSession, age_group: AgeGroup) -> dict[tuple[str,
         .where(
             Question.instrument == QuestionInstrument.big_five,
             Question.age_tier.in_(visible_tiers(age_group)),
+            _RU_ONLY,
         )
         .group_by(Question.bigfive_domain, Question.facet)
     )

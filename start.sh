@@ -106,6 +106,14 @@ docker-compose exec api python scripts/apply_direction_content.py
 # Requires `directions` seeded above (profession tags resolve by Direction slug).
 docker compose exec api python scripts/build_universities.py
 
+# Kazakh overlay for university/program descriptions (KZ-504/505). Reads ONE
+# committed file (scripts/data/catalog_descriptions_kk.json) and writes only
+# description_i18n['kk'] — the ru base columns are untouched, so it is safe to
+# re-run and a no-op until kk is enabled (KZ-603). Directions' kk content is
+# already handled by apply_direction_content.py above. Needs universities in
+# the DB, so it runs after build_universities.py.
+docker compose exec api python scripts/apply_catalog_descriptions_kk.py apply
+
 # University photo files are named by the pre-canonicalization slugs; the
 # dedup + canonical-slug pass renamed ~220 university slugs. Rename the
 # matching <slug>.webp / <slug>.card.webp (from scripts/data/slug_rename_map.json

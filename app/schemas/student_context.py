@@ -46,6 +46,7 @@ class StudentContext(BaseModel):
     city: str
     country: str
     language: str
+    locale: str = "ru"
     subjects_liked: list[str] = []
     subjects_disliked: list[str] = []
     subjects_easy: list[str] = []

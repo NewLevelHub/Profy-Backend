@@ -1,0 +1,866 @@
+[
+ {
+  "slug": "administrator-baz-dannyh",
+  "holland_code": "CRI",
+  "name_ru": "Администратор баз данных",
+  "name_kk": "Дерекқор әкімшісі"
+ },
+ {
+  "slug": "agronom",
+  "holland_code": "IRS",
+  "name_ru": "Агроном",
+  "name_kk": "Агроном"
+ },
+ {
+  "slug": "akter",
+  "holland_code": "AES",
+  "name_ru": "Актёр",
+  "name_kk": "Актёр"
+ },
+ {
+  "slug": "aktuariy",
+  "holland_code": "ISE",
+  "name_ru": "Актуарий",
+  "name_kk": "Актуарий"
+ },
+ {
+  "slug": "analitik-dannyh",
+  "holland_code": "ICE",
+  "name_ru": "Аналитик данных",
+  "name_kk": "Деректер талдаушысы"
+ },
+ {
+  "slug": "animator-2d-3d",
+  "holland_code": "ARI",
+  "name_ru": "Аниматор (2D/3D)",
+  "name_kk": "Аниматор (2D/3D)"
+ },
+ {
+  "slug": "arheolog",
+  "holland_code": "IRA",
+  "name_ru": "Археолог",
+  "name_kk": "Археолог"
+ },
+ {
+  "slug": "arhitektor",
+  "holland_code": "AIR",
+  "name_ru": "Архитектор",
+  "name_kk": "Сәулетші"
+ },
+ {
+  "slug": "arhivarius",
+  "holland_code": "CSE",
+  "name_ru": "Архивариус",
+  "name_kk": "Мұрағатшы"
+ },
+ {
+  "slug": "astronom",
+  "holland_code": "IRA",
+  "name_ru": "Астроном",
+  "name_kk": "Астроном"
+ },
+ {
+  "slug": "auditor",
+  "holland_code": "CSE",
+  "name_ru": "Аудитор",
+  "name_kk": "Аудитор"
+ },
+ {
+  "slug": "aviadispetcher",
+  "holland_code": "SER",
+  "name_ru": "Авиадиспетчер",
+  "name_kk": "Авиадиспетчер"
+ },
+ {
+  "slug": "bibliotekar",
+  "holland_code": "SAI",
+  "name_ru": "Библиотекарь",
+  "name_kk": "Кітапханашы"
+ },
+ {
+  "slug": "biolog",
+  "holland_code": "IRE",
+  "name_ru": "Биолог",
+  "name_kk": "Биолог"
+ },
+ {
+  "slug": "birzhevoy-broker",
+  "holland_code": "ESI",
+  "name_ru": "Биржевой брокер",
+  "name_kk": "Биржа брокері"
+ },
+ {
+  "slug": "biznes-perevodchik",
+  "holland_code": "SEA",
+  "name_ru": "Бизнес-переводчик",
+  "name_kk": "Бизнес-аудармашы"
+ },
+ {
+  "slug": "buhgalter",
+  "holland_code": "CSE",
+  "name_ru": "Бухгалтер",
+  "name_kk": "Бухгалтер"
+ },
+ {
+  "slug": "burovoy-inzhener-neftegazovoe-delo",
+  "holland_code": "RIE",
+  "name_ru": "Буровой инженер (нефтегазовое дело)",
+  "name_kk": "Бұрғылау инженері (мұнай-газ ісі)"
+ },
+ {
+  "slug": "data-engineer",
+  "holland_code": "ICR",
+  "name_ru": "Data Engineer",
+  "name_kk": "Data Engineer"
+ },
+ {
+  "slug": "defektolog",
+  "holland_code": "SAI",
+  "name_ru": "Дефектолог",
+  "name_kk": "Дефектолог"
+ },
+ {
+  "slug": "devops-inzhener",
+  "holland_code": "RCI",
+  "name_ru": "DevOps-инженер",
+  "name_kk": "DevOps-инженер"
+ },
+ {
+  "slug": "diplomat",
+  "holland_code": "ESA",
+  "name_ru": "Дипломат",
+  "name_kk": "Дипломат"
+ },
+ {
+  "slug": "direktor-po-logistike",
+  "holland_code": "ECR",
+  "name_ru": "Директор по логистике",
+  "name_kk": "Логистика директоры"
+ },
+ {
+  "slug": "direktor-po-marketingu",
+  "holland_code": "EAS",
+  "name_ru": "Директор по маркетингу",
+  "name_kk": "Маркетинг директоры"
+ },
+ {
+  "slug": "dizayner-interera",
+  "holland_code": "ARE",
+  "name_ru": "Дизайнер интерьера",
+  "name_kk": "Интерьер дизайнері"
+ },
+ {
+  "slug": "ekonomist-analitik",
+  "holland_code": "IAS",
+  "name_ru": "Экономист-аналитик",
+  "name_kk": "Экономист-талдаушы"
+ },
+ {
+  "slug": "epidemiolog",
+  "holland_code": "ICS",
+  "name_ru": "Эпидемиолог",
+  "name_kk": "Эпидемиолог"
+ },
+ {
+  "slug": "event-menedzher",
+  "holland_code": "ESC",
+  "name_ru": "Event-менеджер",
+  "name_kk": "Event-менеджер"
+ },
+ {
+  "slug": "farmatsevt",
+  "holland_code": "IES",
+  "name_ru": "Фармацевт",
+  "name_kk": "Фармацевт"
+ },
+ {
+  "slug": "filolog-lingvist",
+  "holland_code": "IAS",
+  "name_ru": "Филолог-лингвист",
+  "name_kk": "Филолог-лингвист"
+ },
+ {
+  "slug": "finansovyy-analitik",
+  "holland_code": "CSI",
+  "name_ru": "Финансовый аналитик",
+  "name_kk": "Қаржы талдаушысы"
+ },
+ {
+  "slug": "finansovyy-konsultant",
+  "holland_code": "ESR",
+  "name_ru": "Финансовый консультант",
+  "name_kk": "Қаржы кеңесшісі"
+ },
+ {
+  "slug": "finansovyy-kontroler",
+  "holland_code": "CEI",
+  "name_ru": "Финансовый контролёр",
+  "name_kk": "Қаржы бақылаушысы"
+ },
+ {
+  "slug": "fizik",
+  "holland_code": "IRE",
+  "name_ru": "Физик",
+  "name_kk": "Физик"
+ },
+ {
+  "slug": "fizioterapevt-massazhist",
+  "holland_code": "SIR",
+  "name_ru": "Физиотерапевт / Массажист",
+  "name_kk": "Физиотерапевт / Массажист"
+ },
+ {
+  "slug": "fotograf",
+  "holland_code": "ARE",
+  "name_ru": "Фотограф",
+  "name_kk": "Фотограф"
+ },
+ {
+  "slug": "genetik",
+  "holland_code": "ISR",
+  "name_ru": "Генетик",
+  "name_kk": "Генетик"
+ },
+ {
+  "slug": "geodezist",
+  "holland_code": "RIE",
+  "name_ru": "Геодезист",
+  "name_kk": "Геодезист"
+ },
+ {
+  "slug": "geolog",
+  "holland_code": "ICR",
+  "name_ru": "Геолог",
+  "name_kk": "Геолог"
+ },
+ {
+  "slug": "geymdizayner",
+  "holland_code": "ARI",
+  "name_ru": "Геймдизайнер",
+  "name_kk": "Гейм-дизайнер"
+ },
+ {
+  "slug": "gid-ekskursovod",
+  "holland_code": "SEA",
+  "name_ru": "Гид-экскурсовод",
+  "name_kk": "Гид-экскурсовод"
+ },
+ {
+  "slug": "gornyy-inzhener",
+  "holland_code": "RIE",
+  "name_ru": "Горный инженер",
+  "name_kk": "Тау-кен инженері"
+ },
+ {
+  "slug": "gosudarstvennyy-sluzhaschiy",
+  "holland_code": "SEC",
+  "name_ru": "Государственный служащий",
+  "name_kk": "Мемлекеттік қызметші"
+ },
+ {
+  "slug": "graficheskiy-dizayner",
+  "holland_code": "AIE",
+  "name_ru": "Графический дизайнер",
+  "name_kk": "График дизайнер"
+ },
+ {
+  "slug": "himik",
+  "holland_code": "IRE",
+  "name_ru": "Химик",
+  "name_kk": "Химик"
+ },
+ {
+  "slug": "hirurg",
+  "holland_code": "RIS",
+  "name_ru": "Хирург",
+  "name_kk": "Хирург"
+ },
+ {
+  "slug": "horeograf",
+  "holland_code": "AER",
+  "name_ru": "Хореограф",
+  "name_kk": "Хореограф"
+ },
+ {
+  "slug": "hr-menedzher",
+  "holland_code": "SEC",
+  "name_ru": "HR-менеджер",
+  "name_kk": "HR-менеджер"
+ },
+ {
+  "slug": "hudozhnik",
+  "holland_code": "ASI",
+  "name_ru": "Художник",
+  "name_kk": "Суретші"
+ },
+ {
+  "slug": "illyustrator",
+  "holland_code": "AIS",
+  "name_ru": "Иллюстратор",
+  "name_kk": "Иллюстратор"
+ },
+ {
+  "slug": "investitsionnyy-bankir",
+  "holland_code": "ESI",
+  "name_ru": "Инвестиционный банкир",
+  "name_kk": "Инвестициялық банкир"
+ },
+ {
+  "slug": "inzhener-ekolog",
+  "holland_code": "RIC",
+  "name_ru": "Инженер-эколог",
+  "name_kk": "Эколог инженері"
+ },
+ {
+  "slug": "inzhener-elektrik",
+  "holland_code": "REI",
+  "name_ru": "Инженер-электрик",
+  "name_kk": "Электр инженері"
+ },
+ {
+  "slug": "inzhener-energetik",
+  "holland_code": "RCE",
+  "name_ru": "Инженер-энергетик",
+  "name_kk": "Энергетик инженері"
+ },
+ {
+  "slug": "inzhener-himik",
+  "holland_code": "RCI",
+  "name_ru": "Инженер-химик",
+  "name_kk": "Химик инженері"
+ },
+ {
+  "slug": "inzhener-konstruktor",
+  "holland_code": "RIC",
+  "name_ru": "Инженер-конструктор",
+  "name_kk": "Конструктор инженері"
+ },
+ {
+  "slug": "inzhener-mehanik",
+  "holland_code": "RIS",
+  "name_ru": "Инженер-механик",
+  "name_kk": "Механика инженері"
+ },
+ {
+  "slug": "inzhener-po-avtomatizatsii-i-robototehnike",
+  "holland_code": "RIA",
+  "name_ru": "Инженер по автоматизации и робототехнике",
+  "name_kk": "Автоматтандыру және робототехника инженері"
+ },
+ {
+  "slug": "inzhener-po-kiberbezopasnosti",
+  "holland_code": "IRC",
+  "name_ru": "Инженер по кибербезопасности",
+  "name_kk": "Киберқауіпсіздік инженері"
+ },
+ {
+  "slug": "inzhener-stroitel",
+  "holland_code": "RIC",
+  "name_ru": "Инженер-строитель",
+  "name_kk": "Құрылыс инженері"
+ },
+ {
+  "slug": "inzhener-tehnolog-mashinostroenie",
+  "holland_code": "RCI",
+  "name_ru": "Инженер-технолог (машиностроение)",
+  "name_kk": "Технолог инженері (машина жасау)"
+ },
+ {
+  "slug": "iskusstvoved",
+  "holland_code": "AIE",
+  "name_ru": "Искусствовед",
+  "name_kk": "Өнертанушы"
+ },
+ {
+  "slug": "issledovatel-v-oblasti-biotehnologiy",
+  "holland_code": "IRS",
+  "name_ru": "Исследователь в области биотехнологий",
+  "name_kk": "Биотехнология саласындағы зерттеуші"
+ },
+ {
+  "slug": "istorik",
+  "holland_code": "IAS",
+  "name_ru": "Историк",
+  "name_kk": "Тарихшы"
+ },
+ {
+  "slug": "kompozitor",
+  "holland_code": "AIC",
+  "name_ru": "Композитор",
+  "name_kk": "Композитор"
+ },
+ {
+  "slug": "kreditnyy-analitik",
+  "holland_code": "CIE",
+  "name_ru": "Кредитный аналитик",
+  "name_kk": "Несие талдаушысы"
+ },
+ {
+  "slug": "landshaftnyy-dizayner",
+  "holland_code": "RAE",
+  "name_ru": "Ландшафтный дизайнер",
+  "name_kk": "Ландшафт дизайнері"
+ },
+ {
+  "slug": "lesnichiy",
+  "holland_code": "RIS",
+  "name_ru": "Лесничий",
+  "name_kk": "Орманшы"
+ },
+ {
+  "slug": "logist",
+  "holland_code": "CRE",
+  "name_ru": "Логист",
+  "name_kk": "Логист"
+ },
+ {
+  "slug": "logoped",
+  "holland_code": "SAI",
+  "name_ru": "Логопед",
+  "name_kk": "Логопед"
+ },
+ {
+  "slug": "marketolog",
+  "holland_code": "EAC",
+  "name_ru": "Маркетолог",
+  "name_kk": "Маркетолог"
+ },
+ {
+  "slug": "mashinist-lokomotiva",
+  "holland_code": "RES",
+  "name_ru": "Машинист локомотива",
+  "name_kk": "Локомотив машинисі"
+ },
+ {
+  "slug": "matematik",
+  "holland_code": "IAC",
+  "name_ru": "Математик",
+  "name_kk": "Математик"
+ },
+ {
+  "slug": "mediator-konfliktolog",
+  "holland_code": "SEA",
+  "name_ru": "Медиатор / Конфликтолог",
+  "name_kk": "Медиатор / Конфликтолог"
+ },
+ {
+  "slug": "meditsinskaya-sestra-medbrat",
+  "holland_code": "SIA",
+  "name_ru": "Медицинская сестра / медбрат",
+  "name_kk": "Мейіргер"
+ },
+ {
+  "slug": "meditsinskiy-laboratornyy-tehnolog",
+  "holland_code": "ISR",
+  "name_ru": "Медицинский лабораторный технолог",
+  "name_kk": "Медициналық зертханалық технолог"
+ },
+ {
+  "slug": "menedzher-po-prodazham",
+  "holland_code": "ESR",
+  "name_ru": "Менеджер по продажам",
+  "name_kk": "Сату менеджері"
+ },
+ {
+  "slug": "metallurg",
+  "holland_code": "RIC",
+  "name_ru": "Металлург",
+  "name_kk": "Металлург"
+ },
+ {
+  "slug": "meteorolog",
+  "holland_code": "ICR",
+  "name_ru": "Метеоролог",
+  "name_kk": "Метеоролог"
+ },
+ {
+  "slug": "mobile-razrabotchik",
+  "holland_code": "IRC",
+  "name_ru": "Mobile-разработчик",
+  "name_kk": "Mobile-әзірлеуші"
+ },
+ {
+  "slug": "modeler",
+  "holland_code": "ASR",
+  "name_ru": "Модельер",
+  "name_kk": "Модельер"
+ },
+ {
+  "slug": "modnyy-stilist",
+  "holland_code": "ASE",
+  "name_ru": "Модный стилист",
+  "name_kk": "Сән стилисі"
+ },
+ {
+  "slug": "muzykant-ispolnitel",
+  "holland_code": "ASI",
+  "name_ru": "Музыкант-исполнитель",
+  "name_kk": "Орындаушы музыкант"
+ },
+ {
+  "slug": "nalogovyy-konsultant",
+  "holland_code": "CES",
+  "name_ru": "Налоговый консультант",
+  "name_kk": "Салық кеңесшісі"
+ },
+ {
+  "slug": "neyrobiolog",
+  "holland_code": "IRE",
+  "name_ru": "Нейробиолог",
+  "name_kk": "Нейробиолог"
+ },
+ {
+  "slug": "notarius",
+  "holland_code": "CSE",
+  "name_ru": "Нотариус",
+  "name_kk": "Нотариус"
+ },
+ {
+  "slug": "nutritsiolog-dietolog",
+  "holland_code": "SIA",
+  "name_ru": "Нутрициолог / Диетолог",
+  "name_kk": "Нутрициолог / Диетолог"
+ },
+ {
+  "slug": "okeanolog-gidrolog",
+  "holland_code": "IRE",
+  "name_ru": "Океанолог / Гидролог",
+  "name_kk": "Океанолог / Гидролог"
+ },
+ {
+  "slug": "pedagog-psiholog",
+  "holland_code": "SAI",
+  "name_ru": "Педагог-психолог",
+  "name_kk": "Педагог-психолог"
+ },
+ {
+  "slug": "pediatr",
+  "holland_code": "ISA",
+  "name_ru": "Педиатр",
+  "name_kk": "Педиатр"
+ },
+ {
+  "slug": "pilot-grazhdanskoy-aviatsii",
+  "holland_code": "RCS",
+  "name_ru": "Пилот гражданской авиации",
+  "name_kk": "Азаматтық авиация ұшқышы"
+ },
+ {
+  "slug": "pisatel-kopirayter",
+  "holland_code": "ASI",
+  "name_ru": "Писатель / Копирайтер",
+  "name_kk": "Жазушы / Копирайтер"
+ },
+ {
+  "slug": "politseyskiy",
+  "holland_code": "SER",
+  "name_ru": "Полицейский",
+  "name_kk": "Полиция қызметкері"
+ },
+ {
+  "slug": "pr-menedzher",
+  "holland_code": "EAS",
+  "name_ru": "PR-менеджер",
+  "name_kk": "PR-менеджер"
+ },
+ {
+  "slug": "predprinimatel",
+  "holland_code": "EAI",
+  "name_ru": "Предприниматель",
+  "name_kk": "Кәсіпкер"
+ },
+ {
+  "slug": "prepodavatel-iskusstva",
+  "holland_code": "ASE",
+  "name_ru": "Преподаватель искусства",
+  "name_kk": "Өнер оқытушысы"
+ },
+ {
+  "slug": "prepodavatel-vuza",
+  "holland_code": "SEI",
+  "name_ru": "Преподаватель вуза",
+  "name_kk": "ЖОО оқытушысы"
+ },
+ {
+  "slug": "prodakt-menedzher",
+  "holland_code": "EIA",
+  "name_ru": "Продакт-менеджер",
+  "name_kk": "Өнім менеджері"
+ },
+ {
+  "slug": "proektnyy-menedzher",
+  "holland_code": "ECI",
+  "name_ru": "Проектный менеджер",
+  "name_kk": "Жоба менеджері"
+ },
+ {
+  "slug": "proforientolog-karernyy-konsultant",
+  "holland_code": "SAE",
+  "name_ru": "Профориентолог / Карьерный консультант",
+  "name_kk": "Кәсіптік бағдар маманы / Мансап кеңесшісі"
+ },
+ {
+  "slug": "prokuror",
+  "holland_code": "ECS",
+  "name_ru": "Прокурор",
+  "name_kk": "Прокурор"
+ },
+ {
+  "slug": "psihiatr",
+  "holland_code": "ISE",
+  "name_ru": "Психиатр",
+  "name_kk": "Психиатр"
+ },
+ {
+  "slug": "psiholog-issledovatel",
+  "holland_code": "IES",
+  "name_ru": "Психолог-исследователь",
+  "name_kk": "Психолог-зерттеуші"
+ },
+ {
+  "slug": "psiholog-konsultant",
+  "holland_code": "SAE",
+  "name_ru": "Психолог-консультант",
+  "name_kk": "Психолог-кеңесші"
+ },
+ {
+  "slug": "qa-inzhener-testirovschik",
+  "holland_code": "CRI",
+  "name_ru": "QA-инженер (тестировщик)",
+  "name_kk": "QA-инженер (тестілеуші)"
+ },
+ {
+  "slug": "razrabotchik-programmnogo-obespecheniya",
+  "holland_code": "IRC",
+  "name_ru": "Разработчик программного обеспечения",
+  "name_kk": "Бағдарламалық қамтамасыз ету әзірлеушісі"
+ },
+ {
+  "slug": "reabilitolog-ergoterapevt",
+  "holland_code": "SIE",
+  "name_ru": "Реабилитолог / Эрготерапевт",
+  "name_kk": "Реабилитолог / Эрготерапевт"
+ },
+ {
+  "slug": "rezhisser",
+  "holland_code": "AEC",
+  "name_ru": "Режиссёр",
+  "name_kk": "Режиссёр"
+ },
+ {
+  "slug": "rieltor",
+  "holland_code": "CES",
+  "name_ru": "Риелтор",
+  "name_kk": "Риелтор"
+ },
+ {
+  "slug": "sekretar-deloproizvoditel",
+  "holland_code": "CES",
+  "name_ru": "Секретарь-делопроизводитель",
+  "name_kk": "Хатшы-іс жүргізуші"
+ },
+ {
+  "slug": "shkolnyy-uchitel",
+  "holland_code": "SAE",
+  "name_ru": "Школьный учитель",
+  "name_kk": "Мектеп мұғалімі"
+ },
+ {
+  "slug": "sistemnyy-administrator",
+  "holland_code": "RIC",
+  "name_ru": "Системный администратор",
+  "name_kk": "Жүйелік әкімші"
+ },
+ {
+  "slug": "sistemnyy-analitik",
+  "holland_code": "IER",
+  "name_ru": "Системный аналитик",
+  "name_kk": "Жүйелік талдаушы"
+ },
+ {
+  "slug": "sotsialnyy-rabotnik",
+  "holland_code": "SEA",
+  "name_ru": "Социальный работник",
+  "name_kk": "Әлеуметтік қызметкер"
+ },
+ {
+  "slug": "spasatel-mchs",
+  "holland_code": "SRE",
+  "name_ru": "Спасатель МЧС",
+  "name_kk": "ТЖМ құтқарушысы"
+ },
+ {
+  "slug": "spetsialist-po-iskusstvennomu-intellektu",
+  "holland_code": "IRA",
+  "name_ru": "Специалист по искусственному интеллекту",
+  "name_kk": "Жасанды интеллект маманы"
+ },
+ {
+  "slug": "spetsialist-po-kadrovomu-deloproizvodstvu",
+  "holland_code": "CES",
+  "name_ru": "Специалист по кадровому делопроизводству",
+  "name_kk": "Кадрлық іс жүргізу маманы"
+ },
+ {
+  "slug": "spetsialist-po-mediakommunikatsiyam",
+  "holland_code": "ASE",
+  "name_ru": "Специалист по медиакоммуникациям",
+  "name_kk": "Медиакоммуникация маманы"
+ },
+ {
+  "slug": "spetsialist-po-rabote-s-molodezhyu",
+  "holland_code": "SEA",
+  "name_ru": "Специалист по работе с молодёжью",
+  "name_kk": "Жастармен жұмыс жөніндегі маман"
+ },
+ {
+  "slug": "spetsialist-po-standartizatsii-i-sertifikatsii",
+  "holland_code": "CRI",
+  "name_ru": "Специалист по стандартизации и сертификации",
+  "name_kk": "Стандарттау және сертификаттау маманы"
+ },
+ {
+  "slug": "spetsialist-po-tamozhennomu-delu",
+  "holland_code": "CEI",
+  "name_ru": "Специалист по таможенному делу",
+  "name_kk": "Кеден ісі жөніндегі маман"
+ },
+ {
+  "slug": "spetsialist-po-zakupkam",
+  "holland_code": "CEI",
+  "name_ru": "Специалист по закупкам",
+  "name_kk": "Сатып алу маманы"
+ },
+ {
+  "slug": "spetsialist-tehnicheskoy-podderzhki",
+  "holland_code": "CSR",
+  "name_ru": "Специалист технической поддержки",
+  "name_kk": "Техникалық қолдау маманы"
+ },
+ {
+  "slug": "sportivnyy-menedzher-agent",
+  "holland_code": "ERS",
+  "name_ru": "Спортивный менеджер / агент",
+  "name_kk": "Спорт менеджері / агенті"
+ },
+ {
+  "slug": "stomatolog",
+  "holland_code": "ISR",
+  "name_ru": "Стоматолог",
+  "name_kk": "Стоматолог"
+ },
+ {
+  "slug": "strahovoy-agent",
+  "holland_code": "ESC",
+  "name_ru": "Страховой агент",
+  "name_kk": "Сақтандыру агенті"
+ },
+ {
+  "slug": "strahovoy-anderrayter",
+  "holland_code": "CSE",
+  "name_ru": "Страховой андеррайтер",
+  "name_kk": "Сақтандыру андеррайтері"
+ },
+ {
+  "slug": "stsenarist",
+  "holland_code": "AIS",
+  "name_ru": "Сценарист",
+  "name_kk": "Сценарист"
+ },
+ {
+  "slug": "sudmedekspert-kriminalist",
+  "holland_code": "ISR",
+  "name_ru": "Судмедэксперт / Криминалист",
+  "name_kk": "Сот-медициналық сарапшы / Криминалист"
+ },
+ {
+  "slug": "sudya",
+  "holland_code": "CES",
+  "name_ru": "Судья",
+  "name_kk": "Судья"
+ },
+ {
+  "slug": "tehnolog-pischevogo-proizvodstva",
+  "holland_code": "RCI",
+  "name_ru": "Технолог пищевого производства",
+  "name_kk": "Тамақ өндірісінің технологы"
+ },
+ {
+  "slug": "teolog-religioved",
+  "holland_code": "SAI",
+  "name_ru": "Теолог / Религиовед",
+  "name_kk": "Теолог / Дінтанушы"
+ },
+ {
+  "slug": "trener-po-sportu",
+  "holland_code": "SRE",
+  "name_ru": "Тренер по спорту",
+  "name_kk": "Спорт жаттықтырушысы"
+ },
+ {
+  "slug": "upravlyayuschiy-fermerskim-hozyaystvom",
+  "holland_code": "ESR",
+  "name_ru": "Управляющий фермерским хозяйством",
+  "name_kk": "Фермер шаруашылығының басқарушысы"
+ },
+ {
+  "slug": "upravlyayuschiy-otelem-restoranom",
+  "holland_code": "ESR",
+  "name_ru": "Управляющий отелем / рестораном",
+  "name_kk": "Қонақүй / мейрамхана басқарушысы"
+ },
+ {
+  "slug": "urbanist-gradostroitel",
+  "holland_code": "AIR",
+  "name_ru": "Урбанист / Градостроитель",
+  "name_kk": "Урбанист / Қала құрылысшысы"
+ },
+ {
+  "slug": "ux-ui-dizayner",
+  "holland_code": "AIE",
+  "name_ru": "UX/UI-дизайнер",
+  "name_kk": "UX/UI-дизайнер"
+ },
+ {
+  "slug": "veterinar",
+  "holland_code": "IRS",
+  "name_ru": "Ветеринар",
+  "name_kk": "Ветеринар"
+ },
+ {
+  "slug": "voennyy-ofitser",
+  "holland_code": "RES",
+  "name_ru": "Военный (офицер)",
+  "name_kk": "Әскери қызметкер (офицер)"
+ },
+ {
+  "slug": "vospitatel-detskogo-sada",
+  "holland_code": "SAE",
+  "name_ru": "Воспитатель детского сада",
+  "name_kk": "Балабақша тәрбиешісі"
+ },
+ {
+  "slug": "vrach-obschey-praktiki",
+  "holland_code": "ISR",
+  "name_ru": "Врач общей практики",
+  "name_kk": "Жалпы практика дәрігері"
+ },
+ {
+  "slug": "yurist-advokat",
+  "holland_code": "ECS",
+  "name_ru": "Юрист / Адвокат",
+  "name_kk": "Заңгер / Адвокат"
+ },
+ {
+  "slug": "zhurnalist",
+  "holland_code": "ASE",
+  "name_ru": "Журналист",
+  "name_kk": "Журналист"
+ },
+ {
+  "slug": "zvukorezhisser",
+  "holland_code": "ARI",
+  "name_ru": "Звукорежиссёр",
+  "name_kk": "Дыбыс режиссёрі"
+ }
+]

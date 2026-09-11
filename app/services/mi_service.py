@@ -8,11 +8,12 @@ from typing import Literal
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n import DEFAULT_LOCALE
 from app.models.profile import AgeGroup
 from app.models.question import Question, QuestionInstrument
 from app.models.user_response import UserResponse
 from app.services.age_tiers import visible_tiers
-from app.services.mi_content import MI_ACTIVITIES
+from app.services.mi_content import mi_activities
 from app.services.scoring_levels import LEVEL_HIGH_MIN, LEVEL_LOW_MAX, LEVEL_MEDIUM_MIN
 
 MI_ORDER: list[str] = [
@@ -41,6 +42,9 @@ async def question_counts(db: AsyncSession, age_group: AgeGroup) -> dict[str, in
         .where(
             Question.instrument == QuestionInstrument.mi,
             Question.age_tier.in_(visible_tiers(age_group)),
+            # Structural count — pin to `ru`, the canonical always-complete set,
+            # so it never doubles when `kk` rows exist (KZ-301).
+            Question.locale == DEFAULT_LOCALE,
         )
         .group_by(Question.mi_category)
     )
@@ -153,13 +157,13 @@ def development_plan(
     clubs/activities to try, never professions."""
     reinforce: list[str] = []
     for category in code:
-        reinforce.extend(MI_ACTIVITIES.get(category, [])[:2])
+        reinforce.extend(mi_activities().get(category, [])[:2])
 
     compensate: list[str] = []
     for category in weaknesses:
         if _aversion_ratio(category, aversion_counts, counts) >= _AVERSION_DISQUALIFY_RATIO:
             continue
-        compensate = MI_ACTIVITIES.get(category, [])[:2]
+        compensate = mi_activities().get(category, [])[:2]
         break
 
     return {"reinforce": reinforce, "compensate": compensate}

@@ -25,6 +25,12 @@ shared category is not the same thing as a real profession match. Entries in
 GARBAGE_SPECIALTIES (partner-university names listed as if they were
 programs, purely administrative units, faculty labels with no specific
 subject) are skipped entirely, not force-fit into anything.
+
+KZ-501: this script writes only the `ru` `description` columns and never the
+`*_i18n` override maps (`University.description_i18n`,
+`Program.description_i18n`, `Program.who_its_for_i18n`). Those are filled
+incrementally by KZ-504's batch translation, so a re-run here leaves any
+existing `kk` translations intact.
 """
 import asyncio
 import os

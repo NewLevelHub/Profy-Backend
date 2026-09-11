@@ -16,7 +16,7 @@ from app.schemas.report_narrative import (
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
 from app.services import report_v2_assembler
 from app.services.mi_service import MI_ORDER
-from app.services.riasec_content import NEUTRAL_CAREER_WHY_VARIANTS
+from app.services.riasec_content import neutral_career_why_variants
 from app.services.riasec_service import HOLLAND_ORDER
 
 _NOW = datetime.now(timezone.utc)
@@ -117,7 +117,7 @@ def test_middle_senior_get_six_riasec_items_and_valid_career_explanations() -> N
     assert swe.try_now == "Собери первый проект"
     # The one with no overlapping evidence still gets a neutral fallback, never blank.
     other = next(c for c in response.careers if c.slug == "other")
-    assert other.why == NEUTRAL_CAREER_WHY_VARIANTS[0]
+    assert other.why == neutral_career_why_variants()[0]
 
 
 def test_careers_sharing_the_same_letters_in_a_different_order_get_different_why_text() -> None:
@@ -505,7 +505,8 @@ def test_interest_map_note_does_not_list_a_majority_of_medium_spheres() -> None:
 
 
 def test_build_personality_notes_covers_all_five_traits() -> None:
-    from app.services.bigfive_content import PERSONALITY_LABELS
+    from app.services.bigfive_content import personality_labels as PERSONALITY_LABELS_FN
+    PERSONALITY_LABELS = PERSONALITY_LABELS_FN()
 
     notes = report_v2_assembler.build_personality_notes(False, _DEFAULT_PERSONALITY_PROFILE)
 
@@ -530,7 +531,8 @@ def test_build_personality_notes_ranks_traits_most_to_least_pronounced() -> None
 
 
 def test_build_personality_notes_breaks_ties_by_canonical_order() -> None:
-    from app.services.bigfive_content import PERSONALITY_LABELS
+    from app.services.bigfive_content import personality_labels as PERSONALITY_LABELS_FN
+    PERSONALITY_LABELS = PERSONALITY_LABELS_FN()
 
     # All-equal scores: sort key ties are broken by canonical index, so a
     # flat profile still lists traits in PERSONALITY_LABELS' own order —
@@ -541,7 +543,9 @@ def test_build_personality_notes_breaks_ties_by_canonical_order() -> None:
 
 
 def test_build_personality_notes_uses_junior_wording_for_junior() -> None:
-    from app.services.bigfive_content import _NOTES, _NOTES_JUNIOR
+    from app.i18n.catalog import bigfive as _bf_cat
+    _NOTES = _bf_cat.RU["notes"]
+    _NOTES_JUNIOR = _bf_cat.RU["notes_junior"]
 
     profile = {**_DEFAULT_PERSONALITY_PROFILE, "openness": 90.0}
     junior_notes = {n.trait: n.description for n in report_v2_assembler.build_personality_notes(True, profile)}

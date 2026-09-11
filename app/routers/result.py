@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
+from app.errors import AppError
 from app.models.assessment import Assessment
 from app.models.profile import Profile
 from app.models.user import User
@@ -61,8 +62,17 @@ async def get_report(
     db: AsyncSession = Depends(get_db),
 ) -> ResultResponseV2:
     await _require_assessment_access(assessment_id, current_user, db)
-    result = await report_service.get_report(assessment_id, db)
+    result, outcome = await report_service.resolve_report(assessment_id, db)
     if result is None:
+        # KZ-406: a report may exist in another locale (student switched
+        # language) — signal that so the client shows a "generating" state
+        # and POSTs /generate, rather than treating it as "no report".
+        if outcome is report_service.ReportLookup.LOCALE_NOT_GENERATED:
+            raise AppError(
+                status_code=status.HTTP_404_NOT_FOUND,
+                error_code="report_locale_not_generated",
+                detail="Отчёт на выбранном языке ещё не создан",
+            )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Report not found"
         )

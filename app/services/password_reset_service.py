@@ -56,7 +56,7 @@ async def initiate_reset(email: str, db: AsyncSession) -> None:
     await db.commit()
 
     try:
-        await email_service.send_password_reset_email(email, code)
+        await email_service.send_password_reset_email(email, code, locale=user.locale)
     except Exception:
         logger.exception("Failed to send password reset email for %s", email)
 

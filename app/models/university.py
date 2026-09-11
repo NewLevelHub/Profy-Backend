@@ -54,6 +54,18 @@ class University(Base):
     # columns above since those are Integer and can't hold a status string.
     uniranks_note: Mapped[str | None] = mapped_column(String(50), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # KZ-501: {"kk": "..."} — per-locale override of `description` (which holds
+    # the `ru` text). Nullable, filled incrementally by KZ-504's batch
+    # translation; the read side falls back to `description` (ru) when the
+    # requested locale key is absent, so an empty map changes no response.
+    # `ru` is never duplicated here.
+    description_i18n: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    # {"kk": "..."} — per-locale override of `name` (which holds the `ru`
+    # official name, KZ-206). Filled for Kazakhstan universities only, by
+    # scripts/apply_catalog_descriptions_kk.py from the `university_names`
+    # section of catalog_descriptions_kk.json. Same fallback rule as
+    # description_i18n; `ru` is never duplicated here.
+    name_i18n: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

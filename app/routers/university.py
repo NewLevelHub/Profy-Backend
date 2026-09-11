@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_user
+from app.i18n import DEFAULT_LOCALE, get_locale
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
@@ -18,7 +19,7 @@ from app.schemas.university import ProgramBrief, ProgramDetail
 from app.services import assessment_service
 from app.services.artifact_service import get_artifacts
 from app.services.gap_analysis_service import analyze_gap, to_response
-from app.services.university_service import get_program_by_id, get_program_detail, search_programs
+from app.services.university_service import get_program_by_id, get_program_detail, list_program_briefs
 
 GAP_CACHE_TTL = 60 * 60  # 1 hour
 
@@ -42,7 +43,9 @@ async def list_programs(
     limit: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ) -> list[ProgramBrief]:
-    return await search_programs(db, profession_slug=profession, country=country, limit=limit)
+    return await list_program_briefs(
+        db, profession_slug=profession, country=country, limit=limit, locale=get_locale()
+    )
 
 
 @router.get("/programs/{program_id}", response_model=ProgramDetail)
@@ -50,7 +53,7 @@ async def get_program(
     program_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ) -> ProgramDetail:
-    return await get_program_detail(db, program_id)
+    return await get_program_detail(db, program_id, locale=get_locale())
 
 
 @router.get("/programs/{program_id}/gap-analysis", response_model=GapAnalysisResponse)
@@ -95,8 +98,13 @@ async def get_gap_analysis(
             detail="Assessment is not completed yet",
         )
 
+    # KZ-405: one AnalysisResult row per locale — gap analysis reads only
+    # locale-invariant score fields, so prefer the `ru` row deterministically.
     analysis_result = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        select(AnalysisResult)
+        .where(AnalysisResult.assessment_id == assessment_id)
+        .order_by((AnalysisResult.locale == DEFAULT_LOCALE).desc())
+        .limit(1)
     )
     analysis = analysis_result.scalar_one_or_none()
     if analysis is None:

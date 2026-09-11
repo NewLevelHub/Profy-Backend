@@ -13,6 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.errors import AppError
 from app.models.direction_inquiry import DirectionInquiry
 from app.prompts import direction_inquiry as prompt
 from app.schemas.direction_inquiry import (
@@ -22,15 +23,16 @@ from app.schemas.direction_inquiry import (
 )
 from app.schemas.student_context import StudentContext
 from app.services import direction_service, llm_client
-from app.services.riasec_content import LIKERT_LABELS
+from app.services.riasec_content import likert_labels
 from app.services.student_context import build_student_context
 
 CACHE_TTL = 60 * 60  # 1 hour
 
 _redis: aioredis.Redis | None = None
 
-_AI_UNAVAILABLE = HTTPException(
+_AI_UNAVAILABLE = AppError(
     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+    error_code="ai_unavailable",
     detail="ИИ временно недоступен, попробуй ещё раз",
 )
 
@@ -53,13 +55,15 @@ async def _load_context_and_direction(
     if context is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
     if context.age_group == "junior":
-        raise HTTPException(
+        raise AppError(
             status_code=status.HTTP_403_FORBIDDEN,
+            error_code="feature_requires_age_10",
             detail="Эта возможность доступна с 10 лет",
         )
     if slug not in {d.slug for d in context.careers}:
-        raise HTTPException(
+        raise AppError(
             status_code=status.HTTP_400_BAD_REQUEST,
+            error_code="direction_not_in_results",
             detail="Это направление не входит в твои результаты",
         )
     direction = await direction_service.get_direction_by_slug(slug, db)
@@ -95,7 +99,7 @@ async def generate_questions(
     response = DirectionQuestionsResponse(
         direction_slug=slug,
         direction_name=direction.name,
-        scale=LIKERT_LABELS,
+        scale=likert_labels(),
         questions=questions,
     )
     await redis.setex(key, CACHE_TTL, response.model_dump_json())
@@ -111,25 +115,29 @@ async def build_verdict(
     redis = _get_redis()
     cached = await redis.get(_questions_key(assessment_id, slug))
     if not cached:
-        raise HTTPException(
+        raise AppError(
             status_code=status.HTTP_400_BAD_REQUEST,
+            error_code="inquiry_questions_not_generated",
             detail="Сначала получи вопросы по направлению",
         )
     questions = DirectionQuestionsResponse.model_validate_json(cached).questions
 
     if len(answers) != len(questions):
-        raise HTTPException(
+        raise AppError(
             status_code=status.HTTP_400_BAD_REQUEST,
+            error_code="inquiry_answer_count_mismatch",
             detail="Число ответов не совпадает с числом вопросов",
         )
-    if any(a < 0 or a >= len(LIKERT_LABELS) for a in answers):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Некорректный ответ"
+    if any(a < 0 or a >= len(likert_labels()) for a in answers):
+        raise AppError(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error_code="inquiry_answer_invalid",
+            detail="Некорректный ответ",
         )
 
     context, direction = await _load_context_and_direction(assessment_id, slug, db)
 
-    qa = [{"q": q.text, "answer": LIKERT_LABELS[answers[i]]} for i, q in enumerate(questions)]
+    qa = [{"q": q.text, "answer": likert_labels()[answers[i]]} for i, q in enumerate(questions)]
     messages = prompt.build_verdict_messages(context, direction, qa)
     try:
         raw = await llm_client.complete_json(messages, prompt.VERDICT_SCHEMA, "direction_verdict")

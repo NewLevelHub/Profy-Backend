@@ -10,8 +10,8 @@ since app.services.report_narrative_validator is what enforces them for real.
 from app.models.profile import AgeGroup
 from app.prompts import report_narrative as prompt
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
-from app.services.mi_content import MI_LABELS
-from app.services.riasec_content import RIASEC_LABELS
+from app.services.mi_content import mi_labels
+from app.services.riasec_content import riasec_labels
 
 
 def _junior_context() -> ReportNarrativeContext:
@@ -65,16 +65,16 @@ def test_build_messages_returns_system_and_user_roles():
 def test_junior_system_prompt_forbids_career_narrative_and_lists_all_eight_mi_categories():
     system = prompt._system_prompt(_junior_context())
     assert "career_narrative обязан быть пустым списком" in system
-    assert len(MI_LABELS) == 8
-    for key, label in MI_LABELS.items():
+    assert len(mi_labels()) == 8
+    for key, label in mi_labels().items():
         assert f"{key} ({label})" in system
 
 
 def test_senior_system_prompt_allows_limited_career_narrative_and_lists_six_riasec_categories():
     system = prompt._system_prompt(_senior_context())
     assert "не больше 3 карточек" in system
-    assert len(RIASEC_LABELS) == 6
-    for key, label in RIASEC_LABELS.items():
+    assert len(riasec_labels()) == 6
+    for key, label in riasec_labels().items():
         assert f"{key} ({label})" in system
 
 

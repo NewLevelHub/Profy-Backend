@@ -3,6 +3,7 @@ import uuid
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n import DEFAULT_LOCALE
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
@@ -33,7 +34,7 @@ from app.schemas.roadmap import RoadmapResponse
 from app.services import bigfive_content, motivation_service
 from app.services.age_tiers import visible_tiers
 from app.services.goal_overlay_service import _get_effective_goal_and_scenario
-from app.services.riasec_content import LIKERT_LABELS as RIASEC_LIKERT_LABELS
+from app.services.riasec_content import likert_labels as riasec_likert_labels
 
 # GET /admin/users/export has no page/limit — unlike list_users, it always
 # fetches every matching row (plus their profiles/assessments/analysis
@@ -51,7 +52,7 @@ class ExportTooLargeError(Exception):
 
 
 def _selected_answer_text(answer_value: int, instrument: QuestionInstrument | None = None) -> str:
-    labels = bigfive_content.LIKERT_LABELS if instrument == QuestionInstrument.big_five else RIASEC_LIKERT_LABELS
+    labels = bigfive_content.likert_labels() if instrument == QuestionInstrument.big_five else riasec_likert_labels()
     if 1 <= answer_value <= len(labels):
         return labels[answer_value - 1]
     return f"Шкала {answer_value}/5"
@@ -194,7 +195,11 @@ async def _build_user_list_items(db: AsyncSession, users: list[User]) -> list[Ad
             select(AnalysisResult).where(AnalysisResult.assessment_id.in_(completed_assessment_ids))
         )
         for analysis in analysis_result.scalars().all():
-            analysis_by_assessment[analysis.assessment_id] = analysis
+            # KZ-405: one row per locale — admin is ru-only, prefer the ru row,
+            # but still show a kk-only user's row if that's all there is.
+            prev = analysis_by_assessment.get(analysis.assessment_id)
+            if prev is None or analysis.locale == DEFAULT_LOCALE:
+                analysis_by_assessment[analysis.assessment_id] = analysis
 
     items: list[AdminUserListItem] = []
     for user in users:
@@ -289,7 +294,10 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
 
         total_questions_result = await db.execute(
             select(func.count(Question.id)).where(
-                Question.age_tier.in_(visible_tiers(profile.age_group))
+                Question.age_tier.in_(visible_tiers(profile.age_group)),
+                # ru-only denominator (admin is ru-only; KZ-301 — never
+                # double-count once kk question rows exist).
+                Question.locale == DEFAULT_LOCALE,
             )
         )
         total_questions = total_questions_result.scalar_one()
@@ -438,7 +446,10 @@ async def get_assessment_detail(
 
     analysis_result = None
     analysis_row = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment.id)
+        select(AnalysisResult)
+        .where(AnalysisResult.assessment_id == assessment.id)
+        .order_by((AnalysisResult.locale == DEFAULT_LOCALE).desc())  # KZ-405: prefer ru row
+        .limit(1)
     )
     analysis = analysis_row.scalar_one_or_none()
     if analysis:
@@ -452,7 +463,10 @@ async def get_assessment_detail(
 
     total_questions_result = await db.execute(
         select(func.count(Question.id)).where(
-            Question.age_tier.in_(visible_tiers(profile.age_group))
+            Question.age_tier.in_(visible_tiers(profile.age_group)),
+            # ru-only denominator (admin is ru-only; KZ-301 — never double-count
+            # once kk question rows exist).
+            Question.locale == DEFAULT_LOCALE,
         )
     )
     total_questions = total_questions_result.scalar_one()
@@ -508,7 +522,11 @@ async def _enrich_feedback_rows(
         analysis_result = await db.execute(
             select(AnalysisResult).where(AnalysisResult.assessment_id.in_(assessment_ids))
         )
-        analysis_by_assessment = {a.assessment_id: a for a in analysis_result.scalars().all()}
+        analysis_by_assessment = {}
+        for a in analysis_result.scalars().all():  # KZ-405: prefer the ru row
+            prev = analysis_by_assessment.get(a.assessment_id)
+            if prev is None or a.locale == DEFAULT_LOCALE:
+                analysis_by_assessment[a.assessment_id] = a
 
     items: list[AdminFeedbackListItem] = []
     for fb in feedback_rows:

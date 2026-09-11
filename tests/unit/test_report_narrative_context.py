@@ -8,6 +8,7 @@ the whole catalog — nothing here ever carries a raw score or a percentage."""
 import re
 import uuid
 
+from app.i18n import use_locale
 from app.models.artifact import Artifact, ArtifactType
 from app.models.profile import AgeGroup
 from app.services.report_narrative_context import (
@@ -45,6 +46,30 @@ def test_every_evidence_item_has_source_id_type_and_text() -> None:
         assert item.source_id
         assert item.source_type
         assert item.text
+
+
+def test_subject_evidence_is_localized_but_source_id_stays_canonical() -> None:
+    """KZ-503: a `kk` report shows the Kazakh subject name in the strength
+    card, while the source_id keeps the canonical Russian string for
+    stability/dedup. Custom off-list subjects pass through untouched."""
+    kwargs = dict(
+        age_group=AgeGroup.senior, strengths=["R"],
+        personality_profile={}, personality_notes={}, thinking_style={},
+        motivation_top=[], motivation_highlights=[], artifacts=[],
+    )
+    with use_locale("kk"):
+        ctx = build_report_narrative_context(
+            subjects_liked=["История", "Подводное плавание"], subjects_easy=[], **kwargs
+        )
+    by_id = {e.source_id: e for e in ctx.evidence}
+    assert by_id["subject_liked:История"].text == "Тарих"
+    assert by_id["subject_liked:Подводное плавание"].text == "Подводное плавание"
+
+    with use_locale("ru"):
+        ctx_ru = build_report_narrative_context(
+            subjects_liked=["История"], subjects_easy=[], **kwargs
+        )
+    assert {e.source_id: e for e in ctx_ru.evidence}["subject_liked:История"].text == "История"
 
 
 def test_junior_context_has_mi_evidence_and_no_riasec_claims() -> None:
