@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -11,6 +12,24 @@ from app.database import get_db
 from app.models.user import User
 
 _bearer = HTTPBearer()
+
+# How stale `User.last_active_at` is allowed to get before an authenticated
+# request refreshes it. Writing on every request would turn every read
+# endpoint into a write and put every active session in contention for its own
+# row; the admin screens this feeds ("last seen", "inactive for N days",
+# abandoned-diagnostic counts) are all day-scale, so minute-scale precision
+# buys nothing.
+ACTIVITY_REFRESH_INTERVAL = timedelta(minutes=5)
+
+
+async def _touch_last_active(db: AsyncSession, user: User) -> None:
+    now = datetime.now(timezone.utc)
+    last_active = user.last_active_at
+    if last_active is not None and now - last_active < ACTIVITY_REFRESH_INTERVAL:
+        return
+
+    user.last_active_at = now
+    await db.commit()
 
 
 async def get_current_user(
@@ -41,6 +60,7 @@ async def get_current_user(
     if user is None or not user.is_active:
         raise credentials_exception
 
+    await _touch_last_active(db, user)
     return user
 
 

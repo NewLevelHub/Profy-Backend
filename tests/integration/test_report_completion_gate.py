@@ -24,8 +24,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
-from app.models.question import BigFiveDomain, MIType, Question, QuestionInstrument
+from app.models.question import (
+    BigFiveDomain,
+    HollandType,
+    MIType,
+    Question,
+    QuestionInstrument,
+)
+from app.models.user_response import UserResponse
 from app.models.user import User
+from app.services.age_tiers import visible_tiers
 from app.services import (
     assessment_shared,
     llm_client,
@@ -35,6 +43,7 @@ from app.services import (
 )
 
 _AGE_SAMPLE = {AgeGroup.junior: 8, AgeGroup.middle: 12, AgeGroup.senior: 16}
+_MAX_ANSWER = 5  # top of the Likert scale — see riasec_service.normalize
 
 
 async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> Assessment:
@@ -64,6 +73,53 @@ async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> Ass
     db_session.add(assessment)
     await db_session.flush()
     return assessment
+
+
+async def _answer_all_of_type_at_max(
+    db_session: AsyncSession, assessment: Assessment, age_group: AgeGroup
+) -> None:
+    """Give the assessment one genuinely strong interest type by answering
+    every question of that type with the maximum value.
+
+    Scores are normalized against the maximum possible for the type
+    (riasec_service.normalize: raw / (count * 5)), and
+    strengths_weaknesses() refuses to promote anything below
+    LEVEL_MEDIUM_MIN — so an assessment with no responses at all scores 0
+    everywhere and correctly yields NO strengths, hence no strength_cards.
+    That floor is deliberate (it stops a floor-level type from being cited
+    as evidence), so a test asserting a populated report has to supply a
+    real signal rather than rely on the old blind top-3 behaviour.
+
+    Only the counters are monkeypatched to make the assessment "complete";
+    these rows are real answers, so the resulting score is real too."""
+    if age_group == AgeGroup.junior:
+        type_filter = (
+            Question.instrument == QuestionInstrument.mi,
+            Question.mi_category == MIType.logical,
+        )
+    else:
+        type_filter = (
+            Question.instrument == QuestionInstrument.riasec,
+            Question.riasec_type == HollandType.R,
+        )
+
+    question_ids = (
+        await db_session.execute(
+            select(Question.id).where(
+                *type_filter, Question.age_tier.in_(visible_tiers(age_group))
+            )
+        )
+    ).scalars().all()
+    assert question_ids, "seeded question bank is missing rows for this instrument/age tier"
+
+    db_session.add_all(
+        [
+            UserResponse(assessment_id=assessment.id, question_id=qid, answer_value=_MAX_ANSWER)
+            for qid in question_ids
+        ]
+    )
+    await db_session.flush()
+
 
 
 def _patch_likert(monkeypatch: pytest.MonkeyPatch, *, answered: int, total: int) -> None:
@@ -200,6 +256,7 @@ async def test_successful_generation_populates_v2_narrative_fields(
     off (see comment in the previous test) so this exercises the
     deterministic fallback builder, not a real model call."""
     assessment = await _make_assessment(db_session, AgeGroup.senior)
+    await _answer_all_of_type_at_max(db_session, assessment, AgeGroup.senior)
     _patch_likert(monkeypatch, answered=1, total=1)
     _patch_senior_motivation(monkeypatch, answered=1, total=1)
     monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
