@@ -15,6 +15,7 @@ min_ent_threshold or admission_scores_2026 from scripts/apply_grant_admission_da
 that distinction, so never coerce a missing key to `False`.
 """
 from app.i18n.catalog import tr
+from app.i18n.data_strings import translate_data_list, translate_data_string
 from app.models.program import Program
 from app.models.university import University
 from app.schemas.roadmap import ProgramGrant, UniversityRequirement
@@ -91,7 +92,9 @@ def map_program_requirement(program: Program, university: University) -> Univers
     # a program somehow has both.
     source_documents = requirements.get("source_required_documents")
     if source_documents:
-        required_documents = (required_documents or []) + list(source_documents)
+        required_documents = (required_documents or []) + translate_data_list(
+            list(source_documents)
+        )
 
     # min_ent_threshold (new bulk-seed key) and min_ent (older hand-picked key)
     # are the same real-world fact under two different historical names —
@@ -102,9 +105,18 @@ def map_program_requirement(program: Program, university: University) -> Univers
     if min_ent_threshold is None:
         min_ent_threshold = requirements.get("min_ent")
 
-    exams = list(requirements.get("exams") or [])
-    notes = list(requirements.get("notes") or [])
-    exam_hint_from_notes = _note_hint_for_program(notes, program.name) if not exams else None
+    # The hint is matched against the *source* notes (the matcher keys on
+    # Russian category words), then translated — matching on translated text
+    # would silently stop finding hints on a kk request.
+    raw_exams = list(requirements.get("exams") or [])
+    raw_notes = list(requirements.get("notes") or [])
+    exam_hint_from_notes = (
+        translate_data_string(_note_hint_for_program(raw_notes, program.name))
+        if not raw_exams
+        else None
+    )
+    exams = translate_data_list(raw_exams)
+    notes = translate_data_list(raw_notes)
 
     return UniversityRequirement(
         program_name=program.name,
@@ -112,15 +124,15 @@ def map_program_requirement(program: Program, university: University) -> Univers
         city=university.city,
         country=university.country,
         website=university.website,
-        program_language=program.language,
+        program_language=translate_data_string(program.language) or program.language,
         exams=exams,
         exam_hint_from_notes=exam_hint_from_notes,
         application_deadline=deadlines.get("application_close"),
         grants=[
             ProgramGrant(
-                name=g.get("name", ""),
+                name=translate_data_string(g.get("name", "")) or "",
                 amount=g.get("amount"),
-                conditions=g.get("conditions"),
+                conditions=translate_data_string(g.get("conditions")),
             )
             for g in grants_raw
         ],
@@ -131,7 +143,7 @@ def map_program_requirement(program: Program, university: University) -> Univers
         min_ent_paid=requirements.get("min_ent_paid"),
         min_gpa=requirements.get("min_gpa"),
         min_sat=requirements.get("min_sat"),
-        extracurriculars=list(requirements.get("extracurriculars") or []),
+        extracurriculars=translate_data_list(list(requirements.get("extracurriculars") or [])),
         admission_scores_2026=admission_scores_2026_brief(requirements),
         grant_scores=requirements.get("grant_scores", {}),
         grants_allocated_count=requirements.get("grants_allocated_count"),

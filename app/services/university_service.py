@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.i18n import DEFAULT_LOCALE, resolve_column_i18n
+from app.i18n.data_strings import translate_data_list, translate_data_string
 from app.models.direction import Direction
 from app.models.program import Program
 from app.models.university import University
@@ -43,11 +44,35 @@ def _program_brief(program: Program, locale: str) -> ProgramBrief:
         update={
             "name": name,
             "name_locale": name_locale,
+            "language": translate_data_string(program.language, locale=locale) or program.language,
             "description": description,
             "description_locale": description_locale,
             "university": _university_brief(program.university, locale),
         }
     )
+
+
+def _localized_grants(grants: list | None, locale: str) -> list:
+    """`Program.grants` with each entry's free text resolved for `locale`.
+
+    `requirements_summary.grants` is already localized by
+    `university_requirements.map_program_requirement`, but the program screen
+    renders this raw sibling field, so it needs the same treatment — otherwise
+    a Kazakh page carries a Russian scholarship paragraph under a Kazakh
+    heading. Entries are dicts (`name` / `amount` / `conditions`); anything
+    else passes through untouched rather than being reshaped here.
+    """
+    out = []
+    for grant in grants or []:
+        if not isinstance(grant, dict):
+            out.append(grant)
+            continue
+        localized = dict(grant)
+        for field in ("name", "conditions"):
+            if isinstance(localized.get(field), str):
+                localized[field] = translate_data_string(localized[field], locale=locale)
+        out.append(localized)
+    return out
 
 
 async def search_programs(
@@ -118,7 +143,11 @@ async def get_program_detail(
 
     `description` / `who_its_for` are resolved for `locale` (KZ-501): the `kk`
     override when present, else the `ru` base column, with `*_locale` fields
-    reporting which was served."""
+    reporting which was served. `language`, `career_options` and `grants` are
+    free text inside the catalog rather than columns of their own, so they go
+    through the source-string dictionary instead (contract §14) — the program
+    screen renders these raw fields directly, not their
+    `requirements_summary` counterparts."""
     program = await get_program_by_id(db, program_id)
     name, name_locale = resolve_column_i18n(program.name_i18n, program.name, locale)
     description, description_locale = resolve_column_i18n(
@@ -132,17 +161,17 @@ async def get_program_detail(
         name=name,
         name_locale=name_locale,
         profession_slugs=program.profession_slugs,
-        language=program.language,
+        language=translate_data_string(program.language, locale=locale) or program.language,
         cost_per_year=program.cost_per_year,
         cost_label=program.cost_label,
         description=description,
         description_locale=description_locale,
         who_its_for=who_its_for,
         who_its_for_locale=who_its_for_locale,
-        career_options=program.career_options,
+        career_options=translate_data_list(program.career_options, locale=locale),
         requirements=program.requirements,
         deadlines=program.deadlines,
-        grants=program.grants,
+        grants=_localized_grants(program.grants, locale),
         created_at=program.created_at,
         university=_university_brief(program.university, locale),
         requirements_summary=ureq.map_program_requirement(program, program.university),

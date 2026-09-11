@@ -59,17 +59,19 @@ async def _seed_program(db: AsyncSession, **program_overrides) -> Program:
     db.add(direction)
     await db.flush()
 
-    program = Program(
-        university_id=university.id,
-        name="Тестовая программа",
-        language="ru",
-        description="Русское описание программы",
-        who_its_for="Русский текст «для кого»",
-        requirements={},
-        deadlines={},
-        grants=[],
-        **program_overrides,
-    )
+    # Defaults a caller may override by name — `language` / `grants` matter to
+    # the dictionary tests at the bottom of this file.
+    fields = {
+        "name": "Тестовая программа",
+        "language": "ru",
+        "description": "Русское описание программы",
+        "who_its_for": "Русский текст «для кого»",
+        "requirements": {},
+        "deadlines": {},
+        "grants": [],
+    }
+    fields.update(program_overrides)
+    program = Program(university_id=university.id, **fields)
     program.directions = [direction]
     db.add(program)
     await db.flush()
@@ -132,3 +134,81 @@ async def test_default_locale_is_ru(db_session: AsyncSession):
     program = await _seed_program(db_session, description_i18n={"kk": "Қазақша"})
     detail = await university_service.get_program_detail(db_session, program.id)
     assert detail.description_locale == "ru"
+
+
+# ── free text inside the catalog (contract §14) ──────────────────────────────
+#
+# `language`, `career_options` and `grants` are free text with no column of
+# their own, so `resolve_column_i18n` does not reach them — they go through the
+# source-string dictionary. The program screen renders these raw fields rather
+# than their `requirements_summary` counterparts, so localizing only the
+# summary left a Russian scholarship paragraph under a Kazakh heading.
+
+
+@pytest.fixture
+def dictionary(monkeypatch):
+    """Two-entry stub, so this pins the wiring and not the shipped catalog."""
+    from app.i18n import data_strings
+
+    monkeypatch.setattr(
+        data_strings,
+        "_dictionary",
+        lambda locale: {
+            "английский": "ағылшын",
+            "Грант на всё обучение": "Оқудың барлығына грант",
+            "Отбор по баллам": "Балдар бойынша іріктеу",
+            "Режиссёр": "Режиссёр-қоюшы",
+        }
+        if locale == "kk"
+        else {},
+    )
+
+
+async def test_kk_gets_the_dictionary_for_language_grants_and_careers(
+    db_session: AsyncSession, dictionary
+):
+    program = await _seed_program(
+        db_session,
+        language="английский",
+        career_options=["Режиссёр"],
+        grants=[{"name": "Грант на всё обучение", "amount": "100%", "conditions": "Отбор по баллам"}],
+    )
+
+    detail = await university_service.get_program_detail(db_session, program.id, locale="kk")
+    assert detail.language == "ағылшын"
+    assert detail.career_options == ["Режиссёр-қоюшы"]
+    assert detail.grants[0]["name"] == "Оқудың барлығына грант"
+    assert detail.grants[0]["conditions"] == "Балдар бойынша іріктеу"
+    # Non-text keys must survive untouched — the UI reads `amount` as-is.
+    assert detail.grants[0]["amount"] == "100%"
+
+    briefs = await university_service.list_program_briefs(db_session, SLUG, locale="kk")
+    assert briefs[0].language == "ағылшын"
+
+
+async def test_ru_keeps_the_source_text(db_session: AsyncSession, dictionary):
+    program = await _seed_program(
+        db_session,
+        language="английский",
+        grants=[{"name": "Грант на всё обучение"}],
+    )
+
+    detail = await university_service.get_program_detail(db_session, program.id, locale="ru")
+    assert detail.language == "английский"
+    assert detail.grants[0]["name"] == "Грант на всё обучение"
+
+
+async def test_a_phrase_the_dictionary_lacks_is_served_as_is(
+    db_session: AsyncSession, dictionary
+):
+    """Contract §5: a miss keeps the Russian source rather than blanking the
+    card — a new import must degrade, not break."""
+    program = await _seed_program(
+        db_session,
+        language="суахили",
+        grants=[{"name": "Неизвестная стипендия"}],
+    )
+
+    detail = await university_service.get_program_detail(db_session, program.id, locale="kk")
+    assert detail.language == "суахили"
+    assert detail.grants[0]["name"] == "Неизвестная стипендия"
