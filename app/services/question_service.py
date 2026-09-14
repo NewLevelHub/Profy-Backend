@@ -4,13 +4,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.profile import AgeGroup
 from app.models.question import Question, QuestionInstrument
 from app.schemas.question import QuestionResponse
-from app.services.age_tiers import visible_tiers
+from app.services.age_tiers import RETIRED_INSTRUMENTS, visible_tiers
 
 
 async def get_all_questions(db: AsyncSession, age_group: AgeGroup) -> list[QuestionResponse]:
     query = (
         select(Question)
         .where(Question.age_tier.in_(visible_tiers(age_group)))
+        .where(Question.instrument.not_in(RETIRED_INSTRUMENTS))
         .order_by(Question.order)
     )
     if age_group == AgeGroup.junior:

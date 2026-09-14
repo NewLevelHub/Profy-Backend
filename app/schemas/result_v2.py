@@ -21,7 +21,7 @@ import uuid
 from datetime import datetime
 from typing import Annotated, Literal, Union
 
-from pydantic import BaseModel, Field, TypeAdapter
+from pydantic import BaseModel, Field, TypeAdapter, field_validator
 
 # TZ_Profi.md §17.5 point 7 / Приложение C В.2: every report must carry this
 # framing, verbatim and unconditionally — server-authored, not LLM text, so
@@ -153,14 +153,25 @@ class _ResultResponseBase(BaseModel):
     # already-computed levels, nothing to personalize beyond that.
     interest_map_note: str = INTEREST_MAP_NOTE_FALLBACK
     thinking_style_notes: list[StudentThinkingStyleNote]
-    # Big Five is answered identically by all three age groups (only the
-    # interest instrument/motivation format branch by age — TZ_Profi.md's
-    # confirmed methodology: junior = MI + Big Five + Harter, middle =
-    # RIASEC + Big Five + Harter, senior = RIASEC + Big Five + triplets),
-    # so this lives on the common base, not per-branch.
-    personality_notes: list[StudentPersonalityNote] = Field(
-        min_length=_PERSONALITY_TRAIT_COUNT, max_length=_PERSONALITY_TRAIT_COUNT
-    )
+    # Big Five is retired from the active test pool (docs/big-five-retirement.md)
+    # — a report generated for an assessment that never answered Big Five
+    # (report_service.build_report's compute_bigfive gate) has no personality
+    # data at all, so this section is 0 cards, not 5. Historical reports
+    # generated before retirement (and any cached JSON from that era) still
+    # carry the full 5-item set. Never anything in between: 5 fixed traits,
+    # all present or none.
+    personality_notes: list[StudentPersonalityNote] = Field(default_factory=list)
+
+    @field_validator("personality_notes")
+    @classmethod
+    def _personality_notes_all_or_nothing(
+        cls, v: list[StudentPersonalityNote]
+    ) -> list[StudentPersonalityNote]:
+        if len(v) not in (0, _PERSONALITY_TRAIT_COUNT):
+            raise ValueError(
+                f"personality_notes must have 0 or {_PERSONALITY_TRAIT_COUNT} items, got {len(v)}"
+            )
+        return v
     # 1-2 sentences of synthesis on top of the 5 static cards above — same
     # role as interest_map_note, closing the "just a lookup table, no
     # analysis" gap reported live for "Твой характер". Deterministic,

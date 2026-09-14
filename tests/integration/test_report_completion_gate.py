@@ -271,3 +271,101 @@ async def test_successful_generation_populates_v2_narrative_fields(
     assert analysis.strength_cards
     for card in analysis.strength_cards:
         assert set(card.keys()) == {"title", "description"}
+
+
+async def test_report_has_no_personality_section_when_big_five_was_never_answered(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Big Five retired from the active pool (docs/big-five-retirement.md) —
+    a new assessment answers zero Big Five items even though the real
+    seeded bank still exists (get_all_questions/get_pairs no longer serve
+    it). report_service's compute_bigfive gate must skip the personality/
+    thinking-style block entirely rather than compute a fake floor profile
+    (bigfive_service.normalize turns "no answers" into a misleading 0% on
+    four traits and a fake 100% Emotional Stability)."""
+    assessment = await _make_assessment(db_session, AgeGroup.senior)
+    await _answer_all_of_type_at_max(db_session, assessment, AgeGroup.senior)
+    _patch_likert(monkeypatch, answered=1, total=1)
+    _patch_senior_motivation(monkeypatch, answered=1, total=1)
+    monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
+
+    response = await report_service.build_report(assessment.id, db_session)
+
+    assert response.personality_notes == []
+    assert response.personality_note == ""
+    assert response.thinking_style_notes == []
+
+    stored = await db_session.execute(
+        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment.id)
+    )
+    analysis = stored.scalar_one()
+    assert analysis.big_five == {}
+    assert analysis.personality_profile == {}
+    assert analysis.thinking_style == {}
+
+
+async def test_report_has_no_personality_section_when_big_five_only_partially_answered(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Transition-window case: a user mid-test at the moment Big Five was
+    excluded from the active pool may have answered a handful of items
+    under the old serving code before finishing after deploy. A partial
+    set must not produce a partial/broken profile — it's all-or-nothing,
+    same treatment as a fresh assessment with zero answers."""
+    assessment = await _make_assessment(db_session, AgeGroup.senior)
+    await _answer_all_of_type_at_max(db_session, assessment, AgeGroup.senior)
+    _patch_likert(monkeypatch, answered=1, total=1)
+    _patch_senior_motivation(monkeypatch, answered=1, total=1)
+    monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
+
+    bf_question_id = (
+        await db_session.execute(
+            select(Question.id).where(
+                Question.instrument == QuestionInstrument.big_five,
+                Question.age_tier.in_(visible_tiers(AgeGroup.senior)),
+            ).limit(1)
+        )
+    ).scalar_one()
+    db_session.add(UserResponse(assessment_id=assessment.id, question_id=bf_question_id, answer_value=4))
+    await db_session.flush()
+
+    response = await report_service.build_report(assessment.id, db_session)
+
+    assert response.personality_notes == []
+    assert response.personality_note == ""
+
+
+async def test_report_has_full_personality_section_when_big_five_fully_answered(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Legacy-equivalent case: an assessment that answered every Big Five
+    item this tier's real seeded bank has still gets the full "Твой
+    характер"/"Стиль мышления" sections computed for real — retirement
+    only changes what NEW assessments are served, not what a genuinely
+    complete answer set does (covers a user who finished the whole Big
+    Five test in the transition window right before deploy)."""
+    assessment = await _make_assessment(db_session, AgeGroup.senior)
+    await _answer_all_of_type_at_max(db_session, assessment, AgeGroup.senior)
+    _patch_likert(monkeypatch, answered=1, total=1)
+    _patch_senior_motivation(monkeypatch, answered=1, total=1)
+    monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
+
+    bf_question_ids = (
+        await db_session.execute(
+            select(Question.id).where(
+                Question.instrument == QuestionInstrument.big_five,
+                Question.age_tier.in_(visible_tiers(AgeGroup.senior)),
+            )
+        )
+    ).scalars().all()
+    assert bf_question_ids, "seeded question bank is missing Big Five rows for this age tier"
+    db_session.add_all([
+        UserResponse(assessment_id=assessment.id, question_id=qid, answer_value=4)
+        for qid in bf_question_ids
+    ])
+    await db_session.flush()
+
+    response = await report_service.build_report(assessment.id, db_session)
+
+    assert len(response.personality_notes) == 5
+    assert response.personality_note != ""

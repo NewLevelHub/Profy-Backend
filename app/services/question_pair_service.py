@@ -1,11 +1,14 @@
-"""Forced-choice-pair format — junior (6-9, TZ_Profi.md §13 bans Likert
-outright) gets its whole test this way, shown on its own screen. Middle
-(10-13) gets a subset of its own tier-exclusive questions woven into the
-ordinary Likert flow instead, to break up monotony (TZ_Profi.md §14) without
-abandoning Likert (still fine for that age). `QuestionPair.age_tier` is an
-exact match, unlike `Question.age_tier` (checked via visible_tiers(),
-cumulative) — a junior pair is never returned to a middle profile or vice
-versa.
+"""Forced-choice-pair format. Middle (10-13) gets a subset of its own
+tier-exclusive RIASEC questions woven into the ordinary Likert flow, to
+break up monotony (TZ_Profi.md §14) without abandoning Likert (still fine
+for that age). `QuestionPair.age_tier` is an exact match, unlike
+`Question.age_tier` (checked via visible_tiers(), cumulative) — a middle
+pair is never returned to another profile.
+
+Junior (6-9) had its whole test in this format (TZ_Profi.md §13 bans Likert
+outright for that age) built entirely from Big Five items — with Big Five
+retired from the active pool (docs/big-five-retirement.md), junior has no
+pairs phase at all anymore; `get_pairs` short-circuits to `[]` for it.
 
 A pair pick is written as two ordinary `UserResponse` rows (picked=5,
 other=1) — riasec_service/bigfive_service and the Likert-completion
@@ -23,7 +26,7 @@ from sqlalchemy.orm import aliased
 
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.profile import AgeGroup
-from app.models.question import Question, QuestionInstrument
+from app.models.question import Question
 from app.models.question_pair import QuestionPair
 from app.models.user_response import UserResponse
 from app.schemas.question_pair import (
@@ -33,6 +36,7 @@ from app.schemas.question_pair import (
     SubmitPairAnswersResponse,
 )
 from app.services import assessment_shared
+from app.services.age_tiers import RETIRED_INSTRUMENTS
 
 _PICKED_VALUE = 5
 _OTHER_VALUE = 1
@@ -52,6 +56,16 @@ def _to_option(
 
 
 async def get_pairs(db: AsyncSession, age_group: AgeGroup) -> list[QuestionPairItem]:
+    if age_group == AgeGroup.junior:
+        # Junior's whole pairs phase was 100% Big Five (retired — see
+        # docs/big-five-retirement.md) and junior's RIASEC content was
+        # already retired in favor of MI before that (TZ_Profi.md §4.1),
+        # leaving nothing junior-eligible left to pair. Short-circuit
+        # outright rather than filtering instrument to zero, so the intent
+        # ("junior has no pairs phase at all now") stays unambiguous even if
+        # a future junior-tagged QuestionPair row is added for some other
+        # instrument.
+        return []
     question_a = aliased(Question)
     question_b = aliased(Question)
     query = (
@@ -59,17 +73,9 @@ async def get_pairs(db: AsyncSession, age_group: AgeGroup) -> list[QuestionPairI
         .join(question_a, QuestionPair.question_a_id == question_a.id)
         .join(question_b, QuestionPair.question_b_id == question_b.id)
         .where(QuestionPair.age_tier == age_group)
+        .where(QuestionPair.instrument.not_in(RETIRED_INSTRUMENTS))
         .order_by(QuestionPair.pair_index)
     )
-    if age_group == AgeGroup.junior:
-        # Junior's RIASEC content is retired in favor of the MI instrument
-        # (TZ_Profi.md §4.1 — no career orientation for 6-9-year-olds); old
-        # junior-tagged `riasec` QuestionPair rows are left in the DB but
-        # excluded here rather than migrated/deleted. MI itself is answered
-        # as plain Likert now (product override: ipsative pairing between
-        # unrelated MI categories made an already-weak construct worse — see
-        # question_service.get_all_questions), so only Big Five stays paired.
-        query = query.where(QuestionPair.instrument == QuestionInstrument.big_five)
     result = await db.execute(query)
     return [
         QuestionPairItem(

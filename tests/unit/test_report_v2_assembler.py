@@ -552,6 +552,23 @@ def test_build_personality_notes_uses_junior_wording_for_junior() -> None:
     assert junior_notes["openness"] != adult_notes["openness"]
 
 
+def test_build_personality_notes_returns_empty_list_for_an_empty_profile() -> None:
+    # Big Five retired from the active pool (docs/big-five-retirement.md) —
+    # report_service passes personality_profile={} for an assessment with no
+    # Big Five data. `traits` used to be hardcoded from PERSONALITY_LABELS
+    # regardless of input, so `notes[trait]` raised KeyError on {}; this is
+    # the regression pin for the early-return guard.
+    assert report_v2_assembler.build_personality_notes(False, {}) == []
+    assert report_v2_assembler.build_personality_notes(True, {}) == []
+
+
+def test_build_personality_note_returns_empty_string_for_an_empty_profile() -> None:
+    # Same rationale as above — must not fall through to the "balanced
+    # profile" fallback sentence, which would assert personality data exists
+    # when it doesn't.
+    assert report_v2_assembler.build_personality_note({}) == ""
+
+
 def test_build_personality_note_names_a_minority_of_high_traits() -> None:
     profile = {**_DEFAULT_PERSONALITY_PROFILE, "openness": 75.0}
 

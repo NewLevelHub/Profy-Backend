@@ -20,7 +20,7 @@ from app.models.profile import AgeGroup, Profile
 from app.models.question import Question, QuestionInstrument
 from app.models.roadmap import Roadmap
 from app.models.user_response import UserResponse
-from app.services.age_tiers import visible_tiers
+from app.services.age_tiers import RETIRED_INSTRUMENTS, visible_tiers
 
 logger = logging.getLogger(__name__)
 
@@ -190,7 +190,11 @@ def get_effective_goal(age_group: AgeGroup, primary_goal: AssessmentGoal) -> Ass
 
 
 async def likert_total_questions(db: AsyncSession, age_group: AgeGroup) -> int:
-    query = select(func.count(Question.id)).where(Question.age_tier.in_(visible_tiers(age_group)))
+    query = (
+        select(func.count(Question.id))
+        .where(Question.age_tier.in_(visible_tiers(age_group)))
+        .where(Question.instrument.not_in(RETIRED_INSTRUMENTS))
+    )
     if age_group == AgeGroup.junior:
         # Junior's RIASEC content is retired in favor of the MI instrument
         # (see question_pair_service.get_pairs) — exclude it from the total

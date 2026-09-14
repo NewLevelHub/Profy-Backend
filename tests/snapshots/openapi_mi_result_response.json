@@ -57,8 +57,6 @@
     },
     "personality_notes": {
       "items": "StudentPersonalityNote",
-      "maxItems": 5,
-      "minItems": 5,
       "type": "array"
     },
     "report_version": {
@@ -86,7 +84,6 @@
     "interest_map",
     "is_flat_profile",
     "motivation_highlights",
-    "personality_notes",
     "strength_cards",
     "summary",
     "thinking_style_notes"

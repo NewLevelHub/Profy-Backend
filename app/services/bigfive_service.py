@@ -85,6 +85,24 @@ async def question_counts(db: AsyncSession, age_group: AgeGroup) -> dict[str, in
     return {d: counts.get(d, 0) for d in BIGFIVE_ORDER}
 
 
+async def answered_count(assessment_id: uuid.UUID, db: AsyncSession) -> int:
+    """How many Big Five UserResponse rows this assessment actually has —
+    used only to gate whether report_service computes a personality profile
+    at all (see build_report's compute_bigfive check), never for domain-level
+    scoring itself. Unscoped by age_tier on purpose: a mid-deploy transition
+    case (answered some Big Five before the active pool excluded it) must
+    still be caught here regardless of which tier's item they answered."""
+    result = await db.execute(
+        select(func.count(UserResponse.id))
+        .join(Question, UserResponse.question_id == Question.id)
+        .where(
+            UserResponse.assessment_id == assessment_id,
+            Question.instrument == QuestionInstrument.big_five,
+        )
+    )
+    return result.scalar_one()
+
+
 async def keying_counts(db: AsyncSession, age_group: AgeGroup) -> dict[str, tuple[int, int]]:
     """(plus_count, minus_count) per domain for the items this age branch was
     shown — live from the bank, same rationale as `question_counts`. Feeds

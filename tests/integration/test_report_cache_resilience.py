@@ -178,9 +178,16 @@ async def test_stale_cached_payload_missing_a_new_required_field_falls_back_to_d
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A payload cached under the *current* versioned key by a previous
-    deploy — before `personality_notes` became required — must not crash
-    the read path with a ValidationError. `_cache_get_response` catches
-    that and falls through to a fresh DB-backed rebuild instead."""
+    deploy — before some field became required — must not crash the read
+    path with a ValidationError. `_cache_get_response` catches that and
+    falls through to a fresh DB-backed rebuild instead.
+
+    `thinking_style_notes` stands in for "a required field with no
+    default" here — `personality_notes` used to be this ticket's example,
+    but it's now optional/defaulted (docs/big-five-retirement.md: Big Five
+    retired from the active pool, so a report with no personality data has
+    0 cards, not a missing-required-field error), so deleting it from a
+    cached payload no longer reproduces a validation failure at all."""
     import json
 
     assessment = await _make_assessment(db_session, AgeGroup.senior)
@@ -191,13 +198,13 @@ async def test_stale_cached_payload_missing_a_new_required_field_falls_back_to_d
     redis = assessment_shared.get_redis()
     cache_key = assessment_shared.report_cache_key(assessment.id)
     stale_payload = generated.model_dump(mode="json")
-    del stale_payload["personality_notes"]
+    del stale_payload["thinking_style_notes"]
     await redis.set(cache_key, json.dumps(stale_payload))
 
     fetched = await report_service.get_report(assessment.id, db_session)
 
     assert fetched is not None
-    assert len(fetched.personality_notes) == 5
+    assert fetched.thinking_style_notes == generated.thinking_style_notes
 
 
 async def test_invalidate_retake_survives_redis_outage(
