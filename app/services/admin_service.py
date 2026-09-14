@@ -1,6 +1,7 @@
 import uuid
+from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult
@@ -25,6 +26,7 @@ from app.schemas.admin import (
     AdminUserDetailResponse,
     AdminUserListItem,
     AdminUserListResponse,
+    AdminUserStatsResponse,
     FeedbackBreakdownItem,
 )
 from app.schemas.artifact import ArtifactItem
@@ -32,6 +34,7 @@ from app.schemas.profile import ProfileResponse
 from app.schemas.admin_result import AdminAnalysisResultResponse
 from app.schemas.roadmap import RoadmapResponse
 from app.services import auth_service, bigfive_content, motivation_service
+from app.services.admin_listing import SortOrder, order_by_clause
 from app.services.age_tiers import visible_tiers
 from app.services.goal_overlay_service import _get_effective_goal_and_scenario
 from app.services.riasec_content import LIKERT_LABELS as RIASEC_LIKERT_LABELS
@@ -58,6 +61,20 @@ def _selected_answer_text(answer_value: int, instrument: QuestionInstrument | No
     return f"Шкала {answer_value}/5"
 
 
+def _last_known_activity():
+    """The most recent moment a user is known to have been here.
+
+    Falling back to `created_at` matters: `last_active_at` is null for anyone
+    who has not been seen since it started being recorded, and treating null
+    as "inactive forever" would return an account registered five minutes ago
+    from `?inactive_days=365`. Registering is itself activity.
+
+    `get_user_stats` answers the same question about the same user, so it
+    reuses this — otherwise the list and the "abandoned" tile on top of it
+    disagree about who counts as quiet."""
+    return func.coalesce(User.last_active_at, User.created_at)
+
+
 def _build_user_filters(
     *,
     search: str | None,
@@ -65,6 +82,7 @@ def _build_user_filters(
     status: AssessmentStatus | None,
     goal: AssessmentGoal | None,
     role: UserRole | None,
+    inactive_days: int | None = None,
 ) -> tuple[list, bool]:
     """Filter clauses for the admin users list/export query, plus whether an
     Assessment join is needed. `status`/`goal` match "this user has AT LEAST
@@ -88,6 +106,9 @@ def _build_user_filters(
         filters.append(Profile.age_group == age_group)
     if role is not None:
         filters.append(User.role == role)
+    if inactive_days is not None:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=inactive_days)
+        filters.append(_last_known_activity() < cutoff)
     needs_distinct = status is not None or goal is not None
     if status is not None:
         filters.append(Assessment.status == status)
@@ -103,6 +124,28 @@ def _user_base_query(*, needs_distinct: bool):
     return query
 
 
+# The status of the user's most recent assessment, as a correlated subquery,
+# so the column the list already displays can also be sorted on. Same "latest"
+# rule _build_user_list_items uses to fill it in (newest by created_at), which
+# is what keeps the sorted order consistent with the value shown in the row.
+_LATEST_ASSESSMENT_STATUS = (
+    select(Assessment.status)
+    .where(Assessment.profile_id == Profile.id)
+    .order_by(Assessment.created_at.desc())
+    .limit(1)
+    .correlate(Profile)
+    .scalar_subquery()
+)
+
+USER_SORT_FIELDS = {
+    "created_at": User.created_at,
+    "last_active_at": User.last_active_at,
+    "email": User.email,
+    "age_group": Profile.age_group,
+    "latest_assessment_status": _LATEST_ASSESSMENT_STATUS,
+}
+
+
 async def list_users(
     db: AsyncSession,
     *,
@@ -113,9 +156,13 @@ async def list_users(
     status: AssessmentStatus | None = None,
     goal: AssessmentGoal | None = None,
     role: UserRole | None = UserRole.student,
+    inactive_days: int | None = None,
+    sort: str | None = None,
+    order: SortOrder | None = None,
 ) -> AdminUserListResponse:
     filters, needs_distinct = _build_user_filters(
-        search=search, age_group=age_group, status=status, goal=goal, role=role
+        search=search, age_group=age_group, status=status, goal=goal,
+        role=role, inactive_days=inactive_days,
     )
 
     count_query = _user_base_query(needs_distinct=needs_distinct).with_only_columns(User.id).where(*filters)
@@ -124,10 +171,25 @@ async def list_users(
     total_result = await db.execute(select(func.count()).select_from(count_query.subquery()))
     total = total_result.scalar_one()
 
-    query = _user_base_query(needs_distinct=needs_distinct).where(*filters).order_by(User.created_at.desc())
+    order_by = order_by_clause(
+        sort,
+        order,
+        allowed=USER_SORT_FIELDS,
+        default=(User.created_at.desc(),),
+        tiebreaker=User.id.asc(),
+    )
+
+    query = _user_base_query(needs_distinct=needs_distinct).where(*filters)
     if needs_distinct:
+        # SELECT DISTINCT requires every ORDER BY expression to be in the
+        # select list. User's own columns are there via the entity, but a sort
+        # on the profile's age group or on the latest-assessment subquery is
+        # not — Postgres rejects the query outright unless it is added.
+        sort_column = USER_SORT_FIELDS.get(sort) if sort else None
+        if sort_column is not None:
+            query = query.add_columns(sort_column)
         query = query.distinct()
-    query = query.offset((page - 1) * limit).limit(limit)
+    query = query.order_by(*order_by).offset((page - 1) * limit).limit(limit)
     users_result = await db.execute(query)
     users = users_result.scalars().all()
 
@@ -143,12 +205,14 @@ async def export_users(
     status: AssessmentStatus | None = None,
     goal: AssessmentGoal | None = None,
     role: UserRole | None = UserRole.student,
+    inactive_days: int | None = None,
 ) -> list[AdminUserListItem]:
     """Same filters as `list_users`, no pagination — for CSV export. Raises
     ExportTooLargeError instead of running an unbounded query if the
     filtered result set is bigger than EXPORT_MAX_ROWS."""
     filters, needs_distinct = _build_user_filters(
-        search=search, age_group=age_group, status=status, goal=goal, role=role
+        search=search, age_group=age_group, status=status, goal=goal,
+        role=role, inactive_days=inactive_days,
     )
 
     count_query = _user_base_query(needs_distinct=needs_distinct).with_only_columns(User.id).where(*filters)
@@ -219,11 +283,14 @@ async def _build_user_list_items(db: AsyncSession, users: list[User]) -> list[Ad
         latest_analysis = analysis_by_assessment.get(latest_completed.id) if latest_completed else None
         # RIASEC is only meaningful for middle/senior — junior's instrument
         # is MI, deliberately left blank here rather than mixing shapes.
+        is_junior = bool(profile and profile.age_group == AgeGroup.junior)
         riasec = (
-            dict(latest_analysis.profile)
-            if latest_analysis and profile and profile.age_group != AgeGroup.junior
-            else None
+            dict(latest_analysis.profile) if latest_analysis and not is_junior else None
         )
+        # Same stored `profile` dict, but keyed by MI category instead of
+        # Holland letter for junior — the two shapes are kept in separate
+        # fields rather than mixed into one column set.
+        mi = dict(latest_analysis.profile) if latest_analysis and is_junior else None
         big_five = dict(latest_analysis.big_five) if latest_analysis else None
 
         items.append(
@@ -235,13 +302,17 @@ async def _build_user_list_items(db: AsyncSession, users: list[User]) -> list[Ad
                 role=user.role,
                 is_admin=user.is_admin,
                 created_at=user.created_at,
+                last_active_at=user.last_active_at,
                 has_profile=profile is not None,
                 profile_name=profile.name if profile else None,
                 age_group=profile.age_group.value if profile else None,
+                city=profile.city if profile else None,
+                grade=profile.grade if profile else None,
                 assessments_count=len(assessments),
                 latest_assessment_status=latest.status.value if latest else None,
                 latest_assessment_goal=latest.goal.value if latest else None,
                 riasec=riasec,
+                mi=mi,
                 big_five=big_five,
             )
         )
@@ -331,6 +402,7 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
         role=user.role,
         is_admin=user.is_admin,
         created_at=user.created_at,
+        last_active_at=user.last_active_at,
         profile=ProfileResponse.model_validate(profile) if profile else None,
         artifacts=artifacts,
         assessments=assessments,
@@ -579,18 +651,105 @@ async def _enrich_feedback_rows(
     return items
 
 
+FEEDBACK_SORT_FIELDS = {
+    "created_at": ProductFeedback.created_at,
+    "relevance_score": ProductFeedback.relevance_score,
+}
+
+
+def _has_comment_clause():
+    """A comment that is present but blank is nothing to read, so it counts as
+    "no comment" — the point of the filter is to skip rows with nothing but a
+    score on them."""
+    return and_(ProductFeedback.comment.isnot(None), func.btrim(ProductFeedback.comment) != "")
+
+
+def _build_feedback_filters(
+    *,
+    search: str | None = None,
+    score_min: int | None = None,
+    score_max: int | None = None,
+    age_group: AgeGroup | None = None,
+    section: str | None = None,
+    has_comment: bool | None = None,
+) -> tuple[list, tuple]:
+    """Filter clauses for the feedback list/stats queries, plus the joins they
+    need. `age_group` is not stored on the feedback row — it lives on the
+    profile behind the assessment — so filtering by it joins through both and
+    therefore drops feedback whose assessment was deleted (assessment_id is
+    SET NULL): those rows have no knowable age group, and silently counting
+    them as a match would be worse than excluding them."""
+    filters = []
+    joins: tuple = ()
+
+    if score_min is not None:
+        filters.append(ProductFeedback.relevance_score >= score_min)
+    if score_max is not None:
+        filters.append(ProductFeedback.relevance_score <= score_max)
+    if has_comment is not None:
+        clause = _has_comment_clause()
+        filters.append(clause if has_comment else ~clause)
+    if search:
+        filters.append(ProductFeedback.comment.ilike(f"%{search.strip()}%"))
+    if section:
+        # helpful_sections is a JSONB array of frontend-owned strings; `@>`
+        # asks "does this array contain that element", not a text match.
+        filters.append(ProductFeedback.helpful_sections.contains([section]))
+    if age_group is not None:
+        joins = (
+            (Assessment, ProductFeedback.assessment_id == Assessment.id),
+            (Profile, Assessment.profile_id == Profile.id),
+        )
+        filters.append(Profile.age_group == age_group)
+
+    return filters, joins
+
+
+def _feedback_query(filters: list, joins: tuple):
+    query = select(ProductFeedback)
+    for target, onclause in joins:
+        query = query.join(target, onclause)
+    return query.where(*filters)
+
+
 async def list_feedback(
     db: AsyncSession,
     *,
     page: int = 1,
     limit: int = 20,
+    search: str | None = None,
+    score_min: int | None = None,
+    score_max: int | None = None,
+    age_group: AgeGroup | None = None,
+    section: str | None = None,
+    has_comment: bool | None = None,
+    sort: str | None = None,
+    order: SortOrder | None = None,
 ) -> AdminFeedbackListResponse:
-    total_result = await db.execute(select(func.count()).select_from(ProductFeedback))
-    total = total_result.scalar_one()
+    filters, joins = _build_feedback_filters(
+        search=search,
+        score_min=score_min,
+        score_max=score_max,
+        age_group=age_group,
+        section=section,
+        has_comment=has_comment,
+    )
+
+    count_query = select(func.count()).select_from(ProductFeedback)
+    for target, onclause in joins:
+        count_query = count_query.join(target, onclause)
+    total = (await db.execute(count_query.where(*filters))).scalar_one()
 
     feedback_result = await db.execute(
-        select(ProductFeedback)
-        .order_by(ProductFeedback.created_at.desc())
+        _feedback_query(filters, joins).order_by(
+            *order_by_clause(
+                sort,
+                order,
+                allowed=FEEDBACK_SORT_FIELDS,
+                default=(ProductFeedback.created_at.desc(),),
+                tiebreaker=ProductFeedback.id.asc(),
+            )
+        )
         .offset((page - 1) * limit)
         .limit(limit)
     )
@@ -598,6 +757,62 @@ async def list_feedback(
     items = await _enrich_feedback_rows(db, feedback_rows)
 
     return AdminFeedbackListResponse(items=items, total=total, page=page, limit=limit)
+
+
+DEFAULT_INACTIVE_DAYS = 7
+
+
+async def get_user_stats(
+    db: AsyncSession, *, inactive_days: int = DEFAULT_INACTIVE_DAYS
+) -> AdminUserStatsResponse:
+    """Whole-table counts the users list cannot produce from one page of 20.
+
+    "Abandoned" means an assessment still in progress whose owner has not been
+    seen for `inactive_days` — the same "last known activity" rule the users
+    list filters on (`_last_known_activity`), so this tile and the list it
+    sits above cannot disagree about who counts as quiet."""
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=inactive_days)
+    # Fixed at 7 days on purpose: it is a signup-rate figure named after its
+    # own window, and must not silently follow the unrelated inactivity
+    # threshold the caller chose.
+    signup_cutoff = now - timedelta(days=7)
+
+    total = (await db.execute(select(func.count()).select_from(User))).scalar_one()
+    signups_last_7d = (
+        await db.execute(
+            select(func.count()).select_from(User).where(User.created_at >= signup_cutoff)
+        )
+    ).scalar_one()
+
+    completed = (
+        await db.execute(
+            select(func.count())
+            .select_from(Assessment)
+            .where(Assessment.status == AssessmentStatus.completed)
+        )
+    ).scalar_one()
+
+    abandoned = (
+        await db.execute(
+            select(func.count())
+            .select_from(Assessment)
+            .join(Profile, Assessment.profile_id == Profile.id)
+            .join(User, Profile.user_id == User.id)
+            .where(
+                Assessment.status == AssessmentStatus.in_progress,
+                _last_known_activity() < cutoff,
+            )
+        )
+    ).scalar_one()
+
+    return AdminUserStatsResponse(
+        total=total,
+        signups_last_7d=signups_last_7d,
+        completed_diagnostics=completed,
+        abandoned_diagnostics=abandoned,
+        inactive_days_threshold=inactive_days,
+    )
 
 
 def _breakdown(items: list[AdminFeedbackListItem], key_fn) -> list[FeedbackBreakdownItem]:
@@ -613,17 +828,38 @@ def _breakdown(items: list[AdminFeedbackListItem], key_fn) -> list[FeedbackBreak
     ]
 
 
-async def get_feedback_stats(db: AsyncSession) -> AdminFeedbackStatsResponse:
+async def get_feedback_stats(
+    db: AsyncSession,
+    *,
+    search: str | None = None,
+    score_min: int | None = None,
+    score_max: int | None = None,
+    age_group: AgeGroup | None = None,
+    section: str | None = None,
+    has_comment: bool | None = None,
+) -> AdminFeedbackStatsResponse:
     """TZ_Profi.md §28.4: aggregate by age group / scenario / top direction.
     Feedback volume is admin-only, low-traffic data — in-Python aggregation
     over all rows (via the same enrichment `list_feedback` uses) is simpler
     and more honest than a raw SQL GROUP BY, since `scenario` isn't a stored
     column, it's derived the same way the student's own results page derives
-    it."""
-    feedback_result = await db.execute(select(ProductFeedback))
+    it.
+
+    Takes the same filters as `list_feedback` so the summary describes the
+    rows currently on screen. Unfiltered, it still describes everything."""
+    filters, joins = _build_feedback_filters(
+        search=search,
+        score_min=score_min,
+        score_max=score_max,
+        age_group=age_group,
+        section=section,
+        has_comment=has_comment,
+    )
+    feedback_result = await db.execute(_feedback_query(filters, joins))
     feedback_rows = list(feedback_result.scalars().all())
+    empty_histogram = {str(score): 0 for score in range(1, 6)}
     if not feedback_rows:
-        return AdminFeedbackStatsResponse(total=0)
+        return AdminFeedbackStatsResponse(total=0, score_counts=empty_histogram)
 
     items = await _enrich_feedback_rows(db, feedback_rows)
 
@@ -632,11 +868,21 @@ async def get_feedback_stats(db: AsyncSession) -> AdminFeedbackStatsResponse:
         for section in item.helpful_sections:
             section_counts[section] = section_counts.get(section, 0) + 1
 
+    score_counts = dict(empty_histogram)
+    for item in items:
+        key = str(item.relevance_score)
+        # Every score in the DB should be 1-5 (enforced by the submit schema),
+        # but the column has no CHECK constraint, so an out-of-range value is
+        # counted under its own key rather than dropped from the histogram.
+        score_counts[key] = score_counts.get(key, 0) + 1
+
     return AdminFeedbackStatsResponse(
         total=len(items),
         avg_relevance_score=round(sum(i.relevance_score for i in items) / len(items), 2),
+        score_counts=score_counts,
         by_age_group=_breakdown(items, lambda i: i.age_group),
         by_scenario=_breakdown(items, lambda i: i.scenario),
         by_top_direction=_breakdown(items, lambda i: i.top_direction_name),
         helpful_section_counts=section_counts,
+        no_sections_count=sum(1 for i in items if not i.helpful_sections),
     )

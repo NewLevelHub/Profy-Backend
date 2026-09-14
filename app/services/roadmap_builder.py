@@ -1157,9 +1157,12 @@ async def _upsert_direction_roadmap(
     roadmap.university_requirements = [r.model_dump() for r in plan.university_requirements]
     # mode="json" — program_fit.program_id is a uuid.UUID; a plain
     # model_dump() leaves it as a UUID object, which the JSONB column's
-    # encoder can't serialize (only ever caught by a test, not in
-    # production, because the LLM-enabled program_fit path is rarely
-    # exercised locally — real bug, not just a stale fixture).
+    # encoder can't serialize ("Object of type UUID is not JSON
+    # serializable"), failing every by-program direction roadmap at insert
+    # time (only ever caught by a test, not production, because the
+    # LLM-enabled program_fit path is rarely exercised locally — real bug,
+    # not just a stale fixture). The other model_dump() calls above carry
+    # only str/int/list fields.
     roadmap.program_fit = (
         plan.program_fit.model_dump(mode="json") if plan.program_fit is not None else None
     )

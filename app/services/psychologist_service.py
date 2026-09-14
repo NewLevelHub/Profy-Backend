@@ -1,9 +1,10 @@
-"""Psychologist access to students, their reports, and notes.
+"""Psychologist access to assigned students, their reports, and notes
+(PRO-327 / PRO-330, assignments PRO-325/326).
 
-Scope decision (PRO-321 rework): a psychologist sees **every** student — no
-assignment step, one implicit psychologist↔all-students relation. Student
-list/detail/report and notes are gated only by `require_role(psychologist)`;
-a target that isn't an existing student → not-found (404), never 403.
+Student list/detail/report are assignment-gated (PsychologistStudentAssignment).
+Notes use soft cutoff: create requires an active assignment; list/update/delete
+of notes the psychologist already owns do not — missing ownership/assignment
+→ not-found (404), never 403.
 """
 
 from __future__ import annotations
@@ -12,11 +13,13 @@ import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
 from app.models.assessment import Assessment
 from app.models.profile import Profile
+from app.models.psychologist_assignment import PsychologistStudentAssignment
 from app.models.psychologist_note import PsychologistNote
-from app.models.user import User, UserRole
+from app.models.user import User
 from app.schemas.admin import AdminUserDetailResponse
 from app.schemas.psychologist import (
     PsychologistAssessmentSummary,
@@ -30,11 +33,22 @@ from app.schemas.result_v2 import ResultResponseV2
 from app.services import admin_service
 
 
-async def _require_student(db: AsyncSession, student_id: uuid.UUID) -> User:
-    user = await db.get(User, student_id)
-    if user is None or user.role != UserRole.student:
+async def _require_assigned_student(
+    db: AsyncSession,
+    *,
+    psychologist_id: uuid.UUID,
+    student_id: uuid.UUID,
+) -> PsychologistStudentAssignment:
+    result = await db.execute(
+        select(PsychologistStudentAssignment).where(
+            PsychologistStudentAssignment.psychologist_id == psychologist_id,
+            PsychologistStudentAssignment.student_id == student_id,
+        )
+    )
+    assignment = result.scalar_one_or_none()
+    if assignment is None:
         raise ValueError("Student not found")
-    return user
+    return assignment
 
 
 async def _require_own_note(
@@ -49,18 +63,22 @@ async def _require_own_note(
     return note
 
 
-async def list_students(db: AsyncSession) -> list[PsychologistStudentListItem]:
+async def list_assigned_students(
+    db: AsyncSession, psychologist_id: uuid.UUID
+) -> list[PsychologistStudentListItem]:
+    student = aliased(User)
     query = (
         select(
-            User.id,
-            User.email,
-            User.created_at,
+            student.id,
+            student.email,
             Profile.name,
             Profile.age_group,
+            PsychologistStudentAssignment.created_at,
         )
-        .outerjoin(Profile, Profile.user_id == User.id)
-        .where(User.role == UserRole.student)
-        .order_by(User.created_at.desc())
+        .join(student, student.id == PsychologistStudentAssignment.student_id)
+        .outerjoin(Profile, Profile.user_id == student.id)
+        .where(PsychologistStudentAssignment.psychologist_id == psychologist_id)
+        .order_by(PsychologistStudentAssignment.created_at.desc())
     )
     rows = (await db.execute(query)).all()
     return [
@@ -69,7 +87,7 @@ async def list_students(db: AsyncSession) -> list[PsychologistStudentListItem]:
             email=row.email,
             profile_name=row.name,
             age_group=row.age_group.value if row.age_group is not None else None,
-            registered_at=row.created_at,
+            assigned_at=row.created_at,
         )
         for row in rows
     ]
@@ -103,12 +121,18 @@ def _to_psychologist_detail(
     )
 
 
-async def get_student_detail(
-    db: AsyncSession, *, student_id: uuid.UUID
+async def get_assigned_student_detail(
+    db: AsyncSession,
+    *,
+    psychologist_id: uuid.UUID,
+    student_id: uuid.UUID,
 ) -> PsychologistStudentDetailResponse:
-    await _require_student(db, student_id)
+    await _require_assigned_student(
+        db, psychologist_id=psychologist_id, student_id=student_id
+    )
     detail = await admin_service.get_user_detail(db, student_id)
     if detail is None:
+        # Assignment pointed at a deleted user mid-request — treat as missing.
         raise ValueError("Student not found")
     return _to_psychologist_detail(detail)
 
@@ -116,6 +140,7 @@ async def get_student_detail(
 async def get_student_report(
     db: AsyncSession,
     *,
+    psychologist_id: uuid.UUID,
     student_id: uuid.UUID,
     assessment_id: uuid.UUID,
     viewer: User,
@@ -124,7 +149,9 @@ async def get_student_report(
     report_service.psych_sections_for → True and the validity / psychoemotional
     sections are attached (a student never sees these on their own
     /result)."""
-    await _require_student(db, student_id)
+    await _require_assigned_student(
+        db, psychologist_id=psychologist_id, student_id=student_id
+    )
 
     owns = await db.execute(
         select(Assessment.id)
@@ -148,7 +175,10 @@ async def create_note(
     student_id: uuid.UUID,
     body: PsychologistNoteCreate,
 ) -> PsychologistNote:
-    await _require_student(db, student_id)
+    # Soft cutoff: new notes require an active assignment.
+    await _require_assigned_student(
+        db, psychologist_id=psychologist_id, student_id=student_id
+    )
     note = PsychologistNote(
         psychologist_id=psychologist_id,
         student_id=student_id,
@@ -166,6 +196,8 @@ async def list_notes(
     psychologist_id: uuid.UUID,
     student_id: uuid.UUID,
 ) -> list[PsychologistNoteItem]:
+    # Soft cutoff: listing does not require a current assignment — only
+    # notes owned by this psychologist for this student are returned.
     result = await db.execute(
         select(PsychologistNote)
         .where(

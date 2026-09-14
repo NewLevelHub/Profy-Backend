@@ -30,7 +30,7 @@ def _send_resend(to: str, subject: str, plain: str, html: str) -> None:
 
 
 async def send_verification_email(to: str, code: str) -> None:
-    subject = "Твой код подтверждения — Profy"
+    subject = "Твой код подтверждения — Profile"
     plain = f"Твой код подтверждения: {code}\n\nКод действителен 15 минут."
     html = _load_template("verification.html", code=code)
 
@@ -46,7 +46,7 @@ async def send_verification_email(to: str, code: str) -> None:
 
 
 async def send_password_reset_email(to: str, code: str) -> None:
-    subject = "Сброс пароля — Profy"
+    subject = "Сброс пароля — Profile"
     plain = (
         f"Твой код для сброса пароля: {code}\n\n"
         "Код действителен 15 минут.\n\n"

@@ -52,6 +52,11 @@ class UniversityBrief(BaseModel):
     # never a stored column, so a storage/CDN vendor swap never needs a DB
     # backfill.
     image_url: str | None = None
+    # Whether the *requesting* user starred this university (PRO-265). Not an
+    # ORM column and not derivable from the University row alone — the
+    # service fills it in after model_validate, per caller, and it stays
+    # False for anonymous callers.
+    is_favorite: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -75,15 +80,24 @@ class ProgramBrief(BaseModel):
 
     @model_validator(mode="after")
     def convert_cost_to_usd(self) -> "ProgramBrief":
-        if self.cost_currency and (self.cost_per_year is not None or self.cost_per_year_min is not None):
+        # Idempotent: FastAPI re-validates an already-built ProgramBrief on
+        # response serialization. Without flipping the currency to USD after
+        # the first pass, a second pass would divide the already-USD amount
+        # by the original rate again (960000 KZT → 2000 → 4).
+        if (
+            self.cost_currency
+            and self.cost_currency.upper() != "USD"
+            and (self.cost_per_year is not None or self.cost_per_year_min is not None)
+        ):
             base_cost = self.cost_per_year
             if self.cost_per_year_min is not None and self.cost_per_year_max is not None:
                 base_cost = (self.cost_per_year_min + self.cost_per_year_max) / 2
-            
+
             if base_cost is not None:
                 rate = CURRENCY_RATES_PER_USD.get(self.cost_currency.upper(), 1.0)
                 usd_cost = float(base_cost) / rate
                 self.cost_per_year = Decimal(str(round(usd_cost)))
+                self.cost_currency = "USD"
         return self
 
 
@@ -120,13 +134,59 @@ class ProgramDetail(BaseModel):
 
     @model_validator(mode="after")
     def convert_cost_to_usd(self) -> "ProgramDetail":
-        if self.cost_currency and (self.cost_per_year is not None or self.cost_per_year_min is not None):
+        # Same idempotency contract as ProgramBrief.convert_cost_to_usd —
+        # see that docstring. Without it, response re-validation double-divides.
+        if (
+            self.cost_currency
+            and self.cost_currency.upper() != "USD"
+            and (self.cost_per_year is not None or self.cost_per_year_min is not None)
+        ):
             base_cost = self.cost_per_year
             if self.cost_per_year_min is not None and self.cost_per_year_max is not None:
                 base_cost = (self.cost_per_year_min + self.cost_per_year_max) / 2
-            
+
             if base_cost is not None:
                 rate = CURRENCY_RATES_PER_USD.get(self.cost_currency.upper(), 1.0)
                 usd_cost = float(base_cost) / rate
                 self.cost_per_year = Decimal(str(round(usd_cost)))
+                self.cost_currency = "USD"
         return self
+
+
+class UniversityListItem(UniversityBrief):
+    """A catalogue row. `programs_count` is the aggregate the list query
+    already computes — a university with zero programs can be recommended to
+    nobody, so the number is worth showing rather than hiding."""
+
+    programs_count: int = 0
+
+
+class UniversityListResponse(BaseModel):
+    """Same {items, total, page, limit} envelope the admin lists use. The
+    other public list endpoints return a bare array with no total, which is
+    exactly why they can't be paginated — this one is not repeating that."""
+
+    items: list[UniversityListItem]
+    total: int
+    page: int
+    limit: int
+
+
+class UniversityCountry(BaseModel):
+    """One entry of the catalogue's country filter, with how many
+    universities sit behind it — a filter with nothing behind it is worse
+    than no filter."""
+
+    country: str
+    count: int
+
+
+class UniversityDetail(UniversityBrief):
+    """The university's own page. Deliberately does NOT expose
+    `fact_sources`, `admin_locked_fields`, `ovpo_code` or `slug` — those are
+    editorial/admin plumbing, not student-facing facts."""
+
+    contacts: dict
+    facilities: dict
+    source_url: str | None = None
+    programs: list[ProgramBrief] = []

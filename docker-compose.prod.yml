@@ -2,6 +2,17 @@ services:
   db:
     image: postgres:16-alpine
     container_name: profi_db_prod
+    # A deploy step whose client dies mid-transaction (cancelled CD workflow,
+    # `docker rm -f` on the api container while a script like
+    # build_universities.py is still running) leaves that transaction's row
+    # locks held until Postgres notices the dropped connection — with no
+    # timeout set, that relies on OS-level TCP keepalive, which can take
+    # hours and has required a full server reboot to clear in practice
+    # (see docs — the cd-dev.yml hang on 2026-09-03). This kills any session
+    # that is inside an open transaction but idle (not executing a query,
+    # i.e. waiting on a client that's gone) for 5 minutes. Does not affect
+    # genuinely long-running active queries/transactions.
+    command: ["postgres", "-c", "idle_in_transaction_session_timeout=300000"]
     volumes:
       - postgres_data_prod:/var/lib/postgresql/data
     environment:

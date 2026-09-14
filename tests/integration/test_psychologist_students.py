@@ -1,13 +1,11 @@
-"""GET /api/v1/psychologist/students — a psychologist sees every student
-(PRO-321 rework: no assignment step). Detail + full report also covered here.
-"""
+"""GET /api/v1/psychologist/students — assigned students only (PRO-327).
+Detail + full report also covered here."""
 
 import uuid
 
 import httpx
 
-from app.models.user import User, UserRole
-from app.services import auth_service
+from app.models.user import User
 
 
 async def test_list_students_requires_psychologist(
@@ -24,51 +22,42 @@ async def test_list_students_rejects_admin(
     assert response.status_code == 403
 
 
-async def test_list_returns_every_student(
-    client: httpx.AsyncClient,
-    psychologist_headers: dict[str, str],
-    test_user: User,
-    db_session,
+async def test_list_students_empty_without_assignments(
+    client: httpx.AsyncClient, psychologist_headers: dict[str, str]
 ) -> None:
-    other = User(
-        email=f"{uuid.uuid4()}@example.com",
-        hashed_password=auth_service.hash_password("Testpass123!"),
-        is_active=True,
-        is_verified=True,
-        role=UserRole.student,
-    )
-    db_session.add(other)
-    await db_session.flush()
-
     response = await client.get(
         "/api/v1/psychologist/students", headers=psychologist_headers
     )
     assert response.status_code == 200
-    ids = {row["id"] for row in response.json()}
-    assert str(test_user.id) in ids
-    assert str(other.id) in ids
+    assert response.json() == []
 
 
-async def test_list_excludes_non_students(
+async def test_list_and_get_assigned_student(
     client: httpx.AsyncClient,
+    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
-    admin_user: User,
     psychologist_user: User,
-) -> None:
-    response = await client.get(
-        "/api/v1/psychologist/students", headers=psychologist_headers
-    )
-    assert response.status_code == 200
-    ids = {row["id"] for row in response.json()}
-    assert str(admin_user.id) not in ids
-    assert str(psychologist_user.id) not in ids
-
-
-async def test_get_any_student_detail(
-    client: httpx.AsyncClient,
-    psychologist_headers: dict[str, str],
     test_user: User,
 ) -> None:
+    created = await client.post(
+        "/api/v1/admin/psychologist-assignments",
+        json={
+            "psychologist_id": str(psychologist_user.id),
+            "student_id": str(test_user.id),
+        },
+        headers=admin_headers,
+    )
+    assert created.status_code == 201
+
+    listed = await client.get(
+        "/api/v1/psychologist/students", headers=psychologist_headers
+    )
+    assert listed.status_code == 200
+    items = listed.json()
+    assert len(items) == 1
+    assert items[0]["id"] == str(test_user.id)
+    assert items[0]["email"] == test_user.email
+
     detail = await client.get(
         f"/api/v1/psychologist/students/{test_user.id}",
         headers=psychologist_headers,
@@ -82,13 +71,13 @@ async def test_get_any_student_detail(
     assert "assessments" in body
 
 
-async def test_get_non_student_returns_404(
+async def test_get_unassigned_student_returns_404(
     client: httpx.AsyncClient,
     psychologist_headers: dict[str, str],
-    admin_user: User,
+    test_user: User,
 ) -> None:
     response = await client.get(
-        f"/api/v1/psychologist/students/{admin_user.id}",
+        f"/api/v1/psychologist/students/{test_user.id}",
         headers=psychologist_headers,
     )
     assert response.status_code == 404
@@ -104,11 +93,36 @@ async def test_get_unknown_student_returns_404(
     assert response.status_code == 404
 
 
-async def test_get_student_report_unknown_assessment_404(
+async def test_get_student_report_requires_assignment(
     client: httpx.AsyncClient,
     psychologist_headers: dict[str, str],
     test_user: User,
 ) -> None:
+    # No assignment created — must 404 before the assessment lookup even runs.
+    response = await client.get(
+        f"/api/v1/psychologist/students/{test_user.id}/result/{uuid.uuid4()}",
+        headers=psychologist_headers,
+    )
+    assert response.status_code == 404
+
+
+async def test_get_student_report_unknown_assessment_404(
+    client: httpx.AsyncClient,
+    admin_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    psychologist_user: User,
+    test_user: User,
+) -> None:
+    created = await client.post(
+        "/api/v1/admin/psychologist-assignments",
+        json={
+            "psychologist_id": str(psychologist_user.id),
+            "student_id": str(test_user.id),
+        },
+        headers=admin_headers,
+    )
+    assert created.status_code == 201
+
     response = await client.get(
         f"/api/v1/psychologist/students/{test_user.id}/result/{uuid.uuid4()}",
         headers=psychologist_headers,

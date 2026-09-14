@@ -19,9 +19,7 @@ class PsychologistStudentListItem(BaseModel):
     email: str
     profile_name: str | None = None
     age_group: str | None = None
-    # No assignment step — a psychologist sees every student; this is the
-    # student's registration date, used only for ordering/display.
-    registered_at: datetime
+    assigned_at: datetime
 
 
 class PsychologistAssessmentSummary(BaseModel):

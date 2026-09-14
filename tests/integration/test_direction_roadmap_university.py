@@ -153,7 +153,9 @@ async def test_program_row_for_direction_validates_membership(db_session: AsyncS
     # Program.profession_slugs is now a read-only view over the M2M
     # `directions` relationship (program_directions table) — tag membership
     # by assigning an actual Direction row, not the old JSONB array kwarg.
-    other_direction = Direction(name="Other Direction", slug="other-direction", holland_code="RIA")
+    other_direction = Direction(
+        name="Other direction", slug=f"other-direction-{uuid.uuid4()}", holland_code="RIA"
+    )
     db_session.add(other_direction)
     await db_session.flush()
 
@@ -177,16 +179,10 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
 ):
     assessment = await _make_assessment(db_session, AssessmentGoal.profession)
 
-    # _upsert_direction_roadmap now takes the Direction row itself (reads
-    # .name/.skills_needed/.subjects_to_develop/.holland_code for the
-    # resource-catalog match) — a bare name string used to be enough.
-    # Transient (not persisted) is fine: the function only reads attributes.
-    direction = Direction(name="Architecture", slug=SLUG, holland_code="RIA")
-
     # direction_roadmaps.program_id is FK-constrained to programs.id now —
     # random uuid4()s (the old fixture) no longer insert. Program A/B must
     # be real, persisted rows.
-    university = University(name="Test University", country="Казахстан", city="Алматы")
+    university = University(name=f"Uni {uuid.uuid4()}", country="Казахстан", city="Алматы")
     db_session.add(university)
     await db_session.flush()
     program_a = Program(university_id=university.id, name="Program A", language="ru")
@@ -234,6 +230,10 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
             summary="summary b",
         ),
     )
+
+    direction = Direction(name="Architecture", slug=SLUG, holland_code="RIA")
+    db_session.add(direction)
+    await db_session.flush()
 
     roadmap_first = await roadmap_builder._upsert_direction_roadmap(
         assessment.id,

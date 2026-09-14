@@ -24,7 +24,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
-from app.models.question import BigFiveDomain, HollandType, MIType, Question, QuestionInstrument
+from app.models.question import (
+    BigFiveDomain,
+    HollandType,
+    MIType,
+    Question,
+    QuestionInstrument,
+)
 from app.models.user import User
 from app.schemas.response import AnswerItem
 from app.services import (

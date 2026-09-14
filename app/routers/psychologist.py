@@ -1,8 +1,9 @@
-"""Psychologist router — every student, their reports, and notes.
+"""Psychologist router — assigned students, their reports, and notes.
 
 Mounted at `/api/v1/psychologist`. Psychologists never share admin routes;
-access is gated with `require_role(UserRole.psychologist)`. There is no
-assignment step — a psychologist sees every student (PRO-321 rework).
+access is gated with `require_role(UserRole.psychologist)`, and student
+access (list/detail/report/notes) is further gated to students the admin has
+assigned to that psychologist (PsychologistStudentAssignment, PRO-325/326).
 """
 
 import uuid
@@ -33,7 +34,7 @@ async def list_students(
     current_user: User = Depends(_require_psychologist),
     db: AsyncSession = Depends(get_db),
 ) -> list[PsychologistStudentListItem]:
-    return await psychologist_service.list_students(db)
+    return await psychologist_service.list_assigned_students(db, current_user.id)
 
 
 @router.get("/students/{student_id}", response_model=PsychologistStudentDetailResponse)
@@ -43,7 +44,9 @@ async def get_student(
     db: AsyncSession = Depends(get_db),
 ) -> PsychologistStudentDetailResponse:
     try:
-        return await psychologist_service.get_student_detail(db, student_id=student_id)
+        return await psychologist_service.get_assigned_student_detail(
+            db, psychologist_id=current_user.id, student_id=student_id
+        )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -64,6 +67,7 @@ async def get_student_report(
     try:
         return await psychologist_service.get_student_report(
             db,
+            psychologist_id=current_user.id,
             student_id=student_id,
             assessment_id=assessment_id,
             viewer=current_user,
