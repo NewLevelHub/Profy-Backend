@@ -12,8 +12,9 @@ LongString and IRV, never used alone (PRO-299, conservative thresholds).
 
 Wording rules (PRO-296 §2):
   - project-authored, not from any published scale;
-  - first person, same register as the Big Five items, so a trap does not
-    stand out in the interleaved battery;
+  - first person, same register as Big Five's agree/disagree statements — the
+    scale these items render with (question_service._bigfive_scale) even
+    though they now sit inside the RIASEC block on the wire;
   - plainly, unarguably true or false — no absurdist / comic phrasing that a
     reading teenager would flag as "the trick question";
   - no semantic overlap with the MC-SDS items

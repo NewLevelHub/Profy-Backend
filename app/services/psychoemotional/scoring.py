@@ -24,10 +24,15 @@ from app.services.psychoemotional import engine, validity
 async def _latest_run(
     assessment_id: uuid.UUID, db: AsyncSession
 ) -> PsychoEmotionalRun | None:
+    # list2 IS NULL — circle2 not finished yet (in-progress or abandoned
+    # start): not a real completed run, must never be scored.
     return (
         await db.execute(
             select(PsychoEmotionalRun)
-            .where(PsychoEmotionalRun.assessment_id == assessment_id)
+            .where(
+                PsychoEmotionalRun.assessment_id == assessment_id,
+                PsychoEmotionalRun.list2.isnot(None),
+            )
             .order_by(PsychoEmotionalRun.created_at.desc())
             .limit(1)
         )

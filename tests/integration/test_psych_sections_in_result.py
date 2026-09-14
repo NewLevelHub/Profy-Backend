@@ -475,6 +475,36 @@ async def test_report_generation_scores_the_latest_raw_psychoemotional_run(
     assert response.summary  # main report intact
 
 
+async def test_incomplete_run_is_not_scored_and_leaves_the_section_null(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Two-phase submit: a run with `list2 IS NULL` is circle1 without a
+    finished circle2 (in-progress or abandoned) — report generation must not
+    crash trying to score it, and the psychoemotional section stays null
+    rather than surfacing a half-done run."""
+    user, assessment = await _make_assessment(db_session, AgeGroup.senior)
+    _force_complete_and_llm_disabled(monkeypatch)
+
+    db_session.add(PsychoEmotionalRun(
+        assessment_id=assessment.id, user_id=user.id,
+        list1=[4, 3, 2, 1, 5, 6, 0, 7], list1_dt_ms=[0, 1, 2, 3, 4, 5, 6, 7],
+    ))
+    await db_session.flush()
+
+    response = await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
+
+    run = (await db_session.execute(
+        select(PsychoEmotionalRun).where(
+            PsychoEmotionalRun.assessment_id == assessment.id
+        )
+    )).scalar_one()
+    assert run.list2 is None
+    assert run.metrics == {}  # never scored
+
+    assert response.psychoemotional is None
+    assert response.summary  # main report intact
+
+
 async def test_report_generation_stores_and_serves_a_low_validity_flag(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:

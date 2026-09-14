@@ -5,10 +5,12 @@ Marlowe-Crowne Social Desirability Scale, Russian 20-item adaptation by
 Yu. L. Khanin ("Шкала мотивации одобрения" / ШМО). Part of the protocol-
 validity module (epic PRO-282, phase 1; PRO-296).
 
-These items are mixed into the Likert battery indistinguishably from Big Five
-items (ТестЛжи.md §3.4): same scale, interleaved, no section header, no
-warning screen. At scoring time (PRO-299) each Likert answer is folded to a
-binary agree/disagree by the middle-option rule (see
+These items are mixed into the Likert battery's RIASEC block (wire-tagged
+`instrument='riasec'` to match their neighbours — question_service.py), but
+keep rendering on Big Five's agree/disagree scale (ТестЛжи.md §3.4 predates
+this; see question_service._bigfive_scale): same scale, interleaved, no
+section header, no warning screen. At scoring time (PRO-299) each Likert
+answer is folded to a binary agree/disagree by the middle-option rule (see
 docs/psych/psych-block-spec.md §A3) and matched against `keyed` — the
 socially-desirable pole. Sum of matches = raw SD score, 0-20.
 

@@ -1,17 +1,23 @@
 """Deterministic placement of protocol-validity items inside the Likert
 battery (epic PRO-282, phase 1; PRO-298).
 
-The 20 MC-SDS + N infrequency questions must be **indistinguishable** from
-Big Five items to the student (ТестЛжи.md §3.4): same scale, interleaved, no
-marker. Two constraints from how the client renders the battery:
+The 20 MC-SDS + N infrequency questions are placed **inside the RIASEC
+block**, wire-tagged `instrument='riasec'` to match their neighbours (see
+question_service._VALIDITY_WIRE_INSTRUMENT), so they are not set apart by
+section or position. They keep rendering on Big Five's agree/disagree scale
+(`QuestionResponse.bigfive_scale`, decided independently of `instrument`)
+because the item texts are agree/disagree statements ("Я всегда…", "Я
+никогда…"), not RIASEC's "Мне нравится…" liking statements — see
+question_service._bigfive_scale. Two constraints from how the client renders
+the battery:
 
 - the client re-sorts questions by `order` (buildDisplaySequence.ts), so the
   interleave has to live in the `order` numbers the API returns, not just in
   list position — `question_service.get_all_questions` renumbers the whole
   returned sequence densely after calling this;
-- the client picks the Likert scale by `instrument` (`big_five` → the
-  "неточно…точно" scale), so validity items are placed **within the Big Five
-  block** and masked as `big_five` on the wire.
+- the client picks the Likert scale by `bigfive_scale`, not by `instrument`,
+  so validity items are placed **within the RIASEC block** while still
+  getting the accuracy scale.
 
 `interleave_validity` is pure and deterministic on `seed` (the assessment id):
 the same student always gets the same battery, but the positions are not a
@@ -21,10 +27,15 @@ import random
 
 from app.models.question import Question
 
-# Keep validity items clear of the first / last few Big Five items so they are
-# never the very first or very last thing on that stretch of the battery.
-_EDGE_MARGIN = 6
-# At least this many Big Five items between any two validity items — no runs.
+# Keep validity items clear of the first / last few RIASEC items. RIASEC is
+# the very first instrument block in the battery (question_service seeds it
+# at the lowest `order` range), so this margin IS the global "not in the
+# first/last 10 positions of the presented battery" rule (psych-block-spec.md
+# §A8.2) on the head side — there is no preceding block to add extra offset,
+# unlike when validity items were spliced into Big Five (which always had the
+# RIASEC block ahead of it). Must stay >= 10.
+_EDGE_MARGIN = 10
+# At least this many RIASEC items between any two validity items — no runs.
 _MIN_BASE_BETWEEN = 2
 
 
@@ -36,7 +47,7 @@ def interleave_validity(
     edge_margin: int = _EDGE_MARGIN,
     min_base_between: int = _MIN_BASE_BETWEEN,
 ) -> list[Question]:
-    """Return `base_run` (the contiguous Big Five block) with `validity_items`
+    """Return `base_run` (the contiguous RIASEC block) with `validity_items`
     spread through it deterministically. No item is dropped; on a run too
     short for the spacing rule the constraints relax gracefully rather than
     raising."""

@@ -10,28 +10,19 @@ from app.models.assessment import Assessment
 from app.models.profile import Profile
 from app.models.user import User
 from app.schemas.psychoemotional import (
-    SubmitPsychoEmotionalRequest,
-    SubmitPsychoEmotionalResponse,
+    FinishPsychoEmotionalRequest,
+    FinishPsychoEmotionalResponse,
+    StartPsychoEmotionalRequest,
+    StartPsychoEmotionalResponse,
 )
 from app.services.psychoemotional import run_service
 
 router = APIRouter(tags=["psychoemotional"])
 
 
-@router.post(
-    "/{assessment_id}/psychoemotional",
-    response_model=SubmitPsychoEmotionalResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-async def submit_psychoemotional(
-    assessment_id: uuid.UUID,
-    data: SubmitPsychoEmotionalRequest,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-) -> SubmitPsychoEmotionalResponse:
-    """Сохранить одно прохождение психоэмоционального теста (append-only —
-    повторное прохождение = новая строка). Результат пользователю не
-    возвращается (§5.6)."""
+async def _require_owned_assessment(
+    assessment_id: uuid.UUID, current_user: User, db: AsyncSession
+) -> None:
     row = (
         await db.execute(
             select(Assessment.id, Profile.user_id)
@@ -48,9 +39,46 @@ async def submit_psychoemotional(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
 
-    run = await run_service.create_run(
+
+@router.post(
+    "/{assessment_id}/psychoemotional/start",
+    response_model=StartPsychoEmotionalResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def start_psychoemotional(
+    assessment_id: uuid.UUID,
+    data: StartPsychoEmotionalRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> StartPsychoEmotionalResponse:
+    """circle1 — перед основной батареей тестов. Результат пользователю не
+    возвращается (§5.6)."""
+    await _require_owned_assessment(assessment_id, current_user, db)
+    run = await run_service.start_run(
         assessment_id, data, user_id=current_user.id, db=db
     )
-    return SubmitPsychoEmotionalResponse(
-        run_id=run.id, tech_invalid=run.tech_invalid
+    return StartPsychoEmotionalResponse(run_id=run.id)
+
+
+@router.post(
+    "/{assessment_id}/psychoemotional/{run_id}/finish",
+    response_model=FinishPsychoEmotionalResponse,
+)
+async def finish_psychoemotional(
+    assessment_id: uuid.UUID,
+    run_id: uuid.UUID,
+    data: FinishPsychoEmotionalRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> FinishPsychoEmotionalResponse:
+    """circle2 + check-in — в конце всего прохождения."""
+    await _require_owned_assessment(assessment_id, current_user, db)
+    run = await run_service.finish_run(
+        assessment_id, run_id, data, user_id=current_user.id, db=db
     )
+    if run is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Run not found or already finished",
+        )
+    return FinishPsychoEmotionalResponse(run_id=run.id, tech_invalid=run.tech_invalid)

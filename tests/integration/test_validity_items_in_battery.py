@@ -1,7 +1,8 @@
 """PRO-298: the protocol-validity items are woven into the Likert battery
-returned by `/questions` — masked as Big Five, spread through the Big Five
-block, deterministic per assessment — and they do NOT leak into RIASEC /
-Big Five scoring (those filter by `instrument`)."""
+returned by `/questions` — masked as RIASEC on the wire, spread through the
+RIASEC block, deterministic per assessment, but still rendered with Big
+Five's agree/disagree scale via `bigfive_scale` — and they do NOT leak into
+RIASEC / Big Five scoring (those filter by `instrument`)."""
 import uuid
 
 from sqlalchemy import delete, select
@@ -28,7 +29,7 @@ _MI = list(MIType)
 
 
 async def _seed_battery(
-    db: AsyncSession, *, n_bigfive: int = 80, n_validity: int = 25
+    db: AsyncSession, *, n_riasec: int = 80, n_bigfive: int = 20, n_validity: int = 25
 ) -> tuple[Assessment, list[uuid.UUID]]:
     user = User(
         email=f"{uuid.uuid4()}@example.com",
@@ -55,9 +56,11 @@ async def _seed_battery(
 
     # A realistic senior battery shape: RIASEC block, then Big Five block,
     # then MI block (contiguous `order` ranges — matches the seed banks).
-    for i, holland in enumerate(_HOLLAND):
+    # RIASEC needs to be large enough here for interleave_validity's edge
+    # margin / spacing rules to actually bind (it's the splice target now).
+    for i in range(n_riasec):
         db.add(Question(
-            instrument=QuestionInstrument.riasec, riasec_type=holland,
+            instrument=QuestionInstrument.riasec, riasec_type=_HOLLAND[i % len(_HOLLAND)],
             text=f"riasec {i}", order=1 + i, age_tier=AgeGroup.senior,
         ))
     for i in range(n_bigfive):
@@ -101,9 +104,10 @@ async def test_validity_items_are_masked_and_woven_into_the_battery(
     seen = [q for q in battery if q.id in vset]
     assert {q.id for q in seen} == vset, "every validity item present exactly once"
     for q in seen:
-        assert q.instrument == QuestionInstrument.big_five  # masked on the wire
+        assert q.instrument == QuestionInstrument.riasec  # masked on the wire
         assert q.bigfive_domain is None
         assert q.riasec_type is None
+        assert q.bigfive_scale is True  # still the agree/disagree scale
 
     # order is dense 1..N and matches list position (the client re-sorts by it)
     assert [q.order for q in battery] == list(range(1, len(battery) + 1))
@@ -115,14 +119,26 @@ async def test_validity_items_are_masked_and_woven_into_the_battery(
     assert min(gaps) >= 3, "no two validity items back-to-back"
     assert len(set(gaps)) > 1, "not a fixed 'every Nth' pattern"
 
-    # every validity item sits strictly inside the Big Five block, so it is
-    # surrounded by Big-Five-scaled items and reads identically
-    bf_positions = [
+    # every validity item sits strictly inside the RIASEC block, so its wire
+    # `instrument` matches its neighbours
+    riasec_positions = [
         i for i, q in enumerate(battery)
-        if q.instrument == QuestionInstrument.big_five and q.id not in vset
+        if q.instrument == QuestionInstrument.riasec and q.id not in vset
     ]
-    assert min(bf_positions) < min(positions)
-    assert max(positions) < max(bf_positions)
+    assert min(riasec_positions) < min(positions)
+    assert max(positions) < max(riasec_positions)
+
+    # real (non-validity) items keep the scale their own instrument implies
+    real_bigfive = [
+        q for q in battery
+        if q.id not in vset and q.bigfive_domain is not None
+    ]
+    assert real_bigfive and all(q.bigfive_scale is True for q in real_bigfive)
+    real_riasec = [
+        q for q in battery
+        if q.id not in vset and q.riasec_type is not None
+    ]
+    assert real_riasec and all(q.bigfive_scale is False for q in real_riasec)
 
 
 async def test_battery_is_deterministic_per_assessment(db_session: AsyncSession) -> None:
