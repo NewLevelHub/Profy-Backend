@@ -119,10 +119,48 @@ class StudentPersonalityNote(BaseModel):
     model_config = _model_config
 
 
+class StudentInterestQuote(BaseModel):
+    text: str
+    answer: Literal["like", "dislike"]
+    model_config = _model_config
+
+
+class StudentInterestDetails(BaseModel):
+    """"Why this level" breakdown for one RIASEC type (PRO-336) — built from
+    the student's own answers, so a counsellor or parent can see what the
+    level is made of instead of just the label."""
+
+    answered: int
+    # Answer counts, strongest liking first:
+    # [очень нравится, нравится, не уверен, не нравится, совсем не нравится].
+    distribution: list[int] = Field(min_length=5, max_length=5)
+    likes: int
+    dislikes: int
+    # 0-100 share of the maximum possible score — positions the level meter
+    # against the LEVEL_MEDIUM_MIN/LEVEL_HIGH_MIN marks. The UI shows counts
+    # ("17 из 24"), never this value as a printed percentage.
+    score: float
+    means: str
+    follows: str
+    quotes: list[StudentInterestQuote] = []
+    model_config = _model_config
+
+
 class StudentInterestMapItem(BaseModel):
     code: str
     sphere: str
-    level: Literal["low", "medium", "high"]  # render-state only, never a number
+    level: Literal["low", "medium", "high"]  # render-state only
+    # RIASEC only; None for MI and for responses cached before PRO-336.
+    details: StudentInterestDetails | None = None
+    model_config = _model_config
+
+
+class StudentInterestCombination(BaseModel):
+    """How the two most pronounced RIASEC types sit on Holland's hexagon."""
+
+    codes: list[str] = Field(min_length=2, max_length=2)
+    relation: Literal["adjacent", "alternate", "opposite"]
+    text: str
     model_config = _model_config
 
 
@@ -200,6 +238,9 @@ class RiasecResultResponse(_ResultResponseBase):
     interest_map: list[StudentInterestMapItem] = Field(
         min_length=_RIASEC_INTEREST_COUNT, max_length=_RIASEC_INTEREST_COUNT
     )
+    # None when the second-most pronounced type is below "medium" — a pair
+    # isn't meaningful then — and for responses cached before PRO-336.
+    interest_combination: StudentInterestCombination | None = None
     careers: list[StudentCareer] = Field(max_length=_MAX_CAREERS)
     exploration_activities: list[str] = Field(default_factory=list, max_length=0)
 

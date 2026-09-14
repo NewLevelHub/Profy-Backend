@@ -34,7 +34,7 @@ _redis: aioredis.Redis | None = None
 # time. Bumped to v3 alongside the Big Five relative-tiering / acquiescence
 # correction rework — the response shape is unchanged but the personality
 # levels a cached v2 payload carries are the old absolute-cutoff ones.
-REPORT_CACHE_KEY_PREFIX = "report:v3"
+REPORT_CACHE_KEY_PREFIX = "report:v4"
 
 # Same versioning principle for the goal roadmap cache — bumped 2026-08-18
 # alongside the portrait/recommended_paths prompt rework, so no stale

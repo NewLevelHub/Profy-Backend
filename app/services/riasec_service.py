@@ -160,6 +160,45 @@ async def matched_careers(
     return scored[:limit]
 
 
+async def answer_evidence(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, dict]:
+    """Per-type breakdown of the student's own RIASEC answers — what the
+    interest_map level is actually made of (PRO-336).
+
+    Returns {type: {"distribution": [n5, n4, n3, n2, n1], "liked": [...],
+    "disliked": [...]}}. `liked` (answers >= 4) and `disliked` (<= 2) are
+    statement texts, strongest answer first; ties prefer the later bank
+    position, because each type's block lists abstract traits first and
+    concrete activities after — activities read better as a quote.
+
+    Not tier-filtered: only questions this assessment actually answered can
+    appear, which is already the student's visible set. Empty dict for an
+    assessment with no RIASEC answers (junior/MI)."""
+    result = await db.execute(
+        select(Question.riasec_type, Question.text, Question.order, UserResponse.answer_value)
+        .join(UserResponse, UserResponse.question_id == Question.id)
+        .where(
+            UserResponse.assessment_id == assessment_id,
+            Question.instrument == QuestionInstrument.riasec,
+        )
+    )
+    evidence: dict[str, dict] = {}
+    liked: dict[str, list[tuple[int, int, str]]] = {}
+    disliked: dict[str, list[tuple[int, int, str]]] = {}
+    for riasec_type, text, order, value in result.all():
+        letter = riasec_type.value
+        entry = evidence.setdefault(letter, {"distribution": [0, 0, 0, 0, 0]})
+        if 1 <= value <= 5:
+            entry["distribution"][5 - value] += 1
+        if value >= 4:
+            liked.setdefault(letter, []).append((-value, -order, text))
+        elif value <= _AVERSION_MAX_VALUE:
+            disliked.setdefault(letter, []).append((value, -order, text))
+    for letter, entry in evidence.items():
+        entry["liked"] = [t for *_, t in sorted(liked.get(letter, []))]
+        entry["disliked"] = [t for *_, t in sorted(disliked.get(letter, []))]
+    return evidence
+
+
 def _aversion_ratio(letter: str, aversion_counts: dict[str, int], counts: dict[str, int]) -> float:
     total = counts.get(letter, 0)
     return (aversion_counts.get(letter, 0) / total) if total else 0.0

@@ -173,7 +173,7 @@ def _stored_interest_instrument(profile: dict) -> str:
     return "riasec" if any(key in riasec_service.HOLLAND_ORDER for key in profile) else "mi"
 
 
-def _shape_response(analysis: AnalysisResult) -> ResultResponseV2:
+def _shape_response(analysis: AnalysisResult, evidence: dict[str, dict] | None = None) -> ResultResponseV2:
     """Rebuilds the v2 shape from an already-generated, already-stored row —
     no LLM call, no re-generation. `strength_cards`/`thinking_style_notes`
     are read back verbatim (already the final {title, description} shape,
@@ -192,7 +192,7 @@ def _shape_response(analysis: AnalysisResult) -> ResultResponseV2:
     )
     differentiation = float((analysis.meta or {}).get("differentiation", 0.0))
     flat = report_v2_assembler.is_flat_profile(differentiation)
-    interest_map = report_v2_assembler.build_interest_map(effective_age_group, dict(analysis.profile))
+    interest_map = report_v2_assembler.build_interest_map(effective_age_group, dict(analysis.profile), evidence)
 
     common = dict(
         assessment_id=analysis.assessment_id,
@@ -222,6 +222,7 @@ def _shape_response(analysis: AnalysisResult) -> ResultResponseV2:
 
     return RiasecResultResponse(
         **common,
+        interest_combination=report_v2_assembler.build_interest_combination(interest_map),
         careers=report_v2_assembler.build_riasec_careers(minimal_context, list(analysis.careers)),
     )
 
@@ -273,7 +274,7 @@ async def build_report(
     )
     existing = existing_result.scalar_one_or_none()
     if existing:
-        response = _shape_response(existing)
+        response = _shape_response(existing, await riasec_service.answer_evidence(assessment_id, db))
         await _cache_set(redis, cache_key, response.model_dump_json())
         return response
 
@@ -291,7 +292,7 @@ async def build_report(
     )
     existing = existing_result.scalar_one_or_none()
     if existing:
-        response = _shape_response(existing)
+        response = _shape_response(existing, await riasec_service.answer_evidence(assessment_id, db))
         await _cache_set(redis, cache_key, response.model_dump_json())
         return response
 
@@ -440,10 +441,11 @@ async def build_report(
             select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
         )
         analysis = existing_result.scalar_one()
-        response = _shape_response(analysis)
+        response = _shape_response(analysis, await riasec_service.answer_evidence(assessment_id, db))
         await _cache_set(redis, cache_key, response.model_dump_json())
         return response
 
+    evidence = None if age_group == AgeGroup.junior else await riasec_service.answer_evidence(assessment_id, db)
     response = report_v2_assembler.assemble_result_v2(
         assessment_id=assessment_id,
         age_group=age_group,
@@ -454,6 +456,7 @@ async def build_report(
         differentiation=meta["differentiation"],
         careers=careers,
         created_at=analysis.created_at,
+        evidence=evidence,
     )
     await _cache_set(redis, cache_key, response.model_dump_json())
     return response
@@ -475,6 +478,6 @@ async def get_report(
     analysis = result.scalar_one_or_none()
     if analysis is None:
         return None
-    response = _shape_response(analysis)
+    response = _shape_response(analysis, await riasec_service.answer_evidence(assessment_id, db))
     await _cache_set(redis, cache_key, response.model_dump_json())
     return response
