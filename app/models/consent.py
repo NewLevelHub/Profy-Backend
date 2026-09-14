@@ -8,9 +8,9 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
 # The only scope in use today: parental consent to process the psych-block
-# data and to have a specialist review the validity / psychoemotional / MAC
-# outputs (тестМак.md §8). Kept as a plain string (not an enum) so a new
-# scope is a code-only change — see docs/psych-block-contract.md.
+# data and to have a specialist review the validity / psychoemotional
+# outputs. Kept as a plain string (not an enum) so a new scope is a
+# code-only change — see docs/psych-block-contract.md.
 CONSENT_SCOPE_PSYCH_BLOCK = "psych_block"
 
 

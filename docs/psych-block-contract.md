@@ -1,7 +1,7 @@
 # ADR: контракт психологического блока в `/result`
 
-**Тикет:** PRO-291 (эпик **PRO-282** — «Шкала лжи · Психоэмоциональный тест ·
-МАК»). **Статус:** принято, реализовано в Фазе 0. **Дата:** 2026-09-09.
+**Тикет:** PRO-291 (эпик **PRO-282** — «Шкала лжи · Психоэмоциональный тест»).
+**Статус:** принято, реализовано в Фазе 0. **Дата:** 2026-09-09.
 
 Связанные документы: `00-ЭПИК-PRO-282.md` (§3 режим выката, §4 принятые
 решения), `docs/frontend-result-api-contract.md` (v2-форма `/result`),
@@ -11,9 +11,9 @@
 
 ## 1. Контекст и проблема
 
-Батарея добавляет три вспомогательных слоя для очной встречи с психологом:
-достоверность протокола («шкала лжи»), психоэмоциональный тест (МЦВ Собчик),
-МАК. Роли «Психолог» в системе нет, и на период отладки владелец продукта
+Батарея добавляет два вспомогательных слоя для очной встречи с психологом:
+достоверность протокола («шкала лжи»), психоэмоциональный тест (МЦВ Собчик).
+Роли «Психолог» в системе нет, и на период отладки владелец продукта
 **сознательно** хочет, чтобы выводы приходили в обычный ответ `/result` и были
 видны и школьнику, и админу (эпик §3).
 
@@ -39,19 +39,10 @@
   PRO-321 должен уметь спрятать блок, обнулив/не отдав ровно эти контейнеры и
   секции, не трогая генерацию основного отчёта.
 
-### 2.2 МАК — без контейнера на `AnalysisResult`
-
-У МАК **нет скоринга и нет ИИ-интерпретации** (эпик §4). Агрегировать нечего,
-поэтому колонки на `AnalysisResult` под него не заводим. Секция `mac` в
-`/result` собирается Фазой 3 напрямую из таблиц истории `mac_*` (лента
-«стимул → карта → тексты», сравнительный вид ребёнок ↔ родитель).
-
-### 2.3 Таблицы истории / сырых данных (создаются в своих фазах)
+### 2.2 Таблицы истории / сырых данных (создаются в своих фазах)
 
 - `psychoemotional_run` — сырые выборы (два списка по 8 позиций), тайминги,
   флаг достоверности прохождения, версия порогов. Фаза 2.
-- `mac_*` — упражнения, карты, тексты по наводящим вопросам, автор ответа
-  (ребёнок/родитель для E4). Фаза 3.
 
 Контейнер на `AnalysisResult` — это «последний посчитанный вывод для показа»;
 таблицы истории — «что именно человек сделал», для перекалибровки порогов
@@ -66,15 +57,14 @@
 > при редизайне отчёта, см. `docs/result-report-redesign-plan.md`). Работаем
 > с `result_v2.py`.
 
-`_ResultResponseBase` получил три опциональных поля, `None` по умолчанию:
+`_ResultResponseBase` получил два опциональных поля, `None` по умолчанию:
 
 ```python
 validity: ValiditySection | None = None
 psychoemotional: PsychoEmotionalSection | None = None
-mac: MacSection | None = None
 ```
 
-- Модели секций (`ValiditySection`, `PsychoEmotionalSection`, `MacSection`) —
+- Модели секций (`ValiditySection`, `PsychoEmotionalSection`) —
   **каркас**: сейчас в каждой только `consent_ok: bool` (см. §5). Каждая фаза
   дополняет свою модель конкретными полями (`model_config = {"extra":
   "forbid"}` — расширение только явным добавлением полей).
@@ -97,13 +87,12 @@ mac: MacSection | None = None
   1. строят/читают основной отчёт (`_build_report()` / `_get_report()` — без
      изменений по сути), **кэшируют именно его** (Redis `report:v2:{id}`);
   2. затем вызывают `_attach_psych_sections()`.
-- `_attach_psych_sections()` прогоняет три билдера
-  (`_build_validity_section`, `_build_psychoemotional_section`,
-  `_build_mac_section`) — **каждый в отдельном `try/except`**. Исключение
-  логируется (`logger.exception`), секция остаётся `None`, основной отчёт
-  возвращается нетронутым.
+- `_attach_psych_sections()` прогоняет два билдера
+  (`_build_validity_section`, `_build_psychoemotional_section`) — **каждый в
+  отдельном `try/except`**. Исключение логируется (`logger.exception`),
+  секция остаётся `None`, основной отчёт возвращается нетронутым.
 - Билдеры Фазы 0 возвращают `None` (движков ещё нет). Это **единственные
-  швы**, куда подключаются Фазы 1/2/3 — новых call-site в `build_report()`
+  швы**, куда подключаются Фазы 1/2 — новых call-site в `build_report()`
   добавлять не нужно.
 - Секции **не кладутся в кэш** основного отчёта — они пересобираются на
   каждый запрос. Это держит кэш независимым от зрителя (нужно к PRO-321) и
@@ -181,8 +170,8 @@ admin`, колонка `users.role` (`server_default 'user'`, миграция
 - Меняет `psych_sections_for` на проверку роли (§6.1).
 - Вводит зависимость `require_psych_access` для будущих psychologist-only
   эндпоинтов (экран разбора клиента, PRO-320).
-- Обнуляет/не отдаёт контейнеры `validity`/`psychoemotional` и секции
-  `validity`/`psychoemotional`/`mac` школьнику.
+- Обнуляет/не отдаёт контейнеры и секции `validity`/`psychoemotional`
+  школьнику.
 - Один PR, легко откатить: данные уже в структурно-отделимых
   полях/таблицах (§2), нарратив основного отчёта их не содержит.
 
@@ -197,9 +186,9 @@ admin`, колонка `users.role` (`server_default 'user'`, миграция
 | `app/models/consent.py` | новая модель + `CONSENT_SCOPE_PSYCH_BLOCK` |
 | `app/models/analysis_result.py` | контейнеры `validity`, `psychoemotional` |
 | `app/models/__init__.py` | регистрация `Consent` |
-| `app/schemas/result_v2.py` | `ValiditySection`/`PsychoEmotionalSection`/`MacSection` + 3 опциональных поля |
+| `app/schemas/result_v2.py` | `ValiditySection`/`PsychoEmotionalSection` + 2 опциональных поля |
 | `app/services/consent_service.py` | `record_consent`, `has_consent` |
-| `app/services/report_service.py` | `psych_sections_for`, `_attach_psych_sections`, 3 билдера-шва, тонкие обёртки `build_report`/`get_report` |
+| `app/services/report_service.py` | `psych_sections_for`, `_attach_psych_sections`, 2 билдера-шва, тонкие обёртки `build_report`/`get_report` |
 | `app/routers/result.py` | прокидывает `viewer=current_user` |
 | `tests/integration/test_psych_sections_in_result.py` | позитивный инвариант + изоляция |
 | `tests/integration/test_consent_service.py` | `has_consent` под тестом |

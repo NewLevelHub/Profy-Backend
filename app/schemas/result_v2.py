@@ -89,7 +89,7 @@ _model_config = {"extra": "forbid"}
 # --- Psychology block sections (PRO-282 epic) -------------------------------
 # Skeleton only. Each section is `null` in /result until its phase lands the
 # calculation (validity → Фаза 1 PRO-296…300, psychoemotional → Фаза 2
-# PRO-307…309, mac → Фаза 3 PRO-314…318). Every phase extends its own model
+# PRO-307…309). Every phase extends its own model
 # below with concrete fields. `consent_ok` is the one field defined now — it
 # mirrors the stored parental consent (consent_service.has_consent, scope
 # "psych_block") and is a *flag*, not a gate: MVP (PRO-282 §3/§4) shows the
@@ -247,38 +247,6 @@ class PsychoEmotionalSection(BaseModel):
     model_config = _model_config
 
 
-class MacFeedItem(BaseModel):
-    """Один пункт ленты §C: вопрос-стимул → карта(и) → дословный текст
-    ребёнка + нейтральный контекст, без выводов."""
-
-    exercise_code: str
-    exercise_title: str
-    stimulus_question: str
-    # Готовые абсолютные URL (STORAGE_PUBLIC_BASE_URL + mac_cards.image_path,
-    # см. app/integrations/storage/urls.py) — тот же приём, что у
-    # University.image_url. Файлы лежат в MEDIA_DIR, отдаются nginx `/media/`,
-    # не в этом репозитории и не во фронтенде.
-    card_image_urls: list[str]
-    followup_questions: list[str]
-    followup_answers: list[str]  # дословно, по одному на каждый followup_questions[i]
-    time_spent_ms: int
-    revision_count: int
-    model_config = _model_config
-
-
-class MacSection(BaseModel):
-    """МАК — метафорические ассоциативные карты. Без скоринга и
-    ИИ-интерпретации (PRO-282 §4): лента "стимул → карта → тексты" из
-    последней `mac_sessions`. Сравнительный вид E4 и рабочее поле
-    специалиста (заметки/резюме, PRO-318) в этой версии не собраны —
-    E4/workspace не реализованы, см. отчёт по тикетам."""
-
-    consent_ok: bool = False
-    completed: bool = False
-    feed: list[MacFeedItem] = Field(default_factory=list)
-    model_config = _model_config
-
-
 class StudentStrengthCard(BaseModel):
     title: str
     description: str
@@ -376,7 +344,6 @@ class _ResultResponseBase(BaseModel):
     # report_service.py) — same precedent as EXPLORATION_CLOSING_NOTE etc.
     validity: ValiditySection | None = None
     psychoemotional: PsychoEmotionalSection | None = None
-    mac: MacSection | None = None
     created_at: datetime
     model_config = _model_config
 

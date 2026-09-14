@@ -1,5 +1,5 @@
 """PRO-291 positive invariant: /result carries the validity / psychoemotional
-/ mac sections after a completed assessment, and the main RIASEC/BigFive/MI
+sections after a completed assessment, and the main RIASEC/BigFive/MI
 report still comes back even when a psych-block calculation is forced to blow
 up. This is NOT a "does not leak" guard (PRO-282 §3 explicitly wants the
 sections visible in the MVP) — it's the isolation + wiring contract.
@@ -104,20 +104,19 @@ async def test_result_carries_the_three_psych_sections(
     response = await report_service.build_report(assessment.id, db_session, viewer=await _psych_viewer(db_session))
 
     dumped = response.model_dump()
-    for section in ("validity", "psychoemotional", "mac"):
+    for section in ("validity", "psychoemotional"):
         assert section in dumped
-    # validity is computed at report time now (PRO-299); psychoemotional / mac
-    # stay `null` until their phases ship.
+    # validity is computed at report time now (PRO-299); psychoemotional
+    # stays `null` until a run exists for this assessment.
     assert dumped["validity"] is not None
     assert dumped["psychoemotional"] is None
-    assert dumped["mac"] is None
 
 
 async def test_student_viewer_never_sees_psych_sections(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """PRO-321: a student's own /result carries no validity / psychoemotional
-    / mac — only a psychologist/admin viewer gets them."""
+    — only a psychologist/admin viewer gets them."""
     user, assessment = await _make_assessment(db_session, AgeGroup.senior)
     _force_complete_and_llm_disabled(monkeypatch)
 
@@ -127,7 +126,6 @@ async def test_student_viewer_never_sees_psych_sections(
     assert as_student.summary
     assert as_student.validity is None
     assert as_student.psychoemotional is None
-    assert as_student.mac is None
 
     as_psych = await report_service.build_report(
         assessment.id, db_session, viewer=await _psych_viewer(db_session)
@@ -153,7 +151,6 @@ async def test_main_report_survives_a_broken_psych_block_calculation(
     assert response.interest_instrument == "riasec"
     assert len(response.interest_map) == 6
     assert response.psychoemotional is None  # broken block degraded to null
-    assert response.mac is None
     # validity is computed independently of the psychoemotional builder — a
     # crash in one section does not suppress another.
     assert response.validity is not None

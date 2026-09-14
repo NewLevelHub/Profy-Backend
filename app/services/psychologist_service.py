@@ -122,7 +122,7 @@ async def get_student_report(
 ) -> ResultResponseV2:
     """The student's full /result v2 report. `viewer` is the psychologist, so
     report_service.psych_sections_for → True and the validity / psychoemotional
-    / mac sections are attached (a student never sees these on their own
+    sections are attached (a student never sees these on their own
     /result)."""
     await _require_student(db, student_id)
 

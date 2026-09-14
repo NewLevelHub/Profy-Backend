@@ -52,9 +52,7 @@ class AnalysisResult(Base):
     # deliberately NOT folded into `summary`/narrative so PRO-321 (hide
     # behind role) stays a one-liner. `None` until the matching phase lands
     # its calculation (validity → Фаза 1 PRO-296…300, psychoemotional →
-    # Фаза 2 PRO-307…309). MAC has no scoring (PRO-282 §4) → no container
-    # here; its /result section is assembled from the `mac_*` history tables
-    # added in Фаза 3. Shape of each blob is owned by its phase — see
+    # Фаза 2 PRO-307…309). Shape of each blob is owned by its phase — see
     # docs/psych-block-contract.md.
     validity: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     psychoemotional: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
