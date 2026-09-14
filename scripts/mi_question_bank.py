@@ -231,7 +231,3 @@ assert set(_KK_SHORT) == _ru_shorts, (
 for _q in QUESTIONS:
     _q["text"] = {"ru": _q["text"], "kk": _KK_TEXT[_q["text"]]}
     _q["short_text"] = {"ru": _q["short_text"], "kk": _KK_SHORT[_q["short_text"]]}
-
-# Locales this bank carries, in seed order (ru first — structural source of
-# truth; kk rows clone mi_category / order / age_tier / icon).
-LOCALES: tuple[str, ...] = ("ru", "kk")

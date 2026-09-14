@@ -2,12 +2,13 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
-from app.models.content_locale_column import locale_column
+
+LOCALIZED_FIELDS = frozenset({"text", "text_junior"})
 
 
 class MotivationCategory(str, enum.Enum):
@@ -32,21 +33,20 @@ class MotivationStatement(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    # KZ-301: natural key is (triplet_index, order); the seed dedupes on
-    # (triplet_index, order, locale) in Python, no DB constraint.
-    locale: Mapped[str] = locale_column()
+    # Natural key: (triplet_index, order) — one row per statement now (see
+    # docs/i18n-contract.md §8), no DB constraint (seed dedupes in Python).
     triplet_index: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     category: Mapped[MotivationCategory] = mapped_column(
         Enum(MotivationCategory, name="motivation_category_enum"), nullable=False, index=True
     )
-    text: Mapped[str] = mapped_column(String, nullable=False)
+    text: Mapped[dict] = mapped_column(JSONB, nullable=False)
     # Junior (6-9) rewrite of `text` — same category/position, worded around
     # school/friends/hobbies instead of career/money/work (TZ_Profi.md §13's
     # format ban doesn't apply here, this is a wording-only fix). Null means
     # "show `text` to everyone", which is what happens for middle/senior
     # always, and for junior until this is seeded.
-    text_junior: Mapped[str | None] = mapped_column(String, nullable=True)
+    text_junior: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     # Field-name -> admin-edited value, composed on top of the bank content
     # by scripts/seed_motivation_statements.py at resync time (see
     # docs/admin-questions-content-overrides-plan.md).

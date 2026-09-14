@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.errors import AppError
+from app.i18n import pick_locale
 from app.models.direction_inquiry import DirectionInquiry
 from app.prompts import direction_inquiry as prompt
 from app.schemas.direction_inquiry import (
@@ -98,7 +99,7 @@ async def generate_questions(
 
     response = DirectionQuestionsResponse(
         direction_slug=slug,
-        direction_name=direction.name,
+        direction_name=pick_locale(direction.name),
         scale=likert_labels(),
         questions=questions,
     )

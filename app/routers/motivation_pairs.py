@@ -47,7 +47,7 @@ async def get_motivation_pairs(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
     pairs = await motivation_pair_service.pairs(db)
-    return [MotivationPairItem.model_validate(p) for p in pairs]
+    return [motivation_pair_service.to_item_schema(p) for p in pairs]
 
 
 @router.post("/{assessment_id}/motivation-pair-answers", response_model=SubmitMotivationPairResponse)

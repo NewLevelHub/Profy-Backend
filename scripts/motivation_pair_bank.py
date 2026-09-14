@@ -227,9 +227,6 @@ _KK_CONTENT: dict[str, list[tuple[str, str]]] = {
 assert set(_KK_CONTENT) == set(CATEGORIES), f"kk content category drift: {set(_KK_CONTENT) ^ set(CATEGORIES)}"
 assert all(len(v) == 2 for v in _KK_CONTENT.values()), "every kk category needs 2 facets"
 
-# Locales carried by this bank (ru first — structural source of truth).
-LOCALES: tuple[str, ...] = ("ru", "kk")
-
 PAIRS: list[dict] = []
 _pair_index = 0
 for _category in CATEGORIES:

@@ -151,6 +151,33 @@ UI-локаль — отдельное поле `users.locale`. Связь то�
 
 ## 8. Хранение локализованного контента (вариант A: колонка `locale`)
 
+> **СУПЕРСИДЕД 2026-09-14.** Вариант A (одна логическая единица = N физических
+> строк по одной на локаль) для этих пяти таблиц **заменён** на одну строку на
+> единицу контента, где локализуемые поля — JSONB `{"ru": ..., "kk": ...}`
+> (читаются через `pick_locale`/`pick_locale_list`, как University/Program).
+> Причина: структурные поля (`riasec_type`/`order`/`age_tier`/…) физически
+> дублировались по строкам без DB-инварианта, что реально расходилось при
+> админ-правках (`admin_lock.apply_overrides` патчил только одну строку из
+> двух), а `question_pairs.question_a_id/question_b_id` дублировали не текст, а
+> связь — `kk`-пара ссылалась на `kk`-вопросы, `ru`-пара — на `ru`-вопросы,
+> два параллельных графа вместо одного с переводом. Скоринговые знаменатели
+> (`riasec_service.question_counts` и т.д.), пришитые к `locale == 'ru'` как к
+> «канону», были симптомом этой проблемы, не защитой от неё. Раздел ниже
+> (описание «варианта A», формат банка «до/после», история KZ-302…309)
+> оставлен как исторический контекст того решения — актуальная механика
+> описана в этой врезке.
+>
+> Миграции: `b7e2a4f19c86` (directions) → `c9d3b6a082f5` (motivation_pairs) →
+> `d1f47c8b3a95` (motivation_statements, первая с перевешиванием FK —
+> `motivation_responses`) → `e5a9f2d6c341` (questions, перевешивает
+> `user_responses` + `question_pairs`) → `f7c1e9b4a608` (question_pairs).
+> `content_locale.py`/`localized_rows` удалены (не осталось вызывающих — один
+> ряд на ключ не нуждается в per-key locale-фолбэке). `admin_lock.py`
+> (`apply_overrides`/`effective_value`/`sync_fields`) получил
+> `localized_fields`/`locale` — какие колонки хранят `{locale: value}`-карту
+> и на каком языке админ сейчас правит текст; каждая модель экспортирует
+> `LOCALIZED_FIELDS` (например `app/models/question.py::LOCALIZED_FIELDS`).
+
 Контент из Python-«банков» (`scripts/*_bank.py`) — источник правды; `seed_*.py`
 делают full-resync с удалением строк не из банка (см. `CLAUDE.md`). Поэтому
 казахские версии живут в банках и попадают в БД через seed, не правкой БД.
@@ -817,3 +844,4 @@ Workflow `.github/workflows/i18n-guard.yml` в обоих репозитория
 | 2026-09-08 | KZ-206 follow-up: `universities.name_i18n` (миграция `e3f8a1c4d5b9`) — казахские официальные имена 125 KZ-вузов (секция `university_names` в `catalog_descriptions_kk.json`, вычитка носителем). `_university_brief` резолвит `name` через `resolve_column_i18n`; `UniversityBrief.name_locale`. `apply_catalog_descriptions_kk.py` получил секцию/`--kind name`. 550 passed / 6 pre-existing. |
 | 2026-09-08 | KZ-206 follow-up (2): `programs.name_i18n` (миграция `f4a1b8c6e2d7`) — казахские названия **764** уникальных программ («направлений») KZ-вузов (секция `program_names`, 1591 ряд). `_program_brief` / `get_program_detail` резолвят `name`; `ProgramBrief.name_locale` / `ProgramDetail.name_locale`. `apply_catalog_descriptions_kk.py --kind progname`. `is_kazakh_name` ослаблена (допускает `kk == ru` для международных терминов). FE тип `ProgramBrief.name_locale`, компоненты не тронуты. |
 | 2026-09-10 | Свободный текст внутри `Program.requirements` (`notes`, `exams`, `source_required_documents`, `extracurriculars`, `Program.language`, `grants[].name/conditions`) локализован словарём по **исходной строке**, а не оверлеем на ряд: 12 434 программы против 4 611 уникальных фраз. `app/i18n/data/program_requirements_kk.json` + `app/i18n/data_strings.py` (промах → исходник + тальи фолбэка), проводка в `map_program_requirement`, авторинг — `scripts/apply_requirements_kk.py` (`dump`/`merge`/`stats`, без `apply` и без строк в runbook). Покрытие 100% (§14). |
+| 2026-09-14 | **Вариант A убран для `questions`/`question_pairs`/`motivation_statements`/`motivation_pairs`/`directions`** (§8 врезка) — техдолг: структурные поля дублировались по locale-строкам без DB-инварианта (админ-правка одной строки расходилась с другой), `question_pairs` дублировал не текст, а FK-граф (`question_a_id`/`question_b_id`), скоринг был пришит к `locale=='ru'` как к обходному «канону». Заменено на одну строку на единицу контента, локализуемые поля — JSONB `{"ru","kk"}`-карта (`pick_locale`/`pick_locale_list`, как University/Program). Миграции `b7e2a4f19c86`→`c9d3b6a082f5`→`d1f47c8b3a95`→`e5a9f2d6c341`→`f7c1e9b4a608` (две последние перевешивают FK — `user_responses`, `question_pairs.question_a_id/b_id`, `motivation_responses` — на смёрженную `ru`-строку перед удалением `kk`-твина). `content_locale.py`/`localized_rows` удалены. `admin_lock.py` получил `localized_fields`/`locale`-параметры; admin PATCH для этих 5 сущностей теперь требует `locale` при правке текстового поля. Данные: 628→314 questions, 134→67 question_pairs, 72→36 motivation_statements, 36→18 motivation_pairs, 288→144 directions; 0 потерянных FK. 590 passed / 6 pre-existing (не изменилось). Admin-фронтенд (Profy-Frontend) под новый контракт — отдельный follow-up. |

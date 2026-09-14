@@ -16,6 +16,7 @@ from app.i18n import (
     guess_locale_from_language_field,
     normalize_locale,
     pick_locale,
+    pick_locale_list,
     reset_fallback_counts,
     set_locale,
 )
@@ -189,3 +190,30 @@ def test_pick_locale_defaults_to_current_request_locale():
     assert pick_locale({"ru": "Привет", "kk": "Сәлем"}) == "Привет"
     set_locale("kk")
     assert pick_locale({"ru": "Привет", "kk": "Сәлем"}) == "Сәлем"
+
+
+# ── pick_locale_list ─────────────────────────────────────────────────────────
+
+def test_pick_locale_list_returns_requested_when_present():
+    assert pick_locale_list({"ru": ["a"], "kk": ["b"]}, "kk") == ["b"]
+    assert fallback_counts() == {}
+
+
+def test_pick_locale_list_falls_back_to_ru_and_counts():
+    assert pick_locale_list({"ru": ["a"]}, "kk") == ["a"]
+    assert fallback_counts() == {"kk": 1}
+
+
+def test_pick_locale_list_treats_an_empty_list_as_present_not_missing():
+    # Unlike pick_locale's truthiness check, [] is a legitimate stored value
+    # here (e.g. Direction.professions before a content pass fills it in) —
+    # it must not be treated as "untranslated" and fall back to ru.
+    assert pick_locale_list({"ru": ["a"], "kk": []}, "kk") == []
+    assert fallback_counts() == {}
+
+
+def test_pick_locale_list_raises_when_no_ru_fallback():
+    for bad in ({}, None, {"kk": ["a"]}, {"en": ["a"]}):
+        with pytest.raises(MissingLocalizedText):
+            pick_locale_list(bad, "ru")
+    assert fallback_counts() == {"ru": 4}

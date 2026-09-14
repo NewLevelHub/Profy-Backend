@@ -77,12 +77,12 @@ def _sample_context(locale: str = "ru") -> StudentContext:
 def _sample_direction() -> Direction:
     return Direction(
         slug="software_engineer",
-        name="Инженер-программист",
+        name={"ru": "Инженер-программист"},
         holland_code="IRC",
-        description="Разработка программного обеспечения",
-        professions=["Разработчик ПО", "Архитектор систем"],
-        skills_needed=["Python", "Алгоритмы"],
-        subjects_to_develop=["Информатика", "Математика"],
+        description={"ru": "Разработка программного обеспечения"},
+        professions={"ru": ["Разработчик ПО", "Архитектор систем"]},
+        skills_needed={"ru": ["Python", "Алгоритмы"]},
+        subjects_to_develop={"ru": ["Информатика", "Математика"]},
     )
 
 

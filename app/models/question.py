@@ -6,8 +6,9 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
-from app.models.content_locale_column import locale_column
 from app.models.profile import AgeGroup
+
+LOCALIZED_FIELDS = frozenset({"text", "short_text"})
 
 
 class HollandType(str, enum.Enum):
@@ -58,10 +59,9 @@ class Question(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    # KZ-301: `order` is the natural key (unique per locale by construction —
-    # the seed dedupes on (order, locale) in Python, no DB constraint so
-    # fixtures can still use a "don't-care" order=0).
-    locale: Mapped[str] = locale_column()
+    # `order` is the natural key (per instrument) — one row per question now
+    # (see docs/i18n-contract.md §8); no DB constraint so fixtures can still
+    # use a "don't-care" order=0.
     instrument: Mapped[QuestionInstrument] = mapped_column(
         Enum(QuestionInstrument, name="question_instrument_enum"),
         nullable=False,
@@ -81,10 +81,10 @@ class Question(Base):
     keyed: Mapped[Keyed | None] = mapped_column(
         Enum(Keyed, name="keyed_enum"), nullable=True
     )
-    text: Mapped[str] = mapped_column(String, nullable=False)
+    text: Mapped[dict] = mapped_column(JSONB, nullable=False)
     # Short button-label form of `text`, used by the junior forced-choice-pair
     # UI instead of the full Likert statement. Null for middle/senior rows.
-    short_text: Mapped[str | None] = mapped_column(String, nullable=True)
+    short_text: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     # Single emoji rendered as the "icon" the junior format requires
     # (TZ_Profi.md §13 — junior's allowed formats all mandate icons).
     icon: Mapped[str | None] = mapped_column(String, nullable=True)

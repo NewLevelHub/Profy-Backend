@@ -13,6 +13,7 @@ caller (`_valid_stages`).
 import json
 from typing import TYPE_CHECKING
 
+from app.i18n import pick_locale, pick_locale_list
 from app.models.direction import Direction
 from app.prompts._locale import glossary_block, language_directive
 from app.schemas.roadmap import DIRECTION_HORIZONS, STEP_TRACKS, UniversityRequirement
@@ -470,11 +471,11 @@ RETRY_HINT: dict[str, str] = {
 
 def _direction_brief(direction: Direction) -> dict:
     return {
-        "name": direction.name,
-        "description": direction.description,
-        "professions": list(direction.professions or []),
-        "skills_needed": list(direction.skills_needed or []),
-        "subjects_to_develop": list(direction.subjects_to_develop or []),
+        "name": pick_locale(direction.name),
+        "description": pick_locale(direction.description),
+        "professions": pick_locale_list(direction.professions),
+        "skills_needed": pick_locale_list(direction.skills_needed),
+        "subjects_to_develop": pick_locale_list(direction.subjects_to_develop),
     }
 
 

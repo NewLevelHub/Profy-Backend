@@ -3,7 +3,7 @@ import uuid
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.i18n import DEFAULT_LOCALE
+from app.i18n import DEFAULT_LOCALE, pick_locale
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
@@ -295,9 +295,6 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
         total_questions_result = await db.execute(
             select(func.count(Question.id)).where(
                 Question.age_tier.in_(visible_tiers(profile.age_group)),
-                # ru-only denominator (admin is ru-only; KZ-301 — never
-                # double-count once kk question rows exist).
-                Question.locale == DEFAULT_LOCALE,
             )
         )
         total_questions = total_questions_result.scalar_one()
@@ -401,7 +398,7 @@ async def get_assessment_detail(
                 question_id=response.question_id,
                 instrument=question.instrument.value,
                 category=category,
-                question_text=question.text,
+                question_text=pick_locale(question.text, DEFAULT_LOCALE),
                 question_order=question.order,
                 answer_value=response.answer_value,
                 selected_answer_text=_selected_answer_text(response.answer_value, question.instrument),
@@ -433,11 +430,11 @@ async def get_assessment_detail(
             motivation_responses.append(
                 AdminMotivationResponseItem(
                     triplet_index=row.triplet_index,
-                    picked_most_text=most.text if most else "?",
+                    picked_most_text=pick_locale(most.text, DEFAULT_LOCALE) if most else "?",
                     picked_most_category=most.category.value if most else "?",
-                    picked_least_text=least.text if least else "?",
+                    picked_least_text=pick_locale(least.text, DEFAULT_LOCALE) if least else "?",
                     picked_least_category=least.category.value if least else "?",
-                    not_picked_text=neutral.text if neutral else "?",
+                    not_picked_text=pick_locale(neutral.text, DEFAULT_LOCALE) if neutral else "?",
                     not_picked_category=neutral.category.value if neutral else "?",
                     created_at=row.created_at,
                 )
@@ -464,9 +461,6 @@ async def get_assessment_detail(
     total_questions_result = await db.execute(
         select(func.count(Question.id)).where(
             Question.age_tier.in_(visible_tiers(profile.age_group)),
-            # ru-only denominator (admin is ru-only; KZ-301 — never double-count
-            # once kk question rows exist).
-            Question.locale == DEFAULT_LOCALE,
         )
     )
     total_questions = total_questions_result.scalar_one()

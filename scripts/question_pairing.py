@@ -55,10 +55,6 @@ _BIGFIVE_BLOCKS = [(1, 2, 1), (3, 4, 2), (5, 6, 1)]
 
 _Content = dict[str, str | None]
 
-# Locales the pair content carries (KZ-304). `frame` / `option_a_text` /
-# `option_b_text` become `{"ru": ..., "kk": ...}`; icons are shared.
-PAIR_LOCALES: tuple[str, ...] = ("ru", "kk")
-
 _BILINGUAL_FIELDS = ("frame", "option_a_text", "option_b_text")
 
 

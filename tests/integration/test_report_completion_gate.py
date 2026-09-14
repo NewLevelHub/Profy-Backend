@@ -24,15 +24,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
-from app.models.question import BigFiveDomain, MIType, Question, QuestionInstrument
+from app.models.question import BigFiveDomain, HollandType, MIType, Question, QuestionInstrument
 from app.models.user import User
+from app.models.user_response import UserResponse
 from app.services import (
     assessment_shared,
     llm_client,
     motivation_pair_service,
     motivation_service,
     report_service,
+    riasec_service,
 )
+
+# Far outside real seed data's order range (~300 real questions) — see
+# test_age_matrix_full_flow.py's identical convention.
+_SENTINEL_ORDER = 900_300
 
 _AGE_SAMPLE = {AgeGroup.junior: 8, AgeGroup.middle: 12, AgeGroup.senior: 16}
 
@@ -148,7 +154,7 @@ async def test_junior_likert_total_excludes_stale_riasec_but_counts_mi(
     from app.models.question import HollandType
     stale_riasec_q = Question(
         instrument=QuestionInstrument.riasec, riasec_type=HollandType.R,
-        text="retired", age_tier=AgeGroup.junior,
+        text={"ru": "retired"}, age_tier=AgeGroup.junior,
     )
     db_session.add(stale_riasec_q)
     await db_session.flush()
@@ -157,7 +163,7 @@ async def test_junior_likert_total_excludes_stale_riasec_but_counts_mi(
 
     mi_q = Question(
         instrument=QuestionInstrument.mi, mi_category=MIType.logical,
-        text="mi", age_tier=AgeGroup.junior,
+        text={"ru": "mi"}, age_tier=AgeGroup.junior,
     )
     db_session.add(mi_q)
     await db_session.flush()
@@ -203,6 +209,32 @@ async def test_successful_generation_populates_v2_narrative_fields(
     _patch_likert(monkeypatch, answered=1, total=1)
     _patch_senior_motivation(monkeypatch, answered=1, total=1)
     monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
+
+    # A tiny, controlled RIASEC signal so the deterministic fallback has real
+    # per-type differentiation to build strength-card evidence from — without
+    # it every type scores 0% on this assessment's zero real answers and
+    # riasec_service.strengths_weaknesses honestly returns no strengths (a
+    # deliberate anti-padding guard for a genuinely flat profile, see its own
+    # docstring), which isn't what this test is pinning (the report_version=2
+    # narrative-service wiring). question_counts is patched to match exactly
+    # what's seeded here, not the ~150 real rows already in the dev DB.
+    signal_questions = [
+        Question(
+            instrument=QuestionInstrument.riasec, riasec_type=HollandType.R,
+            text={"ru": f"test-riasec-signal-{i}"}, age_tier=AgeGroup.senior, order=_SENTINEL_ORDER + i,
+        )
+        for i in range(3)
+    ]
+    db_session.add_all(signal_questions)
+    await db_session.flush()
+    db_session.add_all(
+        UserResponse(assessment_id=assessment.id, question_id=q.id, answer_value=5) for q in signal_questions
+    )
+    await db_session.flush()
+    monkeypatch.setattr(
+        riasec_service, "question_counts",
+        AsyncMock(return_value={t: (3 if t == "R" else 0) for t in riasec_service.HOLLAND_ORDER}),
+    )
 
     await report_service.build_report(assessment.id, db_session)
 

@@ -51,7 +51,7 @@ async def test_university_goal_passes_the_access_gate(db_session: AsyncSession):
     the same gate as profession/explore/unsure."""
     assessment = await _make_assessment(db_session, AssessmentGoal.university)
 
-    direction = Direction(name="Test Direction", slug=SLUG, holland_code="RIA")
+    direction = Direction(name={"ru": "Test Direction"}, slug=SLUG, holland_code="RIA")
     db_session.add(direction)
 
     db_session.add(DirectionInquiry(
@@ -87,7 +87,7 @@ async def test_university_goal_skips_inquiry_check(db_session: AsyncSession):
     roadmap_builder._INQUIRY_REQUIRED = True
     try:
         assessment = await _make_assessment(db_session, AssessmentGoal.university)
-        direction = Direction(name="Test Direction", slug=SLUG, holland_code="RIA")
+        direction = Direction(name={"ru": "Test Direction"}, slug=SLUG, holland_code="RIA")
         db_session.add(direction)
         await db_session.flush()
 
@@ -104,7 +104,7 @@ async def test_university_requirements_for_real_seeded_rows(db_session: AsyncSes
     university = University(name="Test University", country="Казахстан", city="Алматы")
     db_session.add(university)
 
-    direction = Direction(name="Test Direction", slug=SLUG, holland_code="RIA")
+    direction = Direction(name={"ru": "Test Direction"}, slug=SLUG, holland_code="RIA")
     db_session.add(direction)
     await db_session.flush()
 
@@ -148,14 +148,17 @@ async def test_university_requirements_empty_for_slug_with_no_programs(db_sessio
 async def test_program_row_for_direction_validates_membership(db_session: AsyncSession):
     university = University(name="Test University", country="Казахстан", city="Алматы")
     db_session.add(university)
+
+    other_direction = Direction(name={"ru": "Other Direction"}, slug="other-direction", holland_code="RIA")
+    db_session.add(other_direction)
     await db_session.flush()
 
     program = Program(
         university_id=university.id,
         name="Test Program",
-        profession_slugs=["other-direction"],
         language="ru",
     )
+    program.directions = [other_direction]
     db_session.add(program)
     await db_session.flush()
 
@@ -169,6 +172,19 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
     db_session: AsyncSession,
 ):
     assessment = await _make_assessment(db_session, AssessmentGoal.profession)
+    direction = Direction(name={"ru": "Architecture"}, slug=SLUG, holland_code="RIA")
+    db_session.add(direction)
+
+    # direction_roadmaps.program_id is a real FK into programs — needs an
+    # actual row, not a bare uuid4(), or the INSERT below violates it.
+    university_a = University(name="University A", country="Казахстан", city="Алматы")
+    university_b = University(name="University B", country="Казахстан", city="Алматы")
+    db_session.add_all([university_a, university_b])
+    await db_session.flush()
+    program_a = Program(university_id=university_a.id, name="Program A", language="ru")
+    program_b = Program(university_id=university_b.id, name="Program B", language="ru")
+    db_session.add_all([program_a, program_b])
+    await db_session.flush()
 
     plan_a = roadmap_builder._DirectionPlan(
         target=RoadmapTarget(role="Архитектор", why="Подходит", horizon_years=4),
@@ -183,7 +199,7 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
         university_track=UniversityTrack(specialties=["Архитектура"], prepare=["ЕНТ"]),
         university_requirements=[],
         program_fit=ProgramFit(
-            program_id=uuid.uuid4(),
+            program_id=program_a.id,
             program_name="Program A",
             university_name="University A",
             subjects=[],
@@ -203,7 +219,7 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
         university_track=UniversityTrack(specialties=["Архитектура"], prepare=["ЕНТ"]),
         university_requirements=[],
         program_fit=ProgramFit(
-            program_id=uuid.uuid4(),
+            program_id=program_b.id,
             program_name="Program B",
             university_name="University B",
             subjects=[],
@@ -214,7 +230,7 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
     roadmap_first = await roadmap_builder._upsert_direction_roadmap(
         assessment.id,
         SLUG,
-        "Architecture",
+        direction,
         plan_a,
         db_session,
         plan_a.program_fit.program_id,
@@ -224,7 +240,7 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
     roadmap_second = await roadmap_builder._upsert_direction_roadmap(
         assessment.id,
         SLUG,
-        "Architecture",
+        direction,
         plan_b,
         db_session,
         plan_b.program_fit.program_id,

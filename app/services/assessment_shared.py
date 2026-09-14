@@ -211,13 +211,8 @@ def get_effective_goal(age_group: AgeGroup, primary_goal: AssessmentGoal) -> Ass
 
 
 async def likert_total_questions(db: AsyncSession, age_group: AgeGroup) -> int:
-    # Structural count (the completion denominator) — pin to `ru`, the canonical
-    # always-complete question set, so it never doubles when `kk` rows are added
-    # (KZ-301). likert_answered_count counts user_responses, which is naturally
-    # per-user and locale-agnostic.
     query = select(func.count(Question.id)).where(
         Question.age_tier.in_(visible_tiers(age_group)),
-        Question.locale == DEFAULT_LOCALE,
     )
     if age_group == AgeGroup.junior:
         # Junior's RIASEC content is retired in favor of the MI instrument

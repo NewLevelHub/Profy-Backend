@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.data import resource_catalog
 from app.errors import AppError
-from app.i18n import DEFAULT_LOCALE
+from app.i18n import DEFAULT_LOCALE, pick_locale, pick_locale_list
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentGoal
@@ -1130,7 +1130,7 @@ async def _upsert_direction_roadmap(
     db: AsyncSession,
     program_id: uuid.UUID | None = None,
 ) -> DirectionRoadmap:
-    direction_name = direction.name
+    direction_name = pick_locale(direction.name)
     existing = (
         await db.execute(
             select(DirectionRoadmap).where(
@@ -1153,9 +1153,9 @@ async def _upsert_direction_roadmap(
     # Deterministic, non-LLM catalogue match off the direction's own fields —
     # see app/data/resource_catalog.py.
     category = resource_catalog.match_category(
-        direction.name,
-        " ".join(direction.skills_needed or []),
-        " ".join(direction.subjects_to_develop or []),
+        direction_name,
+        " ".join(pick_locale_list(direction.skills_needed)),
+        " ".join(pick_locale_list(direction.subjects_to_develop)),
         direction.holland_code,
     )
 
@@ -1169,7 +1169,9 @@ async def _upsert_direction_roadmap(
     roadmap.university_track = plan.university_track.model_dump()
     roadmap.university_requirements = [r.model_dump() for r in plan.university_requirements]
     roadmap.program_fit = (
-        plan.program_fit.model_dump() if plan.program_fit is not None else None
+        # mode="json" — program_id is a UUID, not natively JSON-serializable
+        # (asyncpg's JSONB encoder has no UUID case, unlike a str).
+        plan.program_fit.model_dump(mode="json") if plan.program_fit is not None else None
     )
     roadmap.additional_resources = resource_catalog.resources_for_category(category)
     # Always set explicitly (including back to None) — a row previously

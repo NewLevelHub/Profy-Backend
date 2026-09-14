@@ -1,108 +1,153 @@
-"""Admin content lists carry and filter by `locale`.
+"""Admin editing of localized bank-seeded content — single-row redesign.
 
-KZ-301 turned one logical content unit into one row per locale, which doubled
-every admin content list without telling the admin which copy each row is: the
-`ru` and the `kk` version of the same question come back to back, structurally
-identical, and an admin editing "the" question cannot see which language they
-are about to change. KZ-210 originally left the panel `ru`-only, so nobody
-noticed; that decision was reversed on PR review.
+`questions`/`question_pairs`/`motivation_statements`/`motivation_pairs`/
+`directions` used to carry one physical row per locale (KZ-301), so an admin
+editing "the" question picked one language's row and the other was a
+separate, independently-editable row. That's gone — one row now holds both
+`{"ru": ..., "kk": ...}` values for a localized field (docs/i18n-contract.md
+§8). This covers the resulting contract:
 
-What is pinned here: every list item reports its `locale`, the filter narrows
-to exactly one locale, `total` reflects the filter (a `total` counting the
-unfiltered set would paginate into empty pages), and the endpoint rejects a
-locale outside `KNOWN_LOCALES` rather than silently returning everything.
+- List items no longer report a `locale` (there's only one row) and show the
+  `ru` text (the admin panel itself stays `ru`-only, i18n-contract §2).
+- Detail responses expose the full `{"ru": ..., "kk": ...}` map for every
+  localized field, so both languages are visible in one place.
+- PATCHing a localized field requires an explicit `locale` — which language
+  is being edited — and only that language's value changes; the other
+  locale's value, and the override record backing it, are untouched.
+- PATCHing a non-localized (structural) field needs no `locale`.
 
-Real transactional Postgres session (rolled back), seeded content — the rows
-read here are the ones the panel actually shows.
+Real transactional Postgres session (rolled back) — real seeded content, no
+synthetic rows needed for the read-only checks.
 """
 
-import httpx
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.user import User
-from app.services import admin_content_service, auth_service
-
-# (label, service callable) — the five content lists that gained the filter.
-_LISTS = [
-    ("questions", admin_content_service.list_questions),
-    ("question_pairs", admin_content_service.list_question_pairs),
-    ("motivation_statements", admin_content_service.list_motivation_statements),
-    ("motivation_pairs", admin_content_service.list_motivation_pairs),
-    ("directions", admin_content_service.list_directions),
-]
-
-# Endpoint path per list, for the router-level checks.
-_PATHS = [
-    "/api/v1/admin/questions",
-    "/api/v1/admin/question-pairs",
-    "/api/v1/admin/motivation-statements",
-    "/api/v1/admin/motivation-pairs",
-    "/api/v1/admin/directions",
-]
+from app.models.direction import Direction
+from app.models.motivation import MotivationStatement
+from app.models.motivation_pair import MotivationPair
+from app.models.question import Question, QuestionInstrument
+from app.models.question_pair import QuestionPair
+from app.schemas.admin_content import (
+    AdminDirectionUpdateRequest,
+    AdminMotivationPairUpdateRequest,
+    AdminMotivationStatementUpdateRequest,
+    AdminQuestionPairUpdateRequest,
+    AdminQuestionUpdateRequest,
+)
+from app.services import admin_content_service
+from app.services.admin_lock import AdminOverrideValidationError
 
 
-@pytest.fixture
-async def admin_headers(db_session: AsyncSession) -> dict[str, str]:
-    admin = User(
-        email=f"admin-{id(db_session)}@example.test",
-        hashed_password=auth_service.hash_password("Testpass123!"),
-        is_active=True,
-        is_verified=True,
-        is_admin=True,
-    )
-    db_session.add(admin)
-    await db_session.flush()
-    return {"Authorization": f"Bearer {auth_service.create_jwt_token(admin.id)}"}
+async def _first(db_session: AsyncSession, model, **filters):
+    stmt = select(model)
+    for key, value in filters.items():
+        stmt = stmt.where(getattr(model, key) == value)
+    row = (await db_session.execute(stmt.limit(1))).scalar_one_or_none()
+    assert row is not None, f"no seeded {model.__tablename__} row to test against"
+    return row
 
 
-@pytest.mark.parametrize("label,list_fn", _LISTS, ids=[label for label, _ in _LISTS])
-async def test_every_item_reports_its_locale(db_session: AsyncSession, label, list_fn) -> None:
-    """Without this field the two copies of a row are indistinguishable in the
-    table — the exact defect reported on the PR."""
-    page = await list_fn(db_session, limit=100)
-    assert page.items, f"{label}: no seeded rows to check"
-    assert all(item.locale for item in page.items)
+async def test_question_list_items_show_ru_text_with_no_locale_field(db_session: AsyncSession) -> None:
+    page = await admin_content_service.list_questions(db_session, limit=5)
+    assert page.items
+    for item in page.items:
+        assert not hasattr(item, "locale")
+        assert item.text  # resolved ru string, not a {"ru": ...} dict
 
 
-@pytest.mark.parametrize("label,list_fn", _LISTS, ids=[label for label, _ in _LISTS])
-@pytest.mark.parametrize("locale", ["ru", "kk"])
-async def test_filter_returns_only_that_locale(db_session: AsyncSession, label, list_fn, locale) -> None:
-    page = await list_fn(db_session, locale=locale, limit=100)
-    assert page.items, f"{label}: no {locale} rows"
-    assert {item.locale for item in page.items} == {locale}
+async def test_question_detail_exposes_both_locales(db_session: AsyncSession) -> None:
+    q = await _first(db_session, Question, instrument=QuestionInstrument.riasec)
+    detail = await admin_content_service.get_question_detail(db_session, q.id)
+    assert set(detail.text) >= {"ru", "kk"}
 
 
-@pytest.mark.parametrize("label,list_fn", _LISTS, ids=[label for label, _ in _LISTS])
-async def test_total_reflects_the_filter(db_session: AsyncSession, label, list_fn) -> None:
-    """`total` drives the pager. Counting the unfiltered set while returning a
-    filtered page would render pages that come back empty."""
-    unfiltered = await list_fn(db_session, limit=1)
-    ru = await list_fn(db_session, locale="ru", limit=1)
-    kk = await list_fn(db_session, locale="kk", limit=1)
-
-    assert ru.total < unfiltered.total
-    assert kk.total < unfiltered.total
-    assert ru.total + kk.total == unfiltered.total, f"{label}: a row belongs to neither locale"
-
-
-@pytest.mark.parametrize("path", _PATHS)
-async def test_endpoint_accepts_a_known_locale(
-    client: httpx.AsyncClient, admin_headers: dict[str, str], path: str
+async def test_question_patch_without_locale_is_rejected_for_a_localized_field(
+    db_session: AsyncSession,
 ) -> None:
-    response = await client.get(path, params={"locale": "kk"}, headers=admin_headers)
-    assert response.status_code == 200
-    items = response.json()["items"]
-    assert items and {item["locale"] for item in items} == {"kk"}
+    q = await _first(db_session, Question, instrument=QuestionInstrument.riasec)
+    with pytest.raises(AdminOverrideValidationError):
+        await admin_content_service.update_question(
+            db_session, q.id, AdminQuestionUpdateRequest(text="Новый текст")
+        )
 
 
-@pytest.mark.parametrize("bad", ["en", "KK", "ru,kk", ""])
-async def test_endpoint_rejects_an_unknown_locale(
-    client: httpx.AsyncClient, admin_headers: dict[str, str], bad: str
-) -> None:
-    """Rejecting is the point: a typo that quietly fell through to "no filter"
-    would show both locales while the toolbar claims one."""
-    response = await client.get(
-        "/api/v1/admin/questions", params={"locale": bad}, headers=admin_headers
+async def test_question_patch_edits_only_the_given_locale(db_session: AsyncSession) -> None:
+    q = await _first(db_session, Question, instrument=QuestionInstrument.riasec)
+    original_ru = q.text["ru"]
+
+    updated = await admin_content_service.update_question(
+        db_session, q.id, AdminQuestionUpdateRequest(text="Жаңа мәтін", locale="kk")
     )
-    assert response.status_code == 422
+
+    assert updated.text["kk"] == "Жаңа мәтін"
+    assert updated.text["ru"] == original_ru  # untouched
+    assert updated.overrides["text"] == {"kk": "Жаңа мәтін"}
+
+
+async def test_question_patch_structural_field_needs_no_locale(db_session: AsyncSession) -> None:
+    q = await _first(db_session, Question, instrument=QuestionInstrument.big_five)
+    from app.models.question import Keyed
+
+    other = Keyed.minus if q.keyed == Keyed.plus else Keyed.plus
+    updated = await admin_content_service.update_question(
+        db_session, q.id, AdminQuestionUpdateRequest(keyed=other)
+    )
+    assert updated.keyed == other
+    assert updated.overrides["keyed"] == other.value
+
+
+async def test_question_pair_patch_edits_only_the_given_locale(db_session: AsyncSession) -> None:
+    p = await _first(db_session, QuestionPair)
+    updated = await admin_content_service.update_question_pair(
+        db_session, p.id, AdminQuestionPairUpdateRequest(option_a_text="Жаңа нұсқа", locale="kk")
+    )
+    assert updated.option_a_text["kk"] == "Жаңа нұсқа"
+
+
+async def test_motivation_statement_patch_edits_only_the_given_locale(db_session: AsyncSession) -> None:
+    s = await _first(db_session, MotivationStatement)
+    original_ru = s.text["ru"]
+    updated = await admin_content_service.update_motivation_statement(
+        db_session, s.id, AdminMotivationStatementUpdateRequest(text="Жаңа мәтін", locale="kk")
+    )
+    assert updated.text["kk"] == "Жаңа мәтін"
+    assert updated.text["ru"] == original_ru
+
+
+async def test_motivation_pair_patch_edits_only_the_given_locale(db_session: AsyncSession) -> None:
+    p = await _first(db_session, MotivationPair)
+    original_ru = p.text_a["ru"]
+    updated = await admin_content_service.update_motivation_pair(
+        db_session, p.id, AdminMotivationPairUpdateRequest(text_a="Жаңа мәтін", locale="kk")
+    )
+    assert updated.text_a["kk"] == "Жаңа мәтін"
+    assert updated.text_a["ru"] == original_ru
+
+
+async def test_direction_detail_exposes_both_locales_for_every_content_field(
+    db_session: AsyncSession,
+) -> None:
+    d = await _first(db_session, Direction)
+    detail = await admin_content_service.get_direction_detail(db_session, d.id)
+    assert set(detail.name) >= {"ru", "kk"}
+    assert "ru" in detail.description
+
+
+async def test_direction_patch_edits_only_the_given_locale(db_session: AsyncSession) -> None:
+    d = await _first(db_session, Direction)
+    original_ru = d.name["ru"]
+    updated = await admin_content_service.update_direction(
+        db_session, d.id, AdminDirectionUpdateRequest(name="Жаңа атау", locale="kk")
+    )
+    assert updated.name["kk"] == "Жаңа атау"
+    assert updated.name["ru"] == original_ru
+
+
+async def test_direction_patch_structural_field_needs_no_locale(db_session: AsyncSession) -> None:
+    d = await _first(db_session, Direction)
+    updated = await admin_content_service.update_direction(
+        db_session, d.id, AdminDirectionUpdateRequest(holland_code="XYZ")
+    )
+    assert updated.holland_code == "XYZ"

@@ -456,7 +456,3 @@ for _q in QUESTIONS:
     _q["text"] = {"ru": _q["text"], "kk": _KK_TEXT[_q["text"]]}
     if _q.get("short_text"):
         _q["short_text"] = {"ru": _q["short_text"], "kk": _KK_SHORT[_q["short_text"]]}
-
-# Locales this bank now carries, in seed order (ru first — it is the structural
-# source of truth, kk rows clone its scoring/order fields).
-LOCALES: tuple[str, ...] = ("ru", "kk")

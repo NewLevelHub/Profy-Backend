@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.errors import AppError
-from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES, use_locale
+from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES, pick_locale, pick_locale_list, use_locale
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
@@ -114,16 +114,19 @@ async def _cache_get_response(redis: aioredis.Redis, key: str) -> ResultResponse
 
 
 def _career_dict(direction: Direction, match_score: int) -> dict:
+    # Resolves against the current-request locale (this runs inside the
+    # `use_locale()` block build_report/get_report wrap scoring+text+assembly
+    # in — KZ-403) — Direction's text fields are `{"ru": ..., "kk": ...}` maps.
     return {
         "slug": direction.slug,
-        "name": direction.name,
+        "name": pick_locale(direction.name),
         "holland_code": direction.holland_code,
         "match_score": match_score,
-        "description": direction.description or "",
-        "professions": list(direction.professions or []),
-        "skills_needed": list(direction.skills_needed or []),
-        "subjects_to_develop": list(direction.subjects_to_develop or []),
-        "first_steps": list(direction.first_steps or []),
+        "description": pick_locale(direction.description),
+        "professions": pick_locale_list(direction.professions),
+        "skills_needed": pick_locale_list(direction.skills_needed),
+        "subjects_to_develop": pick_locale_list(direction.subjects_to_develop),
+        "first_steps": pick_locale_list(direction.first_steps),
     }
 
 

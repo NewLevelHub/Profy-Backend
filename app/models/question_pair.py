@@ -5,9 +5,10 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
-from app.models.content_locale_column import locale_column
 from app.models.profile import AgeGroup
 from app.models.question import QuestionInstrument
+
+LOCALIZED_FIELDS = frozenset({"frame", "option_a_text", "option_b_text"})
 
 
 class QuestionPair(Base):
@@ -29,9 +30,8 @@ class QuestionPair(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    # KZ-301: natural key is (instrument, pair_index); the seed dedupes on
-    # (instrument, pair_index, locale) in Python, no DB constraint.
-    locale: Mapped[str] = locale_column()
+    # Natural key is (instrument, pair_index) — one row per pair now (see
+    # docs/i18n-contract.md §8), no DB constraint.
     instrument: Mapped[QuestionInstrument] = mapped_column(
         Enum(QuestionInstrument, name="question_instrument_enum", create_type=False),
         nullable=False,
@@ -53,14 +53,14 @@ class QuestionPair(Base):
     # (TZ_Profi.md §14 — repetitive formats drive drop-off) and, for middle,
     # to make the pair read as one real situation instead of two unrelated
     # statements. Null means "plain icon-pair, no story wrapper" (junior).
-    frame: Mapped[str | None] = mapped_column(String, nullable=True)
+    frame: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     # Override for the option's displayed text — a scenario-specific action
     # ("Починить велосипед"), independent from the linked Question's own
     # Likert-statement text. Null falls back to question.short_text/text
     # (junior's behavior, unchanged). Scoring is unaffected either way — it's
     # keyed by question_a_id/question_b_id, never by displayed text.
-    option_a_text: Mapped[str | None] = mapped_column(String, nullable=True)
-    option_b_text: Mapped[str | None] = mapped_column(String, nullable=True)
+    option_a_text: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    option_b_text: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     # Same idea as option_*_text but for the icon — junior's format requires
     # icons (TZ_Profi.md §13), and once an option's text is rewritten as a
     # scenario-specific action, the linked Question's own icon may no longer

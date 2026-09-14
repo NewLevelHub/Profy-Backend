@@ -3,11 +3,17 @@ import uuid
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n import DEFAULT_LOCALE, pick_locale
+from app.models.direction import LOCALIZED_FIELDS as DIRECTION_LOCALIZED_FIELDS
 from app.models.direction import Direction
+from app.models.motivation import LOCALIZED_FIELDS as MOTIVATION_STATEMENT_LOCALIZED_FIELDS
 from app.models.motivation import MotivationStatement
+from app.models.motivation_pair import LOCALIZED_FIELDS as MOTIVATION_PAIR_LOCALIZED_FIELDS
 from app.models.motivation_pair import MotivationPair
 from app.models.profile import AgeGroup
+from app.models.question import LOCALIZED_FIELDS as QUESTION_LOCALIZED_FIELDS
 from app.models.question import Question, QuestionInstrument
+from app.models.question_pair import LOCALIZED_FIELDS as QUESTION_PAIR_LOCALIZED_FIELDS
 from app.models.question_pair import QuestionPair
 from app.schemas.admin_content import (
     AdminDirectionListItem,
@@ -38,16 +44,24 @@ async def _get_by_id(db: AsyncSession, model, row_id: uuid.UUID):
 
 
 async def _update_by_id(
-    db: AsyncSession, model, row_id: uuid.UUID, data, not_found_msg: str, validate=None
+    db: AsyncSession, model, row_id: uuid.UUID, data, not_found_msg: str,
+    *, localized_fields: frozenset[str], validate=None,
 ):
     row = await _get_by_id(db, model, row_id)
     if row is None:
         raise ValueError(not_found_msg)
 
-    updates = data.model_dump(exclude_unset=True)
+    payload = data.model_dump(exclude_unset=True)
+    locale = payload.pop("locale", None)
+    updates = payload
     if validate is not None:
         validate(row, updates)
-    apply_overrides(row, updates)
+    if any(key in localized_fields for key in updates) and not locale:
+        raise AdminOverrideValidationError(
+            "locale is required when editing a localized field: "
+            f"{sorted(k for k in updates if k in localized_fields)}"
+        )
+    apply_overrides(row, updates, localized_fields=localized_fields, locale=locale)
     await db.commit()
     await db.refresh(row)
     return row
@@ -97,7 +111,6 @@ async def list_questions(
     instrument: QuestionInstrument | None = None,
     age_tier: AgeGroup | None = None,
     search: str | None = None,
-    locale: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> AdminQuestionListResponse:
@@ -107,20 +120,19 @@ async def list_questions(
     if age_tier:
         filters.append(Question.age_tier == age_tier)
     if search:
-        filters.append(Question.text.ilike(f"%{search.strip()}%"))
-    if locale:
-        filters.append(Question.locale == locale)
+        # ru is the admin-panel display locale (i18n-contract §2) — search
+        # matches the ru text specifically, not whatever's in the JSONB blob.
+        filters.append(Question.text["ru"].astext.ilike(f"%{search.strip()}%"))
 
     total, rows = await _count_and_paginate(
-        db, Question, filters, (Question.instrument.asc(), Question.order.asc(), Question.locale.asc()), page, limit
+        db, Question, filters, (Question.instrument.asc(), Question.order.asc()), page, limit
     )
 
     items = [
         AdminQuestionListItem(
             id=q.id,
-            locale=q.locale,
             instrument=q.instrument,
-            text=q.text,
+            text=pick_locale(q.text, DEFAULT_LOCALE),
             order=q.order,
             age_tier=q.age_tier,
             riasec_type=q.riasec_type,
@@ -142,7 +154,8 @@ async def update_question(
     db: AsyncSession, question_id: uuid.UUID, data: AdminQuestionUpdateRequest
 ) -> Question:
     return await _update_by_id(
-        db, Question, question_id, data, "Question not found", validate=_validate_question_update
+        db, Question, question_id, data, "Question not found",
+        localized_fields=QUESTION_LOCALIZED_FIELDS, validate=_validate_question_update,
     )
 
 
@@ -154,7 +167,6 @@ async def list_question_pairs(
     *,
     instrument: QuestionInstrument | None = None,
     age_tier: AgeGroup | None = None,
-    locale: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> AdminQuestionPairListResponse:
@@ -163,17 +175,14 @@ async def list_question_pairs(
         filters.append(QuestionPair.instrument == instrument)
     if age_tier:
         filters.append(QuestionPair.age_tier == age_tier)
-    if locale:
-        filters.append(QuestionPair.locale == locale)
 
     total, rows = await _count_and_paginate(
-        db, QuestionPair, filters, (QuestionPair.instrument.asc(), QuestionPair.pair_index.asc(), QuestionPair.locale.asc()), page, limit
+        db, QuestionPair, filters, (QuestionPair.instrument.asc(), QuestionPair.pair_index.asc()), page, limit
     )
 
     items = [
         AdminQuestionPairListItem(
             id=p.id,
-            locale=p.locale,
             instrument=p.instrument,
             age_tier=p.age_tier,
             pair_index=p.pair_index,
@@ -192,7 +201,10 @@ async def get_question_pair_detail(db: AsyncSession, pair_id: uuid.UUID) -> Ques
 async def update_question_pair(
     db: AsyncSession, pair_id: uuid.UUID, data: AdminQuestionPairUpdateRequest
 ) -> QuestionPair:
-    return await _update_by_id(db, QuestionPair, pair_id, data, "Question pair not found")
+    return await _update_by_id(
+        db, QuestionPair, pair_id, data, "Question pair not found",
+        localized_fields=QUESTION_PAIR_LOCALIZED_FIELDS,
+    )
 
 
 # --- Motivation statements ---
@@ -201,19 +213,14 @@ async def update_question_pair(
 async def list_motivation_statements(
     db: AsyncSession,
     *,
-    locale: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> AdminMotivationStatementListResponse:
-    filters = []
-    if locale:
-        filters.append(MotivationStatement.locale == locale)
-
     total, rows = await _count_and_paginate(
         db,
         MotivationStatement,
-        filters,
-        (MotivationStatement.triplet_index.asc(), MotivationStatement.order.asc(), MotivationStatement.locale.asc()),
+        [],
+        (MotivationStatement.triplet_index.asc(), MotivationStatement.order.asc()),
         page,
         limit,
     )
@@ -221,11 +228,10 @@ async def list_motivation_statements(
     items = [
         AdminMotivationStatementListItem(
             id=s.id,
-            locale=s.locale,
             triplet_index=s.triplet_index,
             order=s.order,
             category=s.category,
-            text=s.text,
+            text=pick_locale(s.text, DEFAULT_LOCALE),
             has_overrides=has_overrides(s),
         )
         for s in rows
@@ -244,7 +250,8 @@ async def update_motivation_statement(
     db: AsyncSession, statement_id: uuid.UUID, data: AdminMotivationStatementUpdateRequest
 ) -> MotivationStatement:
     return await _update_by_id(
-        db, MotivationStatement, statement_id, data, "Motivation statement not found"
+        db, MotivationStatement, statement_id, data, "Motivation statement not found",
+        localized_fields=MOTIVATION_STATEMENT_LOCALIZED_FIELDS,
     )
 
 
@@ -254,22 +261,16 @@ async def update_motivation_statement(
 async def list_motivation_pairs(
     db: AsyncSession,
     *,
-    locale: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> AdminMotivationPairListResponse:
-    filters = []
-    if locale:
-        filters.append(MotivationPair.locale == locale)
-
     total, rows = await _count_and_paginate(
-        db, MotivationPair, filters, (MotivationPair.pair_index.asc(), MotivationPair.locale.asc()), page, limit
+        db, MotivationPair, [], (MotivationPair.pair_index.asc(),), page, limit
     )
 
     items = [
         AdminMotivationPairListItem(
             id=p.id,
-            locale=p.locale,
             pair_index=p.pair_index,
             category_a=p.category_a,
             category_b=p.category_b,
@@ -288,7 +289,10 @@ async def get_motivation_pair_detail(db: AsyncSession, pair_id: uuid.UUID) -> Mo
 async def update_motivation_pair(
     db: AsyncSession, pair_id: uuid.UUID, data: AdminMotivationPairUpdateRequest
 ) -> MotivationPair:
-    return await _update_by_id(db, MotivationPair, pair_id, data, "Motivation pair not found")
+    return await _update_by_id(
+        db, MotivationPair, pair_id, data, "Motivation pair not found",
+        localized_fields=MOTIVATION_PAIR_LOCALIZED_FIELDS,
+    )
 
 
 # --- Directions ---
@@ -298,23 +302,21 @@ async def list_directions(
     db: AsyncSession,
     *,
     search: str | None = None,
-    locale: str | None = None,
     page: int = 1,
     limit: int = 20,
 ) -> AdminDirectionListResponse:
     filters = []
     if search:
-        filters.append(Direction.name.ilike(f"%{search.strip()}%"))
-    if locale:
-        filters.append(Direction.locale == locale)
+        filters.append(Direction.name["ru"].astext.ilike(f"%{search.strip()}%"))
 
-    total, rows = await _count_and_paginate(db, Direction, filters, (Direction.name.asc(), Direction.locale.asc()), page, limit)
+    total, rows = await _count_and_paginate(
+        db, Direction, filters, (Direction.name["ru"].astext.asc(),), page, limit
+    )
 
     items = [
         AdminDirectionListItem(
             id=d.id,
-            locale=d.locale,
-            name=d.name,
+            name=pick_locale(d.name, DEFAULT_LOCALE),
             slug=d.slug,
             holland_code=d.holland_code,
             has_overrides=has_overrides(d),
@@ -332,4 +334,7 @@ async def get_direction_detail(db: AsyncSession, direction_id: uuid.UUID) -> Dir
 async def update_direction(
     db: AsyncSession, direction_id: uuid.UUID, data: AdminDirectionUpdateRequest
 ) -> Direction:
-    return await _update_by_id(db, Direction, direction_id, data, "Direction not found")
+    return await _update_by_id(
+        db, Direction, direction_id, data, "Direction not found",
+        localized_fields=DIRECTION_LOCALIZED_FIELDS,
+    )

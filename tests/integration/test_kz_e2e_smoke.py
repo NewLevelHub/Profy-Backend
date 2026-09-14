@@ -135,7 +135,7 @@ async def test_report_has_no_empty_or_key_like_sections(
 async def test_direction_detail_serves_real_kazakh_content(db_session: AsyncSession) -> None:
     slug = (await db_session.execute(
         select(Direction.slug)
-        .where(Direction.locale == "kk", Direction.description.isnot(None), Direction.description != "")
+        .where(Direction.description["kk"].astext.isnot(None), Direction.description["kk"].astext != "")
         .limit(1)
     )).scalar_one_or_none()
     assert slug, "no seeded kk direction with content — run apply_direction_content.py"

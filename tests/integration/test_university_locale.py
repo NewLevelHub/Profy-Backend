@@ -55,7 +55,7 @@ async def _seed_program(db: AsyncSession, **program_overrides) -> Program:
         **program_overrides.pop("university_overrides", {}),
     )
     db.add(university)
-    direction = Direction(name="Test Direction", slug=SLUG, holland_code="RIA")
+    direction = Direction(name={"ru": "Test Direction"}, slug=SLUG, holland_code="RIA")
     db.add(direction)
     await db.flush()
 

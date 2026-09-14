@@ -103,7 +103,7 @@ async def _kk_program_detail(db: AsyncSession):
                      description="Русское описание вуза",
                      description_i18n={"kk": "Университеттің қазақ тіліндегі сипаттамасы."})
     db.add(uni)
-    direction = Direction(name="Бағыт", slug="guard-kz602", holland_code="RIA")
+    direction = Direction(name={"ru": "Бағыт"}, slug="guard-kz602", holland_code="RIA")
     db.add(direction)
     await db.flush()
     program = Program(university_id=uni.id, name="Информатика (бакалавр)", language="қазақша",

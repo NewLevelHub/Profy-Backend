@@ -1,15 +1,19 @@
-"""KZ-301..305 — `locale` on the bank-seeded content tables.
+"""Bank-seeded content tables (`questions`, `question_pairs`,
+`motivation_statements`, `motivation_pairs`, `directions`) — single-row
+localization.
 
-Covers: tables with no translation yet stay `ru`-only; the question banks
-(RIASEC KZ-302, Big Five KZ-303, MI KZ-304), junior/middle pairs (KZ-304) and
-motivation statements + Harter pairs (KZ-305) carry `kk`; `localized_rows`
-resolves the request locale per natural key and falls back to `ru` for units
-the locale hasn't translated (recording a fallback); scoring denominators stay
-pinned to `ru`; and structural fields match between `ru` and every other locale
-of one logical row.
+These tables used to carry one physical row per locale (KZ-301 "variant A",
+`Model.locale`); that design was replaced by one row per logical item, with
+localizable fields stored as `{"ru": ..., "kk": ...}` JSONB maps read via
+`app.i18n.pick_locale`/`pick_locale_list` (docs/i18n-contract.md §8). This
+file covers: every fully-translated table's rows carry both `ru` and `kk`
+keys; display services correctly serve `kk` text (with per-row fallback to
+`ru` when a `kk` key is genuinely missing); and scoring/counting reads the
+single row set directly (no more "pin to `ru` so `kk` rows don't double the
+denominator" — there's only one row to count).
 
-Real transactional Postgres session (rolled back) — synthetic rows added in a
-test never escape it.
+Real transactional Postgres session (rolled back) — synthetic rows/mutations
+added in a test never escape it.
 """
 
 import pytest
@@ -31,21 +35,6 @@ from app.services import (
     question_service,
     riasec_service,
 )
-from app.services.content_locale import localized_rows
-
-# (model, natural-key attrs, structural attrs that must be identical across a
-# logical row's locales)
-_STRUCTURAL: list[tuple[type, tuple[str, ...], tuple[str, ...]]] = [
-    (
-        Question,
-        ("order",),
-        ("instrument", "riasec_type", "bigfive_domain", "mi_category", "facet", "keyed", "age_tier"),
-    ),
-    (QuestionPair, ("instrument", "pair_index"), ("age_tier",)),
-    (MotivationStatement, ("triplet_index", "order"), ("category",)),
-    (MotivationPair, ("pair_index",), ("category_a", "category_b")),
-    (Direction, ("slug",), ("holland_code",)),
-]
 
 
 @pytest.fixture(autouse=True)
@@ -55,148 +44,93 @@ def _clear_fallback_counts():
     i18n.reset_fallback_counts()
 
 
-async def test_every_content_table_has_a_complete_kk_set(db_session: AsyncSession) -> None:
-    """KZ-302..306: every bank-seeded content table now has one `kk` row per
-    `ru` row (same natural key)."""
-    for model, key_attrs, _ in _STRUCTURAL:
-        rows = (await db_session.execute(select(model))).scalars().all()
-        ru = {tuple(getattr(r, a) for a in key_attrs) for r in rows if r.locale == "ru"}
-        kk = {tuple(getattr(r, a) for a in key_attrs) for r in rows if r.locale == "kk"}
-        assert ru and kk == ru, f"{model.__tablename__}: kk set != ru set (missing {ru - kk})"
-
-
 @pytest.mark.parametrize(
-    ("instrument", "expected", "ticket"),
+    ("instrument", "expected"),
     [
-        (QuestionInstrument.riasec, 146, "KZ-302"),
-        (QuestionInstrument.big_five, 120, "KZ-303"),
-        (QuestionInstrument.mi, 48, "KZ-304"),
+        (QuestionInstrument.riasec, 146),
+        (QuestionInstrument.big_five, 120),
+        (QuestionInstrument.mi, 48),
     ],
 )
-async def test_question_bank_has_a_complete_kk_set(
-    db_session: AsyncSession, instrument: QuestionInstrument, expected: int, ticket: str
+async def test_question_bank_is_fully_translated(
+    db_session: AsyncSession, instrument: QuestionInstrument, expected: int
 ) -> None:
-    """Every question of the instrument has a `kk` row, structurally identical
-    to its `ru` sibling, with genuinely different text."""
+    """Every question of the instrument is one row whose `text` carries both
+    `ru` and genuinely different `kk` text; `short_text` is either present in
+    both locales or absent entirely (never partially translated)."""
     rows = (
         await db_session.execute(select(Question).where(Question.instrument == instrument))
     ).scalars().all()
-    ru = {q.order: q for q in rows if q.locale == "ru"}
-    kk = {q.order: q for q in rows if q.locale == "kk"}
 
-    assert set(kk) == set(ru) and len(kk) == expected, ticket
-    for order, kk_q in kk.items():
-        ru_q = ru[order]
-        assert kk_q.riasec_type == ru_q.riasec_type
-        assert kk_q.bigfive_domain == ru_q.bigfive_domain
-        assert kk_q.facet == ru_q.facet
-        assert kk_q.keyed == ru_q.keyed
-        assert kk_q.age_tier == ru_q.age_tier
-        assert kk_q.icon == ru_q.icon
-        assert (kk_q.short_text is None) == (ru_q.short_text is None)
-        assert kk_q.text and kk_q.text != ru_q.text
+    assert len(rows) == expected
+    for q in rows:
+        assert q.text.get("ru") and q.text.get("kk") and q.text["ru"] != q.text["kk"]
+        if q.short_text is not None:
+            assert q.short_text.get("ru") and q.short_text.get("kk")
 
 
-async def test_localized_rows_per_key_fallback_and_swap_in(db_session: AsyncSession) -> None:
-    """Drop every `kk` direction row but one (within the rolled-back txn), then
-    resolve under `kk`: the surviving slug comes back `kk`, the rest fall back
-    to `ru`, and exactly one fallback is recorded."""
-    kk_dirs = (
-        await db_session.execute(select(Direction).where(Direction.locale == "kk"))
-    ).scalars().all()
-    assert len(kk_dirs) > 1
-    kept = kk_dirs[0]
-    for d in kk_dirs[1:]:
-        await db_session.delete(d)
+async def test_pick_locale_falls_back_per_row_when_kk_is_missing(db_session: AsyncSession) -> None:
+    """Deleting one direction's `kk` translation only affects that row — every
+    other direction still serves real `kk` text, and exactly one fallback is
+    recorded for the missing one."""
+    directions = (await db_session.execute(select(Direction))).scalars().all()
+    assert len(directions) > 1
+    target = next(d for d in directions if "kk" in d.name)
+    target.name = {"ru": target.name["ru"]}
     await db_session.flush()
+
     i18n._current_locale.set("kk")
-
-    rows = await localized_rows(db_session, select(Direction), Direction, key="slug")
-
-    by_slug = {d.slug: d for d in rows}
-    assert by_slug[kept.slug].locale == "kk"
-    assert all(d.locale == "ru" for d in rows if d.slug != kept.slug)
+    assert i18n.pick_locale(target.name) == target.name["ru"]
     assert i18n.fallback_counts().get("kk") == 1
 
-
-async def test_localized_rows_no_fallback_when_locale_is_complete(
-    db_session: AsyncSession,
-) -> None:
-    i18n._current_locale.set("kk")
-
-    rows = await localized_rows(
-        db_session,
-        select(Question).where(Question.instrument == QuestionInstrument.riasec),
-        Question,
-        key="order",
-    )
-
-    assert len(rows) == 146 and all(q.locale == "kk" for q in rows)
-    assert i18n.fallback_counts().get("kk") is None
+    other = next(d for d in directions if d.id != target.id)
+    assert i18n.pick_locale(other.name) == other.name["kk"]
+    assert i18n.fallback_counts().get("kk") == 1  # unchanged — no second fallback
 
 
 async def test_get_all_questions_kk_serves_the_full_kk_set(db_session: AsyncSession) -> None:
-    """All three Likert instruments are translated (KZ-302/303/304), so a `kk`
-    senior test is served entirely as `kk` text with no fallback."""
-    ru_senior = (
-        await db_session.execute(
-            select(func.count())
-            .select_from(Question)
-            .where(Question.age_tier.in_(("junior", "middle", "senior")), Question.locale == "ru")
-        )
-    ).scalar_one()
-    ru_text = {
-        (r.instrument, r.text)
-        for r in (
-            await db_session.execute(select(Question).where(Question.locale == "ru"))
-        ).scalars()
-    }
+    """All three Likert instruments are fully translated, so a `kk` senior
+    test is served entirely as `kk` text with no fallback."""
+    all_questions = (await db_session.execute(select(Question))).scalars().all()
+    by_id = {q.id: q for q in all_questions}
     i18n._current_locale.set("kk")
 
     questions = await question_service.get_all_questions(db_session, AgeGroup.senior)
 
-    assert len(questions) == ru_senior
-    assert all((q.instrument, q.text) not in ru_text for q in questions)  # every row is kk
+    assert questions
+    for q in questions:
+        assert q.text == by_id[q.id].text["kk"]
     assert i18n.fallback_counts().get("kk") is None
 
 
 async def test_get_pairs_kk_serves_translated_frame_and_options(
     db_session: AsyncSession,
 ) -> None:
-    """KZ-304: junior forced-choice pairs render `kk` frame + option text, and
-    the pick still scores (option ids resolve to the kk question rows)."""
-    ru_frames = {
-        p.frame
-        for p in (
-            await db_session.execute(
-                select(QuestionPair).where(QuestionPair.locale == "ru")
-            )
-        ).scalars()
-    }
+    """Junior forced-choice pairs render `kk` frame + option text, and the
+    pick still scores (option ids resolve to the same Question rows
+    regardless of UI locale — there's only one Question row now)."""
+    all_pairs = (await db_session.execute(select(QuestionPair))).scalars().all()
+    ru_frames = {p.frame["ru"] for p in all_pairs if p.frame}
     i18n._current_locale.set("kk")
 
     pairs = await question_pair_service.get_pairs(db_session, AgeGroup.junior)
 
     assert pairs
-    assert all(p.frame not in ru_frames for p in pairs)  # kk frames
+    assert all(p.frame not in ru_frames for p in pairs)  # kk frames, not ru
     assert all(p.option_a.text and p.option_b.text for p in pairs)
     assert all(p.option_a.id != p.option_b.id for p in pairs)
 
 
 async def test_directions_kk_names_and_shared_slug(db_session: AsyncSession) -> None:
-    """KZ-306: every direction has a `kk` name row; `slug` / `holland_code` are
-    shared (not per-locale), so career matching is locale-invariant."""
+    """Every direction has a `kk` name; `slug`/`holland_code` are plain
+    scalars (never localized), so career matching is locale-invariant."""
     from scripts.riasec_professions import PROFESSIONS
     expected = len({p["title"] for p in PROFESSIONS})  # title-deduped bank size
 
     rows = (await db_session.execute(select(Direction))).scalars().all()
-    ru = {d.slug: d for d in rows if d.locale == "ru"}
-    kk = {d.slug: d for d in rows if d.locale == "kk"}
-
-    assert set(kk) == set(ru) and len(kk) == len(ru) == expected
-    for slug, kk_d in kk.items():
-        assert kk_d.holland_code == ru[slug].holland_code
-        assert kk_d.name  # non-empty kk name
+    assert len(rows) == expected
+    for d in rows:
+        assert d.name.get("kk"), f"{d.slug} has no kk name"
 
     # matched_careers scores on holland_code -> same ranking whatever the locale
     code = ["I", "R", "C"]
@@ -208,77 +142,40 @@ async def test_directions_kk_names_and_shared_slug(db_session: AsyncSession) -> 
 
 
 async def test_motivation_triplets_and_pairs_kk(db_session: AsyncSession) -> None:
-    """KZ-305: motivation statements (senior triplets) and Harter pairs
+    """Motivation statements (senior triplets) and Harter pairs
     (junior/middle) render `kk`; category assignment is unchanged."""
-    ru_stmt_text = {
-        s.text
-        for s in (
-            await db_session.execute(
-                select(MotivationStatement).where(MotivationStatement.locale == "ru")
-            )
-        ).scalars()
-    }
+    all_stmts_db = (await db_session.execute(select(MotivationStatement))).scalars().all()
+    by_stmt_id = {s.id: s for s in all_stmts_db}
     i18n._current_locale.set("kk")
 
     grouped = await motivation_service.triplets(db_session)
     all_stmts = [s for stmts in grouped.values() for s in stmts]
     assert len(all_stmts) == 36
-    assert all(s.text not in ru_stmt_text for s in all_stmts)  # kk text
-    assert all(s.locale == "kk" for s in all_stmts)
+    for s in all_stmts:
+        assert i18n.pick_locale(s.text) == by_stmt_id[s.id].text["kk"]
+
+    all_pairs_db = (await db_session.execute(select(MotivationPair))).scalars().all()
+    assert len(all_pairs_db) == 18
+    for p in all_pairs_db:
+        assert p.text_a.get("kk") and p.text_b.get("kk")
+        assert p.category_a == p.category_b  # a/b poles still map to one category
 
     pairs = await motivation_pair_service.pairs(db_session)
     assert len(pairs) == 18
-    assert all(p.locale == "kk" and p.text_a and p.text_b for p in pairs)
-    # a/b poles still map to the same single category
-    assert all(p.category_a == p.category_b for p in pairs)
 
 
-async def test_scoring_denominators_ignore_non_ru_rows(db_session: AsyncSession) -> None:
-    """RIASEC now has a full `kk` set in the DB (KZ-302) plus, here, a second
-    synthetic `kk` clone — the counts normalization divides by must be
-    unmoved: they pin to `ru`."""
-    before_riasec = await riasec_service.question_counts(db_session, AgeGroup.senior)
-    before_likert = await assessment_shared.likert_total_questions(db_session, AgeGroup.senior)
+async def test_scoring_denominators_count_the_single_row_set(db_session: AsyncSession) -> None:
+    """riasec_service.question_counts / assessment_shared.likert_total_questions
+    read `questions` directly with no locale filter — there's one row per
+    question now, so the count is simply "how many rows match the age tier",
+    independent of which locale's text happens to be requested."""
+    i18n._current_locale.set("ru")
+    ru_riasec = await riasec_service.question_counts(db_session, AgeGroup.senior)
+    ru_likert = await assessment_shared.likert_total_questions(db_session, AgeGroup.senior)
 
-    ru_questions = (
-        await db_session.execute(
-            select(Question).where(
-                Question.instrument == QuestionInstrument.riasec, Question.locale == "ru"
-            )
-        )
-    ).scalars().all()
-    for q in ru_questions:
-        db_session.add(
-            Question(
-                locale="kk", instrument=q.instrument, riasec_type=q.riasec_type,
-                bigfive_domain=q.bigfive_domain, mi_category=q.mi_category, facet=q.facet,
-                keyed=q.keyed, text=f"{q.text} (kk2)", short_text=q.short_text, icon=q.icon,
-                order=q.order, age_tier=q.age_tier,
-            )
-        )
-    await db_session.flush()
+    i18n._current_locale.set("kk")
+    kk_riasec = await riasec_service.question_counts(db_session, AgeGroup.senior)
+    kk_likert = await assessment_shared.likert_total_questions(db_session, AgeGroup.senior)
 
-    assert await riasec_service.question_counts(db_session, AgeGroup.senior) == before_riasec
-    assert await assessment_shared.likert_total_questions(db_session, AgeGroup.senior) == before_likert
-
-
-async def test_structural_fields_match_between_ru_and_other_locales(
-    db_session: AsyncSession,
-) -> None:
-    """Now non-trivial for `questions` (146 `kk` RIASEC rows); the guard
-    KZ-303..306 keep relying on as they add more locales."""
-    for model, key_attrs, struct_attrs in _STRUCTURAL:
-        rows = (await db_session.execute(select(model))).scalars().all()
-        ru_by_key = {
-            tuple(getattr(r, a) for a in key_attrs): r for r in rows if r.locale == "ru"
-        }
-        for row in rows:
-            if row.locale == "ru":
-                continue
-            key = tuple(getattr(row, a) for a in key_attrs)
-            sibling = ru_by_key.get(key)
-            assert sibling is not None, f"{model.__tablename__} {key} has no ru sibling"
-            for attr in struct_attrs:
-                assert getattr(row, attr) == getattr(sibling, attr), (
-                    f"{model.__tablename__} {key}: {attr} differs between {row.locale} and ru"
-                )
+    assert kk_riasec == ru_riasec
+    assert kk_likert == ru_likert

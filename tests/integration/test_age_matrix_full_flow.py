@@ -87,7 +87,7 @@ async def _seed_mi_questions(db: AsyncSession, age_group: AgeGroup, dominant: st
     for i, category in enumerate(MI_ORDER):
         q = Question(
             instrument=QuestionInstrument.mi, mi_category=MIType(category),
-            text=f"test-mi-{category}", age_tier=age_group, order=_SENTINEL_BASE + i,
+            text={"ru": f"test-mi-{category}"}, age_tier=age_group, order=_SENTINEL_BASE + i,
         )
         db.add(q)
         await db.flush()
@@ -100,7 +100,7 @@ async def _seed_riasec_questions(db: AsyncSession, age_group: AgeGroup) -> dict[
     for i, letter in enumerate(HOLLAND_ORDER):
         q = Question(
             instrument=QuestionInstrument.riasec, riasec_type=HollandType(letter),
-            text=f"test-riasec-{letter}", age_tier=age_group, order=_SENTINEL_BASE + i,
+            text={"ru": f"test-riasec-{letter}"}, age_tier=age_group, order=_SENTINEL_BASE + i,
         )
         db.add(q)
         await db.flush()
@@ -129,17 +129,17 @@ async def _seed_bigfive_minimal(
     pairs" as part of the junior/middle flow, not just plain Likert."""
     direct_q = Question(
         instrument=QuestionInstrument.big_five, bigfive_domain=BigFiveDomain.O,
-        facet=1, keyed=Keyed.plus, text="test-bigfive-direct", age_tier=age_group,
+        facet=1, keyed=Keyed.plus, text={"ru": "test-bigfive-direct"}, age_tier=age_group,
         order=_SENTINEL_BASE + 50,
     )
     pair_q_a = Question(
         instrument=QuestionInstrument.big_five, bigfive_domain=BigFiveDomain.C,
-        facet=2, keyed=Keyed.plus, text="test-bigfive-pair-a", age_tier=age_group,
+        facet=2, keyed=Keyed.plus, text={"ru": "test-bigfive-pair-a"}, age_tier=age_group,
         order=_SENTINEL_BASE + 51,
     )
     pair_q_b = Question(
         instrument=QuestionInstrument.big_five, bigfive_domain=BigFiveDomain.C,
-        facet=2, keyed=Keyed.plus, text="test-bigfive-pair-b", age_tier=age_group,
+        facet=2, keyed=Keyed.plus, text={"ru": "test-bigfive-pair-b"}, age_tier=age_group,
         order=_SENTINEL_BASE + 52,
     )
     db.add_all([direct_q, pair_q_a, pair_q_b])
@@ -166,7 +166,7 @@ async def _seed_harter_pair_and_answer(
 ) -> None:
     pair = MotivationPair(
         pair_index=_SENTINEL_BASE, category_a=category, category_b=category,
-        text_a="test-harter-a", text_b="test-harter-b",
+        text_a={"ru": "test-harter-a"}, text_b={"ru": "test-harter-b"},
     )
     db.add(pair)
     await db.flush()
@@ -182,9 +182,9 @@ async def _seed_triplet_and_answer(
 ) -> None:
     other_categories = [c for c in MotivationCategory if c != most][:2]
     statements = [
-        MotivationStatement(triplet_index=_SENTINEL_BASE, order=0, category=most, text="test-most"),
-        MotivationStatement(triplet_index=_SENTINEL_BASE, order=1, category=other_categories[0], text="test-mid"),
-        MotivationStatement(triplet_index=_SENTINEL_BASE, order=2, category=other_categories[1], text="test-least"),
+        MotivationStatement(triplet_index=_SENTINEL_BASE, order=0, category=most, text={"ru": "test-most"}),
+        MotivationStatement(triplet_index=_SENTINEL_BASE, order=1, category=other_categories[0], text={"ru": "test-mid"}),
+        MotivationStatement(triplet_index=_SENTINEL_BASE, order=2, category=other_categories[1], text={"ru": "test-least"}),
     ]
     db.add_all(statements)
     await db.flush()
@@ -256,7 +256,7 @@ async def test_junior_full_flow_gives_eight_mi_interests_no_careers_and_activiti
     # TZ_Profi.md §4.1) must never be counted toward junior's MI total.
     stale_riasec = Question(
         instrument=QuestionInstrument.riasec, riasec_type=HollandType.R,
-        text="test-stale-riasec-junior", age_tier=AgeGroup.junior, order=_SENTINEL_BASE + 99,
+        text={"ru": "test-stale-riasec-junior"}, age_tier=AgeGroup.junior, order=_SENTINEL_BASE + 99,
     )
     db_session.add(stale_riasec)
     await db_session.flush()

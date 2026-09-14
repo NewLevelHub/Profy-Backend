@@ -346,5 +346,3 @@ assert set(KK_NAMES) == {p["title"] for p in PROFESSIONS}, (
     f"stray={sorted(set(KK_NAMES) - {p['title'] for p in PROFESSIONS})}"
 )
 
-# Locales the direction catalog carries (ru first — slug source of truth).
-LOCALES: tuple[str, ...] = ("ru", "kk")

@@ -203,6 +203,34 @@ def pick_locale(mapping: Mapping[str, str] | None, locale: str | None = None) ->
     )
 
 
+def pick_locale_list(mapping: Mapping[str, list] | None, locale: str | None = None) -> list:
+    """Like :func:`pick_locale` but for a ``{locale: list}`` mapping (e.g.
+    ``Direction.professions``/``skills_needed``/``subjects_to_develop``/
+    ``first_steps``). A stored empty list (``[]``) is a legitimate value, not
+    "missing" — unlike ``pick_locale``'s truthiness check, presence of the key
+    is what counts here, so a locale seeded with an intentionally empty list
+    is not silently treated as untranslated.
+
+    Same fallback contract as :func:`pick_locale`: falls back to
+    ``DEFAULT_LOCALE`` when the requested locale's key is absent, and raises
+    :class:`MissingLocalizedText` when neither key is present.
+    """
+    loc = locale or get_locale()
+
+    if mapping and loc in mapping and mapping[loc] is not None:
+        return mapping[loc]
+    if mapping and DEFAULT_LOCALE in mapping and mapping[DEFAULT_LOCALE] is not None:
+        if loc != DEFAULT_LOCALE:
+            record_fallback(loc)
+        return mapping[DEFAULT_LOCALE]
+
+    record_fallback(loc)
+    raise MissingLocalizedText(
+        f"no list for locale {loc!r} and no {DEFAULT_LOCALE!r} fallback "
+        f"in mapping with keys {sorted(mapping) if mapping else []}"
+    )
+
+
 def resolve_column_i18n(
     overrides: Mapping[str, str] | None,
     base_ru: str | None,

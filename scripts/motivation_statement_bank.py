@@ -284,9 +284,6 @@ for _m in (_KK_PHRASES, _KK_PHRASES_JUNIOR):
     assert set(_m) == set(CATEGORIES), f"kk phrase-map category drift: {set(_m) ^ set(CATEGORIES)}"
     assert all(len(v) == 4 for v in _m.values()), "every kk phrase list must have 4 items"
 
-# Locales carried by this bank (ru first — structural source of truth).
-LOCALES: tuple[str, ...] = ("ru", "kk")
-
 
 def _generate_lines() -> list[list[int]]:
     """AG(2,3): 3 vertical lines + 9 sloped lines (3 slopes x 3 intercepts,
