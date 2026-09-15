@@ -4,16 +4,19 @@ cutoff) and `personality_notes_for_age()`, the tier-lookup that feeds
 report_v2_assembler.build_personality_notes() ("Твой характер"). Pure
 functions, no DB/LLM.
 """
+from app.i18n.catalog import bigfive as _bigfive_catalog
 from app.services.bigfive_content import (
     _FLAT_SPREAD,
-    _NOTES,
-    _NOTES_JUNIOR,
     _REL_BAND,
-    PERSONALITY_LABELS,
+    personality_labels,
     personality_notes_for_age,
     relative_bands,
     strength_phrases,
 )
+
+_NOTES = _bigfive_catalog.RU["notes"]
+_NOTES_JUNIOR = _bigfive_catalog.RU["notes_junior"]
+PERSONALITY_LABELS = personality_labels()
 
 _MID_PROFILE = {
     "openness": 50.0, "conscientiousness": 50.0, "extraversion": 50.0,

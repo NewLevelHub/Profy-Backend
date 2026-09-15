@@ -26,8 +26,8 @@ async def test_matched_careers_tie_break_is_deterministic_by_slug(
     slug-descending order — if the old score-only sort were still in place,
     Python's stable sort would just preserve that insertion order (zzz
     before aaa) instead of resolving the tie deterministically."""
-    d_z = Direction(name="Z Test Direction", slug="test-tiebreak-zzz", holland_code="CCC")
-    d_a = Direction(name="A Test Direction", slug="test-tiebreak-aaa", holland_code="EEE")
+    d_z = Direction(name={"ru": "Z Test Direction"}, slug="test-tiebreak-zzz", holland_code="CCC")
+    d_a = Direction(name={"ru": "A Test Direction"}, slug="test-tiebreak-aaa", holland_code="EEE")
     db_session.add_all([d_z, d_a])
     await db_session.flush()
 
@@ -58,8 +58,8 @@ async def test_matched_careers_keeps_directions_that_share_an_exact_holland_code
     slug-ascending tie-break order as any other tie. A repeated-letter code
     ("CCC") keeps this isolated from the ~140 real seeded directions (which
     never repeat a letter)."""
-    d_z = Direction(name="Z Duplicate", slug="test-dup-zzz", holland_code="CCC")
-    d_a = Direction(name="A Duplicate", slug="test-dup-aaa", holland_code="CCC")
+    d_z = Direction(name={"ru": "Z Duplicate"}, slug="test-dup-zzz", holland_code="CCC")
+    d_a = Direction(name={"ru": "A Duplicate"}, slug="test-dup-aaa", holland_code="CCC")
     db_session.add_all([d_z, d_a])
     await db_session.flush()
 

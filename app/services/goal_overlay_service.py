@@ -9,7 +9,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.errors import AppError
 from app.models.analysis_result import AnalysisResult
+from app.i18n import DEFAULT_LOCALE, pick_locale
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.direction import Direction
 from app.models.goal_overlay import GoalOverlay
@@ -22,11 +24,12 @@ from app.schemas.goal_overlay import (
     ScenarioBData,
     ScenarioCData,
 )
+from app.i18n.catalog import tr
 from app.services import assessment_shared
 from app.services.gap_analysis_service import analyze_gap
 from app.services.gap_analysis_service import to_response as gap_to_response
-from app.services.mi_content import MI_LABELS
-from app.services.riasec_content import RIASEC_LABELS
+from app.services.mi_content import mi_labels
+from app.services.riasec_content import riasec_labels
 from app.services.roadmap_builder import generate_roadmap
 
 logger = logging.getLogger(__name__)
@@ -90,11 +93,8 @@ _SCENARIO_BY_GOAL: dict[AssessmentGoal, Literal["A", "B", "C"]] = {
     AssessmentGoal.university: "C",
 }
 
-_MIDDLE_UNIVERSITY_DOWNGRADE_NOTE = (
-    "Для учеников 5-8 классов поступление в вуз еще впереди. "
-    "Сейчас самое время определиться с интересными профессиями и направлениями, "
-    "поэтому мы подготовили для тебя отчёт по выбору профессии."
-)
+def _middle_university_downgrade_note() -> str:
+    return tr("goal_overlay")["middle_university_downgrade_note"]
 
 
 def _get_effective_goal_and_scenario(
@@ -112,7 +112,7 @@ def _get_effective_goal_and_scenario(
         return effective_goal, scenario, redirected, None
 
     if age_group == AgeGroup.middle and primary_goal == AssessmentGoal.university:
-        return effective_goal, scenario, True, _MIDDLE_UNIVERSITY_DOWNGRADE_NOTE
+        return effective_goal, scenario, True, _middle_university_downgrade_note()
 
     return effective_goal, scenario, False, None
 
@@ -137,36 +137,26 @@ def _build_alignment_evidence(
     user_code: list[str],
     direction_code: str,
 ) -> BridgeScenario:
-    holland_descriptions = {
-        "R": "практические навыки и интерес к технике/материальным объектам",
-        "I": "аналитическое мышление, склонность к исследованиям и решению сложных задач",
-        "A": "творческое воображение, нестандартный подход и самовыражение",
-        "S": "стремление помогать людям, развитые навыки коммуникации и работы в команде",
-        "E": "лидерские качества, инициативность и организаторские способности",
-        "C": "внимание к деталям, умение работать со структурированной информацией",
-    }
-    
-    holland_actions = {
-        "R": "Пройти практическую профессиональную пробу (например, собрать прототип устройства или выполнить чертеж).",
-        "I": "Решить прикладную аналитическую задачу в этой сфере или изучить научное исследование по теме.",
-        "A": "Создать творческий концепт, эскиз или сценарий, связанный с этой специальностью.",
-        "S": "Поучаствовать в волонтерском проекте или провести интервью с практикующим специалистом.",
-        "E": "Разработать мини-план продвижения или попробовать организовать командное мероприятие.",
-        "C": "Составить детальный чек-лист требований или систематизировать данные по проекту.",
-    }
-    
+    overlay = tr("goal_overlay")
+    holland_descriptions = overlay["holland_descriptions"]
+    holland_actions = overlay["holland_actions"]
+
     direction_letters = set(direction_code or "")
     user_letters = set(user_code)
     overlapping_letters = direction_letters.intersection(user_letters)
-    
+
     what_works = []
     for letter in (direction_code or ""):
         if letter in overlapping_letters:
-            what_works.append(f"Твой выраженный интерес к сфере: {holland_descriptions.get(letter)}")
-            
+            what_works.append(
+                overlay["what_works_overlap"].format(desc=holland_descriptions.get(letter))
+            )
+
     if not what_works and direction_code:
         first_letter = direction_code[0]
-        what_works.append(f"Твои общие склонности, хотя сфера требует: {holland_descriptions.get(first_letter)}")
+        what_works.append(
+            overlay["what_works_general"].format(desc=holland_descriptions.get(first_letter))
+        )
         
     what_to_check = []
     for letter in (direction_code or ""):
@@ -235,7 +225,14 @@ async def get_or_create_goal_overlay(
     await _assert_assessment_complete(assessment_id, profile.age_group, db)
 
     # 5. Fetch AnalysisResult
-    stmt = select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+    # KZ-405: one row per locale — the overlay reads locale-invariant score
+    # fields, so pick the `ru` row deterministically.
+    stmt = (
+        select(AnalysisResult)
+        .where(AnalysisResult.assessment_id == assessment_id)
+        .order_by((AnalysisResult.locale == DEFAULT_LOCALE).desc())
+        .limit(1)
+    )
     res = await db.execute(stmt)
     analysis = res.scalar_one_or_none()
     if not analysis:
@@ -244,8 +241,9 @@ async def get_or_create_goal_overlay(
         res = await db.execute(stmt)
         analysis = res.scalar_one_or_none()
         if not analysis:
-            raise HTTPException(
+            raise AppError(
                 status_code=status.HTTP_404_NOT_FOUND,
+                error_code="assessment_results_unavailable",
                 detail="Не удалось получить результаты диагностики",
             )
 
@@ -278,14 +276,14 @@ async def get_or_create_goal_overlay(
 
     if scenario == "A":
         instrument = await _stored_interest_instrument(analysis)
-        labels = MI_LABELS if instrument == "mi" else RIASEC_LABELS
+        labels = mi_labels() if instrument == "mi" else riasec_labels()
         top_spheres = [labels[k] for k in analysis.strengths if k in labels]
-        
+
+        _overlay = tr("goal_overlay")
         roadmap_summary = (
-            f"Этот маршрут поможет тебе глубже изучить сферы {', '.join(top_spheres[:3])} "
-            "через простые практические пробы и онлайн-исследования."
+            _overlay["roadmap_summary_with_spheres"].format(spheres=", ".join(top_spheres[:3]))
             if top_spheres
-            else "Этот маршрут поможет тебе познакомиться с интересными сферами через пробы."
+            else _overlay["roadmap_summary_generic"]
         )
         
         roadmap = await generate_roadmap(assessment_id, None, db)
@@ -310,13 +308,18 @@ async def get_or_create_goal_overlay(
         adjacent_names = []
 
         if assessment.selected_direction_slug:
+            # `directions.slug` is unique again (single row per direction) —
+            # no more per-locale duplicate to disambiguate. Overlay text
+            # stays pinned to `ru` here until a later ticket localizes this
+            # service (the epic caches overlays by locale); `holland_code`,
+            # the only field driving scoring below, is locale-invariant anyway.
             stmt = select(Direction).where(Direction.slug == assessment.selected_direction_slug)
             res = await db.execute(stmt)
             direction = res.scalar_one_or_none()
             if direction:
                 target_selected = True
-                selected_target_name = direction.name
-                
+                selected_target_name = pick_locale(direction.name, DEFAULT_LOCALE)
+
                 career_index = next((i for i, c in enumerate(careers) if c.get("slug") == direction.slug), None)
                 if career_index is not None:
                     if career_index <= 2:
@@ -328,19 +331,19 @@ async def get_or_create_goal_overlay(
                     match_explanation = careers[career_index].get("why")
                 else:
                     alignment = "bridge"
-                    match_explanation = (
-                        f"Направление «{direction.name}» не попало в твои основные рекомендации, "
-                        "но это не значит, что оно тебе не подходит — его можно рассмотреть как смежное."
+                    match_explanation = tr("goal_overlay")["direction_not_in_top"].format(
+                        name=pick_locale(direction.name, DEFAULT_LOCALE)
                     )
 
                 user_code = analysis.strengths[:3] if analysis.strengths else []
                 bridge_scenario = _build_alignment_evidence(user_code, direction.holland_code)
 
                 if alignment == "bridge":
+                    # Adjacency is scored on `holland_code` (locale-invariant).
                     stmt = select(Direction)
                     res = await db.execute(stmt)
                     all_directions = res.scalars().all()
-                    
+
                     adjacent = []
                     selected_set = set(direction.holland_code)
                     for d in all_directions:
@@ -349,9 +352,9 @@ async def get_or_create_goal_overlay(
                         overlap = len(selected_set.intersection(set(d.holland_code)))
                         if overlap >= 2:
                             adjacent.append(d)
-                    
+
                     adjacent.sort(key=lambda d: (-len(selected_set.intersection(set(d.holland_code))), d.slug))
-                    adjacent_names = [d.name for d in adjacent[:3]]
+                    adjacent_names = [pick_locale(d.name, DEFAULT_LOCALE) for d in adjacent[:3]]
 
         from app.schemas.goal_overlay import GoalAlignmentBlock
         alignment_block = GoalAlignmentBlock(
@@ -433,10 +436,12 @@ async def get_or_create_goal_overlay(
                     matched_direction_slug = best_slug
                 else:
                     alignment = "bridge"
-                    match_explanation = "Данная программа готовит к профессиям за пределами твоих основных рекомендаций."
+                    match_explanation = tr("goal_overlay")["program_beyond_recommendations"]
                     matched_direction_slug = prof_slugs[0] if prof_slugs else None
 
                 if matched_direction_slug:
+                    # See the scenario-C selected-direction lookup above —
+                    # `slug` is unique again, no locale filter needed.
                     stmt = select(Direction).where(Direction.slug == matched_direction_slug)
                     res = await db.execute(stmt)
                     direction = res.scalar_one_or_none()
@@ -445,10 +450,11 @@ async def get_or_create_goal_overlay(
                         bridge_scenario = _build_alignment_evidence(user_code, direction.holland_code)
 
                         if alignment == "bridge":
+                            # Adjacency scored on `holland_code` (locale-invariant).
                             stmt = select(Direction)
                             res = await db.execute(stmt)
                             all_directions = res.scalars().all()
-                            
+
                             adjacent = []
                             selected_set = set(direction.holland_code)
                             for d in all_directions:
@@ -458,7 +464,7 @@ async def get_or_create_goal_overlay(
                                 if overlap >= 2:
                                     adjacent.append(d)
                             adjacent.sort(key=lambda d: (-len(selected_set.intersection(set(d.holland_code))), d.slug))
-                            adjacent_names = [d.name for d in adjacent[:3]]
+                            adjacent_names = [pick_locale(d.name, DEFAULT_LOCALE) for d in adjacent[:3]]
 
         overlay_data = ScenarioCData(
             selected_program_id=selected_program_id,

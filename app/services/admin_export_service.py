@@ -10,9 +10,9 @@ import zipfile
 from datetime import datetime
 
 from app.schemas.admin import AdminAssessmentDetailResponse, AdminUserListItem
-from app.services.bigfive_content import BIGFIVE_LABELS
-from app.services.mi_content import MI_LABELS
-from app.services.riasec_content import RIASEC_LABELS
+from app.services.bigfive_content import bigfive_labels
+from app.services.mi_content import mi_labels
+from app.services.riasec_content import riasec_labels
 
 # Excel does not sniff UTF-8 in a .csv: without a BOM it reads the file in the
 # system codepage and every Cyrillic name turns into mojibake ("Бекзат" ->
@@ -87,7 +87,7 @@ def _label(labels: dict[str, str], value: str | None) -> str:
 # so a fixed RIASEC column set is safe here.
 _RIASEC_KEYS = ("R", "I", "A", "S", "E", "C")
 _BIG_FIVE_KEYS = ("N", "E", "O", "A", "C")
-_MI_KEYS = tuple(MI_LABELS)
+_MI_KEYS = tuple(mi_labels())
 
 # Every header is the human name of what the column holds. The file is opened
 # in Excel by people who are not the developers who named the fields.
@@ -109,9 +109,9 @@ _USER_COLUMNS = (
     "Статус последнего",
     "Цель последнего",
     "Инструмент интересов",
-    *(f"RIASEC: {RIASEC_LABELS[k]}" for k in _RIASEC_KEYS),
-    *(f"MI: {MI_LABELS[k]}" for k in _MI_KEYS),
-    *(f"Big Five: {BIGFIVE_LABELS[k]}" for k in _BIG_FIVE_KEYS),
+    *(f"RIASEC: {riasec_labels()[k]}" for k in _RIASEC_KEYS),
+    *(f"MI: {mi_labels()[k]}" for k in _MI_KEYS),
+    *(f"Big Five: {bigfive_labels()[k]}" for k in _BIG_FIVE_KEYS),
 )
 
 
@@ -226,11 +226,11 @@ def _scale_name(instrument: str, category: str) -> str:
     column. The neighbouring instrument column separates them, but only if the
     reader knows to look — this states the scale outright."""
     if instrument == "riasec":
-        return RIASEC_LABELS.get(category, category)
+        return riasec_labels().get(category, category)
     if instrument == "big_five":
-        return BIGFIVE_LABELS.get(category, category)
+        return bigfive_labels().get(category, category)
     if instrument == "mi":
-        return MI_LABELS.get(category, category)
+        return mi_labels().get(category, category)
     return category
 
 

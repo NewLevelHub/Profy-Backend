@@ -6,10 +6,10 @@ the LLM is unavailable or fails validation three times running.
 """
 from app.models.profile import AgeGroup
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
-from app.services.mi_content import MI_LABELS
+from app.services.mi_content import mi_labels
 from app.services.report_narrative_fallback import build_fallback_narrative
 from app.services.report_narrative_validator import validate
-from app.services.riasec_content import RIASEC_LABELS
+from app.services.riasec_content import riasec_labels
 
 
 def _context(age_group: AgeGroup, instrument: str, evidence: list[EvidenceItem]) -> ReportNarrativeContext:
@@ -48,14 +48,14 @@ def test_fallback_is_valid_with_rich_evidence_senior():
 def test_junior_mi_interests_always_cover_all_eight_categories_regardless_of_evidence():
     context = _context(AgeGroup.junior, "mi", [])
     output = build_fallback_narrative(context)
-    assert {i.category for i in output.interests} == set(MI_LABELS.keys())
+    assert {i.category for i in output.interests} == set(mi_labels().keys())
     assert len(output.interests) == 8
 
 
 def test_middle_senior_riasec_interests_always_cover_all_six_categories_regardless_of_evidence():
     context = _context(AgeGroup.middle, "riasec", [])
     output = build_fallback_narrative(context)
-    assert {i.category for i in output.interests} == set(RIASEC_LABELS.keys())
+    assert {i.category for i in output.interests} == set(riasec_labels().keys())
     assert len(output.interests) == 6
 
 
@@ -79,7 +79,7 @@ def test_junior_never_gets_a_career_narrative():
 
 def test_senior_career_narrative_capped_at_three_and_grounded_in_riasec_evidence():
     evidence = [
-        EvidenceItem(source_id=f"riasec:{letter}", source_type="riasec_category", text=RIASEC_LABELS[letter])
+        EvidenceItem(source_id=f"riasec:{letter}", source_type="riasec_category", text=riasec_labels()[letter])
         for letter in ["R", "I", "A", "S"]
     ]
     context = _context(AgeGroup.senior, "riasec", evidence)
