@@ -6,7 +6,7 @@ student, so the backfill marks all of them `published` — the gate only
 applies to reports generated after it ships.
 
 Revision ID: b7e2d4a91c3f
-Revises: 3b2c5ba64ef1
+Revises: ab5271e14fae
 Create Date: 2026-09-14 00:00:00.000000
 """
 from collections.abc import Sequence
@@ -16,7 +16,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision: str = "b7e2d4a91c3f"
-down_revision: str | None = "3b2c5ba64ef1"
+down_revision: str | None = "ab5271e14fae"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

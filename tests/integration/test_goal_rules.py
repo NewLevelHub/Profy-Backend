@@ -158,9 +158,9 @@ async def test_alignment_match_partial_bridge(
     assessment.status = AssessmentStatus.completed
     
     # Pre-seed some directions
-    dir_dev = Direction(name="Разработчик", slug="developer", holland_code="IRC")
-    dir_eng = Direction(name="Инженер", slug="engineer", holland_code="RIS")
-    dir_art = Direction(name="Художник", slug="artist", holland_code="AIR")
+    dir_dev = Direction(name={"ru": "Разработчик"}, slug="developer", holland_code="IRC")
+    dir_eng = Direction(name={"ru": "Инженер"}, slug="engineer", holland_code="RIS")
+    dir_art = Direction(name={"ru": "Художник"}, slug="artist", holland_code="AIR")
     db_session.add_all([dir_dev, dir_eng, dir_art])
     await db_session.flush()
 

@@ -13,6 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.data import resource_catalog
+from app.errors import AppError
+from app.i18n import DEFAULT_LOCALE, pick_locale, pick_locale_list
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentGoal
@@ -563,7 +565,10 @@ async def generate_roadmap(
 
     # Load matched directions from stored analysis result
     result_row = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        select(AnalysisResult)
+        .where(AnalysisResult.assessment_id == assessment_id)
+        .order_by((AnalysisResult.locale == DEFAULT_LOCALE).desc())  # KZ-405: prefer ru row
+        .limit(1)
     )
     analysis = result_row.scalar_one_or_none()
     directions_raw: list = analysis.careers if analysis else []
@@ -667,8 +672,9 @@ async def get_roadmap(
 
 # ─── Direction roadmap (AI-only, no template fallback) ──────────────────────────
 
-_AI_UNAVAILABLE = HTTPException(
+_AI_UNAVAILABLE = AppError(
     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+    error_code="ai_unavailable",
     detail="ИИ временно недоступен, попробуй ещё раз",
 )
 
@@ -865,8 +871,9 @@ async def _require_direction_roadmap_access(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
 
     if profile.age_group == AgeGroup.junior:
-        raise HTTPException(
+        raise AppError(
             status_code=status.HTTP_403_FORBIDDEN,
+            error_code="feature_requires_age_10",
             detail="Эта возможность доступна с 10 лет",
         )
 
@@ -875,8 +882,9 @@ async def _require_direction_roadmap_access(
         if effective_goal != AssessmentGoal.university:
             inquiry = await direction_inquiry_service.get_inquiry(assessment_id, slug, db)
             if inquiry is None:
-                raise HTTPException(
+                raise AppError(
                     status_code=status.HTTP_400_BAD_REQUEST,
+                    error_code="direction_inquiry_not_completed",
                     detail="Сначала пройди опрос по этому направлению",
                 )
 
@@ -1044,8 +1052,9 @@ async def generate_direction_roadmap_for_program(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
 
     if profile.age_group == AgeGroup.junior:
-        raise HTTPException(
+        raise AppError(
             status_code=status.HTTP_403_FORBIDDEN,
+            error_code="feature_requires_age_10",
             detail="Эта возможность доступна с 10 лет",
         )
 
@@ -1055,14 +1064,18 @@ async def generate_direction_roadmap_for_program(
     program, university = program_university
 
     analysis_row = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        select(AnalysisResult)
+        .where(AnalysisResult.assessment_id == assessment_id)
+        .order_by((AnalysisResult.locale == DEFAULT_LOCALE).desc())  # KZ-405: prefer ru row
+        .limit(1)
     )
     analysis = analysis_row.scalar_one_or_none()
     careers: list = analysis.careers if analysis else []
     slug = direction_service.best_matching_slug(program.profession_slugs or [], careers)
     if slug is None:
-        raise HTTPException(
+        raise AppError(
             status_code=status.HTTP_400_BAD_REQUEST,
+            error_code="program_has_no_direction",
             detail="Эта программа не связана ни с одним направлением",
         )
 
@@ -1117,7 +1130,7 @@ async def _upsert_direction_roadmap(
     db: AsyncSession,
     program_id: uuid.UUID | None = None,
 ) -> DirectionRoadmap:
-    direction_name = direction.name
+    direction_name = pick_locale(direction.name)
     existing = (
         await db.execute(
             select(DirectionRoadmap).where(
@@ -1140,9 +1153,9 @@ async def _upsert_direction_roadmap(
     # Deterministic, non-LLM catalogue match off the direction's own fields —
     # see app/data/resource_catalog.py.
     category = resource_catalog.match_category(
-        direction.name,
-        " ".join(direction.skills_needed or []),
-        " ".join(direction.subjects_to_develop or []),
+        direction_name,
+        " ".join(pick_locale_list(direction.skills_needed)),
+        " ".join(pick_locale_list(direction.subjects_to_develop)),
         direction.holland_code,
     )
 
@@ -1161,6 +1174,8 @@ async def _upsert_direction_roadmap(
     # failing every by-program direction roadmap at insert time. The other
     # model_dump() calls above carry only str/int/list fields.
     roadmap.program_fit = (
+        # mode="json" — program_id is a UUID, not natively JSON-serializable
+        # (asyncpg's JSONB encoder has no UUID case, unlike a str).
         plan.program_fit.model_dump(mode="json") if plan.program_fit is not None else None
     )
     roadmap.additional_resources = resource_catalog.resources_for_category(category)

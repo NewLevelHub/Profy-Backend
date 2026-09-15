@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n import DEFAULT_LOCALE, pick_locale
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
@@ -37,7 +38,7 @@ from app.services import auth_service, bigfive_content, motivation_service
 from app.services.admin_listing import SortOrder, order_by_clause
 from app.services.age_tiers import visible_tiers
 from app.services.goal_overlay_service import _get_effective_goal_and_scenario
-from app.services.riasec_content import LIKERT_LABELS as RIASEC_LIKERT_LABELS
+from app.services.riasec_content import likert_labels as riasec_likert_labels
 
 # GET /admin/users/export has no page/limit — unlike list_users, it always
 # fetches every matching row (plus their profiles/assessments/analysis
@@ -55,7 +56,7 @@ class ExportTooLargeError(Exception):
 
 
 def _selected_answer_text(answer_value: int, instrument: QuestionInstrument | None = None) -> str:
-    labels = bigfive_content.LIKERT_LABELS if instrument == QuestionInstrument.big_five else RIASEC_LIKERT_LABELS
+    labels = bigfive_content.likert_labels() if instrument == QuestionInstrument.big_five else riasec_likert_labels()
     if 1 <= answer_value <= len(labels):
         return labels[answer_value - 1]
     return f"Шкала {answer_value}/5"
@@ -271,7 +272,11 @@ async def _build_user_list_items(db: AsyncSession, users: list[User]) -> list[Ad
             select(AnalysisResult).where(AnalysisResult.assessment_id.in_(completed_assessment_ids))
         )
         for analysis in analysis_result.scalars().all():
-            analysis_by_assessment[analysis.assessment_id] = analysis
+            # KZ-405: one row per locale — admin is ru-only, prefer the ru row,
+            # but still show a kk-only user's row if that's all there is.
+            prev = analysis_by_assessment.get(analysis.assessment_id)
+            if prev is None or analysis.locale == DEFAULT_LOCALE:
+                analysis_by_assessment[analysis.assessment_id] = analysis
 
     items: list[AdminUserListItem] = []
     for user in users:
@@ -374,7 +379,7 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
 
         total_questions_result = await db.execute(
             select(func.count(Question.id)).where(
-                Question.age_tier.in_(visible_tiers(profile.age_group))
+                Question.age_tier.in_(visible_tiers(profile.age_group)),
             )
         )
         total_questions = total_questions_result.scalar_one()
@@ -501,7 +506,7 @@ async def get_assessment_detail(
                 question_id=response.question_id,
                 instrument=question.instrument.value,
                 category=category,
-                question_text=question.text,
+                question_text=pick_locale(question.text, DEFAULT_LOCALE),
                 question_order=question.order,
                 answer_value=response.answer_value,
                 selected_answer_text=_selected_answer_text(response.answer_value, question.instrument),
@@ -533,11 +538,11 @@ async def get_assessment_detail(
             motivation_responses.append(
                 AdminMotivationResponseItem(
                     triplet_index=row.triplet_index,
-                    picked_most_text=most.text if most else "?",
+                    picked_most_text=pick_locale(most.text, DEFAULT_LOCALE) if most else "?",
                     picked_most_category=most.category.value if most else "?",
-                    picked_least_text=least.text if least else "?",
+                    picked_least_text=pick_locale(least.text, DEFAULT_LOCALE) if least else "?",
                     picked_least_category=least.category.value if least else "?",
-                    not_picked_text=neutral.text if neutral else "?",
+                    not_picked_text=pick_locale(neutral.text, DEFAULT_LOCALE) if neutral else "?",
                     not_picked_category=neutral.category.value if neutral else "?",
                     created_at=row.created_at,
                 )
@@ -546,7 +551,10 @@ async def get_assessment_detail(
 
     analysis_result = None
     analysis_row = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment.id)
+        select(AnalysisResult)
+        .where(AnalysisResult.assessment_id == assessment.id)
+        .order_by((AnalysisResult.locale == DEFAULT_LOCALE).desc())  # KZ-405: prefer ru row
+        .limit(1)
     )
     analysis = analysis_row.scalar_one_or_none()
     if analysis:
@@ -560,7 +568,7 @@ async def get_assessment_detail(
 
     total_questions_result = await db.execute(
         select(func.count(Question.id)).where(
-            Question.age_tier.in_(visible_tiers(profile.age_group))
+            Question.age_tier.in_(visible_tiers(profile.age_group)),
         )
     )
     total_questions = total_questions_result.scalar_one()
@@ -616,7 +624,11 @@ async def _enrich_feedback_rows(
         analysis_result = await db.execute(
             select(AnalysisResult).where(AnalysisResult.assessment_id.in_(assessment_ids))
         )
-        analysis_by_assessment = {a.assessment_id: a for a in analysis_result.scalars().all()}
+        analysis_by_assessment = {}
+        for a in analysis_result.scalars().all():  # KZ-405: prefer the ru row
+            prev = analysis_by_assessment.get(a.assessment_id)
+            if prev is None or a.locale == DEFAULT_LOCALE:
+                analysis_by_assessment[a.assessment_id] = a
 
     items: list[AdminFeedbackListItem] = []
     for fb in feedback_rows:

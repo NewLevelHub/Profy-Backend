@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_student_user
+from app.errors import AppError
 from app.models.analysis_result import ReviewStatus
 from app.models.assessment import Assessment
 from app.models.profile import Profile
@@ -71,17 +72,28 @@ async def get_report(
     db: AsyncSession = Depends(get_db),
 ) -> ResultResponseV2 | ResultPendingReviewResponse:
     await _require_assessment_access(assessment_id, current_user, db)
-    # Gate before get_report() — an unpublished report must never be shaped
-    # or read from the cache for a student.
+    # Gate before resolving the report — an unpublished report must never be
+    # shaped or read from the cache for a student. The review status is one
+    # per assessment, shared by every locale row (KZ-405), so it is checked
+    # before the per-locale lookup below.
     review_status = await report_service.get_review_status(assessment_id, db)
     if review_status is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Report not found"
         )
-    if review_status == ReviewStatus.pending_review:
+    if review_status != ReviewStatus.published:
         return ResultPendingReviewResponse(assessment_id=assessment_id)
-    result = await report_service.get_report(assessment_id, db)
+    result, outcome = await report_service.resolve_report(assessment_id, db)
     if result is None:
+        # KZ-406: a report may exist in another locale (student switched
+        # language) — signal that so the client shows a "generating" state
+        # and POSTs /generate, rather than treating it as "no report".
+        if outcome is report_service.ReportLookup.LOCALE_NOT_GENERATED:
+            raise AppError(
+                status_code=status.HTTP_404_NOT_FOUND,
+                error_code="report_locale_not_generated",
+                detail="Отчёт на выбранном языке ещё не создан",
+            )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Report not found"
         )

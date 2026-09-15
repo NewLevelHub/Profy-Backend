@@ -25,12 +25,11 @@ _LEAST_POINTS = 0
 
 
 async def triplets(db: AsyncSession) -> dict[int, list[MotivationStatement]]:
-    result = await db.execute(
-        select(MotivationStatement).order_by(
-            MotivationStatement.triplet_index, MotivationStatement.order
-        )
+    stmt = select(MotivationStatement).order_by(
+        MotivationStatement.triplet_index, MotivationStatement.order
     )
     grouped: dict[int, list[MotivationStatement]] = {}
+    result = await db.execute(stmt)
     for statement in result.scalars().all():
         grouped.setdefault(statement.triplet_index, []).append(statement)
     return grouped

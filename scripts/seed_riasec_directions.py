@@ -5,8 +5,16 @@ Run inside Docker: docker-compose exec api python scripts/seed_riasec_directions
 Idempotent, self-healing: dedupes PROFESSIONS by title (first occurrence in
 source order wins — this is what deterministically resolves the one real
 data conflict in the source, "Psychologist" listed as both IES and SEI, see
-riasec_professions.py's docstring), slugifies the title, upserts by slug,
-deletes any DB row whose slug is no longer produced by the current list.
+riasec_professions.py's docstring), slugifies the `ru` title, upserts by
+`slug`, deletes any DB row whose `slug` is no longer produced by the current
+list.
+
+Localized (KZ-306, single-row redesign): one direction = one row, keyed by
+`slug` (always derived from the `ru` title — locale-invariant, career matching
+and the profession↔program map never see a per-locale slug). `name` is a
+`{"ru": ..., "kk": ...}` map (`ru` title + `riasec_professions.KK_NAMES`);
+`description` and the JSONB lists are filled by `apply_direction_content.py`,
+never here.
 
 To change the profession catalog: edit riasec_professions.py and rerun this
 script — nothing else hardcodes profession names or codes.
@@ -23,7 +31,9 @@ from sqlalchemy import select
 from app.database import async_session
 from app.models.direction import Direction
 from app.services.admin_lock import has_overrides, sync_fields
-from scripts.riasec_professions import PROFESSIONS
+from scripts.riasec_professions import KK_NAMES, PROFESSIONS
+
+_LOCALIZED_FIELDS = frozenset({"name"})
 
 
 _CYRILLIC_TO_LATIN = {
@@ -34,7 +44,6 @@ _CYRILLIC_TO_LATIN = {
     "ы": "y", "ь": "", "э": "e", "ю": "yu", "я": "ya",
 }
 
-
 def slugify(title: str) -> str:
     slug = title.lower()
     slug = slug.replace("&", " and ")
@@ -44,48 +53,56 @@ def slugify(title: str) -> str:
 
 
 def dedupe_by_title(professions: list[dict]) -> list[dict]:
+    """[{title, slug, holland_code}] — first occurrence of a title wins."""
     seen: dict[str, dict] = {}
     for entry in professions:
         title = entry["title"]
         if title in seen:
             continue
         seen[title] = {
-            "name": title,
+            "title": title,
             "slug": slugify(title),
             "holland_code": entry["holland_code"],
         }
     return list(seen.values())
 
 
+def _name_map(title: str) -> dict:
+    name = {"ru": title}
+    kk = KK_NAMES.get(title)
+    if kk:
+        name["kk"] = kk
+    return name
+
+
 async def main() -> None:
     directions = dedupe_by_title(PROFESSIONS)
+    live_slugs = {d["slug"] for d in directions}
 
     async with async_session() as db:
-        live_slugs = {d["slug"] for d in directions}
+        inserted = updated = skipped = deleted = 0
 
         existing_result = await db.execute(select(Direction))
         existing_by_slug = {d.slug: d for d in existing_result.scalars().all()}
 
-        inserted = 0
-        updated = 0
-        skipped = 0
-        deleted = 0
-
         for data in directions:
             existing = existing_by_slug.get(data["slug"])
             if existing is not None:
-                changed = sync_fields(existing, {
-                    "name": data["name"],
-                    "holland_code": data["holland_code"],
-                })
-                if changed:
-                    updated += 1
-                else:
-                    skipped += 1
+                changed = sync_fields(
+                    existing,
+                    {"name": _name_map(data["title"]), "holland_code": data["holland_code"]},
+                    localized_fields=_LOCALIZED_FIELDS,
+                )
+                updated += changed
+                skipped += not changed
                 continue
 
+            # description/professions/skills_needed/subjects_to_develop/
+            # first_steps are left at the model's defaults (empty `ru`-only
+            # maps) — filled in by apply_direction_content.py, which requires
+            # the row to already exist.
             db.add(Direction(
-                name=data["name"],
+                name=_name_map(data["title"]),
                 slug=data["slug"],
                 holland_code=data["holland_code"],
             ))
@@ -101,7 +118,10 @@ async def main() -> None:
             f"Done. Inserted: {inserted}, updated: {updated}, "
             f"skipped (unchanged): {skipped}, orphans deleted: {deleted}"
         )
-        print(f"Total directions (deduped from {len(PROFESSIONS)} raw rows): {len(directions)}")
+        print(
+            f"Directions: {len(directions)} logical (deduped from "
+            f"{len(PROFESSIONS)} raw rows)"
+        )
 
 
 if __name__ == "__main__":

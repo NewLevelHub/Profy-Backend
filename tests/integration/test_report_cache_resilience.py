@@ -97,7 +97,11 @@ async def test_report_cache_key_is_centralized_and_versioned() -> None:
     assessment_id = uuid.uuid4()
     assert (
         assessment_shared.report_cache_key(assessment_id)
-        == f"report:v3:{assessment_id}"
+        == f"report:v4:ru:{assessment_id}"
+    )
+    assert (
+        assessment_shared.report_cache_key(assessment_id, "kk")
+        == f"report:v4:kk:{assessment_id}"
     )
     # report_service must use the exact same builder, not a parallel copy —
     # that's precisely what regressed last time.
@@ -117,7 +121,8 @@ async def test_build_report_writes_and_get_report_reads_the_same_cache_key(
     # A freshly generated report is pending psychologist review (PRO-337)
     # and must never land in the student cache.
     redis = assessment_shared.get_redis()
-    assert await redis.get(f"report:v3:{assessment.id}") is None
+    cache_key = assessment_shared.report_cache_key(assessment.id)
+    assert await redis.get(cache_key) is None
 
     stored = (
         await db_session.execute(select(AnalysisResult).where(AnalysisResult.assessment_id == assessment.id))
@@ -127,9 +132,9 @@ async def test_build_report_writes_and_get_report_reads_the_same_cache_key(
 
     await report_service.get_report(assessment.id, db_session)
     try:
-        assert await redis.get(f"report:v3:{assessment.id}") is not None
+        assert await redis.get(cache_key) is not None
     finally:
-        await redis.delete(f"report:v3:{assessment.id}")
+        await redis.delete(cache_key)
 
 
 async def test_legacy_unversioned_cache_payload_is_never_read_as_v2(
@@ -137,7 +142,7 @@ async def test_legacy_unversioned_cache_payload_is_never_read_as_v2(
 ) -> None:
     """A pre-rollout v1-shaped JSON blob might still be sitting under the old
     `report:{id}` key when this ships. get_report/build_report must ignore
-    it completely (they only ever address `report:v3:{id}`) rather than try
+    it completely (they only ever address `report:v4:{locale}:{id}`) rather than try
     to parse it as ResultResponseV2 and blow up."""
     assessment = await _make_assessment(db_session, AgeGroup.senior)
     _force_complete_and_llm_disabled(monkeypatch, senior=True)

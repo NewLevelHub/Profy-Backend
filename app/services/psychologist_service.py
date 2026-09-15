@@ -16,10 +16,11 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import Select, select
+from sqlalchemy import Select, case, delete, select, tuple_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
+from app.i18n import DEFAULT_LOCALE
 from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
 from app.models.assessment import Assessment
@@ -258,6 +259,32 @@ async def delete_note(
 REVIEW_QUEUE_LIMIT = 200
 
 
+def _is_original_row() -> Any:
+    """KZ-405 keeps one report row per locale; they share one review status,
+    and the queue, the review page and publishing all work on a single one of
+    them — "the row under review". That is the `ru` row when there is one
+    (report_service._find_primary_analysis translates from it, and the
+    psychologist cabinet is Russian), else the earliest.
+
+    Not "the earliest" alone: `created_at` is `now()`, i.e. the *transaction*
+    start, so locale rows written in one transaction tie, and an id
+    tie-break would then pick a translation at random."""
+    other = aliased(AnalysisResult)
+
+    def _rank(row: Any) -> Any:
+        return case((row.locale == DEFAULT_LOCALE, 0), else_=1)
+
+    return ~(
+        select(other.id)
+        .where(
+            other.assessment_id == AnalysisResult.assessment_id,
+            tuple_(_rank(other), other.created_at, other.id)
+            < tuple_(_rank(AnalysisResult), AnalysisResult.created_at, AnalysisResult.id),
+        )
+        .exists()
+    )
+
+
 def review_queue_select(limit: int = REVIEW_QUEUE_LIMIT) -> Select:
     """Results waiting for review, oldest first — shared by the psychologist
     queue and the admin "no psychologist assigned" queue, which differ only
@@ -278,7 +305,7 @@ def review_queue_select(limit: int = REVIEW_QUEUE_LIMIT) -> Select:
         .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
         .join(Profile, Profile.id == Assessment.profile_id)
         .join(student, student.id == Profile.user_id)
-        .where(AnalysisResult.review_status == ReviewStatus.pending_review)
+        .where(AnalysisResult.review_status == ReviewStatus.pending_review, _is_original_row())
         .order_by(AnalysisResult.created_at.asc())
         .limit(limit)
     )
@@ -324,6 +351,7 @@ async def _require_result_for_student(
         .where(
             AnalysisResult.assessment_id == assessment_id,
             Profile.user_id == student_id,
+            _is_original_row(),
         )
     )
     if for_update:
@@ -389,7 +417,7 @@ async def update_result_content(
     # trait by trait — untouched traits keep following the scores.
     notes_patch = values.pop("personality_notes", None)
     if notes_patch is not None:
-        unknown_traits = set(notes_patch) - set(bigfive_content.PERSONALITY_LABELS)
+        unknown_traits = set(notes_patch) - set(bigfive_content.personality_labels())
         if unknown_traits:
             raise ResultPatchInvalidError(
                 f"personality_notes: неизвестные черты {sorted(unknown_traits)}"
@@ -444,6 +472,16 @@ async def update_result_content(
                 changed_fields=changed,
             )
         )
+        # Other-locale rows are translations of the text as it was *before*
+        # this edit — publishing them would ship unreviewed content. Drop them;
+        # the next request in that locale re-translates from the edited row
+        # and inherits its review status (report_service.build_report).
+        await db.execute(
+            delete(AnalysisResult).where(
+                AnalysisResult.assessment_id == analysis.assessment_id,
+                AnalysisResult.id != analysis.id,
+            )
+        )
     await db.commit()
     await db.refresh(analysis)
     detail = _to_detail(analysis)
@@ -474,8 +512,8 @@ async def publish_result_as_admin(
     (docs/psychologist-review-gate-plan.md §4) — not assignment-gated."""
     query = (
         select(AnalysisResult)
-        .where(AnalysisResult.assessment_id == assessment_id)
-        .with_for_update()
+        .where(AnalysisResult.assessment_id == assessment_id, _is_original_row())
+        .with_for_update(of=AnalysisResult)
         .execution_options(populate_existing=True)
     )
     analysis = (await db.execute(query)).scalar_one_or_none()
@@ -497,6 +535,23 @@ async def _publish(
     if analysis.reviewed_by is None:
         analysis.reviewed_by = publisher_id
         analysis.reviewed_at = now
+    # Remaining translations (only ever made from the current, reviewed text —
+    # an edit drops older ones) share the report's status: publish them too,
+    # or a student on that locale would keep seeing "under review".
+    await db.execute(
+        update(AnalysisResult)
+        .where(
+            AnalysisResult.assessment_id == analysis.assessment_id,
+            AnalysisResult.id != analysis.id,
+        )
+        .values(
+            review_status=ReviewStatus.published,
+            reviewed_by=analysis.reviewed_by,
+            reviewed_at=analysis.reviewed_at,
+            published_by=publisher_id,
+            published_at=now,
+        )
+    )
     await db.commit()
     await db.refresh(analysis)
     detail = _to_detail(analysis)
@@ -510,7 +565,7 @@ async def _drop_report_cache(assessment_id: uuid.UUID) -> None:
     (report_service._cache_if_published); the next student GET after
     publishing warms the cache again."""
     await assessment_shared.safe_redis_delete(
-        assessment_shared.get_redis(), assessment_shared.report_cache_key(assessment_id)
+        assessment_shared.get_redis(), *assessment_shared.report_cache_keys(assessment_id)
     )
 
 
@@ -542,7 +597,7 @@ async def _notify_result_published(db: AsyncSession, assessment_id: uuid.UUID) -
     try:
         row = (
             await db.execute(
-                select(User.email, Profile.name)
+                select(User.email, User.locale, Profile.name)
                 .join(Profile, Profile.user_id == User.id)
                 .join(Assessment, Assessment.profile_id == Profile.id)
                 .where(Assessment.id == assessment_id)
@@ -550,7 +605,7 @@ async def _notify_result_published(db: AsyncSession, assessment_id: uuid.UUID) -
         ).one_or_none()
         if row is not None:
             await _send_within_budget(
-                [email_service.send_result_published_email(row.email, row.name or "Привет")]
+                [email_service.send_result_published_email(row.email, row.name, locale=row.locale)]
             )
     except Exception:
         logger.exception("result-published notification failed for assessment=%s", assessment_id)
