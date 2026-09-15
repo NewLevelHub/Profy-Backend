@@ -203,6 +203,14 @@ async def test_report_derived_endpoints_are_gated_until_published(
     )
     assert fetched_roadmap.status_code == 409
 
+    # The inquiry questions are LLM-generated from the same stored careers/
+    # strengths, and its "unknown direction" 400 is an oracle over them.
+    inquiry = await client.get(
+        f"/api/v1/inquiry/{assessment.id}/directions/developer/questions",
+        headers=auth_headers,
+    )
+    assert inquiry.status_code == 409
+
     stored = await stored_result(db_session, assessment.id)
     stored.review_status = ReviewStatus.published
     await db_session.flush()

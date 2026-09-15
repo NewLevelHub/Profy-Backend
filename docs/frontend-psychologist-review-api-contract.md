@@ -141,6 +141,7 @@ Auth тот же JWT Bearer + `require_role(psychologist)` на всём
 | `summary`, `final_analysis`, `strength_cards`, `thinking_style_notes`, `motivation_highlights` | да, как есть |
 | `careers` | порядок, состав и `description`; `why`/`tier` пересчитываются |
 | `strengths` | влияет на `why` у направлений |
+| `weaknesses` | **нет** — student-форма это поле не читает (влияет только на будущие пересчёты) |
 | `personality_notes` | **нет** — блок «Твой характер» собирается из шкал Big Five |
 
 Успешный PATCH проставляет `reviewed_by`/`reviewed_at` и, если что-то

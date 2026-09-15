@@ -139,15 +139,6 @@ async def get_gap_analysis(
             detail="Gap analysis is only available for senior age group",
         )
 
-    # Built from AnalysisResult.careers — same review gate as the report.
-    await report_service.require_published_report(assessment_id, db)
-
-    cache_key = f"gap_analysis:{program_id}:{assessment_id}"
-    redis = _get_redis()
-    cached = await redis.get(cache_key)
-    if cached:
-        return GapAnalysisResponse.model_validate_json(cached)
-
     program = await get_program_by_id(db, program_id)
 
     assessment_result = await db.execute(
@@ -165,6 +156,18 @@ async def get_gap_analysis(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Assessment is not completed yet",
         )
+
+    # Built from AnalysisResult.careers — same review gate as the report.
+    # Both this and the cache read below stay *after* the ownership check
+    # above: otherwise a foreign assessment_id could be probed (409 vs 404),
+    # and a cached gap analysis could be served without ownership at all.
+    await report_service.require_published_report(assessment_id, db)
+
+    cache_key = f"gap_analysis:{program_id}:{assessment_id}"
+    redis = _get_redis()
+    cached = await redis.get(cache_key)
+    if cached:
+        return GapAnalysisResponse.model_validate_json(cached)
 
     analysis_result = await db.execute(
         select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)

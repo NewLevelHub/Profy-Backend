@@ -11,6 +11,12 @@ logger = logging.getLogger(__name__)
 
 _TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "email"
 
+# Best-effort notifications are awaited on request paths (report generation,
+# publishing). Resend has no timeout of its own, so a hung provider would
+# stall the student's request — cap it and move on. The worker thread may
+# outlive the timeout; only the request stops waiting for it.
+_BEST_EFFORT_TIMEOUT_SECONDS = 10
+
 
 def _load_template(name: str, **kwargs: str) -> str:
     path = _TEMPLATES_DIR / name
@@ -55,7 +61,12 @@ async def _send_best_effort(to: str, subject: str, plain: str, template: str, **
         return
     try:
         html = _load_template(template, **{k: escape(v) for k, v in kwargs.items()})
-        await asyncio.to_thread(_send_resend, to, subject, plain, html)
+        await asyncio.wait_for(
+            asyncio.to_thread(_send_resend, to, subject, plain, html),
+            timeout=_BEST_EFFORT_TIMEOUT_SECONDS,
+        )
+    except TimeoutError:
+        logger.warning("%s to %s timed out after %ss", template, to, _BEST_EFFORT_TIMEOUT_SECONDS)
     except Exception:
         logger.exception("Failed to send %s to %s", template, to)
 
