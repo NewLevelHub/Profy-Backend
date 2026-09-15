@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult, ReviewStatus
+from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
 from app.models.user import User
 from app.services import assessment_shared
 
@@ -235,11 +236,13 @@ async def test_translation_keeps_psychologist_edits_outside_the_narrative(
     assert len(detail["careers"]) > 1
     kept = dict(detail["careers"][1])
     kept["description"] = "Психолог переписал описание."
+    # Longer than motivation_top on purpose: the response must not truncate it.
+    edited_highlights = [f"Психолог: мотивация {n}." for n in range(1, 6)]
     patched = await client.patch(
         _result_url(test_user, assessment.id),
         json={
             "careers": [kept],
-            "motivation_highlights": ["Психолог: тебя драйвит результат."],
+            "motivation_highlights": edited_highlights,
             "personality_notes": {**detail["personality_notes"], "openness": "Психолог: про открытость."},
         },
         headers=psychologist_headers,
@@ -251,13 +254,70 @@ async def test_translation_keeps_psychologist_edits_outside_the_narrative(
     await _switch_owner_locale(db_session, test_user, assessment.id, "kk")
     translated = await generate(client, auth_headers, assessment)
     assert translated.status_code == 200
-    assert "status" not in translated.json()
+    body = translated.json()
+    assert "status" not in body
+    # The freshly generated response (cached as-is) shows the reviewed
+    # content, not values recomputed from the scores.
+    assert body["motivation_highlights"] == edited_highlights
+    assert {n["trait"]: n["description"] for n in body["personality_notes"]}["openness"] == "Психолог: про открытость."
 
     kk = next(r for r in await _rows(db_session, assessment.id) if r.locale == "kk")
     assert kk.review_status == ReviewStatus.published
     assert [c["slug"] for c in kk.careers] == [kept["slug"]]
     assert kk.careers[0]["description"] == "Психолог переписал описание."
-    assert kk.motivation_highlights == ["Психолог: тебя драйвит результат."]
+    assert kk.motivation_highlights == edited_highlights
     assert kk.personality_notes_override == {"openness": "Психолог: про открытость."}
+
+    await _clear_report_cache(assessment.id)
+
+
+async def test_edit_history_moves_with_the_row_under_review(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    admin_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    test_user: User,
+    psychologist_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A kk-first report: the first edit is recorded on the kk row. Once a ru
+    translation exists it becomes the row under review, and the next edit
+    drops the kk row — its history must move to ru, not cascade away, or a
+    later kk re-translation reverts the rewritten description."""
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    test_user.locale = "kk"
+    await db_session.flush()
+    assessment = await make_student_assessment(db_session, test_user)
+    await assign(client, admin_headers, psychologist_user, test_user)
+    url = _result_url(test_user, assessment.id)
+    await generate(client, auth_headers, assessment)
+
+    detail = (await client.get(url, headers=psychologist_headers)).json()
+    careers = [dict(c) for c in detail["careers"]]
+    careers[0]["description"] = "Психолог переписал описание."
+    assert (await client.patch(url, json={"careers": careers}, headers=psychologist_headers)).status_code == 200
+
+    await _switch_owner_locale(db_session, test_user, assessment.id, "ru")
+    await generate(client, auth_headers, assessment)
+    assert (await client.patch(url, json={"summary": "Вторая правка"}, headers=psychologist_headers)).status_code == 200
+
+    (ru_row,) = await _rows(db_session, assessment.id)
+    assert ru_row.locale == "ru"
+    history = (
+        await db_session.execute(
+            select(AnalysisResultReviewEdit).where(AnalysisResultReviewEdit.analysis_result_id == ru_row.id)
+        )
+    ).scalars().all()
+    assert len(history) == 2
+
+    assert (await client.post(f"{url}/publish", headers=psychologist_headers)).status_code == 200
+    await _switch_owner_locale(db_session, test_user, assessment.id, "kk")
+    await generate(client, auth_headers, assessment)
+
+    kk = next(r for r in await _rows(db_session, assessment.id) if r.locale == "kk")
+    assert kk.review_status == ReviewStatus.published
+    assert kk.careers[0]["description"] == "Психолог переписал описание."
 
     await _clear_report_cache(assessment.id)

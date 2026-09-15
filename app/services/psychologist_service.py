@@ -54,15 +54,35 @@ logger = logging.getLogger(__name__)
 _NOTIFY_BUDGET_SECONDS = 5
 
 
+# Sends that outlive the budget keep running after the request moves on; the
+# loop only holds weak references to tasks, so keep strong ones until done.
+_background_sends: set[asyncio.Task] = set()
+
+
+def _forget_send(task: asyncio.Task) -> None:
+    _background_sends.discard(task)
+    if not task.cancelled() and task.exception() is not None:
+        logger.error("notification send failed", exc_info=task.exception())
+
+
 async def _send_within_budget(sends: list[Any]) -> None:
     if not sends:
         return
-    try:
-        await asyncio.wait_for(
-            asyncio.gather(*sends, return_exceptions=True), timeout=_NOTIFY_BUDGET_SECONDS
+    tasks = [asyncio.ensure_future(send) for send in sends]
+    for task in tasks:
+        _background_sends.add(task)
+        task.add_done_callback(_forget_send)
+    # asyncio.wait, not wait_for(gather(...)): on timeout the request stops
+    # waiting but nothing is cancelled. The email pool has two workers, so a
+    # send queued behind a slow provider would otherwise be cancelled before
+    # it ever started and that recipient silently never notified.
+    _done, pending = await asyncio.wait(tasks, timeout=_NOTIFY_BUDGET_SECONDS)
+    if pending:
+        logger.warning(
+            "notification budget of %ss exceeded — %d send(s) continue in the background",
+            _NOTIFY_BUDGET_SECONDS,
+            len(pending),
         )
-    except TimeoutError:
-        logger.warning("notification budget of %ss exceeded — request continues", _NOTIFY_BUDGET_SECONDS)
 
 
 class ResultAlreadyPublishedError(Exception):
@@ -480,6 +500,20 @@ async def update_result_content(
         # this edit — publishing them would ship unreviewed content. Drop them;
         # the next request in that locale re-translates from the edited row
         # and inherits its review status (report_service.build_report).
+        stale_rows = select(AnalysisResult.id).where(
+            AnalysisResult.assessment_id == analysis.assessment_id,
+            AnalysisResult.id != analysis.id,
+        )
+        # Keep the audit trail. A kk-first report edited before a ru
+        # translation existed has its history on the kk row; once ru becomes
+        # the row under review, deleting kk would cascade that history away,
+        # and _carry_over_review_edits relies on it to keep rewritten
+        # descriptions in every future translation.
+        await db.execute(
+            update(AnalysisResultReviewEdit)
+            .where(AnalysisResultReviewEdit.analysis_result_id.in_(stale_rows))
+            .values(analysis_result_id=analysis.id)
+        )
         await db.execute(
             delete(AnalysisResult).where(
                 AnalysisResult.assessment_id == analysis.assessment_id,

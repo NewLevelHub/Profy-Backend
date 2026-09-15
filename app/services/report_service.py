@@ -706,17 +706,24 @@ async def build_report(
             await _cache_if_published(redis, analysis, response)
             return response
 
-        response = report_v2_assembler.assemble_result_v2(
-            assessment_id=assessment_id,
-            age_group=age_group,
-            context=context,
-            narrative=narrative,
-            profile_scores=profile_scores,
-            personality_profile=personality_profile,
-            differentiation=meta["differentiation"],
-            careers=careers,
-            created_at=analysis.created_at,
-        )
+        if sibling is not None:
+            # A translation carries reviewed content — careers, motivation
+            # highlights, personality_notes_override — that assemble_result_v2
+            # would rebuild from the scores, and this response is cached as-is.
+            # Shape it from the row just stored, exactly like every later read.
+            response = _shape_response(analysis, locale=locale)
+        else:
+            response = report_v2_assembler.assemble_result_v2(
+                assessment_id=assessment_id,
+                age_group=age_group,
+                context=context,
+                narrative=narrative,
+                profile_scores=profile_scores,
+                personality_profile=personality_profile,
+                differentiation=meta["differentiation"],
+                careers=careers,
+                created_at=analysis.created_at,
+            )
     await _cache_if_published(redis, analysis, response)
 
     # Only a first-ever report starts a review — a new locale row inherited the
