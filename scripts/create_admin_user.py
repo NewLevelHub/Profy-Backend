@@ -13,7 +13,7 @@ sys.path.insert(0, _ROOT)
 from sqlalchemy import select
 
 from app.database import async_session
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.services.auth_service import hash_password
 
 
@@ -32,7 +32,7 @@ async def main() -> None:
         if user:
             print(f"User {email} already exists. Updating to admin and resetting password...")
             user.hashed_password = hash_password(password)
-            user.is_admin = True
+            user.role = UserRole.admin
             user.is_active = True
             user.is_verified = True
         else:
@@ -42,7 +42,7 @@ async def main() -> None:
                 hashed_password=hash_password(password),
                 is_active=True,
                 is_verified=True,
-                is_admin=True,
+                role=UserRole.admin,
             )
             db.add(user)
 

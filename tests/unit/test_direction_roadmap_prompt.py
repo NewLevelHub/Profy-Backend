@@ -166,7 +166,8 @@ def test_university_requirements_block_never_shown_for_non_university_goals():
     # changes: the block must key off "is it non-empty", not off the goal.
     reqs = [
         UniversityRequirement(
-            program_name="p", university_name="u", city="c", country="kz", program_language="ru", exams=[],
+            program_name="p", university_name="u", city="c", country="kz",
+            program_language="Русский", exams=[],
         )
     ]
     _, user_message = direction_prompt.build_messages(_context("explore"), _DIRECTION, reqs)

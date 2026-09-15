@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_student_user
 from app.models.user import User
 from app.schemas.artifact import ArtifactItem, ArtifactsBulkRequest, ArtifactsResponse
 from app.services import artifact_service
@@ -21,7 +21,7 @@ async def _require_profile_id(current_user: User, db: AsyncSession) -> object:
 @router.post("", response_model=ArtifactsResponse)
 async def save_artifacts(
     data: ArtifactsBulkRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> ArtifactsResponse:
     profile_id = await _require_profile_id(current_user, db)
@@ -31,7 +31,7 @@ async def save_artifacts(
 
 @router.get("", response_model=ArtifactsResponse)
 async def get_artifacts(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> ArtifactsResponse:
     profile_id = await _require_profile_id(current_user, db)

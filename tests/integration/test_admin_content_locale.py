@@ -83,7 +83,11 @@ async def test_question_patch_edits_only_the_given_locale(db_session: AsyncSessi
 
     assert updated.text["kk"] == "Жаңа мәтін"
     assert updated.text["ru"] == original_ru  # untouched
-    assert updated.overrides["text"] == {"kk": "Жаңа мәтін"}
+    # Structured {value, bank_value} entry (admin-lock's revert feature) —
+    # `value` is the per-locale override map, `bank_value` the full map the
+    # bank had before this first edit on the field.
+    assert updated.overrides["text"]["value"] == {"kk": "Жаңа мәтін"}
+    assert updated.overrides["text"]["bank_value"]["ru"] == original_ru
 
 
 async def test_question_patch_structural_field_needs_no_locale(db_session: AsyncSession) -> None:
@@ -95,7 +99,8 @@ async def test_question_patch_structural_field_needs_no_locale(db_session: Async
         db_session, q.id, AdminQuestionUpdateRequest(keyed=other)
     )
     assert updated.keyed == other
-    assert updated.overrides["keyed"] == other.value
+    # Structured {value, bank_value} entry (admin-lock's revert feature).
+    assert updated.overrides["keyed"]["value"] == other.value
 
 
 async def test_question_pair_patch_edits_only_the_given_locale(db_session: AsyncSession) -> None:

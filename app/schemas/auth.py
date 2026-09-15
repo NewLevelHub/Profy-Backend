@@ -5,6 +5,7 @@ from typing import Annotated
 from pydantic import AfterValidator, BaseModel, EmailStr, Field, field_validator
 
 from app.i18n import KNOWN_LOCALES
+from app.models.user import UserRole
 
 # Emails are matched case-insensitively everywhere (DB lookups, Google
 # account linking) — normalizing once at the request boundary keeps every
@@ -42,6 +43,7 @@ class GoogleAuthRequest(BaseModel):
 class UserInfo(BaseModel):
     id: uuid.UUID
     email: str
+    role: UserRole = UserRole.student
     is_admin: bool = False
     locale: str = "ru"
 
@@ -74,6 +76,7 @@ class UserResponse(BaseModel):
     email: str
     is_active: bool
     is_verified: bool
+    role: UserRole
     is_admin: bool
     locale: str = "ru"
 

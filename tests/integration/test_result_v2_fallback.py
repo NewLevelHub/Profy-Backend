@@ -31,8 +31,10 @@ from app.services import (
     report_service,
     riasec_service,
 )
+from app.services.age_tiers import visible_tiers
 
 _AGE_SAMPLE = {AgeGroup.junior: 8, AgeGroup.middle: 12, AgeGroup.senior: 16}
+_MAX_ANSWER = 5  # top of the Likert scale — see riasec_service.normalize
 # Far outside real seed data's order range (~300 real questions) — see
 # test_age_matrix_full_flow.py's identical convention.
 _SENTINEL_ORDER = 900_200
@@ -56,6 +58,53 @@ async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> Ass
     db_session.add(assessment)
     await db_session.flush()
     return assessment
+
+
+async def _answer_all_of_type_at_max(
+    db_session: AsyncSession, assessment: Assessment, age_group: AgeGroup
+) -> None:
+    """Give the assessment one genuinely strong interest type by answering
+    every question of that type with the maximum value.
+
+    Scores are normalized against the maximum possible for the type
+    (riasec_service.normalize: raw / (count * 5)), and
+    strengths_weaknesses() refuses to promote anything below
+    LEVEL_MEDIUM_MIN — so an assessment with no responses at all scores 0
+    everywhere and correctly yields NO strengths, hence no strength_cards.
+    That floor is deliberate (it stops a floor-level type from being cited
+    as evidence), so a test asserting a populated report has to supply a
+    real signal rather than rely on the old blind top-3 behaviour.
+
+    Only the counters are monkeypatched to make the assessment "complete";
+    these rows are real answers, so the resulting score is real too."""
+    if age_group == AgeGroup.junior:
+        type_filter = (
+            Question.instrument == QuestionInstrument.mi,
+            Question.mi_category == MIType.logical,
+        )
+    else:
+        type_filter = (
+            Question.instrument == QuestionInstrument.riasec,
+            Question.riasec_type == HollandType.R,
+        )
+
+    question_ids = (
+        await db_session.execute(
+            select(Question.id).where(
+                *type_filter, Question.age_tier.in_(visible_tiers(age_group))
+            )
+        )
+    ).scalars().all()
+    assert question_ids, "seeded question bank is missing rows for this instrument/age tier"
+
+    db_session.add_all(
+        [
+            UserResponse(assessment_id=assessment.id, question_id=qid, answer_value=_MAX_ANSWER)
+            for qid in question_ids
+        ]
+    )
+    await db_session.flush()
+
 
 
 def _force_complete_and_llm_disabled(monkeypatch: pytest.MonkeyPatch, *, senior: bool) -> None:
@@ -118,6 +167,7 @@ async def test_disabled_llm_returns_full_v2_form_for_senior(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     assessment = await _make_assessment(db_session, AgeGroup.senior)
+    await _answer_all_of_type_at_max(db_session, assessment, AgeGroup.senior)
     _force_complete_and_llm_disabled(monkeypatch, senior=True)
     await _seed_dominant_interest_signal(db_session, monkeypatch, assessment, AgeGroup.senior)
 
@@ -132,8 +182,8 @@ async def test_disabled_llm_returns_full_v2_form_for_senior(
     assert response.strength_cards
     assert response.exploration_activities == []
     # careers may be empty only if no direction in the DB shares any Holland
-    # letter with this (all-zero-score) profile's tie-broken top code — but
-    # every field must still be well-formed either way.
+    # letter with this profile's top code — but every field must still be
+    # well-formed either way.
     for career in response.careers:
         assert career.why
 
@@ -148,6 +198,7 @@ async def test_disabled_llm_returns_full_v2_form_for_junior(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     assessment = await _make_assessment(db_session, AgeGroup.junior)
+    await _answer_all_of_type_at_max(db_session, assessment, AgeGroup.junior)
     _force_complete_and_llm_disabled(monkeypatch, senior=False)
     await _seed_dominant_interest_signal(db_session, monkeypatch, assessment, AgeGroup.junior)
 

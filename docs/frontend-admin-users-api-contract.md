@@ -1,6 +1,8 @@
 # Admin Users/Assessments API — контракт для фронтенда
 
-**Статус: реализовано на ветке `pro-226`, актуально на 2026-09-02.**
+**Статус: реализовано на ветке `pro-226`, актуально на 2026-09-02. §0, §1.1,
+поле `role` в §2/§3/§4 и фильтр `role` в §2/§3 (default `student`) добавлены
+на ветке `pro-281` (роли ученик/админ/психолог), актуально на 2026-09-09.**
 Основано на прямом чтении `app/routers/admin.py`, `app/schemas/admin.py`,
 `app/services/admin_service.py`, `app/services/admin_export_service.py`.
 
@@ -16,15 +18,53 @@
 раньше — этот документ первый раз её описывает для фронтенда. Новое в этой
 задаче — фильтры/2 колонки в списке юзеров и 2 CSV-эндпоинта.
 
+## 0. Роли (новое, `pro-281`)
+
+У `User` появилось поле `role`: `"student"` / `"admin"` / `"psychologist"`.
+Это **источник истины** — `is_admin` теперь производное от него
+(`is_admin == (role == "admin")`), оставлено в ответах как есть для обратной
+совместимости, **не убирайте `is_admin` из UI одним PR** — оба поля всегда
+консистентны, можно мигрировать постепенно.
+
+Self-registration (`/auth/register`, Google) создаёт только `student` —
+роль там не выбирается и в теле запроса её нет. `admin`/`psychologist`
+аккаунты создаются только админом, см. §1.1.
+
 ## 1. Эндпоинты (обзор)
 
 | Method | Path | Назначение |
 |---|---|---|
 | GET | `/api/v1/admin/users` | список юзеров + сырые результаты последнего теста |
+| POST | `/api/v1/admin/users` | **новое** — создать `admin`/`psychologist` аккаунт |
 | GET | `/api/v1/admin/users/export` | тот же список, без пагинации, в CSV |
 | GET | `/api/v1/admin/users/{id}` | детали юзера: профиль + список его тестов |
 | GET | `/api/v1/admin/assessments/{id}` | полный результат одного теста (JSON) |
 | GET | `/api/v1/admin/assessments/{id}/export` | тот же результат теста в CSV |
+
+### 1.1 Создание admin/psychologist аккаунта (новое)
+
+```text
+POST /api/v1/admin/users
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{"email": "psych@example.com", "password": "Testpass123!", "role": "psychologist"}
+```
+
+- `role` — обязателен, только `"admin"` или `"psychologist"`. `role:
+  "student"` вернёт **422** (`{"detail": [...]}`. в стандартном pydantic-формате
+  ошибок валидации) — этот эндпоинт намеренно не создаёт учеников, для них
+  self-registration.
+- `is_verified` — опционален, по умолчанию `true` (в отличие от обычной
+  регистрации, письмо с кодом подтверждения НЕ отправляется).
+- Успех — **201**, тело — тот же `AdminUserDetailResponse`, что и §4 (только
+  что созданный юзер, `profile`/`artifacts`/`assessments` пустые).
+- Email уже занят → **400** `{"detail": "Email already exists"}`.
+- Не-админ (включая `psychologist`) → **403**, как везде в этой админке.
+
+UI: форма "создать сотрудника" — email, пароль, селект роли
+(`admin`/`psychologist`, без `student`), опциональный чекбокс "уже
+подтверждён" (по умолчанию включён).
 
 ## 2. Список юзеров
 
@@ -38,6 +78,14 @@ GET /api/v1/admin/users?page=1&limit=20&search=ivan&age_group=senior&status=comp
   по `Profile.age_group` юзера напрямую.
 - `status` — новый фильтр, опционален: `in_progress`/`completed`.
 - `goal` — новый фильтр, опционален: `explore`/`profession`/`university`/`unsure`.
+- `role` — **новое, опционален, по умолчанию `student`**. Этот список
+  исторически показывал только учеников; теперь, когда через §1.1 можно
+  создать admin/psychologist аккаунт, они по умолчанию **не попадают** в
+  этот список (у них нет профиля/тестов — только засоряли бы таблицу и
+  `total`). Передайте `role=admin` или `role=psychologist` явно, если нужно
+  показать сотрудников (например, отдельная вкладка "Персонал" в админке) —
+  `role=student` остаётся дефолтом, ничего менять на фронте не обязательно,
+  если такая вкладка не нужна прямо сейчас.
 
 **⚠️ Важная семантика `status`/`goal`: "у юзера есть ХОТЯ БЫ ОДИН тест,
 подходящий под фильтр" — не обязательно его САМЫЙ ПОСЛЕДНИЙ тест.** Если
@@ -60,7 +108,8 @@ GET /api/v1/admin/users?page=1&limit=20&search=ivan&age_group=senior&status=comp
       "email": "user@example.com",
       "is_verified": true,
       "is_active": true,
-      "is_admin": false,
+      "role": "student",                  // "student" | "admin" | "psychologist" — новое поле
+      "is_admin": false,                   // == (role == "admin"); оставлено для совместимости
       "created_at": "2026-08-28T09:20:13Z",
       "has_profile": true,
       "profile_name": "Arman",
@@ -86,11 +135,12 @@ GET /api/v1/admin/users?page=1&limit=20&search=ivan&age_group=senior&status=comp
 ## 3. Экспорт списка в CSV
 
 ```text
-GET /api/v1/admin/users/export?search=...&age_group=...&status=...&goal=...
+GET /api/v1/admin/users/export?search=...&age_group=...&status=...&goal=...&role=...
 Authorization: Bearer <token>
 ```
 
-Те же фильтры, что и §2, **без** `page`/`limit` — выгружает ВСЕХ юзеров,
+Те же фильтры, что и §2 (включая `role`, по умолчанию `student`), **без**
+`page`/`limit` — выгружает ВСЕХ юзеров,
 подходящих под фильтр, за один запрос. Ответ — не JSON, а файл:
 `Content-Type: text/csv`, `Content-Disposition: attachment;
 filename=users_export.csv`. На фронте — обычная ссылка/кнопка `<a href=... download>`
@@ -100,11 +150,14 @@ filename=users_export.csv`. На фронте — обычная ссылка/к
 `null`):
 
 ```
-id,email,is_verified,is_active,is_admin,created_at,has_profile,profile_name,
+id,email,is_verified,is_active,role,is_admin,created_at,has_profile,profile_name,
 age_group,assessments_count,latest_assessment_status,latest_assessment_goal,
 riasec_R,riasec_I,riasec_A,riasec_S,riasec_E,riasec_C,
 big_five_N,big_five_E,big_five_O,big_five_A,big_five_C
 ```
+
+`role` — новая колонка (`pro-281`), значение — plain-строка (`student`/
+`admin`/`psychologist`), не enum-repr.
 
 `riasec_*`/`big_five_*` — пустые для junior/без результата, как и в JSON-версии.
 
@@ -129,7 +182,8 @@ GET /api/v1/admin/users/{user_id}
 
 ```jsonc
 {
-  "id": "...", "email": "...", "is_verified": true, "is_active": true, "is_admin": false,
+  "id": "...", "email": "...", "is_verified": true, "is_active": true,
+  "role": "student", "is_admin": false,
   "created_at": "...",
   "profile": { /* ProfileResponse — см. docs/frontend-result-api-contract.md, или null если анкета не заполнена */ },
   "artifacts": [ /* ArtifactItem[] — загруженные сертификаты/файлы */ ],
@@ -339,6 +393,10 @@ triplet_index,picked_most_text,picked_most_category,picked_least_text,picked_lea
 `GET /users/export` дополнительно может вернуть **400**, если под фильтр
 попадает больше 5000 юзеров — см. §3.
 
+`POST /users` (§1.1): **422** на `role: "student"` или невалидный email/
+пароль (стандартный pydantic-формат ошибок), **400** `{"detail": "Email
+already exists"}` на дубликат, **403** не-админу.
+
 ## 8. Что нужно построить на фронте
 
 1. **Таблица юзеров** — колонки из §2 (email, профиль, возраст, статус/цель
@@ -360,3 +418,16 @@ triplet_index,picked_most_text,picked_most_category,picked_least_text,picked_lea
    junior, RIASEC-буквы для middle/senior (§5.1) — не хардкодьте набор из 6
    RIASEC-букв при рендере этого конкретного поля, только для отдельного
    `riasec`-поля в списковом эндпоинте (§2) это безопасно.
+6. **Новое (`pro-281`): колонка/бейдж роли** в таблице юзеров (§2) — `role`
+   вместо (или рядом с) старого `is_admin`-чекбокса; учтите три значения, не
+   только "админ/не админ".
+7. **Новое: форма "создать сотрудника"** (§1.1) — email, пароль, селект
+   роли (только `admin`/`psychologist`), кнопка на странице списка юзеров
+   рядом с "Экспорт CSV". Успешное создание — просто вставить новую строку
+   в таблицу (ответ уже в форме `AdminUserDetailResponse`, поля есть) или
+   передёрнуть список.
+8. **Дальше по плану (ещё не реализовано в бэкенде, не начинайте раньше
+   бэка):** отдельный psychologist-кабинет — список назначенных ему
+   учеников, страница ученика (урезанная версия §4/§5), заметки психолога.
+   Контракт появится отдельным документом, когда бэкенд будет готов — см.
+   `docs/user-roles-integration-plan.md`, Milestones 2–3.

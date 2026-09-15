@@ -2,6 +2,12 @@ services:
   db:
     image: postgres:16-alpine
     container_name: profi_db_dev
+    # See the matching comment in docker-compose.prod.yml — kills sessions
+    # left idling inside an open transaction (orphaned client, e.g. a
+    # cancelled CD deploy) after 5 minutes instead of holding row locks
+    # until something notices the dead TCP connection, which in practice
+    # has required a full server reboot to clear (cd-dev.yml hang, 2026-09-03).
+    command: ["postgres", "-c", "idle_in_transaction_session_timeout=300000"]
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
     # Pass credentials via env_file (literal) — avoid ${} interpolation of passwords

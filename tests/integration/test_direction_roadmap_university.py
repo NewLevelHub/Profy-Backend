@@ -149,15 +149,16 @@ async def test_program_row_for_direction_validates_membership(db_session: AsyncS
     university = University(name="Test University", country="Казахстан", city="Алматы")
     db_session.add(university)
 
-    other_direction = Direction(name={"ru": "Other Direction"}, slug="other-direction", holland_code="RIA")
+    # Randomized slug — a fixed literal risks colliding with another test's
+    # row against the shared, rollback-isolated-per-test but not otherwise
+    # reset dev DB (see SLUG's own module-level comment convention).
+    other_direction = Direction(
+        name={"ru": "Other Direction"}, slug=f"other-direction-{uuid.uuid4()}", holland_code="RIA"
+    )
     db_session.add(other_direction)
     await db_session.flush()
 
-    program = Program(
-        university_id=university.id,
-        name="Test Program",
-        language="ru",
-    )
+    program = Program(university_id=university.id, name="Test Program", language="ru")
     program.directions = [other_direction]
     db_session.add(program)
     await db_session.flush()
@@ -172,17 +173,14 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
     db_session: AsyncSession,
 ):
     assessment = await _make_assessment(db_session, AssessmentGoal.profession)
-    direction = Direction(name={"ru": "Architecture"}, slug=SLUG, holland_code="RIA")
-    db_session.add(direction)
 
-    # direction_roadmaps.program_id is a real FK into programs — needs an
-    # actual row, not a bare uuid4(), or the INSERT below violates it.
-    university_a = University(name="University A", country="Казахстан", city="Алматы")
-    university_b = University(name="University B", country="Казахстан", city="Алматы")
-    db_session.add_all([university_a, university_b])
+    # direction_roadmaps.program_id is a real FK now, so the two plans have to
+    # point at rows that exist — a bare uuid4() is rejected at insert time.
+    university = University(name=f"Uni {uuid.uuid4()}", country="Казахстан", city="Алматы")
+    db_session.add(university)
     await db_session.flush()
-    program_a = Program(university_id=university_a.id, name="Program A", language="ru")
-    program_b = Program(university_id=university_b.id, name="Program B", language="ru")
+    program_a = Program(university_id=university.id, name="Program A", language="ru")
+    program_b = Program(university_id=university.id, name="Program B", language="ru")
     db_session.add_all([program_a, program_b])
     await db_session.flush()
 
@@ -226,6 +224,10 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
             summary="summary b",
         ),
     )
+
+    direction = Direction(name={"ru": "Architecture"}, slug=SLUG, holland_code="RIA")
+    db_session.add(direction)
+    await db_session.flush()
 
     roadmap_first = await roadmap_builder._upsert_direction_roadmap(
         assessment.id,

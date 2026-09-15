@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_student_user
 from app.models.assessment import Assessment
 from app.models.profile import Profile
 from app.models.program import Program
@@ -48,7 +48,7 @@ async def _require_assessment_access(
 @router.post("/generate", response_model=RoadmapResponse)
 async def generate_roadmap(
     data: GenerateRoadmapRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> RoadmapResponse:
     await _require_assessment_access(data.assessment_id, current_user, db)
@@ -58,7 +58,7 @@ async def generate_roadmap(
 @router.post("/direction", response_model=DirectionRoadmapResponse)
 async def generate_direction_roadmap(
     data: GenerateDirectionRoadmapRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> DirectionRoadmapResponse:
     """Confirm a direction after the AI inquiry and build the in-direction plan."""
@@ -85,7 +85,7 @@ async def generate_direction_roadmap(
 @router.post("/direction/by-program", response_model=DirectionRoadmapResponse)
 async def generate_direction_roadmap_for_program(
     data: GenerateDirectionRoadmapForProgramRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> DirectionRoadmapResponse:
     """University scenario (C): build the plan for a chosen program directly —
@@ -100,7 +100,7 @@ async def generate_direction_roadmap_for_program(
 async def get_direction_roadmap(
     assessment_id: uuid.UUID,
     slug: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> DirectionRoadmapResponse:
     await _require_assessment_access(assessment_id, current_user, db)
@@ -113,7 +113,7 @@ async def get_direction_roadmap(
 @router.get("/{assessment_id}", response_model=RoadmapResponse)
 async def get_roadmap(
     assessment_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> RoadmapResponse:
     await _require_assessment_access(assessment_id, current_user, db)
