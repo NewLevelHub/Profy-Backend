@@ -249,6 +249,14 @@ async def get_or_create_goal_overlay(
                 detail="Не удалось получить результаты диагностики",
             )
 
+    # Everything below is built from the report — top spheres, matched
+    # directions, the alignment block, a generated roadmap. The router gated
+    # on entry, but the report may have just been created above, so gate
+    # again here (PRO-337). The unsure-goal branch returns earlier and never
+    # reaches this point: choosing a goal needs no report.
+    from app.services.report_service import require_published_report
+    await require_published_report(assessment_id, db)
+
     # 6. Compute matrix rules
     effective_goal, scenario, redirected, admission_info_note = _get_effective_goal_and_scenario(
         profile.age_group, primary_goal

@@ -512,8 +512,10 @@ async def require_published_report(assessment_id: uuid.UUID, db: AsyncSession) -
     /result itself answers with the pending envelope instead — here there is
     no such envelope in the contract, so an unpublished report is a 409.
 
-    `None` (no report at all) is deliberately not handled: each caller
-    already has its own 400/404 for that case."""
+    "No report at all" is left to the caller: each has its own 400/404 for
+    that. A caller that *generates* the report instead of failing (the goal
+    overlay does) must call this again after generation — otherwise the gate
+    would pass exactly when there was nothing to gate yet."""
     if await get_review_status(assessment_id, db) == ReviewStatus.pending_review:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

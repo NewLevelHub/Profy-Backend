@@ -108,7 +108,10 @@ async def get_goal_context(
     from app.services import goal_overlay_service
     await _require_assessment_access(assessment_id, current_user, db)
     # Derived from the same AnalysisResult as the report (top spheres,
-    # matched directions) — must stay behind the review gate.
+    # matched directions) — must stay behind the review gate. The overlay
+    # service gates again after its own build_report() call: the goal-choice
+    # interstitial answers before touching the report at all, so the whole
+    # endpoint cannot be gated here.
     await report_service.require_published_report(assessment_id, db)
     return await goal_overlay_service.get_or_create_goal_overlay(
         assessment_id, db, program_id=program_id

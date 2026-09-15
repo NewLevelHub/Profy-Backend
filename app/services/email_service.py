@@ -24,6 +24,17 @@ _BEST_EFFORT_TIMEOUT_SECONDS = 10
 # verification, artifact uploads), so notifications get their own small pool.
 _EMAIL_EXECUTOR = ThreadPoolExecutor(max_workers=2, thread_name_prefix="email-send")
 
+# `wait_for` above caps how long the request waits, not the HTTP call itself:
+# the library's own client defaults to 30s, so a stuck send kept its worker
+# long after we gave up — and `concurrent.futures`' atexit hook joins those
+# workers, delaying container shutdown on deploy. Align the two.
+try:
+    from resend.http_client_requests import RequestsClient
+
+    resend.default_http_client = RequestsClient(timeout=_BEST_EFFORT_TIMEOUT_SECONDS)
+except Exception:  # library layout changed — its own 30s default still applies
+    logger.warning("could not set the Resend HTTP timeout — falling back to the library default")
+
 
 def _load_template(name: str, **kwargs: str) -> str:
     path = _TEMPLATES_DIR / name

@@ -8,7 +8,9 @@ import httpx
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.analysis_result import ReviewStatus
+from sqlalchemy import select
+
+from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.user import User
 from app.services import assessment_shared, email_service
 
@@ -161,6 +163,36 @@ async def test_notification_failure_does_not_break_generation(
     assert response.status_code == 200
     assert response.json() == {"status": "pending_review", "assessment_id": assessment_id}
     assert (await stored_result(db_session, assessment.id)).review_status == ReviewStatus.pending_review
+
+
+async def test_goal_context_does_not_generate_a_report_behind_the_gate(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    test_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """goal-context builds the report itself when there is none — without its
+    own gate that is a way to generate one and read its content straight
+    away, review or no review."""
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+
+    response = await client.get(
+        f"/api/v1/result/{assessment.id}/goal-context", headers=auth_headers
+    )
+    assert response.status_code == 409
+
+    # It may generate the report on the way (that is pre-existing behaviour,
+    # and the psychologist queue picks it up) — what must not happen is
+    # serving content derived from it.
+    stored = (
+        await db_session.execute(
+            select(AnalysisResult).where(AnalysisResult.assessment_id == assessment.id)
+        )
+    ).scalar_one_or_none()
+    assert stored is None or stored.review_status == ReviewStatus.pending_review
 
 
 async def test_unknown_assessment_is_404(
