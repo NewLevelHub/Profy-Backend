@@ -133,6 +133,12 @@ Auth тот же JWT Bearer + `require_role(psychologist)` на всём
 - `careers` — не больше 10, каждый элемент ровно в форме §2.2 (все 9 ключей).
 - `strengths` / `weaknesses` — только коды, которые есть в профиле этого
   результата (для RIASEC — буквы `R I A S E C`).
+- `personality_notes` — только 5 известных черт (`openness`,
+  `conscientiousness`, `extraversion`, `agreeableness`,
+  `emotional_stability`), непустой текст. В `GET` приходит тот текст, который
+  видит ученик (возрастная формулировка по шкалам + правки психолога);
+  сохраняется только то, что реально отличается от расчётной фразы, поэтому
+  нетронутая черта продолжает пересчитываться по шкалам.
 
 Что увидит ученик после публикации:
 
@@ -141,8 +147,8 @@ Auth тот же JWT Bearer + `require_role(psychologist)` на всём
 | `summary`, `final_analysis`, `strength_cards`, `thinking_style_notes`, `motivation_highlights` | да, как есть |
 | `careers` | порядок, состав и `description`; `why`/`tier` пересчитываются |
 | `strengths` | влияет на `why` у направлений |
-| `weaknesses` | **нет** — student-форма это поле не читает (влияет только на будущие пересчёты) |
-| `personality_notes` | **нет** — блок «Твой характер» собирается из шкал Big Five |
+| `weaknesses` | в отчёте не показывается, но идёт в генерацию плана и уточнений (`student_context`) |
+| `personality_notes` | да — заменяет расчётную фразу по этой черте; нетронутые черты остаются расчётными |
 
 Успешный PATCH проставляет `reviewed_by`/`reviewed_at` и, если что-то
 реально изменилось, пишет запись в `analysis_result_review_edits` (история

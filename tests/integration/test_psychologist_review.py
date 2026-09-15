@@ -174,10 +174,61 @@ async def test_patch_edits_content_audits_and_publish_shows_it_to_student(
     await assessment_shared.get_redis().delete(assessment_shared.report_cache_key(assessment.id))
 
 
+async def test_personality_note_edit_reaches_the_student(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    admin_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    test_user: User,
+    psychologist_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """"Твой характер" is computed from the scores, not read from storage —
+    a correction has to override that computed phrase, and only for the
+    trait actually corrected."""
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+    await generate(client, auth_headers, assessment)
+    await assign(client, admin_headers, psychologist_user, test_user)
+
+    detail = await client.get(_result_url(test_user, assessment.id), headers=psychologist_headers)
+    notes = detail.json()["personality_notes"]
+    assert set(notes) == {
+        "openness", "conscientiousness", "extraversion", "agreeableness", "emotional_stability",
+    }
+    corrected = "Психолог: тебе легко браться за незнакомое."
+
+    patched = await client.patch(
+        _result_url(test_user, assessment.id),
+        json={"personality_notes": {**notes, "openness": corrected}},
+        headers=psychologist_headers,
+    )
+    assert patched.status_code == 200
+    assert patched.json()["personality_notes"]["openness"] == corrected
+
+    stored = await stored_result(db_session, assessment.id)
+    # Only the corrected trait is stored — the rest keep following the scores.
+    assert set(stored.personality_notes_override) == {"openness"}
+
+    await client.post(f"{_result_url(test_user, assessment.id)}/publish", headers=psychologist_headers)
+    student_view = await client.get(f"/api/v1/result/{assessment.id}", headers=auth_headers)
+    by_trait = {n["trait"]: n["description"] for n in student_view.json()["personality_notes"]}
+    assert by_trait["openness"] == corrected
+    assert by_trait["extraversion"] == notes["extraversion"]
+
+    from app.services import assessment_shared
+
+    await assessment_shared.get_redis().delete(assessment_shared.report_cache_key(assessment.id))
+
+
 @pytest.mark.parametrize(
     "payload",
     [
         {"strengths": ["Z"]},
+        {"personality_notes": {"нет_такой_черты": "текст"}},
+        {"personality_notes": {"openness": "   "}},
         {"summary": None},
         {"summary": ""},
         {"profile": {"R": 100}},

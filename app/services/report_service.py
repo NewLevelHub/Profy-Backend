@@ -217,7 +217,9 @@ def _shape_response(analysis: AnalysisResult) -> ResultResponseV2:
         # interest_instrument (Big Five doesn't branch by age) — read back
         # directly, no need to recompute or route through minimal_context.
         personality_notes=report_v2_assembler.build_personality_notes(
-            instrument == "mi", dict(analysis.personality_profile)
+            instrument == "mi",
+            dict(analysis.personality_profile),
+            dict(analysis.personality_notes_override),
         ),
         personality_note=report_v2_assembler.build_personality_note(dict(analysis.personality_profile)),
         motivation_highlights=list(analysis.motivation_highlights),
@@ -484,6 +486,24 @@ async def build_report(
             db, student_id=student_user_id, student_name=student_name
         )
     return response
+
+
+def student_personality_notes(
+    analysis: AnalysisResult, *, include_overrides: bool = True
+) -> dict[str, str]:
+    """Exactly the "Твой характер" text the student reads: the age-appropriate
+    computed phrase per trait, with the psychologist's corrections applied.
+    The psychologist's own view edits this, not the adult-phrased stored
+    `personality_notes` (which the student never sees)."""
+    is_junior = _stored_interest_instrument(dict(analysis.profile)) == "mi"
+    return {
+        note.trait: note.description
+        for note in report_v2_assembler.build_personality_notes(
+            is_junior,
+            dict(analysis.personality_profile),
+            dict(analysis.personality_notes_override) if include_overrides else {},
+        )
+    }
 
 
 async def require_published_report(assessment_id: uuid.UUID, db: AsyncSession) -> None:

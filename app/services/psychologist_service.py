@@ -40,7 +40,7 @@ from app.schemas.psychologist_result import (
     PsychologistResultPatch,
     PsychologistReviewQueueItem,
 )
-from app.services import admin_service, assessment_shared, email_service
+from app.services import admin_service, assessment_shared, bigfive_content, email_service, report_service
 
 logger = logging.getLogger(__name__)
 
@@ -319,6 +319,17 @@ async def _require_result_for_student(
     return analysis
 
 
+def _to_detail(analysis: AnalysisResult) -> PsychologistResultDetailResponse:
+    """`personality_notes` is the one field the psychologist must not see
+    straight from the row: the stored text is adult-phrased and the student
+    reads a computed, age-appropriate phrase instead. Show (and let them
+    edit) exactly what the student reads."""
+    detail = PsychologistResultDetailResponse.model_validate(analysis)
+    return detail.model_copy(
+        update={"personality_notes": report_service.student_personality_notes(analysis)}
+    )
+
+
 async def get_result_for_review(
     db: AsyncSession,
     *,
@@ -332,7 +343,7 @@ async def get_result_for_review(
     analysis = await _require_result_for_student(
         db, student_id=student_id, assessment_id=assessment_id
     )
-    return PsychologistResultDetailResponse.model_validate(analysis)
+    return _to_detail(analysis)
 
 
 async def update_result_content(
@@ -353,6 +364,20 @@ async def update_result_content(
         raise ResultAlreadyPublishedError("Result is already published")
 
     values = patch.model_dump(exclude_unset=True, mode="json")
+
+    # "Твой характер" is stored apart from the rest: the student reads a
+    # computed phrase, so a correction is kept as an override of that phrase,
+    # trait by trait — untouched traits keep following the scores.
+    notes_patch = values.pop("personality_notes", None)
+    if notes_patch is not None:
+        unknown_traits = set(notes_patch) - set(bigfive_content.PERSONALITY_LABELS)
+        if unknown_traits:
+            raise ResultPatchInvalidError(
+                f"personality_notes: неизвестные черты {sorted(unknown_traits)}"
+            )
+        if any(not text.strip() for text in notes_patch.values()):
+            raise ResultPatchInvalidError("personality_notes: текст не может быть пустым")
+
     # strengths/weaknesses are category codes the student report is rebuilt
     # from (careers "why", interest map) — free text there would break it.
     allowed_codes = set(analysis.profile)
@@ -370,6 +395,22 @@ async def update_result_content(
             changed[field] = {"old": old_value, "new": new_value}
             setattr(analysis, field, new_value)
 
+    if notes_patch is not None:
+        default_notes = report_service.student_personality_notes(analysis, include_overrides=False)
+        # Only genuine corrections are stored — a trait left at its computed
+        # wording must keep following the scores, not freeze today's phrasing.
+        new_override = {
+            trait: text
+            for trait, text in notes_patch.items()
+            if text.strip() != default_notes.get(trait, "").strip()
+        }
+        if new_override != dict(analysis.personality_notes_override):
+            changed["personality_notes"] = {
+                "old": report_service.student_personality_notes(analysis),
+                "new": {**default_notes, **new_override},
+            }
+            analysis.personality_notes_override = new_override
+
     analysis.reviewed_by = psychologist_id
     analysis.reviewed_at = datetime.now(timezone.utc)
     if changed:
@@ -382,7 +423,7 @@ async def update_result_content(
         )
     await db.commit()
     await db.refresh(analysis)
-    detail = PsychologistResultDetailResponse.model_validate(analysis)
+    detail = _to_detail(analysis)
     await _drop_report_cache(assessment_id)
     return detail
 
@@ -435,7 +476,7 @@ async def _publish(
         analysis.reviewed_at = now
     await db.commit()
     await db.refresh(analysis)
-    detail = PsychologistResultDetailResponse.model_validate(analysis)
+    detail = _to_detail(analysis)
     await _drop_report_cache(analysis.assessment_id)
     await _notify_result_published(db, analysis.assessment_id)
     return detail

@@ -44,7 +44,13 @@ class AnalysisResult(Base):
     motivation_top: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)  # ["interest", "creation"]
     motivation_highlights: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)  # RU phrases for "Что тебя драйвит"
     personality_profile: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # 5 traits, display-ready (N flipped to emotional_stability)
-    personality_notes: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # 1 tiered phrase per trait, for "Твой характер"
+    personality_notes: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # 1 tiered phrase per trait, adult wording — generation context/admin, NOT what the student reads
+    # Psychologist's corrections to the student-visible "Твой характер" text
+    # (trait -> text). Empty on every generated row: the student then gets the
+    # age-appropriate wording computed from the scores, exactly as before the
+    # review gate. Deliberately separate from `personality_notes` above, which
+    # is adult-phrased for every age and feeds narrative generation.
+    personality_notes_override: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict, server_default="{}")
     # v2 student-report narrative fields (docs/rs-progress-notes.md) — empty
     # on every row until the narrative-generation pipeline that populates
     # them lands. [{"title": ..., "description": ...}, ...] each.

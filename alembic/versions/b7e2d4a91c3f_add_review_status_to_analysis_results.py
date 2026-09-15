@@ -68,6 +68,15 @@ def upgrade() -> None:
             server_default="pending_review",
         ),
     )
+    op.add_column(
+        "analysis_results",
+        sa.Column(
+            "personality_notes_override",
+            postgresql.JSONB(),
+            nullable=False,
+            server_default="{}",
+        ),
+    )
     op.add_column("analysis_results", sa.Column("reviewed_by", sa.UUID(), nullable=True))
     op.add_column(
         "analysis_results", sa.Column("reviewed_at", sa.DateTime(timezone=True), nullable=True)
@@ -118,6 +127,7 @@ def downgrade() -> None:
     op.drop_column("analysis_results", "reviewed_at")
     op.drop_column("analysis_results", "reviewed_by")
     op.drop_column("analysis_results", "review_status")
+    op.drop_column("analysis_results", "personality_notes_override")
     op.drop_index(
         op.f("ix_analysis_result_review_edits_analysis_result_id"),
         table_name="analysis_result_review_edits",
