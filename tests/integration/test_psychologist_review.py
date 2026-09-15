@@ -223,6 +223,50 @@ async def test_personality_note_edit_reaches_the_student(
     await assessment_shared.get_redis().delete(assessment_shared.report_cache_key(assessment.id))
 
 
+async def test_second_partial_personality_patch_keeps_earlier_corrections(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    admin_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    test_user: User,
+    psychologist_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Omitting a trait means "leave as is", like every other patch field."""
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+    await generate(client, auth_headers, assessment)
+    await assign(client, admin_headers, psychologist_user, test_user)
+    url = _result_url(test_user, assessment.id)
+
+    first = await client.patch(
+        url, json={"personality_notes": {"openness": "Первая правка"}}, headers=psychologist_headers
+    )
+    assert first.status_code == 200
+    second = await client.patch(
+        url, json={"personality_notes": {"extraversion": "Вторая правка"}}, headers=psychologist_headers
+    )
+    assert second.status_code == 200
+    notes = second.json()["personality_notes"]
+    assert notes["openness"] == "Первая правка"
+    assert notes["extraversion"] == "Вторая правка"
+
+    stored = await stored_result(db_session, assessment.id)
+    assert set(stored.personality_notes_override) == {"openness", "extraversion"}
+
+    # Typing the computed phrase back in drops the override for that trait.
+    default_openness = (
+        await client.patch(
+            url,
+            json={"personality_notes": {"openness": "Первая правка"}},
+            headers=psychologist_headers,
+        )
+    ).json()["personality_notes"]["openness"]
+    assert default_openness == "Первая правка"
+
+
 @pytest.mark.parametrize(
     "payload",
     [

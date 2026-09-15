@@ -10,6 +10,7 @@ assignment for every call.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -43,6 +44,24 @@ from app.schemas.psychologist_result import (
 from app.services import admin_service, assessment_shared, bigfive_content, email_service, report_service
 
 logger = logging.getLogger(__name__)
+
+
+# Notifications sit on request paths (report generation, publishing). Sending
+# is best-effort, so the request waits for the whole step at most this long —
+# per-recipient timeouts would still add up on a slow provider and could push
+# POST /result/generate past nginx's own timeout.
+_NOTIFY_BUDGET_SECONDS = 5
+
+
+async def _send_within_budget(sends: list[Any]) -> None:
+    if not sends:
+        return
+    try:
+        await asyncio.wait_for(
+            asyncio.gather(*sends, return_exceptions=True), timeout=_NOTIFY_BUDGET_SECONDS
+        )
+    except TimeoutError:
+        logger.warning("notification budget of %ss exceeded — request continues", _NOTIFY_BUDGET_SECONDS)
 
 
 class ResultAlreadyPublishedError(Exception):
@@ -399,11 +418,15 @@ async def update_result_content(
         default_notes = report_service.student_personality_notes(analysis, include_overrides=False)
         # Only genuine corrections are stored — a trait left at its computed
         # wording must keep following the scores, not freeze today's phrasing.
-        new_override = {
-            trait: text
-            for trait, text in notes_patch.items()
-            if text.strip() != default_notes.get(trait, "").strip()
-        }
+        # Merge, don't replace: omitting a trait means "leave as is" here too,
+        # so a later one-trait correction can't silently drop earlier ones.
+        # Typing the computed phrase back in removes the override for that trait.
+        new_override = dict(analysis.personality_notes_override)
+        for trait, text in notes_patch.items():
+            if text.strip() == default_notes.get(trait, "").strip():
+                new_override.pop(trait, None)
+            else:
+                new_override[trait] = text
         if new_override != dict(analysis.personality_notes_override):
             changed["personality_notes"] = {
                 "old": report_service.student_personality_notes(analysis),
@@ -509,11 +532,9 @@ async def notify_review_pending(
     except Exception:
         logger.exception("review-pending recipients lookup failed for student=%s", student_id)
         return
-    for email in emails:
-        try:
-            await email_service.send_review_pending_email(email, student_name or "без имени")
-        except Exception:
-            logger.exception("review-pending email to %s failed", email)
+    await _send_within_budget(
+        [email_service.send_review_pending_email(email, student_name or "без имени") for email in emails]
+    )
 
 
 async def _notify_result_published(db: AsyncSession, assessment_id: uuid.UUID) -> None:
@@ -528,6 +549,8 @@ async def _notify_result_published(db: AsyncSession, assessment_id: uuid.UUID) -
             )
         ).one_or_none()
         if row is not None:
-            await email_service.send_result_published_email(row.email, row.name or "Привет")
+            await _send_within_budget(
+                [email_service.send_result_published_email(row.email, row.name or "Привет")]
+            )
     except Exception:
         logger.exception("result-published notification failed for assessment=%s", assessment_id)

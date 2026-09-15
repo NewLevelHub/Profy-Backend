@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from html import escape
 from pathlib import Path
 
@@ -16,6 +17,12 @@ _TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "email"
 # stall the student's request — cap it and move on. The worker thread may
 # outlive the timeout; only the request stops waiting for it.
 _BEST_EFFORT_TIMEOUT_SECONDS = 10
+
+# `asyncio.wait_for` only stops the *waiting*: the blocking Resend call keeps
+# its thread until the provider answers. On the shared default executor those
+# stuck threads would eventually starve every other `to_thread` user (OAuth
+# verification, artifact uploads), so notifications get their own small pool.
+_EMAIL_EXECUTOR = ThreadPoolExecutor(max_workers=2, thread_name_prefix="email-send")
 
 
 def _load_template(name: str, **kwargs: str) -> str:
@@ -61,8 +68,9 @@ async def _send_best_effort(to: str, subject: str, plain: str, template: str, **
         return
     try:
         html = _load_template(template, **{k: escape(v) for k, v in kwargs.items()})
+        loop = asyncio.get_running_loop()
         await asyncio.wait_for(
-            asyncio.to_thread(_send_resend, to, subject, plain, html),
+            loop.run_in_executor(_EMAIL_EXECUTOR, _send_resend, to, subject, plain, html),
             timeout=_BEST_EFFORT_TIMEOUT_SECONDS,
         )
     except TimeoutError:
