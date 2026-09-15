@@ -236,6 +236,7 @@ async def test_translation_keeps_psychologist_edits_outside_the_narrative(
     assert len(detail["careers"]) > 1
     kept = dict(detail["careers"][1])
     kept["description"] = "Психолог переписал описание."
+    kept["skills_needed"] = ["Психолог: главный навык."]
     # Longer than motivation_top on purpose: the response must not truncate it.
     edited_highlights = [f"Психолог: мотивация {n}." for n in range(1, 6)]
     patched = await client.patch(
@@ -265,6 +266,7 @@ async def test_translation_keeps_psychologist_edits_outside_the_narrative(
     assert kk.review_status == ReviewStatus.published
     assert [c["slug"] for c in kk.careers] == [kept["slug"]]
     assert kk.careers[0]["description"] == "Психолог переписал описание."
+    assert kk.careers[0]["skills_needed"] == ["Психолог: главный навык."]
     assert kk.motivation_highlights == edited_highlights
     assert kk.personality_notes_override == {"openness": "Психолог: про открытость."}
 
@@ -319,5 +321,47 @@ async def test_edit_history_moves_with_the_row_under_review(
     kk = next(r for r in await _rows(db_session, assessment.id) if r.locale == "kk")
     assert kk.review_status == ReviewStatus.published
     assert kk.careers[0]["description"] == "Психолог переписал описание."
+
+    await _clear_report_cache(assessment.id)
+
+
+async def test_fallback_translation_keeps_edited_narrative_verbatim(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    admin_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    test_user: User,
+    psychologist_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With the LLM off (force_complete_senior) the new locale's narrative is
+    the deterministic fallback — fresh text, not a translation of the reviewed
+    row. Narrative fields the psychologist edited must come over verbatim;
+    untouched ones keep the target-locale fallback."""
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+    await assign(client, admin_headers, psychologist_user, test_user)
+    url = _result_url(test_user, assessment.id)
+    await generate(client, auth_headers, assessment)
+
+    cards = [{"title": "Психолог: карточка", "description": "Психолог: описание карточки."}]
+    patched = await client.patch(
+        url, json={"summary": "Психолог: сводка.", "strength_cards": cards}, headers=psychologist_headers
+    )
+    assert patched.status_code == 200
+    assert (await client.post(f"{url}/publish", headers=psychologist_headers)).status_code == 200
+
+    await _switch_owner_locale(db_session, test_user, assessment.id, "kk")
+    translated = await generate(client, auth_headers, assessment)
+    assert translated.status_code == 200
+
+    kk = next(r for r in await _rows(db_session, assessment.id) if r.locale == "kk")
+    assert kk.summary == "Психолог: сводка."
+    assert kk.strength_cards == cards
+    # final_analysis was not edited: it stays the Kazakh fallback text.
+    assert set("әғқңөұүһі") & set(kk.final_analysis.lower())
+    assert translated.json()["summary"] == "Психолог: сводка."
 
     await _clear_report_cache(assessment.id)

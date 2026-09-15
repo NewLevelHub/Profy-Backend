@@ -408,3 +408,30 @@ async def test_assigned_student_leaves_admin_unassigned_queue(
 
     unassigned = await client.get("/api/v1/admin/psychologist-reviews/unassigned", headers=admin_headers)
     assert str(assessment.id) not in {item["assessment_id"] for item in unassigned.json()}
+
+
+async def test_personality_notes_follow_the_report_language_not_the_reviewer(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    admin_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    test_user: User,
+    psychologist_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A psychologist browsing in kk reviewing a ru report must see — and
+    correct — the ru phrase, or the correction lands inside the ru report in
+    the wrong language."""
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+    await generate(client, auth_headers, assessment)
+    await assign(client, admin_headers, psychologist_user, test_user)
+
+    url = _result_url(test_user, assessment.id)
+    in_ru = await client.get(url, headers={**psychologist_headers, "Accept-Language": "ru"})
+    in_kk = await client.get(url, headers={**psychologist_headers, "Accept-Language": "kk"})
+    assert in_ru.status_code == in_kk.status_code == 200
+    assert in_kk.json()["personality_notes"] == in_ru.json()["personality_notes"]
+    assert not any(set("әғқңөұүһі") & set(text.lower()) for text in in_kk.json()["personality_notes"].values())

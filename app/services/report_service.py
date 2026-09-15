@@ -176,7 +176,7 @@ async def _build_narrative(
     profile: Profile | None,
     artifacts: list[Artifact],
     locale: str = DEFAULT_LOCALE,
-) -> tuple[report_narrative_context.ReportNarrativeContext, ReportNarrativeOutput]:
+) -> tuple[report_narrative_context.ReportNarrativeContext, ReportNarrativeOutput, bool | None]:
     """Produces everything text-shaped (summary, strength_cards,
     thinking_style_notes, final_analysis) for this locale.
 
@@ -219,14 +219,16 @@ async def _build_narrative(
             "report_narrative translated from=%s to=%s is_ai=%s age_group=%s",
             primary.locale, locale, is_ai, age_group.value,
         )
-        return context, narrative
+        # Third value: whether the "translation" is an AI translation of the
+        # primary row (True) or the deterministic fallback — fresh text (False).
+        return context, narrative, is_ai
 
     narrative, is_ai = await generate_report_narrative(context, language=locale)
     logger.info(
         "report_narrative generated is_ai=%s age_group=%s locale=%s",
         is_ai, age_group.value, locale,
     )
-    return context, narrative
+    return context, narrative, None
 
 
 async def _acquire_generation_lock(assessment_id: uuid.UUID, db: AsyncSession) -> None:
@@ -257,17 +259,22 @@ async def _carry_over_review_edits(
     db: AsyncSession,
     *,
     motivation_highlights: list[str],
-) -> tuple[list[str], list[str], list[dict], list[str]]:
+) -> tuple[list[str], list[str], list[dict], list[str], set[str]]:
     """Content of a new locale row that must match the row a psychologist
-    reviewed (PRO-337 × KZ-405) — only the four narrative fields are
-    translated, the rest would otherwise be recomputed and silently undo
-    their edits.
+    reviewed (PRO-337 × KZ-405) — the rest of generation recomputes from the
+    scores and would silently undo their edits.
 
     Category codes are locale-free and copied as-is. The career list keeps
-    the reviewed selection and order but is re-rendered in the current
-    locale from the catalog. A career description the psychologist rewrote
-    and motivation highlights they edited are kept verbatim, in the language
-    they were written in — there is nothing to translate them with."""
+    the reviewed selection and order; each career is re-rendered in the
+    current locale from the catalog, except the keys the psychologist changed
+    (and careers they added), which are kept verbatim in the language they
+    were written in — there is nothing to translate them with. Motivation
+    highlights they edited are kept verbatim too.
+
+    "Changed" is read from the edit history as old→new *within one edit*,
+    never by comparing across rows: rows in different locales differ in every
+    rendered field, so a cross-row compare would mark untouched text as
+    edited. Also returns the set of edited top-level fields."""
     edits = (
         await db.execute(
             select(AnalysisResultReviewEdit.changed_fields)
@@ -276,15 +283,21 @@ async def _carry_over_review_edits(
         )
     ).scalars().all()
     edited_fields = {field for change in edits for field in change}
-    rewritten_descriptions: set[str] = set()
+
+    edited_keys: dict[str, set[str]] = {}
+    added: set[str] = set()
     for change in edits:
         if "careers" not in change:
             continue
-        before = {c.get("slug"): c.get("description") for c in change["careers"].get("old") or []}
+        before = {c.get("slug"): c for c in change["careers"].get("old") or []}
         for career in change["careers"].get("new") or []:
             slug = career.get("slug")
-            if slug in before and career.get("description") != before[slug]:
-                rewritten_descriptions.add(slug)
+            if slug not in before:
+                added.add(slug)
+                continue
+            keys = {key for key, value in career.items() if before[slug].get(key) != value}
+            if keys:
+                edited_keys.setdefault(slug, set()).update(keys)
 
     reviewed_careers = list(reviewed.careers or [])
     slugs = [c.get("slug") for c in reviewed_careers if c.get("slug")]
@@ -295,13 +308,16 @@ async def _carry_over_review_edits(
     )
     careers: list[dict] = []
     for career in reviewed_careers:
-        direction = directions.get(career.get("slug"))
-        if direction is None:
+        slug = career.get("slug")
+        direction = directions.get(slug)
+        if direction is None or slug in added:
+            # Not in the catalog, or written by the psychologist from scratch.
             careers.append(dict(career))
             continue
         rendered = _career_dict(direction, career.get("match_score", 0))
-        if career.get("slug") in rewritten_descriptions:
-            rendered["description"] = career.get("description", "")
+        for key in edited_keys.get(slug, ()):
+            if key in career:
+                rendered[key] = career[key]
         careers.append(rendered)
 
     highlights = (
@@ -309,7 +325,7 @@ async def _carry_over_review_edits(
         if "motivation_highlights" in edited_fields
         else motivation_highlights
     )
-    return list(reviewed.strengths), list(reviewed.weaknesses), careers, highlights
+    return list(reviewed.strengths), list(reviewed.weaknesses), careers, highlights, edited_fields
 
 
 def _stored_interest_instrument(profile: dict) -> str:
@@ -609,12 +625,13 @@ async def build_report(
                 .limit(1)
             )
         ).scalar_one_or_none()
+        carried_edits: set[str] = set()
         if sibling is not None:
             # Inheriting the status is only honest if the content matches what
             # was reviewed. The narrative is translated from that row
             # (_build_narrative); everything else a psychologist can edit is
             # carried over instead of being recomputed from the scores.
-            strengths, weaknesses, careers, mot_highlights = await _carry_over_review_edits(
+            strengths, weaknesses, careers, mot_highlights, carried_edits = await _carry_over_review_edits(
                 sibling, db, motivation_highlights=mot_highlights
             )
         inherited_review = (
@@ -636,7 +653,7 @@ async def build_report(
         # together (LLM when enabled and valid, deterministic fallback otherwise
         # — report_narrative_service never raises and never leaves any of the
         # three empty/inconsistent with each other).
-        context, narrative = await _build_narrative(
+        context, narrative, narrative_translated_by_ai = await _build_narrative(
             assessment_id=assessment_id,
             db=db,
             age_group=age_group,
@@ -654,11 +671,27 @@ async def build_report(
         thinking_style_notes_stored = [
             note.model_dump(exclude={"evidence_ids"}) for note in narrative.thinking_style_notes
         ]
+        summary_stored = narrative.summary
+        final_analysis_stored = narrative.final_analysis
+        if sibling is not None and not narrative_translated_by_ai:
+            # The deterministic fallback (LLM off, or every attempt failed) is
+            # fresh text, not a translation of the reviewed row — it would
+            # silently drop what the psychologist wrote. Narrative fields they
+            # edited come over verbatim instead, like every other carried edit;
+            # untouched ones keep the target-locale fallback text.
+            if "summary" in carried_edits:
+                summary_stored = sibling.summary
+            if "final_analysis" in carried_edits:
+                final_analysis_stored = sibling.final_analysis
+            if "strength_cards" in carried_edits:
+                strength_cards_stored = [dict(card) for card in sibling.strength_cards]
+            if "thinking_style_notes" in carried_edits:
+                thinking_style_notes_stored = [dict(note) for note in sibling.thinking_style_notes]
 
         analysis = AnalysisResult(
             assessment_id=assessment_id,
             locale=locale,
-            summary=narrative.summary,
+            summary=summary_stored,
             profile=profile_scores,
             code=code,
             meta=meta,
@@ -676,7 +709,7 @@ async def build_report(
             motivation_highlights=mot_highlights,
             strength_cards=strength_cards_stored,
             thinking_style_notes=thinking_style_notes_stored,
-            final_analysis=narrative.final_analysis,
+            final_analysis=final_analysis_stored,
             report_version=2,
             **inherited_review,
         )
@@ -746,14 +779,17 @@ def student_personality_notes(
     The psychologist's own view edits this, not the adult-phrased stored
     `personality_notes` (which the student never sees)."""
     is_junior = _stored_interest_instrument(dict(analysis.profile)) == "mi"
-    return {
-        note.trait: note.description
-        for note in report_v2_assembler.build_personality_notes(
-            is_junior,
-            dict(analysis.personality_profile),
-            dict(analysis.personality_notes_override) if include_overrides else {},
-        )
-    }
+    # In the row's own language, never the reviewer's request locale — a kk
+    # psychologist reviewing a ru report must see (and correct) the ru phrase.
+    with use_locale(analysis.locale):
+        return {
+            note.trait: note.description
+            for note in report_v2_assembler.build_personality_notes(
+                is_junior,
+                dict(analysis.personality_profile),
+                dict(analysis.personality_notes_override) if include_overrides else {},
+            )
+        }
 
 
 async def require_published_report(assessment_id: uuid.UUID, db: AsyncSession) -> None:
@@ -767,8 +803,12 @@ async def require_published_report(assessment_id: uuid.UUID, db: AsyncSession) -
     overlay does) must call this again after generation — otherwise the gate
     would pass exactly when there was nothing to gate yet."""
     if await get_review_status(assessment_id, db) == ReviewStatus.pending_review:
-        raise HTTPException(
+        # AppError, not a bare HTTPException: the same endpoints already 409
+        # with `assessment_not_completed`, and the frontend branches on
+        # error_code, never on detail (app/errors.py).
+        raise AppError(
             status_code=status.HTTP_409_CONFLICT,
+            error_code="report_pending_review",
             detail="Отчёт ещё не опубликован психологом",
         )
 

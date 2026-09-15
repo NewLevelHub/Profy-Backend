@@ -223,6 +223,8 @@ async def test_report_derived_endpoints_are_gated_until_published(
         f"/api/v1/result/{assessment.id}/goal-context", headers=auth_headers
     )
     assert goal_context.status_code == 409
+    # Distinct from the `assessment_not_completed` 409 on the same endpoints.
+    assert goal_context.json()["error_code"] == "report_pending_review"
 
     generated_roadmap = await client.post(
         "/api/v1/roadmap/generate",
