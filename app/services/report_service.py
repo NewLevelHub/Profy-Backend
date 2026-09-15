@@ -459,6 +459,26 @@ async def build_report(
     return response
 
 
+async def get_report_with_analysis(
+    assessment_id: uuid.UUID, db: AsyncSession
+) -> tuple[ResultResponseV2, AnalysisResult] | None:
+    """PRO-338 Ф0.3 — the psychologist specialist report surface needs both
+    the already-existing student-shape report AND the raw `AnalysisResult`
+    row (for the 6 new-tests JSONB containers,
+    `new_tests_report_service.build_new_tests_sections`). `get_report()`
+    alone only ever returns the shaped response and, on a cache hit, never
+    touches the DB row at all. Bypasses the response cache on purpose: the
+    specialist view is low-traffic and always needs the raw row anyway, so
+    caching only the shaped half saves nothing."""
+    result = await db.execute(
+        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+    )
+    analysis = result.scalar_one_or_none()
+    if analysis is None:
+        return None
+    return _shape_response(analysis), analysis
+
+
 async def get_report(
     assessment_id: uuid.UUID, db: AsyncSession
 ) -> ResultResponseV2 | None:

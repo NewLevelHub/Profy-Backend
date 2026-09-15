@@ -11,7 +11,9 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from app.schemas.artifact import ArtifactItem
+from app.schemas.new_tests import NewTestsSections
 from app.schemas.profile import ProfileResponse
+from app.schemas.result_v2 import ResultV2Schema
 
 
 class PsychologistStudentListItem(BaseModel):
@@ -61,3 +63,15 @@ class PsychologistNoteItem(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class PsychologistReportResponse(BaseModel):
+    """PRO-338 Ф0.3 — the specialist-only report surface for one assessment:
+    the same student-facing report shape (`report`, reused as-is from
+    result_v2.py, not duplicated field-by-field) plus the 6 new-tests
+    sections (`new_tests`, reused as-is from new_tests.py) that never reach
+    the student's own /result."""
+
+    report: ResultV2Schema
+    new_tests: NewTestsSections
+    model_config = {"extra": "forbid"}

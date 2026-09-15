@@ -16,6 +16,7 @@ from app.schemas.psychologist import (
     PsychologistNoteCreate,
     PsychologistNoteItem,
     PsychologistNoteUpdate,
+    PsychologistReportResponse,
     PsychologistStudentDetailResponse,
     PsychologistStudentListItem,
 )
@@ -24,6 +25,9 @@ from app.services import psychologist_service
 router = APIRouter(tags=["psychologist"])
 
 _require_psychologist = require_role(UserRole.psychologist)
+# The report endpoint alone also admits admin (PRO-338 Ф0.3) — every other
+# route in this router stays psychologist-only, unchanged.
+_require_psychologist_or_admin = require_role(UserRole.psychologist, UserRole.admin)
 
 
 @router.get("/students", response_model=list[PsychologistStudentListItem])
@@ -97,6 +101,27 @@ async def update_note(
             psychologist_id=current_user.id,
             note_id=note_id,
             body=body,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.get(
+    "/students/{student_id}/assessments/{assessment_id}/report",
+    response_model=PsychologistReportResponse,
+)
+async def get_student_assessment_report(
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+    current_user: User = Depends(_require_psychologist_or_admin),
+    db: AsyncSession = Depends(get_db),
+) -> PsychologistReportResponse:
+    try:
+        return await psychologist_service.get_assigned_student_report(
+            db,
+            psychologist_id=current_user.id,
+            student_id=student_id,
+            assessment_id=assessment_id,
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

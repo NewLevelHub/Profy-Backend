@@ -13,6 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
+from app.models.assessment import Assessment
 from app.models.profile import Profile
 from app.models.psychologist_assignment import PsychologistStudentAssignment
 from app.models.psychologist_note import PsychologistNote
@@ -23,10 +24,11 @@ from app.schemas.psychologist import (
     PsychologistNoteCreate,
     PsychologistNoteItem,
     PsychologistNoteUpdate,
+    PsychologistReportResponse,
     PsychologistStudentDetailResponse,
     PsychologistStudentListItem,
 )
-from app.services import admin_service
+from app.services import admin_service, new_tests_report_service, report_service
 
 
 async def _require_assigned_student(
@@ -45,6 +47,27 @@ async def _require_assigned_student(
     if assignment is None:
         raise ValueError("Student not found")
     return assignment
+
+
+async def _require_student_assessment(
+    db: AsyncSession,
+    *,
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+) -> Assessment:
+    """An assigned student and a real assessment_id aren't enough on their
+    own — this closes the gap where a psychologist assigned to student A
+    passes student B's assessment_id (or any other) in the URL and would
+    otherwise see someone else's report."""
+    result = await db.execute(
+        select(Assessment)
+        .join(Profile, Assessment.profile_id == Profile.id)
+        .where(Assessment.id == assessment_id, Profile.user_id == student_id)
+    )
+    assessment = result.scalar_one_or_none()
+    if assessment is None:
+        raise ValueError("Assessment not found")
+    return assessment
 
 
 async def _require_own_note(
@@ -203,3 +226,37 @@ async def delete_note(
     )
     await db.delete(note)
     await db.commit()
+
+
+async def get_assigned_student_report(
+    db: AsyncSession,
+    *,
+    psychologist_id: uuid.UUID,
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+) -> PsychologistReportResponse:
+    """PRO-338 Ф0.3 — the specialist-only report surface (never the
+    student-facing /result): the existing student-shape report plus the 6
+    new-tests sections (professional_types/team_role/temperament/
+    intelligence/aspiration_level/empathy_confidence), the latter isolated
+    per-section by new_tests_report_service so one malformed test never
+    blanks the others or fails the whole request.
+
+    Raises ValueError (→ 404 in the router) for: no assignment, an
+    assessment_id that isn't this student's own, or no report generated yet
+    for that assessment — the same "missing → 404, not 403" idiom as
+    get_assigned_student_detail/_require_own_note above."""
+    await _require_assigned_student(
+        db, psychologist_id=psychologist_id, student_id=student_id
+    )
+    await _require_student_assessment(
+        db, student_id=student_id, assessment_id=assessment_id
+    )
+    result = await report_service.get_report_with_analysis(assessment_id, db)
+    if result is None:
+        raise ValueError("Report not found")
+    report, analysis = result
+    return PsychologistReportResponse(
+        report=report,
+        new_tests=new_tests_report_service.build_new_tests_sections(analysis),
+    )
