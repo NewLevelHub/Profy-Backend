@@ -1,7 +1,7 @@
 """PRO-306 (two-phase): POST /assessment/{id}/psychoemotional/start stores
-circle1 (before the main battery), POST .../{run_id}/finish stores circle2 +
-check-in (at the end) on the same append-only row. Validates §6.1, leaves
-metrics/flag for PRO-307/308."""
+check-in + circle1 (before the main battery, §B4 п.1-2 — check-in comes
+first), POST .../{run_id}/finish stores circle2 (at the end) on the same
+append-only row. Validates §6.1, leaves metrics/flag for PRO-307/308."""
 import uuid
 
 from httpx import AsyncClient
@@ -17,12 +17,9 @@ from app.services import auth_service
 _LIST1 = [4, 3, 2, 1, 5, 6, 0, 7]
 _LIST2 = [3, 4, 2, 0, 1, 5, 6, 7]
 _DT = [0, 2100, 1800, 2400, 3000, 1500, 1200, 900]
-_START_PAYLOAD = {"list1": _LIST1, "list1_dt_ms": _DT}
-_FINISH_PAYLOAD = {
-    "list2": _LIST2,
-    "list2_dt_ms": _DT,
-    "checkin": {"q1": "спокойно", "q2": "не указано", "q3": "хорошо"},
-}
+_CHECKIN = {"q1": "спокойно", "q2": "не указано", "q3": "хорошо"}
+_START_PAYLOAD = {"list1": _LIST1, "list1_dt_ms": _DT, "checkin": _CHECKIN}
+_FINISH_PAYLOAD = {"list2": _LIST2, "list2_dt_ms": _DT}
 
 
 async def _auth(db: AsyncSession) -> tuple[User, Assessment, dict]:
@@ -65,6 +62,7 @@ async def test_start_stores_a_pending_run(
         select(PsychoEmotionalRun).where(PsychoEmotionalRun.id == uuid.UUID(run_id))
     )).scalar_one()
     assert run.list1 == _LIST1
+    assert run.checkin == _CHECKIN
     assert run.list2 is None
     assert run.pause_actual_sec is None
     assert run.tech_invalid is False
@@ -87,7 +85,7 @@ async def test_finish_completes_the_same_row(
         select(PsychoEmotionalRun).where(PsychoEmotionalRun.id == uuid.UUID(run_id))
     )).scalar_one()
     assert run.list1 == _LIST1 and run.list2 == _LIST2
-    assert run.checkin["q2"] == "не указано"
+    assert run.checkin == _CHECKIN  # set on start, untouched by finish
     assert run.pause_actual_sec is not None and run.pause_actual_sec >= 0
     assert run.metrics == {}
     assert run.validity_flag is None  # PRO-307/308 fill this

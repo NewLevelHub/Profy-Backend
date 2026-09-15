@@ -57,15 +57,14 @@ class PsychoEmotionalRun(Base):
     # circle 1 (перед всей батареей тестов) — известен со старта прохождения.
     list1: Mapped[list] = mapped_column(JSONB, nullable=False)  # 8 ID цветов, порядок выбора круг 1
     list1_dt_ms: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)  # Δt каждого выбора, круг 1
-    # circle 2 (после батареи, вместе с check-in) — NULL, пока прохождение не
-    # завершено; такая строка — «в процессе»/брошенная, движок (scoring.py)
-    # её игнорирует.
+    # circle 2 (после батареи) — NULL, пока прохождение не завершено; такая
+    # строка — «в процессе»/брошенная, движок (scoring.py) её игнорирует.
     list2: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     list2_dt_ms: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     # Фактическая длительность между circle1 и circle2 — считается на finish
     # как (finish_time − created_at), больше не искусственная 120с-пауза.
     pause_actual_sec: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    checkin: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # 3 ответа; «не указано» при пропуске; заполняется на finish
+    checkin: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # 3 ответа; «не указано» при пропуске; заполняется на start (§B4 п.1, перед circle1)
 
     # --- Вычисленные метрики (наполняет движок PRO-309; форма — за ним) ---
     metrics: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)

@@ -51,8 +51,8 @@ async def start_psychoemotional(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> StartPsychoEmotionalResponse:
-    """circle1 — перед основной батареей тестов. Результат пользователю не
-    возвращается (§5.6)."""
+    """check-in + circle1 — перед основной батареей тестов (§B4 п.1-2).
+    Результат пользователю не возвращается (§5.6)."""
     await _require_owned_assessment(assessment_id, current_user, db)
     run = await run_service.start_run(
         assessment_id, data, user_id=current_user.id, db=db
@@ -71,7 +71,7 @@ async def finish_psychoemotional(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> FinishPsychoEmotionalResponse:
-    """circle2 + check-in — в конце всего прохождения."""
+    """circle2 — в конце всего прохождения."""
     await _require_owned_assessment(assessment_id, current_user, db)
     run = await run_service.finish_run(
         assessment_id, run_id, data, user_id=current_user.id, db=db
