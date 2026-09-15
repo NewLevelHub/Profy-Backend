@@ -19,11 +19,24 @@ _model_config = {"extra": "forbid"}
 
 class ProfessionalTypesSection(BaseModel):
     """ДДО (Климов + Йовайши/Резапкина) — 20 форс-чойс пар + 5 Likert-пунктов
-    способностей. 5 шкал: Ч-П/Ч-Т/Ч-Ч/Ч-З/Ч-Х."""
+    способностей. 5 шкал (Latin keys, PRO-338 Ф1.2): practical (Ч-П),
+    technical (Ч-Т), social (Ч-Ч), sign (Ч-З), artistic (Ч-Х).
 
-    scores: dict[str, float] | None = None
-    top_type: str | None = None
-    abilities_score: float | None = None
+    `interest_scores` (1 point per А/Б pick, from the 20 pairs) and
+    `abilities_scores` (5 raw 0-3 Likert values) are deliberately two
+    separate arrays, never merged into one "score" — the Radar Chart draws
+    them as two overlaid polygons (Ф1.3), the delta between them is a
+    frontend rendering concern, not something this section pre-computes.
+
+    `hybrid_profile` is a bare [scale_a, scale_b] flag (top two interest
+    scales within <=1 point of each other) with NO pre-baked list of
+    example professions — the source document's "инженер-программист" is
+    illustrative only, never a lookup table; the specialist interprets the
+    flag themselves."""
+
+    interest_scores: dict[str, int] | None = None
+    hybrid_profile: list[str] | None = None
+    abilities_scores: dict[str, int] | None = None
     model_config = _model_config
 
 
@@ -40,12 +53,25 @@ class TeamRoleSection(BaseModel):
 
 
 class TemperamentSection(BaseModel):
-    """Eysenck EPI (адапт. Шмелева) — 57 Да/Нет. Экстраверсия/Нейротизм/
-    шкала лжи, quadrant = один из 4 темпераментов (Scatter Plot)."""
+    """Eysenck EPI (адапт. Шмелева) — 57 Да/Нет, 3 scales. PRO-338 Ф1.5:
+    raw sums + band labels + the lie-scale traffic-light flag
+    (app/data/eysenck_thresholds.json — same versioned-config contract as
+    ValidityThresholds/PsychoEmotionalThresholds). Ф1.6 adds `quadrant`.
 
-    extraversion: float | None = None
-    neuroticism: float | None = None
-    lie_scale: float | None = None
+    `extraversion_level`/`neuroticism_level` are plain band labels (Latin
+    keys: deep_introvert/introvert/ambivert/extravert/bright_extravert;
+    low/medium/high/very_high) — independent from `quadrant` (Latin keys:
+    choleric/sanguine/phlegmatic/melancholic), a coarser 2x2 split at the
+    (12, 12) midpoint of the same two raw scores, per the source's
+    "сильный/слабый × уравновешенный/неуравновешенный × подвижный/инертный"
+    formula — rendered as the Scatter Plot's 4 quadrants (Ф1.6)."""
+
+    extraversion_raw: int | None = None
+    neuroticism_raw: int | None = None
+    lie_scale_raw: int | None = None
+    extraversion_level: str | None = None
+    neuroticism_level: str | None = None
+    protocol_flagged: bool | None = None
     quadrant: str | None = None
     model_config = _model_config
 

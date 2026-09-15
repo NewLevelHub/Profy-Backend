@@ -160,7 +160,7 @@ async def test_full_report_with_new_tests_section_isolation(
     assessment = await _make_assessment_for(db_session, test_user)
     analysis = AnalysisResult(
         **_minimal_report_kwargs(assessment.id),
-        professional_types={"top_type": "Ч-П"},
+        professional_types={"interest_scores": {"practical": 5}},
         eysenck={"not_a_real_field": 1},
         elers={"score": 20, "level": "high"},
     )
@@ -178,7 +178,7 @@ async def test_full_report_with_new_tests_section_isolation(
     assert body["report"]["interest_instrument"] == "riasec"
 
     new_tests = body["new_tests"]
-    assert new_tests["professional_types"]["top_type"] == "Ч-П"
+    assert new_tests["professional_types"]["interest_scores"] == {"practical": 5}
     assert new_tests["aspiration_level"]["score"] == 20
     assert new_tests["temperament"] is None
     assert new_tests["team_role"] is None

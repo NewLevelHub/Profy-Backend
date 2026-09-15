@@ -174,3 +174,52 @@ def load_psychoemotional_thresholds(
 
 
 psychoemotional_thresholds: PsychoEmotionalThresholds = load_psychoemotional_thresholds()
+
+
+# --- Eysenck EPI thresholds (epic PRO-338, phase 1; Ф1.5) -------------------
+# Same contract as validity_thresholds/psychoemotional_thresholds: cut-offs
+# in a versioned JSON, edited without code changes
+# (02-Фаза1-Лёгкие-тесты.md §1.Б). eysenck_service.py stores the applied
+# `version` alongside the computed scores.
+_EYSENCK_THRESHOLDS_PATH = Path(__file__).parent / "data" / "eysenck_thresholds.json"
+
+
+class EysenckThresholds(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="allow")
+
+    version: int
+    lie_scale_max_ok: int  # lie_raw > this -> protocol flagged ("traffic light")
+    # Ascending inclusive upper bounds for every band except the last one
+    # (which is "greater than the last bound"):
+    #   extraversion_bounds [4, 8, 14, 19] -> <=4 deep_introvert, 5-8
+    #   introvert, 9-14 ambivert, 15-19 extravert, >19 bright_extravert.
+    extraversion_bounds: tuple[int, int, int, int]
+    #   neuroticism_bounds [8, 13, 19] -> <=8 low, 9-13 medium, 14-19 high,
+    #   >19 very_high.
+    neuroticism_bounds: tuple[int, int, int]
+
+    def lie_scale_flagged(self, lie_raw: int) -> bool:
+        return lie_raw > self.lie_scale_max_ok
+
+    def extraversion_level(self, raw: int) -> str:
+        labels = ["deep_introvert", "introvert", "ambivert", "extravert"]
+        for bound, label in zip(self.extraversion_bounds, labels):
+            if raw <= bound:
+                return label
+        return "bright_extravert"
+
+    def neuroticism_level(self, raw: int) -> str:
+        labels = ["low", "medium", "high"]
+        for bound, label in zip(self.neuroticism_bounds, labels):
+            if raw <= bound:
+                return label
+        return "very_high"
+
+
+def load_eysenck_thresholds(
+    path: Path = _EYSENCK_THRESHOLDS_PATH,
+) -> EysenckThresholds:
+    return EysenckThresholds.model_validate(json.loads(path.read_text(encoding="utf-8")))
+
+
+eysenck_thresholds: EysenckThresholds = load_eysenck_thresholds()

@@ -36,9 +36,11 @@ from app.services import (
     bigfive_content,
     bigfive_service,
     consent_service,
+    eysenck_service,
     mi_service,
     motivation_pair_service,
     motivation_service,
+    professional_types_service,
     report_narrative_context,
     report_v2_assembler,
     riasec_service,
@@ -689,6 +691,27 @@ async def _build_report(
         note.model_dump(exclude={"evidence_ids"}) for note in narrative.thinking_style_notes
     ]
 
+    # PRO-338 Ф1.2 — specialist-only, always attempted regardless of age
+    # group: junior/middle simply never answered these (senior-only
+    # content, Ф0.8), so both raw-score reads come back None and this
+    # collapses to `professional_types=None` on the row, same as if the
+    # test didn't exist for them.
+    pt_interest_scores = await professional_types_service.interest_raw_scores(assessment_id, db)
+    pt_abilities_scores = await professional_types_service.abilities_raw_scores(assessment_id, db)
+    professional_types_data = (
+        {
+            "interest_scores": pt_interest_scores,
+            "hybrid_profile": professional_types_service.hybrid_profile(pt_interest_scores),
+            "abilities_scores": pt_abilities_scores,
+        }
+        if pt_interest_scores is not None or pt_abilities_scores is not None
+        else None
+    )
+
+    # PRO-338 Ф1.5 — same "specialist-only, None if unanswered" convention.
+    eysenck_scores = await eysenck_service.raw_scores(assessment_id, db)
+    eysenck_data = eysenck_service.build_section_data(eysenck_scores)
+
     analysis = AnalysisResult(
         assessment_id=assessment_id,
         summary=narrative.summary,
@@ -710,6 +733,8 @@ async def _build_report(
         strength_cards=strength_cards_stored,
         thinking_style_notes=thinking_style_notes_stored,
         final_analysis=narrative.final_analysis,
+        professional_types=professional_types_data,
+        eysenck=eysenck_data,
         report_version=2,
     )
     db.add(analysis)
