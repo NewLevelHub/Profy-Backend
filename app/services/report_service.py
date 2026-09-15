@@ -6,7 +6,7 @@ from enum import Enum
 import redis.asyncio as aioredis
 from fastapi import HTTPException, status
 from pydantic import ValidationError
-from sqlalchemy import select, text
+from sqlalchemy import case, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,6 +14,7 @@ from app.config import settings
 from app.errors import AppError
 from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES, pick_locale, pick_locale_list, use_locale
 from app.models.analysis_result import AnalysisResult, ReviewStatus
+from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.direction import Direction
@@ -242,6 +243,73 @@ async def _acquire_generation_lock(assessment_id: uuid.UUID, db: AsyncSession) -
     extra (harmless) serialization, never a correctness bug — the re-check
     after acquiring the lock is what actually prevents a duplicate insert."""
     await db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:key))"), {"key": str(assessment_id)})
+
+
+async def lock_report_generation(assessment_id: uuid.UUID, db: AsyncSession) -> None:
+    """The per-assessment generation lock, for writers that must not
+    interleave with a locale row being generated — a review edit dropping
+    stale translations, a publish covering every locale row (PRO-337)."""
+    await _acquire_generation_lock(assessment_id, db)
+
+
+async def _carry_over_review_edits(
+    reviewed: AnalysisResult,
+    db: AsyncSession,
+    *,
+    motivation_highlights: list[str],
+) -> tuple[list[str], list[str], list[dict], list[str]]:
+    """Content of a new locale row that must match the row a psychologist
+    reviewed (PRO-337 × KZ-405) — only the four narrative fields are
+    translated, the rest would otherwise be recomputed and silently undo
+    their edits.
+
+    Category codes are locale-free and copied as-is. The career list keeps
+    the reviewed selection and order but is re-rendered in the current
+    locale from the catalog. A career description the psychologist rewrote
+    and motivation highlights they edited are kept verbatim, in the language
+    they were written in — there is nothing to translate them with."""
+    edits = (
+        await db.execute(
+            select(AnalysisResultReviewEdit.changed_fields)
+            .where(AnalysisResultReviewEdit.analysis_result_id == reviewed.id)
+            .order_by(AnalysisResultReviewEdit.edited_at.asc())
+        )
+    ).scalars().all()
+    edited_fields = {field for change in edits for field in change}
+    rewritten_descriptions: set[str] = set()
+    for change in edits:
+        if "careers" not in change:
+            continue
+        before = {c.get("slug"): c.get("description") for c in change["careers"].get("old") or []}
+        for career in change["careers"].get("new") or []:
+            slug = career.get("slug")
+            if slug in before and career.get("description") != before[slug]:
+                rewritten_descriptions.add(slug)
+
+    reviewed_careers = list(reviewed.careers or [])
+    slugs = [c.get("slug") for c in reviewed_careers if c.get("slug")]
+    directions = (
+        {d.slug: d for d in (await db.execute(select(Direction).where(Direction.slug.in_(slugs)))).scalars().all()}
+        if slugs
+        else {}
+    )
+    careers: list[dict] = []
+    for career in reviewed_careers:
+        direction = directions.get(career.get("slug"))
+        if direction is None:
+            careers.append(dict(career))
+            continue
+        rendered = _career_dict(direction, career.get("match_score", 0))
+        if career.get("slug") in rewritten_descriptions:
+            rendered["description"] = career.get("description", "")
+        careers.append(rendered)
+
+    highlights = (
+        list(reviewed.motivation_highlights)
+        if "motivation_highlights" in edited_fields
+        else motivation_highlights
+    )
+    return list(reviewed.strengths), list(reviewed.weaknesses), careers, highlights
 
 
 def _stored_interest_instrument(profile: dict) -> str:
@@ -522,6 +590,48 @@ async def build_report(
         mot_top = motivation_service.top_categories(mot_scores)
         mot_highlights = motivation_highlight_phrases(mot_top)
 
+        # KZ-405: a row in another locale means this one is a translation of an
+        # already-generated report. It carries that report's review status —
+        # a language switch must neither hide a published report behind "under
+        # review" again nor start a second review. Only a first-ever report
+        # starts as pending_review (and notifies the psychologist, below).
+        sibling = (
+            await db.execute(
+                select(AnalysisResult)
+                .where(AnalysisResult.assessment_id == assessment_id, AnalysisResult.locale != locale)
+                # The row under review: ru first, then the earliest — the same
+                # rule as psychologist_service._is_original_row.
+                .order_by(
+                    case((AnalysisResult.locale == DEFAULT_LOCALE, 0), else_=1),
+                    AnalysisResult.created_at.asc(),
+                    AnalysisResult.id.asc(),
+                )
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        if sibling is not None:
+            # Inheriting the status is only honest if the content matches what
+            # was reviewed. The narrative is translated from that row
+            # (_build_narrative); everything else a psychologist can edit is
+            # carried over instead of being recomputed from the scores.
+            strengths, weaknesses, careers, mot_highlights = await _carry_over_review_edits(
+                sibling, db, motivation_highlights=mot_highlights
+            )
+        inherited_review = (
+            dict(
+                review_status=sibling.review_status,
+                reviewed_by=sibling.reviewed_by,
+                reviewed_at=sibling.reviewed_at,
+                published_by=sibling.published_by,
+                published_at=sibling.published_at,
+                personality_notes_override=dict(sibling.personality_notes_override),
+            )
+            if sibling is not None
+            # Explicit, not just the column default: a new report is never
+            # visible to the student until a psychologist publishes it.
+            else dict(review_status=ReviewStatus.pending_review)
+        )
+
         # One narrative call feeds summary + strength_cards + thinking_style_notes
         # together (LLM when enabled and valid, deterministic fallback otherwise
         # — report_narrative_service never raises and never leaves any of the
@@ -544,33 +654,6 @@ async def build_report(
         thinking_style_notes_stored = [
             note.model_dump(exclude={"evidence_ids"}) for note in narrative.thinking_style_notes
         ]
-
-        # KZ-405: a row in another locale means this one is a translation of an
-        # already-generated report. It carries that report's review status —
-        # a language switch must neither hide a published report behind "under
-        # review" again nor start a second review. Only a first-ever report
-        # starts as pending_review (and notifies the psychologist, below).
-        sibling = (
-            await db.execute(
-                select(AnalysisResult)
-                .where(AnalysisResult.assessment_id == assessment_id, AnalysisResult.locale != locale)
-                .order_by(AnalysisResult.created_at.asc())
-                .limit(1)
-            )
-        ).scalar_one_or_none()
-        inherited_review = (
-            dict(
-                review_status=sibling.review_status,
-                reviewed_by=sibling.reviewed_by,
-                reviewed_at=sibling.reviewed_at,
-                published_by=sibling.published_by,
-                published_at=sibling.published_at,
-            )
-            if sibling is not None
-            # Explicit, not just the column default: a new report is never
-            # visible to the student until a psychologist publishes it.
-            else dict(review_status=ReviewStatus.pending_review)
-        )
 
         analysis = AnalysisResult(
             assessment_id=assessment_id,
@@ -691,7 +774,11 @@ async def get_review_status(assessment_id: uuid.UUID, db: AsyncSession) -> Revie
     result = await db.execute(
         select(AnalysisResult.review_status)
         .where(AnalysisResult.assessment_id == assessment_id)
-        .order_by(AnalysisResult.created_at.asc())
+        .order_by(
+            case((AnalysisResult.locale == DEFAULT_LOCALE, 0), else_=1),
+            AnalysisResult.created_at.asc(),
+            AnalysisResult.id.asc(),
+        )
         .limit(1)
     )
     return result.scalars().first()

@@ -119,12 +119,10 @@ async def get_goal_context(
 ) -> GoalOverlayResponse:
     from app.services import goal_overlay_service
     await _require_assessment_access(assessment_id, current_user, db)
-    # Derived from the same AnalysisResult as the report (top spheres,
-    # matched directions) — must stay behind the review gate. The overlay
-    # service gates again after its own build_report() call: the goal-choice
-    # interstitial answers before touching the report at all, so the whole
-    # endpoint cannot be gated here.
-    await report_service.require_published_report(assessment_id, db)
+    # The review gate lives inside goal_overlay_service, right where it first
+    # reads (or generates) the report. Not here: the goal-choice interstitial
+    # (unsure goal) answers before that and needs no report, so gating the
+    # whole endpoint would block choosing a goal while a report is pending.
     return await goal_overlay_service.get_or_create_goal_overlay(
         assessment_id, db, program_id=program_id
     )

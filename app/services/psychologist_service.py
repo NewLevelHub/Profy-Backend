@@ -404,6 +404,10 @@ async def update_result_content(
     await _require_assigned_student(
         db, psychologist_id=psychologist_id, student_id=student_id
     )
+    # Serialize with report generation: a locale row generated in between
+    # would be a translation of the pre-edit text (edit) or miss the
+    # published status (publish).
+    await report_service.lock_report_generation(assessment_id, db)
     analysis = await _require_result_for_student(
         db, student_id=student_id, assessment_id=assessment_id, for_update=True
     )
@@ -499,6 +503,10 @@ async def publish_result(
     await _require_assigned_student(
         db, psychologist_id=psychologist_id, student_id=student_id
     )
+    # Serialize with report generation: a locale row generated in between
+    # would be a translation of the pre-edit text (edit) or miss the
+    # published status (publish).
+    await report_service.lock_report_generation(assessment_id, db)
     analysis = await _require_result_for_student(
         db, student_id=student_id, assessment_id=assessment_id, for_update=True
     )
@@ -510,6 +518,10 @@ async def publish_result_as_admin(
 ) -> PsychologistResultDetailResponse:
     """Admin fallback for results whose student has no psychologist
     (docs/psychologist-review-gate-plan.md §4) — not assignment-gated."""
+    # Serialize with report generation: a locale row generated in between
+    # would be a translation of the pre-edit text (edit) or miss the
+    # published status (publish).
+    await report_service.lock_report_generation(assessment_id, db)
     query = (
         select(AnalysisResult)
         .where(AnalysisResult.assessment_id == assessment_id, _is_original_row())

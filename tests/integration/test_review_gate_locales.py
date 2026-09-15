@@ -210,3 +210,54 @@ async def test_publish_without_edits_publishes_every_locale_row(
     assert "status" not in fetched.json()
 
     await _clear_report_cache(assessment.id)
+
+
+async def test_translation_keeps_psychologist_edits_outside_the_narrative(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    admin_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    test_user: User,
+    psychologist_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Only the narrative is translated. Careers, motivation highlights and
+    the personality correction must come over from the reviewed row, or the
+    translation inherits `published` while silently undoing the review."""
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+    await assign(client, admin_headers, psychologist_user, test_user)
+    await generate(client, auth_headers, assessment)
+
+    detail = (await client.get(_result_url(test_user, assessment.id), headers=psychologist_headers)).json()
+    assert len(detail["careers"]) > 1
+    kept = dict(detail["careers"][1])
+    kept["description"] = "Психолог переписал описание."
+    patched = await client.patch(
+        _result_url(test_user, assessment.id),
+        json={
+            "careers": [kept],
+            "motivation_highlights": ["Психолог: тебя драйвит результат."],
+            "personality_notes": {**detail["personality_notes"], "openness": "Психолог: про открытость."},
+        },
+        headers=psychologist_headers,
+    )
+    assert patched.status_code == 200
+    published = await client.post(f"{_result_url(test_user, assessment.id)}/publish", headers=psychologist_headers)
+    assert published.status_code == 200
+
+    await _switch_owner_locale(db_session, test_user, assessment.id, "kk")
+    translated = await generate(client, auth_headers, assessment)
+    assert translated.status_code == 200
+    assert "status" not in translated.json()
+
+    kk = next(r for r in await _rows(db_session, assessment.id) if r.locale == "kk")
+    assert kk.review_status == ReviewStatus.published
+    assert [c["slug"] for c in kk.careers] == [kept["slug"]]
+    assert kk.careers[0]["description"] == "Психолог переписал описание."
+    assert kk.motivation_highlights == ["Психолог: тебя драйвит результат."]
+    assert kk.personality_notes_override == {"openness": "Психолог: про открытость."}
+
+    await _clear_report_cache(assessment.id)

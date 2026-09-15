@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.models.analysis_result import AnalysisResult, ReviewStatus
+from app.models.assessment import AssessmentGoal
 from app.models.user import User
 from app.services import assessment_shared, email_service
 
@@ -253,3 +254,26 @@ async def test_report_derived_endpoints_are_gated_until_published(
         f"/api/v1/result/{assessment.id}/goal-context", headers=auth_headers
     )
     assert reopened.status_code != 409
+
+
+async def test_goal_choice_interstitial_works_while_report_is_pending(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    test_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Choosing a goal needs no report — the unsure-goal answer must not be
+    blocked by the review gate while a report waits for the psychologist."""
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+    await generate(client, auth_headers, assessment)
+    assessment.goal = AssessmentGoal.unsure
+    await db_session.flush()
+
+    response = await client.get(
+        f"/api/v1/result/{assessment.id}/goal-context", headers=auth_headers
+    )
+    assert response.status_code == 200
+    assert response.json()["needs_goal_selection"] is True
