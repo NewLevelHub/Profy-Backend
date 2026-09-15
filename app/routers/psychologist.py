@@ -1,7 +1,9 @@
-"""Psychologist router — assigned students + notes (PRO-327 / PRO-330).
+"""Psychologist router — assigned students, their reports, and notes.
 
 Mounted at `/api/v1/psychologist`. Psychologists never share admin routes;
-access is gated with `require_role(UserRole.psychologist)`.
+access is gated with `require_role(UserRole.psychologist)`, and student
+access (list/detail/report/notes) is further gated to students the admin has
+assigned to that psychologist (PsychologistStudentAssignment, PRO-325/326).
 """
 
 import uuid
@@ -20,6 +22,7 @@ from app.schemas.psychologist import (
     PsychologistStudentDetailResponse,
     PsychologistStudentListItem,
 )
+from app.schemas.result_v2 import ResultResponseV2, ResultV2Schema
 from app.services import psychologist_service
 
 router = APIRouter(tags=["psychologist"])
@@ -47,6 +50,31 @@ async def get_student(
     try:
         return await psychologist_service.get_assigned_student_detail(
             db, psychologist_id=current_user.id, student_id=student_id
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.get(
+    "/students/{student_id}/result/{assessment_id}",
+    response_model=ResultV2Schema,
+)
+async def get_student_report(
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+    current_user: User = Depends(_require_psychologist),
+    db: AsyncSession = Depends(get_db),
+) -> ResultResponseV2:
+    """The student's full RIASEC / Big Five / (Люшер) психоэмоциональный /
+    достоверность report — psych-block sections included because the viewer
+    is a psychologist."""
+    try:
+        return await psychologist_service.get_student_report(
+            db,
+            psychologist_id=current_user.id,
+            student_id=student_id,
+            assessment_id=assessment_id,
+            viewer=current_user,
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

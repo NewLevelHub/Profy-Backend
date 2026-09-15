@@ -48,10 +48,18 @@ class AnalysisResult(Base):
     # thinking_style_notes so a row is never "completed" with only one of
     # the two landed.
     report_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    # --- Psychology block (PRO-282 epic) — structurally-separate containers,
+    # deliberately NOT folded into `summary`/narrative so PRO-321 (hide
+    # behind role) stays a one-liner. `None` until the matching phase lands
+    # its calculation (validity → Фаза 1 PRO-296…300, psychoemotional →
+    # Фаза 2 PRO-307…309). Shape of each blob is owned by its phase — see
+    # docs/psych-block-contract.md.
+    validity: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    psychoemotional: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     # PRO-338 Ф0.2 — specialist-only containers for the 4 "simple" new tests
     # (one shot per assessment, no timing/replay concerns), same JSONB-on-
-    # AnalysisResult pattern as the existing fields above. `None` until each
-    # test's own scoring service lands in Ф1 (02-Фаза1-Лёгкие-тесты.md) —
+    # AnalysisResult pattern as the fields above. `None` until each test's
+    # own scoring service lands in Ф1 (02-Фаза1-Лёгкие-тесты.md) —
     # app/services/new_tests_report_service.py's builders treat that as "no
     # data yet", not an error. Belbin and АСТУР deliberately have NO column
     # here: their answer format (ipsative point-allocation / timed subtests)

@@ -61,6 +61,12 @@
       "minItems": 5,
       "type": "array"
     },
+    "psychoemotional": {
+      "anyOf": [
+        "PsychoEmotionalSection",
+        "null"
+      ]
+    },
     "report_version": {
       "const": 2,
       "default": 2,
@@ -77,6 +83,12 @@
     "thinking_style_notes": {
       "items": "StudentThinkingStyleNote",
       "type": "array"
+    },
+    "validity": {
+      "anyOf": [
+        "ValiditySection",
+        "null"
+      ]
     }
   },
   "required": [

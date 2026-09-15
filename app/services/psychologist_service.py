@@ -1,8 +1,10 @@
-"""Psychologist access to assigned students and notes (PRO-327 / PRO-330).
+"""Psychologist access to assigned students, their reports, and notes
+(PRO-327 / PRO-330, assignments PRO-325/326).
 
-Student list/detail are assignment-gated. Notes use soft cutoff: create
-requires an active assignment; list/update/delete of notes the psychologist
-already owns do not — missing ownership → not-found (404), never 403.
+Student list/detail/report are assignment-gated (PsychologistStudentAssignment).
+Notes use soft cutoff: create requires an active assignment; list/update/delete
+of notes the psychologist already owns do not — missing ownership/assignment
+→ not-found (404), never 403.
 """
 
 from __future__ import annotations
@@ -28,6 +30,7 @@ from app.schemas.psychologist import (
     PsychologistStudentDetailResponse,
     PsychologistStudentListItem,
 )
+from app.schemas.result_v2 import ResultResponseV2
 from app.services import admin_service, new_tests_report_service, report_service
 
 
@@ -154,6 +157,33 @@ async def get_assigned_student_detail(
         # Assignment pointed at a deleted user mid-request — treat as missing.
         raise ValueError("Student not found")
     return _to_psychologist_detail(detail)
+
+
+async def get_student_report(
+    db: AsyncSession,
+    *,
+    psychologist_id: uuid.UUID,
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+    viewer: User,
+) -> ResultResponseV2:
+    """The student's full /result v2 report. `viewer` is the psychologist, so
+    report_service.psych_sections_for → True and the validity / psychoemotional
+    sections are attached (a student never sees these on their own
+    /result)."""
+    await _require_assigned_student(
+        db, psychologist_id=psychologist_id, student_id=student_id
+    )
+
+    owns = await db.execute(
+        select(Assessment.id)
+        .join(Profile, Assessment.profile_id == Profile.id)
+        .where(Assessment.id == assessment_id, Profile.user_id == student_id)
+    )
+    if owns.scalar_one_or_none() is None:
+        raise ValueError("Assessment not found")
+
+    return await report_service.build_report(assessment_id, db, viewer=viewer)
 
 
 async def create_note(

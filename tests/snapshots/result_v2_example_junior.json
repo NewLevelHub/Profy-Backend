@@ -89,6 +89,7 @@
       "trait": "emotional_stability"
     }
   ],
+  "psychoemotional": null,
   "report_version": 2,
   "strength_cards": [
     {
@@ -102,5 +103,6 @@
       "description": "Короткое описание",
       "title": "Стиль 0"
     }
-  ]
+  ],
+  "validity": null
 }

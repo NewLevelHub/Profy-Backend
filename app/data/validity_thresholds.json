@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "comment": "Protocol-validity cut-offs (epic PRO-282, phase 1). Loaded by app.config.load_validity_thresholds; the applied `version` is stored on assessment_validity.thresholds_version. Changing a threshold = bump `version` and edit values here, NO code change (psych-block-spec.md §A4). sd_bounds [8,15] are the adolescent-shifted MC-SDS bands from PRO-294 (0-8 ok / 9-15 social_desirability / 16-20 high). v1 -> v2: sd_bounds 13 -> 15 to match the PRO-294 research. Recalibrate on our own sample after >=300-500 completed runs.",
+  "sd_bounds": [8, 15],
+  "longstring_max_flag": 10,
+  "irv_low_flag": 0.5,
+  "infrequency_fail_flag": 2
+}

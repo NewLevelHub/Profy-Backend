@@ -1,4 +1,5 @@
-"""GET /api/v1/psychologist/students — assigned students only (PRO-327)."""
+"""GET /api/v1/psychologist/students — assigned students only (PRO-327).
+Detail + full report also covered here."""
 
 import uuid
 
@@ -87,6 +88,43 @@ async def test_get_unknown_student_returns_404(
 ) -> None:
     response = await client.get(
         f"/api/v1/psychologist/students/{uuid.uuid4()}",
+        headers=psychologist_headers,
+    )
+    assert response.status_code == 404
+
+
+async def test_get_student_report_requires_assignment(
+    client: httpx.AsyncClient,
+    psychologist_headers: dict[str, str],
+    test_user: User,
+) -> None:
+    # No assignment created — must 404 before the assessment lookup even runs.
+    response = await client.get(
+        f"/api/v1/psychologist/students/{test_user.id}/result/{uuid.uuid4()}",
+        headers=psychologist_headers,
+    )
+    assert response.status_code == 404
+
+
+async def test_get_student_report_unknown_assessment_404(
+    client: httpx.AsyncClient,
+    admin_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    psychologist_user: User,
+    test_user: User,
+) -> None:
+    created = await client.post(
+        "/api/v1/admin/psychologist-assignments",
+        json={
+            "psychologist_id": str(psychologist_user.id),
+            "student_id": str(test_user.id),
+        },
+        headers=admin_headers,
+    )
+    assert created.status_code == 201
+
+    response = await client.get(
+        f"/api/v1/psychologist/students/{test_user.id}/result/{uuid.uuid4()}",
         headers=psychologist_headers,
     )
     assert response.status_code == 404

@@ -51,7 +51,9 @@ async def generate_report(
     db: AsyncSession = Depends(get_db),
 ) -> ResultResponseV2:
     await _require_assessment_access(data.assessment_id, current_user, db)
-    return await report_service.build_report(data.assessment_id, db)
+    return await report_service.build_report(
+        data.assessment_id, db, viewer=current_user
+    )
 
 
 @router.get("/{assessment_id}", response_model=ResultV2Schema)
@@ -61,7 +63,7 @@ async def get_report(
     db: AsyncSession = Depends(get_db),
 ) -> ResultResponseV2:
     await _require_assessment_access(assessment_id, current_user, db)
-    result = await report_service.get_report(assessment_id, db)
+    result = await report_service.get_report(assessment_id, db, viewer=current_user)
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Report not found"
