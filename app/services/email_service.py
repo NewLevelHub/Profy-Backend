@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from html import escape
 from pathlib import Path
 
 import resend
@@ -43,6 +44,43 @@ async def send_verification_email(to: str, code: str) -> None:
     except Exception:
         logger.exception("Failed to send verification email to %s", to)
         raise
+
+
+async def _send_best_effort(to: str, subject: str, plain: str, template: str, **kwargs: str) -> None:
+    """Notification on a critical path (report generation, publishing) —
+    unlike the OTP emails above, a failure here is logged and swallowed,
+    never raised to the caller."""
+    if not settings.RESEND_API_KEY:
+        logger.warning("Resend not configured — skipping %s to %s", template, to)
+        return
+    try:
+        html = _load_template(template, **{k: escape(v) for k, v in kwargs.items()})
+        await asyncio.to_thread(_send_resend, to, subject, plain, html)
+    except Exception:
+        logger.exception("Failed to send %s to %s", template, to)
+
+
+async def send_review_pending_email(to: str, student_name: str) -> None:
+    """Психологу — новый отчёт ждёт проверки. Best-effort, никогда не raises."""
+    await _send_best_effort(
+        to,
+        "Новый отчёт ждёт проверки — Profile",
+        f"Ученик {student_name} завершил тест. Отчёт ждёт вашей проверки "
+        "в разделе «Проверка отчётов» кабинета психолога.",
+        "review_pending.html",
+        student_name=student_name,
+    )
+
+
+async def send_result_published_email(to: str, student_name: str) -> None:
+    """Ученику — результат опубликован. Best-effort, никогда не raises."""
+    await _send_best_effort(
+        to,
+        "Твой результат готов — Profile",
+        f"{student_name}, психолог проверил твой отчёт — он уже ждёт тебя в Profile.",
+        "result_published.html",
+        student_name=student_name,
+    )
 
 
 async def send_password_reset_email(to: str, code: str) -> None:

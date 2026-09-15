@@ -25,7 +25,7 @@ import redis.asyncio as aioredis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.analysis_result import AnalysisResult
+from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
@@ -114,8 +114,22 @@ async def test_build_report_writes_and_get_report_reads_the_same_cache_key(
 
     await report_service.build_report(assessment.id, db_session)
 
+    # A freshly generated report is pending psychologist review (PRO-337)
+    # and must never land in the student cache.
     redis = assessment_shared.get_redis()
-    assert await redis.get(f"report:v3:{assessment.id}") is not None
+    assert await redis.get(f"report:v3:{assessment.id}") is None
+
+    stored = (
+        await db_session.execute(select(AnalysisResult).where(AnalysisResult.assessment_id == assessment.id))
+    ).scalar_one()
+    stored.review_status = ReviewStatus.published
+    await db_session.flush()
+
+    await report_service.get_report(assessment.id, db_session)
+    try:
+        assert await redis.get(f"report:v3:{assessment.id}") is not None
+    finally:
+        await redis.delete(f"report:v3:{assessment.id}")
 
 
 async def test_legacy_unversioned_cache_payload_is_never_read_as_v2(

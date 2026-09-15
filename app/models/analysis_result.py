@@ -1,11 +1,21 @@
+import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Text, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+
+
+class ReviewStatus(str, enum.Enum):
+    """Psychologist review gate (docs/psychologist-review-gate-plan.md).
+    A freshly generated report is `pending_review` — invisible to the
+    student — until a psychologist (or an admin) publishes it."""
+
+    pending_review = "pending_review"
+    published = "published"
 
 
 class AnalysisResult(Base):
@@ -48,6 +58,23 @@ class AnalysisResult(Base):
     # thinking_style_notes so a row is never "completed" with only one of
     # the two landed.
     report_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    # Review gate. Rows that existed before the gate were backfilled to
+    # `published` by the migration — they had already been shown.
+    review_status: Mapped[ReviewStatus] = mapped_column(
+        Enum(ReviewStatus, name="analysis_result_review_status_enum"),
+        nullable=False,
+        default=ReviewStatus.pending_review,
+        server_default=ReviewStatus.pending_review.value,
+    )
+    # Who last edited the content (or published without edits).
+    reviewed_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    published_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

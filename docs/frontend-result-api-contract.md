@@ -39,7 +39,14 @@ Authorization: Bearer <token>
 
 Оба эндпоинта возвращают одну и ту же student-safe форму —
 `response_model=ResultV2Schema` (дискриминированный union, см. §4), без
-отдельного "raw" ответа для студента. `assessment_id` в обоих случаях
+отдельного "raw" ответа для студента.
+
+**Проверка психологом (PRO-337).** Пока психолог не опубликовал отчёт, обе
+ручки вместо формы ниже отдают `200` с
+`{"status": "pending_review", "assessment_id": "uuid"}`
+(`ResultPendingReviewResponse`, `response_model` расширен до
+`ResultV2Schema | ResultPendingReviewResponse`). Ветвиться по полю
+`status`. Подробности — `docs/frontend-psychologist-review-api-contract.md`. `assessment_id` в обоих случаях
 проверяется на принадлежность текущему пользователю через
 `Profile.user_id` (см. §8).
 
@@ -294,6 +301,9 @@ public-поля v2-контракта (см. §3), просто с тем же �
 - **`403`** — assessment принадлежит другому пользователю (owner
   проверяется через join `Assessment -> Profile.user_id`).
 - **`409`** — обязательные ответы ещё не завершены (см. выше).
+- **`200` pending-конверт** — отчёт сгенерирован, но не опубликован
+  психологом (см. §1). Это не ошибка; на `GET` проверяется до похода в
+  кэш/`get_report`, в кэш такой отчёт не попадает.
 
 Ошибка LLM или Redis не превращается в `5xx`:
 

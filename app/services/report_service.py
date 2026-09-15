@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models.analysis_result import AnalysisResult
+from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.direction import Direction
@@ -94,6 +94,18 @@ async def _cache_get_response(redis: aioredis.Redis, key: str) -> ResultResponse
     except ValidationError:
         logger.warning("cached payload for key=%s no longer matches the schema — falling back to DB", key)
         return None
+
+
+async def _cache_if_published(
+    redis: aioredis.Redis, analysis: AnalysisResult, response: ResultResponseV2
+) -> None:
+    """The student-facing cache must only ever hold published reports
+    (docs/psychologist-review-gate-plan.md §6). The router gates on
+    review_status before reading, but a cached unpublished report would be
+    one careless future caller away from leaking to the student."""
+    if analysis.review_status != ReviewStatus.published:
+        return
+    await _cache_set(redis, _cache_key(analysis.assessment_id), response.model_dump_json())
 
 
 def _career_dict(direction: Direction, match_score: int) -> dict:
@@ -274,7 +286,7 @@ async def build_report(
     existing = existing_result.scalar_one_or_none()
     if existing:
         response = _shape_response(existing)
-        await _cache_set(redis, cache_key, response.model_dump_json())
+        await _cache_if_published(redis, existing, response)
         return response
 
     # No result yet — but a concurrent request for this same assessment_id
@@ -292,7 +304,7 @@ async def build_report(
     existing = existing_result.scalar_one_or_none()
     if existing:
         response = _shape_response(existing)
-        await _cache_set(redis, cache_key, response.model_dump_json())
+        await _cache_if_published(redis, existing, response)
         return response
 
     assessment_result = await db.execute(
@@ -423,7 +435,13 @@ async def build_report(
         thinking_style_notes=thinking_style_notes_stored,
         final_analysis=narrative.final_analysis,
         report_version=2,
+        # Explicit, not just the column default: a new report is never
+        # visible to the student until a psychologist publishes it.
+        review_status=ReviewStatus.pending_review,
     )
+    # Read before commit — the profile instance is expired afterwards.
+    student_user_id = profile.user_id if profile is not None else None
+    student_name = profile.name if profile is not None else None
     db.add(analysis)
     if assessment.status != AssessmentStatus.completed:
         # Same transaction as the AnalysisResult insert below — either both
@@ -441,7 +459,7 @@ async def build_report(
         )
         analysis = existing_result.scalar_one()
         response = _shape_response(analysis)
-        await _cache_set(redis, cache_key, response.model_dump_json())
+        await _cache_if_published(redis, analysis, response)
         return response
 
     response = report_v2_assembler.assemble_result_v2(
@@ -455,8 +473,26 @@ async def build_report(
         careers=careers,
         created_at=analysis.created_at,
     )
-    await _cache_set(redis, cache_key, response.model_dump_json())
+    await _cache_if_published(redis, analysis, response)
+
+    # Only for a freshly inserted row — the "already exists" and
+    # IntegrityError branches above return before reaching this.
+    if student_user_id is not None:
+        from app.services import psychologist_service
+
+        await psychologist_service.notify_review_pending(
+            db, student_id=student_user_id, student_name=student_name
+        )
     return response
+
+
+async def get_review_status(assessment_id: uuid.UUID, db: AsyncSession) -> ReviewStatus | None:
+    """Single source of truth for the student-facing review gate — always
+    read from the DB, never from the report cache. None = no report yet."""
+    result = await db.execute(
+        select(AnalysisResult.review_status).where(AnalysisResult.assessment_id == assessment_id)
+    )
+    return result.scalar_one_or_none()
 
 
 async def get_report(
@@ -476,5 +512,5 @@ async def get_report(
     if analysis is None:
         return None
     response = _shape_response(analysis)
-    await _cache_set(redis, cache_key, response.model_dump_json())
+    await _cache_if_published(redis, analysis, response)
     return response

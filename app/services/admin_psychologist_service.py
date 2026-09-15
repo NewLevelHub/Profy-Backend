@@ -12,6 +12,7 @@ import uuid
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.profile import Profile
 from app.models.psychologist_assignment import PsychologistStudentAssignment
 from app.models.user import User, UserRole
 from app.schemas.admin import (
@@ -19,6 +20,8 @@ from app.schemas.admin import (
     PsychologistAssignmentItem,
     PsychologistAssignmentListResponse,
 )
+from app.schemas.psychologist_result import PsychologistReviewQueueItem
+from app.services import psychologist_service
 
 
 async def create_assignment(
@@ -96,6 +99,19 @@ async def list_assignments(
     return PsychologistAssignmentListResponse(
         items=items, total=total, page=page, limit=limit
     )
+
+
+async def list_unassigned_reviews(db: AsyncSession) -> list[PsychologistReviewQueueItem]:
+    """Results waiting for review whose student has no psychologist at all —
+    without this queue they would never be published
+    (docs/psychologist-review-gate-plan.md §4)."""
+    has_assignment = (
+        select(PsychologistStudentAssignment.id)
+        .where(PsychologistStudentAssignment.student_id == Profile.user_id)
+        .exists()
+    )
+    query = psychologist_service.review_queue_select().where(~has_assignment)
+    return psychologist_service.to_review_queue_items((await db.execute(query)).all())
 
 
 async def delete_assignment(db: AsyncSession, assignment_id: uuid.UUID) -> None:

@@ -349,16 +349,16 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
         assessment_rows = assessments_result.scalars().all()
         assessment_ids = [row.id for row in assessment_rows]
 
-        result_ids: set[uuid.UUID] = set()
+        review_status_by_assessment: dict[uuid.UUID, str] = {}
         roadmap_ids: set[uuid.UUID] = set()
         answered_by_assessment: dict[uuid.UUID, int] = {}
         if assessment_ids:
             results_result = await db.execute(
-                select(AnalysisResult.assessment_id).where(
+                select(AnalysisResult.assessment_id, AnalysisResult.review_status).where(
                     AnalysisResult.assessment_id.in_(assessment_ids)
                 )
             )
-            result_ids = {row[0] for row in results_result.all()}
+            review_status_by_assessment = {row[0]: row[1].value for row in results_result.all()}
 
             roadmaps_result = await db.execute(
                 select(Roadmap.assessment_id).where(Roadmap.assessment_id.in_(assessment_ids))
@@ -388,7 +388,8 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
                 total_questions=total_questions,
                 created_at=assessment.created_at,
                 completed_at=assessment.completed_at,
-                has_result=assessment.id in result_ids,
+                has_result=assessment.id in review_status_by_assessment,
+                review_status=review_status_by_assessment.get(assessment.id),
                 has_roadmap=assessment.id in roadmap_ids,
             )
             for assessment in assessment_rows
