@@ -1,7 +1,7 @@
 import enum
 import uuid
 
-from sqlalchemy import Enum, Integer, String
+from sqlalchemy import Enum, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -59,9 +59,11 @@ class Question(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    # `order` is the natural key (per instrument) — one row per question now
-    # (see docs/i18n-contract.md §8); no DB constraint so fixtures can still
-    # use a "don't-care" order=0.
+    # `order` is the natural key per instrument — one row per question now
+    # (see docs/i18n-contract.md §8), enforced by `uq_questions_instrument_order`
+    # below (migration 4d28ab54e64c). A "don't-care" order=0 is still fine in tests
+    # as long as a single test never creates two same-instrument rows without
+    # an explicit distinct order.
     instrument: Mapped[QuestionInstrument] = mapped_column(
         Enum(QuestionInstrument, name="question_instrument_enum"),
         nullable=False,
@@ -103,3 +105,7 @@ class Question(Base):
     # by every scripts/seed_*.py at resync time so admin edits survive
     # redeploys (see docs/admin-questions-content-overrides-plan.md).
     overrides: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+
+    __table_args__ = (
+        UniqueConstraint("instrument", "order", name="uq_questions_instrument_order"),
+    )
