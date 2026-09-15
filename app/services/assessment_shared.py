@@ -205,3 +205,33 @@ async def likert_answered_count(assessment_id: uuid.UUID, db: AsyncSession) -> i
         select(func.count(UserResponse.id)).where(UserResponse.assessment_id == assessment_id)
     )
     return result.scalar_one()
+
+
+async def response_time_deltas_ms(
+    assessment_id: uuid.UUID, db: AsyncSession
+) -> list[int]:
+    """Passively-collected reaction-time signal for the protocol-validity
+    module (PRO-298): milliseconds between consecutive answer saves, in save
+    order. Read straight off `user_responses.created_at` (stamped server-side
+    on every write) — nothing is collected from or shown to the client.
+
+    NOT part of scoring. validity_service (PRO-299) stores this on
+    `assessment_validity.rt_ms` as raw calibration data only; `sd_level` /
+    `traffic_light` never depend on it.
+
+    Granularity is page-level, not per-question: the client submits answers
+    in batches (LikertPage = 5 at a time) and each batch is one INSERT, so
+    every row in a batch shares a `created_at` and appears here as a run of
+    `0`s followed by one real inter-batch gap ≈ time spent on that page. The
+    ticket forbids a frontend change, so finer timing isn't available.
+    """
+    result = await db.execute(
+        select(UserResponse.created_at)
+        .where(UserResponse.assessment_id == assessment_id)
+        .order_by(UserResponse.created_at, UserResponse.id)
+    )
+    stamps = list(result.scalars().all())
+    return [
+        max(0, round((later - earlier).total_seconds() * 1000))
+        for earlier, later in zip(stamps, stamps[1:])
+    ]

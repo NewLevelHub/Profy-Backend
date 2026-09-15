@@ -31,19 +31,21 @@ from app.models.question import (
     Question,
     QuestionInstrument,
 )
-from app.models.user_response import UserResponse
 from app.models.user import User
-from app.services.age_tiers import visible_tiers
+from app.schemas.response import AnswerItem
 from app.services import (
+    assessment_service,
     assessment_shared,
     llm_client,
     motivation_pair_service,
     motivation_service,
     report_service,
+    riasec_service,
 )
+from app.services.riasec_service import HOLLAND_ORDER
 
 _AGE_SAMPLE = {AgeGroup.junior: 8, AgeGroup.middle: 12, AgeGroup.senior: 16}
-_MAX_ANSWER = 5  # top of the Likert scale — see riasec_service.normalize
+_SENTINEL_BASE = 960_000
 
 
 async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> Assessment:
@@ -75,53 +77,6 @@ async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> Ass
     return assessment
 
 
-async def _answer_all_of_type_at_max(
-    db_session: AsyncSession, assessment: Assessment, age_group: AgeGroup
-) -> None:
-    """Give the assessment one genuinely strong interest type by answering
-    every question of that type with the maximum value.
-
-    Scores are normalized against the maximum possible for the type
-    (riasec_service.normalize: raw / (count * 5)), and
-    strengths_weaknesses() refuses to promote anything below
-    LEVEL_MEDIUM_MIN — so an assessment with no responses at all scores 0
-    everywhere and correctly yields NO strengths, hence no strength_cards.
-    That floor is deliberate (it stops a floor-level type from being cited
-    as evidence), so a test asserting a populated report has to supply a
-    real signal rather than rely on the old blind top-3 behaviour.
-
-    Only the counters are monkeypatched to make the assessment "complete";
-    these rows are real answers, so the resulting score is real too."""
-    if age_group == AgeGroup.junior:
-        type_filter = (
-            Question.instrument == QuestionInstrument.mi,
-            Question.mi_category == MIType.logical,
-        )
-    else:
-        type_filter = (
-            Question.instrument == QuestionInstrument.riasec,
-            Question.riasec_type == HollandType.R,
-        )
-
-    question_ids = (
-        await db_session.execute(
-            select(Question.id).where(
-                *type_filter, Question.age_tier.in_(visible_tiers(age_group))
-            )
-        )
-    ).scalars().all()
-    assert question_ids, "seeded question bank is missing rows for this instrument/age tier"
-
-    db_session.add_all(
-        [
-            UserResponse(assessment_id=assessment.id, question_id=qid, answer_value=_MAX_ANSWER)
-            for qid in question_ids
-        ]
-    )
-    await db_session.flush()
-
-
-
 def _patch_likert(monkeypatch: pytest.MonkeyPatch, *, answered: int, total: int) -> None:
     monkeypatch.setattr(
         assessment_shared, "likert_answered_count", AsyncMock(return_value=answered)
@@ -137,6 +92,28 @@ def _patch_senior_motivation(monkeypatch: pytest.MonkeyPatch, *, answered: int, 
 def _patch_pair_motivation(monkeypatch: pytest.MonkeyPatch, *, answered: int, total: int) -> None:
     monkeypatch.setattr(motivation_pair_service, "answered_count", AsyncMock(return_value=answered))
     monkeypatch.setattr(motivation_pair_service, "total_pairs", AsyncMock(return_value=total))
+
+
+async def _seed_riasec_dominant(
+    db: AsyncSession, assessment: Assessment, profile_id: uuid.UUID, *, dominant: str,
+) -> int:
+    """Real RIASEC Question rows (one per Holland letter), answered for real
+    with `dominant` scored high — riasec_service.strengths_weaknesses()
+    deliberately returns [] for a flat/all-zero profile (see its docstring),
+    which is what the monkeypatched-completion-counter shortcut alone
+    produces. Returns the seeded count, to patch likert_*_count with."""
+    answers = []
+    for i, letter in enumerate(HOLLAND_ORDER):
+        q = Question(
+            instrument=QuestionInstrument.riasec, riasec_type=HollandType(letter),
+            text=f"test-completion-gate-riasec-{letter}", age_tier=AgeGroup.senior,
+            order=_SENTINEL_BASE + i,
+        )
+        db.add(q)
+        await db.flush()
+        answers.append(AnswerItem(question_id=q.id, value=5 if letter == dominant else 2))
+    await assessment_service.submit_answers(assessment.id, answers, profile_id, db)
+    return len(answers)
 
 
 async def test_junior_incomplete_harter_returns_409_and_does_not_complete(
@@ -256,10 +233,15 @@ async def test_successful_generation_populates_v2_narrative_fields(
     off (see comment in the previous test) so this exercises the
     deterministic fallback builder, not a real model call."""
     assessment = await _make_assessment(db_session, AgeGroup.senior)
-    await _answer_all_of_type_at_max(db_session, assessment, AgeGroup.senior)
-    _patch_likert(monkeypatch, answered=1, total=1)
     _patch_senior_motivation(monkeypatch, answered=1, total=1)
     monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
+
+    seeded = await _seed_riasec_dominant(db_session, assessment, assessment.profile_id, dominant="R")
+    _patch_likert(monkeypatch, answered=seeded, total=seeded)
+    monkeypatch.setattr(
+        riasec_service, "question_counts",
+        AsyncMock(return_value={letter: 1 for letter in HOLLAND_ORDER}),
+    )
 
     await report_service.build_report(assessment.id, db_session)
 

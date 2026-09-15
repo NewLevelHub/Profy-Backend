@@ -47,6 +47,12 @@
     "is_flat_profile": {
       "type": "boolean"
     },
+    "mac": {
+      "anyOf": [
+        "MacSection",
+        "null"
+      ]
+    },
     "motivation_highlights": {
       "items": "string",
       "type": "array"
@@ -60,6 +66,12 @@
       "maxItems": 5,
       "minItems": 5,
       "type": "array"
+    },
+    "psychoemotional": {
+      "anyOf": [
+        "PsychoEmotionalSection",
+        "null"
+      ]
     },
     "report_version": {
       "const": 2,
@@ -77,6 +89,12 @@
     "thinking_style_notes": {
       "items": "StudentThinkingStyleNote",
       "type": "array"
+    },
+    "validity": {
+      "anyOf": [
+        "ValiditySection",
+        "null"
+      ]
     }
   },
   "required": [
