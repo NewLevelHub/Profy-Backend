@@ -22,6 +22,18 @@ class QuestionInstrument(str, enum.Enum):
     riasec = "riasec"
     big_five = "big_five"
     mi = "mi"
+    # PRO-338 Ф0.2: ДДО "интересы" (20 форс-чойс пар) — QuestionPair-based,
+    # doesn't touch Question rows itself, but shares the same instrument
+    # enum so question_service's instrument-agnostic counting/filtering
+    # (assessment_shared.likert_total_questions) stays a single source of
+    # truth for every instrument, pair-based or Likert-based alike.
+    professional_types = "professional_types"
+    # ДДО "способности" — 5 Likert-пунктов, reuses the Likert engine as-is.
+    professional_types_abilities = "professional_types_abilities"
+    # Eysenck EPI (темперамент), 57 Да/Нет — binary scale, see Ф0.5.
+    eysenck = "eysenck"
+    # Elers achievement motivation (уровень притязаний), Да/Нет — binary scale, see Ф0.5.
+    elers = "elers"
 
 
 class BigFiveDomain(str, enum.Enum):

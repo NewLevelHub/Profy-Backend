@@ -48,6 +48,19 @@ class AnalysisResult(Base):
     # thinking_style_notes so a row is never "completed" with only one of
     # the two landed.
     report_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    # PRO-338 Ф0.2 — specialist-only containers for the 4 "simple" new tests
+    # (one shot per assessment, no timing/replay concerns), same JSONB-on-
+    # AnalysisResult pattern as the existing fields above. `None` until each
+    # test's own scoring service lands in Ф1 (02-Фаза1-Лёгкие-тесты.md) —
+    # app/services/new_tests_report_service.py's builders treat that as "no
+    # data yet", not an error. Belbin and АСТУР deliberately have NO column
+    # here: their answer format (ipsative point-allocation / timed subtests)
+    # needs its own table with append-only history, built in their own
+    # phase (Ф2.3/Ф3.3), not a single-row JSONB snapshot.
+    professional_types: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    eysenck: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    elers: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    empathy_confidence: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
