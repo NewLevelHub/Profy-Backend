@@ -99,8 +99,18 @@ def upgrade() -> None:
         WHERE review_status = 'pending_review'
     """)
 
+    # Partial index: both review queues scan for pending rows only, and that
+    # set stays small while published rows accumulate forever.
+    op.create_index(
+        "ix_analysis_results_pending_review",
+        "analysis_results",
+        ["created_at"],
+        postgresql_where=sa.text("review_status = 'pending_review'"),
+    )
+
 
 def downgrade() -> None:
+    op.drop_index("ix_analysis_results_pending_review", table_name="analysis_results")
     op.drop_constraint("analysis_results_published_by_fkey", "analysis_results", type_="foreignkey")
     op.drop_constraint("analysis_results_reviewed_by_fkey", "analysis_results", type_="foreignkey")
     op.drop_column("analysis_results", "published_at")

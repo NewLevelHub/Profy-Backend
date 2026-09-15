@@ -233,7 +233,13 @@ async def delete_note(
 # --- Report review (PRO-337) -------------------------------------------------
 
 
-def review_queue_select() -> Select:
+# Hard cap on both review queues. Neither is paginated in the UI, and a
+# backlog that large means the queue is not being worked at all — cutting it
+# off keeps one runaway response from carrying every pending report.
+REVIEW_QUEUE_LIMIT = 200
+
+
+def review_queue_select(limit: int = REVIEW_QUEUE_LIMIT) -> Select:
     """Results waiting for review, oldest first — shared by the psychologist
     queue and the admin "no psychologist assigned" queue, which differ only
     in how they filter on `PsychologistStudentAssignment` (joined live, never
@@ -255,6 +261,7 @@ def review_queue_select() -> Select:
         .join(student, student.id == Profile.user_id)
         .where(AnalysisResult.review_status == ReviewStatus.pending_review)
         .order_by(AnalysisResult.created_at.asc())
+        .limit(limit)
     )
 
 

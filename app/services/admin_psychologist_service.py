@@ -101,7 +101,9 @@ async def list_assignments(
     )
 
 
-async def list_unassigned_reviews(db: AsyncSession) -> list[PsychologistReviewQueueItem]:
+async def list_unassigned_reviews(
+    db: AsyncSession, *, limit: int = psychologist_service.REVIEW_QUEUE_LIMIT
+) -> list[PsychologistReviewQueueItem]:
     """Results waiting for review whose student has no psychologist at all —
     without this queue they would never be published
     (docs/psychologist-review-gate-plan.md §4)."""
@@ -110,7 +112,7 @@ async def list_unassigned_reviews(db: AsyncSession) -> list[PsychologistReviewQu
         .where(PsychologistStudentAssignment.student_id == Profile.user_id)
         .exists()
     )
-    query = psychologist_service.review_queue_select().where(~has_assignment)
+    query = psychologist_service.review_queue_select(limit).where(~has_assignment)
     return psychologist_service.to_review_queue_items((await db.execute(query)).all())
 
 

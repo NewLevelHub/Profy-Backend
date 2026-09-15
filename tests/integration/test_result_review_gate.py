@@ -168,3 +168,48 @@ async def test_unknown_assessment_is_404(
 ) -> None:
     response = await client.get(f"/api/v1/result/{uuid.uuid4()}", headers=auth_headers)
     assert response.status_code == 404
+
+
+async def test_report_derived_endpoints_are_gated_until_published(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    test_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The envelope alone isn't the gate: goal overlay, roadmaps and gap
+    analysis are all built from the same stored AnalysisResult, and would
+    otherwise hand the student its content (top spheres, matched directions,
+    a generated plan) before the psychologist published anything."""
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+    await generate(client, auth_headers, assessment)
+
+    goal_context = await client.get(
+        f"/api/v1/result/{assessment.id}/goal-context", headers=auth_headers
+    )
+    assert goal_context.status_code == 409
+
+    generated_roadmap = await client.post(
+        "/api/v1/roadmap/generate",
+        json={"assessment_id": str(assessment.id)},
+        headers=auth_headers,
+    )
+    assert generated_roadmap.status_code == 409
+
+    fetched_roadmap = await client.get(
+        f"/api/v1/roadmap/{assessment.id}", headers=auth_headers
+    )
+    assert fetched_roadmap.status_code == 409
+
+    stored = await stored_result(db_session, assessment.id)
+    stored.review_status = ReviewStatus.published
+    await db_session.flush()
+
+    # Only the gate is asserted here — whatever these endpoints answer after
+    # publication is their own contract, tested elsewhere.
+    reopened = await client.get(
+        f"/api/v1/result/{assessment.id}/goal-context", headers=auth_headers
+    )
+    assert reopened.status_code != 409

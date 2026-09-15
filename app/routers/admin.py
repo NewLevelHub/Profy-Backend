@@ -183,10 +183,11 @@ async def delete_psychologist_assignment(
     response_model=list[PsychologistReviewQueueItem],
 )
 async def list_unassigned_psychologist_reviews(
+    limit: int = Query(default=100, ge=1, le=500),
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await admin_psychologist_service.list_unassigned_reviews(db)
+    return await admin_psychologist_service.list_unassigned_reviews(db, limit=limit)
 
 
 @router.post(

@@ -21,7 +21,7 @@ from app.schemas.university import (
     UniversityDetail,
     UniversityListResponse,
 )
-from app.services import assessment_service
+from app.services import assessment_service, report_service
 from app.services.artifact_service import get_artifacts
 from app.services.gap_analysis_service import analyze_gap, to_response
 from app.services.university_service import (
@@ -138,6 +138,9 @@ async def get_gap_analysis(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Gap analysis is only available for senior age group",
         )
+
+    # Built from AnalysisResult.careers — same review gate as the report.
+    await report_service.require_published_report(assessment_id, db)
 
     cache_key = f"gap_analysis:{program_id}:{assessment_id}"
     redis = _get_redis()

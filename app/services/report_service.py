@@ -486,6 +486,21 @@ async def build_report(
     return response
 
 
+async def require_published_report(assessment_id: uuid.UUID, db: AsyncSession) -> None:
+    """Gate for every *other* student-facing endpoint that derives content
+    from a stored AnalysisResult (goal overlay, gap analysis, roadmaps).
+    /result itself answers with the pending envelope instead — here there is
+    no such envelope in the contract, so an unpublished report is a 409.
+
+    `None` (no report at all) is deliberately not handled: each caller
+    already has its own 400/404 for that case."""
+    if await get_review_status(assessment_id, db) == ReviewStatus.pending_review:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Отчёт ещё не опубликован психологом",
+        )
+
+
 async def get_review_status(assessment_id: uuid.UUID, db: AsyncSession) -> ReviewStatus | None:
     """Single source of truth for the student-facing review gate — always
     read from the DB, never from the report cache. None = no report yet."""
