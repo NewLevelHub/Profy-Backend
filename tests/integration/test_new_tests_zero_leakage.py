@@ -1,7 +1,8 @@
-"""PRO-338 Ф0.5 — the 4 new Likert/binary-based instruments added in Ф0.2
-(professional_types_abilities, eysenck, elers — professional_types itself
-is QuestionPair-based, not Question-based, so it never reaches the Likert
-battery at all) must have zero leakage into riasec/bigfive/mi scoring, same
+"""PRO-338 Ф0.5/Ф1.10 — the new Likert/binary-based instruments added in Ф0.2
+(professional_types_abilities, eysenck, elers, boyko_empathy, kondash_anxiety —
+professional_types itself is QuestionPair-based, not Question-based, so it
+never reaches the Likert battery at all) must have zero leakage into
+riasec/bigfive/mi scoring, same
 guarantee PRO-298 already established for `validity`
 (test_validity_items_in_battery.py::test_validity_rows_do_not_change_riasec_or_bigfive_scoring)
 — every scoring service filters strictly on `Question.instrument ==` its
@@ -28,6 +29,8 @@ _NEW_INSTRUMENTS = [
     QuestionInstrument.professional_types_abilities,
     QuestionInstrument.eysenck,
     QuestionInstrument.elers,
+    QuestionInstrument.boyko_empathy,
+    QuestionInstrument.kondash_anxiety,
 ]
 
 

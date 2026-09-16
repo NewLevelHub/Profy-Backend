@@ -35,8 +35,11 @@ from app.services import (
     assessment_shared,
     bigfive_content,
     bigfive_service,
+    boyko_empathy_service,
     consent_service,
+    elers_service,
     eysenck_service,
+    kondash_anxiety_service,
     mi_service,
     motivation_pair_service,
     motivation_service,
@@ -712,6 +715,27 @@ async def _build_report(
     eysenck_scores = await eysenck_service.raw_scores(assessment_id, db)
     eysenck_data = eysenck_service.build_section_data(eysenck_scores)
 
+    # PRO-338 Ф1.8 — same "specialist-only, None if unanswered" convention.
+    elers_score = await elers_service.raw_score(assessment_id, db)
+    elers_data = elers_service.build_section_data(elers_score)
+
+    # PRO-338 Ф1.11 — Бойко (эмпатия) + Кондаш/Прихожан (соц. уверенность)
+    # share one report section (empathy_confidence); each half falls back to
+    # None independently on its own instrument being unanswered, then the
+    # two dicts are merged (never both None -> None, since either half alone
+    # is still real data worth showing).
+    boyko_scores = await boyko_empathy_service.raw_scores(assessment_id, db)
+    boyko_data = boyko_empathy_service.build_section_data(boyko_scores)
+    kondash_interpersonal_raw = await kondash_anxiety_service.interpersonal_raw_score(assessment_id, db)
+    kondash_data = kondash_anxiety_service.build_confidence_data(
+        kondash_interpersonal_raw, age=profile.age if profile is not None else 16
+    )
+    empathy_confidence_data = (
+        {**(boyko_data or {}), **(kondash_data or {})}
+        if boyko_data is not None or kondash_data is not None
+        else None
+    )
+
     analysis = AnalysisResult(
         assessment_id=assessment_id,
         summary=narrative.summary,
@@ -735,6 +759,8 @@ async def _build_report(
         final_analysis=narrative.final_analysis,
         professional_types=professional_types_data,
         eysenck=eysenck_data,
+        elers=elers_data,
+        empathy_confidence=empathy_confidence_data,
         report_version=2,
     )
     db.add(analysis)

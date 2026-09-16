@@ -1,18 +1,18 @@
 """
-Seed script: populate the `questions` table with the 41 canonical `elers`
-items from elers_bank.py (content-only — `keyed` lives in the bank file for
-the future scoring service to resolve via `Question.order`, not a DB
-column, same as eysenck_service.py). PRO-338 Ф0.8/Ф1.7, pattern 1:1 with
-seed_lie_scale_questions.py (PRO-298).
+Seed script: populate the `questions` table with the 40 canonical
+`kondash_anxiety` items from kondash_anxiety_bank.py (content-only —
+`subscale` lives in the bank file for the future scoring service to resolve
+via `Question.order`, not a DB column, same as elers_service.py). PRO-338
+Ф0.8/Ф1.10, pattern 1:1 with seed_boyko_empathy_questions.py.
 
-Run inside Docker, AFTER seed_eysenck_questions.py (shares the same `order`
-numbering space, contiguous within the "Дополнительные тесты" sub-section
-so the battery never interleaves it with RIASEC/BigFive/MI):
-    docker-compose exec api python scripts/seed_elers_questions.py
+Run inside Docker, AFTER seed_boyko_empathy_questions.py (shares the same
+`order` numbering space, contiguous within the "Дополнительные тесты"
+sub-section so the battery never interleaves it with RIASEC/BigFive/MI):
+    docker-compose exec api python scripts/seed_kondash_anxiety_questions.py
 
 Idempotent, self-healing: upserts by `order`, deletes any DB row tagged
-instrument='elers' whose `order` is no longer in the bank — same pattern as
-every other seed_*_questions.py script.
+instrument='kondash_anxiety' whose `order` is no longer in the bank — same
+pattern as every other seed_*_questions.py script.
 """
 import asyncio
 import os
@@ -26,7 +26,7 @@ from app.database import async_session
 from app.models.profile import AgeGroup
 from app.models.question import Question, QuestionInstrument
 from app.services.admin_lock import has_overrides, sync_fields
-from scripts.elers_bank import QUESTIONS
+from scripts.kondash_anxiety_bank import QUESTIONS
 
 
 async def main() -> None:
@@ -34,7 +34,7 @@ async def main() -> None:
         live_orders = {q["order"] for q in QUESTIONS}
 
         existing_result = await db.execute(
-            select(Question).where(Question.instrument == QuestionInstrument.elers)
+            select(Question).where(Question.instrument == QuestionInstrument.kondash_anxiety)
         )
         existing_by_order = {q.order: q for q in existing_result.scalars().all()}
 
@@ -54,7 +54,7 @@ async def main() -> None:
                 continue
 
             db.add(Question(
-                instrument=QuestionInstrument.elers,
+                instrument=QuestionInstrument.kondash_anxiety,
                 text=data["text"],
                 order=data["order"],
                 age_tier=age_tier,
@@ -71,7 +71,7 @@ async def main() -> None:
             f"Done. Inserted: {inserted}, updated: {updated}, "
             f"skipped (unchanged): {skipped}, orphans deleted: {deleted}"
         )
-        print(f"Total elers items in bank: {len(QUESTIONS)}")
+        print(f"Total kondash_anxiety items in bank: {len(QUESTIONS)}")
 
 
 if __name__ == "__main__":

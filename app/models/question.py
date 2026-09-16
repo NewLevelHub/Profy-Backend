@@ -40,6 +40,11 @@ class QuestionInstrument(str, enum.Enum):
     eysenck = "eysenck"
     # Elers achievement motivation (уровень притязаний), Да/Нет — binary scale, see Ф0.5.
     elers = "elers"
+    # Boyko empathy (эмпатические способности), 36 Да/Нет, 6 каналов — binary scale, see Ф0.5.
+    boyko_empathy = "boyko_empathy"
+    # Kondash/Prikhozhan anxiety scale, 40 items, 0-4 5-point scale
+    # (Нет/Немного/Достаточно/Значительно/Очень), 4 субшкалы — see Ф1.10.
+    kondash_anxiety = "kondash_anxiety"
 
 
 class ValidityRole(str, enum.Enum):

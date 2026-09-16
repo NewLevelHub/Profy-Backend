@@ -96,11 +96,18 @@ class AspirationLevelSection(BaseModel):
 
 class EmpathyConfidenceSection(BaseModel):
     """Бойко (эмпатия, 6 каналов) + Кондаш/Прихожан (межличностная
-    тревожность, инвертирована в "уверенность", стены 1-10)."""
+    тревожность, инвертирована в "уверенность", стены 1-10). Ф1.11:
+    `empathy_level`/`confidence_level` are band labels from
+    app.config.boyko_empathy_thresholds/kondash_anxiety_thresholds — same
+    "backend computes the label, frontend only maps it to copy" convention
+    as every other scored section (elers' `level`, eysenck's
+    `*_level`/`quadrant`)."""
 
     empathy_channels: dict[str, float] | None = None
     empathy_total: float | None = None
+    empathy_level: str | None = None
     confidence_stens: int | None = None
+    confidence_level: str | None = None
     model_config = _model_config
 
 

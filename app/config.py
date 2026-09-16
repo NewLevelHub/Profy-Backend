@@ -223,3 +223,120 @@ def load_eysenck_thresholds(
 
 
 eysenck_thresholds: EysenckThresholds = load_eysenck_thresholds()
+
+
+# --- Elers achievement-motivation thresholds (epic PRO-338, phase 1; Ф1.8) --
+# Same contract as eysenck_thresholds/validity_thresholds: cut-offs in a
+# versioned JSON, edited without code changes (02-Фаза1-Лёгкие-тесты.md §1.В).
+_ELERS_THRESHOLDS_PATH = Path(__file__).parent / "data" / "elers_thresholds.json"
+
+
+class ElersThresholds(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="allow")
+
+    version: int
+    # Ascending inclusive upper bounds for every band except the last one
+    # (which is "greater than the last bound"):
+    #   bounds [10, 16, 20] -> 1-10 low, 11-16 medium, 17-20 moderately_high
+    #   (positive prognostic marker), >20 too_high (burnout risk).
+    bounds: tuple[int, int, int]
+
+    def level(self, raw: int) -> str:
+        labels = ["low", "medium", "moderately_high"]
+        for bound, label in zip(self.bounds, labels):
+            if raw <= bound:
+                return label
+        return "too_high"
+
+
+def load_elers_thresholds(
+    path: Path = _ELERS_THRESHOLDS_PATH,
+) -> ElersThresholds:
+    return ElersThresholds.model_validate(json.loads(path.read_text(encoding="utf-8")))
+
+
+elers_thresholds: ElersThresholds = load_elers_thresholds()
+
+
+# --- Boyko empathy thresholds (epic PRO-338, phase 1; Ф1.11) ----------------
+# Same contract as elers_thresholds/eysenck_thresholds: cut-offs in a
+# versioned JSON, edited without code changes (02-Фаза1-Лёгкие-тесты.md §1.Г).
+_BOYKO_EMPATHY_THRESHOLDS_PATH = Path(__file__).parent / "data" / "boyko_empathy_thresholds.json"
+
+
+class BoykoEmpathyThresholds(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="allow")
+
+    version: int
+    # Ascending inclusive upper bounds for every band except the last one
+    # (which is "greater than the last bound"):
+    #   bounds [14, 21, 29] -> <=14 very_low, 15-21 underestimated,
+    #   22-29 average, >29 (30-36) very_high. See the JSON file's own
+    #   comment for how the ambiguous boundary score 14 was resolved.
+    bounds: tuple[int, int, int]
+
+    def level(self, raw: int) -> str:
+        labels = ["very_low", "underestimated", "average"]
+        for bound, label in zip(self.bounds, labels):
+            if raw <= bound:
+                return label
+        return "very_high"
+
+
+def load_boyko_empathy_thresholds(
+    path: Path = _BOYKO_EMPATHY_THRESHOLDS_PATH,
+) -> BoykoEmpathyThresholds:
+    return BoykoEmpathyThresholds.model_validate(json.loads(path.read_text(encoding="utf-8")))
+
+
+boyko_empathy_thresholds: BoykoEmpathyThresholds = load_boyko_empathy_thresholds()
+
+
+# --- Kondash/Prikhozhan anxiety -> confidence thresholds (epic PRO-338,
+# phase 1; Ф1.11) --------------------------------------------------------
+# Same contract as the thresholds above: cut-offs in a versioned JSON, edited
+# without code changes. See the JSON file's own comment for the age-bracket
+# and inversion-semantics decisions.
+_KONDASH_ANXIETY_THRESHOLDS_PATH = Path(__file__).parent / "data" / "kondash_anxiety_thresholds.json"
+
+
+class KondashAgeBracket(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    max_age: int
+    sten10: int
+
+
+class KondashAnxietyThresholds(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="allow")
+
+    version: int
+    interpersonal_sten10_by_age: tuple[KondashAgeBracket, ...]
+    # Ascending inclusive upper bounds: sten<=bounds[0] "high" confidence,
+    # sten<=bounds[1] "normative", above that "low".
+    confidence_sten_bounds: tuple[int, int]
+
+    def interpersonal_sten10(self, age: int) -> int:
+        """Sten-10 raw-score threshold for the межличностная subscale at
+        this age — the last bracket also serves as the fallback for any age
+        past its `max_age` (see the JSON file's own comment)."""
+        for bracket in self.interpersonal_sten10_by_age:
+            if age <= bracket.max_age:
+                return bracket.sten10
+        return self.interpersonal_sten10_by_age[-1].sten10
+
+    def confidence_level(self, sten: int) -> str:
+        labels = ["high", "normative"]
+        for bound, label in zip(self.confidence_sten_bounds, labels):
+            if sten <= bound:
+                return label
+        return "low"
+
+
+def load_kondash_anxiety_thresholds(
+    path: Path = _KONDASH_ANXIETY_THRESHOLDS_PATH,
+) -> KondashAnxietyThresholds:
+    return KondashAnxietyThresholds.model_validate(json.loads(path.read_text(encoding="utf-8")))
+
+
+kondash_anxiety_thresholds: KondashAnxietyThresholds = load_kondash_anxiety_thresholds()
