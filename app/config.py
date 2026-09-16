@@ -340,3 +340,30 @@ def load_kondash_anxiety_thresholds(
 
 
 kondash_anxiety_thresholds: KondashAnxietyThresholds = load_kondash_anxiety_thresholds()
+
+
+# --- Belbin BTRSPI role-interpretation threshold (epic PRO-338, phase 2; Ф2.5) --
+# Same contract as eysenck_thresholds/elers_thresholds: cut-off in a
+# versioned JSON, edited without code changes
+# (03-Фаза2-Белбин.md Ф2.5).
+_BELBIN_THRESHOLDS_PATH = Path(__file__).parent / "data" / "belbin_thresholds.json"
+
+
+class BelbinThresholds(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="allow")
+
+    version: int
+    # role_totals[role] <= this -> "avoidance zone" (delegate to others).
+    avoidance_max_score: int
+
+    def is_avoidance_zone(self, role_score: int) -> bool:
+        return role_score <= self.avoidance_max_score
+
+
+def load_belbin_thresholds(
+    path: Path = _BELBIN_THRESHOLDS_PATH,
+) -> BelbinThresholds:
+    return BelbinThresholds.model_validate(json.loads(path.read_text(encoding="utf-8")))
+
+
+belbin_thresholds: BelbinThresholds = load_belbin_thresholds()

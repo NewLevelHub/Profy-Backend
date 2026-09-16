@@ -288,5 +288,7 @@ async def get_assigned_student_report(
     report, analysis = result
     return PsychologistReportResponse(
         report=report,
-        new_tests=new_tests_report_service.build_new_tests_sections(analysis),
+        new_tests=await new_tests_report_service.build_new_tests_sections(
+            analysis, assessment_id=assessment_id, db=db
+        ),
     )

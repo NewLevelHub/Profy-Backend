@@ -44,10 +44,22 @@ class TeamRoleSection(BaseModel):
     """Belbin BTRSPI — 7 блоков ипсативного распределения, own table
     (belbin_runs, Ф2.3), not Question-based. `methodological_note` carries
     the source's 18+/corporate-context caveat (epic decision table §2) as a
-    note for the specialist, not a code-gated restriction."""
+    note for the specialist, not a code-gated restriction.
 
-    scores: dict[str, float] | None = None
-    top_roles: list[str] | None = None
+    `ranked_roles` is all 8 role codes sorted by score descending (ties
+    broken by belbin_bank.ROLES' fixed order, same as
+    belbin_service.interpret_role_totals) — the Bar Chart (Ф2.7) renders
+    bars in exactly this order, not `scores`' own (unordered) key order.
+    `dominant_role`/`supporting_roles`/`avoidance_roles` are the same 3
+    groups `interpret_role_totals` (Ф2.5) computes, carried through
+    unchanged so the frontend colors bars by group without re-deriving the
+    ranking or threshold logic itself."""
+
+    scores: dict[str, int] | None = None
+    ranked_roles: list[str] | None = None
+    dominant_role: str | None = None
+    supporting_roles: list[str] | None = None
+    avoidance_roles: list[str] | None = None
     methodological_note: str | None = None
     model_config = _model_config
 

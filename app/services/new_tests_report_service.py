@@ -9,6 +9,9 @@ section` and neighbors. Consumed by Ф0.3's specialist report endpoint
 by the student-facing /result.
 """
 import logging
+import uuid
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult
 from app.schemas.new_tests import (
@@ -20,8 +23,20 @@ from app.schemas.new_tests import (
     TeamRoleSection,
     TemperamentSection,
 )
+from app.services import belbin_service
 
 logger = logging.getLogger(__name__)
+
+# Ф2.7 / epic decision table §2: Belbin's source is 18+/corporate-context —
+# a methodical note for the specialist, never a code-gated restriction (the
+# platform's own age range, 14-18, is otherwise unaffected — see
+# 00-ЭПИК-PRO-338.md's "Возраст" row).
+_BELBIN_METHODOLOGICAL_NOTE = (
+    "Методика Белбина изначально разработана для взрослых сотрудников в "
+    "корпоративном контексте (18+). Результат школьника стоит трактовать с "
+    "поправкой на возраст — это не формальное ограничение платформы, а "
+    "методическая особенность источника."
+)
 
 
 def _build_professional_types_section(analysis_result: AnalysisResult) -> ProfessionalTypesSection | None:
@@ -39,13 +54,31 @@ def _build_professional_types_section(analysis_result: AnalysisResult) -> Profes
         return None
 
 
-def _build_team_role_section(analysis_result: AnalysisResult) -> TeamRoleSection | None:
-    """Belbin has no data source yet — its own ipsative-battery table
-    (belbin_runs) lands in Ф2.3 (03-Фаза2-Белбин.md). Kept as its own
-    isolated builder now so wiring it into the specialist report later only
-    touches this function's body, not the aggregator or the response
-    schema."""
-    return None
+async def _build_team_role_section(
+    assessment_id: uuid.UUID, db: AsyncSession
+) -> TeamRoleSection | None:
+    """Belbin (Ф2.7). Unlike every other section here, its source is NOT an
+    `AnalysisResult` JSONB column — `belbin_runs` (Ф2.3) is a separate
+    append-only table (optional psychologist-assigned block, not part of
+    the main battery/build_report() flow), so this builder is the one
+    exception that takes `assessment_id`/`db` instead of `analysis_result`.
+    `None` if Belbin was never assigned/completed for this assessment."""
+    try:
+        run = await belbin_service.get_latest_run(assessment_id, db)
+        if run is None:
+            return None
+        interpretation = belbin_service.interpret_role_totals(run.role_totals)
+        return TeamRoleSection(
+            scores=run.role_totals,
+            ranked_roles=interpretation.ranked_roles,
+            dominant_role=interpretation.dominant_role,
+            supporting_roles=interpretation.supporting_roles,
+            avoidance_roles=interpretation.avoidance_roles,
+            methodological_note=_BELBIN_METHODOLOGICAL_NOTE,
+        )
+    except Exception:
+        logger.exception("Failed to build team_role section for assessment %s", assessment_id)
+        return None
 
 
 def _build_temperament_section(analysis_result: AnalysisResult) -> TemperamentSection | None:
@@ -96,12 +129,17 @@ def _build_empathy_confidence_section(analysis_result: AnalysisResult) -> Empath
         return None
 
 
-def build_new_tests_sections(analysis_result: AnalysisResult) -> NewTestsSections:
+async def build_new_tests_sections(
+    analysis_result: AnalysisResult, *, assessment_id: uuid.UUID, db: AsyncSession
+) -> NewTestsSections:
     """Always succeeds, never raises — every field independently falls back
-    to None on its own builder's failure (see module docstring)."""
+    to None on its own builder's failure (see module docstring). Async
+    (since Ф2.7) only because team_role's source is a separate table, not
+    an `analysis_result` column — every other builder here stays a plain
+    sync function on `analysis_result` alone."""
     return NewTestsSections(
         professional_types=_build_professional_types_section(analysis_result),
-        team_role=_build_team_role_section(analysis_result),
+        team_role=await _build_team_role_section(assessment_id, db),
         temperament=_build_temperament_section(analysis_result),
         intelligence=_build_intelligence_section(analysis_result),
         aspiration_level=_build_aspiration_level_section(analysis_result),

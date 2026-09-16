@@ -4,6 +4,7 @@ from app.models.email_verification import EmailVerificationToken  # noqa: F401 �
 from app.models.artifact import Artifact  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.assessment import Assessment  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.assessment_validity import AssessmentValidity  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.belbin_run import BelbinRun  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.consent import Consent  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.direction import Direction  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.direction_inquiry import DirectionInquiry  # noqa: F401 — keep model imported so Alembic discovers it
@@ -30,7 +31,7 @@ from app.models.validity_calibration_log import ValidityCalibrationLog  # noqa: 
 from app.models.goal_overlay import GoalOverlay  # noqa: F401 — keep model imported so Alembic discovers it
 
 __all__ = [
-    "Base", "AnalysisResult", "AssessmentValidity", "Artifact", "Assessment", "Consent",
+    "Base", "AnalysisResult", "AssessmentValidity", "Artifact", "Assessment", "BelbinRun", "Consent",
     "Direction", "DirectionInquiry", "DirectionRoadmap",
     "EmailVerificationToken", "MotivationPair", "MotivationPairResponse",
     "MotivationResponse", "MotivationStatement", "PasswordResetToken",

@@ -2,12 +2,14 @@
 (PRO-338 Ф0.3) — the specialist-only surface for the main report + the 6
 new-tests sections. Never exposed to the student's own /result."""
 import uuid
+from datetime import datetime, timedelta, timezone
 
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal
+from app.models.belbin_run import BelbinRun
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
 
@@ -184,3 +186,61 @@ async def test_full_report_with_new_tests_section_isolation(
     assert new_tests["team_role"] is None
     assert new_tests["intelligence"] is None
     assert new_tests["empathy_confidence"] is None
+
+
+async def test_team_role_section_reads_the_latest_belbin_run(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    admin_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    psychologist_user: User,
+    test_user: User,
+) -> None:
+    """Ф2.7 — unlike every other new-tests section, team_role's source is
+    the separate `belbin_runs` table, not an AnalysisResult JSONB column.
+    Two runs are seeded to confirm the report reads the LATEST one, not the
+    first (append-only history, Ф2.3)."""
+    await _assign(client, admin_headers, psychologist_user.id, test_user.id)
+    assessment = await _make_assessment_for(db_session, test_user)
+    analysis = AnalysisResult(**_minimal_report_kwargs(assessment.id))
+    db_session.add(analysis)
+
+    stale_totals = {
+        "implementer": 5, "coordinator": 5, "shaper": 5, "plant": 5,
+        "resource_investigator": 5, "evaluator": 5, "team_worker": 15, "finisher": 25,
+    }
+    latest_totals = {
+        "implementer": 3, "coordinator": 20, "shaper": 14, "plant": 2,
+        "resource_investigator": 8, "evaluator": 8, "team_worker": 8, "finisher": 7,
+    }
+    # Explicit created_at: the whole test runs inside one wrapped
+    # transaction (tests/conftest.py's savepoint fixture), so Postgres'
+    # now() is frozen for the transaction's duration — two server-defaulted
+    # timestamps here would tie, unlike real separate requests.
+    now = datetime.now(timezone.utc)
+    db_session.add(BelbinRun(
+        assessment_id=assessment.id, user_id=test_user.id,
+        allocations=[], role_totals=stale_totals,
+        created_at=now - timedelta(minutes=5),
+    ))
+    await db_session.flush()
+    db_session.add(BelbinRun(
+        assessment_id=assessment.id, user_id=test_user.id,
+        allocations=[], role_totals=latest_totals,
+        created_at=now,
+    ))
+    await db_session.flush()
+
+    response = await client.get(
+        f"/api/v1/psychologist/students/{test_user.id}/assessments/{assessment.id}/report",
+        headers=psychologist_headers,
+    )
+    assert response.status_code == 200
+    team_role = response.json()["new_tests"]["team_role"]
+
+    assert team_role["scores"] == latest_totals
+    assert team_role["dominant_role"] == "coordinator"
+    assert team_role["supporting_roles"] == ["shaper", "resource_investigator"]
+    assert set(team_role["avoidance_roles"]) == {"implementer", "plant"}
+    assert team_role["ranked_roles"][0] == "coordinator"
+    assert team_role["methodological_note"]
