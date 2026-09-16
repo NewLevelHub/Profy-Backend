@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "comment": "АСТУР СПН-group thresholds (epic PRO-338, phase 3; Ф3.5). Loaded by app.config.load_astur_thresholds. The spec gives only rough target proportions (~10/20/40/20/10%) and explicitly says they are 'рабочая модель до калибровки на реальной выборке пользователей платформы' (04-Фаза3-АСТУР.md, §5) — no real percentile data exists yet, unlike a calibrated norm table. In the absence of one, spn_bounds below are derived as percentages of MAX_RAW_SCORE=127 (scripts/astur_bank.py's 6 scored subtests: 20+16+12+38+26+15, see app/services/astur_scoring.py's own assertion of this number): <=10% -> group5, <=30% -> group4, <=70% -> group3, <=90% -> group2, >90% -> group1. This is a placeholder methodology (score-range slicing), NOT a real normative percentile distribution — replace with actual calibrated bounds once real user data accumulates, same caveat as the rest of this epic's АСТУР content.",
+  "spn_bounds": [12, 37, 88, 113]
+}

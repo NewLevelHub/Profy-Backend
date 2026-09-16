@@ -150,6 +150,7 @@ async def get_student_assessment_report(
             psychologist_id=current_user.id,
             student_id=student_id,
             assessment_id=assessment_id,
+            viewer_role=current_user.role,
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

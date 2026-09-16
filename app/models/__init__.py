@@ -4,11 +4,13 @@ from app.models.email_verification import EmailVerificationToken  # noqa: F401 �
 from app.models.artifact import Artifact  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.assessment import Assessment  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.assessment_validity import AssessmentValidity  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.astur_run import AsturRun  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.belbin_run import BelbinRun  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.consent import Consent  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.direction import Direction  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.direction_inquiry import DirectionInquiry  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.direction_roadmap import DirectionRoadmap  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.extended_block_assignment import ExtendedBlockAssignment  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.motivation import MotivationResponse, MotivationStatement  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.motivation_pair import MotivationPair, MotivationPairResponse  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.password_reset import PasswordResetToken  # noqa: F401 — keep model imported so Alembic discovers it
@@ -31,8 +33,8 @@ from app.models.validity_calibration_log import ValidityCalibrationLog  # noqa: 
 from app.models.goal_overlay import GoalOverlay  # noqa: F401 — keep model imported so Alembic discovers it
 
 __all__ = [
-    "Base", "AnalysisResult", "AssessmentValidity", "Artifact", "Assessment", "BelbinRun", "Consent",
-    "Direction", "DirectionInquiry", "DirectionRoadmap",
+    "Base", "AnalysisResult", "AssessmentValidity", "Artifact", "Assessment", "AsturRun", "BelbinRun", "Consent",
+    "Direction", "DirectionInquiry", "DirectionRoadmap", "ExtendedBlockAssignment",
     "EmailVerificationToken", "MotivationPair", "MotivationPairResponse",
     "MotivationResponse", "MotivationStatement", "PasswordResetToken",
     "ProductFeedback", "Profile", "Program", "PsychoEmotionalRun",

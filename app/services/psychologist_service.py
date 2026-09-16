@@ -19,7 +19,7 @@ from app.models.assessment import Assessment
 from app.models.profile import Profile
 from app.models.psychologist_assignment import PsychologistStudentAssignment
 from app.models.psychologist_note import PsychologistNote
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.admin import AdminUserDetailResponse
 from app.schemas.psychologist import (
     PsychologistAssessmentSummary,
@@ -264,13 +264,22 @@ async def get_assigned_student_report(
     psychologist_id: uuid.UUID,
     student_id: uuid.UUID,
     assessment_id: uuid.UUID,
+    viewer_role: UserRole,
 ) -> PsychologistReportResponse:
-    """PRO-338 Ф0.3 — the specialist-only report surface (never the
-    student-facing /result): the existing student-shape report plus the 6
+    """PRO-338 Ф0.3/Ф4.1 — the specialist-only report surface (never the
+    student-facing /result): the existing student-shape report — now
+    including PRO-282's `validity`/`psychoemotional` sections, see
+    `report_service.get_report_with_analysis`'s own Ф4.1 note — plus the 6
     new-tests sections (professional_types/team_role/temperament/
     intelligence/aspiration_level/empathy_confidence), the latter isolated
     per-section by new_tests_report_service so one malformed test never
     blanks the others or fails the whole request.
+
+    `viewer_role` is always psychologist/admin here (the router's own
+    `require_role` guarantees it before this is ever called) — passed
+    through rather than hardcoded so `report_service.psych_sections_for`
+    stays the single place that decides visibility, per its own module
+    comment.
 
     Raises ValueError (→ 404 in the router) for: no assignment, an
     assessment_id that isn't this student's own, or no report generated yet
@@ -282,7 +291,7 @@ async def get_assigned_student_report(
     await _require_student_assessment(
         db, student_id=student_id, assessment_id=assessment_id
     )
-    result = await report_service.get_report_with_analysis(assessment_id, db)
+    result = await report_service.get_report_with_analysis(assessment_id, db, viewer_role=viewer_role)
     if result is None:
         raise ValueError("Report not found")
     report, analysis = result

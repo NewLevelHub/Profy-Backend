@@ -9,9 +9,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal
+from app.models.assessment_validity import AssessmentValidity, SdLevel, TrafficLight
+from app.models.astur_run import AsturRun
 from app.models.belbin_run import BelbinRun
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
+from scripts.astur_bank import AWARENESS_ITEMS
 
 
 async def _make_assessment_for(db: AsyncSession, owner: User) -> Assessment:
@@ -244,3 +247,91 @@ async def test_team_role_section_reads_the_latest_belbin_run(
     assert set(team_role["avoidance_roles"]) == {"implementer", "plant"}
     assert team_role["ranked_roles"][0] == "coordinator"
     assert team_role["methodological_note"]
+
+
+async def test_intelligence_section_reads_the_latest_astur_run(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    admin_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    psychologist_user: User,
+    test_user: User,
+) -> None:
+    """Ф3.7 — same "separate append-only table, not an AnalysisResult JSONB
+    column" shape as team_role (Ф2.7). Two runs seeded to confirm the
+    report reads the LATEST one. Only 1 of 20 «Осведомлённость» items
+    answered (correctly) — scoring degrades gracefully on a partial
+    attempt (astur_scoring.py's own contract), no need to fill all 98."""
+    await _assign(client, admin_headers, psychologist_user.id, test_user.id)
+    assessment = await _make_assessment_for(db_session, test_user)
+    analysis = AnalysisResult(**_minimal_report_kwargs(assessment.id))
+    db_session.add(analysis)
+
+    now = datetime.now(timezone.utc)
+    db_session.add(AsturRun(
+        assessment_id=assessment.id, user_id=test_user.id,
+        answers={"awareness": {"1": "wrong answer"}},
+        created_at=now - timedelta(minutes=10),
+    ))
+    await db_session.flush()
+    db_session.add(AsturRun(
+        assessment_id=assessment.id, user_id=test_user.id,
+        answers={"awareness": {"1": AWARENESS_ITEMS[0]["answer"]}},
+        lability_answers={
+            str(i): {"answer": "x", "elapsed_ms": 1000, "over_limit": False} for i in range(1, 9)
+        },
+        created_at=now,
+    ))
+    await db_session.flush()
+
+    response = await client.get(
+        f"/api/v1/psychologist/students/{test_user.id}/assessments/{assessment.id}/report",
+        headers=psychologist_headers,
+    )
+    assert response.status_code == 200
+    intelligence = response.json()["new_tests"]["intelligence"]
+
+    assert intelligence["subtest_scores"]["awareness"] == 1
+    assert intelligence["raw_score"] == 1
+    assert intelligence["spn_group"] is not None
+    assert intelligence["lability_first_half_accuracy"] is not None
+    assert intelligence["lability_second_half_accuracy"] is not None
+
+
+async def test_pro282_validity_section_is_attached_for_the_psychologist_viewer(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    admin_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    psychologist_user: User,
+    test_user: User,
+) -> None:
+    """Ф4.1 — before this fix, `get_assigned_student_report` built its
+    response via `get_report_with_analysis()` WITHOUT ever calling
+    `_attach_psych_sections`, so PRO-282's `validity`/`psychoemotional`
+    stayed `null` here even though PRO-282 is already merged into this
+    backend branch and a psychologist viewer should see them (same
+    `psych_sections_for` gate `/result` itself uses)."""
+    await _assign(client, admin_headers, psychologist_user.id, test_user.id)
+    assessment = await _make_assessment_for(db_session, test_user)
+    analysis = AnalysisResult(**_minimal_report_kwargs(assessment.id))
+    db_session.add(analysis)
+    db_session.add(AssessmentValidity(
+        assessment_id=assessment.id,
+        sd_raw=4, sd_level=SdLevel.ok,
+        longstring_max=3, irv=1.2, infrequency_failed=0, careless_flag=False,
+        traffic_light=TrafficLight.green,
+        thresholds_version=1,
+    ))
+    await db_session.flush()
+
+    response = await client.get(
+        f"/api/v1/psychologist/students/{test_user.id}/assessments/{assessment.id}/report",
+        headers=psychologist_headers,
+    )
+    assert response.status_code == 200
+    validity = response.json()["report"]["validity"]
+
+    assert validity is not None
+    assert validity["sd_raw"] == 4
+    assert validity["traffic_light"] == "green"

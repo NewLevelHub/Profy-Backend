@@ -43,8 +43,9 @@ async def test_populated_containers_build_their_sections(db_session: AsyncSessio
     assert result.temperament.extraversion_raw == 12
     assert result.aspiration_level.level == "moderate"
     assert result.empathy_confidence.confidence_stens == 6
-    # Belbin has no belbin_runs row for this (unpersisted) assessment_id;
-    # АСТУР has no container yet (own table lands in Ф3.3)
+    # Belbin/АСТУР both read a separate table (belbin_runs/astur_runs), not
+    # an AnalysisResult JSONB column — no row exists for this (unpersisted)
+    # assessment_id, so both stay None.
     assert result.team_role is None
     assert result.intelligence is None
 

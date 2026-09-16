@@ -90,11 +90,28 @@ class TemperamentSection(BaseModel):
 
 class IntelligenceSection(BaseModel):
     """АСТУР (Акимова/Борисова/Гуревич и др., ПИ РАО 1995) — 98 заданий,
-    7 из 8 субтестов, own table (Ф3.3), not Question-based."""
+    7 из 8 субтестов, own table (astur_runs, Ф3.3), not Question-based.
 
-    spn_group: int | None = None
+    Ф3.7 extends the Ф0.2 stub (which only had spn_group/subtest_scores/
+    learning_profile) with the fields astur_scoring.score_run() (Ф3.5)
+    actually produces: `raw_score` (Line Chart needs a total, not just the
+    per-subtest breakdown), `learning_profile_shares` (the ticket's own
+    "с долями" requirement — `learning_profile` alone is just the winning
+    subject key, not the 3-way split), and the 2 lability accuracy figures
+    + `lability_fatigue_signal` (the JSON-boolean form of
+    astur_scoring.is_fatigue_signal(), pre-computed here so the frontend
+    never re-implements the >25%-drop rule) — lability is deliberately
+    rendered as its own block, outside the Line Chart (Ф3.7's own
+    "Отдельно" instruction), same as it's excluded from `raw_score`."""
+
+    raw_score: int | None = None
     subtest_scores: dict[str, float] | None = None
+    spn_group: int | None = None
     learning_profile: str | None = None
+    learning_profile_shares: dict[str, float] | None = None
+    lability_first_half_accuracy: float | None = None
+    lability_second_half_accuracy: float | None = None
+    lability_fatigue_signal: bool | None = None
     model_config = _model_config
 
 

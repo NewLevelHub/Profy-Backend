@@ -815,7 +815,7 @@ async def _build_report(
 
 
 async def get_report_with_analysis(
-    assessment_id: uuid.UUID, db: AsyncSession
+    assessment_id: uuid.UUID, db: AsyncSession, *, viewer_role: UserRole | None = None
 ) -> tuple[ResultResponseV2, AnalysisResult] | None:
     """PRO-338 Ф0.3 — the psychologist specialist report surface needs both
     the already-existing student-shape report AND the raw `AnalysisResult`
@@ -824,14 +824,30 @@ async def get_report_with_analysis(
     alone only ever returns the shaped response and, on a cache hit, never
     touches the DB row at all. Bypasses the response cache on purpose: the
     specialist view is low-traffic and always needs the raw row anyway, so
-    caching only the shaped half saves nothing."""
+    caching only the shaped half saves nothing.
+
+    PRO-338 Ф4.1: also attaches PRO-282's `validity`/`psychoemotional`
+    sections when `viewer_role` is given — same `_attach_psych_sections`
+    seam `get_report()` uses, called here explicitly because this function
+    bypasses that one entirely (it reads `AnalysisResult` directly, not
+    `_get_report`/the response cache). Before this, the specialist report
+    endpoint (Ф0.3) built its response via this function WITHOUT ever
+    calling `_attach_psych_sections` — `validity`/`psychoemotional` stayed
+    `null` here even for a psychologist viewer, despite PRO-282 already
+    being merged into this backend branch (see this function's own Ф0.3
+    history / 01-Фаза0-Фундамент.md's note on the gap). `viewer_role=None`
+    (the default) preserves every other caller's existing behavior — only
+    `psychologist_service.get_assigned_student_report` (Ф4.1) passes a role."""
     result = await db.execute(
         select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
     )
     analysis = result.scalar_one_or_none()
     if analysis is None:
         return None
-    return _shape_response(analysis), analysis
+    response = await _attach_psych_sections(
+        _shape_response(analysis), viewer_role=viewer_role, assessment_id=assessment_id, db=db
+    )
+    return response, analysis
 
 
 async def get_report(

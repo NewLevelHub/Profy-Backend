@@ -11,9 +11,12 @@ by the student-facing /result.
 import logging
 import uuid
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult
+from app.models.assessment import Assessment
+from app.models.profile import Profile
 from app.schemas.new_tests import (
     AspirationLevelSection,
     EmpathyConfidenceSection,
@@ -23,7 +26,8 @@ from app.schemas.new_tests import (
     TeamRoleSection,
     TemperamentSection,
 )
-from app.services import belbin_service
+from app.services import astur_service, belbin_service
+from app.services.astur_scoring import is_fatigue_signal, score_run
 
 logger = logging.getLogger(__name__)
 
@@ -94,11 +98,60 @@ def _build_temperament_section(analysis_result: AnalysisResult) -> TemperamentSe
         return None
 
 
-def _build_intelligence_section(analysis_result: AnalysisResult) -> IntelligenceSection | None:
-    """АСТУР has no data source yet — its own timed-subtest table lands in
-    Ф3.3 (04-Фаза3-АСТУР.md). Isolated builder for the same reason as
-    _build_team_role_section above."""
-    return None
+async def _build_intelligence_section(
+    assessment_id: uuid.UUID, db: AsyncSession
+) -> IntelligenceSection | None:
+    """АСТУР (Ф3.7). Same shape of exception as `_build_team_role_section`
+    above: source is `astur_runs` (Ф3.3), a separate append-only table, not
+    an `AnalysisResult` JSONB column — scoring (`astur_scoring.score_run`,
+    Ф3.5) is a pure function computed here at report-build time, not
+    persisted onto the run row (same "compute on read" choice Belbin's
+    `interpret_role_totals` already made). `None` if АСТУР was never
+    assigned/completed for this assessment.
+
+    `submitted_at`/`profile_name` feed the 2 lability items whose correct
+    answer depends on real-world context (день недели / respondent's own
+    name, see astur_scoring.py's own docstring) — `run.created_at` is used
+    as `submitted_at` (the row's own creation time; АСТУР has no separate
+    "finished at" timestamp, and a sitting normally completes in minutes,
+    so this is a reasonable proxy, not an exact value)."""
+    try:
+        run = await astur_service.get_latest_run(assessment_id, db)
+        if run is None:
+            return None
+
+        profile = (
+            await db.execute(
+                select(Profile.name)
+                .join(Assessment, Assessment.profile_id == Profile.id)
+                .where(Assessment.id == assessment_id)
+            )
+        ).scalar_one_or_none()
+
+        result = score_run(
+            run.answers, run.lability_answers,
+            submitted_at=run.created_at, profile_name=profile or "",
+        )
+
+        fatigue_signal = None
+        if result.lability_first_half_accuracy is not None and result.lability_second_half_accuracy is not None:
+            fatigue_signal = is_fatigue_signal(
+                result.lability_first_half_accuracy, result.lability_second_half_accuracy
+            )
+
+        return IntelligenceSection(
+            raw_score=result.raw_score if result.subtest_scores else None,
+            subtest_scores=result.subtest_scores or None,
+            spn_group=result.spn_group,
+            learning_profile=result.recommended_profile.get("recommended"),
+            learning_profile_shares=result.recommended_profile.get("shares"),
+            lability_first_half_accuracy=result.lability_first_half_accuracy,
+            lability_second_half_accuracy=result.lability_second_half_accuracy,
+            lability_fatigue_signal=fatigue_signal,
+        )
+    except Exception:
+        logger.exception("Failed to build intelligence section for assessment %s", assessment_id)
+        return None
 
 
 def _build_aspiration_level_section(analysis_result: AnalysisResult) -> AspirationLevelSection | None:
@@ -141,7 +194,7 @@ async def build_new_tests_sections(
         professional_types=_build_professional_types_section(analysis_result),
         team_role=await _build_team_role_section(assessment_id, db),
         temperament=_build_temperament_section(analysis_result),
-        intelligence=_build_intelligence_section(analysis_result),
+        intelligence=await _build_intelligence_section(assessment_id, db),
         aspiration_level=_build_aspiration_level_section(analysis_result),
         empathy_confidence=_build_empathy_confidence_section(analysis_result),
     )
