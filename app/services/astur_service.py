@@ -38,6 +38,10 @@ _PUBLIC_ITEM_FIELDS: dict[str, tuple[str, ...]] = {
     "generalization": ("pair",),
     "logical_schemas": ("concepts",),  # shuffled below — see build_content()
     "numeric_series": ("sequence",),
+    # No content fields — stimulus is a static frontend image asset
+    # addressed by item position, not by anything sent here. Never the
+    # item's `answer` letter.
+    "geometric_figures": (),
 }
 
 

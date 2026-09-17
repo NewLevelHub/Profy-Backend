@@ -23,9 +23,11 @@ class AsturRun(Base):
     (тот же принцип, что у `PsychoEmotionalRun.checkin`/`metrics`: всегда
     словарь, пустой до заполнения, а не NULL). Ключи субтестов — латиницей
     (`scripts/astur_bank.py`'s `SUBTESTS[i]["key"]`: awareness/analogies/
-    classification/generalization/logical_schemas/numeric_series — 6 сейчас,
-    geometric_figures добавится вместе с Ф3.1), форму каждого субтеста
-    владеет контент-банк, не эта модель.
+    classification/generalization/logical_schemas/numeric_series/
+    geometric_figures — 7 сейчас, форму каждого субтеста владеет
+    контент-банк, не эта модель. `geometric_figures` (Ф3.1) хранится и
+    сдаётся как любой другой субтест, но ещё не входит в `raw_score` —
+    см. docstring `scripts/astur_bank.py`.
 
     Лабильность (субтест 3) хранится СОВСЕМ отдельно от `answers` — у неё
     другая механика (per-item таймер вместо per-subtest, см. Ф3.4) и не

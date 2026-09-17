@@ -97,6 +97,11 @@ def _score_numeric_series(item: dict, submitted: object) -> int:
     return 1 if got == item["answer"] else 0
 
 
+# geometric_figures (Ф3.1) is deliberately absent here — see
+# scripts/astur_bank.py's docstring: folding a new subtest into raw_score
+# without recalibrating astur_thresholds.json's SPN-group cut-offs would
+# silently shift every existing threshold. It's collected (astur_service
+# stores/returns it like any other subtest) but not yet scored.
 _SCORERS: dict[str, tuple] = {
     "awareness": (_score_mc, AWARENESS_ITEMS),
     "analogies": (_score_mc, ANALOGIES_ITEMS),
