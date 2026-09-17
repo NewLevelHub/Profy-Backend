@@ -1285,7 +1285,11 @@ async def get_report_with_analysis(
     if analysis is None:
         return None
     response = await _attach_psych_sections(
-        _shape_response(analysis, await riasec_service.answer_evidence(assessment_id, db)),
+        _shape_response(
+            analysis,
+            await riasec_service.answer_evidence(assessment_id, db, locale=analysis.locale),
+            locale=analysis.locale,
+        ),
         viewer_role=viewer_role,
         assessment_id=assessment_id,
         db=db,

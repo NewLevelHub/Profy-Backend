@@ -6,6 +6,7 @@ from typing import Literal
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n import pick_locale
 from app.models.direction import Direction
 from app.models.profile import AgeGroup
 from app.models.question import HollandType, Question, QuestionInstrument
@@ -161,7 +162,9 @@ async def matched_careers(
     return scored[:limit]
 
 
-async def answer_evidence(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, dict]:
+async def answer_evidence(
+    assessment_id: uuid.UUID, db: AsyncSession, *, locale: str | None = None
+) -> dict[str, dict]:
     """Per-type breakdown of the student's own RIASEC answers — what the
     interest_map level is actually made of (PRO-336).
 
@@ -190,10 +193,11 @@ async def answer_evidence(assessment_id: uuid.UUID, db: AsyncSession) -> dict[st
         entry = evidence.setdefault(letter, {"distribution": [0, 0, 0, 0, 0]})
         if 1 <= value <= 5:
             entry["distribution"][5 - value] += 1
+        statement_text = pick_locale(text, locale=locale) if isinstance(text, dict) else str(text)
         if value >= 4:
-            liked.setdefault(letter, []).append((-value, -order, text))
+            liked.setdefault(letter, []).append((-value, -order, statement_text))
         elif value <= _AVERSION_MAX_VALUE:
-            disliked.setdefault(letter, []).append((value, -order, text))
+            disliked.setdefault(letter, []).append((value, -order, statement_text))
     for letter, entry in evidence.items():
         entry["liked"] = [t for *_, t in sorted(liked.get(letter, []))]
         entry["disliked"] = [t for *_, t in sorted(disliked.get(letter, []))]
