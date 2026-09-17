@@ -3,7 +3,7 @@
 ## Status: Milestone 1 implemented (branch `pro-281`); Milestone 2
 implemented across `pro-325`–`pro-328`; Milestone 3 implemented across
 `pro-329` (model), `pro-330` (CRUD + soft cutoff), `pro-331` (tests +
-frontend contract)
+frontend contract); Milestone 4 implemented on `pro-337`
 
 Milestone 1 (роль-инфраструктура) реализован и проверен: `UserRole` enum +
 `role` колонка на `User`, `is_admin` стал computed-property, миграция
@@ -199,6 +199,29 @@ CRUD со soft cutoff на `app/routers/psychologist.py`, контракт
   `test_milestone3_notes.py`.
 - Админский доступ на чтение заметок (для надзора) — не запрошен, вне
   скоупа Milestone 3, добавляется отдельным PR при необходимости.
+
+## Milestone 4 — Проверка и публикация отчёта психологом (done)
+
+Закрывает строку «полный assessment/report API для психолога». Дизайн —
+`docs/psychologist-review-gate-plan.md`.
+
+- `AnalysisResult.review_status` (`pending_review` → `published`) +
+  `reviewed_by/at`, `published_by/at`; таблица аудита правок
+  `analysis_result_review_edits`. Миграция `b7e2d4a91c3f` с бэкофиллом всех
+  существующих строк в `published`.
+- Гейт в `app/routers/result.py`: пока отчёт не опубликован, `GET`/`POST
+  /result` отдают `ResultPendingReviewResponse`; кэш `report:v3:*` пишется
+  только для опубликованных (`report_service._cache_if_published`).
+- Роуты психолога: `GET /reviews`, `GET/PATCH
+  /students/{id}/results/{assessment_id}`, `POST .../publish` — под
+  `_require_assigned_student` (404, не 403). Публикация необратима (409).
+- Админ: `GET /admin/psychologist-reviews/unassigned`, `POST
+  /admin/psychologist-reviews/{assessment_id}/publish`.
+- Письма (best-effort): `send_review_pending_email`,
+  `send_result_published_email`.
+- Контракт: `docs/frontend-psychologist-review-api-contract.md`.
+- Тесты: `tests/integration/test_result_review_gate.py`,
+  `test_psychologist_review.py`.
 
 ## Проверка
 

@@ -51,17 +51,23 @@ async def _seed_abilities(db: AsyncSession) -> tuple[int, int, int, int]:
 
     for data in QUESTIONS:
         age_tier = AgeGroup(data["age_tier"])
+        # `Question.text` is `{locale: str}` JSONB (docs/i18n-contract.md §8)
+        # — this bank predates that migration and still carries plain `ru`
+        # strings. No `kk` translation exists yet for this specialist-only
+        # content; `pick_locale()` falls back to `ru` when `kk` is missing,
+        # so `{"ru": ...}` alone is correct today.
+        text = {"ru": data["text"]}
         existing = existing_by_order.get(data["order"])
 
         if existing is not None:
-            changed = sync_fields(existing, {"text": data["text"], "age_tier": age_tier})
+            changed = sync_fields(existing, {"text": text, "age_tier": age_tier})
             updated += 1 if changed else 0
             skipped += 0 if changed else 1
             continue
 
         db.add(Question(
             instrument=QuestionInstrument.professional_types_abilities,
-            text=data["text"], order=data["order"], age_tier=age_tier,
+            text=text, order=data["order"], age_tier=age_tier,
         ))
         inserted += 1
 
@@ -93,17 +99,23 @@ async def _seed_pair_options(db: AsyncSession) -> tuple[dict[int, uuid.UUID], tu
 
     for data in options:
         age_tier = AgeGroup(data["age_tier"])
+        # `Question.text` is `{locale: str}` JSONB (docs/i18n-contract.md §8)
+        # — this bank predates that migration and still carries plain `ru`
+        # strings. No `kk` translation exists yet for this specialist-only
+        # content; `pick_locale()` falls back to `ru` when `kk` is missing,
+        # so `{"ru": ...}` alone is correct today.
+        text = {"ru": data["text"]}
         existing = existing_by_order.get(data["order"])
 
         if existing is not None:
-            changed = sync_fields(existing, {"text": data["text"], "age_tier": age_tier})
+            changed = sync_fields(existing, {"text": text, "age_tier": age_tier})
             updated += 1 if changed else 0
             skipped += 0 if changed else 1
             continue
 
         question = Question(
             instrument=QuestionInstrument.professional_types,
-            text=data["text"], order=data["order"], age_tier=age_tier,
+            text=text, order=data["order"], age_tier=age_tier,
         )
         db.add(question)
         existing_by_order[data["order"]] = question

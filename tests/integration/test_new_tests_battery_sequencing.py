@@ -56,13 +56,13 @@ async def _seed_full_battery(db: AsyncSession) -> Assessment:
     for i in range(20):
         db.add(Question(
             instrument=QuestionInstrument.riasec, riasec_type=_HOLLAND[i % len(_HOLLAND)],
-            text=f"riasec {i}", order=1 + i, age_tier=AgeGroup.senior,
+            text={"ru": f"riasec {i}"}, order=1 + i, age_tier=AgeGroup.senior,
         ))
     for i in range(10):
         db.add(Question(
             instrument=QuestionInstrument.big_five, bigfive_domain=_BIG_FIVE_DOMAINS[i % 5],
             keyed=Keyed.plus if i % 2 else Keyed.minus, facet=1,
-            text=f"bigfive {i}", order=100 + i, age_tier=AgeGroup.senior,
+            text={"ru": f"bigfive {i}"}, order=100 + i, age_tier=AgeGroup.senior,
         ))
     for data in PROFESSIONAL_TYPES_ABILITIES_QUESTIONS:
         db.add(Question(

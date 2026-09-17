@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_student_user
+from app.i18n import pick_locale
 from app.models.assessment import Assessment
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
@@ -56,7 +57,7 @@ async def get_motivation_triplets(
                     id=s.id,
                     triplet_index=s.triplet_index,
                     order=s.order,
-                    text=s.text_junior if (age_group == AgeGroup.junior and s.text_junior) else s.text,
+                    text=pick_locale(s.text_junior) if (age_group == AgeGroup.junior and s.text_junior) else pick_locale(s.text),
                 )
                 for s in statements
             ],

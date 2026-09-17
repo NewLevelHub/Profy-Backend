@@ -11,7 +11,7 @@ router = APIRouter(tags=["directions"])
 @router.get("", response_model=list[DirectionBase])
 async def list_directions(db: AsyncSession = Depends(get_db)) -> list[DirectionBase]:
     directions = await direction_service.get_all_directions(db)
-    return [DirectionBase.model_validate(d) for d in directions]
+    return [direction_service.to_base_schema(d) for d in directions]
 
 
 @router.get("/{slug}", response_model=DirectionDetail)

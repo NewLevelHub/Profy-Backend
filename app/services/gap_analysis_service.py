@@ -1,10 +1,17 @@
 from dataclasses import dataclass
 
+from app.i18n.catalog import tr
 from app.models.artifact import Artifact, ArtifactType
 from app.models.profile import Profile
 from app.models.program import Program
 from app.schemas.gap import GapAnalysisResponse, GapItem, GapStatus
 
+# The `_*_KEYS` / `_*_TERMS` sets below match Russian substrings inside backend
+# requirement / artifact data (Program.requirements keys, Artifact.value text) —
+# they are match-data, NOT user-facing copy, so they stay Russian and are
+# excluded from the KZ-602 "no Cyrillic in content services" guard (same rule as
+# the frontend KZ-206 "backend data / not UI copy" literals). The user-facing
+# `comment=` strings moved to app/i18n/catalog/gap_analysis.py (KZ-307).
 _GPA_KEYS = {"gpa", "grade_point", "средний балл", "gpa_min"}
 _LANGUAGE_KEYS = {"ielts", "toefl", "duolingo", "english", "language", "cefr", "язык", "английский"}
 _EXAM_KEYS = {"sat", "act", "ent", "ege", "exam", "test", "экзамен", "олимпиада"}
@@ -85,6 +92,7 @@ def analyze_gap(
     has_portfolio = _has_portfolio_artifacts(artifacts)
 
     items: list[GapItem] = []
+    _c = tr("gap_analysis")
 
     has_language_cert = _has_language_certificate(artifacts)
     has_exam = _has_exam_artifact(artifacts)
@@ -97,7 +105,7 @@ def analyze_gap(
             items.append(GapItem(
                 requirement=req_key,
                 status=GapStatus.unknown,
-                comment="Нет данных о среднем балле",
+                comment=_c["gpa_no_data"],
             ))
 
         elif category == "language":
@@ -105,19 +113,19 @@ def analyze_gap(
                 items.append(GapItem(
                     requirement=req_key,
                     status=GapStatus.met,
-                    comment="Языковой сертификат обнаружен в достижениях",
+                    comment=_c["lang_cert_found"],
                 ))
             elif has_language:
                 items.append(GapItem(
                     requirement=req_key,
                     status=GapStatus.in_progress,
-                    comment="Обнаружены языковые курсы или активности в профиле",
+                    comment=_c["lang_activity_found"],
                 ))
             else:
                 items.append(GapItem(
                     requirement=req_key,
                     status=GapStatus.unknown,
-                    comment="Нет данных об уровне языка",
+                    comment=_c["lang_no_data"],
                 ))
 
         elif category == "exam":
@@ -125,19 +133,19 @@ def analyze_gap(
                 items.append(GapItem(
                     requirement=req_key,
                     status=GapStatus.met,
-                    comment="Результат экзамена обнаружен в профиле",
+                    comment=_c["exam_result_found"],
                 ))
             elif profile.grade < 10:
                 items.append(GapItem(
                     requirement=req_key,
                     status=GapStatus.in_progress,
-                    comment=f"{profile.grade} класс — есть время подготовиться к экзаменам",
+                    comment=_c["exam_grade_time"].format(grade=profile.grade),
                 ))
             else:
                 items.append(GapItem(
                     requirement=req_key,
                     status=GapStatus.unknown,
-                    comment="Нет данных о результатах экзаменов",
+                    comment=_c["exam_no_data"],
                 ))
 
         elif category == "portfolio":
@@ -145,26 +153,26 @@ def analyze_gap(
                 items.append(GapItem(
                     requirement=req_key,
                     status=GapStatus.met,
-                    comment="Есть достижения или профессиональный опыт — портфолио готово",
+                    comment=_c["portfolio_ready"],
                 ))
             elif has_portfolio_starters:
                 items.append(GapItem(
                     requirement=req_key,
                     status=GapStatus.in_progress,
-                    comment="Есть хобби, клубы или спорт — можно оформить в портфолио",
+                    comment=_c["portfolio_starter"],
                 ))
             else:
                 items.append(GapItem(
                     requirement=req_key,
                     status=GapStatus.not_met,
-                    comment="Нет портфолио, достижений или профессионального опыта",
+                    comment=_c["portfolio_none"],
                 ))
 
         else:
             items.append(GapItem(
                 requirement=req_key,
                 status=GapStatus.unknown,
-                comment="Недостаточно данных для оценки",
+                comment=_c["not_enough_data"],
             ))
 
     met = [i for i in items if i.status == GapStatus.met]

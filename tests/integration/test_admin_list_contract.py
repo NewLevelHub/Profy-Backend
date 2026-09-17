@@ -394,11 +394,11 @@ async def test_has_overrides_filter_splits_edited_from_untouched(
     before a deploy, since a resync composes overrides back over the bank."""
     marker = _marker()
     edited = Direction(
-        name=f"{marker} edited", slug=f"{marker}-edited", holland_code="RIS",
-        overrides={"name": f"{marker} edited"},
+        name={"ru": f"{marker} edited"}, slug=f"{marker}-edited", holland_code="RIS",
+        overrides={"name": {"ru": f"{marker} edited"}},
     )
     untouched = Direction(
-        name=f"{marker} plain", slug=f"{marker}-plain", holland_code="RIS"
+        name={"ru": f"{marker} plain"}, slug=f"{marker}-plain", holland_code="RIS"
     )
     db_session.add_all([edited, untouched])
     await db_session.flush()
@@ -421,14 +421,14 @@ async def test_direction_catalog_filled_filter_matches_the_row_flag(
     different places; if they ever disagree the list contradicts itself."""
     marker = _marker()
     full = Direction(
-        name=f"{marker} full", slug=f"{marker}-full", holland_code="RIS",
-        description="описание", professions=["p"], skills_needed=["s"],
-        subjects_to_develop=["s"], first_steps=["f"],
+        name={"ru": f"{marker} full"}, slug=f"{marker}-full", holland_code="RIS",
+        description={"ru": "описание"}, professions={"ru": ["p"]}, skills_needed={"ru": ["s"]},
+        subjects_to_develop={"ru": ["s"]}, first_steps={"ru": ["f"]},
     )
     partial = Direction(
-        name=f"{marker} partial", slug=f"{marker}-partial", holland_code="RIS",
-        description="описание", professions=[], skills_needed=["s"],
-        subjects_to_develop=["s"], first_steps=["f"],
+        name={"ru": f"{marker} partial"}, slug=f"{marker}-partial", holland_code="RIS",
+        description={"ru": "описание"}, professions={"ru": []}, skills_needed={"ru": ["s"]},
+        subjects_to_develop={"ru": ["s"]}, first_steps={"ru": ["f"]},
     )
     db_session.add_all([full, partial])
     await db_session.flush()
@@ -454,12 +454,12 @@ async def test_question_pair_search_matches_the_text_a_student_sees(
     marker = _marker()
     question_a = Question(
         instrument=QuestionInstrument.big_five,
-        text=f"{marker} чинить самокат",
-        order=0,
+        text={"ru": f"{marker} чинить самокат"},
+        order=900_101,
         age_tier=AgeGroup.junior,
     )
     question_b = Question(
-        instrument=QuestionInstrument.big_five, text="играть в салки", order=0,
+        instrument=QuestionInstrument.big_five, text={"ru": "играть в салки"}, order=900_102,
         age_tier=AgeGroup.junior,
     )
     db_session.add_all([question_a, question_b])
@@ -472,7 +472,7 @@ async def test_question_pair_search_matches_the_text_a_student_sees(
     overridden_pair = QuestionPair(
         instrument=QuestionInstrument.big_five, age_tier=AgeGroup.junior,
         pair_index=900_002, question_a_id=question_b.id, question_b_id=question_b.id,
-        option_a_text=f"{marker} рисовать комикс",
+        option_a_text={"ru": f"{marker} рисовать комикс"},
     )
     db_session.add_all([fallback_pair, overridden_pair])
     await db_session.flush()
@@ -494,8 +494,8 @@ async def test_question_pair_search_does_not_match_a_shadowed_fallback(
     marker = _marker()
     question = Question(
         instrument=QuestionInstrument.big_five,
-        text=f"{marker} скрытый текст",
-        order=0,
+        text={"ru": f"{marker} скрытый текст"},
+        order=900_103,
         age_tier=AgeGroup.junior,
     )
     db_session.add(question)
@@ -504,7 +504,7 @@ async def test_question_pair_search_does_not_match_a_shadowed_fallback(
     pair = QuestionPair(
         instrument=QuestionInstrument.big_five, age_tier=AgeGroup.junior,
         pair_index=900_003, question_a_id=question.id, question_b_id=question.id,
-        option_a_text="видимый текст", option_b_text="видимый текст",
+        option_a_text={"ru": "видимый текст"}, option_b_text={"ru": "видимый текст"},
     )
     db_session.add(pair)
     await db_session.flush()
@@ -531,7 +531,7 @@ async def test_motivation_statements_can_be_fetched_one_triplet_at_a_time(
                 triplet_index=triplet_index,
                 order=order,
                 category=category,
-                text=f"Утверждение {order}",
+                text={"ru": f"Утверждение {order}"},
             )
         )
     await db_session.flush()

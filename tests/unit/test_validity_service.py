@@ -65,7 +65,7 @@ async def _setup(
     for i, holland in enumerate(list(HollandType)):
         q = Question(
             instrument=QuestionInstrument.riasec, riasec_type=holland,
-            text=f"r{i}", order=1 + i, age_tier=AgeGroup.senior,
+            text={"ru": f"r{i}"}, order=1 + i, age_tier=AgeGroup.senior,
         )
         base.append(q)
         db.add(q)
@@ -74,7 +74,7 @@ async def _setup(
             instrument=QuestionInstrument.big_five,
             bigfive_domain=list(BigFiveDomain)[i % 5],
             keyed=Keyed.plus if i % 2 else Keyed.minus, facet=1,
-            text=f"b{i}", order=100 + i, age_tier=AgeGroup.senior,
+            text={"ru": f"b{i}"}, order=100 + i, age_tier=AgeGroup.senior,
         )
         base.append(q)
         db.add(q)
@@ -85,7 +85,7 @@ async def _setup(
         q = Question(
             instrument=QuestionInstrument.validity, validity_role=ValidityRole.sd_key,
             validity_meta={"key": f"mc_sds_{n:02d}", "keyed": keyed},
-            text=f"mc {n}", order=300 + n, age_tier=AgeGroup.middle,
+            text={"ru": f"mc {n}"}, order=300 + n, age_tier=AgeGroup.middle,
         )
         mc_sds.append(q)
         db.add(q)
@@ -95,7 +95,7 @@ async def _setup(
             instrument=QuestionInstrument.validity,
             validity_role=ValidityRole.infrequency,
             validity_meta={"key": f"infreq_{i:02d}", "expected_answer": expected},
-            text=f"trap {i}", order=330 + i, age_tier=AgeGroup.middle,
+            text={"ru": f"trap {i}"}, order=330 + i, age_tier=AgeGroup.middle,
         )
         traps.append(q)
         db.add(q)

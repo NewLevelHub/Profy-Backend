@@ -86,6 +86,8 @@ class AdminAssessmentSummary(BaseModel):
     created_at: datetime
     completed_at: datetime | None = None
     has_result: bool = False
+    # "pending_review" | "published", None when there is no result yet.
+    review_status: str | None = None
     has_roadmap: bool = False
 
 

@@ -11,7 +11,7 @@ student-facing schema in app/schemas/result.py does later.
 import uuid
 from datetime import datetime, timezone
 
-from app.models.analysis_result import AnalysisResult
+from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.schemas.admin_result import AdminAnalysisResultResponse
 
 
@@ -39,6 +39,8 @@ def _analysis(*, profile: dict, code: list[str], meta: dict, careers: list[dict]
         strength_cards=[],
         thinking_style_notes=[],
         report_version=1,
+        # In-memory object, no INSERT — column defaults never fire.
+        review_status=ReviewStatus.published,
     )
 
 

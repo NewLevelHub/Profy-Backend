@@ -44,6 +44,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
     RESEND_API_KEY: str = ""
     EMAIL_FROM: str = ""
+    # Public SPA origin for deep links in transactional emails (no trailing slash).
+    FRONTEND_URL: str = "http://localhost:5173"
     GOOGLE_CLIENT_ID: str = ""
 
     # Which backend build_storage_backend() returns:

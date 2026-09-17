@@ -3,6 +3,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n import pick_locale
 from app.models.profile import AgeGroup
 from app.models.question import Question, QuestionInstrument
 from app.schemas.question import QuestionResponse
@@ -26,15 +27,17 @@ def _bigfive_scale(question: Question) -> bool:
     return question.instrument == QuestionInstrument.big_five
 
 
-def _to_response(question: Question, order: int) -> QuestionResponse:
+def to_response_schema(
+    question: Question, order: int | None = None, locale: str | None = None
+) -> QuestionResponse:
     if question.instrument == QuestionInstrument.validity:
         return QuestionResponse(
             id=question.id,
             instrument=_VALIDITY_WIRE_INSTRUMENT,
             riasec_type=None,
             bigfive_domain=None,
-            text=question.text,
-            order=order,
+            text=pick_locale(question.text, locale),
+            order=order if order is not None else question.order,
             bigfive_scale=_bigfive_scale(question),
         )
     return QuestionResponse(
@@ -42,14 +45,23 @@ def _to_response(question: Question, order: int) -> QuestionResponse:
         instrument=question.instrument,
         riasec_type=question.riasec_type,
         bigfive_domain=question.bigfive_domain,
-        text=question.text,
-        order=order,
+        text=pick_locale(question.text, locale),
+        order=order if order is not None else question.order,
         bigfive_scale=_bigfive_scale(question),
     )
 
 
+# Backwards-compatible alias — the validity-interleave splicing (PRO-298)
+# below always calls with an explicit renumbered `order`.
+_to_response = to_response_schema
+
+
 async def get_all_questions(
-    db: AsyncSession, age_group: AgeGroup, *, assessment_id: uuid.UUID
+    db: AsyncSession,
+    age_group: AgeGroup,
+    *,
+    assessment_id: uuid.UUID,
+    locale: str | None = None,
 ) -> list[QuestionResponse]:
     """The Likert battery for one assessment. Protocol-validity items
     (PRO-298) are mixed into the RIASEC block by a rule that is
@@ -72,7 +84,7 @@ async def get_all_questions(
     validity = [q for q in questions if q.instrument == QuestionInstrument.validity]
     base = [q for q in questions if q.instrument != QuestionInstrument.validity]
     if not validity:
-        return [_to_response(q, i + 1) for i, q in enumerate(base)]
+        return [to_response_schema(q, i + 1, locale) for i, q in enumerate(base)]
 
     # Splice validity items into the contiguous RIASEC sub-run only, so each
     # one sits among RIASEC-instrument-tagged items and its wire `instrument`
@@ -97,4 +109,4 @@ async def get_all_questions(
         )
         sequence = base[:first] + woven + base[last + 1 :]
 
-    return [_to_response(q, i + 1) for i, q in enumerate(sequence)]
+    return [to_response_schema(q, i + 1, locale) for i, q in enumerate(sequence)]

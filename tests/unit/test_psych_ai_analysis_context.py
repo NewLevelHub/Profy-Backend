@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from app.schemas.new_tests import NewTestsSections, TeamRoleSection, TemperamentSection
 from app.schemas.result_v2 import RiasecResultResponse, StudentCareer, StudentInterestMapItem, StudentPersonalityNote
-from app.services.bigfive_content import PERSONALITY_LABELS
+from app.services.bigfive_content import personality_labels
 from app.services.psych_ai_analysis_context import build_context, has_any_data
 
 _NOW = datetime.now(timezone.utc)
@@ -15,7 +15,7 @@ _RIASEC_CODES = ["R", "I", "A", "S", "E", "C"]
 def _personality_notes() -> list[StudentPersonalityNote]:
     return [
         StudentPersonalityNote(trait=trait, label=label, description="Короткое описание")
-        for trait, label in PERSONALITY_LABELS.items()
+        for trait, label in personality_labels().items()
     ]
 
 

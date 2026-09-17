@@ -1,21 +1,29 @@
-"""Psychologist access to assigned students, their reports, and notes
-(PRO-327 / PRO-330, assignments PRO-325/326).
+"""Psychologist access to assigned students, their reports, notes and report
+review (PRO-327 / PRO-330 / PRO-337, assignments PRO-325/326).
 
 Student list/detail/report are assignment-gated (PsychologistStudentAssignment).
 Notes use soft cutoff: create requires an active assignment; list/update/delete
 of notes the psychologist already owns do not — missing ownership/assignment
 → not-found (404), never 403.
+Report review (docs/psychologist-review-gate-plan.md §3) requires an active
+assignment for every call.
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
+from datetime import datetime, timezone
+from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import Select, case, delete, select, tuple_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
+from app.i18n import DEFAULT_LOCALE
+from app.models.analysis_result import AnalysisResult, ReviewStatus
+from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
 from app.models.assessment import Assessment
 from app.models.extended_block_assignment import ExtendedBlock, ExtendedBlockAssignment
 from app.models.profile import Profile
@@ -26,6 +34,7 @@ from app.schemas.admin import AdminUserDetailResponse
 from app.schemas.psych_ai_analysis import PsychAiAnalysisOutput
 from app.schemas.psychologist import (
     PsychologistAssessmentSummary,
+    PsychologistAvailableStudentItem,
     PsychologistNoteCreate,
     PsychologistNoteItem,
     PsychologistNoteUpdate,
@@ -33,9 +42,17 @@ from app.schemas.psychologist import (
     PsychologistStudentDetailResponse,
     PsychologistStudentListItem,
 )
+from app.schemas.psychologist_result import (
+    PsychologistResultDetailResponse,
+    PsychologistResultPatch,
+    PsychologistReviewQueueItem,
+)
 from app.schemas.result_v2 import ResultResponseV2
 from app.services import (
     admin_service,
+    assessment_shared,
+    bigfive_content,
+    email_service,
     extended_block_service,
     new_tests_report_service,
     psych_ai_analysis_service,
@@ -44,6 +61,52 @@ from app.services import (
 from app.services.psych_ai_analysis_context import build_context, has_any_data
 
 logger = logging.getLogger(__name__)
+
+
+# Notifications sit on request paths (report generation, publishing). Sending
+# is best-effort, so the request waits for the whole step at most this long —
+# per-recipient timeouts would still add up on a slow provider and could push
+# POST /result/generate past nginx's own timeout.
+_NOTIFY_BUDGET_SECONDS = 5
+
+
+# Sends that outlive the budget keep running after the request moves on; the
+# loop only holds weak references to tasks, so keep strong ones until done.
+_background_sends: set[asyncio.Task] = set()
+
+
+def _forget_send(task: asyncio.Task) -> None:
+    _background_sends.discard(task)
+    if not task.cancelled() and task.exception() is not None:
+        logger.error("notification send failed", exc_info=task.exception())
+
+
+async def _send_within_budget(sends: list[Any]) -> None:
+    if not sends:
+        return
+    tasks = [asyncio.ensure_future(send) for send in sends]
+    for task in tasks:
+        _background_sends.add(task)
+        task.add_done_callback(_forget_send)
+    # asyncio.wait, not wait_for(gather(...)): on timeout the request stops
+    # waiting but nothing is cancelled. The email pool has two workers, so a
+    # send queued behind a slow provider would otherwise be cancelled before
+    # it ever started and that recipient silently never notified.
+    _done, pending = await asyncio.wait(tasks, timeout=_NOTIFY_BUDGET_SECONDS)
+    if pending:
+        logger.warning(
+            "notification budget of %ss exceeded — %d send(s) continue in the background",
+            _NOTIFY_BUDGET_SECONDS,
+            len(pending),
+        )
+
+
+class ResultAlreadyPublishedError(Exception):
+    """Edit or publish of a result that is already published → 409."""
+
+
+class ResultPatchInvalidError(Exception):
+    """Well-formed patch that doesn't fit the stored result → 422."""
 
 
 async def _require_assigned_student(
@@ -127,6 +190,83 @@ async def list_assigned_students(
     ]
 
 
+async def list_available_students(
+    db: AsyncSession, psychologist_id: uuid.UUID
+) -> list[PsychologistAvailableStudentItem]:
+    """Students the psychologist can claim — role=student and not yet
+    assigned to this psychologist (PRO-337: selection without admin)."""
+    already_mine = (
+        select(PsychologistStudentAssignment.student_id)
+        .where(PsychologistStudentAssignment.psychologist_id == psychologist_id)
+    )
+    pending = (
+        select(AnalysisResult.id)
+        .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
+        .join(Profile, Profile.id == Assessment.profile_id)
+        .where(
+            Profile.user_id == User.id,
+            AnalysisResult.review_status == ReviewStatus.pending_review,
+        )
+        .exists()
+    )
+    query = (
+        select(User.id, User.email, Profile.name, Profile.age_group, pending.label("has_pending"))
+        .outerjoin(Profile, Profile.user_id == User.id)
+        .where(User.role == UserRole.student, ~User.id.in_(already_mine))
+        .order_by(User.created_at.desc())
+    )
+    rows = (await db.execute(query)).all()
+    return [
+        PsychologistAvailableStudentItem(
+            id=row.id,
+            email=row.email,
+            profile_name=row.name,
+            age_group=row.age_group.value if row.age_group is not None else None,
+            has_pending_review=bool(row.has_pending),
+        )
+        for row in rows
+    ]
+
+
+async def claim_student(
+    db: AsyncSession, *, psychologist_id: uuid.UUID, student_id: uuid.UUID
+) -> PsychologistStudentListItem:
+    """Psychologist self-assigns a student. Admin is not in this flow."""
+    student = await db.get(User, student_id)
+    if student is None or student.role != UserRole.student:
+        raise ValueError("Student not found")
+
+    existing = await db.execute(
+        select(PsychologistStudentAssignment).where(
+            PsychologistStudentAssignment.psychologist_id == psychologist_id,
+            PsychologistStudentAssignment.student_id == student_id,
+        )
+    )
+    assignment = existing.scalar_one_or_none()
+    if assignment is None:
+        assignment = PsychologistStudentAssignment(
+            psychologist_id=psychologist_id,
+            student_id=student_id,
+        )
+        db.add(assignment)
+        await db.commit()
+        await db.refresh(assignment)
+    else:
+        # Idempotent claim — already mine.
+        pass
+
+    profile = (
+        await db.execute(select(Profile).where(Profile.user_id == student_id))
+    ).scalar_one_or_none()
+    return PsychologistStudentListItem(
+        id=student.id,
+        email=student.email,
+        profile_name=profile.name if profile is not None else None,
+        age_group=profile.age_group.value if profile is not None and profile.age_group is not None else None,
+        assigned_at=assignment.created_at,
+    )
+
+
 def _to_psychologist_detail(
     detail: AdminUserDetailResponse,
 ) -> PsychologistStudentDetailResponse:
@@ -148,6 +288,7 @@ def _to_psychologist_detail(
                 created_at=a.created_at,
                 completed_at=a.completed_at,
                 has_result=a.has_result,
+                review_status=a.review_status,
                 has_roadmap=a.has_roadmap,
             )
             for a in detail.assessments
@@ -361,6 +502,149 @@ async def _get_or_generate_psych_ai_analysis(
         return None
 
 
+# --- Report review (PRO-337) -------------------------------------------------
+
+
+# Hard cap on both review queues. Neither is paginated in the UI, and a
+# backlog that large means the queue is not being worked at all — cutting it
+# off keeps one runaway response from carrying every pending report.
+REVIEW_QUEUE_LIMIT = 200
+
+
+def _is_original_row() -> Any:
+    """KZ-405 keeps one report row per locale; they share one review status,
+    and the queue, the review page and publishing all work on a single one of
+    them — "the row under review". That is the `ru` row when there is one
+    (report_service._find_primary_analysis translates from it, and the
+    psychologist cabinet is Russian), else the earliest.
+
+    Not "the earliest" alone: `created_at` is `now()`, i.e. the *transaction*
+    start, so locale rows written in one transaction tie, and an id
+    tie-break would then pick a translation at random."""
+    other = aliased(AnalysisResult)
+
+    def _rank(row: Any) -> Any:
+        return case((row.locale == DEFAULT_LOCALE, 0), else_=1)
+
+    return ~(
+        select(other.id)
+        .where(
+            other.assessment_id == AnalysisResult.assessment_id,
+            tuple_(_rank(other), other.created_at, other.id)
+            < tuple_(_rank(AnalysisResult), AnalysisResult.created_at, AnalysisResult.id),
+        )
+        .exists()
+    )
+
+
+def review_queue_select(limit: int = REVIEW_QUEUE_LIMIT) -> Select:
+    """Results waiting for review, oldest first — shared by the psychologist
+    queue and the admin "no psychologist assigned" queue, which differ only
+    in how they filter on `PsychologistStudentAssignment` (joined live, never
+    snapshotted, so a later assignment pulls existing results in)."""
+    student = aliased(User)
+    return (
+        select(
+            AnalysisResult.assessment_id,
+            AnalysisResult.created_at.label("generated_at"),
+            AnalysisResult.reviewed_at,
+            Assessment.goal,
+            student.id.label("student_id"),
+            student.email.label("student_email"),
+            Profile.name.label("student_name"),
+            Profile.age_group,
+        )
+        .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
+        .join(Profile, Profile.id == Assessment.profile_id)
+        .join(student, student.id == Profile.user_id)
+        .where(AnalysisResult.review_status == ReviewStatus.pending_review, _is_original_row())
+        .order_by(AnalysisResult.created_at.asc())
+        .limit(limit)
+    )
+
+
+def to_review_queue_items(rows: Any) -> list[PsychologistReviewQueueItem]:
+    return [
+        PsychologistReviewQueueItem(
+            assessment_id=row.assessment_id,
+            student_id=row.student_id,
+            student_name=row.student_name,
+            student_email=row.student_email,
+            age_group=row.age_group.value if row.age_group is not None else None,
+            goal=row.goal.value,
+            generated_at=row.generated_at,
+            reviewed_at=row.reviewed_at,
+        )
+        for row in rows
+    ]
+
+
+async def list_pending_reviews(
+    db: AsyncSession, psychologist_id: uuid.UUID
+) -> list[PsychologistReviewQueueItem]:
+    query = review_queue_select().join(
+        PsychologistStudentAssignment,
+        PsychologistStudentAssignment.student_id == Profile.user_id,
+    ).where(PsychologistStudentAssignment.psychologist_id == psychologist_id)
+    return to_review_queue_items((await db.execute(query)).all())
+
+
+async def _require_result_for_student(
+    db: AsyncSession,
+    *,
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+    for_update: bool = False,
+) -> AnalysisResult:
+    query = (
+        select(AnalysisResult)
+        .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
+        .join(Profile, Profile.id == Assessment.profile_id)
+        .where(
+            AnalysisResult.assessment_id == assessment_id,
+            Profile.user_id == student_id,
+            _is_original_row(),
+        )
+    )
+    if for_update:
+        # Serializes concurrent PATCH/publish on one result; populate_existing
+        # so a row already in the session is re-read under the lock.
+        query = query.with_for_update(of=AnalysisResult).execution_options(
+            populate_existing=True
+        )
+    analysis = (await db.execute(query)).scalar_one_or_none()
+    if analysis is None:
+        raise ValueError("Result not found")
+    return analysis
+
+
+def _to_detail(analysis: AnalysisResult) -> PsychologistResultDetailResponse:
+    """`personality_notes` is the one field the psychologist must not see
+    straight from the row: the stored text is adult-phrased and the student
+    reads a computed, age-appropriate phrase instead. Show (and let them
+    edit) exactly what the student reads."""
+    detail = PsychologistResultDetailResponse.model_validate(analysis)
+    return detail.model_copy(
+        update={"personality_notes": report_service.student_personality_notes(analysis)}
+    )
+
+
+async def get_result_for_review(
+    db: AsyncSession,
+    *,
+    psychologist_id: uuid.UUID,
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+) -> PsychologistResultDetailResponse:
+    await _require_assigned_student(
+        db, psychologist_id=psychologist_id, student_id=student_id
+    )
+    analysis = await _require_result_for_student(
+        db, student_id=student_id, assessment_id=assessment_id
+    )
+    return _to_detail(analysis)
+
+
 async def regenerate_psych_ai_analysis(
     db: AsyncSession,
     *,
@@ -408,3 +692,267 @@ async def assign_extended_block(
     return await extended_block_service.assign_block(
         assessment_id, block, psychologist_id=psychologist_id, db=db
     )
+
+
+async def update_result_content(
+    db: AsyncSession,
+    *,
+    psychologist_id: uuid.UUID,
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+    patch: PsychologistResultPatch,
+) -> PsychologistResultDetailResponse:
+    await _require_assigned_student(
+        db, psychologist_id=psychologist_id, student_id=student_id
+    )
+    # Serialize with report generation: a locale row generated in between
+    # would be a translation of the pre-edit text (edit) or miss the
+    # published status (publish).
+    await report_service.lock_report_generation(assessment_id, db)
+    analysis = await _require_result_for_student(
+        db, student_id=student_id, assessment_id=assessment_id, for_update=True
+    )
+    if analysis.review_status != ReviewStatus.pending_review:
+        raise ResultAlreadyPublishedError("Result is already published")
+
+    values = patch.model_dump(exclude_unset=True, mode="json")
+
+    # "Твой характер" is stored apart from the rest: the student reads a
+    # computed phrase, so a correction is kept as an override of that phrase,
+    # trait by trait — untouched traits keep following the scores.
+    notes_patch = values.pop("personality_notes", None)
+    if notes_patch is not None:
+        unknown_traits = set(notes_patch) - set(bigfive_content.personality_labels())
+        if unknown_traits:
+            raise ResultPatchInvalidError(
+                f"personality_notes: неизвестные черты {sorted(unknown_traits)}"
+            )
+        if any(not text.strip() for text in notes_patch.values()):
+            raise ResultPatchInvalidError("personality_notes: текст не может быть пустым")
+
+    # strengths/weaknesses are category codes the student report is rebuilt
+    # from (careers "why", interest map) — free text there would break it.
+    allowed_codes = set(analysis.profile)
+    for field in ("strengths", "weaknesses"):
+        unknown = set(values.get(field, [])) - allowed_codes
+        if unknown:
+            raise ResultPatchInvalidError(
+                f"{field}: unknown codes {sorted(unknown)}, allowed {sorted(allowed_codes)}"
+            )
+
+    changed: dict[str, dict[str, Any]] = {}
+    for field, new_value in values.items():
+        old_value = getattr(analysis, field)
+        if old_value != new_value:
+            changed[field] = {"old": old_value, "new": new_value}
+            setattr(analysis, field, new_value)
+
+    if notes_patch is not None:
+        default_notes = report_service.student_personality_notes(analysis, include_overrides=False)
+        # Only genuine corrections are stored — a trait left at its computed
+        # wording must keep following the scores, not freeze today's phrasing.
+        # Merge, don't replace: omitting a trait means "leave as is" here too,
+        # so a later one-trait correction can't silently drop earlier ones.
+        # Typing the computed phrase back in removes the override for that trait.
+        new_override = dict(analysis.personality_notes_override)
+        for trait, text in notes_patch.items():
+            if text.strip() == default_notes.get(trait, "").strip():
+                new_override.pop(trait, None)
+            else:
+                new_override[trait] = text
+        if new_override != dict(analysis.personality_notes_override):
+            changed["personality_notes"] = {
+                "old": report_service.student_personality_notes(analysis),
+                "new": {**default_notes, **new_override},
+            }
+            analysis.personality_notes_override = new_override
+
+    analysis.reviewed_by = psychologist_id
+    analysis.reviewed_at = datetime.now(timezone.utc)
+    if changed:
+        db.add(
+            AnalysisResultReviewEdit(
+                analysis_result_id=analysis.id,
+                editor_id=psychologist_id,
+                changed_fields=changed,
+            )
+        )
+        # Other-locale rows are translations of the text as it was *before*
+        # this edit — publishing them would ship unreviewed content. Drop them;
+        # the next request in that locale re-translates from the edited row
+        # and inherits its review status (report_service.build_report).
+        stale_rows = select(AnalysisResult.id).where(
+            AnalysisResult.assessment_id == analysis.assessment_id,
+            AnalysisResult.id != analysis.id,
+        )
+        # Keep the audit trail. A kk-first report edited before a ru
+        # translation existed has its history on the kk row; once ru becomes
+        # the row under review, deleting kk would cascade that history away,
+        # and _carry_over_review_edits relies on it to keep rewritten
+        # descriptions in every future translation.
+        await db.execute(
+            update(AnalysisResultReviewEdit)
+            .where(AnalysisResultReviewEdit.analysis_result_id.in_(stale_rows))
+            .values(analysis_result_id=analysis.id)
+        )
+        await db.execute(
+            delete(AnalysisResult).where(
+                AnalysisResult.assessment_id == analysis.assessment_id,
+                AnalysisResult.id != analysis.id,
+            )
+        )
+    await db.commit()
+    await db.refresh(analysis)
+    detail = _to_detail(analysis)
+    await _drop_report_cache(assessment_id)
+    return detail
+
+
+async def publish_result(
+    db: AsyncSession,
+    *,
+    psychologist_id: uuid.UUID,
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+) -> PsychologistResultDetailResponse:
+    await _require_assigned_student(
+        db, psychologist_id=psychologist_id, student_id=student_id
+    )
+    # Serialize with report generation: a locale row generated in between
+    # would be a translation of the pre-edit text (edit) or miss the
+    # published status (publish).
+    await report_service.lock_report_generation(assessment_id, db)
+    analysis = await _require_result_for_student(
+        db, student_id=student_id, assessment_id=assessment_id, for_update=True
+    )
+    return await _publish(db, analysis, publisher_id=psychologist_id)
+
+
+async def publish_result_as_admin(
+    db: AsyncSession, *, admin_id: uuid.UUID, assessment_id: uuid.UUID
+) -> PsychologistResultDetailResponse:
+    """Admin fallback for results whose student has no psychologist
+    (docs/psychologist-review-gate-plan.md §4) — not assignment-gated."""
+    # Serialize with report generation: a locale row generated in between
+    # would be a translation of the pre-edit text (edit) or miss the
+    # published status (publish).
+    await report_service.lock_report_generation(assessment_id, db)
+    query = (
+        select(AnalysisResult)
+        .where(AnalysisResult.assessment_id == assessment_id, _is_original_row())
+        .with_for_update(of=AnalysisResult)
+        .execution_options(populate_existing=True)
+    )
+    analysis = (await db.execute(query)).scalar_one_or_none()
+    if analysis is None:
+        raise ValueError("Result not found")
+    return await _publish(db, analysis, publisher_id=admin_id)
+
+
+async def _publish(
+    db: AsyncSession, analysis: AnalysisResult, *, publisher_id: uuid.UUID
+) -> PsychologistResultDetailResponse:
+    if analysis.review_status == ReviewStatus.published:
+        raise ResultAlreadyPublishedError("Result is already published")
+    now = datetime.now(timezone.utc)
+    analysis.review_status = ReviewStatus.published
+    analysis.published_by = publisher_id
+    analysis.published_at = now
+    # Published without edits — publishing still counts as a review.
+    if analysis.reviewed_by is None:
+        analysis.reviewed_by = publisher_id
+        analysis.reviewed_at = now
+    # Remaining translations (only ever made from the current, reviewed text —
+    # an edit drops older ones) share the report's status: publish them too,
+    # or a student on that locale would keep seeing "under review".
+    await db.execute(
+        update(AnalysisResult)
+        .where(
+            AnalysisResult.assessment_id == analysis.assessment_id,
+            AnalysisResult.id != analysis.id,
+        )
+        .values(
+            review_status=ReviewStatus.published,
+            reviewed_by=analysis.reviewed_by,
+            reviewed_at=analysis.reviewed_at,
+            published_by=publisher_id,
+            published_at=now,
+        )
+    )
+    await db.commit()
+    await db.refresh(analysis)
+    detail = _to_detail(analysis)
+    await _drop_report_cache(analysis.assessment_id)
+    await _notify_result_published(db, analysis.assessment_id)
+    return detail
+
+
+async def _drop_report_cache(assessment_id: uuid.UUID) -> None:
+    """Defensive — unpublished reports are never cached in the first place
+    (report_service._cache_if_published); the next student GET after
+    publishing warms the cache again."""
+    await assessment_shared.safe_redis_delete(
+        assessment_shared.get_redis(), *assessment_shared.report_cache_keys(assessment_id)
+    )
+
+
+async def notify_review_pending(
+    db: AsyncSession,
+    *,
+    student_id: uuid.UUID,
+    student_name: str | None,
+    assessment_id: uuid.UUID,
+) -> None:
+    """Email every psychologist assigned to the student that a new report
+    waits for review. Best-effort: never raises into report generation."""
+    try:
+        result = await db.execute(
+            select(User.email)
+            .join(
+                PsychologistStudentAssignment,
+                PsychologistStudentAssignment.psychologist_id == User.id,
+            )
+            .where(PsychologistStudentAssignment.student_id == student_id)
+        )
+        emails = list(result.scalars().all())
+    except Exception:
+        logger.exception("review-pending recipients lookup failed for student=%s", student_id)
+        return
+    review_url = email_service.frontend_url(
+        f"/psychologist/students/{student_id}/results/{assessment_id}/review"
+    )
+    await _send_within_budget(
+        [
+            email_service.send_review_pending_email(
+                email, student_name or "без имени", review_url=review_url
+            )
+            for email in emails
+        ]
+    )
+
+
+async def _notify_result_published(db: AsyncSession, assessment_id: uuid.UUID) -> None:
+    """Email the student that their report is published. Best-effort."""
+    try:
+        row = (
+            await db.execute(
+                select(User.email, User.locale, Profile.name)
+                .join(Profile, Profile.user_id == User.id)
+                .join(Assessment, Assessment.profile_id == Profile.id)
+                .where(Assessment.id == assessment_id)
+            )
+        ).one_or_none()
+        if row is not None:
+            results_url = email_service.frontend_url("/results")
+            await _send_within_budget(
+                [
+                    email_service.send_result_published_email(
+                        row.email,
+                        row.name,
+                        locale=row.locale,
+                        results_url=results_url,
+                    )
+                ]
+            )
+    except Exception:
+        logger.exception("result-published notification failed for assessment=%s", assessment_id)

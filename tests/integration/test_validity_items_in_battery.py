@@ -61,19 +61,19 @@ async def _seed_battery(
     for i in range(n_riasec):
         db.add(Question(
             instrument=QuestionInstrument.riasec, riasec_type=_HOLLAND[i % len(_HOLLAND)],
-            text=f"riasec {i}", order=1 + i, age_tier=AgeGroup.senior,
+            text={"ru": f"riasec {i}"}, order=1 + i, age_tier=AgeGroup.senior,
         ))
     for i in range(n_bigfive):
         db.add(Question(
             instrument=QuestionInstrument.big_five,
             bigfive_domain=_BIG_FIVE_DOMAINS[i % 5],
             keyed=Keyed.plus if i % 2 else Keyed.minus,
-            facet=1, text=f"bigfive {i}", order=100 + i, age_tier=AgeGroup.senior,
+            facet=1, text={"ru": f"bigfive {i}"}, order=100 + i, age_tier=AgeGroup.senior,
         ))
     for i, mi in enumerate(_MI * 4):
         db.add(Question(
             instrument=QuestionInstrument.mi, mi_category=mi,
-            text=f"mi {i}", order=500 + i, age_tier=AgeGroup.senior,
+            text={"ru": f"mi {i}"}, order=500 + i, age_tier=AgeGroup.senior,
         ))
 
     validity_ids: list[uuid.UUID] = []
@@ -82,7 +82,7 @@ async def _seed_battery(
             instrument=QuestionInstrument.validity,
             validity_role=ValidityRole.sd_key if i < 20 else ValidityRole.infrequency,
             validity_meta={"key": f"v{i:02d}", "keyed": "agree"},
-            text=f"validity {i}", order=1000 + i, age_tier=AgeGroup.middle,
+            text={"ru": f"validity {i}"}, order=1000 + i, age_tier=AgeGroup.middle,
         )
         db.add(q)
         await db.flush()

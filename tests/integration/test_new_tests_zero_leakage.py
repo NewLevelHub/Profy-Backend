@@ -55,7 +55,7 @@ async def _seed_new_instrument_questions(db: AsyncSession, *, n_per_instrument: 
     for offset, instrument in enumerate(_NEW_INSTRUMENTS):
         for i in range(n_per_instrument):
             q = Question(
-                instrument=instrument, text=f"{instrument.value} {i}",
+                instrument=instrument, text={"ru": f"{instrument.value} {i}"},
                 order=2000 + offset * 100 + i, age_tier=AgeGroup.senior,
             )
             db.add(q)
@@ -70,7 +70,7 @@ async def test_new_instruments_do_not_change_riasec_or_bigfive_scoring(db_sessio
     riasec_questions = [
         Question(
             instrument=QuestionInstrument.riasec, riasec_type=_HOLLAND[i % len(_HOLLAND)],
-            text=f"riasec {i}", order=1 + i, age_tier=AgeGroup.senior,
+            text={"ru": f"riasec {i}"}, order=1 + i, age_tier=AgeGroup.senior,
         )
         for i in range(12)
     ]
@@ -78,7 +78,7 @@ async def test_new_instruments_do_not_change_riasec_or_bigfive_scoring(db_sessio
         Question(
             instrument=QuestionInstrument.big_five, bigfive_domain=_BIG_FIVE_DOMAINS[i % 5],
             keyed=Keyed.plus if i % 2 else Keyed.minus, facet=1,
-            text=f"bigfive {i}", order=100 + i, age_tier=AgeGroup.senior,
+            text={"ru": f"bigfive {i}"}, order=100 + i, age_tier=AgeGroup.senior,
         )
         for i in range(10)
     ]
@@ -113,7 +113,7 @@ async def test_new_instruments_do_not_change_mi_scoring_for_junior(db_session: A
     mi_questions = [
         Question(
             instrument=QuestionInstrument.mi, mi_category=_MI[i % len(_MI)],
-            text=f"mi {i}", order=1 + i, age_tier=AgeGroup.junior,
+            text={"ru": f"mi {i}"}, order=1 + i, age_tier=AgeGroup.junior,
         )
         for i in range(16)
     ]

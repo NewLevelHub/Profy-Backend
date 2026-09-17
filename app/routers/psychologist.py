@@ -1,4 +1,5 @@
-"""Psychologist router — assigned students, their reports, and notes.
+"""Psychologist router — assigned students, their reports, notes, and report
+review (PRO-327 / PRO-330 / PRO-337).
 
 Mounted at `/api/v1/psychologist`. Psychologists never share admin routes;
 access is gated with `require_role(UserRole.psychologist)`, and student
@@ -18,6 +19,7 @@ from app.models.user import User, UserRole
 from app.schemas.extended_block import AssignExtendedBlockRequest, ExtendedBlockAssignmentResponse
 from app.schemas.psych_ai_analysis import PsychAiAnalysisOutput
 from app.schemas.psychologist import (
+    PsychologistAvailableStudentItem,
     PsychologistNoteCreate,
     PsychologistNoteItem,
     PsychologistNoteUpdate,
@@ -25,8 +27,17 @@ from app.schemas.psychologist import (
     PsychologistStudentDetailResponse,
     PsychologistStudentListItem,
 )
+from app.schemas.psychologist_result import (
+    PsychologistResultDetailResponse,
+    PsychologistResultPatch,
+    PsychologistReviewQueueItem,
+)
 from app.schemas.result_v2 import ResultResponseV2, ResultV2Schema
 from app.services import extended_block_service, psychologist_service
+from app.services.psychologist_service import (
+    ResultAlreadyPublishedError,
+    ResultPatchInvalidError,
+)
 
 router = APIRouter(tags=["psychologist"])
 
@@ -35,6 +46,78 @@ _require_psychologist = require_role(UserRole.psychologist)
 # route in this router stays psychologist-only, unchanged.
 _require_psychologist_or_admin = require_role(UserRole.psychologist, UserRole.admin)
 
+_RESULT_PATH = "/students/{student_id}/results/{assessment_id}"
+
+
+@router.get("/reviews", response_model=list[PsychologistReviewQueueItem])
+async def list_reviews(
+    current_user: User = Depends(_require_psychologist),
+    db: AsyncSession = Depends(get_db),
+) -> list[PsychologistReviewQueueItem]:
+    return await psychologist_service.list_pending_reviews(db, current_user.id)
+
+
+@router.get(_RESULT_PATH, response_model=PsychologistResultDetailResponse)
+async def get_result_for_review(
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+    current_user: User = Depends(_require_psychologist),
+    db: AsyncSession = Depends(get_db),
+) -> PsychologistResultDetailResponse:
+    try:
+        return await psychologist_service.get_result_for_review(
+            db,
+            psychologist_id=current_user.id,
+            student_id=student_id,
+            assessment_id=assessment_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.patch(_RESULT_PATH, response_model=PsychologistResultDetailResponse)
+async def update_result_content(
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+    body: PsychologistResultPatch,
+    current_user: User = Depends(_require_psychologist),
+    db: AsyncSession = Depends(get_db),
+) -> PsychologistResultDetailResponse:
+    try:
+        return await psychologist_service.update_result_content(
+            db,
+            psychologist_id=current_user.id,
+            student_id=student_id,
+            assessment_id=assessment_id,
+            patch=body,
+        )
+    except ResultAlreadyPublishedError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except ResultPatchInvalidError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.post(f"{_RESULT_PATH}/publish", response_model=PsychologistResultDetailResponse)
+async def publish_result(
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+    current_user: User = Depends(_require_psychologist),
+    db: AsyncSession = Depends(get_db),
+) -> PsychologistResultDetailResponse:
+    try:
+        return await psychologist_service.publish_result(
+            db,
+            psychologist_id=current_user.id,
+            student_id=student_id,
+            assessment_id=assessment_id,
+        )
+    except ResultAlreadyPublishedError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
 
 @router.get("/students", response_model=list[PsychologistStudentListItem])
 async def list_students(
@@ -42,6 +125,33 @@ async def list_students(
     db: AsyncSession = Depends(get_db),
 ) -> list[PsychologistStudentListItem]:
     return await psychologist_service.list_assigned_students(db, current_user.id)
+
+
+@router.get("/students/available", response_model=list[PsychologistAvailableStudentItem])
+async def list_available_students(
+    current_user: User = Depends(_require_psychologist),
+    db: AsyncSession = Depends(get_db),
+) -> list[PsychologistAvailableStudentItem]:
+    """Pool of students this psychologist can claim — no admin in the flow."""
+    return await psychologist_service.list_available_students(db, current_user.id)
+
+
+@router.post(
+    "/students/{student_id}/claim",
+    response_model=PsychologistStudentListItem,
+    status_code=status.HTTP_201_CREATED,
+)
+async def claim_student(
+    student_id: uuid.UUID,
+    current_user: User = Depends(_require_psychologist),
+    db: AsyncSession = Depends(get_db),
+) -> PsychologistStudentListItem:
+    try:
+        return await psychologist_service.claim_student(
+            db, psychologist_id=current_user.id, student_id=student_id
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.get("/students/{student_id}", response_model=PsychologistStudentDetailResponse)

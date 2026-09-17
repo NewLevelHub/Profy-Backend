@@ -57,13 +57,21 @@ async def main() -> None:
             role = ValidityRole(data["validity_role"])
             age_tier = AgeGroup(data["age_tier"])
             meta = _validity_meta(data)
+            # `Question.text` is `{locale: str}` JSONB (docs/i18n-contract.md
+            # §8) — these banks predate that migration and still carry plain
+            # `ru` strings (their own `locale` key is a leftover from the old
+            # row-per-locale design, not a model field). No `kk` translation
+            # exists yet for these protocol-validity items; `pick_locale()`
+            # falls back to `ru` when `kk` is missing, so `{"ru": ...}` alone
+            # is correct today.
+            text = {"ru": data["text"]}
             existing = existing_by_order.get(data["order"])
 
             if existing is not None:
                 changed = sync_fields(existing, {
                     "validity_role": role,
                     "validity_meta": meta,
-                    "text": data["text"],
+                    "text": text,
                     "age_tier": age_tier,
                 })
                 updated += 1 if changed else 0
@@ -75,7 +83,7 @@ async def main() -> None:
                     instrument=QuestionInstrument.validity,
                     validity_role=role,
                     validity_meta=meta,
-                    text=data["text"],
+                    text=text,
                     order=data["order"],
                     age_tier=age_tier,
                 )

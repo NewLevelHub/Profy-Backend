@@ -2,12 +2,14 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 from app.models.motivation import MotivationCategory
+
+LOCALIZED_FIELDS = frozenset({"text_a", "text_b"})
 
 
 class MotivationIntensity(str, enum.Enum):
@@ -32,19 +34,23 @@ class MotivationPair(Base):
     cognitively lighter than holding 3 constructs at once."""
 
     __tablename__ = "motivation_pairs"
+    # Natural key, one row per pair now (see docs/i18n-contract.md §8).
+    __table_args__ = (
+        UniqueConstraint("pair_index", name="uq_motivation_pairs_pair_index"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    pair_index: Mapped[int] = mapped_column(Integer, nullable=False, unique=True, index=True)
+    pair_index: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     category_a: Mapped[MotivationCategory] = mapped_column(
         Enum(MotivationCategory, name="motivation_category_enum", create_type=False), nullable=False
     )
     category_b: Mapped[MotivationCategory] = mapped_column(
         Enum(MotivationCategory, name="motivation_category_enum", create_type=False), nullable=False
     )
-    text_a: Mapped[str] = mapped_column(String, nullable=False)
-    text_b: Mapped[str] = mapped_column(String, nullable=False)
+    text_a: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    text_b: Mapped[dict] = mapped_column(JSONB, nullable=False)
     # Field-name -> admin-edited value, composed on top of the bank content
     # by scripts/seed_motivation_pairs.py at resync time (see
     # docs/admin-questions-content-overrides-plan.md).

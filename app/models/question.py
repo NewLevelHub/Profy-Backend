@@ -1,12 +1,14 @@
 import enum
 import uuid
 
-from sqlalchemy import Enum, Integer, String
+from sqlalchemy import Enum, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 from app.models.profile import AgeGroup
+
+LOCALIZED_FIELDS = frozenset({"text", "short_text"})
 
 
 class HollandType(str, enum.Enum):
@@ -88,6 +90,11 @@ class Question(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
+    # `order` is the natural key per instrument — one row per question now
+    # (see docs/i18n-contract.md §8), enforced by `uq_questions_instrument_order`
+    # below (migration 4d28ab54e64c). A "don't-care" order=0 is still fine in tests
+    # as long as a single test never creates two same-instrument rows without
+    # an explicit distinct order.
     instrument: Mapped[QuestionInstrument] = mapped_column(
         Enum(QuestionInstrument, name="question_instrument_enum"),
         nullable=False,
@@ -117,10 +124,10 @@ class Question(Base):
         Enum(ValidityRole, name="validity_role_enum"), nullable=True
     )
     validity_meta: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    text: Mapped[str] = mapped_column(String, nullable=False)
+    text: Mapped[dict] = mapped_column(JSONB, nullable=False)
     # Short button-label form of `text`, used by the junior forced-choice-pair
     # UI instead of the full Likert statement. Null for middle/senior rows.
-    short_text: Mapped[str | None] = mapped_column(String, nullable=True)
+    short_text: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     # Single emoji rendered as the "icon" the junior format requires
     # (TZ_Profi.md §13 — junior's allowed formats all mandate icons).
     icon: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -139,3 +146,7 @@ class Question(Base):
     # by every scripts/seed_*.py at resync time so admin edits survive
     # redeploys (see docs/admin-questions-content-overrides-plan.md).
     overrides: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+
+    __table_args__ = (
+        UniqueConstraint("instrument", "order", name="uq_questions_instrument_order"),
+    )

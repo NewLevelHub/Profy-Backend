@@ -17,7 +17,7 @@ from app.schemas.roadmap import (
     GenerateDirectionRoadmapRequest,
     RoadmapResponse,
 )
-from app.services import roadmap_builder
+from app.services import report_service, roadmap_builder
 
 router = APIRouter(tags=["roadmap"])
 
@@ -43,6 +43,10 @@ async def _require_assessment_access(
     _, owner_user_id = row_data
     if owner_user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    # Every roadmap route builds on AnalysisResult.careers — the gate lives
+    # here, in the one helper all of them already call, so a new roadmap
+    # endpoint cannot forget it.
+    await report_service.require_published_report(assessment_id, db)
 
 
 @router.post("/generate", response_model=RoadmapResponse)

@@ -15,9 +15,10 @@ pattern as app/prompts/roadmap.py's "exactly 5 horizons".
 import json
 
 from app.models.profile import AgeGroup
+from app.prompts._locale import glossary_block, language_directive
 from app.schemas.report_narrative_context import ReportNarrativeContext
-from app.services.mi_content import MI_LABELS
-from app.services.riasec_content import RIASEC_LABELS
+from app.services.mi_content import mi_labels
+from app.services.riasec_content import riasec_labels
 
 
 def _card_schema() -> dict:
@@ -135,16 +136,18 @@ _AGE_STYLE = {
 }
 
 
-def _system_prompt(context: ReportNarrativeContext) -> str:
+def _system_prompt(context: ReportNarrativeContext, *, locale: str = "ru") -> str:
     age_group = AgeGroup(context.age_group)
     is_mi = context.interest_instrument == "mi"
-    labels = MI_LABELS if is_mi else RIASEC_LABELS
+    labels = mi_labels() if is_mi else riasec_labels()
     categories_line = ", ".join(f"{key} ({label})" for key, label in labels.items())
+    glossary = glossary_block(locale)
+    glossary_section = f"\n{glossary}\n" if glossary else ""
 
     return f"""\
 Ты — тёплый наставник для детей и подростков. Пишешь разделы отчёта по \
 результатам профориентационного теста строго в JSON по заданной схеме, без \
-текста вне JSON. Обращайся на «ты». Язык ответа — русский.
+текста вне JSON. Обращайся на «ты». {language_directive(locale)}
 
 ГЛАВНОЕ ПРАВИЛО ФАКТОВ: тебе нельзя сообщать ни одного факта, числа или \
 названия, которого нет в поданных данных (evidence). Каждая карточка (кроме \
@@ -272,7 +275,7 @@ disclaimer рядом, повторять её в summary нельзя.
 7. final_analysis — минимум 3 предложения, не повторяет summary дословно, \
 не содержит фразу про «карту возможных направлений», и явно связывает \
 минимум 2 разных раздела отчёта между собой.
-
+{glossary_section}
 Каталог фактов (evidence) — единственный источник, на который можно \
 ссылаться:
 {json.dumps([e.model_dump() for e in context.evidence], ensure_ascii=False, indent=2)}
@@ -280,10 +283,10 @@ disclaimer рядом, повторять её в summary нельзя.
 
 
 def build_messages(context: ReportNarrativeContext, *, language: str = "ru") -> list[dict[str, str]]:
-    system = _system_prompt(context)
+    system = _system_prompt(context, locale=language)
     user = (
         "Сгенерируй нарратив по инструкциям и схеме выше. "
-        f"Язык ответа: {language}."
+        f"{language_directive(language)}"
     )
     return [
         {"role": "system", "content": system},

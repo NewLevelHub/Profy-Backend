@@ -42,11 +42,17 @@ async def main() -> None:
 
         for data in QUESTIONS:
             age_tier = AgeGroup(data["age_tier"])
+            # `Question.text` is `{locale: str}` JSONB (docs/i18n-contract.md
+            # §8) — this bank predates that migration and still carries plain
+            # `ru` strings. No `kk` translation exists yet for this
+            # specialist-only content; `pick_locale()` falls back to `ru`
+            # when `kk` is missing, so `{"ru": ...}` alone is correct today.
+            text = {"ru": data["text"]}
             existing = existing_by_order.get(data["order"])
 
             if existing is not None:
                 changed = sync_fields(existing, {
-                    "text": data["text"],
+                    "text": text,
                     "age_tier": age_tier,
                 })
                 updated += 1 if changed else 0
@@ -55,7 +61,7 @@ async def main() -> None:
 
             db.add(Question(
                 instrument=QuestionInstrument.boyko_empathy,
-                text=data["text"],
+                text=text,
                 order=data["order"],
                 age_tier=age_tier,
             ))

@@ -39,6 +39,9 @@ from app.services.riasec_service import HOLLAND_ORDER
 
 _AGE_SAMPLE = {AgeGroup.junior: 8, AgeGroup.middle: 12, AgeGroup.senior: 16}
 _MAX_ANSWER = 5  # top of the Likert scale — see riasec_service.normalize
+# Far outside real seed data's order range (~300 real questions) — see
+# test_age_matrix_full_flow.py's identical convention.
+_SENTINEL_ORDER = 900_200
 
 # Sentinel order values far outside the real ~300 seeded questions in the
 # shared dev DB (same convention as test_age_matrix_full_flow.py) — these
@@ -62,7 +65,7 @@ async def _seed_riasec_dominant(
     for i, letter in enumerate(HOLLAND_ORDER):
         q = Question(
             instrument=QuestionInstrument.riasec, riasec_type=HollandType(letter),
-            text=f"test-fallback-riasec-{letter}", age_tier=AgeGroup.senior, order=_SENTINEL_BASE + i,
+            text={"ru": f"test-fallback-riasec-{letter}"}, age_tier=AgeGroup.senior, order=_SENTINEL_BASE + i,
         )
         db.add(q)
         await db.flush()
@@ -79,7 +82,7 @@ async def _seed_mi_dominant(
     for i, category in enumerate(MI_ORDER):
         q = Question(
             instrument=QuestionInstrument.mi, mi_category=MIType(category),
-            text=f"test-fallback-mi-{category}", age_tier=AgeGroup.junior, order=_SENTINEL_BASE + i,
+            text={"ru": f"test-fallback-mi-{category}"}, age_tier=AgeGroup.junior, order=_SENTINEL_BASE + i,
         )
         db.add(q)
         await db.flush()
@@ -167,12 +170,57 @@ def _force_complete_and_llm_disabled(monkeypatch: pytest.MonkeyPatch, *, senior:
     monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
 
 
+async def _seed_dominant_interest_signal(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch, assessment: Assessment, age_group: AgeGroup,
+) -> None:
+    """A tiny, controlled RIASEC/MI signal so the deterministic fallback has
+    real per-type differentiation to build strength-card evidence from.
+    Without this, every type scores 0% on this assessment's zero real
+    answers and riasec_service.strengths_weaknesses honestly returns no
+    strengths (a deliberate anti-padding guard for a genuinely flat
+    profile, see its own docstring) — correct in general, but not what
+    these tests are pinning (report_version=2 wiring + a populated v2
+    shape). question_counts is monkeypatched to match exactly what's
+    seeded here, not the ~150 real rows already in the dev DB."""
+    if age_group == AgeGroup.junior:
+        service = mi_service
+        category = MIType.logical
+        questions = [
+            Question(
+                instrument=QuestionInstrument.mi, mi_category=category,
+                text={"ru": f"test-mi-signal-{i}"}, age_tier=age_group, order=_SENTINEL_ORDER + i,
+            )
+            for i in range(3)
+        ]
+        counts = {c: (3 if c == category.value else 0) for c in mi_service.MI_ORDER}
+    else:
+        service = riasec_service
+        rtype = HollandType.R
+        questions = [
+            Question(
+                instrument=QuestionInstrument.riasec, riasec_type=rtype,
+                text={"ru": f"test-riasec-signal-{i}"}, age_tier=age_group, order=_SENTINEL_ORDER + i,
+            )
+            for i in range(3)
+        ]
+        counts = {t: (3 if t == rtype.value else 0) for t in riasec_service.HOLLAND_ORDER}
+
+    db_session.add_all(questions)
+    await db_session.flush()
+    db_session.add_all(
+        UserResponse(assessment_id=assessment.id, question_id=q.id, answer_value=5) for q in questions
+    )
+    await db_session.flush()
+    monkeypatch.setattr(service, "question_counts", AsyncMock(return_value=counts))
+
+
 async def test_disabled_llm_returns_full_v2_form_for_senior(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     assessment = await _make_assessment(db_session, AgeGroup.senior)
     await _answer_all_of_type_at_max(db_session, assessment, AgeGroup.senior)
     _force_complete_and_llm_disabled(monkeypatch, senior=True)
+    await _seed_dominant_interest_signal(db_session, monkeypatch, assessment, AgeGroup.senior)
 
     # A real, non-flat RIASEC battery — riasec_service.strengths_weaknesses()
     # deliberately returns [] for a flat/all-zero profile (see its
@@ -218,6 +266,7 @@ async def test_disabled_llm_returns_full_v2_form_for_junior(
     assessment = await _make_assessment(db_session, AgeGroup.junior)
     await _answer_all_of_type_at_max(db_session, assessment, AgeGroup.junior)
     _force_complete_and_llm_disabled(monkeypatch, senior=False)
+    await _seed_dominant_interest_signal(db_session, monkeypatch, assessment, AgeGroup.junior)
 
     # Real, non-flat MI battery — see the matching comment in the senior test.
     seeded = await _seed_mi_dominant(db_session, assessment, assessment.profile_id, dominant="verbal")

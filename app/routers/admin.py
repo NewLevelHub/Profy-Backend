@@ -51,14 +51,20 @@ from app.schemas.admin_content import (
     AdminQuestionPairUpdateRequest,
     AdminQuestionUpdateRequest,
 )
+from app.schemas.psychologist_result import (
+    PsychologistResultDetailResponse,
+    PsychologistReviewQueueItem,
+)
 from app.services import (
     admin_content_service,
     admin_export_service,
     admin_psychologist_service,
     admin_service,
     admin_university_service,
+    psychologist_service,
     university_service,
 )
+from app.services.psychologist_service import ResultAlreadyPublishedError
 
 router = APIRouter(tags=["admin"])
 
@@ -170,6 +176,37 @@ async def delete_psychologist_assignment(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get(
+    "/psychologist-reviews/unassigned",
+    response_model=list[PsychologistReviewQueueItem],
+)
+async def list_unassigned_psychologist_reviews(
+    limit: int = Query(default=100, ge=1, le=500),
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await admin_psychologist_service.list_unassigned_reviews(db, limit=limit)
+
+
+@router.post(
+    "/psychologist-reviews/{assessment_id}/publish",
+    response_model=PsychologistResultDetailResponse,
+)
+async def publish_psychologist_review(
+    assessment_id: uuid.UUID,
+    current_user: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await psychologist_service.publish_result_as_admin(
+            db, admin_id=current_user.id, assessment_id=assessment_id
+        )
+    except ResultAlreadyPublishedError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.get("/users/stats", response_model=AdminUserStatsResponse)
@@ -412,6 +449,7 @@ async def update_program(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
+# Admin content lists show one row per (logical unit, locale) since KZ-301, so
 @router.get("/questions", response_model=AdminQuestionListResponse)
 async def list_questions(
     page: int = Query(default=1, ge=1),

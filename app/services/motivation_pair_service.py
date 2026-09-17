@@ -16,6 +16,7 @@ from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n import pick_locale
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.motivation_pair import MotivationIntensity, MotivationPair, MotivationPairResponse, PairSide
 from app.schemas.motivation_pair import MotivationPairItem, PairIntensityAnswer, SubmitMotivationPairResponse
@@ -34,8 +35,17 @@ _SCORE_TABLE: dict[tuple[str, str], int] = {
 
 
 async def pairs(db: AsyncSession) -> list[MotivationPair]:
-    result = await db.execute(select(MotivationPair).order_by(MotivationPair.pair_index))
+    stmt = select(MotivationPair).order_by(MotivationPair.pair_index)
+    result = await db.execute(stmt)
     return list(result.scalars().all())
+
+
+def to_item_schema(pair: MotivationPair, locale: str | None = None) -> MotivationPairItem:
+    return MotivationPairItem(
+        pair_index=pair.pair_index,
+        text_a=pick_locale(pair.text_a, locale),
+        text_b=pick_locale(pair.text_b, locale),
+    )
 
 
 async def total_pairs(db: AsyncSession) -> int:

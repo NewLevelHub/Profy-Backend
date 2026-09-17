@@ -14,7 +14,7 @@ from app.services.validity_battery import (
 def _base(n: int) -> list[Question]:
     return [
         Question(
-            instrument=QuestionInstrument.big_five, text=f"bf{i}", order=100 + i
+            instrument=QuestionInstrument.big_five, text={"ru": f"bf{i}"}, order=100 + i
         )
         for i in range(n)
     ]
@@ -25,7 +25,7 @@ def _validity(n: int) -> list[Question]:
         Question(
             instrument=QuestionInstrument.validity,
             validity_role=ValidityRole.sd_key,
-            text=f"v{i}",
+            text={"ru": f"v{i}"},
             order=1000 + i,
         )
         for i in range(n)
