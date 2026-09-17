@@ -1,3 +1,4 @@
+import enum
 import uuid
 from datetime import datetime
 
@@ -7,6 +8,15 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
+
+
+class ReviewStatus(str, enum.Enum):
+    """Psychologist review gate (docs/psychologist-review-gate-plan.md).
+    A freshly generated report is `pending_review` — invisible to the
+    student — until a psychologist (or an admin) publishes it."""
+
+    pending_review = "pending_review"
+    published = "published"
 
 
 class AnalysisResult(Base):
@@ -47,7 +57,13 @@ class AnalysisResult(Base):
     motivation_top: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)  # ["interest", "creation"]
     motivation_highlights: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)  # RU phrases for "Что тебя драйвит"
     personality_profile: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # 5 traits, display-ready (N flipped to emotional_stability)
-    personality_notes: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # 1 tiered phrase per trait, for "Твой характер"
+    personality_notes: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # 1 tiered phrase per trait, adult wording — generation context/admin, NOT what the student reads
+    # Psychologist's corrections to the student-visible "Твой характер" text
+    # (trait -> text). Empty on every generated row: the student then gets the
+    # age-appropriate wording computed from the scores, exactly as before the
+    # review gate. Deliberately separate from `personality_notes` above, which
+    # is adult-phrased for every age and feeds narrative generation.
+    personality_notes_override: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict, server_default="{}")
     # v2 student-report narrative fields (docs/rs-progress-notes.md) — empty
     # on every row until the narrative-generation pipeline that populates
     # them lands. [{"title": ..., "description": ...}, ...] each.
@@ -61,6 +77,23 @@ class AnalysisResult(Base):
     # thinking_style_notes so a row is never "completed" with only one of
     # the two landed.
     report_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    # Review gate. Rows that existed before the gate were backfilled to
+    # `published` by the migration — they had already been shown.
+    review_status: Mapped[ReviewStatus] = mapped_column(
+        Enum(ReviewStatus, name="analysis_result_review_status_enum"),
+        nullable=False,
+        default=ReviewStatus.pending_review,
+        server_default=ReviewStatus.pending_review.value,
+    )
+    # Who last edited the content (or published without edits).
+    reviewed_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    published_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

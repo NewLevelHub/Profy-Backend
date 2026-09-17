@@ -8,7 +8,7 @@ from app.models.user import User
 from app.models.profile import AgeGroup, Profile
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.direction import Direction
-from app.models.analysis_result import AnalysisResult
+from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.goal_overlay import GoalOverlay
 from app.services import auth_service
 
@@ -176,6 +176,9 @@ async def test_alignment_match_partial_bridge(
             {"slug": "artist", "name": "Художник", "holland_code": "AIR", "why": "..."}
         ],
         profile={"I": 10.0, "R": 8.0, "C": 6.0},
+        # Goal context is gated on publication (PRO-337) — this test is about
+        # the goal/alignment rules, so the report starts out already published.
+        review_status=ReviewStatus.published,
     )
     db_session.add(analysis)
     await db_session.flush()

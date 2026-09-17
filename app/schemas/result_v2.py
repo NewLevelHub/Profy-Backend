@@ -207,3 +207,20 @@ class RiasecResultResponse(_ResultResponseBase):
 ResultResponseV2 = Union[MiResultResponse, RiasecResultResponse]
 ResultV2Schema = Annotated[ResultResponseV2, Field(discriminator="interest_instrument")]
 ResultV2Adapter: TypeAdapter[ResultResponseV2] = TypeAdapter(ResultV2Schema)
+
+
+class ResultPendingReviewResponse(BaseModel):
+    """What `GET /result/{id}` and `POST /result/generate` return while the
+    report still waits for a psychologist to publish it
+    (docs/psychologist-review-gate-plan.md §2). A 200 with its own `status`
+    field rather than a 403/404: the frontend already treats 403 on this
+    endpoint as a foreign/stale session and resets assessment state.
+
+    Never cached — the report cache only ever holds published reports."""
+
+    status: Literal["pending_review"] = "pending_review"
+    assessment_id: uuid.UUID
+    model_config = _model_config
+
+
+ResultOrPendingSchema = Union[ResultV2Schema, ResultPendingReviewResponse]

@@ -133,7 +133,11 @@ def build_interest_map(age_group: AgeGroup, profile_scores: dict[str, float]) ->
     ]
 
 
-def build_personality_notes(is_junior: bool, personality_profile: dict[str, float]) -> list[StudentPersonalityNote]:
+def build_personality_notes(
+    is_junior: bool,
+    personality_profile: dict[str, float],
+    overrides: dict[str, str] | None = None,
+) -> list[StudentPersonalityNote]:
     """"Твой характер" — the Big Five instrument is answered identically by
     all three age groups (only interests/motivation branch by age), so
     unlike interest_map this never varies by instrument, only by wording
@@ -147,6 +151,11 @@ def build_personality_notes(is_junior: bool, personality_profile: dict[str, floa
     trait's band relative to the student's own five-trait average
     (bigfive_content.relative_bands), not an absolute cutoff."""
     notes = bigfive_content.personality_notes_for_age(is_junior, personality_profile)
+    # A psychologist's correction replaces the computed phrase for that trait
+    # only (PRO-337); traits they left alone keep the age-appropriate default.
+    for trait, text in (overrides or {}).items():
+        if trait in notes and text.strip():
+            notes[trait] = text
     bands = bigfive_content.relative_bands(personality_profile)
     traits = list(bigfive_content.personality_labels().items())
     ranked = sorted(traits, key=lambda item: (-personality_profile.get(item[0], 0.0), traits.index(item)))

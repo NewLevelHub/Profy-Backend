@@ -1,5 +1,6 @@
 from app.database import Base
 from app.models.analysis_result import AnalysisResult  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.analysis_result_review_edit import AnalysisResultReviewEdit  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.email_verification import EmailVerificationToken  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.artifact import Artifact  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.assessment import Assessment  # noqa: F401 — keep model imported so Alembic discovers it

@@ -22,6 +22,16 @@ class PsychologistStudentListItem(BaseModel):
     assigned_at: datetime
 
 
+class PsychologistAvailableStudentItem(BaseModel):
+    """Student not yet claimed by this psychologist (PRO-337 selection flow)."""
+
+    id: uuid.UUID
+    email: str
+    profile_name: str | None = None
+    age_group: str | None = None
+    has_pending_review: bool = False
+
+
 class PsychologistAssessmentSummary(BaseModel):
     id: uuid.UUID
     goal: str
@@ -31,6 +41,8 @@ class PsychologistAssessmentSummary(BaseModel):
     created_at: datetime
     completed_at: datetime | None = None
     has_result: bool = False
+    # "pending_review" | "published", None when there is no result yet.
+    review_status: str | None = None
     has_roadmap: bool = False
 
 
