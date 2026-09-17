@@ -84,7 +84,7 @@ class GapAnalysisResult:
 def analyze_gap(
     profile: Profile,
     artifacts: list[Artifact],
-    assessment_scores: dict[str, float],
+    _assessment_scores: dict[str, float],
     program: Program,
 ) -> GapAnalysisResult:
     requirements: dict = program.requirements or {}
