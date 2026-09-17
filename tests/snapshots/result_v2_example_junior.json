@@ -1,108 +1,116 @@
 {
+  "report_version": 2,
   "assessment_id": "00000000-0000-0000-0000-000000000001",
-  "careers": [],
-  "created_at": "2026-01-01T00:00:00Z",
+  "summary": "Тебе нравится решать логические задачки.",
   "disclaimer": "Это не окончательный выбор, а карта возможных направлений — со временем картина может измениться, и это нормально.",
-  "exploration_activities": [
-    "Собери конструктор LEGO"
+  "strength_cards": [
+    {
+      "title": "Сильная сторона 0",
+      "description": "Короткое описание"
+    }
   ],
+  "interest_map_note": "Карта показывает, какие сферы проявляются ярче, а какие — тише. Это не оценка, а просто снимок текущего состояния.",
+  "thinking_style_notes": [
+    {
+      "title": "Стиль 0",
+      "description": "Короткое описание"
+    }
+  ],
+  "personality_notes": [
+    {
+      "trait": "openness",
+      "label": "Открытость новому",
+      "description": "Короткое описание",
+      "level": "medium"
+    },
+    {
+      "trait": "conscientiousness",
+      "label": "Организованность",
+      "description": "Короткое описание",
+      "level": "medium"
+    },
+    {
+      "trait": "extraversion",
+      "label": "Общительность",
+      "description": "Короткое описание",
+      "level": "medium"
+    },
+    {
+      "trait": "agreeableness",
+      "label": "Доброжелательность",
+      "description": "Короткое описание",
+      "level": "medium"
+    },
+    {
+      "trait": "emotional_stability",
+      "label": "Эмоциональная устойчивость",
+      "description": "Короткое описание",
+      "level": "medium"
+    }
+  ],
+  "personality_note": "Каждая черта характера проявляется по-своему — вместе они складываются в общую картину того, как тебе комфортнее действовать и общаться.",
+  "motivation_highlights": [
+    "Тебе важно разбираться в интересном"
+  ],
+  "is_flat_profile": false,
   "exploration_note": "Не обязательно пробовать всё сразу — начни с того, что откликается больше всего. Даже маленький шаг сегодня помогает лучше понять, что тебе действительно нравится.",
   "final_analysis": "Каждый раздел этого отчёта — отдельный кусочек общей картины: не разрозненные факты, а разные стороны одного и того же человека. Используй их вместе, а не по одному, когда будешь решать, что попробовать дальше.",
+  "validity": null,
+  "psychoemotional": null,
+  "created_at": "2026-01-01T00:00:00Z",
   "interest_instrument": "mi",
   "interest_map": [
     {
       "code": "verbal",
+      "sphere": "verbal",
       "level": "medium",
-      "sphere": "verbal"
+      "details": null
     },
     {
       "code": "logical",
+      "sphere": "logical",
       "level": "medium",
-      "sphere": "logical"
+      "details": null
     },
     {
       "code": "musical",
+      "sphere": "musical",
       "level": "medium",
-      "sphere": "musical"
+      "details": null
     },
     {
       "code": "visual",
+      "sphere": "visual",
       "level": "medium",
-      "sphere": "visual"
+      "details": null
     },
     {
       "code": "bodily",
+      "sphere": "bodily",
       "level": "medium",
-      "sphere": "bodily"
+      "details": null
     },
     {
       "code": "interpersonal",
+      "sphere": "interpersonal",
       "level": "medium",
-      "sphere": "interpersonal"
+      "details": null
     },
     {
       "code": "intrapersonal",
+      "sphere": "intrapersonal",
       "level": "medium",
-      "sphere": "intrapersonal"
+      "details": null
     },
     {
       "code": "naturalistic",
+      "sphere": "naturalistic",
       "level": "medium",
-      "sphere": "naturalistic"
+      "details": null
     }
   ],
-  "interest_map_note": "Карта показывает, какие сферы проявляются ярче, а какие — тише. Это не оценка, а просто снимок текущего состояния.",
-  "is_flat_profile": false,
-  "motivation_highlights": [
-    "Тебе важно разбираться в интересном"
-  ],
-  "personality_note": "Каждая черта характера проявляется по-своему — вместе они складываются в общую картину того, как тебе комфортнее действовать и общаться.",
-  "personality_notes": [
-    {
-      "description": "Короткое описание",
-      "label": "Открытость новому",
-      "level": "medium",
-      "trait": "openness"
-    },
-    {
-      "description": "Короткое описание",
-      "label": "Организованность",
-      "level": "medium",
-      "trait": "conscientiousness"
-    },
-    {
-      "description": "Короткое описание",
-      "label": "Общительность",
-      "level": "medium",
-      "trait": "extraversion"
-    },
-    {
-      "description": "Короткое описание",
-      "label": "Доброжелательность",
-      "level": "medium",
-      "trait": "agreeableness"
-    },
-    {
-      "description": "Короткое описание",
-      "label": "Эмоциональная устойчивость",
-      "level": "medium",
-      "trait": "emotional_stability"
-    }
-  ],
-  "psychoemotional": null,
-  "report_version": 2,
-  "strength_cards": [
-    {
-      "description": "Короткое описание",
-      "title": "Сильная сторона 0"
-    }
-  ],
-  "summary": "Тебе нравится решать логические задачки.",
-  "thinking_style_notes": [
-    {
-      "description": "Короткое описание",
-      "title": "Стиль 0"
-    }
-  ],
-  "validity": null
+  "careers": [],
+  "exploration_activities": [
+    "Собери конструктор LEGO"
+  ]
 }
