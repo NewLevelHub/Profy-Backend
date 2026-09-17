@@ -24,7 +24,7 @@ from app.services.admin_lock import AdminOverrideValidationError
 async def _triplet(db: AsyncSession, index: int) -> list[MotivationStatement]:
     statements = [
         MotivationStatement(
-            triplet_index=index, order=order, category=category, text=f"Утверждение {order}"
+            triplet_index=index, order=order, category=category, text={"ru": f"Утверждение {order}"}
         )
         for order, category in enumerate(
             (MotivationCategory.interest, MotivationCategory.money, MotivationCategory.freedom)
@@ -79,10 +79,10 @@ async def test_keeping_its_own_category_is_not_a_clash_with_itself(
     updated = await admin_content_service.update_motivation_statement(
         db_session,
         second.id,
-        AdminMotivationStatementUpdateRequest(category=second.category, text="Новый текст"),
+        AdminMotivationStatementUpdateRequest(category=second.category, text="Новый текст", locale="ru"),
     )
 
-    assert updated.text == "Новый текст"
+    assert updated.text == {"ru": "Новый текст"}
 
 
 async def test_the_same_category_in_a_different_triplet_is_fine(

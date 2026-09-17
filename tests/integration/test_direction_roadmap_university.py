@@ -51,7 +51,7 @@ async def test_university_goal_passes_the_access_gate(db_session: AsyncSession):
     the same gate as profession/explore/unsure."""
     assessment = await _make_assessment(db_session, AssessmentGoal.university)
 
-    direction = Direction(name="Test Direction", slug=SLUG, holland_code="RIA")
+    direction = Direction(name={"ru": "Test Direction"}, slug=SLUG, holland_code="RIA")
     db_session.add(direction)
 
     db_session.add(DirectionInquiry(
@@ -87,7 +87,7 @@ async def test_university_goal_skips_inquiry_check(db_session: AsyncSession):
     roadmap_builder._INQUIRY_REQUIRED = True
     try:
         assessment = await _make_assessment(db_session, AssessmentGoal.university)
-        direction = Direction(name="Test Direction", slug=SLUG, holland_code="RIA")
+        direction = Direction(name={"ru": "Test Direction"}, slug=SLUG, holland_code="RIA")
         db_session.add(direction)
         await db_session.flush()
 
@@ -104,7 +104,7 @@ async def test_university_requirements_for_real_seeded_rows(db_session: AsyncSes
     university = University(name="Test University", country="Казахстан", city="Алматы")
     db_session.add(university)
 
-    direction = Direction(name="Test Direction", slug=SLUG, holland_code="RIA")
+    direction = Direction(name={"ru": "Test Direction"}, slug=SLUG, holland_code="RIA")
     db_session.add(direction)
     await db_session.flush()
 
@@ -148,10 +148,12 @@ async def test_university_requirements_empty_for_slug_with_no_programs(db_sessio
 async def test_program_row_for_direction_validates_membership(db_session: AsyncSession):
     university = University(name="Test University", country="Казахстан", city="Алматы")
     db_session.add(university)
-    await db_session.flush()
 
+    # Randomized slug — a fixed literal risks colliding with another test's
+    # row against the shared, rollback-isolated-per-test but not otherwise
+    # reset dev DB (see SLUG's own module-level comment convention).
     other_direction = Direction(
-        name="Other direction", slug=f"other-direction-{uuid.uuid4()}", holland_code="RIS"
+        name={"ru": "Other Direction"}, slug=f"other-direction-{uuid.uuid4()}", holland_code="RIA"
     )
     db_session.add(other_direction)
     await db_session.flush()
@@ -223,7 +225,7 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
         ),
     )
 
-    direction = Direction(name="Architecture", slug=SLUG, holland_code="RIA")
+    direction = Direction(name={"ru": "Architecture"}, slug=SLUG, holland_code="RIA")
     db_session.add(direction)
     await db_session.flush()
 

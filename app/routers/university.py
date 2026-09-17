@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_student_user, get_current_user, get_current_user_optional
+from app.i18n import DEFAULT_LOCALE, get_locale
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
@@ -105,6 +106,7 @@ async def list_programs(
         country=country,
         limit=limit,
         user_id=current_user.id if current_user else None,
+        locale=get_locale(),
     )
 
 
@@ -117,6 +119,7 @@ async def get_program(
     return await get_program_detail(
         db,
         program_id,
+        locale=get_locale(),
         user_id=current_user.id if current_user else None,
     )
 
@@ -163,8 +166,13 @@ async def get_gap_analysis(
             detail="Assessment is not completed yet",
         )
 
+    # KZ-405: one AnalysisResult row per locale — gap analysis reads only
+    # locale-invariant score fields, so prefer the `ru` row deterministically.
     analysis_result = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        select(AnalysisResult)
+        .where(AnalysisResult.assessment_id == assessment_id)
+        .order_by((AnalysisResult.locale == DEFAULT_LOCALE).desc())
+        .limit(1)
     )
     analysis = analysis_result.scalar_one_or_none()
     if analysis is None:

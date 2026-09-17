@@ -22,6 +22,7 @@ with no clear goal; user feedback: "к чему готовится ребёно�
 Post-validation in the caller: `_valid_milestones` (shared by both shapes)
 + one corrective retry — same pattern as `direction_roadmap._valid_stages`.
 """
+from app.prompts._locale import glossary_block, language_directive
 from app.schemas.student_context import StudentContext
 
 HORIZONS = ["month_1", "months_3", "months_6", "year_1", "until_goal"]
@@ -140,7 +141,10 @@ _GOAL_FRAMING = {
 
 # Shared between the main prompt and the per-track follow-up — nothing here
 # depends on whether this call is deciding directions or building one plan.
-_SHARED_RULES = """\
+def _shared_rules(locale: str = "ru") -> str:
+    glossary = glossary_block(locale)
+    glossary_section = f"\n\n{glossary}" if glossary else ""
+    return f"""\
 СТРУКТУРА. Ровно 5 этапов (milestones) — по одному на каждый горизонт: \
 month_1, months_3, months_6, year_1, until_goal. В каждом этапе — от 4 до 5 \
 задач (tasks), не меньше и не больше: этап обязан реально заполнять свой срок \
@@ -217,10 +221,12 @@ motivation_top/motivation_highlights (что его драйвит). Испол�
 олимпиады. Формулируй как «найди в своём городе кружок…», не как выдуманный \
 конкретный адрес или название организации.
 
-Язык ответа — русский.\
-"""
+{language_directive(locale)}{glossary_section}"""
 
-_SYSTEM_PROMPT = f"""\
+
+def _system_prompt(locale: str = "ru") -> str:
+    rules = _shared_rules(locale)
+    return f"""\
 Ты — не тёплый собеседник, а проектировщик учебного плана. Твоя задача — по \
 данным профтеста построить роадмап, который ученик (а для 6-9 лет — его \
 родитель) откроет и СРАЗУ начнёт выполнять, ничего не додумывая сам. Если шаг \
@@ -252,11 +258,12 @@ _SYSTEM_PROMPT = f"""\
 уровня, олимпиада/конкурс, направление профессий, что это даёт для поступления) — без воды \
 и без выдуманных названий организаций.
 
-{_SHARED_RULES}"""
+{rules}"""
 
-# Follow-up call, made once per recommended_path when the first call named 2
-# — the direction is already fixed, this call only builds the plan for it.
-_TRACK_SYSTEM_PROMPT = f"""\
+
+def _track_system_prompt(locale: str = "ru") -> str:
+    rules = _shared_rules(locale)
+    return f"""\
 Ты — не тёплый собеседник, а проектировщик учебного плана. Ученику уже \
 подобрано ОДНО конкретное направление (передано ниже вместе с обоснованием, \
 почему оно ему подходит) — твоя задача построить по нему полноценный \
@@ -269,7 +276,12 @@ _TRACK_SYSTEM_PROMPT = f"""\
 В поле outcome для каждого этапа milestone опиши одной понятной фразой, что \
 у ученика будет на руках или в плане опыта к концу этого горизонта.
 
-{_SHARED_RULES}"""
+{rules}"""
+
+
+_SHARED_RULES = _shared_rules("ru")
+_SYSTEM_PROMPT = _system_prompt("ru")
+_TRACK_SYSTEM_PROMPT = _track_system_prompt("ru")
 
 # Appended when a generated plan breaks the structure — one corrective pass
 # beats an immediate fallback to the (much thinner) template.
@@ -310,7 +322,8 @@ DECISION_RETRY_HINT: dict[str, str] = {
 }
 
 
-def build_messages(context: StudentContext) -> list[dict[str, str]]:
+def build_messages(context: StudentContext, *, locale: str | None = None) -> list[dict[str, str]]:
+    target_locale = locale or getattr(context, "locale", "ru")
     framing = _GOAL_FRAMING.get(context.goal, _GOAL_FRAMING["explore"])
     allowed = ", ".join(CATEGORIES)
     user_content = (
@@ -320,16 +333,22 @@ def build_messages(context: StudentContext) -> list[dict[str, str]]:
         "Составь для этого ученика персональный роадмап по схеме."
     )
     return [
-        {"role": "system", "content": _SYSTEM_PROMPT},
+        {"role": "system", "content": _system_prompt(target_locale)},
         {"role": "user", "content": user_content},
     ]
 
 
 def build_track_messages(
-    context: StudentContext, path_label: str, path_why: str, path_future_benefit: str,
+    context: StudentContext,
+    path_label: str,
+    path_why: str,
+    path_future_benefit: str,
+    *,
+    locale: str | None = None,
 ) -> list[dict[str, str]]:
     """Follow-up call for one already-decided RecommendedPath — builds its
     full, independent 5-milestone plan (TRACK_JSON_SCHEMA)."""
+    target_locale = locale or getattr(context, "locale", "ru")
     allowed = ", ".join(CATEGORIES)
     user_content = (
         f"НАПРАВЛЕНИЕ ЭТОГО ПЛАНА: «{path_label}».\n"
@@ -340,6 +359,6 @@ def build_track_messages(
         "Построй полный 5-этапный план по этому направлению, по схеме."
     )
     return [
-        {"role": "system", "content": _TRACK_SYSTEM_PROMPT},
+        {"role": "system", "content": _track_system_prompt(target_locale)},
         {"role": "user", "content": user_content},
     ]

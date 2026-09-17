@@ -7,6 +7,13 @@ from app.models.motivation import MotivationCategory
 from app.models.profile import AgeGroup
 from app.models.question import BigFiveDomain, HollandType, Keyed, MIType, QuestionInstrument
 
+# One row per item now (docs/i18n-contract.md §8) — list items show the `ru`
+# text (admin panel itself stays ru-only, i18n-contract §2); Detail schemas
+# expose the full `{"ru": ..., "kk": ...}` map so both locales are visible/
+# editable. UpdateRequest schemas take a plain value for ONE locale plus a
+# top-level `locale` (required whenever a localized field is being set) —
+# see app.services.admin_lock.apply_overrides.
+
 
 class AdminFieldOverride(BaseModel):
     """One admin edit to a bank-seeded field, with what it replaced.
@@ -52,16 +59,12 @@ class AdminQuestionListItem(BaseModel):
     mi_category: MIType | None
     has_overrides: bool
 
-    model_config = {"from_attributes": True}
-
 
 class AdminQuestionListResponse(BaseModel):
     items: list[AdminQuestionListItem]
     total: int
     page: int
     limit: int
-
-    model_config = {"from_attributes": True}
 
 
 class AdminQuestionDetail(BaseModel):
@@ -72,8 +75,8 @@ class AdminQuestionDetail(BaseModel):
     mi_category: MIType | None
     facet: int | None
     keyed: Keyed | None
-    text: str
-    short_text: str | None
+    text: dict[str, str]
+    short_text: dict[str, str] | None
     icon: str | None
     order: int
     age_tier: AgeGroup
@@ -83,6 +86,7 @@ class AdminQuestionDetail(BaseModel):
 
 
 class AdminQuestionUpdateRequest(BaseModel):
+    locale: str | None = None
     riasec_type: HollandType | None = None
     bigfive_domain: BigFiveDomain | None = None
     mi_category: MIType | None = None
@@ -116,16 +120,12 @@ class AdminQuestionPairListItem(BaseModel):
     option_b_text: str
     has_overrides: bool
 
-    model_config = {"from_attributes": True}
-
 
 class AdminQuestionPairListResponse(BaseModel):
     items: list[AdminQuestionPairListItem]
     total: int
     page: int
     limit: int
-
-    model_config = {"from_attributes": True}
 
 
 class AdminLinkedQuestion(BaseModel):
@@ -150,9 +150,9 @@ class AdminQuestionPairDetail(BaseModel):
     question_b_id: uuid.UUID
     question_a: AdminLinkedQuestion | None = None
     question_b: AdminLinkedQuestion | None = None
-    frame: str | None
-    option_a_text: str | None
-    option_b_text: str | None
+    frame: dict[str, str] | None
+    option_a_text: dict[str, str] | None
+    option_b_text: dict[str, str] | None
     option_a_icon: str | None
     option_b_icon: str | None
     overrides: dict[str, AdminFieldOverride]
@@ -161,6 +161,7 @@ class AdminQuestionPairDetail(BaseModel):
 
 
 class AdminQuestionPairUpdateRequest(BaseModel):
+    locale: str | None = None
     frame: str | None = None
     option_a_text: str | None = None
     option_b_text: str | None = None
@@ -179,8 +180,6 @@ class AdminMotivationStatementListItem(BaseModel):
     text: str
     has_overrides: bool
 
-    model_config = {"from_attributes": True}
-
 
 class AdminMotivationStatementListResponse(BaseModel):
     items: list[AdminMotivationStatementListItem]
@@ -188,22 +187,21 @@ class AdminMotivationStatementListResponse(BaseModel):
     page: int
     limit: int
 
-    model_config = {"from_attributes": True}
-
 
 class AdminMotivationStatementDetail(BaseModel):
     id: uuid.UUID
     triplet_index: int
     order: int
     category: MotivationCategory
-    text: str
-    text_junior: str | None
+    text: dict[str, str]
+    text_junior: dict[str, str] | None
     overrides: dict[str, AdminFieldOverride]
 
     model_config = {"from_attributes": True}
 
 
 class AdminMotivationStatementUpdateRequest(BaseModel):
+    locale: str | None = None
     category: MotivationCategory | None = None
     text: str | None = None
     text_junior: str | None = None
@@ -225,8 +223,6 @@ class AdminMotivationPairListItem(BaseModel):
     text_b: str
     has_overrides: bool
 
-    model_config = {"from_attributes": True}
-
 
 class AdminMotivationPairListResponse(BaseModel):
     items: list[AdminMotivationPairListItem]
@@ -234,22 +230,21 @@ class AdminMotivationPairListResponse(BaseModel):
     page: int
     limit: int
 
-    model_config = {"from_attributes": True}
-
 
 class AdminMotivationPairDetail(BaseModel):
     id: uuid.UUID
     pair_index: int
     category_a: MotivationCategory
     category_b: MotivationCategory
-    text_a: str
-    text_b: str
+    text_a: dict[str, str]
+    text_b: dict[str, str]
     overrides: dict[str, AdminFieldOverride]
 
     model_config = {"from_attributes": True}
 
 
 class AdminMotivationPairUpdateRequest(BaseModel):
+    locale: str | None = None
     category_a: MotivationCategory | None = None
     category_b: MotivationCategory | None = None
     text_a: str | None = None
@@ -275,16 +270,12 @@ class AdminDirectionListItem(BaseModel):
     empty_catalog_fields: list[str]
     has_overrides: bool
 
-    model_config = {"from_attributes": True}
-
 
 class AdminDirectionListResponse(BaseModel):
     items: list[AdminDirectionListItem]
     total: int
     page: int
     limit: int
-
-    model_config = {"from_attributes": True}
 
 
 class AdminDirectionProgram(BaseModel):
@@ -303,14 +294,14 @@ class AdminDirectionProgram(BaseModel):
 
 class AdminDirectionDetail(BaseModel):
     id: uuid.UUID
-    name: str
+    name: dict[str, str]
     slug: str
     holland_code: str
-    description: str
-    professions: list
-    skills_needed: list
-    subjects_to_develop: list
-    first_steps: list
+    description: dict[str, str]
+    professions: dict[str, list]
+    skills_needed: dict[str, list]
+    subjects_to_develop: dict[str, list]
+    first_steps: dict[str, list]
     programs: list[AdminDirectionProgram] = []
     overrides: dict[str, AdminFieldOverride]
 
@@ -318,6 +309,7 @@ class AdminDirectionDetail(BaseModel):
 
 
 class AdminDirectionUpdateRequest(BaseModel):
+    locale: str | None = None
     name: str | None = None
     holland_code: str | None = None
     description: str | None = None

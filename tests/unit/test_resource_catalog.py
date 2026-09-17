@@ -2,6 +2,9 @@
 block — see app/data/resource_catalog.py. No LLM involved, so this is plain
 unit-testable logic."""
 from app.data import resource_catalog
+from app.i18n.catalog import resource_catalog as _rc_catalog
+
+_RESOURCE_CATALOG = _rc_catalog.RU["catalog"]
 
 
 def test_architect_matches_creative_design():
@@ -38,14 +41,14 @@ def test_resources_for_none_category_is_empty():
 
 
 def test_resources_for_category_capped_at_five():
-    for category, items in resource_catalog.RESOURCE_CATALOG.items():
+    for category, items in _RESOURCE_CATALOG.items():
         assert len(resource_catalog.resources_for_category(category)) <= 5
         assert len(items) <= 5
 
 
 def test_catalog_entries_have_required_fields_and_no_duplicate_urls():
     seen_urls = set()
-    for items in resource_catalog.RESOURCE_CATALOG.values():
+    for items in _RESOURCE_CATALOG.values():
         for item in items:
             assert item["title"]
             assert item["kind"]
@@ -55,4 +58,4 @@ def test_catalog_entries_have_required_fields_and_no_duplicate_urls():
 
 
 def test_every_catalog_category_has_keywords():
-    assert set(resource_catalog.RESOURCE_CATALOG.keys()) == set(resource_catalog.CATEGORY_KEYWORDS.keys())
+    assert set(_RESOURCE_CATALOG.keys()) == set(resource_catalog.CATEGORY_KEYWORDS.keys())

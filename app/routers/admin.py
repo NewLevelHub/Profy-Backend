@@ -412,6 +412,7 @@ async def update_program(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
+# Admin content lists show one row per (logical unit, locale) since KZ-301, so
 @router.get("/questions", response_model=AdminQuestionListResponse)
 async def list_questions(
     page: int = Query(default=1, ge=1),

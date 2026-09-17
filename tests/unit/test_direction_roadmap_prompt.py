@@ -11,14 +11,14 @@ from app.schemas.roadmap import UniversityRequirement
 from app.schemas.student_context import StudentContext
 
 _DIRECTION = Direction(
-    name="IT и разработка",
+    name={"ru": "IT и разработка"},
     slug="it-development",
     holland_code="RIA",
-    description="desc",
-    professions=["Backend-разработчик"],
-    skills_needed=["Python"],
-    subjects_to_develop=["Информатика"],
-    first_steps=[],
+    description={"ru": "desc"},
+    professions={"ru": ["Backend-разработчик"]},
+    skills_needed={"ru": ["Python"]},
+    subjects_to_develop={"ru": ["Информатика"]},
+    first_steps={"ru": []},
 )
 
 

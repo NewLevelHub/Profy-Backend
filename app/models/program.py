@@ -94,6 +94,17 @@ class Program(Base):
     cost_currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     who_its_for: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # KZ-501: {"kk": "..."} per-locale overrides of `description` / `who_its_for`
+    # (both base columns hold the `ru` text). Nullable, filled incrementally by
+    # KZ-504; the read side falls back to the base column when the locale key is
+    # absent, so an empty map changes no response.
+    description_i18n: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    who_its_for_i18n: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    # {"kk": "..."} — per-locale override of `name` (the field-of-study title,
+    # base column holds `ru`). Filled for Kazakhstan universities' programs only,
+    # by scripts/apply_catalog_descriptions_kk.py from the `program_names`
+    # section. Same fallback rule; `ru` never duplicated here.
+    name_i18n: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     # Legacy field from an early data pass — populated for only ~9 of 2442
     # programs. Display-only (shown on the program detail page when
     # non-empty), never used in matching/scoring. Don't add new logic that

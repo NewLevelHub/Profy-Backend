@@ -15,6 +15,7 @@ from app.models.direction import Direction
 from app.models.motivation import MotivationCategory, MotivationStatement
 from app.models.profile import AgeGroup
 from app.models.program import Program
+from app.models.question import LOCALIZED_FIELDS as QUESTION_LOCALIZED_FIELDS
 from app.models.question import Question, QuestionInstrument
 from app.models.university import University
 from app.schemas.admin_content import (
@@ -36,7 +37,11 @@ from app.services.admin_lock import (
 
 async def _question(db: AsyncSession, text: str) -> Question:
     question = Question(
-        instrument=QuestionInstrument.riasec, text=text, order=0, age_tier=AgeGroup.senior
+        instrument=QuestionInstrument.riasec, text={"ru": text},
+        # uq_questions_instrument_order needs a distinct order per (instrument,
+        # order) pair — a test creating two riasec questions can't both use 0.
+        order=abs(hash(uuid.uuid4())) % 100_000,
+        age_tier=AgeGroup.senior,
     )
     db.add(question)
     await db.commit()
@@ -51,13 +56,13 @@ async def test_patch_records_what_it_replaced(db_session: AsyncSession) -> None:
     question = await _question(db_session, "Текст из банка")
 
     updated = await admin_content_service.update_question(
-        db_session, question.id, AdminQuestionUpdateRequest(text="Правка админа")
+        db_session, question.id, AdminQuestionUpdateRequest(text="Правка админа", locale="ru")
     )
 
-    assert updated.text == "Правка админа"
+    assert updated.text == {"ru": "Правка админа"}
     assert updated.overrides["text"] == {
-        "value": "Правка админа",
-        "bank_value": "Текст из банка",
+        "value": {"ru": "Правка админа"},
+        "bank_value": {"ru": "Текст из банка"},
     }
 
 
@@ -68,14 +73,14 @@ async def test_clearing_one_override_restores_the_bank_value_immediately(
     admin's text on the row until the next deploy re-ran the seed script."""
     question = await _question(db_session, "Текст из банка")
     await admin_content_service.update_question(
-        db_session, question.id, AdminQuestionUpdateRequest(text="Правка", icon="🙂")
+        db_session, question.id, AdminQuestionUpdateRequest(text="Правка", icon="🙂", locale="ru")
     )
 
     reverted = await admin_content_service.clear_question_overrides(
         db_session, question.id, "text"
     )
 
-    assert reverted.text == "Текст из банка"
+    assert reverted.text == {"ru": "Текст из банка"}
     assert "text" not in reverted.overrides
     assert reverted.icon == "🙂"  # the other edit is untouched
     assert "icon" in reverted.overrides
@@ -86,12 +91,12 @@ async def test_clearing_all_overrides_puts_the_whole_row_back(
 ) -> None:
     question = await _question(db_session, "Текст из банка")
     await admin_content_service.update_question(
-        db_session, question.id, AdminQuestionUpdateRequest(text="Правка", icon="🙂")
+        db_session, question.id, AdminQuestionUpdateRequest(text="Правка", icon="🙂", locale="ru")
     )
 
     reverted = await admin_content_service.clear_question_overrides(db_session, question.id)
 
-    assert reverted.text == "Текст из банка"
+    assert reverted.text == {"ru": "Текст из банка"}
     assert reverted.icon is None
     assert reverted.overrides == {}
 
@@ -101,15 +106,15 @@ async def test_re_editing_keeps_the_original_bank_value(db_session: AsyncSession
     first edit as the "original" would make revert restore an admin's typo."""
     question = await _question(db_session, "Текст из банка")
     await admin_content_service.update_question(
-        db_session, question.id, AdminQuestionUpdateRequest(text="Первая правка")
+        db_session, question.id, AdminQuestionUpdateRequest(text="Первая правка", locale="ru")
     )
     await admin_content_service.update_question(
-        db_session, question.id, AdminQuestionUpdateRequest(text="Вторая правка")
+        db_session, question.id, AdminQuestionUpdateRequest(text="Вторая правка", locale="ru")
     )
 
     reverted = await admin_content_service.clear_question_overrides(db_session, question.id)
 
-    assert reverted.text == "Текст из банка"
+    assert reverted.text == {"ru": "Текст из банка"}
 
 
 async def test_clearing_a_field_that_is_not_overridden_is_reported(
@@ -132,17 +137,19 @@ async def test_a_resync_still_keeps_the_override_and_refreshes_the_bank_value(
     wording the bank uses *now*, not the one it used when the edit was made."""
     question = await _question(db_session, "Старый текст банка")
     await admin_content_service.update_question(
-        db_session, question.id, AdminQuestionUpdateRequest(text="Правка админа")
+        db_session, question.id, AdminQuestionUpdateRequest(text="Правка админа", locale="ru")
     )
     await db_session.refresh(question)
 
-    sync_fields(question, {"text": "Новый текст банка"})
+    sync_fields(
+        question, {"text": {"ru": "Новый текст банка"}}, localized_fields=QUESTION_LOCALIZED_FIELDS
+    )
 
-    assert question.text == "Правка админа"
-    assert question.overrides["text"]["bank_value"] == "Новый текст банка"
+    assert question.text == {"ru": "Правка админа"}
+    assert question.overrides["text"]["bank_value"] == {"ru": "Новый текст банка"}
 
     clear_overrides(question)
-    assert question.text == "Новый текст банка"
+    assert question.text == {"ru": "Новый текст банка"}
 
 
 async def test_an_override_written_before_bank_values_were_recorded_still_clears(
@@ -158,7 +165,7 @@ async def test_an_override_written_before_bank_values_were_recorded_still_clears
     reverted = await admin_content_service.clear_question_overrides(db_session, question.id)
 
     assert reverted.overrides == {}
-    assert reverted.text == "Значение админа"
+    assert reverted.text == {"ru": "Значение админа"}
 
 
 async def test_a_null_bank_value_is_restored_not_treated_as_unknown(
@@ -196,19 +203,20 @@ async def test_direction_and_motivation_overrides_clear_too(
     db_session: AsyncSession,
 ) -> None:
     direction = Direction(
-        name="Из банка", slug=f"dir-{uuid.uuid4()}", holland_code="RIS"
+        name={"ru": "Из банка"}, slug=f"dir-{uuid.uuid4()}", holland_code="RIS"
     )
     statement = MotivationStatement(
-        triplet_index=900_200, order=0, category=MotivationCategory.interest, text="Из банка"
+        triplet_index=900_200, order=0, category=MotivationCategory.interest,
+        text={"ru": "Из банка"},
     )
     db_session.add_all([direction, statement])
     await db_session.commit()
 
     await admin_content_service.update_direction(
-        db_session, direction.id, AdminDirectionUpdateRequest(name="Правка")
+        db_session, direction.id, AdminDirectionUpdateRequest(name="Правка", locale="ru")
     )
     await admin_content_service.update_motivation_statement(
-        db_session, statement.id, AdminMotivationStatementUpdateRequest(text="Правка")
+        db_session, statement.id, AdminMotivationStatementUpdateRequest(text="Правка", locale="ru")
     )
 
     reverted_direction = await admin_content_service.clear_direction_overrides(
@@ -218,8 +226,8 @@ async def test_direction_and_motivation_overrides_clear_too(
         db_session, statement.id
     )
 
-    assert reverted_direction.name == "Из банка"
-    assert reverted_statement.text == "Из банка"
+    assert reverted_direction.name == {"ru": "Из банка"}
+    assert reverted_statement.text == {"ru": "Из банка"}
 
 
 # --- university/program locks ----------------------------------------------
@@ -306,17 +314,19 @@ async def test_re_editing_a_legacy_override_does_not_promote_a_typo_to_original(
     typo as "the bank's original" and a later revert would restore it — the
     original has to stay unknown instead."""
     question = await _question(db_session, "Опечатка админа")
-    question.overrides = {"text": {"value": "Опечатка админа"}}
+    # Pre-bank-value-tracking shape for a localized field: a bare {locale:
+    # value} map, not yet wrapped in {"value": ..., "bank_value": ...}.
+    question.overrides = {"text": {"ru": "Опечатка админа"}}
     await db_session.commit()
 
     updated = await admin_content_service.update_question(
-        db_session, question.id, AdminQuestionUpdateRequest(text="Вторая правка")
+        db_session, question.id, AdminQuestionUpdateRequest(text="Вторая правка", locale="ru")
     )
 
     assert "bank_value" not in updated.overrides["text"]
 
     reverted = await admin_content_service.clear_question_overrides(db_session, question.id)
-    assert reverted.text == "Вторая правка"  # left for the seed run, not "restored" to a typo
+    assert reverted.text == {"ru": "Вторая правка"}  # left for the seed run, not "restored" to a typo
 
 
 async def test_the_api_says_whether_the_original_is_known(db_session: AsyncSession) -> None:
@@ -326,18 +336,18 @@ async def test_the_api_says_whether_the_original_is_known(db_session: AsyncSessi
     revert that restores nothing."""
     known = await _question(db_session, "Текст из банка")
     await admin_content_service.update_question(
-        db_session, known.id, AdminQuestionUpdateRequest(text="Правка")
+        db_session, known.id, AdminQuestionUpdateRequest(text="Правка", locale="ru")
     )
 
     unknown = await _question(db_session, "Значение админа")
-    unknown.overrides = {"text": {"value": "Значение админа"}}
+    unknown.overrides = {"text": {"ru": "Значение админа"}}
     await db_session.commit()
 
     known_detail = AdminQuestionDetail.model_validate(known)
     unknown_detail = AdminQuestionDetail.model_validate(unknown)
 
     assert known_detail.overrides["text"].bank_value_known is True
-    assert known_detail.overrides["text"].bank_value == "Текст из банка"
+    assert known_detail.overrides["text"].bank_value == {"ru": "Текст из банка"}
     assert unknown_detail.overrides["text"].bank_value_known is False
 
 
@@ -349,9 +359,10 @@ async def test_a_resync_that_only_refreshed_the_bank_value_reports_as_changed(
     about what they did."""
     question = await _question(db_session, "Старый текст банка")
     await admin_content_service.update_question(
-        db_session, question.id, AdminQuestionUpdateRequest(text="Правка админа")
+        db_session, question.id, AdminQuestionUpdateRequest(text="Правка админа", locale="ru")
     )
     await db_session.refresh(question)
 
-    assert sync_fields(question, {"text": "Новый текст банка"}) is True
-    assert sync_fields(question, {"text": "Новый текст банка"}) is False
+    bank_value = {"text": {"ru": "Новый текст банка"}}
+    assert sync_fields(question, bank_value, localized_fields=QUESTION_LOCALIZED_FIELDS) is True
+    assert sync_fields(question, bank_value, localized_fields=QUESTION_LOCALIZED_FIELDS) is False

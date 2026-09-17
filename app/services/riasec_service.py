@@ -11,7 +11,7 @@ from app.models.profile import AgeGroup
 from app.models.question import HollandType, Question, QuestionInstrument
 from app.models.user_response import UserResponse
 from app.services.age_tiers import visible_tiers
-from app.services.riasec_content import TYPE_ACTIVITIES
+from app.services.riasec_content import type_activities
 from app.services.scoring_levels import LEVEL_HIGH_MIN, LEVEL_LOW_MAX, LEVEL_MEDIUM_MIN
 
 HOLLAND_ORDER: list[str] = ["R", "I", "A", "S", "E", "C"]
@@ -138,8 +138,9 @@ def career_match_score(user_code: list[str], direction_code: str) -> int:
 async def matched_careers(
     user_code: list[str], db: AsyncSession, limit: int = 10
 ) -> list[tuple[Direction, int]]:
-    result = await db.execute(select(Direction))
-    directions = list(result.scalars().all())
+    # Names/descriptions are resolved by the caller (report_service._career_dict)
+    # via pick_locale — one row per direction now, no locale filter needed.
+    directions = (await db.execute(select(Direction))).scalars().all()
     scored = [(d, career_match_score(user_code, d.holland_code)) for d in directions]
     # Tie-break on slug (ascending) so equal scores don't depend on DB row
     # order — same convention as top_code's HOLLAND_ORDER tie-break above.
@@ -261,13 +262,13 @@ def development_plan(
     the single weakest type — unless the student explicitly dislikes it (aversion)."""
     reinforce: list[str] = []
     for letter in code:
-        reinforce.extend(TYPE_ACTIVITIES.get(letter, [])[:2])
+        reinforce.extend(type_activities().get(letter, [])[:2])
 
     compensate: list[str] = []
     for letter in weaknesses:
         if _aversion_ratio(letter, aversion_counts, counts) >= _AVERSION_DISQUALIFY_RATIO:
             continue
-        compensate = TYPE_ACTIVITIES.get(letter, [])[:2]
+        compensate = type_activities().get(letter, [])[:2]
         break
 
     return {"reinforce": reinforce, "compensate": compensate}
