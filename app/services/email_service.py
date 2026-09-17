@@ -119,21 +119,39 @@ async def _send_best_effort(
         logger.exception("Failed to send %s to %s", template, to)
 
 
-async def send_review_pending_email(to: str, student_name: str) -> None:
+def frontend_url(path: str) -> str:
+    """Build an absolute SPA URL for email CTAs. `path` may be absolute or
+    relative; trailing slash on FRONTEND_URL is stripped."""
+    base = settings.FRONTEND_URL.rstrip("/")
+    if not path.startswith("/"):
+        path = f"/{path}"
+    return f"{base}{path}"
+
+
+async def send_review_pending_email(
+    to: str, student_name: str, *, review_url: str
+) -> None:
     """Психологу — новый отчёт ждёт проверки. Кабинет психолога только на
     русском (KZ-210), поэтому и это письмо всегда ru. Best-effort, никогда не raises."""
     strings = tr("email", locale=DEFAULT_LOCALE)
     await _send_best_effort(
         to,
         strings["review_pending_subject"],
-        strings["review_pending_plain"].format(student_name=student_name),
+        strings["review_pending_plain"].format(
+            student_name=student_name, review_url=review_url
+        ),
         "review_pending.html",
         student_name=student_name,
+        review_url=review_url,
     )
 
 
 async def send_result_published_email(
-    to: str, student_name: str | None, *, locale: str = DEFAULT_LOCALE
+    to: str,
+    student_name: str | None,
+    *,
+    locale: str = DEFAULT_LOCALE,
+    results_url: str,
 ) -> None:
     """Ученику — результат опубликован, на языке ученика (`users.locale`).
     Best-effort, никогда не raises."""
@@ -143,10 +161,13 @@ async def send_result_published_email(
     await _send_best_effort(
         to,
         strings["result_published_subject"],
-        strings["result_published_plain"].format(student_name=name),
+        strings["result_published_plain"].format(
+            student_name=name, results_url=results_url
+        ),
         "result_published.html",
         locale=loc,
         student_name=name,
+        results_url=results_url,
     )
 
 

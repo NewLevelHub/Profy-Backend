@@ -27,10 +27,11 @@ from app.models.assessment import Assessment
 from app.models.profile import Profile
 from app.models.psychologist_assignment import PsychologistStudentAssignment
 from app.models.psychologist_note import PsychologistNote
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.admin import AdminUserDetailResponse
 from app.schemas.psychologist import (
     PsychologistAssessmentSummary,
+    PsychologistAvailableStudentItem,
     PsychologistNoteCreate,
     PsychologistNoteItem,
     PsychologistNoteUpdate,
@@ -151,6 +152,83 @@ async def list_assigned_students(
         )
         for row in rows
     ]
+
+
+async def list_available_students(
+    db: AsyncSession, psychologist_id: uuid.UUID
+) -> list[PsychologistAvailableStudentItem]:
+    """Students the psychologist can claim — role=student and not yet
+    assigned to this psychologist (PRO-337: selection without admin)."""
+    already_mine = (
+        select(PsychologistStudentAssignment.student_id)
+        .where(PsychologistStudentAssignment.psychologist_id == psychologist_id)
+    )
+    pending = (
+        select(AnalysisResult.id)
+        .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
+        .join(Profile, Profile.id == Assessment.profile_id)
+        .where(
+            Profile.user_id == User.id,
+            AnalysisResult.review_status == ReviewStatus.pending_review,
+        )
+        .exists()
+    )
+    query = (
+        select(User.id, User.email, Profile.name, Profile.age_group, pending.label("has_pending"))
+        .outerjoin(Profile, Profile.user_id == User.id)
+        .where(User.role == UserRole.student, ~User.id.in_(already_mine))
+        .order_by(User.created_at.desc())
+    )
+    rows = (await db.execute(query)).all()
+    return [
+        PsychologistAvailableStudentItem(
+            id=row.id,
+            email=row.email,
+            profile_name=row.name,
+            age_group=row.age_group.value if row.age_group is not None else None,
+            has_pending_review=bool(row.has_pending),
+        )
+        for row in rows
+    ]
+
+
+async def claim_student(
+    db: AsyncSession, *, psychologist_id: uuid.UUID, student_id: uuid.UUID
+) -> PsychologistStudentListItem:
+    """Psychologist self-assigns a student. Admin is not in this flow."""
+    student = await db.get(User, student_id)
+    if student is None or student.role != UserRole.student:
+        raise ValueError("Student not found")
+
+    existing = await db.execute(
+        select(PsychologistStudentAssignment).where(
+            PsychologistStudentAssignment.psychologist_id == psychologist_id,
+            PsychologistStudentAssignment.student_id == student_id,
+        )
+    )
+    assignment = existing.scalar_one_or_none()
+    if assignment is None:
+        assignment = PsychologistStudentAssignment(
+            psychologist_id=psychologist_id,
+            student_id=student_id,
+        )
+        db.add(assignment)
+        await db.commit()
+        await db.refresh(assignment)
+    else:
+        # Idempotent claim — already mine.
+        pass
+
+    profile = (
+        await db.execute(select(Profile).where(Profile.user_id == student_id))
+    ).scalar_one_or_none()
+    return PsychologistStudentListItem(
+        id=student.id,
+        email=student.email,
+        profile_name=profile.name if profile is not None else None,
+        age_group=profile.age_group.value if profile is not None and profile.age_group is not None else None,
+        assigned_at=assignment.created_at,
+    )
 
 
 def _to_psychologist_detail(
@@ -616,7 +694,11 @@ async def _drop_report_cache(assessment_id: uuid.UUID) -> None:
 
 
 async def notify_review_pending(
-    db: AsyncSession, *, student_id: uuid.UUID, student_name: str | None
+    db: AsyncSession,
+    *,
+    student_id: uuid.UUID,
+    student_name: str | None,
+    assessment_id: uuid.UUID,
 ) -> None:
     """Email every psychologist assigned to the student that a new report
     waits for review. Best-effort: never raises into report generation."""
@@ -633,8 +715,16 @@ async def notify_review_pending(
     except Exception:
         logger.exception("review-pending recipients lookup failed for student=%s", student_id)
         return
+    review_url = email_service.frontend_url(
+        f"/psychologist/students/{student_id}/results/{assessment_id}/review"
+    )
     await _send_within_budget(
-        [email_service.send_review_pending_email(email, student_name or "без имени") for email in emails]
+        [
+            email_service.send_review_pending_email(
+                email, student_name or "без имени", review_url=review_url
+            )
+            for email in emails
+        ]
     )
 
 
@@ -650,8 +740,16 @@ async def _notify_result_published(db: AsyncSession, assessment_id: uuid.UUID) -
             )
         ).one_or_none()
         if row is not None:
+            results_url = email_service.frontend_url("/results")
             await _send_within_budget(
-                [email_service.send_result_published_email(row.email, row.name, locale=row.locale)]
+                [
+                    email_service.send_result_published_email(
+                        row.email,
+                        row.name,
+                        locale=row.locale,
+                        results_url=results_url,
+                    )
+                ]
             )
     except Exception:
         logger.exception("result-published notification failed for assessment=%s", assessment_id)

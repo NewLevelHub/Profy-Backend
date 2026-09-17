@@ -766,7 +766,10 @@ async def build_report(
         from app.services import psychologist_service
 
         await psychologist_service.notify_review_pending(
-            db, student_id=student_user_id, student_name=student_name
+            db,
+            student_id=student_user_id,
+            student_name=student_name,
+            assessment_id=assessment_id,
         )
     return response
 

@@ -25,11 +25,14 @@ RU = {
     ),
     "review_pending_subject": "Новый отчёт ждёт проверки — Profy",
     "review_pending_plain": (
-        "Ученик {student_name} завершил тест. Отчёт ждёт вашей проверки "
-        "в разделе «Проверка отчётов» кабинета психолога."
+        "Ученик {student_name} завершил тест. Отчёт ждёт вашей проверки:\n"
+        "{review_url}"
     ),
     "result_published_subject": "Твой результат готов — Profy",
-    "result_published_plain": "{student_name}, психолог проверил твой отчёт — он уже ждёт тебя в Profy.",
+    "result_published_plain": (
+        "{student_name}, психолог проверил твой отчёт — он уже ждёт тебя в Profy:\n"
+        "{results_url}"
+    ),
     "result_published_fallback_name": "Привет",
 }
 
@@ -44,10 +47,13 @@ KK = {
     ),
     "review_pending_subject": "Жаңа есеп тексеруді күтуде — Profy",
     "review_pending_plain": (
-        "{student_name} оқушысы тестті аяқтады. Есеп психолог кабинетіндегі "
-        "«Есептерді тексеру» бөлімінде сіздің тексеруіңізді күтуде."
+        "{student_name} оқушысы тестті аяқтады. Есеп сіздің тексеруіңізді күтуде:\n"
+        "{review_url}"
     ),
     "result_published_subject": "Нәтижең дайын — Profy",
-    "result_published_plain": "{student_name}, психолог есебіңді тексерді — ол Profy-де сені күтіп тұр.",
+    "result_published_plain": (
+        "{student_name}, психолог есебіңді тексерді — ол Profy-де сені күтіп тұр:\n"
+        "{results_url}"
+    ),
     "result_published_fallback_name": "Сәлем",
 }
