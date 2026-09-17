@@ -13,7 +13,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import require_role
+from app.models.extended_block_assignment import ExtendedBlock
 from app.models.user import User, UserRole
+from app.schemas.extended_block import AssignExtendedBlockRequest, ExtendedBlockAssignmentResponse
+from app.schemas.psych_ai_analysis import PsychAiAnalysisOutput
 from app.schemas.psychologist import (
     PsychologistNoteCreate,
     PsychologistNoteItem,
@@ -23,7 +26,7 @@ from app.schemas.psychologist import (
     PsychologistStudentListItem,
 )
 from app.schemas.result_v2 import ResultResponseV2, ResultV2Schema
-from app.services import psychologist_service
+from app.services import extended_block_service, psychologist_service
 
 router = APIRouter(tags=["psychologist"])
 
@@ -154,6 +157,68 @@ async def get_student_assessment_report(
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.post(
+    "/students/{student_id}/assessments/{assessment_id}/report/ai-analysis/regenerate",
+    response_model=PsychAiAnalysisOutput | None,
+)
+async def regenerate_report_ai_analysis(
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+    current_user: User = Depends(_require_psychologist_or_admin),
+    db: AsyncSession = Depends(get_db),
+) -> PsychAiAnalysisOutput | None:
+    """Explicit "Обновить анализ" action — e.g. after finishing an extended
+    block (Belbin/АСТУР) so the AI analysis reflects it, since the report's
+    own GET only auto-generates once and caches. `None` (not an error) if
+    generation is unavailable/fails — same "AI analysis may be absent"
+    contract as the report endpoint's own `ai_analysis` field."""
+    try:
+        return await psychologist_service.regenerate_psych_ai_analysis(
+            db,
+            psychologist_id=current_user.id,
+            student_id=student_id,
+            assessment_id=assessment_id,
+            viewer_role=current_user.role,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.post(
+    "/students/{student_id}/assessments/{assessment_id}/extended-blocks",
+    response_model=ExtendedBlockAssignmentResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def assign_extended_block(
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+    body: AssignExtendedBlockRequest,
+    current_user: User = Depends(_require_psychologist_or_admin),
+    db: AsyncSession = Depends(get_db),
+) -> ExtendedBlockAssignmentResponse:
+    """Post-Ф4.1 follow-up — «Назначить Belbin/АСТУР» replaces the raw
+    hand-delivered link (Ф2.6/Ф3.6). Idempotent: re-assigning an
+    already-assigned block just returns the existing assignment."""
+    try:
+        row = await psychologist_service.assign_extended_block(
+            db,
+            psychologist_id=current_user.id,
+            student_id=student_id,
+            assessment_id=assessment_id,
+            block=ExtendedBlock(body.block),
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    # Re-assigning an already-completed block is idempotent (returns the
+    # existing row) — compute `completed` for real rather than hardcoding
+    # False, so that case still reports accurately.
+    assignments = await extended_block_service.list_assignments(assessment_id, db)
+    completed = next((a["completed"] for a in assignments if a["block"] == row.block.value), False)
+    return ExtendedBlockAssignmentResponse(
+        block=row.block.value, assigned_at=row.assigned_at, completed=completed
+    )
 
 
 @router.delete("/notes/{note_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -9,6 +9,7 @@ of notes the psychologist already owns do not — missing ownership/assignment
 
 from __future__ import annotations
 
+import logging
 import uuid
 
 from sqlalchemy import select
@@ -16,11 +17,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
 from app.models.assessment import Assessment
+from app.models.extended_block_assignment import ExtendedBlock, ExtendedBlockAssignment
 from app.models.profile import Profile
 from app.models.psychologist_assignment import PsychologistStudentAssignment
 from app.models.psychologist_note import PsychologistNote
 from app.models.user import User, UserRole
 from app.schemas.admin import AdminUserDetailResponse
+from app.schemas.psych_ai_analysis import PsychAiAnalysisOutput
 from app.schemas.psychologist import (
     PsychologistAssessmentSummary,
     PsychologistNoteCreate,
@@ -31,7 +34,16 @@ from app.schemas.psychologist import (
     PsychologistStudentListItem,
 )
 from app.schemas.result_v2 import ResultResponseV2
-from app.services import admin_service, new_tests_report_service, report_service
+from app.services import (
+    admin_service,
+    extended_block_service,
+    new_tests_report_service,
+    psych_ai_analysis_service,
+    report_service,
+)
+from app.services.psych_ai_analysis_context import build_context, has_any_data
+
+logger = logging.getLogger(__name__)
 
 
 async def _require_assigned_student(
@@ -295,9 +307,104 @@ async def get_assigned_student_report(
     if result is None:
         raise ValueError("Report not found")
     report, analysis = result
-    return PsychologistReportResponse(
-        report=report,
-        new_tests=await new_tests_report_service.build_new_tests_sections(
-            analysis, assessment_id=assessment_id, db=db
-        ),
+    new_tests = await new_tests_report_service.build_new_tests_sections(
+        analysis, assessment_id=assessment_id, db=db
+    )
+    ai_analysis = await _get_or_generate_psych_ai_analysis(
+        analysis, report=report, new_tests=new_tests, student_id=student_id, db=db
+    )
+    return PsychologistReportResponse(report=report, new_tests=new_tests, ai_analysis=ai_analysis)
+
+
+async def _student_profile_name(student_id: uuid.UUID, db: AsyncSession) -> str:
+    name = (
+        await db.execute(select(Profile.name).where(Profile.user_id == student_id))
+    ).scalar_one_or_none()
+    return name or "Ученик"
+
+
+async def _get_or_generate_psych_ai_analysis(
+    analysis, *, report, new_tests, student_id: uuid.UUID, db: AsyncSession, force: bool = False
+) -> PsychAiAnalysisOutput | None:
+    """Lazily generates + caches the AI analysis on first view (product
+    decision: auto-generate rather than requiring an explicit action first)
+    — `analysis.psych_ai_analysis` is the cache, `force=True` (the
+    regenerate endpoint) bypasses it and overwrites. Returns `None` without
+    ever raising: an unavailable AI analysis must never break the rest of
+    the report, same isolation principle as new_tests_report_service's
+    per-section try/except."""
+    if not force and analysis.psych_ai_analysis:
+        try:
+            return PsychAiAnalysisOutput.model_validate(analysis.psych_ai_analysis)
+        except Exception:
+            logger.exception(
+                "Failed to parse cached psych_ai_analysis for assessment %s", analysis.assessment_id
+            )
+            # Fall through and regenerate — a malformed cached blob (e.g.
+            # from an older schema version) shouldn't wedge this forever.
+
+    try:
+        student_name = await _student_profile_name(student_id, db)
+        context = build_context(report, new_tests, student_name=student_name)
+        if not has_any_data(context):
+            return None
+        output, is_ai_generated = await psych_ai_analysis_service.generate_psych_ai_analysis(context)
+        if not is_ai_generated or output is None:
+            return None
+        analysis.psych_ai_analysis = output.model_dump(mode="json")
+        await db.commit()
+        return output
+    except Exception:
+        logger.exception(
+            "Failed to generate psych_ai_analysis for assessment %s", analysis.assessment_id
+        )
+        return None
+
+
+async def regenerate_psych_ai_analysis(
+    db: AsyncSession,
+    *,
+    psychologist_id: uuid.UUID,
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+    viewer_role: UserRole,
+) -> PsychAiAnalysisOutput | None:
+    """Explicit "Обновить анализ" action — bypasses the cache even if one
+    already exists (e.g. the psychologist just finished an extended block
+    like Belbin/АСТУР and wants the analysis to reflect it)."""
+    await _require_assigned_student(db, psychologist_id=psychologist_id, student_id=student_id)
+    await _require_student_assessment(db, student_id=student_id, assessment_id=assessment_id)
+    result = await report_service.get_report_with_analysis(assessment_id, db, viewer_role=viewer_role)
+    if result is None:
+        raise ValueError("Report not found")
+    report, analysis = result
+    new_tests = await new_tests_report_service.build_new_tests_sections(
+        analysis, assessment_id=assessment_id, db=db
+    )
+    return await _get_or_generate_psych_ai_analysis(
+        analysis, report=report, new_tests=new_tests, student_id=student_id, db=db, force=True
+    )
+
+
+async def assign_extended_block(
+    db: AsyncSession,
+    *,
+    psychologist_id: uuid.UUID,
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+    block: ExtendedBlock,
+) -> ExtendedBlockAssignment:
+    """Post-Ф4.1 follow-up — replaces the raw hand-delivered Belbin/АСТУР
+    link (Ф2.6/Ф3.6's original UX) with a real assignment the student's own
+    UI can discover (GET .../extended-blocks). Same ownership checks as
+    get_assigned_student_report; idempotent (see extended_block_service's
+    own docstring — re-assigning is a no-op, not an error)."""
+    await _require_assigned_student(
+        db, psychologist_id=psychologist_id, student_id=student_id
+    )
+    await _require_student_assessment(
+        db, student_id=student_id, assessment_id=assessment_id
+    )
+    return await extended_block_service.assign_block(
+        assessment_id, block, psychologist_id=psychologist_id, db=db
     )

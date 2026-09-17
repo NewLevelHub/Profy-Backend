@@ -69,6 +69,13 @@ class AnalysisResult(Base):
     eysenck: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
     elers: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
     empathy_confidence: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    # Specialist-only AI analysis (per-block commentary + final synthesis +
+    # one profession picked from `careers`, never invented) — generated
+    # lazily on first psychologist view of the report and cached here;
+    # `None` until then and after an explicit regenerate. Shape owned by
+    # app.schemas.psych_ai_analysis.PsychAiAnalysisOutput, not this model —
+    # same "container, not a typed column" precedent as every field above.
+    psych_ai_analysis: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
