@@ -55,7 +55,7 @@ Kazakh translations are edited in these files, never in the DB. Full contract: `
 
 #### Review/data files must reference rows by a portable key, never a bare row UUID
 
-Any review/data file under `scripts/data/**` (or `scripts/*review*.json`) that points at a `University`/`Program` row MUST carry a cross-DB-portable key — `slug` / `university_slug` (curated rows), `jinaq_external_id` (jinaq rows, resolved via `university_external_refs`), or `ror_id`; a `Program` also needs its *name* to resolve under that University. A bare `University.id` / `Program.id` is a per-database random `uuid4()` and resolves to nothing on any other DB (a fresh local copy, prod's first import run) — the apply script then silently no-ops on every entry. Resolve rows through `scripts/entity_resolver.py` (`resolve_university` / `resolve_program`), not a hand-rolled `where(University.id == ...)`. Enforced by `tests/unit/test_review_files_portable_keys.py`; background and the affected-script audit are in `docs/content-pipeline-id-resolution-audit.md`.
+Any review/data file under `scripts/data/**` (or `scripts/*review*.json`) that points at a `University`/`Program` row MUST carry a cross-DB-portable key — `slug` / `university_slug` (curated rows), `jinaq_external_id` (jinaq rows, resolved via `university_external_refs`), or `ror_id`; a `Program` also needs its *name* to resolve under that University. A bare `University.id` / `Program.id` is a per-database random `uuid4()` and resolves to nothing on any other DB (a fresh local copy, prod's first import run) — the apply script then silently no-ops on every entry. Resolve rows through `scripts/entity_resolver.py` (`resolve_university` / `resolve_program`), not a hand-rolled `where(University.id == ...)`. Enforced by `tests/unit/test_review_files_portable_keys.py`.
 
 ### Assessment: age tiers and multiple instruments
 
@@ -67,7 +67,7 @@ Any review/data file under `scripts/data/**` (or `scripts/*review*.json`) that p
 
 ### Admin endpoints
 
-`app/routers/admin.py` + `app/services/admin_university_service.py` currently expose read + PATCH-only editing for `University`/`Program` (no create/delete). There is no admin editing for question-bank content yet — because of the resync behavior above, adding it isn't a plain PATCH; see `docs/admin-edit-lock-plan.md` and `docs/admin-questions-content-overrides-plan.md` for the planned approach before building anything in this area.
+`app/routers/admin.py` exposes read + PATCH editing for `University`/`Program` (no create/delete) via `admin_university_service`, with `admin_locked_fields` so CD reseeds don't overwrite admin edits. Question-bank content (questions / pairs / motivation / directions) is editable too: admin edits live in an `overrides` JSONB layer composed on top of the seed banks at sync time (`admin_content_service` + `admin_lock`). Frontend contracts: `docs/frontend-admin-university-api-contract.md`, `docs/frontend-admin-questions-api-contract.md`, `docs/frontend-admin-users-api-contract.md`.
 
 ### Deploy topology (relevant when touching docker-compose/nginx)
 

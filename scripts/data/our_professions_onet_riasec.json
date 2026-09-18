@@ -1,0 +1,2258 @@
+[
+ {
+  "title": "Инженер-механик",
+  "our_code": "RIS",
+  "onet_soc": "17-2141.00",
+  "onet_title": "Mechanical Engineers",
+  "vec": {
+   "R": 6.39,
+   "I": 5.12,
+   "A": 2.02,
+   "S": 1.22,
+   "E": 1.97,
+   "C": 4.83
+  },
+  "onet_top3": "RIC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Пилот гражданской авиации",
+  "our_code": "RCS",
+  "onet_soc": "53-2011.00",
+  "onet_title": "Airline Pilots, Copilots, and Flight Engineers",
+  "vec": {
+   "R": 4.74,
+   "I": 3.15,
+   "A": 1.44,
+   "S": 2.5,
+   "E": 3.81,
+   "C": 4.7
+  },
+  "onet_top3": "RCE",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Авиадиспетчер",
+  "our_code": "SER",
+  "onet_soc": "53-2021.00",
+  "onet_title": "Air Traffic Controllers",
+  "vec": {
+   "R": 4.55,
+   "I": 2.45,
+   "A": 1.0,
+   "S": 2.68,
+   "E": 4.29,
+   "C": 4.99
+  },
+  "onet_top3": "CRE",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Геодезист",
+  "our_code": "RIE",
+  "onet_soc": "17-1022.00",
+  "onet_title": "Surveyors",
+  "vec": {
+   "R": 5.25,
+   "I": 4.73,
+   "A": 2.12,
+   "S": 1.63,
+   "E": 1.88,
+   "C": 5.29
+  },
+  "onet_top3": "CRI",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Инженер-строитель",
+  "our_code": "RIC",
+  "onet_soc": "17-2051.00",
+  "onet_title": "Civil Engineers",
+  "vec": {
+   "R": 6.43,
+   "I": 5.15,
+   "A": 2.21,
+   "S": 1.69,
+   "E": 2.66,
+   "C": 4.61
+  },
+  "onet_top3": "RIC",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Инженер-электрик",
+  "our_code": "REI",
+  "onet_soc": "17-2071.00",
+  "onet_title": "Electrical Engineers",
+  "vec": {
+   "R": 6.02,
+   "I": 5.45,
+   "A": 2.12,
+   "S": 1.72,
+   "E": 2.44,
+   "C": 4.43
+  },
+  "onet_top3": "RIC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Агроном",
+  "our_code": "IRS",
+  "onet_soc": "19-1013.00",
+  "onet_title": "Soil and Plant Scientists",
+  "vec": {
+   "R": 6.43,
+   "I": 6.71,
+   "A": 2.11,
+   "S": 1.67,
+   "E": 1.71,
+   "C": 3.41
+  },
+  "onet_top3": "IRC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Ветеринар",
+  "our_code": "IRS",
+  "onet_soc": "29-1131.00",
+  "onet_title": "Veterinarians",
+  "vec": {
+   "R": 5.98,
+   "I": 5.98,
+   "A": 1.0,
+   "S": 3.45,
+   "E": 1.7,
+   "C": 3.47
+  },
+  "onet_top3": "RIC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Лесничий",
+  "our_code": "RIS",
+  "onet_soc": "19-1032.00",
+  "onet_title": "Foresters",
+  "vec": {
+   "R": 5.32,
+   "I": 4.48,
+   "A": 1.25,
+   "S": 2.3,
+   "E": 3.78,
+   "C": 4.39
+  },
+  "onet_top3": "RIC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Буровой инженер (нефтегазовое дело)",
+  "our_code": "RIE",
+  "onet_soc": "17-2171.00",
+  "onet_title": "Petroleum Engineers",
+  "vec": {
+   "R": 5.37,
+   "I": 5.33,
+   "A": 1.92,
+   "S": 1.78,
+   "E": 3.04,
+   "C": 4.32
+  },
+  "onet_top3": "RIC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Машинист локомотива",
+  "our_code": "RES",
+  "onet_soc": "53-4011.00",
+  "onet_title": "Locomotive Engineers",
+  "vec": {
+   "R": 7.0,
+   "I": 3.49,
+   "A": 1.0,
+   "S": 1.85,
+   "E": 1.89,
+   "C": 4.65
+  },
+  "onet_top3": "RCI",
+  "letters_overlap": 1
+ },
+ {
+  "title": "Технолог пищевого производства",
+  "our_code": "RCI",
+  "onet_soc": "19-4013.00",
+  "onet_title": "Food Science Technicians",
+  "vec": {
+   "R": 5.57,
+   "I": 4.51,
+   "A": 1.33,
+   "S": 1.73,
+   "E": 1.96,
+   "C": 5.04
+  },
+  "onet_top3": "RCI",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Ландшафтный дизайнер",
+  "our_code": "RAE",
+  "onet_soc": "17-1012.00",
+  "onet_title": "Landscape Architects",
+  "vec": {
+   "R": 5.42,
+   "I": 4.73,
+   "A": 4.68,
+   "S": 2.67,
+   "E": 3.65,
+   "C": 3.7
+  },
+  "onet_top3": "RIA",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Полицейский",
+  "our_code": "SER",
+  "onet_soc": "33-3051.00",
+  "onet_title": "Police and Sheriff's Patrol Officers",
+  "vec": {
+   "R": 5.36,
+   "I": 2.76,
+   "A": 1.07,
+   "S": 3.45,
+   "E": 4.08,
+   "C": 4.35
+  },
+  "onet_top3": "RCE",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Спасатель МЧС",
+  "our_code": "SRE",
+  "onet_soc": "33-2011.00",
+  "onet_title": "Firefighters",
+  "vec": {
+   "R": 6.49,
+   "I": 2.92,
+   "A": 1.31,
+   "S": 3.39,
+   "E": 3.01,
+   "C": 3.47
+  },
+  "onet_top3": "RCS",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Системный администратор",
+  "our_code": "RIC",
+  "onet_soc": "15-1244.00",
+  "onet_title": "Network and Computer Systems Administrators",
+  "vec": {
+   "R": 4.19,
+   "I": 4.04,
+   "A": 1.0,
+   "S": 2.22,
+   "E": 3.46,
+   "C": 6.18
+  },
+  "onet_top3": "CRI",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Управляющий фермерским хозяйством",
+  "our_code": "ESR",
+  "onet_soc": "11-9013.00",
+  "onet_title": "Farmers, Ranchers, and Other Agricultural Managers",
+  "vec": {
+   "R": 5.16,
+   "I": 2.74,
+   "A": 1.06,
+   "S": 2.63,
+   "E": 5.52,
+   "C": 4.53
+  },
+  "onet_top3": "ERC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Инженер-конструктор",
+  "our_code": "RIC",
+  "onet_soc": "17-2141.00",
+  "onet_title": "Mechanical Engineers",
+  "vec": {
+   "R": 6.39,
+   "I": 5.12,
+   "A": 2.02,
+   "S": 1.22,
+   "E": 1.97,
+   "C": 4.83
+  },
+  "onet_top3": "RIC",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Инженер по автоматизации и робототехнике",
+  "our_code": "RIA",
+  "onet_soc": "17-2199.08",
+  "onet_title": "Robotics Engineers",
+  "vec": {
+   "R": 6.18,
+   "I": 5.61,
+   "A": 1.79,
+   "S": 1.49,
+   "E": 1.79,
+   "C": 4.48
+  },
+  "onet_top3": "RIC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Инженер-энергетик",
+  "our_code": "RCE",
+  "onet_soc": "17-2199.03",
+  "onet_title": "Energy Engineers, Except Wind and Solar",
+  "vec": {
+   "R": 5.2,
+   "I": 4.69,
+   "A": 2.03,
+   "S": 2.24,
+   "E": 3.09,
+   "C": 4.4
+  },
+  "onet_top3": "RIC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Инженер-технолог (машиностроение)",
+  "our_code": "RCI",
+  "onet_soc": "17-2112.00",
+  "onet_title": "Industrial Engineers",
+  "vec": {
+   "R": 4.96,
+   "I": 4.99,
+   "A": 1.58,
+   "S": 1.37,
+   "E": 3.29,
+   "C": 5.35
+  },
+  "onet_top3": "CIR",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Горный инженер",
+  "our_code": "RIE",
+  "onet_soc": "17-2151.00",
+  "onet_title": "Mining and Geological Engineers, Including Mining Safety Engineers",
+  "vec": {
+   "R": 6.08,
+   "I": 5.58,
+   "A": 1.55,
+   "S": 1.84,
+   "E": 2.75,
+   "C": 4.64
+  },
+  "onet_top3": "RIC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Металлург",
+  "our_code": "RIC",
+  "onet_soc": "17-2131.00",
+  "onet_title": "Materials Engineers",
+  "vec": {
+   "R": 5.88,
+   "I": 5.82,
+   "A": 2.54,
+   "S": 1.38,
+   "E": 2.06,
+   "C": 4.11
+  },
+  "onet_top3": "RIC",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Инженер-химик",
+  "our_code": "RCI",
+  "onet_soc": "17-2041.00",
+  "onet_title": "Chemical Engineers",
+  "vec": {
+   "R": 6.27,
+   "I": 5.75,
+   "A": 1.8,
+   "S": 1.02,
+   "E": 1.85,
+   "C": 4.54
+  },
+  "onet_top3": "RIC",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Разработчик программного обеспечения",
+  "our_code": "IRC",
+  "onet_soc": "15-1252.00",
+  "onet_title": "Software Developers",
+  "vec": {
+   "R": 3.61,
+   "I": 6.05,
+   "A": 2.37,
+   "S": 1.81,
+   "E": 1.87,
+   "C": 5.62
+  },
+  "onet_top3": "ICR",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Аналитик данных",
+  "our_code": "ICE",
+  "onet_soc": "15-2051.00",
+  "onet_title": "Data Scientists",
+  "vec": {
+   "R": 2.17,
+   "I": 6.98,
+   "A": 2.61,
+   "S": 1.66,
+   "E": 1.71,
+   "C": 5.39
+  },
+  "onet_top3": "ICA",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Специалист по искусственному интеллекту",
+  "our_code": "IRA",
+  "onet_soc": "15-1221.00",
+  "onet_title": "Computer and Information Research Scientists",
+  "vec": {
+   "R": 3.74,
+   "I": 7.0,
+   "A": 2.95,
+   "S": 2.0,
+   "E": 2.49,
+   "C": 4.8
+  },
+  "onet_top3": "ICR",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Геолог",
+  "our_code": "ICR",
+  "onet_soc": "19-2042.00",
+  "onet_title": "Geoscientists, Except Hydrologists and Geographers",
+  "vec": {
+   "R": 5.59,
+   "I": 7.0,
+   "A": 2.72,
+   "S": 2.24,
+   "E": 1.65,
+   "C": 4.16
+  },
+  "onet_top3": "IRC",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Биолог",
+  "our_code": "IRE",
+  "onet_soc": "19-1029.04",
+  "onet_title": "Biologists",
+  "vec": {
+   "R": 4.11,
+   "I": 7.0,
+   "A": 2.4,
+   "S": 2.62,
+   "E": 2.76,
+   "C": 4.45
+  },
+  "onet_top3": "ICR",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Химик",
+  "our_code": "IRE",
+  "onet_soc": "19-2031.00",
+  "onet_title": "Chemists",
+  "vec": {
+   "R": 5.67,
+   "I": 6.71,
+   "A": 1.52,
+   "S": 1.14,
+   "E": 1.6,
+   "C": 4.81
+  },
+  "onet_top3": "IRC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Врач общей практики",
+  "our_code": "ISR",
+  "onet_soc": "29-1215.00",
+  "onet_title": "Family Medicine Physicians",
+  "vec": {
+   "R": 3.75,
+   "I": 6.08,
+   "A": 1.45,
+   "S": 6.21,
+   "E": 2.34,
+   "C": 3.95
+  },
+  "onet_top3": "SIC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Стоматолог",
+  "our_code": "ISR",
+  "onet_soc": "29-1021.00",
+  "onet_title": "Dentists, General",
+  "vec": {
+   "R": 5.23,
+   "I": 5.48,
+   "A": 1.17,
+   "S": 4.41,
+   "E": 2.0,
+   "C": 3.71
+  },
+  "onet_top3": "IRS",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Фармацевт",
+  "our_code": "IES",
+  "onet_soc": "29-1051.00",
+  "onet_title": "Pharmacists",
+  "vec": {
+   "R": 2.82,
+   "I": 5.67,
+   "A": 1.48,
+   "S": 4.88,
+   "E": 2.62,
+   "C": 4.56
+  },
+  "onet_top3": "ISC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Психолог-исследователь",
+  "our_code": "IES",
+  "onet_soc": "19-3033.00",
+  "onet_title": "Clinical and Counseling Psychologists",
+  "vec": {
+   "R": 1.05,
+   "I": 5.58,
+   "A": 3.06,
+   "S": 6.57,
+   "E": 2.65,
+   "C": 3.49
+  },
+  "onet_top3": "SIC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Экономист-аналитик",
+  "our_code": "IAS",
+  "onet_soc": "19-3011.00",
+  "onet_title": "Economists",
+  "vec": {
+   "R": 1.35,
+   "I": 7.0,
+   "A": 2.43,
+   "S": 2.4,
+   "E": 3.93,
+   "C": 4.53
+  },
+  "onet_top3": "ICE",
+  "letters_overlap": 1
+ },
+ {
+  "title": "Актуарий",
+  "our_code": "ISE",
+  "onet_soc": "15-2011.00",
+  "onet_title": "Actuaries",
+  "vec": {
+   "R": 1.78,
+   "I": 4.45,
+   "A": 1.13,
+   "S": 2.49,
+   "E": 3.33,
+   "C": 6.29
+  },
+  "onet_top3": "CIE",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Математик",
+  "our_code": "IAC",
+  "onet_soc": "15-2021.00",
+  "onet_title": "Mathematicians",
+  "vec": {
+   "R": 3.22,
+   "I": 7.0,
+   "A": 3.23,
+   "S": 1.95,
+   "E": 1.11,
+   "C": 5.03
+  },
+  "onet_top3": "ICA",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Археолог",
+  "our_code": "IRA",
+  "onet_soc": "19-3091.00",
+  "onet_title": "Anthropologists and Archeologists",
+  "vec": {
+   "R": 3.99,
+   "I": 6.84,
+   "A": 4.21,
+   "S": 3.67,
+   "E": 1.63,
+   "C": 3.19
+  },
+  "onet_top3": "IAR",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Метеоролог",
+  "our_code": "ICR",
+  "onet_soc": "19-2021.00",
+  "onet_title": "Atmospheric and Space Scientists",
+  "vec": {
+   "R": 4.77,
+   "I": 6.26,
+   "A": 2.72,
+   "S": 2.49,
+   "E": 2.68,
+   "C": 4.45
+  },
+  "onet_top3": "IRC",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Системный аналитик",
+  "our_code": "IER",
+  "onet_soc": "15-1211.00",
+  "onet_title": "Computer Systems Analysts",
+  "vec": {
+   "R": 3.27,
+   "I": 6.39,
+   "A": 1.98,
+   "S": 1.91,
+   "E": 2.23,
+   "C": 5.93
+  },
+  "onet_top3": "ICR",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Исследователь в области биотехнологий",
+  "our_code": "IRS",
+  "onet_soc": "19-1021.00",
+  "onet_title": "Biochemists and Biophysicists",
+  "vec": {
+   "R": 5.11,
+   "I": 7.0,
+   "A": 2.61,
+   "S": 2.15,
+   "E": 1.83,
+   "C": 3.64
+  },
+  "onet_top3": "IRC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Инженер-эколог",
+  "our_code": "RIC",
+  "onet_soc": "17-2081.00",
+  "onet_title": "Environmental Engineers",
+  "vec": {
+   "R": 5.17,
+   "I": 6.1,
+   "A": 1.96,
+   "S": 2.22,
+   "E": 3.17,
+   "C": 4.59
+  },
+  "onet_top3": "IRC",
+  "letters_overlap": 3
+ },
+ {
+  "title": "DevOps-инженер",
+  "our_code": "RCI",
+  "onet_soc": "15-1299.08",
+  "onet_title": "Computer Systems Engineers/Architects",
+  "vec": {
+   "R": 4.1,
+   "I": 5.46,
+   "A": 1.88,
+   "S": 2.1,
+   "E": 3.03,
+   "C": 5.76
+  },
+  "onet_top3": "CIR",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Инженер по кибербезопасности",
+  "our_code": "IRC",
+  "onet_soc": "15-1212.00",
+  "onet_title": "Information Security Analysts",
+  "vec": {
+   "R": 3.56,
+   "I": 5.4,
+   "A": 1.34,
+   "S": 2.11,
+   "E": 2.85,
+   "C": 6.08
+  },
+  "onet_top3": "CIR",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Data Engineer",
+  "our_code": "ICR",
+  "onet_soc": "15-1243.00",
+  "onet_title": "Database Architects",
+  "vec": {
+   "R": 2.63,
+   "I": 5.63,
+   "A": 2.16,
+   "S": 1.91,
+   "E": 2.68,
+   "C": 6.12
+  },
+  "onet_top3": "CIE",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Mobile-разработчик",
+  "our_code": "IRC",
+  "onet_soc": "15-1252.00",
+  "onet_title": "Software Developers",
+  "vec": {
+   "R": 3.61,
+   "I": 6.05,
+   "A": 2.37,
+   "S": 1.81,
+   "E": 1.87,
+   "C": 5.62
+  },
+  "onet_top3": "ICR",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Физик",
+  "our_code": "IRE",
+  "onet_soc": "19-2012.00",
+  "onet_title": "Physicists",
+  "vec": {
+   "R": 4.94,
+   "I": 7.0,
+   "A": 2.75,
+   "S": 2.12,
+   "E": 1.77,
+   "C": 4.8
+  },
+  "onet_top3": "IRC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Астроном",
+  "our_code": "IRA",
+  "onet_soc": "19-2011.00",
+  "onet_title": "Astronomers",
+  "vec": {
+   "R": 5.07,
+   "I": 7.0,
+   "A": 3.28,
+   "S": 2.71,
+   "E": 1.87,
+   "C": 4.04
+  },
+  "onet_top3": "IRC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Хирург",
+  "our_code": "RIS",
+  "onet_soc": "29-1242.00",
+  "onet_title": "Orthopedic Surgeons, Except Pediatric",
+  "vec": {
+   "R": 5.08,
+   "I": 6.5,
+   "A": 1.48,
+   "S": 4.82,
+   "E": 2.36,
+   "C": 3.91
+  },
+  "onet_top3": "IRS",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Педиатр",
+  "our_code": "ISA",
+  "onet_soc": "29-1221.00",
+  "onet_title": "Pediatricians, General",
+  "vec": {
+   "R": 3.64,
+   "I": 6.18,
+   "A": 1.88,
+   "S": 6.64,
+   "E": 2.54,
+   "C": 3.58
+  },
+  "onet_top3": "SIR",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Психиатр",
+  "our_code": "ISE",
+  "onet_soc": "29-1223.00",
+  "onet_title": "Psychiatrists",
+  "vec": {
+   "R": 2.3,
+   "I": 6.59,
+   "A": 2.65,
+   "S": 5.83,
+   "E": 1.95,
+   "C": 3.6
+  },
+  "onet_top3": "ISC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Генетик",
+  "our_code": "ISR",
+  "onet_soc": "19-1029.03",
+  "onet_title": "Geneticists",
+  "vec": {
+   "R": 4.05,
+   "I": 7.0,
+   "A": 2.95,
+   "S": 2.91,
+   "E": 1.61,
+   "C": 4.78
+  },
+  "onet_top3": "ICR",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Эпидемиолог",
+  "our_code": "ICS",
+  "onet_soc": "19-1041.00",
+  "onet_title": "Epidemiologists",
+  "vec": {
+   "R": 2.82,
+   "I": 7.0,
+   "A": 2.19,
+   "S": 4.11,
+   "E": 2.37,
+   "C": 3.63
+  },
+  "onet_top3": "ISC",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Нейробиолог",
+  "our_code": "IRE",
+  "onet_soc": "19-1029.04",
+  "onet_title": "Biologists",
+  "vec": {
+   "R": 4.11,
+   "I": 7.0,
+   "A": 2.4,
+   "S": 2.62,
+   "E": 2.76,
+   "C": 4.45
+  },
+  "onet_top3": "ICR",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Судмедэксперт / Криминалист",
+  "our_code": "ISR",
+  "onet_soc": "19-4092.00",
+  "onet_title": "Forensic Science Technicians",
+  "vec": {
+   "R": 5.18,
+   "I": 5.94,
+   "A": 1.77,
+   "S": 1.5,
+   "E": 1.59,
+   "C": 4.98
+  },
+  "onet_top3": "IRC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Океанолог / Гидролог",
+  "our_code": "IRE",
+  "onet_soc": "19-2043.00",
+  "onet_title": "Hydrologists",
+  "vec": {
+   "R": 5.84,
+   "I": 6.41,
+   "A": 1.63,
+   "S": 2.14,
+   "E": 2.29,
+   "C": 4.31
+  },
+  "onet_top3": "IRC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Историк",
+  "our_code": "IAS",
+  "onet_soc": "19-3093.00",
+  "onet_title": "Historians",
+  "vec": {
+   "R": 2.39,
+   "I": 5.32,
+   "A": 3.7,
+   "S": 3.22,
+   "E": 2.35,
+   "C": 4.87
+  },
+  "onet_top3": "ICA",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Медицинский лабораторный технолог",
+  "our_code": "ISR",
+  "onet_soc": "29-2011.00",
+  "onet_title": "Medical and Clinical Laboratory Technologists",
+  "vec": {
+   "R": 5.81,
+   "I": 6.15,
+   "A": 1.13,
+   "S": 2.77,
+   "E": 1.51,
+   "C": 4.99
+  },
+  "onet_top3": "IRC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Архитектор",
+  "our_code": "AIR",
+  "onet_soc": "17-1011.00",
+  "onet_title": "Architects, Except Landscape and Naval",
+  "vec": {
+   "R": 4.92,
+   "I": 3.88,
+   "A": 4.13,
+   "S": 2.53,
+   "E": 3.65,
+   "C": 4.44
+  },
+  "onet_top3": "RCA",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Графический дизайнер",
+  "our_code": "AIE",
+  "onet_soc": "27-1024.00",
+  "onet_title": "Graphic Designers",
+  "vec": {
+   "R": 3.38,
+   "I": 2.86,
+   "A": 7.0,
+   "S": 2.16,
+   "E": 3.43,
+   "C": 3.92
+  },
+  "onet_top3": "ACE",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Модельер",
+  "our_code": "ASR",
+  "onet_soc": "27-1022.00",
+  "onet_title": "Fashion Designers",
+  "vec": {
+   "R": 4.34,
+   "I": 2.17,
+   "A": 7.0,
+   "S": 2.35,
+   "E": 3.96,
+   "C": 2.94
+  },
+  "onet_top3": "ARE",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Художник",
+  "our_code": "ASI",
+  "onet_soc": "27-1013.00",
+  "onet_title": "Fine Artists, Including Painters, Sculptors, and Illustrators",
+  "vec": {
+   "R": 4.05,
+   "I": 2.68,
+   "A": 7.0,
+   "S": 2.28,
+   "E": 2.37,
+   "C": 2.34
+  },
+  "onet_top3": "ARI",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Писатель / Копирайтер",
+  "our_code": "ASI",
+  "onet_soc": "27-3043.00",
+  "onet_title": "Writers and Authors",
+  "vec": {
+   "R": 1.0,
+   "I": 3.25,
+   "A": 6.68,
+   "S": 2.86,
+   "E": 4.75,
+   "C": 3.34
+  },
+  "onet_top3": "AEC",
+  "letters_overlap": 1
+ },
+ {
+  "title": "Журналист",
+  "our_code": "ASE",
+  "onet_soc": "27-3023.00",
+  "onet_title": "News Analysts, Reporters, and Journalists",
+  "vec": {
+   "R": 1.47,
+   "I": 4.16,
+   "A": 5.09,
+   "S": 2.8,
+   "E": 3.95,
+   "C": 3.64
+  },
+  "onet_top3": "AIE",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Режиссёр",
+  "our_code": "AEC",
+  "onet_soc": "27-2012.00",
+  "onet_title": "Producers and Directors",
+  "vec": {
+   "R": 2.13,
+   "I": 2.24,
+   "A": 6.14,
+   "S": 3.12,
+   "E": 5.78,
+   "C": 3.56
+  },
+  "onet_top3": "AEC",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Актёр",
+  "our_code": "AES",
+  "onet_soc": "27-2011.00",
+  "onet_title": "Actors",
+  "vec": {
+   "R": 2.29,
+   "I": 2.16,
+   "A": 7.0,
+   "S": 4.08,
+   "E": 4.0,
+   "C": 1.81
+  },
+  "onet_top3": "ASE",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Хореограф",
+  "our_code": "AER",
+  "onet_soc": "27-2032.00",
+  "onet_title": "Choreographers",
+  "vec": {
+   "R": 3.63,
+   "I": 2.22,
+   "A": 7.0,
+   "S": 3.96,
+   "E": 3.77,
+   "C": 2.13
+  },
+  "onet_top3": "ASE",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Музыкант-исполнитель",
+  "our_code": "ASI",
+  "onet_soc": "27-2042.00",
+  "onet_title": "Musicians and Singers",
+  "vec": {
+   "R": 2.87,
+   "I": 1.53,
+   "A": 6.66,
+   "S": 3.41,
+   "E": 3.42,
+   "C": 2.17
+  },
+  "onet_top3": "AES",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Фотограф",
+  "our_code": "ARE",
+  "onet_soc": "27-4021.00",
+  "onet_title": "Photographers",
+  "vec": {
+   "R": 5.54,
+   "I": 2.18,
+   "A": 5.28,
+   "S": 1.94,
+   "E": 2.28,
+   "C": 3.35
+  },
+  "onet_top3": "RAC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Дизайнер интерьера",
+  "our_code": "ARE",
+  "onet_soc": "27-1025.00",
+  "onet_title": "Interior Designers",
+  "vec": {
+   "R": 4.12,
+   "I": 3.07,
+   "A": 5.56,
+   "S": 2.68,
+   "E": 3.7,
+   "C": 3.82
+  },
+  "onet_top3": "ARC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Аниматор (2D/3D)",
+  "our_code": "ARI",
+  "onet_soc": "27-1014.00",
+  "onet_title": "Special Effects Artists and Animators",
+  "vec": {
+   "R": 3.71,
+   "I": 2.77,
+   "A": 7.0,
+   "S": 2.18,
+   "E": 2.62,
+   "C": 3.13
+  },
+  "onet_top3": "ARC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Преподаватель искусства",
+  "our_code": "ASE",
+  "onet_soc": "25-1121.00",
+  "onet_title": "Art, Drama, and Music Teachers, Postsecondary",
+  "vec": {
+   "R": 3.03,
+   "I": 4.14,
+   "A": 5.73,
+   "S": 6.99,
+   "E": 2.12,
+   "C": 2.61
+  },
+  "onet_top3": "SAI",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Искусствовед",
+  "our_code": "AIE",
+  "onet_soc": "25-4012.00",
+  "onet_title": "Curators",
+  "vec": {
+   "R": 2.47,
+   "I": 3.43,
+   "A": 2.98,
+   "S": 3.82,
+   "E": 3.84,
+   "C": 5.36
+  },
+  "onet_top3": "CES",
+  "letters_overlap": 1
+ },
+ {
+  "title": "UX/UI-дизайнер",
+  "our_code": "AIE",
+  "onet_soc": "15-1255.00",
+  "onet_title": "Web and Digital Interface Designers",
+  "vec": {
+   "R": 2.59,
+   "I": 4.88,
+   "A": 4.48,
+   "S": 2.2,
+   "E": 3.13,
+   "C": 4.4
+  },
+  "onet_top3": "IAC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Геймдизайнер",
+  "our_code": "ARI",
+  "onet_soc": "15-1255.01",
+  "onet_title": "Video Game Designers",
+  "vec": {
+   "R": 2.77,
+   "I": 4.15,
+   "A": 6.38,
+   "S": 2.3,
+   "E": 3.92,
+   "C": 3.85
+  },
+  "onet_top3": "AIE",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Урбанист / Градостроитель",
+  "our_code": "AIR",
+  "onet_soc": "19-3051.00",
+  "onet_title": "Urban and Regional Planners",
+  "vec": {
+   "R": 3.22,
+   "I": 5.31,
+   "A": 3.06,
+   "S": 3.03,
+   "E": 4.46,
+   "C": 3.96
+  },
+  "onet_top3": "IEC",
+  "letters_overlap": 1
+ },
+ {
+  "title": "Композитор",
+  "our_code": "AIC",
+  "onet_soc": "27-2041.00",
+  "onet_title": "Music Directors and Composers",
+  "vec": {
+   "R": 2.07,
+   "I": 2.28,
+   "A": 7.0,
+   "S": 3.04,
+   "E": 4.82,
+   "C": 2.63
+  },
+  "onet_top3": "AES",
+  "letters_overlap": 1
+ },
+ {
+  "title": "Звукорежиссёр",
+  "our_code": "ARI",
+  "onet_soc": "27-4014.00",
+  "onet_title": "Sound Engineering Technicians",
+  "vec": {
+   "R": 5.14,
+   "I": 2.68,
+   "A": 4.45,
+   "S": 1.69,
+   "E": 2.16,
+   "C": 4.22
+  },
+  "onet_top3": "RAC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Сценарист",
+  "our_code": "AIS",
+  "onet_soc": "27-3043.05",
+  "onet_title": "Poets, Lyricists and Creative Writers",
+  "vec": {
+   "R": 1.17,
+   "I": 3.58,
+   "A": 7.0,
+   "S": 2.83,
+   "E": 3.17,
+   "C": 2.88
+  },
+  "onet_top3": "AIE",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Модный стилист",
+  "our_code": "ASE",
+  "onet_soc": "27-1022.00",
+  "onet_title": "Fashion Designers",
+  "vec": {
+   "R": 4.34,
+   "I": 2.17,
+   "A": 7.0,
+   "S": 2.35,
+   "E": 3.96,
+   "C": 2.94
+  },
+  "onet_top3": "ARE",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Иллюстратор",
+  "our_code": "AIS",
+  "onet_soc": "27-1013.00",
+  "onet_title": "Fine Artists, Including Painters, Sculptors, and Illustrators",
+  "vec": {
+   "R": 4.05,
+   "I": 2.68,
+   "A": 7.0,
+   "S": 2.28,
+   "E": 2.37,
+   "C": 2.34
+  },
+  "onet_top3": "ARI",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Специалист по медиакоммуникациям",
+  "our_code": "ASE",
+  "onet_soc": "27-3031.00",
+  "onet_title": "Public Relations Specialists",
+  "vec": {
+   "R": 1.0,
+   "I": 2.72,
+   "A": 4.68,
+   "S": 3.94,
+   "E": 5.82,
+   "C": 3.45
+  },
+  "onet_top3": "EAS",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Филолог-лингвист",
+  "our_code": "IAS",
+  "onet_soc": "25-1124.00",
+  "onet_title": "Foreign Language and Literature Teachers, Postsecondary",
+  "vec": {
+   "R": 2.11,
+   "I": 4.52,
+   "A": 4.06,
+   "S": 7.0,
+   "E": 2.52,
+   "C": 3.53
+  },
+  "onet_top3": "SIA",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Школьный учитель",
+  "our_code": "SAE",
+  "onet_soc": "25-2031.00",
+  "onet_title": "Secondary School Teachers, Except Special and Career/Technical Education",
+  "vec": {
+   "R": 2.73,
+   "I": 3.19,
+   "A": 3.77,
+   "S": 7.0,
+   "E": 2.9,
+   "C": 3.61
+  },
+  "onet_top3": "SAC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Психолог-консультант",
+  "our_code": "SAE",
+  "onet_soc": "19-3033.00",
+  "onet_title": "Clinical and Counseling Psychologists",
+  "vec": {
+   "R": 1.05,
+   "I": 5.58,
+   "A": 3.06,
+   "S": 6.57,
+   "E": 2.65,
+   "C": 3.49
+  },
+  "onet_top3": "SIC",
+  "letters_overlap": 1
+ },
+ {
+  "title": "Медицинская сестра / медбрат",
+  "our_code": "SIA",
+  "onet_soc": "29-1141.00",
+  "onet_title": "Registered Nurses",
+  "vec": {
+   "R": 3.46,
+   "I": 4.71,
+   "A": 1.34,
+   "S": 5.57,
+   "E": 2.38,
+   "C": 4.75
+  },
+  "onet_top3": "SCI",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Логопед",
+  "our_code": "SAI",
+  "onet_soc": "29-1127.00",
+  "onet_title": "Speech-Language Pathologists",
+  "vec": {
+   "R": 2.62,
+   "I": 5.57,
+   "A": 3.0,
+   "S": 6.09,
+   "E": 1.44,
+   "C": 4.03
+  },
+  "onet_top3": "SIC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Социальный работник",
+  "our_code": "SEA",
+  "onet_soc": "21-1021.00",
+  "onet_title": "Child, Family, and School Social Workers",
+  "vec": {
+   "R": 1.7,
+   "I": 3.32,
+   "A": 2.9,
+   "S": 6.85,
+   "E": 2.94,
+   "C": 3.57
+  },
+  "onet_top3": "SCI",
+  "letters_overlap": 1
+ },
+ {
+  "title": "Воспитатель детского сада",
+  "our_code": "SAE",
+  "onet_soc": "25-2011.00",
+  "onet_title": "Preschool Teachers, Except Special Education",
+  "vec": {
+   "R": 2.94,
+   "I": 2.76,
+   "A": 3.98,
+   "S": 7.0,
+   "E": 2.49,
+   "C": 3.61
+  },
+  "onet_top3": "SAC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "HR-менеджер",
+  "our_code": "SEC",
+  "onet_soc": "11-3121.00",
+  "onet_title": "Human Resources Managers",
+  "vec": {
+   "R": 1.26,
+   "I": 2.31,
+   "A": 1.5,
+   "S": 3.88,
+   "E": 7.0,
+   "C": 5.54
+  },
+  "onet_top3": "ECS",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Тренер по спорту",
+  "our_code": "SRE",
+  "onet_soc": "27-2022.00",
+  "onet_title": "Coaches and Scouts",
+  "vec": {
+   "R": 4.25,
+   "I": 2.15,
+   "A": 2.43,
+   "S": 5.31,
+   "E": 5.15,
+   "C": 3.45
+  },
+  "onet_top3": "SER",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Гид-экскурсовод",
+  "our_code": "SEA",
+  "onet_soc": "39-7011.00",
+  "onet_title": "Tour Guides and Escorts",
+  "vec": {
+   "R": 3.33,
+   "I": 2.4,
+   "A": 3.46,
+   "S": 5.35,
+   "E": 3.64,
+   "C": 2.85
+  },
+  "onet_top3": "SEA",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Библиотекарь",
+  "our_code": "SAI",
+  "onet_soc": "25-4022.00",
+  "onet_title": "Librarians and Media Collections Specialists",
+  "vec": {
+   "R": 2.32,
+   "I": 3.63,
+   "A": 2.65,
+   "S": 4.04,
+   "E": 2.75,
+   "C": 5.83
+  },
+  "onet_top3": "CSI",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Преподаватель вуза",
+  "our_code": "SEI",
+  "onet_soc": "25-1081.00",
+  "onet_title": "Education Teachers, Postsecondary",
+  "vec": {
+   "R": 2.67,
+   "I": 4.77,
+   "A": 3.47,
+   "S": 7.0,
+   "E": 2.68,
+   "C": 3.61
+  },
+  "onet_top3": "SIC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Специалист по работе с молодёжью",
+  "our_code": "SEA",
+  "onet_soc": "21-1093.00",
+  "onet_title": "Social and Human Service Assistants",
+  "vec": {
+   "R": 1.28,
+   "I": 2.8,
+   "A": 1.95,
+   "S": 6.09,
+   "E": 3.61,
+   "C": 4.57
+  },
+  "onet_top3": "SCE",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Реабилитолог / Эрготерапевт",
+  "our_code": "SIE",
+  "onet_soc": "29-1122.00",
+  "onet_title": "Occupational Therapists",
+  "vec": {
+   "R": 3.57,
+   "I": 4.23,
+   "A": 3.07,
+   "S": 6.08,
+   "E": 1.83,
+   "C": 3.12
+  },
+  "onet_top3": "SIR",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Нутрициолог / Диетолог",
+  "our_code": "SIA",
+  "onet_soc": "29-1031.00",
+  "onet_title": "Dietitians and Nutritionists",
+  "vec": {
+   "R": 3.03,
+   "I": 4.8,
+   "A": 2.4,
+   "S": 5.5,
+   "E": 3.42,
+   "C": 3.35
+  },
+  "onet_top3": "SIE",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Дефектолог",
+  "our_code": "SAI",
+  "onet_soc": "25-2056.00",
+  "onet_title": "Special Education Teachers, Elementary School",
+  "vec": {
+   "R": 2.27,
+   "I": 3.94,
+   "A": 3.65,
+   "S": 7.0,
+   "E": 1.77,
+   "C": 3.48
+  },
+  "onet_top3": "SIA",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Физиотерапевт / Массажист",
+  "our_code": "SIR",
+  "onet_soc": "29-1123.00",
+  "onet_title": "Physical Therapists",
+  "vec": {
+   "R": 4.33,
+   "I": 4.87,
+   "A": 2.17,
+   "S": 5.91,
+   "E": 2.49,
+   "C": 3.07
+  },
+  "onet_top3": "SIR",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Медиатор / Конфликтолог",
+  "our_code": "SEA",
+  "onet_soc": "23-1022.00",
+  "onet_title": "Arbitrators, Mediators, and Conciliators",
+  "vec": {
+   "R": 1.12,
+   "I": 3.61,
+   "A": 2.25,
+   "S": 4.24,
+   "E": 4.63,
+   "C": 4.33
+  },
+  "onet_top3": "ECS",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Профориентолог / Карьерный консультант",
+  "our_code": "SAE",
+  "onet_soc": "21-1012.00",
+  "onet_title": "Educational, Guidance, and Career Counselors and Advisors",
+  "vec": {
+   "R": 1.0,
+   "I": 3.3,
+   "A": 3.13,
+   "S": 7.0,
+   "E": 3.92,
+   "C": 4.09
+  },
+  "onet_top3": "SCE",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Педагог-психолог",
+  "our_code": "SAI",
+  "onet_soc": "19-3034.00",
+  "onet_title": "School Psychologists",
+  "vec": {
+   "R": 1.0,
+   "I": 5.0,
+   "A": 3.31,
+   "S": 6.77,
+   "E": 2.82,
+   "C": 4.01
+  },
+  "onet_top3": "SIC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Теолог / Религиовед",
+  "our_code": "SAI",
+  "onet_soc": "25-1126.00",
+  "onet_title": "Philosophy and Religion Teachers, Postsecondary",
+  "vec": {
+   "R": 2.46,
+   "I": 5.14,
+   "A": 3.76,
+   "S": 7.0,
+   "E": 2.77,
+   "C": 3.48
+  },
+  "onet_top3": "SIA",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Предприниматель",
+  "our_code": "EAI",
+  "onet_soc": "11-1011.00",
+  "onet_title": "Chief Executives",
+  "vec": {
+   "R": 1.26,
+   "I": 3.05,
+   "A": 2.16,
+   "S": 3.54,
+   "E": 6.96,
+   "C": 4.97
+  },
+  "onet_top3": "ECS",
+  "letters_overlap": 1
+ },
+ {
+  "title": "Менеджер по продажам",
+  "our_code": "ESR",
+  "onet_soc": "11-2022.00",
+  "onet_title": "Sales Managers",
+  "vec": {
+   "R": 1.49,
+   "I": 1.67,
+   "A": 1.36,
+   "S": 3.37,
+   "E": 7.0,
+   "C": 5.53
+  },
+  "onet_top3": "ECS",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Директор по маркетингу",
+  "our_code": "EAS",
+  "onet_soc": "11-2021.00",
+  "onet_title": "Marketing Managers",
+  "vec": {
+   "R": 1.0,
+   "I": 2.9,
+   "A": 2.45,
+   "S": 2.82,
+   "E": 7.0,
+   "C": 4.7
+  },
+  "onet_top3": "ECI",
+  "letters_overlap": 1
+ },
+ {
+  "title": "Юрист / Адвокат",
+  "our_code": "ECS",
+  "onet_soc": "23-1011.00",
+  "onet_title": "Lawyers",
+  "vec": {
+   "R": 1.12,
+   "I": 4.38,
+   "A": 2.4,
+   "S": 3.48,
+   "E": 5.51,
+   "C": 4.59
+  },
+  "onet_top3": "ECI",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Финансовый консультант",
+  "our_code": "ESR",
+  "onet_soc": "13-2052.00",
+  "onet_title": "Personal Financial Advisors",
+  "vec": {
+   "R": 1.0,
+   "I": 3.27,
+   "A": 1.69,
+   "S": 4.07,
+   "E": 5.85,
+   "C": 5.61
+  },
+  "onet_top3": "ECS",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Риелтор",
+  "our_code": "CES",
+  "onet_soc": "41-9022.00",
+  "onet_title": "Real Estate Sales Agents",
+  "vec": {
+   "R": 2.12,
+   "I": 1.47,
+   "A": 1.92,
+   "S": 3.52,
+   "E": 6.46,
+   "C": 4.94
+  },
+  "onet_top3": "ECS",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Event-менеджер",
+  "our_code": "ESC",
+  "onet_soc": "13-1121.00",
+  "onet_title": "Meeting, Convention, and Event Planners",
+  "vec": {
+   "R": 1.0,
+   "I": 1.56,
+   "A": 2.49,
+   "S": 4.56,
+   "E": 7.0,
+   "C": 4.96
+  },
+  "onet_top3": "ECS",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Страховой агент",
+  "our_code": "ESC",
+  "onet_soc": "41-3021.00",
+  "onet_title": "Insurance Sales Agents",
+  "vec": {
+   "R": 1.0,
+   "I": 2.25,
+   "A": 1.09,
+   "S": 3.71,
+   "E": 5.95,
+   "C": 5.46
+  },
+  "onet_top3": "ECS",
+  "letters_overlap": 3
+ },
+ {
+  "title": "PR-менеджер",
+  "our_code": "EAS",
+  "onet_soc": "11-2032.00",
+  "onet_title": "Public Relations Managers",
+  "vec": {
+   "R": 1.0,
+   "I": 2.34,
+   "A": 3.67,
+   "S": 4.18,
+   "E": 7.0,
+   "C": 4.39
+  },
+  "onet_top3": "ECS",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Управляющий отелем / рестораном",
+  "our_code": "ESR",
+  "onet_soc": "11-9081.00",
+  "onet_title": "Lodging Managers",
+  "vec": {
+   "R": 2.69,
+   "I": 1.1,
+   "A": 1.43,
+   "S": 4.31,
+   "E": 6.21,
+   "C": 5.22
+  },
+  "onet_top3": "ECS",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Биржевой брокер",
+  "our_code": "ESI",
+  "onet_soc": "41-3031.00",
+  "onet_title": "Securities, Commodities, and Financial Services Sales Agents",
+  "vec": {
+   "R": 1.26,
+   "I": 2.53,
+   "A": 1.29,
+   "S": 3.07,
+   "E": 6.08,
+   "C": 5.27
+  },
+  "onet_top3": "ECS",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Директор по логистике",
+  "our_code": "ECR",
+  "onet_soc": "11-3071.00",
+  "onet_title": "Transportation, Storage, and Distribution Managers",
+  "vec": {
+   "R": 3.6,
+   "I": 2.64,
+   "A": 1.0,
+   "S": 2.39,
+   "E": 5.99,
+   "C": 5.74
+  },
+  "onet_top3": "ECR",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Бизнес-переводчик",
+  "our_code": "SEA",
+  "onet_soc": "27-3091.00",
+  "onet_title": "Interpreters and Translators",
+  "vec": {
+   "R": 1.89,
+   "I": 3.19,
+   "A": 4.28,
+   "S": 3.48,
+   "E": 1.9,
+   "C": 4.79
+  },
+  "onet_top3": "CAS",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Продакт-менеджер",
+  "our_code": "EIA",
+  "onet_soc": "13-1111.00",
+  "onet_title": "Management Analysts",
+  "vec": {
+   "R": 1.37,
+   "I": 5.44,
+   "A": 1.63,
+   "S": 2.82,
+   "E": 4.81,
+   "C": 6.05
+  },
+  "onet_top3": "CIE",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Проектный менеджер",
+  "our_code": "ECI",
+  "onet_soc": "13-1082.00",
+  "onet_title": "Project Management Specialists",
+  "vec": {
+   "R": 1.48,
+   "I": 2.75,
+   "A": 1.57,
+   "S": 3.32,
+   "E": 6.3,
+   "C": 5.55
+  },
+  "onet_top3": "ECS",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Инвестиционный банкир",
+  "our_code": "ESI",
+  "onet_soc": "11-3031.00",
+  "onet_title": "Financial Managers",
+  "vec": {
+   "R": 1.36,
+   "I": 2.46,
+   "A": 1.59,
+   "S": 3.04,
+   "E": 7.0,
+   "C": 5.56
+  },
+  "onet_top3": "ECS",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Маркетолог",
+  "our_code": "EAC",
+  "onet_soc": "13-1161.00",
+  "onet_title": "Market Research Analysts and Marketing Specialists",
+  "vec": {
+   "R": 1.08,
+   "I": 4.6,
+   "A": 2.56,
+   "S": 2.47,
+   "E": 5.52,
+   "C": 4.62
+  },
+  "onet_top3": "ECI",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Судья",
+  "our_code": "CES",
+  "onet_soc": "23-1023.00",
+  "onet_title": "Judges, Magistrate Judges, and Magistrates",
+  "vec": {
+   "R": 2.33,
+   "I": 3.81,
+   "A": 2.19,
+   "S": 3.96,
+   "E": 5.27,
+   "C": 4.11
+  },
+  "onet_top3": "ECS",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Прокурор",
+  "our_code": "ECS",
+  "onet_soc": "23-1011.00",
+  "onet_title": "Lawyers",
+  "vec": {
+   "R": 1.12,
+   "I": 4.38,
+   "A": 2.4,
+   "S": 3.48,
+   "E": 5.51,
+   "C": 4.59
+  },
+  "onet_top3": "ECI",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Нотариус",
+  "our_code": "CSE",
+  "onet_soc": "23-2093.00",
+  "onet_title": "Title Examiners, Abstractors, and Searchers",
+  "vec": {
+   "R": 2.44,
+   "I": 2.63,
+   "A": 1.11,
+   "S": 2.34,
+   "E": 3.44,
+   "C": 6.74
+  },
+  "onet_top3": "CEI",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Спортивный менеджер / агент",
+  "our_code": "ERS",
+  "onet_soc": "13-1011.00",
+  "onet_title": "Agents and Business Managers of Artists, Performers, and Athletes",
+  "vec": {
+   "R": 1.0,
+   "I": 1.76,
+   "A": 3.55,
+   "S": 4.14,
+   "E": 6.48,
+   "C": 3.73
+  },
+  "onet_top3": "ESC",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Бухгалтер",
+  "our_code": "CSE",
+  "onet_soc": "13-2011.00",
+  "onet_title": "Accountants and Auditors",
+  "vec": {
+   "R": 1.14,
+   "I": 3.57,
+   "A": 1.08,
+   "S": 2.13,
+   "E": 3.87,
+   "C": 7.0
+  },
+  "onet_top3": "CEI",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Налоговый консультант",
+  "our_code": "CES",
+  "onet_soc": "13-2082.00",
+  "onet_title": "Tax Preparers",
+  "vec": {
+   "R": 2.17,
+   "I": 2.38,
+   "A": 1.0,
+   "S": 2.26,
+   "E": 3.38,
+   "C": 6.79
+  },
+  "onet_top3": "CEI",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Финансовый аналитик",
+  "our_code": "CSI",
+  "onet_soc": "13-2051.00",
+  "onet_title": "Financial and Investment Analysts",
+  "vec": {
+   "R": 1.0,
+   "I": 5.06,
+   "A": 1.78,
+   "S": 2.25,
+   "E": 5.09,
+   "C": 5.54
+  },
+  "onet_top3": "CEI",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Аудитор",
+  "our_code": "CSE",
+  "onet_soc": "13-2011.00",
+  "onet_title": "Accountants and Auditors",
+  "vec": {
+   "R": 1.14,
+   "I": 3.57,
+   "A": 1.08,
+   "S": 2.13,
+   "E": 3.87,
+   "C": 7.0
+  },
+  "onet_top3": "CEI",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Специалист по таможенному делу",
+  "our_code": "CEI",
+  "onet_soc": "13-1041.08",
+  "onet_title": "Customs Brokers",
+  "vec": {
+   "R": 2.37,
+   "I": 1.53,
+   "A": 1.0,
+   "S": 2.17,
+   "E": 5.02,
+   "C": 6.13
+  },
+  "onet_top3": "CER",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Секретарь-делопроизводитель",
+  "our_code": "CES",
+  "onet_soc": "43-6014.00",
+  "onet_title": "Secretaries and Administrative Assistants, Except Legal, Medical, and Executive",
+  "vec": {
+   "R": 1.98,
+   "I": 1.37,
+   "A": 1.0,
+   "S": 3.61,
+   "E": 4.18,
+   "C": 6.95
+  },
+  "onet_top3": "CES",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Специалист технической поддержки",
+  "our_code": "CSR",
+  "onet_soc": "15-1232.00",
+  "onet_title": "Computer User Support Specialists",
+  "vec": {
+   "R": 4.13,
+   "I": 3.77,
+   "A": 1.0,
+   "S": 3.31,
+   "E": 2.36,
+   "C": 6.02
+  },
+  "onet_top3": "CRI",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Кредитный аналитик",
+  "our_code": "CIE",
+  "onet_soc": "13-2041.00",
+  "onet_title": "Credit Analysts",
+  "vec": {
+   "R": 1.0,
+   "I": 3.79,
+   "A": 1.0,
+   "S": 2.41,
+   "E": 4.55,
+   "C": 6.85
+  },
+  "onet_top3": "CEI",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Специалист по кадровому делопроизводству",
+  "our_code": "CES",
+  "onet_soc": "13-1071.00",
+  "onet_title": "Human Resources Specialists",
+  "vec": {
+   "R": 1.03,
+   "I": 2.52,
+   "A": 1.35,
+   "S": 3.78,
+   "E": 5.67,
+   "C": 5.52
+  },
+  "onet_top3": "ECS",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Архивариус",
+  "our_code": "CSE",
+  "onet_soc": "25-4011.00",
+  "onet_title": "Archivists",
+  "vec": {
+   "R": 2.88,
+   "I": 4.72,
+   "A": 2.89,
+   "S": 2.96,
+   "E": 1.83,
+   "C": 5.97
+  },
+  "onet_top3": "CIS",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Специалист по стандартизации и сертификации",
+  "our_code": "CRI",
+  "onet_soc": "13-1041.07",
+  "onet_title": "Regulatory Affairs Specialists",
+  "vec": {
+   "R": 1.4,
+   "I": 3.32,
+   "A": 1.0,
+   "S": 2.5,
+   "E": 4.46,
+   "C": 6.32
+  },
+  "onet_top3": "CEI",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Страховой андеррайтер",
+  "our_code": "CSE",
+  "onet_soc": "13-2053.00",
+  "onet_title": "Insurance Underwriters",
+  "vec": {
+   "R": 1.72,
+   "I": 3.64,
+   "A": 1.0,
+   "S": 2.84,
+   "E": 4.5,
+   "C": 6.16
+  },
+  "onet_top3": "CEI",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Специалист по закупкам",
+  "our_code": "CEI",
+  "onet_soc": "13-1023.00",
+  "onet_title": "Purchasing Agents, Except Wholesale, Retail, and Farm Products",
+  "vec": {
+   "R": 3.5,
+   "I": 1.82,
+   "A": 1.19,
+   "S": 1.93,
+   "E": 5.09,
+   "C": 5.65
+  },
+  "onet_top3": "CER",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Администратор баз данных",
+  "our_code": "CRI",
+  "onet_soc": "15-1242.00",
+  "onet_title": "Database Administrators",
+  "vec": {
+   "R": 2.83,
+   "I": 4.83,
+   "A": 1.2,
+   "S": 2.29,
+   "E": 2.94,
+   "C": 6.61
+  },
+  "onet_top3": "CIE",
+  "letters_overlap": 2
+ },
+ {
+  "title": "QA-инженер (тестировщик)",
+  "our_code": "CRI",
+  "onet_soc": "15-1253.00",
+  "onet_title": "Software Quality Assurance Analysts and Testers",
+  "vec": {
+   "R": 3.8,
+   "I": 5.76,
+   "A": 1.69,
+   "S": 1.53,
+   "E": 1.57,
+   "C": 5.67
+  },
+  "onet_top3": "ICR",
+  "letters_overlap": 3
+ },
+ {
+  "title": "Логист",
+  "our_code": "CRE",
+  "onet_soc": "13-1081.00",
+  "onet_title": "Logisticians",
+  "vec": {
+   "R": 2.35,
+   "I": 3.81,
+   "A": 1.1,
+   "S": 2.33,
+   "E": 5.02,
+   "C": 5.44
+  },
+  "onet_top3": "CEI",
+  "letters_overlap": 2
+ },
+ {
+  "title": "Финансовый контролёр",
+  "our_code": "CEI",
+  "onet_soc": "11-3031.01",
+  "onet_title": "Treasurers and Controllers",
+  "vec": {
+   "R": 1.0,
+   "I": 2.2,
+   "A": 1.17,
+   "S": 2.68,
+   "E": 6.15,
+   "C": 6.44
+  },
+  "onet_top3": "CES",
+  "letters_overlap": 2
+ }
+]
