@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment
 from app.models.profile import Profile
+from app.models.user import User
 from app.schemas.new_tests import (
     AspirationLevelSection,
     EmpathyConfidenceSection,
@@ -152,17 +153,27 @@ async def _build_intelligence_section(
         if run is None:
             return None
 
-        profile = (
+        profile_row = (
             await db.execute(
-                select(Profile.name)
+                select(Profile.name, User.locale)
                 .join(Assessment, Assessment.profile_id == Profile.id)
+                .join(User, Profile.user_id == User.id)
                 .where(Assessment.id == assessment_id)
             )
-        ).scalar_one_or_none()
+        ).one_or_none()
+        profile_name = profile_row.name if profile_row else None
+        # The STUDENT's own stored locale preference, not whoever happens to
+        # be viewing this report right now (a psychologist reading it in
+        # `ru` must not flip which weekday name item 2's dynamic lability
+        # answer is scored against — see astur_scoring.score_lability's
+        # own docstring). Falls back to "ru" if unset, same default as
+        # SUPPORTED_LOCALES' own convention.
+        student_locale = (profile_row.locale if profile_row else None) or "ru"
 
         result = score_run(
             run.answers, run.lability_answers,
-            submitted_at=run.created_at, profile_name=profile or "",
+            submitted_at=run.created_at, profile_name=profile_name or "",
+            locale=student_locale,
         )
 
         fatigue_signal = None

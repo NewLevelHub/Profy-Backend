@@ -276,7 +276,7 @@ async def test_intelligence_section_reads_the_latest_astur_run(
     await db_session.flush()
     db_session.add(AsturRun(
         assessment_id=assessment.id, user_id=test_user.id,
-        answers={"awareness": {"1": AWARENESS_ITEMS[0]["answer"]}},
+        answers={"awareness": {"1": AWARENESS_ITEMS[0]["answer"]["ru"]}},
         lability_answers={
             str(i): {"answer": "x", "elapsed_ms": 1000, "over_limit": False} for i in range(1, 9)
         },

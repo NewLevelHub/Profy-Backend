@@ -21,6 +21,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import BelbinThresholds, belbin_thresholds
+from app.i18n import pick_locale
 from app.models.belbin_run import BelbinRun
 from app.services import ipsative_battery
 from scripts.belbin_bank import BLOCK_TOTAL, ITEM_ROLE, ROLES, SECTIONS
@@ -100,7 +101,7 @@ def role_evidence(run: BelbinRun) -> dict[str, dict]:
             evidence[role]["points_by_block"].append(points)
             evidence[role]["items"].append({
                 "block": section["section"],
-                "text": item["text"],
+                "text": pick_locale(item["text"]),
                 "points": points,
             })
     return evidence

@@ -52,11 +52,10 @@ async def _seed_abilities(db: AsyncSession) -> tuple[int, int, int, int]:
     for data in QUESTIONS:
         age_tier = AgeGroup(data["age_tier"])
         # `Question.text` is `{locale: str}` JSONB (docs/i18n-contract.md §8)
-        # — this bank predates that migration and still carries plain `ru`
-        # strings. No `kk` translation exists yet for this specialist-only
-        # content; `pick_locale()` falls back to `ru` when `kk` is missing,
-        # so `{"ru": ...}` alone is correct today.
-        text = {"ru": data["text"]}
+        # — the bank already builds this dict itself (kk added PRO-338
+        # Ф4.4, see professional_types_bank.py's own `_abilities_text`
+        # helper), so this is passed straight through.
+        text = data["text"]
         existing = existing_by_order.get(data["order"])
 
         if existing is not None:
@@ -100,11 +99,10 @@ async def _seed_pair_options(db: AsyncSession) -> tuple[dict[int, uuid.UUID], tu
     for data in options:
         age_tier = AgeGroup(data["age_tier"])
         # `Question.text` is `{locale: str}` JSONB (docs/i18n-contract.md §8)
-        # — this bank predates that migration and still carries plain `ru`
-        # strings. No `kk` translation exists yet for this specialist-only
-        # content; `pick_locale()` falls back to `ru` when `kk` is missing,
-        # so `{"ru": ...}` alone is correct today.
-        text = {"ru": data["text"]}
+        # — the bank already builds this dict itself (kk added PRO-338
+        # Ф4.4, see professional_types_bank.py's own `_KK_PAIR_TEXT`
+        # fold-in), so this is passed straight through.
+        text = data["text"]
         existing = existing_by_order.get(data["order"])
 
         if existing is not None:

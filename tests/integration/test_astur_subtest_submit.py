@@ -186,6 +186,10 @@ async def test_completing_the_full_battery_then_resubmitting_starts_a_new_run(
         5: {"answers": {str(i): "x" for i in range(1, 20)}},
         6: {"answers": {str(i): ["a", "b"] for i in range(1, 9)}},
         7: {"answers": {str(i): [1, 2] for i in range(1, 16)}},
+        # geometric_figures (Ф3.1) — tracked like any other subtest
+        # (`is_complete()` requires it even though it's excluded from
+        # raw_score, see astur_bank.py's own module docstring).
+        8: {"answers": {str(i): "Г" for i in range(1, 6)}},
     }
     first_run_id = None
     for n, payload in subtest_payloads.items():
@@ -215,8 +219,9 @@ async def test_unknown_subtest_number_is_404(
 ) -> None:
     _, assessment, headers = await _auth(db_session)
 
+    # 9, not 8 — subtest 8 (geometric_figures, Ф3.1) is a real subtest now.
     resp = await client.post(
-        f"/api/v1/assessment/{assessment.id}/astur/subtest/8",
+        f"/api/v1/assessment/{assessment.id}/astur/subtest/9",
         json={"answers": {}}, headers=headers,
     )
 

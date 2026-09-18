@@ -38,37 +38,49 @@ def test_subtests_metadata_matches_item_counts() -> None:
     lability_meta = next(s for s in SUBTESTS if s["key"] == "lability")
     assert lability_meta["scored"] is False
     scored_keys = {s["key"] for s in SUBTESTS if s["scored"]}
+    # `scored` here means "submitted/tracked like any other subtest", not
+    # "counts toward raw_score" — geometric_figures (Ф3.1) is tracked
+    # (scored=True) but deliberately excluded from astur_scoring.MAX_RAW_SCORE
+    # until its points are calibrated into the SPN-group thresholds, see
+    # astur_bank.py's own module docstring.
     assert scored_keys == {
         "awareness", "analogies", "classification", "generalization",
-        "logical_schemas", "numeric_series",
+        "logical_schemas", "numeric_series", "geometric_figures",
     }
 
 
 def test_awareness_every_item_has_a_valid_subject_and_answer_in_options() -> None:
+    # `text`/`options`/`answer` are `{ru,kk}` dicts (PRO-338 Ф4.4) — checked
+    # per locale so a kk-only or ru-only content gap fails loudly here.
     for item in AWARENESS_ITEMS:
         assert item["subject"] in SUBJECTS
-        assert item["answer"] in item["options"]
-        assert 4 <= len(item["options"]) <= 5
+        for loc in ("ru", "kk"):
+            assert item["answer"][loc] in item["options"][loc]
+            assert 4 <= len(item["options"][loc]) <= 5
 
 
 def test_analogies_answer_is_always_in_its_own_options() -> None:
     for item in ANALOGIES_ITEMS:
-        assert item["answer"] in item["options"]
+        for loc in ("ru", "kk"):
+            assert item["answer"][loc] in item["options"][loc]
     # Item 4 (0-indexed 3) is the source's own documented anomaly: only 4
     # options instead of 5, preserved as-is, not padded.
-    assert len(ANALOGIES_ITEMS[3]["options"]) == 4
+    assert len(ANALOGIES_ITEMS[3]["options"]["ru"]) == 4
+    assert len(ANALOGIES_ITEMS[3]["options"]["kk"]) == 4
 
 
 def test_classification_answer_is_exactly_2_of_the_6_words() -> None:
     for item in CLASSIFICATION_ITEMS:
-        assert len(item["words"]) == 6
-        assert len(item["answer"]) == 2
-        assert set(item["answer"]) <= set(item["words"])
+        for loc in ("ru", "kk"):
+            assert len(item["words"][loc]) == 6
+            assert len(item["answer"][loc]) == 2
+            assert set(item["answer"][loc]) <= set(item["words"][loc])
 
 
 def test_generalization_score_tiers_never_overlap() -> None:
     for item in GENERALIZATION_ITEMS:
-        assert not set(item["score_2"]) & set(item["score_1"])
+        for loc in ("ru", "kk"):
+            assert not set(item["score_2"][loc]) & set(item["score_1"][loc])
         assert item["subject"] in SUBJECTS
 
 
@@ -79,9 +91,10 @@ def test_generalization_max_possible_score_is_38() -> None:
 
 def test_logical_schemas_are_ordered_general_to_specific_chains() -> None:
     for item in LOGICAL_SCHEMA_ITEMS:
-        assert len(item["concepts"]) >= 3
+        for loc in ("ru", "kk"):
+            assert len(item["concepts"][loc]) >= 3
     # Max scorable links across all 8 chains.
-    max_links = sum(len(item["concepts"]) - 1 for item in LOGICAL_SCHEMA_ITEMS)
+    max_links = sum(len(item["concepts"]["ru"]) - 1 for item in LOGICAL_SCHEMA_ITEMS)
     assert max_links > 0
 
 
@@ -104,24 +117,25 @@ def test_lability_items_are_either_static_or_dynamic_never_both() -> None:
 def test_lability_static_answers_match_hand_computed_keys() -> None:
     """Spot-check the 6 static commands' answers against what the command
     text itself literally implies (verified by hand when the bank was
-    written) — a regression guard, not a re-derivation."""
-    by_instruction = {item["instruction"]: item for item in LABILITY_ITEMS if "answer" in item}
+    written) — a regression guard, not a re-derivation. `instruction`/
+    `answer` are `{ru,kk}` dicts (PRO-338 Ф4.4) — keyed/checked on `ru`."""
+    by_instruction = {item["instruction"]["ru"]: item for item in LABILITY_ITEMS if "answer" in item}
 
     assert by_instruction[
         "Если после слова «стол» по алфавиту идёт слово «стул» — напишите цифру 1, если нет — цифру 2."
-    ]["answer"] == "1"  # о < у in the Cyrillic alphabet, стол < стул
+    ]["answer"]["ru"] == "1"  # о < у in the Cyrillic alphabet, стол < стул
     assert by_instruction[
         "Если 7 больше 5 — поставьте плюс, если нет — поставьте минус."
-    ]["answer"] == "плюс"
+    ]["answer"]["ru"] == "плюс"
     assert by_instruction[
         "Из пары чисел «3 и 8» напишите то число, которое является чётным."
-    ]["answer"] == "8"
+    ]["answer"]["ru"] == "8"
     assert by_instruction[
         "Если слово «зима» ближе по смыслу к слову «снег», чем к слову «жара», — напишите «да», иначе — «нет»."
-    ]["answer"] == "да"
+    ]["answer"]["ru"] == "да"
     assert by_instruction[
         "Если месяц май идёт раньше месяца март — поставьте галочку, иначе — крестик."
-    ]["answer"] == "крестик"  # May is the 5th month, March the 3rd — May is NOT earlier
+    ]["answer"]["ru"] == "крестик"  # May is the 5th month, March the 3rd — May is NOT earlier
     assert by_instruction[
         "Напишите слово «выше», если 10 больше 100, иначе напишите слово «ниже»."
-    ]["answer"] == "ниже"
+    ]["answer"]["ru"] == "ниже"

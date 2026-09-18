@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
+from app.i18n import pick_locale
 from app.models.assessment import Assessment
 from app.models.profile import Profile
 from app.models.user import User
@@ -29,13 +30,15 @@ async def get_belbin_content(
     once to render the 7-block flow, independent of which assessment the
     eventual submit targets."""
     return BelbinContentResponse(
-        instruction=INSTRUCTION,
+        instruction=pick_locale(INSTRUCTION),
         block_total=BLOCK_TOTAL,
         sections=[
             {
                 "section": section["section"],
-                "title": section["title"],
-                "items": [{"id": item["id"], "text": item["text"]} for item in section["items"]],
+                "title": pick_locale(section["title"]),
+                "items": [
+                    {"id": item["id"], "text": pick_locale(item["text"])} for item in section["items"]
+                ],
             }
             for section in SECTIONS
         ],

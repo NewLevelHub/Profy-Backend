@@ -35,15 +35,17 @@ async def test_content_shape_matches_the_bank(client: AsyncClient, db_session: A
 
     assert resp.status_code == 200, resp.text
     body = resp.json()
-    assert body["instruction"] == INSTRUCTION
+    # `INSTRUCTION`/section `title`/item `text` are `{ru,kk}` dicts (PRO-338
+    # Ф4.4); the response resolves to the caller's locale — `ru` by default.
+    assert body["instruction"] == INSTRUCTION["ru"]
     assert body["block_total"] == BLOCK_TOTAL == 10
     assert len(body["sections"]) == 7
     for section, expected in zip(body["sections"], SECTIONS, strict=True):
         assert section["section"] == expected["section"]
-        assert section["title"] == expected["title"]
+        assert section["title"] == expected["title"]["ru"]
         assert len(section["items"]) == 8
         assert [i["id"] for i in section["items"]] == [i["id"] for i in expected["items"]]
-        assert [i["text"] for i in section["items"]] == [i["text"] for i in expected["items"]]
+        assert [i["text"] for i in section["items"]] == [i["text"]["ru"] for i in expected["items"]]
 
 
 async def test_content_never_leaks_the_role_key(client: AsyncClient, db_session: AsyncSession) -> None:

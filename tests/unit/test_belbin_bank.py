@@ -43,8 +43,8 @@ def test_item_ids_are_section_prefixed_and_1_indexed() -> None:
 
 
 def test_instruction_text_mentions_10_points_and_7_sections() -> None:
-    assert "10 баллов" in INSTRUCTION
-    assert "7 разделов" in INSTRUCTION
+    assert "10 баллов" in INSTRUCTION["ru"]
+    assert "7 разделов" in INSTRUCTION["ru"]
 
 
 def test_corrected_roles_from_ф2_1_research_are_applied() -> None:

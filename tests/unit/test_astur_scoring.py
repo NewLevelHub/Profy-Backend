@@ -16,19 +16,19 @@ from scripts.astur_bank import (
 
 
 def _all_correct_awareness() -> dict[str, str]:
-    return {str(i): item["answer"] for i, item in enumerate(AWARENESS_ITEMS, start=1)}
+    return {str(i): item["answer"]["ru"] for i, item in enumerate(AWARENESS_ITEMS, start=1)}
 
 
 def _all_correct_classification() -> dict[str, list[str]]:
-    return {str(i): item["answer"] for i, item in enumerate(CLASSIFICATION_ITEMS, start=1)}
+    return {str(i): item["answer"]["ru"] for i, item in enumerate(CLASSIFICATION_ITEMS, start=1)}
 
 
 def _all_correct_generalization(*, tier: str = "score_2") -> dict[str, str]:
-    return {str(i): item[tier][0] for i, item in enumerate(GENERALIZATION_ITEMS, start=1)}
+    return {str(i): item[tier]["ru"][0] for i, item in enumerate(GENERALIZATION_ITEMS, start=1)}
 
 
 def _all_correct_logical_schemas() -> dict[str, list[str]]:
-    return {str(i): item["concepts"] for i, item in enumerate(LOGICAL_SCHEMA_ITEMS, start=1)}
+    return {str(i): item["concepts"]["ru"] for i, item in enumerate(LOGICAL_SCHEMA_ITEMS, start=1)}
 
 
 def _all_correct_numeric_series() -> dict[str, list[int]]:
@@ -37,31 +37,33 @@ def _all_correct_numeric_series() -> dict[str, list[int]]:
 
 def test_awareness_scoring_is_case_and_whitespace_insensitive() -> None:
     item = AWARENESS_ITEMS[0]
-    assert astur_scoring._score_mc(item, item["answer"].upper()) == 1
-    assert astur_scoring._score_mc(item, f"  {item['answer']}  ") == 1
+    answer = item["answer"]["ru"]
+    assert astur_scoring._score_mc(item, answer.upper()) == 1
+    assert astur_scoring._score_mc(item, f"  {answer}  ") == 1
     assert astur_scoring._score_mc(item, "точно не то") == 0
     assert astur_scoring._score_mc(item, None) == 0
 
 
 def test_classification_requires_exactly_the_2_key_words_in_any_order() -> None:
     item = CLASSIFICATION_ITEMS[0]  # дог, спаниель
-    assert astur_scoring._score_classification(item, list(reversed(item["answer"]))) == 1
-    assert astur_scoring._score_classification(item, [item["answer"][0], "стол"]) == 0
-    assert astur_scoring._score_classification(item, item["answer"] + ["extra"]) == 0
+    answer = item["answer"]["ru"]
+    assert astur_scoring._score_classification(item, list(reversed(answer))) == 1
+    assert astur_scoring._score_classification(item, [answer[0], "стол"]) == 0
+    assert astur_scoring._score_classification(item, answer + ["extra"]) == 0
     assert astur_scoring._score_classification(item, "not a list") == 0
 
 
 def test_generalization_scores_0_1_2_by_tier() -> None:
     item = GENERALIZATION_ITEMS[0]  # Ель-сосна
-    assert astur_scoring._score_generalization(item, item["score_2"][0]) == 2
-    assert astur_scoring._score_generalization(item, item["score_1"][0].upper()) == 1
+    assert astur_scoring._score_generalization(item, item["score_2"]["ru"][0]) == 2
+    assert astur_scoring._score_generalization(item, item["score_1"]["ru"][0].upper()) == 1
     assert astur_scoring._score_generalization(item, "совершенно левый ответ") == 0
     assert astur_scoring._score_generalization(item, "") == 0
 
 
 def test_logical_schema_awards_partial_credit_per_adjacent_link() -> None:
     item = LOGICAL_SCHEMA_ITEMS[0]  # 5 concepts, 4 possible links
-    correct = item["concepts"]
+    correct = item["concepts"]["ru"]
     assert astur_scoring._score_logical_schema(item, correct) == 4
 
     # Swap the first two — breaks link 0 (a-b) and link 1 (b-c) since b's
@@ -92,7 +94,7 @@ def test_score_subtests_only_scores_whats_present() -> None:
 def test_score_subtests_all_correct_hits_max_raw_score() -> None:
     answers = {
         "awareness": _all_correct_awareness(),
-        "analogies": {str(i): item["answer"] for i, item in enumerate(ANALOGIES_ITEMS, start=1)},
+        "analogies": {str(i): item["answer"]["ru"] for i, item in enumerate(ANALOGIES_ITEMS, start=1)},
         "classification": _all_correct_classification(),
         "generalization": _all_correct_generalization(),
         "logical_schemas": _all_correct_logical_schemas(),

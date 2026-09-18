@@ -37,14 +37,16 @@ async def test_content_shape_matches_the_bank(client: AsyncClient, db_session: A
 
     assert resp.status_code == 200, resp.text
     body = resp.json()
-    assert len(body["subtests"]) == 7
+    assert len(body["subtests"]) == 8
     assert body["lability_item_limit_ms"] == 20000
 
     by_key = {s["key"]: s for s in body["subtests"]}
     for meta in SUBTESTS:
         subtest = by_key[meta["key"]]
-        assert subtest["name"] == meta["name"]
-        assert subtest["instruction"] == meta["instruction"]
+        # `name`/`instruction` are `{ru,kk}` dicts (PRO-338 Ф4.4); the
+        # response resolves to the caller's locale — `ru` by default here.
+        assert subtest["name"] == meta["name"]["ru"]
+        assert subtest["instruction"] == meta["instruction"]["ru"]
         assert subtest["item_count"] == meta["item_count"] == len(subtest["items"])
         assert subtest["scored"] == meta["scored"]
 
@@ -75,7 +77,7 @@ async def test_logical_schemas_concepts_are_shuffled_not_the_answer_order(
     bank_items = SUBTEST_ITEMS["logical_schemas"]
     assert len(schemas["items"]) == len(bank_items)
     for served, bank_item in zip(schemas["items"], bank_items, strict=True):
-        assert set(served["concepts"]) == set(bank_item["concepts"])
+        assert set(served["concepts"]) == set(bank_item["concepts"]["ru"])
         # Not a strict "must differ" assertion (a real shuffle can land on
         # the original order by chance) — the content-integrity guarantee
         # (same items, no extra/missing) is what's checked above; the

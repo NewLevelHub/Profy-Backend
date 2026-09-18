@@ -42,4 +42,4 @@ def test_specific_items_match_the_source_key_verbatim() -> None:
     # Item 41 -> order 510 -> "yes" (the item whose canonical existence
     # this ticket's own audit resolved — must be scored, not dropped)
     assert by_order[510]["keyed"] == "yes"
-    assert by_order[510]["text"].startswith("Если я уверен, что стою на правильном пути")
+    assert by_order[510]["text"]["ru"].startswith("Если я уверен, что стою на правильном пути")

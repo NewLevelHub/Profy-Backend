@@ -17,9 +17,17 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import astur_timer_config
+from app.i18n import pick_locale, pick_locale_list
 from app.models.astur_run import AsturRun
 from app.services import subtest_timer
 from scripts.astur_bank import SUBTEST_BY_NUMBER, SUBTEST_ITEMS, SUBTESTS
+
+# Which of `_PUBLIC_ITEM_FIELDS`' fields are `{ru,kk}` scalar text vs
+# `{ru,kk}` lists vs locale-independent as-is (numeric_series' `sequence`,
+# lability's `answer_format` tag) — PRO-338 Ф4.4. Drives `build_content()`'s
+# per-field locale resolution below.
+_LOCALIZED_SCALAR_FIELDS = {"text", "third", "instruction"}
+_LOCALIZED_LIST_FIELDS = {"options", "pair", "words", "concepts"}
 
 _SCORED_KEYS = {s["key"] for s in SUBTESTS if s["scored"]}
 _LABILITY_KEY = "lability"
@@ -45,9 +53,22 @@ _PUBLIC_ITEM_FIELDS: dict[str, tuple[str, ...]] = {
 }
 
 
+def _public_field_value(field: str, value: object) -> object:
+    """Resolves one item field to the request's locale — `{ru,kk}` scalar
+    text (PRO-338 Ф4.4) via `pick_locale`, `{ru,kk}` lists via
+    `pick_locale_list`, everything else (numeric_series' `sequence`,
+    lability's `answer_format` tag) passed through as-is, locale-independent."""
+    if field in _LOCALIZED_SCALAR_FIELDS:
+        return pick_locale(value)
+    if field in _LOCALIZED_LIST_FIELDS:
+        return pick_locale_list(value)
+    return value
+
+
 def build_content() -> dict:
-    """Static content for the whole test — same for every user, no DB
-    access. `logical_schemas`' `concepts` is the bank's correct order; this
+    """Static content for the whole test — same for every user (given the
+    caller's own request locale, PRO-338 Ф4.4), no DB access.
+    `logical_schemas`' `concepts` is the bank's correct order; this
     shuffles a COPY per call so the respondent gets a scrambled hierarchy
     to reassemble, never the answer itself."""
     subtests = []
@@ -56,7 +77,7 @@ def build_content() -> dict:
         public_fields = _PUBLIC_ITEM_FIELDS[key]
         items = []
         for item in SUBTEST_ITEMS[key]:
-            public_item = {field: item[field] for field in public_fields}
+            public_item = {field: _public_field_value(field, item[field]) for field in public_fields}
             if key == "logical_schemas":
                 shuffled = list(public_item["concepts"])
                 random.shuffle(shuffled)
@@ -65,8 +86,8 @@ def build_content() -> dict:
         subtests.append({
             "number": n,
             "key": key,
-            "name": meta["name"],
-            "instruction": meta["instruction"],
+            "name": pick_locale(meta["name"]),
+            "instruction": pick_locale(meta["instruction"]),
             "item_count": meta["item_count"],
             "scored": meta["scored"],
             "time_limit_sec": astur_timer_config.subtest_time_limit_sec.get(key),

@@ -45,4 +45,4 @@ def test_specific_items_match_the_source_key_verbatim() -> None:
     # ticket's own audit had to restore, along with 32-35)
     assert by_order[546]["channel"] == "identification"
     assert by_order[546]["keyed"] == "no"
-    assert by_order[546]["text"].startswith("Мне трудно понять, почему пустяки")
+    assert by_order[546]["text"]["ru"].startswith("Мне трудно понять, почему пустяки")

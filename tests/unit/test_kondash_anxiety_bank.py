@@ -37,16 +37,16 @@ def test_specific_items_match_the_source_subscale_key_verbatim() -> None:
 
     # Item 1 -> order 547 -> school ("Отвечать у доски.")
     assert by_order[547]["subscale"] == "school"
-    assert by_order[547]["text"] == "Отвечать у доски."
+    assert by_order[547]["text"]["ru"] == "Отвечать у доски."
     # Item 14 -> order 560 -> magical — the item whose 2026-09-15
     # reconstruction was wrong, corrected to the confirmed original text.
     assert by_order[560]["subscale"] == "magical"
-    assert by_order[560]["text"] == (
+    assert by_order[560]["text"]["ru"] == (
         "Мысль о том, что неосторожным поступком можно навлечь на себя гнев потусторонних сил."
     )
     # Item 22 -> order 568 -> interpersonal (one of the 11 items missing
     # before the 2026-09-16 correction)
     assert by_order[568]["subscale"] == "interpersonal"
-    assert by_order[568]["text"] == "Выступать перед большой аудиторией."
+    assert by_order[568]["text"]["ru"] == "Выступать перед большой аудиторией."
     # Item 40 -> order 586 -> magical (last item)
     assert by_order[586]["subscale"] == "magical"

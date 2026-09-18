@@ -43,32 +43,47 @@ seed script.
 
 # 3 subject-area tags used by "Осведомлённость" and "Обобщение" items only
 # (Ф3.5's "профиль обучения" is computed from exactly these two subtests).
-SUBJECTS: dict[str, str] = {
-    "humanities": "Гуманитарный",
-    "physics_math": "Физико-математический",
-    "natural_science": "Естественнонаучный",
+# `{ru,kk}` — PRO-338 Ф4.4, Тикеты-новые-тесты/kk-translations.md §6.9
+# (native-speaker review 2026-09-18).
+SUBJECTS: dict[str, dict[str, str]] = {
+    "humanities": {"ru": "Гуманитарный", "kk": "Гуманитарлық"},
+    "physics_math": {"ru": "Физико-математический", "kk": "Физика-математикалық"},
+    "natural_science": {"ru": "Естественнонаучный", "kk": "Жаратылыстану"},
 }
 
 # Fixed instruction text per subtest, verbatim from the spec (Ф3.2 ticket).
+# `name`/`instruction` — `{ru,kk}` dicts, PRO-338 Ф4.4, kk translated in
+# Тикеты-новые-тесты/kk-translations.md §6.1/§7.6 (native-speaker review
+# 2026-09-18). Subtest names have no official Kazakh АСТУР adaptation to
+# match (see kk-translations.md §6's own note) — first terminological choice.
 SUBTESTS: list[dict] = [
     {
         "key": "awareness",
-        "name": "Осведомлённость",
-        "instruction": "Прочитайте предложение, в котором пропущено слово. Выберите из пяти вариантов слово, которое подходит по смыслу.",
+        "name": {"ru": "Осведомлённость", "kk": "Хабардарлық"},
+        "instruction": {
+            "ru": "Прочитайте предложение, в котором пропущено слово. Выберите из пяти вариантов слово, которое подходит по смыслу.",
+            "kk": "Бір сөзі түсіп қалған сөйлемді оқыңыз. Ұсынылған бес нұсқадан мағынасына сай келетін сөзді таңдаңыз.",
+        },
         "item_count": 20,
         "scored": True,
     },
     {
         "key": "analogies",
-        "name": "Двойные аналогии",
-        "instruction": "Даны два слова в известном отношении друг к другу и третье слово. Подберите слово, которое относится к третьему так же, как второе относится к первому.",
+        "name": {"ru": "Двойные аналогии", "kk": "Қос аналогия"},
+        "instruction": {
+            "ru": "Даны два слова в известном отношении друг к другу и третье слово. Подберите слово, которое относится к третьему так же, как второе относится к первому.",
+            "kk": "Бір-бірімен белгілі қатынаста тұрған екі сөз және үшінші сөз берілген. Екінші сөз біріншіге қалай қатысты болса, үшінші сөзге дәл солай қатысты болатын сөзді таңдаңыз.",
+        },
         "item_count": 16,
         "scored": True,
     },
     {
         "key": "lability",
-        "name": "Понимание инструкций (лабильность)",
-        "instruction": "Как можно быстрее выполните то, что говорится в задании.",
+        "name": {"ru": "Понимание инструкций (лабильность)", "kk": "Нұсқауларды түсіну (лабильділік)"},
+        "instruction": {
+            "ru": "Как можно быстрее выполните то, что говорится в задании.",
+            "kk": "Тапсырмада айтылғанды мүмкіндігінше тез орындаңыз.",
+        },
         "item_count": 8,
         # Ф3.5: scored separately (first-half vs second-half accuracy),
         # never added to the overall intelligence score.
@@ -76,36 +91,51 @@ SUBTESTS: list[dict] = [
     },
     {
         "key": "classification",
-        "name": "Классификации",
-        "instruction": "В каждой строке шесть слов. Найдите ровно два слова, которые связаны между собой общим признаком.",
+        "name": {"ru": "Классификации", "kk": "Жіктеу"},
+        "instruction": {
+            "ru": "В каждой строке шесть слов. Найдите ровно два слова, которые связаны между собой общим признаком.",
+            "kk": "Әр жолда алты сөз бар. Ортақ белгісімен байланысқан дәл екі сөзді табыңыз.",
+        },
         "item_count": 12,
         "scored": True,
     },
     {
         "key": "generalization",
-        "name": "Обобщение",
-        "instruction": "Даны два понятия. Впишите одно слово или короткое словосочетание, которое их обобщает.",
+        "name": {"ru": "Обобщение", "kk": "Жалпылау"},
+        "instruction": {
+            "ru": "Даны два понятия. Впишите одно слово или короткое словосочетание, которое их обобщает.",
+            "kk": "Екі ұғым берілген. Оларды жалпылайтын бір сөз немесе қысқа тіркес жазыңыз.",
+        },
         "item_count": 19,
         "scored": True,
     },
     {
         "key": "logical_schemas",
-        "name": "Логические схемы",
-        "instruction": "Расставьте понятия по порядку — от самого общего к самому частному — и соедините их стрелками.",
+        "name": {"ru": "Логические схемы", "kk": "Логикалық схемалар"},
+        "instruction": {
+            "ru": "Расставьте понятия по порядку — от самого общего к самому частному — и соедините их стрелками.",
+            "kk": "Ұғымдарды реттілікпен орналастырыңыз — ең жалпыдан ең жекеге қарай — және оларды көрсеткілермен қосыңыз.",
+        },
         "item_count": 8,
         "scored": True,
     },
     {
         "key": "numeric_series",
-        "name": "Числовые ряды",
-        "instruction": "Каждый ряд чисел построен по своему правилу. Определите правило и впишите два числа, которые продолжают ряд.",
+        "name": {"ru": "Числовые ряды", "kk": "Сандар қатары"},
+        "instruction": {
+            "ru": "Каждый ряд чисел построен по своему правилу. Определите правило и впишите два числа, которые продолжают ряд.",
+            "kk": "Әр сандар қатары өз ережесі бойынша құрылған. Ережені анықтап, қатарды жалғастыратын екі санды жазыңыз.",
+        },
         "item_count": 15,
         "scored": True,
     },
     {
         "key": "geometric_figures",
-        "name": "Геометрические фигуры",
-        "instruction": "Определите, из каких частей (А, Б, В или Г) можно без пропусков и остатка собрать фигуру-эталон слева.",
+        "name": {"ru": "Геометрические фигуры", "kk": "Геометриялық фигуралар"},
+        "instruction": {
+            "ru": "Определите, из каких частей (А, Б, В или Г) можно без пропусков и остатка собрать фигуру-эталон слева.",
+            "kk": "Сол жақтағы эталон фигураны қандай бөліктерден (А, Б, В немесе Г) қалдықсыз және бос орынсыз құрастыруға болатынын анықтаңыз.",
+        },
         "item_count": 5,
         # Tracked like any other subtest (submit/is_complete) — see this
         # module's docstring for why it's not yet in astur_scoring.py's
@@ -427,6 +457,173 @@ GEOMETRIC_FIGURES_ITEMS: list[dict] = [
 ]
 
 
+# ── Kazakh (kk) — PRO-338 Ф4.4 ──────────────────────────────────────────────
+# `Тикеты-новые-тесты/kk-translations.md` §6 (native-speaker review
+# 2026-09-18, subtests 1-2 flagged there for extra lexical scrutiny — see
+# that section's own warning about synonym/antonym relations not always
+# surviving translation). Positional lists (index i = item i+1), not
+# key-fold dicts like the Likert banks — these items are compound
+# (text+options, pair+third+options, ...) so a single ru-string key isn't
+# enough to address "the options of this item" unambiguously. NUMERIC_SERIES
+# (pure numbers) and GEOMETRIC_FIGURES (a letter key, stimulus is an image
+# asset) need no kk content at all — see their own sections in
+# kk-translations.md §6.8/module docstring above.
+
+_KK_AWARENESS: list[dict] = [
+    {"text": "«Өмірбаян» сөзімен мағынасы жақын сөз — бұл …?", "options": ["оқиға", "ерлік", "өмірбаяндық сипаттама", "кітап", "жазушы"]},
+    {"text": "«Тапшылық» сөзіне мағынасы қарама-қарсы сөз — бұл …?", "options": ["жетіспеушілік", "молшылық", "кемшілік", "жоғалту", "шығын"]},
+    {"text": "Жасушаның құрылысы мен тіршілік әрекетін зерттейтін ғылым — бұл …?", "options": ["генетика", "цитология", "экология", "анатомия", "физиология"]},
+    {"text": "Жазықтықтағы және кеңістіктегі фигураларды зерттейтін математика саласы — бұл …?", "options": ["алгебра", "геометрия", "арифметика", "статистика", "тригонометрия"]},
+    {"text": "Музыка жазатын адам — бұл …?", "options": ["дирижёр", "орындаушы", "композитор", "аранжировщик", "солист"]},
+    {"text": "«Монарх» сөзіне мағынасы жақын сөз — бұл …?", "options": ["президент", "министр", "билеуші", "депутат", "судья"]},
+    {"text": "Тірі ағзаның ең кіші құрылымдық бірлігі — бұл …?", "options": ["молекула", "атом", "жасуша", "тін", "мүше"]},
+    {"text": "Денелердің қозғалысын зерттейтін физика саласы — бұл …?", "options": ["оптика", "механика", "термодинамика", "электр", "акустика"]},
+    {"text": "«Метафора» дегеніміз — бұл …?", "options": ["нақты анықтама", "жасырын салыстыру", "жауапсыз сұрақ", "дыбыстардың қайталануы", "фактілер тізімі"]},
+    {"text": "Температураны өлшеуге арналған құрал — бұл …?", "options": ["барометр", "термометр", "амперметр", "манометр", "спидометр"]},
+    {"text": "«Орталықтандыру» сөзіне қарама-қарсы мағыналы сөз — бұл …?", "options": ["біріктіру", "орталықсыздандыру", "шоғырландыру", "біркелкілендіру", "интеграция"]},
+    {"text": "Қоғамда қабылданған, бірақ заңмен бекітілмеген мінез-құлық ережелерінің жиынтығы — бұл …?", "options": ["заң", "имандылық", "жарғы", "кодекс", "регламент"]},
+    {"text": "Тіл туралы ғылым — бұл …?", "options": ["лингвистика", "философия", "социология", "психология", "риторика"]},
+    {"text": "Электр тогының күшін өлшеу бірлігі — бұл …?", "options": ["вольт", "ватт", "ампер", "ом", "джоуль"]},
+    {"text": "«Эволюция» сөзіне мағынасы жақын сөз — бұл …?", "options": ["революция", "даму", "тоқырау", "дағдарыс", "регресс"]},
+    {"text": "Тұқым қуалаушылықты зерттейтін биология саласы — бұл …?", "options": ["экология", "генетика", "анатомия", "физиология", "микробиология"]},
+    {"text": "«Ирония» дегеніміз — бұл …?", "options": ["тікелей айтылған ой", "жасырын мысқыл", "қатты айқай", "дәл есеп", "шынайы тамсану"]},
+    {"text": "Бір жүйеге созылған таулардың жиынтығы — бұл …?", "options": ["жазық", "жота", "үстірт", "ойпат", "ойыс"]},
+    {"text": "Қоғам және қоғамдық қатынастар туралы ғылым — бұл …?", "options": ["экономика", "әлеуметтану", "саясаттану", "тарих", "философия"]},
+    {"text": "Химияда зат мөлшерін өлшеу бірлігі — бұл …?", "options": ["грамм", "литр", "моль", "градус", "паскаль"]},
+]
+assert len(_KK_AWARENESS) == len(AWARENESS_ITEMS)
+
+for _ru, _kk in zip(AWARENESS_ITEMS, _KK_AWARENESS, strict=True):
+    assert len(_ru["options"]) == len(_kk["options"]), _ru["text"]
+    _kk_answer = _kk["options"][_ru["options"].index(_ru["answer"])]
+    _ru["text"] = {"ru": _ru["text"], "kk": _kk["text"]}
+    _ru["options"] = {"ru": _ru["options"], "kk": _kk["options"]}
+    _ru["answer"] = {"ru": _ru["answer"], "kk": _kk_answer}
+
+
+_KK_ANALOGIES: list[dict] = [
+    {"pair": ("орман", "ағаштар"), "third": "кітапхана", "options": ["бақ", "аула", "қала", "театр", "кітаптар"]},
+    {"pair": ("жүгіру", "айқайлау"), "third": "тұру", "options": ["үндемеу", "еңбектеу", "шуылдау", "шақыру", "жылау"]},
+    {"pair": ("қиярша", "көкөніс"), "third": "георгин", "options": ["арам шөп", "шық", "бақша", "гүл", "жер"]},
+    {"pair": ("мұғалім", "оқушы"), "third": "дәрігер", "options": ["төсек", "науқастар", "палата", "термометр"]},
+    {"pair": ("бақша", "сәбіз"), "third": "бақ", "options": ["қоршау", "алма ағашы", "құдық", "орындық", "гүлдер"]},
+    {"pair": ("гүл", "құмыра"), "third": "құс", "options": ["тұмсық", "шағала", "ұя", "жұмыртқа", "қауырсын"]},
+    {"pair": ("жазушы", "кітап"), "third": "суретші", "options": ["қылқалам", "сурет", "кенеп", "бояу", "мұражай"]},
+    {"pair": ("қыс", "қар"), "third": "жаз", "options": ["жаңбыр", "ыстық", "демалыс", "теңіз", "күнге күю"]},
+    {"pair": ("сөз", "сөйлем"), "third": "кірпіш", "options": ["балшық", "үй", "қабырға", "құрылыс", "ерітінді"]},
+    {"pair": ("өзен", "жағалау"), "third": "теңіз", "options": ["толқын", "жағалау аймағы", "кеме", "балық", "тереңдік"]},
+    {"pair": ("аштық", "тамақ"), "third": "шөлдеу", "options": ["стакан", "су", "құдық", "ыстық", "ішу"]},
+    {"pair": ("тұқым", "өсімдік"), "third": "жұмыртқа", "options": ["ұя", "қабықша", "құс", "тауық", "сарысы"]},
+    {"pair": ("сабақ", "мұғалім"), "third": "концерт", "options": ["билет", "зал", "музыкант", "афиша", "сахна"]},
+    {"pair": ("суық", "мұз"), "third": "ыстық", "options": ["от", "бу", "аптап", "алау", "ыстық"]},
+    {"pair": ("көз", "көру"), "third": "құлақ", "options": ["дыбыс", "есту", "музыка", "шу", "тыныштық"]},
+    {"pair": ("зауыт", "жұмысшы"), "third": "егістік", "options": ["трактор", "өнім", "шаруа", "жер", "дән"]},
+]
+assert len(_KK_ANALOGIES) == len(ANALOGIES_ITEMS)
+
+for _ru, _kk in zip(ANALOGIES_ITEMS, _KK_ANALOGIES, strict=True):
+    assert len(_ru["options"]) == len(_kk["options"]), _ru["pair"]
+    _kk_answer = _kk["options"][_ru["options"].index(_ru["answer"])]
+    _ru["pair"] = {"ru": list(_ru["pair"]), "kk": list(_kk["pair"])}
+    _ru["third"] = {"ru": _ru["third"], "kk": _kk["third"]}
+    _ru["options"] = {"ru": _ru["options"], "kk": _kk["options"]}
+    _ru["answer"] = {"ru": _ru["answer"], "kk": _kk_answer}
+
+
+_KK_LABILITY: list[dict] = [
+    {"instruction": "Егер «стол» сөзінен кейін әліпби бойынша «стул» сөзі келсе — 1 санын жазыңыз, келмесе — 2 санын жазыңыз.", "options": ["1", "2"], "answer": "1"},
+    {"instruction": "Егер бүгінгі апта күні дауыссыз дыбыстан басталса — шеңберді сызыңыз, олай болмаса — шаршыны сызыңыз.", "options": ["шеңбер", "шаршы"]},
+    {"instruction": "Егер 7 саны 5-тен көп болса — қосу белгісін қойыңыз, олай болмаса — азайту белгісін қойыңыз.", "options": ["қосу", "азайту"], "answer": "қосу"},
+    {"instruction": "«3 және 8» жұбынан жұп санды жазыңыз.", "options": ["3", "8"], "answer": "8"},
+    {"instruction": "Егер «қыс» сөзі мағынасы жағынан «қар» сөзіне «ыстық» сөзінен гөрі жақынырақ болса — «иә» деп жазыңыз, олай болмаса — «жоқ» деп жазыңыз.", "options": ["иә", "жоқ"], "answer": "иә"},
+    {"instruction": "Есіміңіздің бірінші әрпі дауысты дыбыс па? «Иә» немесе «Жоқ» деп таңдаңыз.", "options": ["иә", "жоқ"]},
+    {"instruction": "Егер мамыр айы наурыз айынан бұрын келсе — құстырма белгісін қойыңыз, олай болмаса — айқас белгісін қойыңыз.", "options": ["құстырма", "айқас"], "answer": "айқас"},
+    {"instruction": "Егер 10 саны 100-ден көп болса — «жоғары» деген сөзді жазыңыз, олай болмаса — «төмен» деген сөзді жазыңыз.", "options": ["жоғары", "төмен"], "answer": "төмен"},
+]
+assert len(_KK_LABILITY) == len(LABILITY_ITEMS)
+
+for _ru, _kk in zip(LABILITY_ITEMS, _KK_LABILITY, strict=True):
+    assert len(_ru["options"]) == len(_kk["options"]) == 2
+    _ru["instruction"] = {"ru": _ru["instruction"], "kk": _kk["instruction"]}
+    _ru["options"] = {"ru": _ru["options"], "kk": _kk["options"]}
+    if "answer" in _ru:
+        assert "answer" in _kk, _ru["instruction"]
+        _ru["answer"] = {"ru": _ru["answer"], "kk": _kk["answer"]}
+
+
+_KK_CLASSIFICATION: list[list[str]] = [
+    ["дог", "үстел", "кітап", "спаниель", "терезе", "ағаш"],
+    ["скрипка", "кесе", "гитара", "тәрелке", "қасық", "есік"],
+    ["емен", "раушан", "шкаф", "қарағай", "диван", "экран"],
+    ["жолбарыс", "кітап", "арыстан", "қалам", "үстел", "терезе"],
+    ["раушан", "қызғалдақ", "үстел", "орындық", "терезе", "есік"],
+    ["қарбыз", "қауын", "картоп", "айна", "шам", "диван"],
+    ["қасқыр", "түлкі", "сиыр", "шам", "айна", "диван"],
+    ["гитара", "барабан", "үстел", "орындық", "шам", "айна"],
+    ["бидай", "қара бидай", "шкаф", "үстел", "кесе", "орындық"],
+    ["трамвай", "троллейбус", "алма", "алмұрт", "үстел", "кітап"],
+    ["бүркіт", "сұңқар", "тауық", "сиыр", "үстел", "кітап"],
+    ["үйеңкі", "қайың", "үстел", "кітап", "кесе", "айна"],
+]
+assert len(_KK_CLASSIFICATION) == len(CLASSIFICATION_ITEMS)
+
+for _ru, _kk_words in zip(CLASSIFICATION_ITEMS, _KK_CLASSIFICATION, strict=True):
+    assert len(_ru["words"]) == len(_kk_words) == 6
+    _kk_answer = [_kk_words[_ru["words"].index(w)] for w in _ru["answer"]]
+    _ru["words"] = {"ru": _ru["words"], "kk": _kk_words}
+    _ru["answer"] = {"ru": _ru["answer"], "kk": _kk_answer}
+
+
+# `score_2`/`score_1` are lists of acceptable phrasings (see
+# GENERALIZATION_ITEMS' own docstring) — kk versions translated by meaning,
+# not literally, same "natural generalization, not calque" approach the
+# ru originals themselves use.
+_KK_GENERALIZATION: list[dict] = [
+    {"pair": ("Шырша", "қарағай"), "score_2": ["қылқан жапырақты ағаштар"], "score_1": ["ағаштар", "өсімдіктер", "орман"]},
+    {"pair": ("Ертегі", "батырлар жыры"), "score_2": ["ауызша халық шығармашылығы", "фольклор"], "score_1": ["әдебиет", "шығармашылық"]},
+    {"pair": ("Атом", "молекула"), "score_2": ["заттың ең ұсақ бөлшектері"], "score_1": ["бөлшек", "зат"]},
+    {"pair": ("Ботаника", "зоология"), "score_2": ["биология", "тірі табиғат туралы ғылым"], "score_1": ["ғылым", "пән"]},
+    {"pair": ("Кескіндеме", "мүсін өнері"), "score_2": ["бейнелеу өнері"], "score_1": ["өнер", "шығармашылық", "мәдениет"]},
+    {"pair": ("Африка", "Антарктида"), "score_2": ["әлем бөліктері", "материктер"], "score_1": ["географиялық объектілер", "құрлық"]},
+    {"pair": ("Ампер", "Вольт"), "score_2": ["электр шамаларын өлшеу бірліктері"], "score_1": ["физикалық шамалар", "электр"]},
+    {"pair": ("Жүрек", "артерия"), "score_2": ["қан айналым жүйесінің мүшелері"], "score_1": ["адамның ішкі мүшелері"]},
+    {"pair": ("Париж", "Лондон"), "score_2": ["мемлекеттердің астаналары"], "score_1": ["қалалар", "елді мекендер"]},
+    {"pair": ("Феодализм", "капитализм"), "score_2": ["қоғамдық-экономикалық формациялар"], "score_1": ["қоғам", "дәуірлер", "даму сатылары"]},
+    {"pair": ("Батылдық", "мейірімділік"), "score_2": ["мінездің оң қасиеттері"], "score_1": ["қасиеттер", "тұлғаның қасиеттері"]},
+    {"pair": ("Су қоймасы", "канал"), "score_2": ["жасанды су құрылыстары"], "score_1": ["құрылыс", "су айдыны"]},
+    {"pair": ("Қосынды", "көбейтінді"), "score_2": ["математикалық амалдардың нәтижелері"], "score_1": ["математикалық амалдар"]},
+    {"pair": ("Ғылым", "өнер"), "score_2": ["адам қызметінің түрлері"], "score_1": ["шығармашылық", "таным"]},
+    {"pair": ("Ақуыз", "май"), "score_2": ["органикалық заттар"], "score_1": ["заттың құрамы", "нутриенттер"]},
+    {"pair": ("Газ", "сұйықтық"), "score_2": ["заттың агрегаттық күйлері"], "score_1": ["зат", "дененің күйі"]},
+    {"pair": ("Жер сілкінісі", "құйын"), "score_2": ["дүлей апаттар"], "score_1": ["табиғат құбылыстары"]},
+    {"pair": ("Метафора", "аллегория"), "score_2": ["көркемдік тәсілдер", "көркемдегіш құралдар"], "score_1": ["баяндау тәсілдері"]},
+    {"pair": ("Классицизм", "романтизм"), "score_2": ["өнердегі бағыттар"], "score_1": ["әдеби бағыттар", "дәуірлер"]},
+]
+assert len(_KK_GENERALIZATION) == len(GENERALIZATION_ITEMS)
+
+for _ru, _kk in zip(GENERALIZATION_ITEMS, _KK_GENERALIZATION, strict=True):
+    _ru["pair"] = {"ru": list(_ru["pair"]), "kk": list(_kk["pair"])}
+    _ru["score_2"] = {"ru": _ru["score_2"], "kk": _kk["score_2"]}
+    _ru["score_1"] = {"ru": _ru["score_1"], "kk": _kk["score_1"]}
+
+
+_KK_LOGICAL_SCHEMAS: list[list[str]] = [
+    ["тірі жәндік", "жануар", "сүтқоректі", "мысық", "сиам мысығы"],
+    ["мемлекет", "облыс", "қала", "көше", "үй"],
+    ["өнер", "әдебиет", "поэзия", "сонет"],
+    ["сан", "натурал сан", "жұп сан", "24"],
+    ["көлік", "жер үсті көлігі", "рельсті көлік", "трамвай"],
+    ["зат", "органикалық зат", "ақуыз", "фермент"],
+    ["оқу орны", "мектеп", "жоғары сынып", "11-сынып"],
+    ["ғылым", "жаратылыстану ғылымы", "биология", "генетика"],
+]
+assert len(_KK_LOGICAL_SCHEMAS) == len(LOGICAL_SCHEMA_ITEMS)
+
+for _ru, _kk_concepts in zip(LOGICAL_SCHEMA_ITEMS, _KK_LOGICAL_SCHEMAS, strict=True):
+    assert len(_ru["concepts"]) == len(_kk_concepts)
+    _ru["concepts"] = {"ru": _ru["concepts"], "kk": _kk_concepts}
+
+
 # subtest key -> its item list, for callers that look a subtest up by
 # SUBTEST_BY_NUMBER[n]["key"] and need the actual items (structural
 # validation of a submit payload, Ф3.4 — never used for scoring, Ф3.5).
@@ -465,37 +662,49 @@ assert _TOTAL_ITEMS == 103, f"АСТУР (8 subtests) must total 103 items, got 
 _SCORED_TOTAL = sum(count for key, (_, count) in _EXPECTED_COUNTS.items() if key != "lability")
 assert _SCORED_TOTAL == 95, f"scored-or-scorable items (excluding lability) must total 95, got {_SCORED_TOTAL}"
 
-for _item in AWARENESS_ITEMS:
-    assert 4 <= len(_item["options"]) <= 5
-    assert _item["answer"] in _item["options"]
-    assert _item["subject"] in SUBJECTS
+# Below: `text`/`options`/`answer`/`words`/`score_2`/`score_1`/`concepts`
+# are `{ru,kk}` dicts (PRO-338 Ф4.4 fold-in above) for every subtest except
+# numeric_series/geometric_figures (locale-independent content) — every
+# check below runs once per locale so a translation gap can't silently ship.
+for _loc in ("ru", "kk"):
+    for _item in AWARENESS_ITEMS:
+        _opts = _item["options"][_loc]
+        assert 4 <= len(_opts) <= 5
+        assert _item["answer"][_loc] in _opts
+        assert _item["subject"] in SUBJECTS
 
-for _item in ANALOGIES_ITEMS:
-    assert 4 <= len(_item["options"]) <= 5
-    assert _item["answer"] in _item["options"]
+    for _item in ANALOGIES_ITEMS:
+        _opts = _item["options"][_loc]
+        assert 4 <= len(_opts) <= 5
+        assert _item["answer"][_loc] in _opts
+
+    for _item in CLASSIFICATION_ITEMS:
+        _words = _item["words"][_loc]
+        _answer = _item["answer"][_loc]
+        assert len(_words) == 6
+        assert len(_answer) == 2
+        assert set(_answer).issubset(set(_words))
+
+    for _item in GENERALIZATION_ITEMS:
+        _score_2 = _item["score_2"][_loc]
+        _score_1 = _item["score_1"][_loc]
+        assert _score_2 and _score_1
+        assert _item["subject"] in SUBJECTS
+        # A phrase must not appear in both tiers — ambiguous scoring otherwise.
+        assert not set(_score_2) & set(_score_1)
+
+    for _item in LOGICAL_SCHEMA_ITEMS:
+        assert len(_item["concepts"][_loc]) >= 3
 
 for _item in LABILITY_ITEMS:
     assert ("answer" in _item) != ("dynamic" in _item), (
         "each lability item is either fully static (answer) or dynamic "
         "(needs submission-time context) — never both, never neither"
     )
-    assert len(_item["options"]) == 2, "every lability item is a 2-way choice, rendered as buttons"
-    if "answer" in _item:
-        assert _item["answer"] in _item["options"]
-
-for _item in CLASSIFICATION_ITEMS:
-    assert len(_item["words"]) == 6
-    assert len(_item["answer"]) == 2
-    assert set(_item["answer"]).issubset(set(_item["words"]))
-
-for _item in GENERALIZATION_ITEMS:
-    assert _item["score_2"] and _item["score_1"]
-    assert _item["subject"] in SUBJECTS
-    # A phrase must not appear in both tiers — ambiguous scoring otherwise.
-    assert not set(_item["score_2"]) & set(_item["score_1"])
-
-for _item in LOGICAL_SCHEMA_ITEMS:
-    assert len(_item["concepts"]) >= 3
+    for _loc in ("ru", "kk"):
+        assert len(_item["options"][_loc]) == 2, "every lability item is a 2-way choice, rendered as buttons"
+        if "answer" in _item:
+            assert _item["answer"][_loc] in _item["options"][_loc]
 
 for _item in NUMERIC_SERIES_ITEMS:
     assert len(_item["answer"]) == 2
