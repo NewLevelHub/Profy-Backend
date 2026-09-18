@@ -43,11 +43,14 @@ async def make_other_student(db_session: AsyncSession) -> User:
 def force_complete_senior(monkeypatch: pytest.MonkeyPatch) -> None:
     """Same shortcut as test_report_cache_resilience: every completeness
     counter reports "done" and the LLM is off, so build_report runs the real
-    scoring + fallback narrative on an empty answer set."""
+    scoring + fallback narrative on an empty answer set. Belbin + АСТУР are
+    also required now (assessment_shared.belbin_and_astur_completed) — none
+    of these review-gate tests seed either, so that's patched too."""
     monkeypatch.setattr(assessment_shared, "likert_answered_count", AsyncMock(return_value=1))
     monkeypatch.setattr(assessment_shared, "likert_total_questions", AsyncMock(return_value=1))
     monkeypatch.setattr(motivation_service, "answered_count", AsyncMock(return_value=1))
     monkeypatch.setattr(motivation_service, "total_triplets", AsyncMock(return_value=1))
+    monkeypatch.setattr(assessment_shared, "belbin_and_astur_completed", AsyncMock(return_value=True))
     monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
 
 

@@ -73,6 +73,9 @@ async def test_concurrent_generate_runs_narrative_generation_once_and_returns_id
     monkeypatch.setattr(assessment_shared, "likert_total_questions", AsyncMock(return_value=1))
     monkeypatch.setattr(motivation_service, "answered_count", AsyncMock(return_value=1))
     monkeypatch.setattr(motivation_service, "total_triplets", AsyncMock(return_value=1))
+    # Belbin + АСТУР are also required for completion now (assessment_shared.
+    # belbin_and_astur_completed) — this test never seeds either.
+    monkeypatch.setattr(assessment_shared, "belbin_and_astur_completed", AsyncMock(return_value=True))
 
     call_count = 0
     real_generate = report_service.generate_report_narrative
@@ -125,6 +128,7 @@ async def test_repeat_post_after_generation_does_not_regenerate(monkeypatch: pyt
     monkeypatch.setattr(assessment_shared, "likert_total_questions", AsyncMock(return_value=1))
     monkeypatch.setattr(motivation_service, "answered_count", AsyncMock(return_value=1))
     monkeypatch.setattr(motivation_service, "total_triplets", AsyncMock(return_value=1))
+    monkeypatch.setattr(assessment_shared, "belbin_and_astur_completed", AsyncMock(return_value=True))
 
     call_count = 0
     real_generate = report_service.generate_report_narrative

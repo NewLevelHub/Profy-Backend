@@ -470,20 +470,20 @@ async def _assert_assessment_complete(
     and senior are RIASEC + Big Five (question pairs land in the same
     Question/UserResponse tables, so no separate count is needed for them).
     Motivation is Harter pairs for junior/middle, MOST/LEAST triplets for
-    senior — different tables, so the right counter has to be picked here."""
+    senior — different tables, so the right counter has to be picked here.
+    Belbin + АСТУР are also required (assessment_shared.
+    belbin_and_astur_completed): they're not optional/psychologist-only —
+    the continuous flow routes every student through both right after
+    motivation — so a report must not be generatable (and `assessment.status`
+    must not read as `completed`) before they're done too."""
     likert_answered = await assessment_shared.likert_answered_count(assessment_id, db)
     likert_total = await assessment_shared.likert_total_questions(db, age_group)
     likert_done = likert_total > 0 and likert_answered >= likert_total
 
-    if age_group == AgeGroup.senior:
-        mot_answered = await motivation_service.answered_count(assessment_id, db)
-        mot_total = await motivation_service.total_triplets(db)
-    else:
-        mot_answered = await motivation_pair_service.answered_count(assessment_id, db)
-        mot_total = await motivation_pair_service.total_pairs(db)
-    mot_done = mot_total > 0 and mot_answered >= mot_total
+    mot_done = await assessment_shared.motivation_completed(assessment_id, age_group, db)
+    battery_done = await assessment_shared.belbin_and_astur_completed(assessment_id, db)
 
-    if not (likert_done and mot_done):
+    if not (likert_done and mot_done and battery_done):
         raise AppError(
             status_code=status.HTTP_409_CONFLICT,
             error_code="assessment_not_completed",
@@ -789,7 +789,9 @@ async def _build_report(
     existing = existing_result.scalar_one_or_none()
     if existing:
         response = _shape_response(
-            existing, await riasec_service.answer_evidence(assessment_id, db), locale=locale
+            existing,
+            await riasec_service.answer_evidence(assessment_id, db, locale=locale),
+            locale=locale,
         )
         await _cache_if_published(redis, existing, response)
         return response
@@ -812,7 +814,9 @@ async def _build_report(
     existing = existing_result.scalar_one_or_none()
     if existing:
         response = _shape_response(
-            existing, await riasec_service.answer_evidence(assessment_id, db), locale=locale
+            existing,
+            await riasec_service.answer_evidence(assessment_id, db, locale=locale),
+            locale=locale,
         )
         await _cache_if_published(redis, existing, response)
         return response
@@ -1085,7 +1089,9 @@ async def _build_report(
             )
             analysis = existing_result.scalar_one()
             response = _shape_response(
-                analysis, await riasec_service.answer_evidence(assessment_id, db), locale=locale
+                analysis,
+                await riasec_service.answer_evidence(assessment_id, db, locale=locale),
+                locale=locale,
             )
             await _cache_if_published(redis, analysis, response)
             return response
@@ -1096,13 +1102,15 @@ async def _build_report(
             # would rebuild from the scores, and this response is cached as-is.
             # Shape it from the row just stored, exactly like every later read.
             response = _shape_response(
-                analysis, await riasec_service.answer_evidence(assessment_id, db), locale=locale
+                analysis,
+                await riasec_service.answer_evidence(assessment_id, db, locale=locale),
+                locale=locale,
             )
         else:
             evidence = (
                 None
                 if age_group == AgeGroup.junior
-                else await riasec_service.answer_evidence(assessment_id, db)
+                else await riasec_service.answer_evidence(assessment_id, db, locale=locale)
             )
             response = report_v2_assembler.assemble_result_v2(
                 assessment_id=assessment_id,
@@ -1248,7 +1256,7 @@ async def resolve_report(
         return None, ReportLookup.LOCALE_NOT_GENERATED
 
     response = _shape_response(
-        analysis, await riasec_service.answer_evidence(assessment_id, db), locale=locale
+        analysis, await riasec_service.answer_evidence(assessment_id, db, locale=locale), locale=locale
     )
     await _cache_if_published(redis, analysis, response)
     return response, ReportLookup.OK

@@ -10,7 +10,7 @@ from app.config import AsturThresholds, astur_thresholds, load_astur_thresholds
 def test_thresholds_load_from_the_shipped_file() -> None:
     assert isinstance(astur_thresholds, AsturThresholds)
     assert isinstance(astur_thresholds.version, int)
-    assert astur_thresholds.spn_bounds == (12, 37, 88, 113)
+    assert astur_thresholds.spn_bounds == (11, 32, 64, 95)
 
 
 def test_shipped_file_is_valid_json_with_a_version() -> None:

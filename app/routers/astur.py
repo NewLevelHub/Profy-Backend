@@ -15,7 +15,7 @@ from app.schemas.astur import (
     SubmitAsturSubtestRequest,
     SubmitAsturSubtestResponse,
 )
-from app.services import astur_service
+from app.services import assessment_shared, astur_service
 
 router = APIRouter(tags=["astur"])
 
@@ -94,6 +94,30 @@ async def submit_astur_subtest(
     run, key, actual_ms, over_limit_items = await astur_service.submit_subtest(
         assessment_id, n, data.answers, data.elapsed_ms, user_id=current_user.id, db=db
     )
+
+    # АСТУР is the last phase in the continuous flow (motivation -> Belbin ->
+    # АСТУР) — this is where `assessment.status` actually gets to flip to
+    # `completed`, since Likert/motivation were already done earlier but
+    # Belbin/АСТУР weren't yet (see assessment_shared.try_complete_assessment).
+    if astur_service.is_complete(run):
+        assessment_row = (
+            await db.execute(select(Assessment).where(Assessment.id == assessment_id))
+        ).scalar_one()
+        age_group = await assessment_shared.get_profile_age_group(assessment_row.profile_id, db)
+        likert_answered = await assessment_shared.likert_answered_count(assessment_id, db)
+        likert_total = await assessment_shared.likert_total_questions(db, age_group)
+        likert_completed = likert_total > 0 and likert_answered >= likert_total
+        motivation_completed = await assessment_shared.motivation_completed(
+            assessment_id, age_group, db
+        )
+        if await assessment_shared.try_complete_assessment(
+            assessment_row,
+            likert_completed=likert_completed,
+            motivation_completed=motivation_completed,
+            db=db,
+        ):
+            await db.commit()
+
     return SubmitAsturSubtestResponse(
         run_id=run.id, subtest=key, actual_ms=actual_ms, over_limit_items=over_limit_items
     )

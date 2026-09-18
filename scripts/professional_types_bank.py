@@ -225,9 +225,9 @@ PAIRS: list[dict] = [
         "option_a": {
             "order": 368,
             "text": "Составлять точные описания, отчеты о наблюдаемых явлениях",
-            "scale": "sign",
+            "scale": "artistic",
         },
-        "option_b": {"order": 369, "text": "Художественно описывать, изображать события", "scale": "artistic"},
+        "option_b": {"order": 369, "text": "Художественно описывать, изображать события", "scale": "sign"},
     },
     {
         "pair_index": 83,

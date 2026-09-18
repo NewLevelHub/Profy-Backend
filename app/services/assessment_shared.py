@@ -6,6 +6,7 @@ test — not just its own phase — is complete)."""
 
 import logging
 import uuid
+from datetime import datetime, timezone
 
 import redis.asyncio as aioredis
 from sqlalchemy import func, select
@@ -14,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
 from app.models.analysis_result import AnalysisResult
-from app.models.assessment import Assessment, AssessmentGoal
+from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.direction_inquiry import DirectionInquiry
 from app.models.direction_roadmap import DirectionRoadmap
 from app.models.profile import AgeGroup, Profile
@@ -228,6 +229,72 @@ async def likert_answered_count(assessment_id: uuid.UUID, db: AsyncSession) -> i
         select(func.count(UserResponse.id)).where(UserResponse.assessment_id == assessment_id)
     )
     return result.scalar_one()
+
+
+async def motivation_completed(assessment_id: uuid.UUID, age_group: AgeGroup, db: AsyncSession) -> bool:
+    """Whether the motivation phase is done, picking the right format by age
+    group — senior's MOST/LEAST triplets (motivation_service) vs junior/
+    middle's Harter pairs (motivation_pair_service), same branch
+    report_service.py uses. Local import for the same circular-import reason
+    as try_complete_assessment below (both those modules import this one)."""
+    from app.services import motivation_pair_service, motivation_service
+
+    if age_group == AgeGroup.senior:
+        mot_answered = await motivation_service.answered_count(assessment_id, db)
+        mot_total = await motivation_service.total_triplets(db)
+    else:
+        mot_answered = await motivation_pair_service.answered_count(assessment_id, db)
+        mot_total = await motivation_pair_service.total_pairs(db)
+    return mot_total > 0 and mot_answered >= mot_total
+
+
+async def belbin_and_astur_completed(assessment_id: uuid.UUID, db: AsyncSession) -> bool:
+    """Whether both Belbin and АСТУР are done for this assessment. Belbin/
+    АСТУР used to be treated as separate/optional (an older comment
+    elsewhere in this codebase claimed they're psychologist-only), but the
+    continuous flow (MotivationTripletFlow.tsx / MotivationHarterFlow.tsx)
+    routes every student through both right after motivation — so anything
+    that decides "is this assessment actually done" (report generation,
+    `assessment.status`) must require them too, or a student who exits
+    between motivation and Belbin gets a "report ready" screen for a test
+    they haven't finished (observed live: an assessment marked completed
+    with 0 belbin_runs and 0 astur_runs).
+
+    Local import: belbin_service/astur_service are import-free of this
+    module, so this direction is safe, but keeping it local (rather than at
+    module level) keeps this file's own import graph simple regardless."""
+    from app.services import astur_service, belbin_service
+
+    belbin_run = await belbin_service.get_latest_run(assessment_id, db)
+    if belbin_run is None:
+        return False
+    astur_run = await astur_service.get_latest_run(assessment_id, db)
+    return astur_run is not None and astur_service.is_complete(astur_run)
+
+
+async def try_complete_assessment(
+    assessment: Assessment, *, likert_completed: bool, motivation_completed: bool, db: AsyncSession
+) -> bool:
+    """Flips `assessment.status` to `completed` once every required phase is
+    actually done — Likert/pairs, motivation, Belbin, AND АСТУР (see
+    `belbin_and_astur_completed`). Called from the tail end of each phase's
+    own submit (motivation_service, motivation_pair_service, astur router)
+    since none of them alone knows when the *last* phase finishes; whichever
+    call lands last is the one that actually flips it.
+
+    Does not commit — caller's existing commit picks this up in the same
+    transaction as its own phase's write, so a completed-without-Belbin/
+    АСТУР assessment can't land even under a partial failure."""
+    if assessment.status == AssessmentStatus.completed:
+        return False
+    if not (likert_completed and motivation_completed):
+        return False
+    if not await belbin_and_astur_completed(assessment.id, db):
+        return False
+
+    assessment.status = AssessmentStatus.completed
+    assessment.completed_at = datetime.now(timezone.utc)
+    return True
 
 
 async def response_time_deltas_ms(

@@ -147,6 +147,19 @@ def _patch_pair_motivation(monkeypatch: pytest.MonkeyPatch, *, answered: int, to
     monkeypatch.setattr(motivation_pair_service, "total_pairs", AsyncMock(return_value=total))
 
 
+def _patch_battery(monkeypatch: pytest.MonkeyPatch, *, completed: bool) -> None:
+    """Belbin + АСТУР are also required for completion (assessment_shared.
+    belbin_and_astur_completed) — every student is routed through both right
+    after motivation in the continuous flow (MotivationTripletFlow.tsx /
+    MotivationHarterFlow.tsx), not just psychologist-assigned ones. Patched
+    the same way the Likert/motivation counters above are: these tests pin
+    _assert_assessment_complete's own branching, not belbin_service/
+    astur_service's real run-tracking (covered separately)."""
+    monkeypatch.setattr(
+        assessment_shared, "belbin_and_astur_completed", AsyncMock(return_value=completed)
+    )
+
+
 async def _seed_riasec_dominant(
     db: AsyncSession, assessment: Assessment, profile_id: uuid.UUID, *, dominant: str,
 ) -> int:
@@ -223,6 +236,28 @@ async def test_senior_incomplete_triplet_returns_409_and_does_not_complete(
     pair_mot.assert_not_called()
 
 
+async def test_senior_likert_and_motivation_done_but_belbin_astur_missing_returns_409(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regression for the live bug: a student who finished Likert + motivation
+    but hasn't done Belbin/АСТУР yet must not get a "report ready" screen —
+    those two are mandatory continuation steps in the flow
+    (MotivationTripletFlow.tsx / MotivationHarterFlow.tsx route every
+    student through both right after motivation), not optional extras."""
+    assessment = await _make_assessment(db_session, AgeGroup.senior)
+    _patch_likert(monkeypatch, answered=1, total=1)
+    _patch_senior_motivation(monkeypatch, answered=1, total=1)
+    _patch_battery(monkeypatch, completed=False)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await report_service.build_report(assessment.id, db_session)
+
+    assert exc_info.value.status_code == 409
+    await db_session.refresh(assessment)
+    assert assessment.status == AssessmentStatus.in_progress
+    assert assessment.completed_at is None
+
+
 async def test_junior_likert_total_excludes_stale_riasec_but_counts_mi(
     db_session: AsyncSession,
 ) -> None:
@@ -257,6 +292,7 @@ async def test_successful_generation_atomically_sets_completion_and_result(
     assessment = await _make_assessment(db_session, AgeGroup.senior)
     _patch_likert(monkeypatch, answered=1, total=1)
     _patch_senior_motivation(monkeypatch, answered=1, total=1)
+    _patch_battery(monkeypatch, completed=True)
     # This dev env actually has a working LLM key (LLM_ENABLED=true) — force
     # it off so this test is a fast, deterministic fallback run, not an
     # accidental real API call on every suite run.
@@ -289,6 +325,7 @@ async def test_successful_generation_populates_v2_narrative_fields(
     await _answer_all_of_type_at_max(db_session, assessment, AgeGroup.senior)
     _patch_likert(monkeypatch, answered=1, total=1)
     _patch_senior_motivation(monkeypatch, answered=1, total=1)
+    _patch_battery(monkeypatch, completed=True)
     monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
 
     # A tiny, controlled RIASEC signal so the deterministic fallback has real
