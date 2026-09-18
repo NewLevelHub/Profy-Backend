@@ -38,7 +38,7 @@ async def test_content_shape_matches_the_bank(client: AsyncClient, db_session: A
     assert resp.status_code == 200, resp.text
     body = resp.json()
     assert len(body["subtests"]) == 7
-    assert body["lability_item_limit_ms"] == 5000
+    assert body["lability_item_limit_ms"] == 20000
 
     by_key = {s["key"]: s for s in body["subtests"]}
     for meta in SUBTESTS:

@@ -235,25 +235,39 @@ ANALOGIES_ITEMS: list[dict] = [
 # facts) — so they have NO fixed `answer`; instead `dynamic` names what the
 # future scoring service (Ф3.5) must resolve at grading time:
 #   "day_of_week" -> the actual weekday of `submitted_at`
-#   "own_name"    -> the respondent's own first/last name (profile)
+#   "own_name"    -> whether the respondent's own first name starts with a
+#                    vowel (see astur_scoring._own_name_expected_answer)
 # Every other command's answer is fully static and computed once here.
+#
+# `options` (added 2026-09-18): every item's answer space was ALREADY a
+# closed set of exactly 2 possible values — the frontend just wasn't told
+# that, so every non-shape item rendered as a free-text box under a 20s
+# timer, which live in-office testing showed was genuinely hard to use (had
+# to read the instruction, work out the answer, AND type it correctly, all
+# under time pressure). `options` lets LabilityRunner render two buttons
+# instead, same as item 2 already did for its shape answer. Item 6 was
+# additionally reworded (see below) so it also reduces to a plain yes/no
+# instead of "identify and type a specific Cyrillic letter derived from a
+# 2-branch rule about your own name" — that compound task was the hardest
+# item in the whole subtest even for an adult test-taker, per direct
+# feedback, and diluted the point of a *speed* subtest into a spelling test.
 LABILITY_ITEMS: list[dict] = [
     {"instruction": "Если после слова «стол» по алфавиту идёт слово «стул» — напишите цифру 1, если нет — цифру 2.",
-     "answer_format": "digit", "answer": "1"},
+     "answer_format": "digit", "answer": "1", "options": ["1", "2"]},
     {"instruction": "Обведите кружок, если сегодняшний день недели начинается с согласной буквы, иначе — обведите квадрат.",
-     "answer_format": "shape", "dynamic": "day_of_week"},
+     "answer_format": "shape", "dynamic": "day_of_week", "options": ["кружок", "квадрат"]},
     {"instruction": "Если 7 больше 5 — поставьте плюс, если нет — поставьте минус.",
-     "answer_format": "symbol", "answer": "плюс"},
-    {"instruction": "Зачеркните чётное число из пары «3 и 8», иначе зачеркните нечётное.",
-     "answer_format": "digit", "answer": "8"},
+     "answer_format": "symbol", "answer": "плюс", "options": ["плюс", "минус"]},
+    {"instruction": "Из пары чисел «3 и 8» напишите то число, которое является чётным.",
+     "answer_format": "digit", "answer": "8", "options": ["3", "8"]},
     {"instruction": "Если слово «зима» ближе по смыслу к слову «снег», чем к слову «жара», — напишите «да», иначе — «нет».",
-     "answer_format": "word", "answer": "да"},
-    {"instruction": "Подчеркните первую букву своего имени, если она гласная, иначе — подчеркните последнюю букву фамилии.",
-     "answer_format": "letter", "dynamic": "own_name"},
+     "answer_format": "word", "answer": "да", "options": ["да", "нет"]},
+    {"instruction": "Первая буква вашего имени — гласная? Выберите «Да» или «Нет».",
+     "answer_format": "word", "dynamic": "own_name", "options": ["да", "нет"]},
     {"instruction": "Если месяц май идёт раньше месяца март — поставьте галочку, иначе — крестик.",
-     "answer_format": "symbol", "answer": "крестик"},
+     "answer_format": "symbol", "answer": "крестик", "options": ["галочка", "крестик"]},
     {"instruction": "Напишите слово «выше», если 10 больше 100, иначе напишите слово «ниже».",
-     "answer_format": "word", "answer": "ниже"},
+     "answer_format": "word", "answer": "ниже", "options": ["выше", "ниже"]},
 ]
 
 
@@ -465,6 +479,9 @@ for _item in LABILITY_ITEMS:
         "each lability item is either fully static (answer) or dynamic "
         "(needs submission-time context) — never both, never neither"
     )
+    assert len(_item["options"]) == 2, "every lability item is a 2-way choice, rendered as buttons"
+    if "answer" in _item:
+        assert _item["answer"] in _item["options"]
 
 for _item in CLASSIFICATION_ITEMS:
     assert len(_item["words"]) == 6

@@ -17,6 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import KondashAnxietyThresholds, kondash_anxiety_thresholds
+from app.i18n import pick_locale
 from app.models.question import Question, QuestionInstrument
 from app.models.user_response import UserResponse
 from scripts.kondash_anxiety_bank import QUESTIONS
@@ -45,6 +46,38 @@ async def interpersonal_raw_score(assessment_id: uuid.UUID, db: AsyncSession) ->
     if not interpersonal_rows:
         return None
     return sum(interpersonal_rows)
+
+
+async def answer_evidence(assessment_id: uuid.UUID, db: AsyncSession) -> dict | None:
+    """Breakdown of the student's own answers to the 10 межличностная-
+    subscale items, each rated 0-4 (unlike the binary Да/Нет tests, so this
+    mirrors RIASEC's `distribution` shape — a 5-bucket count — rather than
+    Eysenck's yes/no split). `None` when nothing has been answered yet."""
+    result = await db.execute(
+        select(Question.order, Question.text, UserResponse.answer_value)
+        .join(UserResponse, UserResponse.question_id == Question.id)
+        .where(
+            Question.instrument == QuestionInstrument.kondash_anxiety,
+            UserResponse.assessment_id == assessment_id,
+        )
+        .order_by(Question.order)
+    )
+    interpersonal_rows = [
+        (text, value) for order, text, value in result.all() if _ORDER_TO_SUBSCALE[order] == _INTERPERSONAL
+    ]
+    if not interpersonal_rows:
+        return None
+
+    distribution = [0, 0, 0, 0, 0]
+    items = []
+    for text, value in interpersonal_rows:
+        if 0 <= value <= 4:
+            distribution[value] += 1
+        items.append({
+            "text": pick_locale(text) if isinstance(text, dict) else str(text),
+            "value": value,
+        })
+    return {"answered": len(interpersonal_rows), "distribution": distribution, "items": items}
 
 
 def sten_from_raw(raw: int, sten10: int) -> int:

@@ -10,7 +10,7 @@ from app.config import AsturTimerConfig, astur_timer_config, load_astur_timer_co
 def test_config_loads_from_the_shipped_file() -> None:
     assert isinstance(astur_timer_config, AsturTimerConfig)
     assert isinstance(astur_timer_config.version, int)
-    assert astur_timer_config.lability_item_limit_ms == 5000
+    assert astur_timer_config.lability_item_limit_ms == 20000
 
 
 def test_shipped_file_is_valid_json_with_a_version() -> None:

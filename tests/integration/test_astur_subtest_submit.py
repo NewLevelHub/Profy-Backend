@@ -136,7 +136,7 @@ async def test_lability_requires_elapsed_ms_and_flags_over_limit_items(
 ) -> None:
     _, assessment, headers = await _auth(db_session)
     answers, elapsed_ms = _lability_payload()
-    elapsed_ms["3"] = 9000  # over the 5000ms default limit
+    elapsed_ms["3"] = 21000  # over the 20000ms default limit
 
     missing_elapsed = await client.post(
         f"/api/v1/assessment/{assessment.id}/astur/subtest/3",

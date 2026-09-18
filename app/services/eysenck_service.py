@@ -15,6 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import EysenckThresholds, eysenck_thresholds
+from app.i18n import pick_locale
 from app.models.question import Question, QuestionInstrument
 from app.models.user_response import UserResponse
 from scripts.eysenck_bank import QUESTIONS
@@ -65,6 +66,45 @@ async def raw_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, in
         if answer_value == keyed_value:
             scores[scale] += 1
     return scores
+
+
+async def answer_evidence(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, dict] | None:
+    """Per-scale breakdown of the student's own Eysenck answers — the same
+    "what is this raw score actually made of" evidence
+    riasec_service.answer_evidence provides for RIASEC, mirrored here for
+    the psychologist report's "Почему такой результат" card (parity request:
+    the specialist screen should show real answers, not just a restated
+    score).
+
+    Returns {scale: {"answered", "yes", "no", "items": [{"text","answer"}]}}
+    for each of extraversion/neuroticism/lie — `answer` is the student's
+    literal Да/Нет, not whether it matched the keyed direction. `None` when
+    nothing has been answered yet, same convention as `raw_scores()`."""
+    result = await db.execute(
+        select(Question.order, Question.text, UserResponse.answer_value)
+        .join(UserResponse, UserResponse.question_id == Question.id)
+        .where(
+            Question.instrument == QuestionInstrument.eysenck,
+            UserResponse.assessment_id == assessment_id,
+        )
+        .order_by(Question.order)
+    )
+    rows = result.all()
+    if not rows:
+        return None
+
+    evidence: dict[str, dict] = {}
+    for order, text, value in rows:
+        scale, _keyed = _ORDER_TO_KEY[order]
+        answer = "yes" if value == _YES_VALUE else "no"
+        entry = evidence.setdefault(scale, {"answered": 0, "yes": 0, "no": 0, "items": []})
+        entry["answered"] += 1
+        entry[answer] += 1
+        entry["items"].append({
+            "text": pick_locale(text) if isinstance(text, dict) else str(text),
+            "answer": answer,
+        })
+    return evidence
 
 
 def quadrant(extraversion_raw: int, neuroticism_raw: int) -> str:

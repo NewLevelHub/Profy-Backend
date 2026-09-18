@@ -155,13 +155,24 @@ def test_lability_day_of_week_dynamic_item_resolves_against_submission_date() ->
     assert first_half == 1 / 4  # only item 2 correct among items 1-4
 
 
-def test_lability_own_name_dynamic_item_uses_first_and_last_word_heuristic() -> None:
-    # "Аружан Абенова" -> first name starts with "А" (a vowel) -> expected "а".
+def test_lability_own_name_dynamic_item_resolves_first_name_vowel() -> None:
+    # "Аружан Абенова" -> first name starts with "А" (a vowel) -> expected "да".
     lability_answers = {str(i): {"answer": ""} for i in range(1, 9)}
-    lability_answers["6"] = {"answer": "а"}
+    lability_answers["6"] = {"answer": "да"}
 
     _, second_half = astur_scoring.score_lability(
         lability_answers, submitted_at=datetime.now(timezone.utc), profile_name="Аружан Абенова",
+    )
+    assert second_half == 1 / 4  # only item 6 correct among items 5-8
+
+
+def test_lability_own_name_dynamic_item_resolves_first_name_consonant() -> None:
+    # "Данияр Ким" -> first name starts with "Д" (not a vowel) -> expected "нет".
+    lability_answers = {str(i): {"answer": ""} for i in range(1, 9)}
+    lability_answers["6"] = {"answer": "нет"}
+
+    _, second_half = astur_scoring.score_lability(
+        lability_answers, submitted_at=datetime.now(timezone.utc), profile_name="Данияр Ким",
     )
     assert second_half == 1 / 4  # only item 6 correct among items 5-8
 

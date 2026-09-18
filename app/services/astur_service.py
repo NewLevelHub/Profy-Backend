@@ -33,7 +33,7 @@ _LABILITY_ITEM_KEYS = {str(i) for i in range(1, len(SUBTEST_ITEMS[_LABILITY_KEY]
 _PUBLIC_ITEM_FIELDS: dict[str, tuple[str, ...]] = {
     "awareness": ("text", "options"),
     "analogies": ("pair", "third", "options"),
-    "lability": ("instruction", "answer_format"),
+    "lability": ("instruction", "answer_format", "options"),
     "classification": ("words",),
     "generalization": ("pair",),
     "logical_schemas": ("concepts",),  # shuffled below — see build_content()

@@ -188,20 +188,19 @@ def _day_of_week_expected_answer(submitted_at: datetime) -> str:
 
 
 def _own_name_expected_answer(profile_name: str) -> str:
-    """Item 6 asks for the first letter of "своего имени" (first name) if
-    it's a vowel, else the last letter of "фамилии" (surname) — but
-    `Profile.name` (app/models/profile.py) is one combined display-name
-    field, not split into first/last. Best-effort heuristic, not exact:
-    first word = имя, last word = фамилия — matches typical "Имя Фамилия"
-    entry, but is genuinely wrong for a single-word name or a
-    surname-first entry. Documented here rather than silently assumed."""
+    """Item 6 asks whether the first letter of "своего имени" (first name)
+    is a vowel — answered via a да/нет button (reworded 2026-09-18; used to
+    ask for the first letter of the name if it's a vowel, else the last
+    letter of the surname, typed as free text — a two-branch rule requiring
+    the respondent to both derive AND correctly type a specific Cyrillic
+    letter under a lability timer, which live in-office testing found to be
+    the hardest item in the whole subtest). `Profile.name` (app/models/
+    profile.py) is one combined display-name field; first word is taken as
+    имя, matching the typical "Имя Фамилия" entry."""
     parts = profile_name.split()
-    if not parts:
-        return ""
-    first_name, last_name = parts[0], parts[-1]
-    if first_name and first_name[0].casefold() in _VOWELS_RU:
-        return first_name[0]
-    return last_name[-1] if last_name else ""
+    if not parts or not parts[0]:
+        return "нет"
+    return "да" if parts[0][0].casefold() in _VOWELS_RU else "нет"
 
 
 def _is_lability_item_correct(

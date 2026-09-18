@@ -14,6 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import ElersThresholds, elers_thresholds
+from app.i18n import pick_locale
 from app.models.question import Question, QuestionInstrument
 from app.models.user_response import UserResponse
 from scripts.elers_bank import QUESTIONS
@@ -53,6 +54,38 @@ async def raw_score(assessment_id: uuid.UUID, db: AsyncSession) -> int | None:
         if answer_value == keyed_value:
             score += 1
     return score
+
+
+async def answer_evidence(assessment_id: uuid.UUID, db: AsyncSession) -> dict | None:
+    """Breakdown of the student's own Elers answers — buffer items excluded,
+    same as `raw_score()` (they never score, so they'd be noise here too).
+    Single scale (unlike Eysenck's 3), so this returns one flat
+    `{"answered", "yes", "no", "items": [{"text","answer"}]}` dict rather
+    than a per-scale mapping. `None` when nothing scoreable has been
+    answered yet."""
+    result = await db.execute(
+        select(Question.order, Question.text, UserResponse.answer_value)
+        .join(UserResponse, UserResponse.question_id == Question.id)
+        .where(
+            Question.instrument == QuestionInstrument.elers,
+            UserResponse.assessment_id == assessment_id,
+        )
+        .order_by(Question.order)
+    )
+    rows = [(order, text, value) for order, text, value in result.all() if _ORDER_TO_KEYED[order] != "buffer"]
+    if not rows:
+        return None
+
+    entry = {"answered": 0, "yes": 0, "no": 0, "items": []}
+    for order, text, value in rows:
+        answer = "yes" if value == _YES_VALUE else "no"
+        entry["answered"] += 1
+        entry[answer] += 1
+        entry["items"].append({
+            "text": pick_locale(text) if isinstance(text, dict) else str(text),
+            "answer": answer,
+        })
+    return entry
 
 
 def build_section_data(

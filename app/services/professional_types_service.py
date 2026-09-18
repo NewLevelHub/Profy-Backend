@@ -14,6 +14,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n import pick_locale
 from app.models.question import Question, QuestionInstrument
 from app.models.user_response import UserResponse
 from scripts.professional_types_bank import PAIRS, QUESTIONS
@@ -80,6 +81,67 @@ async def abilities_raw_scores(assessment_id: uuid.UUID, db: AsyncSession) -> di
     if not rows:
         return None
     return {_ABILITIES_ORDER_TO_SCALE[order]: value for order, value in rows}
+
+
+async def interest_evidence(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, dict] | None:
+    """Per-scale breakdown of the student's own 20 А/Б picks — for each
+    scale, how many times it appeared across the 20 pairs and how many of
+    those appearances it was actually picked, plus the literal option text
+    per appearance (question_pair_service writes picked=5/other=1 for BOTH
+    options of an answered pair, so every appearance — picked or not — has
+    its own `UserResponse` row here). `None` when none of the 20 pairs have
+    been answered yet."""
+    result = await db.execute(
+        select(Question.order, Question.text, UserResponse.answer_value)
+        .join(UserResponse, UserResponse.question_id == Question.id)
+        .where(
+            Question.instrument == QuestionInstrument.professional_types,
+            UserResponse.assessment_id == assessment_id,
+        )
+        .order_by(Question.order)
+    )
+    rows = result.all()
+    if not rows:
+        return None
+
+    evidence: dict[str, dict] = {scale: {"picked": 0, "total": 0, "items": []} for scale in SCALE_ORDER}
+    for order, text, value in rows:
+        scale = _INTEREST_ORDER_TO_SCALE[order]
+        picked = value == _PICKED_VALUE
+        entry = evidence[scale]
+        entry["total"] += 1
+        if picked:
+            entry["picked"] += 1
+        entry["items"].append({
+            "text": pick_locale(text) if isinstance(text, dict) else str(text),
+            "picked": picked,
+        })
+    return evidence
+
+
+async def abilities_evidence(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, dict] | None:
+    """The literal text + raw 0-3 value behind each of the 5 abilities
+    scores — one item per scale, so there's no distribution to bucket,
+    unlike every other evidence builder here. `None` when none of the 5
+    have been answered yet."""
+    result = await db.execute(
+        select(Question.order, Question.text, UserResponse.answer_value)
+        .join(UserResponse, UserResponse.question_id == Question.id)
+        .where(
+            Question.instrument == QuestionInstrument.professional_types_abilities,
+            UserResponse.assessment_id == assessment_id,
+        )
+    )
+    rows = result.all()
+    if not rows:
+        return None
+    return {
+        _ABILITIES_ORDER_TO_SCALE[order]: {
+            "text": pick_locale(text) if isinstance(text, dict) else str(text),
+            "value": value,
+        }
+        for order, text, value in rows
+    }
 
 
 def hybrid_profile(interest_scores: dict[str, int] | None) -> list[str] | None:

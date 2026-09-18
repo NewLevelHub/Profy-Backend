@@ -17,6 +17,77 @@ from pydantic import BaseModel
 _model_config = {"extra": "forbid"}
 
 
+# ─── "Почему такой результат" evidence — mirrors result_v2.StudentInterestDetails'
+# real-answers pattern (distribution/likes/dislikes) for the psychologist
+# report's own detail cards, which until now only restated the raw score in
+# a sentence instead of showing what the student actually answered. One
+# shape per answer format the 6 new tests actually use: binary Да/Нет
+# (Eysenck/Elers/Boyko), 0-4 rated (Kondash), forced-choice pair pick (ДДО
+# interests), single Likert item (ДДО abilities), ipsative points (Belbin).
+
+
+class BinaryAnswerItem(BaseModel):
+    text: str
+    answer: str  # "yes" | "no" — the student's literal Да/Нет
+    model_config = _model_config
+
+
+class BinaryScaleEvidence(BaseModel):
+    answered: int
+    yes: int
+    no: int
+    items: list[BinaryAnswerItem]
+    model_config = _model_config
+
+
+class RatedAnswerItem(BaseModel):
+    text: str
+    value: int
+    model_config = _model_config
+
+
+class RatedScaleEvidence(BaseModel):
+    """0-4 rated items (Kondash) — `distribution[v]` = count of items
+    answered with value `v`, same shape as RIASEC's own 5-point distribution."""
+
+    answered: int
+    distribution: list[int]
+    items: list[RatedAnswerItem]
+    model_config = _model_config
+
+
+class PairAnswerItem(BaseModel):
+    text: str
+    picked: bool
+    model_config = _model_config
+
+
+class PairScaleEvidence(BaseModel):
+    picked: int
+    total: int
+    items: list[PairAnswerItem]
+    model_config = _model_config
+
+
+class SingleItemEvidence(BaseModel):
+    text: str
+    value: int
+    model_config = _model_config
+
+
+class RoleEvidenceItem(BaseModel):
+    block: str
+    text: str
+    points: int
+    model_config = _model_config
+
+
+class RoleEvidence(BaseModel):
+    points_by_block: list[int]
+    items: list[RoleEvidenceItem]
+    model_config = _model_config
+
+
 class ProfessionalTypesSection(BaseModel):
     """ДДО (Климов + Йовайши/Резапкина) — 20 форс-чойс пар + 5 Likert-пунктов
     способностей. 5 шкал (Latin keys, PRO-338 Ф1.2): practical (Ч-П),
@@ -37,6 +108,8 @@ class ProfessionalTypesSection(BaseModel):
     interest_scores: dict[str, int] | None = None
     hybrid_profile: list[str] | None = None
     abilities_scores: dict[str, int] | None = None
+    interest_evidence: dict[str, PairScaleEvidence] | None = None
+    abilities_evidence: dict[str, SingleItemEvidence] | None = None
     model_config = _model_config
 
 
@@ -61,6 +134,7 @@ class TeamRoleSection(BaseModel):
     supporting_roles: list[str] | None = None
     avoidance_roles: list[str] | None = None
     methodological_note: str | None = None
+    role_evidence: dict[str, RoleEvidence] | None = None
     model_config = _model_config
 
 
@@ -85,6 +159,9 @@ class TemperamentSection(BaseModel):
     neuroticism_level: str | None = None
     protocol_flagged: bool | None = None
     quadrant: str | None = None
+    extraversion_evidence: BinaryScaleEvidence | None = None
+    neuroticism_evidence: BinaryScaleEvidence | None = None
+    lie_scale_evidence: BinaryScaleEvidence | None = None
     model_config = _model_config
 
 
@@ -120,6 +197,7 @@ class AspirationLevelSection(BaseModel):
 
     score: int | None = None
     level: str | None = None
+    evidence: BinaryScaleEvidence | None = None
     model_config = _model_config
 
 
@@ -137,6 +215,8 @@ class EmpathyConfidenceSection(BaseModel):
     empathy_level: str | None = None
     confidence_stens: int | None = None
     confidence_level: str | None = None
+    empathy_evidence: dict[str, BinaryScaleEvidence] | None = None
+    confidence_evidence: RatedScaleEvidence | None = None
     model_config = _model_config
 
 

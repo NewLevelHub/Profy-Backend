@@ -72,6 +72,40 @@ async def submit_run(
     return run
 
 
+def role_evidence(run: BelbinRun) -> dict[str, dict]:
+    """Per-role breakdown of the student's own point allocations across all
+    7 blocks — the ipsative-battery equivalent of
+    riasec_service.answer_evidence's "what is this score actually made of"
+    evidence, for the psychologist report's "Почему такой результат" card.
+    Pure function: `run.allocations` already carries every point the
+    student assigned, no extra DB read needed (unlike the other 5 tests'
+    evidence builders, all Question/UserResponse-based).
+
+    Returns {role: {"points_by_block": [7 ints, block I..VII order],
+    "items": [{"block", "text", "points"}, one per statement that role owns
+    across all 7 blocks]}}.
+
+    Tolerates fewer than 7 allocation blocks (a bare/partial `BelbinRun`,
+    e.g. in a test fixture) by treating a missing block as unscored (0
+    points for every item in it) rather than raising — a real submitted run
+    always has exactly 7 (`submit_run` enforces it), so this only matters
+    for incomplete data, which should degrade the evidence, not the whole
+    report section."""
+    evidence: dict[str, dict] = {role: {"points_by_block": [], "items": []} for role in ROLES}
+    for i, section in enumerate(SECTIONS):
+        block = run.allocations[i] if i < len(run.allocations) else {}
+        for item in section["items"]:
+            role = item["role"]
+            points = block.get(item["id"], 0)
+            evidence[role]["points_by_block"].append(points)
+            evidence[role]["items"].append({
+                "block": section["section"],
+                "text": item["text"],
+                "points": points,
+            })
+    return evidence
+
+
 @dataclass(frozen=True)
 class BelbinInterpretation:
     # All 8 role codes, ranked highest score first. Ties broken by
