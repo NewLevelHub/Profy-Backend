@@ -11,7 +11,10 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from app.schemas.artifact import ArtifactItem
+from app.schemas.new_tests import NewTestsSections
 from app.schemas.profile import ProfileResponse
+from app.schemas.psych_ai_analysis import PsychAiAnalysisOutput
+from app.schemas.result_v2 import ResultV2Schema
 
 
 class PsychologistStudentListItem(BaseModel):
@@ -20,6 +23,16 @@ class PsychologistStudentListItem(BaseModel):
     profile_name: str | None = None
     age_group: str | None = None
     assigned_at: datetime
+
+
+class PsychologistAvailableStudentItem(BaseModel):
+    """Student not yet claimed by this psychologist (PRO-337 selection flow)."""
+
+    id: uuid.UUID
+    email: str
+    profile_name: str | None = None
+    age_group: str | None = None
+    has_pending_review: bool = False
 
 
 class PsychologistAssessmentSummary(BaseModel):
@@ -31,6 +44,8 @@ class PsychologistAssessmentSummary(BaseModel):
     created_at: datetime
     completed_at: datetime | None = None
     has_result: bool = False
+    # "pending_review" | "published", None when there is no result yet.
+    review_status: str | None = None
     has_roadmap: bool = False
 
 
@@ -61,3 +76,24 @@ class PsychologistNoteItem(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class PsychologistReportResponse(BaseModel):
+    """PRO-338 Ф0.3 — the specialist-only report surface for one assessment:
+    the same student-facing report shape (`report`, reused as-is from
+    result_v2.py, not duplicated field-by-field) plus the 6 new-tests
+    sections (`new_tests`, reused as-is from new_tests.py) that never reach
+    the student's own /result.
+
+    `ai_analysis` — per-block AI commentary + a final synthesis + one
+    profession picked from `report.careers` (never invented, see
+    app/services/psych_ai_analysis_validator.py). Lazily generated on first
+    view and cached on AnalysisResult.psych_ai_analysis; `None` when the LLM
+    is disabled, generation failed after retries, or there's no data yet to
+    analyze — the psychologist sees "not available", never a fabricated
+    analysis standing in for a real one."""
+
+    report: ResultV2Schema
+    new_tests: NewTestsSections
+    ai_analysis: PsychAiAnalysisOutput | None = None
+    model_config = {"extra": "forbid"}

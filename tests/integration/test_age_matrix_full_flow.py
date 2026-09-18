@@ -238,6 +238,11 @@ def _patch_completion_gate(
         monkeypatch.setattr(motivation_service, "total_triplets", AsyncMock(return_value=1))
     else:
         monkeypatch.setattr(motivation_pair_service, "total_pairs", AsyncMock(return_value=1))
+    # Belbin + АСТУР are also required for completion now (assessment_shared.
+    # belbin_and_astur_completed) — this file's flows never touch either, so
+    # without this they'd 409 at the completion gate before ever reaching the
+    # scoring/report-assembly code this test actually exercises.
+    monkeypatch.setattr(assessment_shared, "belbin_and_astur_completed", AsyncMock(return_value=True))
     monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
 
 

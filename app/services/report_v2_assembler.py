@@ -32,7 +32,10 @@ from app.schemas.result_v2 import (
     ResultResponseV2,
     RiasecResultResponse,
     StudentCareer,
+    StudentInterestCombination,
+    StudentInterestDetails,
     StudentInterestMapItem,
+    StudentInterestQuote,
     StudentPersonalityNote,
     StudentStrengthCard,
     StudentThinkingStyleNote,
@@ -41,7 +44,8 @@ from app.services import bigfive_content
 from app.services.mi_content import mi_activities, mi_labels
 from app.services.mi_service import MI_ORDER
 from app.services.riasec_content import neutral_career_why_variants, neutral_try_now, riasec_labels
-from app.services.riasec_service import HOLLAND_ORDER, direction_letter_weight
+from app.services.riasec_explanations import COMBINATION_TEXTS, QUOTE_MIX, TYPE_EXPLANATIONS
+from app.services.riasec_service import HOLLAND_ORDER, consistency, direction_letter_weight
 from app.services.scoring_levels import LEVEL_HIGH_MIN, LEVEL_MEDIUM_MIN
 
 # TZ_Profi.md §16.6: "разброс между максимальной и минимальной категорией
@@ -115,25 +119,85 @@ def build_interest_map_note(items: list[StudentInterestMapItem]) -> str:
     return t["interest_map_note_flat"]
 
 
-def build_interest_map(age_group: AgeGroup, profile_scores: dict[str, float]) -> list[StudentInterestMapItem]:
+def build_interest_map(
+    age_group: AgeGroup,
+    profile_scores: dict[str, float],
+    evidence: dict[str, dict] | None = None,
+) -> list[StudentInterestMapItem]:
     """All 6 RIASEC spheres (middle/senior) or all 8 MI spheres (junior),
     ranked most-to-least pronounced by score — every category, not just the
     ones evidenced as a "strength" (that subset is what report_narrative's
     `interests` field covers instead, tier strong/steady; this is the
     numeric-level map). Same score-desc/canonical-index tie-break convention
-    as riasec_service.py's strengths/weaknesses ranking, just unfiltered."""
+    as riasec_service.py's strengths/weaknesses ranking, just unfiltered.
+
+    `evidence` (riasec_service.answer_evidence) adds the per-type "why this
+    level" breakdown; RIASEC only, and a type with no answers gets none."""
     if age_group == AgeGroup.junior:
         order, labels = MI_ORDER, mi_labels()
     else:
         order, labels = HOLLAND_ORDER, riasec_labels()
     ranked = sorted(order, key=lambda key: (-profile_scores.get(key, 0.0), order.index(key)))
-    return [
-        StudentInterestMapItem(code=key, sphere=labels[key], level=_level(profile_scores.get(key, 0.0)))
-        for key in ranked
-    ]
+    items = []
+    for key in ranked:
+        score = profile_scores.get(key, 0.0)
+        level = _level(score)
+        details = None
+        if age_group != AgeGroup.junior and evidence and key in evidence:
+            details = build_interest_details(key, level, score, evidence[key])
+        items.append(StudentInterestMapItem(code=key, sphere=labels[key], level=level, details=details))
+    return items
 
 
-def build_personality_notes(is_junior: bool, personality_profile: dict[str, float]) -> list[StudentPersonalityNote]:
+def build_interest_details(
+    code: str,
+    level: Literal["low", "medium", "high"],
+    score: float,
+    evidence: dict,
+) -> StudentInterestDetails:
+    distribution = list(evidence["distribution"])
+    liked, disliked = evidence.get("liked", []), evidence.get("disliked", [])
+    want_liked, want_disliked = QUOTE_MIX[level]
+    # Fill a short side from the other one so every type shows up to 4
+    # quotes — a leading type with a single "не нравится" still gets 4.
+    total = want_liked + want_disliked
+    take_liked = min(len(liked), max(want_liked, total - len(disliked)))
+    take_disliked = min(len(disliked), total - take_liked)
+    quotes = [StudentInterestQuote(text=t, answer="like") for t in liked[:take_liked]]
+    quotes += [StudentInterestQuote(text=t, answer="dislike") for t in disliked[:take_disliked]]
+    means, follows = TYPE_EXPLANATIONS[code][level]
+    return StudentInterestDetails(
+        answered=sum(distribution),
+        distribution=distribution,
+        likes=distribution[0] + distribution[1],
+        dislikes=distribution[3] + distribution[4],
+        score=round(score, 1),
+        means=means,
+        follows=follows,
+        quotes=quotes,
+    )
+
+
+def build_interest_combination(items: list[StudentInterestMapItem]) -> StudentInterestCombination | None:
+    """Holland hexagon relation of the two most pronounced RIASEC types
+    (`items` is already ranked). Skipped when the runner-up isn't at least
+    "medium" — pairing a leading type with an absent one explains nothing."""
+    if len(items) < 2 or items[1].level == "low":
+        return None
+    first, second = items[0], items[1]
+    relation, template = COMBINATION_TEXTS[consistency([first.code, second.code])]
+    return StudentInterestCombination(
+        codes=[first.code, second.code],
+        relation=relation,
+        text=template.format(a=first.sphere, b=second.sphere),
+    )
+
+
+def build_personality_notes(
+    is_junior: bool,
+    personality_profile: dict[str, float],
+    overrides: dict[str, str] | None = None,
+) -> list[StudentPersonalityNote]:
     """"Твой характер" — the Big Five instrument is answered identically by
     all three age groups (only interests/motivation branch by age), so
     unlike interest_map this never varies by instrument, only by wording
@@ -147,6 +211,11 @@ def build_personality_notes(is_junior: bool, personality_profile: dict[str, floa
     trait's band relative to the student's own five-trait average
     (bigfive_content.relative_bands), not an absolute cutoff."""
     notes = bigfive_content.personality_notes_for_age(is_junior, personality_profile)
+    # A psychologist's correction replaces the computed phrase for that trait
+    # only (PRO-337); traits they left alone keep the age-appropriate default.
+    for trait, text in (overrides or {}).items():
+        if trait in notes and text.strip():
+            notes[trait] = text
     bands = bigfive_content.relative_bands(personality_profile)
     traits = list(bigfive_content.personality_labels().items())
     ranked = sorted(traits, key=lambda item: (-personality_profile.get(item[0], 0.0), traits.index(item)))
@@ -350,6 +419,7 @@ def assemble_result_v2(
     differentiation: float,
     careers: list[dict],
     created_at: datetime,
+    evidence: dict[str, dict] | None = None,
 ) -> ResultResponseV2:
     """Always succeeds, never raises, never leaves a required field empty —
     this is what makes /result return 200 with a complete v2 form
@@ -357,7 +427,7 @@ def assemble_result_v2(
     deterministic fallback (report_service decides that; this function
     doesn't care which)."""
     flat = is_flat_profile(differentiation)
-    interest_map = build_interest_map(age_group, profile_scores)
+    interest_map = build_interest_map(age_group, profile_scores, evidence)
     common = dict(
         assessment_id=assessment_id,
         summary=narrative.summary,
@@ -386,5 +456,6 @@ def assemble_result_v2(
     return RiasecResultResponse(
         **common,
         interest_map=interest_map,
+        interest_combination=build_interest_combination(interest_map),
         careers=build_riasec_careers(context, careers),
     )

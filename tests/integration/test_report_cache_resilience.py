@@ -25,7 +25,7 @@ import redis.asyncio as aioredis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.analysis_result import AnalysisResult
+from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
@@ -72,6 +72,7 @@ def _force_complete_and_llm_disabled(monkeypatch: pytest.MonkeyPatch, *, senior:
     else:
         monkeypatch.setattr(motivation_pair_service, "answered_count", AsyncMock(return_value=1))
         monkeypatch.setattr(motivation_pair_service, "total_pairs", AsyncMock(return_value=1))
+    monkeypatch.setattr(assessment_shared, "belbin_and_astur_completed", AsyncMock(return_value=True))
     monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
 
 
@@ -118,8 +119,23 @@ async def test_build_report_writes_and_get_report_reads_the_same_cache_key(
 
     await report_service.build_report(assessment.id, db_session)
 
+    # A freshly generated report is pending psychologist review (PRO-337)
+    # and must never land in the student cache.
     redis = assessment_shared.get_redis()
-    assert await redis.get(assessment_shared.report_cache_key(assessment.id)) is not None
+    cache_key = assessment_shared.report_cache_key(assessment.id)
+    assert await redis.get(cache_key) is None
+
+    stored = (
+        await db_session.execute(select(AnalysisResult).where(AnalysisResult.assessment_id == assessment.id))
+    ).scalar_one()
+    stored.review_status = ReviewStatus.published
+    await db_session.flush()
+
+    await report_service.get_report(assessment.id, db_session)
+    try:
+        assert await redis.get(cache_key) is not None
+    finally:
+        await redis.delete(cache_key)
 
 
 async def test_legacy_unversioned_cache_payload_is_never_read_as_v2(

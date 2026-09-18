@@ -24,6 +24,37 @@ class QuestionInstrument(str, enum.Enum):
     riasec = "riasec"
     big_five = "big_five"
     mi = "mi"
+    # Protocol-validity items (epic PRO-282, phase 1; PRO-296/PRO-297). MC-SDS
+    # ("шкала лжи") statements + infrequency traps, mixed into the Likert
+    # battery indistinguishably from Big Five. Scored by validity_service
+    # (PRO-299), NEVER picked up by riasec_service / bigfive_service — those
+    # filter on `instrument` (PRO-298).
+    validity = "validity"
+    # PRO-338 Ф0.2: ДДО "интересы" (20 форс-чойс пар) — QuestionPair-based,
+    # doesn't touch Question rows itself, but shares the same instrument
+    # enum so question_service's instrument-agnostic counting/filtering
+    # (assessment_shared.likert_total_questions) stays a single source of
+    # truth for every instrument, pair-based or Likert-based alike.
+    professional_types = "professional_types"
+    # ДДО "способности" — 5 Likert-пунктов, reuses the Likert engine as-is.
+    professional_types_abilities = "professional_types_abilities"
+    # Eysenck EPI (темперамент), 57 Да/Нет — binary scale, see Ф0.5.
+    eysenck = "eysenck"
+    # Elers achievement motivation (уровень притязаний), Да/Нет — binary scale, see Ф0.5.
+    elers = "elers"
+    # Boyko empathy (эмпатические способности), 36 Да/Нет, 6 каналов — binary scale, see Ф0.5.
+    boyko_empathy = "boyko_empathy"
+    # Kondash/Prikhozhan anxiety scale, 40 items, 0-4 5-point scale
+    # (Нет/Немного/Достаточно/Значительно/Очень), 4 субшкалы — see Ф1.10.
+    kondash_anxiety = "kondash_anxiety"
+
+
+class ValidityRole(str, enum.Enum):
+    """Which kind of validity item a `instrument='validity'` question is.
+    Null for every other instrument."""
+
+    sd_key = "sd_key"  # MC-SDS social-desirability keyed item
+    infrequency = "infrequency"  # attention-check "trap"
 
 
 class BigFiveDomain(str, enum.Enum):
@@ -83,6 +114,16 @@ class Question(Base):
     keyed: Mapped[Keyed | None] = mapped_column(
         Enum(Keyed, name="keyed_enum"), nullable=True
     )
+    # Validity module (PRO-297). Both null for non-`validity` instruments.
+    #   validity_role — sd_key | infrequency (see ValidityRole).
+    #   validity_meta — per-role scoring payload, kept as JSONB so the
+    #     shape stays owned by the content bank / scorer, not a migration:
+    #       sd_key      → {"keyed": "agree" | "disagree"}   (socially-desirable pole)
+    #       infrequency → {"expected_answer": "agree" | "disagree"} (only plausible answer)
+    validity_role: Mapped[ValidityRole | None] = mapped_column(
+        Enum(ValidityRole, name="validity_role_enum"), nullable=True
+    )
+    validity_meta: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     text: Mapped[dict] = mapped_column(JSONB, nullable=False)
     # Short button-label form of `text`, used by the junior forced-choice-pair
     # UI instead of the full Likert statement. Null for middle/senior rows.

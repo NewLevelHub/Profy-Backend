@@ -1168,11 +1168,14 @@ async def _upsert_direction_roadmap(
     roadmap.subjects_to_focus = plan.subjects_to_focus
     roadmap.university_track = plan.university_track.model_dump()
     roadmap.university_requirements = [r.model_dump() for r in plan.university_requirements]
-    # mode="json" because ProgramFit.program_id is a uuid.UUID and this column
-    # is JSONB — a plain model_dump() hands asyncpg a UUID object, which
-    # json.dumps refuses ("Object of type UUID is not JSON serializable"),
-    # failing every by-program direction roadmap at insert time. The other
-    # model_dump() calls above carry only str/int/list fields.
+    # mode="json" — program_fit.program_id is a uuid.UUID; a plain
+    # model_dump() leaves it as a UUID object, which the JSONB column's
+    # encoder can't serialize ("Object of type UUID is not JSON
+    # serializable"), failing every by-program direction roadmap at insert
+    # time (only ever caught by a test, not production, because the
+    # LLM-enabled program_fit path is rarely exercised locally — real bug,
+    # not just a stale fixture). The other model_dump() calls above carry
+    # only str/int/list fields.
     roadmap.program_fit = (
         # mode="json" — program_id is a UUID, not natively JSON-serializable
         # (asyncpg's JSONB encoder has no UUID case, unlike a str).

@@ -4,7 +4,10 @@ Was Russian literals in `app/services/email_service.py`. The HTML bodies live
 next to this as templates (`app/templates/email/<name>.html` and the `.kk.html`
 sibling); only the subject and the plain-text alternative are here.
 
-`{code}` is the one placeholder — formatted at the call site with `.format()`.
+`{code}` / `{student_name}` are the placeholders — formatted at the call site
+with `.format()`. The review-pending email goes to a psychologist and is
+sent in `ru` only (the psychologist cabinet is Russian, KZ-210); its `kk`
+entries exist for catalog parity.
 
 Unlike the request-locale areas, the email locale is the *recipient's* stored
 choice (`users.locale`) or the registration `Accept-Language` — both already
@@ -20,6 +23,17 @@ RU = {
         "Код действителен 15 минут.\n\n"
         "Если ты не запрашивал сброс пароля — проигнорируй это письмо."
     ),
+    "review_pending_subject": "Новый отчёт ждёт проверки — Profy",
+    "review_pending_plain": (
+        "Ученик {student_name} завершил тест. Отчёт ждёт вашей проверки:\n"
+        "{review_url}"
+    ),
+    "result_published_subject": "Твой результат готов — Profy",
+    "result_published_plain": (
+        "{student_name}, психолог проверил твой отчёт — он уже ждёт тебя в Profy:\n"
+        "{results_url}"
+    ),
+    "result_published_fallback_name": "Привет",
 }
 
 KK = {
@@ -31,4 +45,15 @@ KK = {
         "Код 15 минут жарамды.\n\n"
         "Егер сен құпиясөзді қалпына келтіруді сұрамасаң — бұл хатты елемей қой."
     ),
+    "review_pending_subject": "Жаңа есеп тексеруді күтуде — Profy",
+    "review_pending_plain": (
+        "{student_name} оқушысы тестті аяқтады. Есеп сіздің тексеруіңізді күтуде:\n"
+        "{review_url}"
+    ),
+    "result_published_subject": "Нәтижең дайын — Profy",
+    "result_published_plain": (
+        "{student_name}, психолог есебіңді тексерді — ол Profy-де сені күтіп тұр:\n"
+        "{results_url}"
+    ),
+    "result_published_fallback_name": "Сәлем",
 }

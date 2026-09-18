@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "comment": "Boyko empathy total-score cut-offs (epic PRO-338, Ф1.11). Loaded by app.config.load_boyko_empathy_thresholds. Changing a threshold = edit here + bump `version`, NO code change (same contract as eysenck_thresholds.json/elers_thresholds.json). bounds are ascending inclusive upper bounds for every band except the last, which is 'greater than the last bound': [14, 21, 29] -> <=14 very_low, 15-21 underestimated, 22-29 average, >29 (30-36) very_high. The source spec (docs/psych/new-tests-content-sources.md, 'Пробел 2') gives '14 и менее -> Очень низкий' as its own table row — the raw ticket text (Тикеты-новые-тесты/02-Фаза1-Лёгкие-тесты.md §1.Г Ф1.11) separately phrases the same bands as '<14 очень низкий' / '15-21 заниженный', leaving 14 itself ambiguous between the two; this file resolves that ambiguity by following the audit doc's own explicit table (14 inclusive in very_low), not the looser ticket prose. Decision fixed here and in the Ф1.11 PR description.",
+  "bounds": [14, 21, 29]
+}
