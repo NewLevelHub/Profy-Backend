@@ -60,7 +60,7 @@ async def get_all_questions(
     db: AsyncSession,
     age_group: AgeGroup,
     *,
-    assessment_id: uuid.UUID,
+    assessment_id: uuid.UUID | None = None,
     locale: str | None = None,
 ) -> list[QuestionResponse]:
     """The Likert battery for one assessment. Protocol-validity items
@@ -92,12 +92,13 @@ async def get_all_questions(
     # regardless — see _bigfive_scale). `base` is already `order`-sorted, and
     # every bank lays its instrument down as one contiguous `order` block, so
     # the run is a simple slice.
+    seed = assessment_id.int if assessment_id is not None else 0
     first = next(
         (i for i, q in enumerate(base) if q.instrument == QuestionInstrument.riasec),
         None,
     )
     if first is None:  # no RIASEC block (junior: riasec rows are excluded above)
-        sequence = interleave_validity(base, validity, seed=assessment_id.int)
+        sequence = interleave_validity(base, validity, seed=seed)
     else:
         last = max(
             i
@@ -105,7 +106,7 @@ async def get_all_questions(
             if q.instrument == QuestionInstrument.riasec
         )
         woven = interleave_validity(
-            base[first : last + 1], validity, seed=assessment_id.int
+            base[first : last + 1], validity, seed=seed
         )
         sequence = base[:first] + woven + base[last + 1 :]
 
