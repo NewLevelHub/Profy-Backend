@@ -71,7 +71,7 @@ def _context_careers(analysis: AnalysisResult | None) -> list[ContextCareer]:
                 slug=c.get("slug", ""),
                 name=c.get("name", ""),
                 holland_code=c.get("holland_code", ""),
-                match_score=int(c.get("match_score", 0)),
+                match_score=float(c.get("match_score", 0)),
                 description=c.get("description", ""),
                 professions=list(c.get("professions", [])),
                 skills_needed=list(c.get("skills_needed", [])),
