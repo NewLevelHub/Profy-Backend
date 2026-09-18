@@ -132,12 +132,12 @@ async def test_directions_kk_names_and_shared_slug(db_session: AsyncSession) -> 
     for d in rows:
         assert d.name.get("kk"), f"{d.slug} has no kk name"
 
-    # matched_careers scores on holland_code -> same ranking whatever the locale
-    code = ["I", "R", "C"]
+    # matched_careers scores on the full 6-dim profile -> same ranking whatever the locale
+    profile = {"R": 10.0, "I": 90.0, "A": 10.0, "S": 10.0, "E": 10.0, "C": 80.0}
     i18n._current_locale.set("ru")
-    ru_ranked = [(d.slug, s) for d, s in await riasec_service.matched_careers(code, db_session)]
+    ru_ranked = [(d.slug, s) for d, s in await riasec_service.matched_careers(profile, db_session)]
     i18n._current_locale.set("kk")
-    kk_ranked = [(d.slug, s) for d, s in await riasec_service.matched_careers(code, db_session)]
+    kk_ranked = [(d.slug, s) for d, s in await riasec_service.matched_careers(profile, db_session)]
     assert ru_ranked == kk_ranked
 
 

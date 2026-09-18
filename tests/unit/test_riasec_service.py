@@ -2,6 +2,9 @@
 verify. Also serves as the infra smoke test for anything that doesn't need
 `db_session`/`client` (no event loop surprises, no fixtures required)."""
 
+import pytest
+
+from app.models.direction import Direction
 from app.services import riasec_service
 
 
@@ -109,13 +112,9 @@ def test_direction_letter_weight_rewards_the_directions_primary_letter_most() ->
 
 
 def test_career_match_score_differentiates_anagrams_of_the_same_letters() -> None:
-    """Found live: Архивариус/Аудитор/Бухгалтер (all "CSE") and Директор по
-    логистике ("ESC")/HR-менеджер ("SEC") all scored identically for a
-    {C,S,E}-topped student under the old `letter in direction_code`
-    membership check — every anagram of the same 3 letters tied. Positional
-    weighting must break that: matching the student's own code order
-    exactly scores strictly higher than any reshuffled permutation, and
-    different permutations score differently from each other."""
+    """Legacy positional fallback must still break anagrams of the same
+    3 letters (CSE/ESC/SEC/...) — used for the few directions without an
+    O*NET vector (PRO-385)."""
     user_code = ["C", "S", "E"]
 
     exact = riasec_service.career_match_score(user_code, "CSE")
@@ -131,3 +130,72 @@ def test_career_match_score_differentiates_anagrams_of_the_same_letters() -> Non
 
 def test_career_match_score_zero_when_no_letters_overlap() -> None:
     assert riasec_service.career_match_score(["C", "S", "E"], "RIA") == 0
+
+
+def test_pearson_correlation_perfect_and_opposite() -> None:
+    profile = {"R": 10.0, "I": 20.0, "A": 30.0, "S": 40.0, "E": 50.0, "C": 60.0}
+    assert riasec_service.pearson_correlation(profile, profile) == pytest.approx(1.0)
+    opposite = {"R": 60.0, "I": 50.0, "A": 40.0, "S": 30.0, "E": 20.0, "C": 10.0}
+    assert riasec_service.pearson_correlation(profile, opposite) == pytest.approx(-1.0)
+
+
+def test_pearson_correlation_flat_profile_is_zero_not_nan() -> None:
+    flat = {t: 50.0 for t in "RIASEC"}
+    varying = {"R": 10.0, "I": 20.0, "A": 30.0, "S": 40.0, "E": 50.0, "C": 60.0}
+    assert riasec_service.pearson_correlation(flat, varying) == 0.0
+
+
+def test_pearson_azat_regression_ranks_pedagogue_above_financial_analyst() -> None:
+    """Live case from PRO-385: Azat's profile used to get «Финансовый
+    аналитик» as top-1 under 3-letter code ranking (C beat I by 0.04pp).
+    Pearson on the full 6-dim vectors puts his real profession
+    «Педагог-психолог» in the top-10 and the analyst near the bottom."""
+    import json
+    from pathlib import Path
+
+    # Exact Likert sums / question counts from the ticket (before round-1).
+    azat = {
+        "R": 52 / (24 * 5) * 100,
+        "I": 61 / (23 * 5) * 100,
+        "A": 61 / (26 * 5) * 100,
+        "S": 91 / (23 * 5) * 100,
+        "E": 55 / (24 * 5) * 100,
+        "C": 69 / (26 * 5) * 100,
+    }
+    data = json.loads(
+        (Path(__file__).resolve().parents[2] / "scripts/data/our_professions_onet_riasec.json")
+        .read_text(encoding="utf-8")
+    )
+    ranked = sorted(
+        ((riasec_service.pearson_correlation(azat, entry["vec"]), entry["title"]) for entry in data),
+        reverse=True,
+    )
+    by_title = {title: (i + 1, r) for i, (r, title) in enumerate(ranked)}
+
+    ped_rank, ped_r = by_title["Педагог-психолог"]
+    fin_rank, fin_r = by_title["Финансовый аналитик"]
+
+    assert ped_rank <= 10
+    assert ped_r == pytest.approx(0.888, abs=0.01)
+    assert fin_rank > 50
+    assert fin_r < 0.0
+    assert ranked[0][1] == "Социальный работник"
+
+
+def test_direction_match_score_uses_pearson_when_vector_present() -> None:
+    direction = Direction(
+        name={"ru": "Педагог"},
+        slug="test-pedagog",
+        holland_code="SIA",
+        onet_vector={"R": 1.0, "I": 2.0, "A": 3.0, "S": 7.0, "E": 2.0, "C": 2.0},
+    )
+    normalized = {"R": 10.0, "I": 20.0, "A": 30.0, "S": 90.0, "E": 20.0, "C": 20.0}
+    score = riasec_service.direction_match_score(normalized, direction)
+    assert score == round(riasec_service.pearson_correlation(normalized, direction.onet_vector), 4)
+
+
+def test_direction_match_score_falls_back_to_code_when_vector_missing() -> None:
+    direction = Direction(name={"ru": "Военный"}, slug="test-voennyy", holland_code="RES")
+    normalized = {"R": 90.0, "I": 10.0, "A": 10.0, "S": 20.0, "E": 80.0, "C": 10.0}
+    # top_code = R, E, S → exact match with RES → 14/14 = 1.0
+    assert riasec_service.direction_match_score(normalized, direction) == 1.0

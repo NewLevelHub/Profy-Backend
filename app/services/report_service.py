@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.errors import AppError
-from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES, pick_locale, pick_locale_list, use_locale
+from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES, MissingLocalizedText, pick_locale, pick_locale_list, use_locale
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
@@ -113,16 +113,25 @@ async def _cache_get_response(redis: aioredis.Redis, key: str) -> ResultResponse
         return None
 
 
-def _career_dict(direction: Direction, match_score: int) -> dict:
+def _career_dict(direction: Direction, match_score: float) -> dict:
     # Resolves against the current-request locale (this runs inside the
     # `use_locale()` block build_report/get_report wrap scoring+text+assembly
     # in — KZ-403) — Direction's text fields are `{"ru": ..., "kk": ...}` maps.
+    #
+    # `description` may still be blank (`{"ru": ""}`) when
+    # apply_direction_content.py hasn't run — pick_locale treats blank as
+    # missing and would 500 the whole report. Soft-empty here; name stays
+    # strict (seed always fills it).
+    try:
+        description = pick_locale(direction.description)
+    except MissingLocalizedText:
+        description = ""
     return {
         "slug": direction.slug,
         "name": pick_locale(direction.name),
         "holland_code": direction.holland_code,
         "match_score": match_score,
-        "description": pick_locale(direction.description),
+        "description": description,
         "professions": pick_locale_list(direction.professions),
         "skills_needed": pick_locale_list(direction.skills_needed),
         "subjects_to_develop": pick_locale_list(direction.subjects_to_develop),
@@ -479,7 +488,7 @@ async def build_report(
             strengths, weaknesses = riasec_service.strengths_weaknesses(profile_scores, aversion_counts, counts)
             plan = riasec_service.development_plan(code, weaknesses, aversion_counts, counts)
 
-            matched = await riasec_service.matched_careers(code, db)
+            matched = await riasec_service.matched_careers(profile_scores, db)
             careers = [_career_dict(d, score) for d, score in matched]
 
         # grand_mean is the same query for both raw_scores() and facet_raw() below

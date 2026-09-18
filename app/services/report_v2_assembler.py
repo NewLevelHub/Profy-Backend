@@ -52,16 +52,16 @@ _FLAT_PROFILE_THRESHOLD = 25.0
 
 _GOOD_TIER_MAX_RANK = 3
 
-# Career matching (career_match_score, riasec_service.py) runs purely on the
-# RIASEC top-3 code — it has no way to know about subjects/artifacts, and a
-# flat profile means that top-3 is itself close to noise (the difference
-# between rank 3 and rank 4 might be a single point). Found live: a student
+# Career matching (direction_match_score / Pearson, riasec_service.py) runs on
+# the full 6-dim RIASEC profile — it has no way to know about subjects/artifacts,
+# and a flat profile means that ranking is itself close to noise (the
+# difference between rank 3 and rank 4 might be tiny). Found live: a student
 # with clear self-reported programming/robotics interest, but a flat RIASEC
 # profile (differentiation 11.5), got Архивариус/Аудитор/Бухгалтер — three
 # clerical directions with zero connection to what they'd actually told the
-# app about themselves. Redesigning career_match_score to weigh non-RIASEC
-# evidence is a real methodology change (result-quality-fixes.md §3, variant
-# C) — not done here. The mitigation is the honest disclaimer below, not a
+# app about themselves. Weighing non-RIASEC evidence into the match score is
+# a real methodology change (result-quality-fixes.md §3, variant C) — not
+# done here. The mitigation is the honest disclaimer below, not a
 # shortened/uniform-tier career list (product decision, 2026-08-17): the
 # ranking itself is still real RIASEC-derived signal even when it's a close
 # call, so a flat profile shows the same ranked top-10 as everyone else.
