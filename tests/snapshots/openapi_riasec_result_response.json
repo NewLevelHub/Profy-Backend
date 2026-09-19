@@ -77,6 +77,12 @@
     "thinking_style_notes": {
       "items": "StudentThinkingStyleNote",
       "type": "array"
+    },
+    "interest_combination": {
+      "anyOf": [
+        "StudentInterestCombination",
+        "null"
+      ]
     }
   },
   "required": [

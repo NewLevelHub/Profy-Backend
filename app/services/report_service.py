@@ -284,7 +284,30 @@ async def _resolve_owner_locale(
     return resolved
 
 
-def _shape_response(analysis: AnalysisResult, *, locale: str = DEFAULT_LOCALE) -> ResultResponseV2:
+
+async def _interest_evidence(
+    assessment_id: uuid.UUID,
+    db: AsyncSession,
+    *,
+    age_group: AgeGroup | None = None,
+    profile: dict | None = None,
+) -> dict[str, dict] | None:
+    """Per-type RIASEC answer breakdown for interest details (PRO-336).
+    Junior (MI) has no RIASEC answers — skip."""
+    if age_group is None and profile is not None:
+        instrument = _stored_interest_instrument(profile)
+        age_group = AgeGroup.junior if instrument == "mi" else AgeGroup.senior
+    if age_group == AgeGroup.junior:
+        return None
+    return await riasec_service.answer_evidence(assessment_id, db)
+
+
+def _shape_response(
+    analysis: AnalysisResult,
+    *,
+    locale: str = DEFAULT_LOCALE,
+    evidence: dict[str, dict] | None = None,
+) -> ResultResponseV2:
     """Rebuilds the v2 shape from an already-generated, already-stored row —
     no LLM call, no re-generation. `strength_cards`/`thinking_style_notes`
     are read back verbatim (already the final {title, description} shape,
@@ -295,10 +318,12 @@ def _shape_response(analysis: AnalysisResult, *, locale: str = DEFAULT_LOCALE) -
     label/synthesis text, so the whole rebuild runs under the owner's
     locale (KZ-403)."""
     with use_locale(locale):
-        return _shape_response_inner(analysis)
+        return _shape_response_inner(analysis, evidence=evidence)
 
 
-def _shape_response_inner(analysis: AnalysisResult) -> ResultResponseV2:
+def _shape_response_inner(
+    analysis: AnalysisResult, *, evidence: dict[str, dict] | None = None
+) -> ResultResponseV2:
     instrument = _stored_interest_instrument(analysis.profile)
     effective_age_group = AgeGroup.junior if instrument == "mi" else AgeGroup.senior
     minimal_context = report_narrative_context.build_report_narrative_context(
@@ -310,7 +335,7 @@ def _shape_response_inner(analysis: AnalysisResult) -> ResultResponseV2:
     )
     differentiation = float((analysis.meta or {}).get("differentiation", 0.0))
     flat = report_v2_assembler.is_flat_profile(differentiation)
-    interest_map = report_v2_assembler.build_interest_map(effective_age_group, dict(analysis.profile))
+    interest_map = report_v2_assembler.build_interest_map(effective_age_group, dict(analysis.profile), evidence)
 
     common = dict(
         assessment_id=analysis.assessment_id,
@@ -343,6 +368,7 @@ def _shape_response_inner(analysis: AnalysisResult) -> ResultResponseV2:
 
     return RiasecResultResponse(
         **common,
+        interest_combination=report_v2_assembler.build_interest_combination(interest_map),
         careers=report_v2_assembler.build_riasec_careers(minimal_context, list(analysis.careers)),
     )
 
@@ -399,7 +425,8 @@ async def build_report(
     )
     existing = existing_result.scalar_one_or_none()
     if existing:
-        response = _shape_response(existing, locale=locale)
+        evidence = await _interest_evidence(assessment_id, db, profile=dict(existing.profile or {}))
+        response = _shape_response(existing, locale=locale, evidence=evidence)
         await _cache_set(redis, cache_key, response.model_dump_json())
         return response
 
@@ -420,7 +447,8 @@ async def build_report(
     )
     existing = existing_result.scalar_one_or_none()
     if existing:
-        response = _shape_response(existing, locale=locale)
+        evidence = await _interest_evidence(assessment_id, db, profile=dict(existing.profile or {}))
+        response = _shape_response(existing, locale=locale, evidence=evidence)
         await _cache_set(redis, cache_key, response.model_dump_json())
         return response
 
@@ -583,10 +611,12 @@ async def build_report(
                 )
             )
             analysis = existing_result.scalar_one()
-            response = _shape_response(analysis, locale=locale)
+            evidence = await _interest_evidence(assessment_id, db, age_group=age_group)
+            response = _shape_response(analysis, locale=locale, evidence=evidence)
             await _cache_set(redis, cache_key, response.model_dump_json())
             return response
 
+        evidence = await _interest_evidence(assessment_id, db, age_group=age_group)
         response = report_v2_assembler.assemble_result_v2(
             assessment_id=assessment_id,
             age_group=age_group,
@@ -597,6 +627,7 @@ async def build_report(
             differentiation=meta["differentiation"],
             careers=careers,
             created_at=analysis.created_at,
+            evidence=evidence,
         )
     await _cache_set(redis, cache_key, response.model_dump_json())
     return response
@@ -645,7 +676,8 @@ async def resolve_report(
         # will lazily (re)generate it. Do NOT fall back to another locale's row.
         return None, ReportLookup.LOCALE_NOT_GENERATED
 
-    response = _shape_response(analysis, locale=locale)
+    evidence = await _interest_evidence(assessment_id, db, profile=dict(analysis.profile or {}))
+    response = _shape_response(analysis, locale=locale, evidence=evidence)
     await _cache_set(redis, cache_key, response.model_dump_json())
     return response, ReportLookup.OK
 
