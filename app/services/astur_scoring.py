@@ -208,7 +208,7 @@ def _day_of_week_expected_answer(submitted_at: datetime, *, locale: str = "ru") 
     weekdays = _WEEKDAYS_KK if locale == "kk" else _WEEKDAYS_RU
     weekday = weekdays[submitted_at.weekday()]
     circle_word, square_word = ("шеңбер", "шаршы") if locale == "kk" else ("кружок", "квадрат")
-    return circle_word if weekday[0] in _VOWELS else square_word
+    return circle_word if weekday[0] not in _VOWELS else square_word
 
 
 def _own_name_expected_answer(profile_name: str, *, locale: str = "ru") -> str:

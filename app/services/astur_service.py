@@ -160,7 +160,8 @@ async def _get_or_create_active_run(
 ) -> AsturRun:
     run = await _latest_run(assessment_id, db)
     if run is None or is_complete(run):
-        run = AsturRun(assessment_id=assessment_id, user_id=user_id)
+        from app.i18n import get_locale
+        run = AsturRun(assessment_id=assessment_id, user_id=user_id, locale=get_locale())
         db.add(run)
         await db.flush()
     return run

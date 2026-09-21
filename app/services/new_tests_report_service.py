@@ -162,18 +162,15 @@ async def _build_intelligence_section(
             )
         ).one_or_none()
         profile_name = profile_row.name if profile_row else None
-        # The STUDENT's own stored locale preference, not whoever happens to
-        # be viewing this report right now (a psychologist reading it in
-        # `ru` must not flip which weekday name item 2's dynamic lability
-        # answer is scored against — see astur_scoring.score_lability's
-        # own docstring). Falls back to "ru" if unset, same default as
-        # SUPPORTED_LOCALES' own convention.
-        student_locale = (profile_row.locale if profile_row else None) or "ru"
+        # The locale recorded when the attempt was started, preventing
+        # scoring mismatches if the user later changes their profile language.
+        # Falls back to "ru" for older attempts.
+        run_locale = getattr(run, "locale", "ru") or "ru"
 
         result = score_run(
             run.answers, run.lability_answers,
             submitted_at=run.created_at, profile_name=profile_name or "",
-            locale=student_locale,
+            locale=run_locale,
         )
 
         fatigue_signal = None
