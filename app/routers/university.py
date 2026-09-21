@@ -22,7 +22,7 @@ from app.schemas.university import (
     UniversityDetail,
     UniversityListResponse,
 )
-from app.services import assessment_service
+from app.services import assessment_service, report_service
 from app.services.artifact_service import get_artifacts
 from app.services.gap_analysis_service import analyze_gap, to_response
 from app.services.university_service import (
@@ -142,12 +142,6 @@ async def get_gap_analysis(
             detail="Gap analysis is only available for senior age group",
         )
 
-    cache_key = f"gap_analysis:{program_id}:{assessment_id}"
-    redis = _get_redis()
-    cached = await redis.get(cache_key)
-    if cached:
-        return GapAnalysisResponse.model_validate_json(cached)
-
     program = await get_program_by_id(db, program_id)
 
     assessment_result = await db.execute(
@@ -165,6 +159,18 @@ async def get_gap_analysis(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Assessment is not completed yet",
         )
+
+    # Built from AnalysisResult.careers — same review gate as the report.
+    # Both this and the cache read below stay *after* the ownership check
+    # above: otherwise a foreign assessment_id could be probed (409 vs 404),
+    # and a cached gap analysis could be served without ownership at all.
+    await report_service.require_published_report(assessment_id, db)
+
+    cache_key = f"gap_analysis:{program_id}:{assessment_id}"
+    redis = _get_redis()
+    cached = await redis.get(cache_key)
+    if cached:
+        return GapAnalysisResponse.model_validate_json(cached)
 
     # KZ-405: one AnalysisResult row per locale — gap analysis reads only
     # locale-invariant score fields, so prefer the `ru` row deterministically.

@@ -11,7 +11,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.analysis_result import AnalysisResult
+from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
@@ -45,6 +45,7 @@ def _llm_off_complete(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(assessment_shared, "likert_total_questions", AsyncMock(return_value=1))
     monkeypatch.setattr(motivation_service, "answered_count", AsyncMock(return_value=1))
     monkeypatch.setattr(motivation_service, "total_triplets", AsyncMock(return_value=1))
+    monkeypatch.setattr(assessment_shared, "belbin_and_astur_completed", AsyncMock(return_value=True))
     monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
 
 
@@ -52,6 +53,15 @@ async def _rows(db_session: AsyncSession, assessment_id: uuid.UUID) -> list[Anal
     return list((await db_session.execute(
         select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
     )).scalars().all())
+
+
+async def _publish_all(db_session: AsyncSession, assessment_id: uuid.UUID) -> None:
+    """PRO-337: a freshly generated report waits for psychologist review and is
+    never cached. The cache tests here are about per-locale keys themselves,
+    so they start from a published report."""
+    for row in await _rows(db_session, assessment_id):
+        row.review_status = ReviewStatus.published
+    await db_session.flush()
 
 
 async def test_ru_then_kk_generation_creates_two_independent_rows(
@@ -95,6 +105,11 @@ async def test_cache_keys_are_locale_scoped(
     ru_key = assessment_shared.report_cache_key(assessment.id, "ru")
     kk_key = assessment_shared.report_cache_key(assessment.id, "kk")
     assert ru_key != kk_key
+    # PRO-337: pending psychologist review — nothing cached yet, in any locale.
+    assert await redis.get(ru_key) is None
+
+    await _publish_all(db_session, assessment.id)
+    await report_service.get_report(assessment.id, db_session)
     assert await redis.get(ru_key) is not None
     assert await redis.get(kk_key) is None
 
@@ -198,6 +213,10 @@ async def test_patch_auth_me_locale_change_clears_the_owner_locale_cache(
     assessment, user = await _senior_assessment(db_session, locale="ru")
     _llm_off_complete(monkeypatch)
     await report_service.build_report(assessment.id, db_session)
+    # PRO-337: only a published report is cached — publish, then read it once
+    # so the per-locale report key this test is about actually exists.
+    await _publish_all(db_session, assessment.id)
+    await report_service.get_report(assessment.id, db_session)
     await db_session.commit()
 
     redis = assessment_shared.get_redis()

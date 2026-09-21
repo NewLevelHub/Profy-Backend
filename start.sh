@@ -69,6 +69,24 @@ docker-compose exec api python scripts/seed_bigfive_questions.py
 # Ожидается: Total questions in bank: 120
 docker-compose exec api python scripts/seed_mi_questions.py
 # Ожидается: Total questions in bank: 48
+
+# "Дополнительные тесты" — PRO-338 Ф0.8/Ф1.10: professional_types_abilities/
+# eysenck/elers/boyko_empathy/kondash_anxiety form one contiguous,
+# non-interleaved sub-section right after MI (order 400-586) — unlike the
+# validity items above, they are never woven into RIASEC/BigFive/MI.
+docker-compose exec api python scripts/seed_professional_types_questions.py
+# Ожидается: Total professional_types_abilities items in bank: 5
+docker-compose exec api python scripts/seed_eysenck_questions.py
+# Ожидается: Total eysenck items in bank: 57
+docker-compose exec api python scripts/seed_elers_questions.py
+# Ожидается: Total elers items in bank: 41
+docker-compose exec api python scripts/seed_boyko_empathy_questions.py
+# Ожидается: Total boyko_empathy items in bank: 36
+docker-compose exec api python scripts/seed_kondash_anxiety_questions.py
+# Ожидается: Total kondash_anxiety items in bank: 40
+
+docker-compose exec api python scripts/seed_lie_scale_questions.py
+# Ожидается: Total validity items in banks: 25 (20 MC-SDS + 5 infrequency)
 docker-compose exec api python scripts/seed_question_pairs.py
 # Ожидается: Total pairs in bank: 67
 

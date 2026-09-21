@@ -149,6 +149,9 @@ async def test_program_row_for_direction_validates_membership(db_session: AsyncS
     university = University(name="Test University", country="Казахстан", city="Алматы")
     db_session.add(university)
 
+    # Program.profession_slugs is now a read-only view over the M2M
+    # `directions` relationship (program_directions table) — tag membership
+    # by assigning an actual Direction row, not the old JSONB array kwarg.
     # Randomized slug — a fixed literal risks colliding with another test's
     # row against the shared, rollback-isolated-per-test but not otherwise
     # reset dev DB (see SLUG's own module-level comment convention).
@@ -158,8 +161,12 @@ async def test_program_row_for_direction_validates_membership(db_session: AsyncS
     db_session.add(other_direction)
     await db_session.flush()
 
-    program = Program(university_id=university.id, name="Test Program", language="ru")
-    program.directions = [other_direction]
+    program = Program(
+        university_id=university.id,
+        name="Test Program",
+        directions=[other_direction],
+        language="ru",
+    )
     db_session.add(program)
     await db_session.flush()
 
@@ -174,8 +181,9 @@ async def test_upsert_direction_roadmap_rewrites_same_row_for_new_program(
 ):
     assessment = await _make_assessment(db_session, AssessmentGoal.profession)
 
-    # direction_roadmaps.program_id is a real FK now, so the two plans have to
-    # point at rows that exist — a bare uuid4() is rejected at insert time.
+    # direction_roadmaps.program_id is FK-constrained to programs.id now —
+    # random uuid4()s (the old fixture) no longer insert. Program A/B must
+    # be real, persisted rows.
     university = University(name=f"Uni {uuid.uuid4()}", country="Казахстан", city="Алматы")
     db_session.add(university)
     await db_session.flush()

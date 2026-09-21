@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "comment": "Elers achievement-motivation cut-offs (epic PRO-338, Ф1.8). Loaded by app.config.load_elers_thresholds. Changing a threshold = edit here + bump `version`, NO code change (same contract as eysenck_thresholds.json / validity_thresholds.json). bounds are ascending inclusive upper bounds for every band except the last, which is 'greater than the last bound': [10, 16, 20] -> 1-10 low, 11-16 medium, 17-20 moderately_high (positive marker), >20 too_high (burnout risk). Source: Тикеты-новые-тесты/02-Фаза1-Лёгкие-тесты.md §1.В Ф1.8.",
+  "bounds": [10, 16, 20]
+}

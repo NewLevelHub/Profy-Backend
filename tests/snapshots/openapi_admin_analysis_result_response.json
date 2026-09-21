@@ -51,8 +51,35 @@
     "profile": {
       "type": "object"
     },
+    "published_at": {
+      "anyOf": [
+        "null",
+        "string"
+      ]
+    },
+    "published_by": {
+      "anyOf": [
+        "null",
+        "string"
+      ]
+    },
     "report_version": {
       "type": "integer"
+    },
+    "review_status": {
+      "ref": "ReviewStatus"
+    },
+    "reviewed_at": {
+      "anyOf": [
+        "null",
+        "string"
+      ]
+    },
+    "reviewed_by": {
+      "anyOf": [
+        "null",
+        "string"
+      ]
     },
     "strength_cards": {
       "items": "AdminStrengthCard",
@@ -94,6 +121,7 @@
     "personality_profile",
     "profile",
     "report_version",
+    "review_status",
     "strength_cards",
     "strengths",
     "summary",
