@@ -1,7 +1,7 @@
 """add psychologist_notes table
 
 Revision ID: 7db53544fd3d
-Revises: e4ed44aa0d52
+Revises: 12cdf8d6ab06
 Create Date: 2026-09-09 00:00:00.000000
 """
 from collections.abc import Sequence
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "7db53544fd3d"
-down_revision: str | None = "e4ed44aa0d52"
+down_revision: str | None = "12cdf8d6ab06"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

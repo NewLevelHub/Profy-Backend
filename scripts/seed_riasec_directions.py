@@ -16,13 +16,21 @@ and the profession↔program map never see a per-locale slug). `name` is a
 `description` and the JSONB lists are filled by `apply_direction_content.py`,
 never here.
 
+O*NET 6-dim vectors (PRO-385): loaded from
+`scripts/data/our_professions_onet_riasec.json` by `ru` title and written to
+`Direction.onet_vector`. Titles absent from that file keep NULL and use the
+legacy code-based fallback at match time.
+
 To change the profession catalog: edit riasec_professions.py and rerun this
-script — nothing else hardcodes profession names or codes.
+script — nothing else hardcodes profession names or codes. To refresh
+vectors: replace the JSON and rerun.
 """
 import asyncio
+import json
 import os
 import re
 import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -34,6 +42,12 @@ from app.services.admin_lock import has_overrides, sync_fields
 from scripts.riasec_professions import KK_NAMES, PROFESSIONS
 
 _LOCALIZED_FIELDS = frozenset({"name"})
+_ONET_VECTORS_PATH = Path(__file__).resolve().parent / "data" / "our_professions_onet_riasec.json"
+
+
+def _load_onet_vectors() -> dict[str, dict[str, float]]:
+    raw = json.loads(_ONET_VECTORS_PATH.read_text(encoding="utf-8"))
+    return {entry["title"]: entry["vec"] for entry in raw}
 
 
 _CYRILLIC_TO_LATIN = {
@@ -78,6 +92,7 @@ def _name_map(title: str) -> dict:
 async def main() -> None:
     directions = dedupe_by_title(PROFESSIONS)
     live_slugs = {d["slug"] for d in directions}
+    onet_vectors = _load_onet_vectors()
 
     async with async_session() as db:
         inserted = updated = skipped = deleted = 0
@@ -86,11 +101,16 @@ async def main() -> None:
         existing_by_slug = {d.slug: d for d in existing_result.scalars().all()}
 
         for data in directions:
+            vector = onet_vectors.get(data["title"])
             existing = existing_by_slug.get(data["slug"])
             if existing is not None:
                 changed = sync_fields(
                     existing,
-                    {"name": _name_map(data["title"]), "holland_code": data["holland_code"]},
+                    {
+                        "name": _name_map(data["title"]),
+                        "holland_code": data["holland_code"],
+                        "onet_vector": vector,
+                    },
                     localized_fields=_LOCALIZED_FIELDS,
                 )
                 updated += changed
@@ -105,6 +125,7 @@ async def main() -> None:
                 name=_name_map(data["title"]),
                 slug=data["slug"],
                 holland_code=data["holland_code"],
+                onet_vector=vector,
             ))
             inserted += 1
 
@@ -114,13 +135,15 @@ async def main() -> None:
                 deleted += 1
 
         await db.commit()
+        with_vector = sum(1 for d in directions if d["title"] in onet_vectors)
         print(
             f"Done. Inserted: {inserted}, updated: {updated}, "
             f"skipped (unchanged): {skipped}, orphans deleted: {deleted}"
         )
         print(
             f"Directions: {len(directions)} logical (deduped from "
-            f"{len(PROFESSIONS)} raw rows)"
+            f"{len(PROFESSIONS)} raw rows); "
+            f"onet_vector: {with_vector}, fallback (NULL): {len(directions) - with_vector}"
         )
 
 

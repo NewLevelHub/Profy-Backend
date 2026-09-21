@@ -77,6 +77,34 @@ class AnalysisResult(Base):
     # thinking_style_notes so a row is never "completed" with only one of
     # the two landed.
     report_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    # --- Psychology block (PRO-282 epic) — structurally-separate containers,
+    # deliberately NOT folded into `summary`/narrative so PRO-321 (hide
+    # behind role) stays a one-liner. `None` until the matching phase lands
+    # its calculation (validity → Фаза 1 PRO-296…300, psychoemotional →
+    # Фаза 2 PRO-307…309). Shape of each blob is owned by its phase — see
+    # docs/psych-block-contract.md.
+    validity: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    psychoemotional: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    # PRO-338 Ф0.2 — specialist-only containers for the 4 "simple" new tests
+    # (one shot per assessment, no timing/replay concerns), same JSONB-on-
+    # AnalysisResult pattern as the fields above. `None` until each test's
+    # own scoring service lands in Ф1 (02-Фаза1-Лёгкие-тесты.md) —
+    # app/services/new_tests_report_service.py's builders treat that as "no
+    # data yet", not an error. Belbin and АСТУР deliberately have NO column
+    # here: their answer format (ipsative point-allocation / timed subtests)
+    # needs its own table with append-only history, built in their own
+    # phase (Ф2.3/Ф3.3), not a single-row JSONB snapshot.
+    professional_types: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    eysenck: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    elers: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    empathy_confidence: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    # Specialist-only AI analysis (per-block commentary + final synthesis +
+    # one profession picked from `careers`, never invented) — generated
+    # lazily on first psychologist view of the report and cached here;
+    # `None` until then and after an explicit regenerate. Shape owned by
+    # app.schemas.psych_ai_analysis.PsychAiAnalysisOutput, not this model —
+    # same "container, not a typed column" precedent as every field above.
+    psych_ai_analysis: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
     # Review gate. Rows that existed before the gate were backfilled to
     # `published` by the migration — they had already been shown.
     review_status: Mapped[ReviewStatus] = mapped_column(

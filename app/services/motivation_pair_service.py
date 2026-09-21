@@ -9,7 +9,6 @@ scripts/motivation_pair_bank.py. Mirrors motivation_service.py's shape
 whichever one matches the profile's age_group."""
 
 import uuid
-from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
@@ -140,9 +139,13 @@ async def submit_pair_answers(
     likert_total = await assessment_shared.likert_total_questions(db, age_group)
     likert_completed = likert_total > 0 and likert_answered >= likert_total
 
-    if mot_completed and likert_completed and assessment.status != AssessmentStatus.completed:
-        assessment.status = AssessmentStatus.completed
-        assessment.completed_at = datetime.now(timezone.utc)
+    # `assessment.status` only flips once Belbin + АСТУР are done too — see
+    # assessment_shared.try_complete_assessment / motivation_service.py's
+    # identical call for the full rationale (junior/middle use this Harter-
+    # pairs format instead of the senior triplets, same completion rule).
+    await assessment_shared.try_complete_assessment(
+        assessment, likert_completed=likert_completed, motivation_completed=mot_completed, db=db
+    )
 
     await db.commit()
 

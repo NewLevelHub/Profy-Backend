@@ -1,119 +1,128 @@
 {
+  "report_version": 2,
   "assessment_id": "00000000-0000-0000-0000-000000000001",
-  "careers": [
+  "summary": "У тебя выражен исследовательский и артистичный тип.",
+  "disclaimer": "Это не окончательный выбор, а карта возможных направлений — со временем картина может измениться, и это нормально.",
+  "strength_cards": [
     {
-      "description": null,
-      "matched_strengths": [],
-      "name": "Направление",
-      "rank": 1,
-      "skills_needed": [],
-      "slug": "swe",
-      "subjects_to_develop": [],
-      "tier": "strong",
-      "try_now": "Попробуй маленький проект",
-      "why": "Совпадает с твоими ответами"
-    },
-    {
-      "description": null,
-      "matched_strengths": [],
-      "name": "Направление",
-      "rank": 1,
-      "skills_needed": [],
-      "slug": "designer",
-      "subjects_to_develop": [],
-      "tier": "good",
-      "try_now": "Попробуй маленький проект",
-      "why": "Совпадает с твоими ответами"
+      "title": "Сильная сторона 0",
+      "description": "Короткое описание"
     }
   ],
-  "created_at": "2026-01-01T00:00:00Z",
-  "disclaimer": "Это не окончательный выбор, а карта возможных направлений — со временем картина может измениться, и это нормально.",
-  "exploration_activities": [],
+  "interest_map_note": "Карта показывает, какие сферы проявляются ярче, а какие — тише. Это не оценка, а просто снимок текущего состояния.",
+  "thinking_style_notes": [
+    {
+      "title": "Стиль 0",
+      "description": "Короткое описание"
+    }
+  ],
+  "personality_notes": [
+    {
+      "trait": "openness",
+      "label": "Открытость новому",
+      "description": "Короткое описание",
+      "level": "medium"
+    },
+    {
+      "trait": "conscientiousness",
+      "label": "Организованность",
+      "description": "Короткое описание",
+      "level": "medium"
+    },
+    {
+      "trait": "extraversion",
+      "label": "Общительность",
+      "description": "Короткое описание",
+      "level": "medium"
+    },
+    {
+      "trait": "agreeableness",
+      "label": "Доброжелательность",
+      "description": "Короткое описание",
+      "level": "medium"
+    },
+    {
+      "trait": "emotional_stability",
+      "label": "Эмоциональная устойчивость",
+      "description": "Короткое описание",
+      "level": "medium"
+    }
+  ],
+  "personality_note": "Каждая черта характера проявляется по-своему — вместе они складываются в общую картину того, как тебе комфортнее действовать и общаться.",
+  "motivation_highlights": [
+    "Тебе важно докапываться до сути"
+  ],
+  "is_flat_profile": false,
   "exploration_note": "Не обязательно пробовать всё сразу — начни с того, что откликается больше всего. Даже маленький шаг сегодня помогает лучше понять, что тебе действительно нравится.",
   "final_analysis": "Каждый раздел этого отчёта — отдельный кусочек общей картины: не разрозненные факты, а разные стороны одного и того же человека. Используй их вместе, а не по одному, когда будешь решать, что попробовать дальше.",
+  "validity": null,
+  "psychoemotional": null,
+  "created_at": "2026-01-01T00:00:00Z",
   "interest_instrument": "riasec",
   "interest_map": [
     {
       "code": "R",
+      "sphere": "R",
       "level": "medium",
-      "sphere": "R"
+      "details": null
     },
     {
       "code": "I",
+      "sphere": "I",
       "level": "medium",
-      "sphere": "I"
+      "details": null
     },
     {
       "code": "A",
+      "sphere": "A",
       "level": "medium",
-      "sphere": "A"
+      "details": null
     },
     {
       "code": "S",
+      "sphere": "S",
       "level": "medium",
-      "sphere": "S"
+      "details": null
     },
     {
       "code": "E",
+      "sphere": "E",
       "level": "medium",
-      "sphere": "E"
+      "details": null
     },
     {
       "code": "C",
+      "sphere": "C",
       "level": "medium",
-      "sphere": "C"
+      "details": null
     }
   ],
-  "interest_map_note": "Карта показывает, какие сферы проявляются ярче, а какие — тише. Это не оценка, а просто снимок текущего состояния.",
-  "is_flat_profile": false,
-  "motivation_highlights": [
-    "Тебе важно докапываться до сути"
-  ],
-  "personality_note": "Каждая черта характера проявляется по-своему — вместе они складываются в общую картину того, как тебе комфортнее действовать и общаться.",
-  "personality_notes": [
+  "interest_combination": null,
+  "careers": [
     {
-      "description": "Короткое описание",
-      "label": "Открытость новому",
-      "level": "medium",
-      "trait": "openness"
+      "slug": "swe",
+      "name": "Направление",
+      "rank": 1,
+      "tier": "strong",
+      "why": "Совпадает с твоими ответами",
+      "matched_strengths": [],
+      "try_now": "Попробуй маленький проект",
+      "description": null,
+      "skills_needed": [],
+      "subjects_to_develop": []
     },
     {
-      "description": "Короткое описание",
-      "label": "Организованность",
-      "level": "medium",
-      "trait": "conscientiousness"
-    },
-    {
-      "description": "Короткое описание",
-      "label": "Общительность",
-      "level": "medium",
-      "trait": "extraversion"
-    },
-    {
-      "description": "Короткое описание",
-      "label": "Доброжелательность",
-      "level": "medium",
-      "trait": "agreeableness"
-    },
-    {
-      "description": "Короткое описание",
-      "label": "Эмоциональная устойчивость",
-      "level": "medium",
-      "trait": "emotional_stability"
+      "slug": "designer",
+      "name": "Направление",
+      "rank": 1,
+      "tier": "good",
+      "why": "Совпадает с твоими ответами",
+      "matched_strengths": [],
+      "try_now": "Попробуй маленький проект",
+      "description": null,
+      "skills_needed": [],
+      "subjects_to_develop": []
     }
   ],
-  "report_version": 2,
-  "strength_cards": [
-    {
-      "description": "Короткое описание",
-      "title": "Сильная сторона 0"
-    }
-  ],
-  "summary": "У тебя выражен исследовательский и артистичный тип.",
-  "thinking_style_notes": [
-    {
-      "description": "Короткое описание",
-      "title": "Стиль 0"
-    }
-  ]
+  "exploration_activities": []
 }

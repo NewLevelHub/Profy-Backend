@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "comment": "Kondash/Prikhozhan anxiety cut-offs used for the 'Соц. уверенность' inversion (epic PRO-338, Ф1.11). Loaded by app.config.load_kondash_anxiety_thresholds. Changing a threshold = edit here + bump `version`, NO code change. `interpersonal_sten10_by_age`: only the межличностная-subscale 'sten 10' raw-score threshold is a restored original norm (docs/psych/new-tests-content-sources.md 'Пробел 3', per age bracket) — there is no full raw->sten(1-9) table, so sten is derived from it via the doc's own documented working proportional formula (ceil(raw*10/sten10), capped at 10), applied in kondash_anxiety_service.py, not here. Brackets are ascending by max_age; the last bracket (15-16 лет, sten10=18) is also the fallback for any age above 16 — the instrument's own designed range (форма Б) tops out at 16, so ages 17+ (a senior-tier student can be older) have no norm of their own; reusing the nearest/highest known bracket is a documented working decision, not a restored norm. `confidence_sten_bounds`: [3, 6] ascending inclusive upper bounds, taken directly from Ф1.11's own ticket text (02-Фаза1-Лёгкие-тесты.md §1.Г) — sten<=3 'high' confidence, 4-6 'normative', >6 (7-10) 'low' confidence/elevated interpersonal anxiety. No numeric inversion of the sten value itself (confidence_stens stores the SAME sten number the anxiety computation produces) — 'инверсия' in the ticket is the interpretive relationship (low anxiety sten = high confidence), not an arithmetic 11-x flip; the ticket's own band numbers (1-3/4-6) only make sense read directly against the raw anxiety sten, not a flipped one. Decision fixed here and in the Ф1.11 PR description.",
+  "interpersonal_sten10_by_age": [
+    {"max_age": 11, "sten10": 24},
+    {"max_age": 12, "sten10": 21},
+    {"max_age": 14, "sten10": 28},
+    {"max_age": 16, "sten10": 18}
+  ],
+  "confidence_sten_bounds": [3, 6]
+}

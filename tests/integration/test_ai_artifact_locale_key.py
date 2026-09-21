@@ -45,6 +45,7 @@ def _llm_off_complete(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(assessment_shared, "likert_total_questions", AsyncMock(return_value=1))
     monkeypatch.setattr(motivation_service, "answered_count", AsyncMock(return_value=1))
     monkeypatch.setattr(motivation_service, "total_triplets", AsyncMock(return_value=1))
+    monkeypatch.setattr(assessment_shared, "belbin_and_astur_completed", AsyncMock(return_value=True))
     monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
 
 

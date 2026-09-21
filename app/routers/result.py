@@ -57,7 +57,9 @@ async def generate_report(
     db: AsyncSession = Depends(get_db),
 ) -> ResultResponseV2 | ResultPendingReviewResponse:
     await _require_assessment_access(data.assessment_id, current_user, db)
-    report = await report_service.build_report(data.assessment_id, db)
+    report = await report_service.build_report(
+        data.assessment_id, db, viewer=current_user
+    )
     review_status = await report_service.get_review_status(data.assessment_id, db)
     # Fail closed: anything but an explicit `published` stays hidden.
     if review_status != ReviewStatus.published:

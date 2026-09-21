@@ -22,7 +22,7 @@ class AdminCareerMatch(BaseModel):
     slug: str
     name: str
     holland_code: str
-    match_score: int
+    match_score: float
     description: str
     professions: list[str]
     skills_needed: list[str]

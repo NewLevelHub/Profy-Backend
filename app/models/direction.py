@@ -27,10 +27,14 @@ class Direction(Base):
     # Natural key, locale-invariant (see KZ-306) — computed from the `ru`
     # title, never translated itself, so this stays a plain unique column.
     slug: Mapped[str] = mapped_column(String(100), nullable=False, unique=True, index=True)
-    # 3-letter Holland code (e.g. "RIS") — sole basis for career matching
-    # (riasec_service.career_match_score). Replaces the old required_scores/
-    # bonus_scores threshold scoring entirely. Not localized.
+    # 3-letter Holland code (e.g. "RIS") — still used for display, meta
+    # (consistency / development_plan), and as a fallback career-match score
+    # when `onet_vector` is missing. Not localized.
     holland_code: Mapped[str] = mapped_column(String(3), nullable=False, index=True)
+    # Full 6-dim O*NET RIASEC interest vector {"R": .., "I": .., ...} used by
+    # Pearson career matching (PRO-385). NULL for the few catalog entries
+    # without a US SOC analogue — those fall back to holland_code scoring.
+    onet_vector: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
     # Descriptive fields kept for downstream consumers (report_service,
     # roadmap_builder, direction_inquiry_service, frontend DirectionDetailPage)
     # that predate this migration. The new profession catalog (seeded from
