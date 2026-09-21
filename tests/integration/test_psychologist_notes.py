@@ -4,6 +4,8 @@ Create requires an active assignment; list/PATCH/DELETE of own notes remain
 allowed after the student is unassigned. Foreign note ids → 404, not 403.
 """
 
+import uuid
+
 import httpx
 
 from app.models.user import User
@@ -35,6 +37,17 @@ async def test_create_note_requires_assignment(
     response = await client.post(
         f"/api/v1/psychologist/students/{test_user.id}/notes",
         json={"content": "Hello"},
+        headers=psychologist_headers,
+    )
+    assert response.status_code == 404
+
+
+async def test_create_note_for_unknown_student_404(
+    client: httpx.AsyncClient, psychologist_headers: dict[str, str]
+) -> None:
+    response = await client.post(
+        f"/api/v1/psychologist/students/{uuid.uuid4()}/notes",
+        json={"content": "nobody"},
         headers=psychologist_headers,
     )
     assert response.status_code == 404
@@ -149,7 +162,7 @@ async def test_foreign_note_returns_404(
     from app.services import auth_service
 
     other = User(
-        email="other-psych@example.test",
+        email=f"{uuid.uuid4()}@example.com",
         hashed_password=auth_service.hash_password("Testpass123!"),
         is_active=True,
         is_verified=True,

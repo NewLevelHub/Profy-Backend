@@ -14,7 +14,7 @@ from app.schemas.direction_inquiry import (
     DirectionVerdictRequest,
     DirectionVerdictResponse,
 )
-from app.services import direction_inquiry_service
+from app.services import direction_inquiry_service, report_service
 
 router = APIRouter(tags=["direction-inquiry"])
 
@@ -33,6 +33,10 @@ async def _require_assessment_access(
     _, owner_user_id = row_data
     if owner_user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    # build_student_context() feeds the stored careers/strengths/profile into
+    # the generated questions and verdict, and the "slug not in careers" 400
+    # is itself an oracle over the unpublished matched-directions list.
+    await report_service.require_published_report(assessment_id, db)
 
 
 @router.get(

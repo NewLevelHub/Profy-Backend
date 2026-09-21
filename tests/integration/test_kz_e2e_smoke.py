@@ -82,6 +82,7 @@ async def _kk_report(db: AsyncSession, monkeypatch, age_group: AgeGroup):
     monkeypatch.setattr(motivation_service, "total_triplets", AsyncMock(return_value=1))
     monkeypatch.setattr(motivation_pair_service, "answered_count", AsyncMock(return_value=1))
     monkeypatch.setattr(motivation_pair_service, "total_pairs", AsyncMock(return_value=1))
+    monkeypatch.setattr(assessment_shared, "belbin_and_astur_completed", AsyncMock(return_value=True))
     monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
 
     from app.services import report_service

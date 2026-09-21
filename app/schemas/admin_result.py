@@ -15,12 +15,14 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from app.models.analysis_result import ReviewStatus
+
 
 class AdminCareerMatch(BaseModel):
     slug: str
     name: str
     holland_code: str
-    match_score: int
+    match_score: float
     description: str
     professions: list[str]
     skills_needed: list[str]
@@ -90,6 +92,13 @@ class AdminAnalysisResultResponse(BaseModel):
     strength_cards: list[AdminStrengthCard]
     thinking_style_notes: list[AdminThinkingStyleNote]
     report_version: int
+    # Psychologist review gate — admins see these unconditionally, their
+    # access is never gated by review_status.
+    review_status: ReviewStatus
+    reviewed_by: uuid.UUID | None = None
+    reviewed_at: datetime | None = None
+    published_by: uuid.UUID | None = None
+    published_at: datetime | None = None
     summary: str
     created_at: datetime
 

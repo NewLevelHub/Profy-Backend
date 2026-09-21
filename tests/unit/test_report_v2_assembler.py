@@ -50,7 +50,7 @@ def _narrative(strength_cards: int = 2, thinking_style_notes: int = 1) -> Report
     )
 
 
-def _direction(slug: str, holland_code: str, match_score: int, first_steps: list[str] | None = None) -> dict:
+def _direction(slug: str, holland_code: str, match_score: float, first_steps: list[str] | None = None) -> dict:
     return {
         "slug": slug,
         "name": f"Направление {slug}",
@@ -248,12 +248,12 @@ def test_flat_profile_still_gets_the_full_ranked_career_list() -> None:
 
 
 def test_flat_profile_with_artifact_evidence_gets_an_honest_summary_note() -> None:
-    """career_match_score only ever looks at the RIASEC top-3 code — on a
-    flat profile that top-3 is close to noise, and it never sees
+    """Career matching ranks on the full 6-dim Pearson profile (PRO-385) —
+    on a flat profile that ranking is close to noise, and it never sees
     subject/artifact evidence at all. Found live: a student with clear
     self-reported programming/robotics interest got three clerical
     directions with zero connection to it. The scoped mitigation is telling
-    the reader honestly, not silently presenting a noisy top-3 as fact."""
+    the reader honestly, not silently presenting a noisy top as fact."""
     context = _context(age_group="senior", evidence=[
         EvidenceItem(source_id="artifact:1", source_type="artifact", text="Программирование"),
     ])

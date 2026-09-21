@@ -6,6 +6,7 @@ from typing import Literal
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n import pick_locale
 from app.models.direction import Direction
 from app.models.profile import AgeGroup
 from app.models.question import HollandType, Question, QuestionInstrument
@@ -116,18 +117,19 @@ def top_code(normalized: dict[str, float], limit: int = 3) -> list[str]:
 def direction_letter_weight(letter: str, direction_code: str) -> int:
     """3 if `letter` is direction_code's primary (first) letter, 2 if
     secondary, 1 if tertiary, 0 if absent — positional, not just membership.
-    Holland's own congruence theory (Iachan-style indices) treats matching
-    a direction's PRIMARY letter as worth more than matching its third —
-    plain `letter in direction_code` collapsed that distinction, which is
-    also why every anagram of the same 3 letters (CSE/ESC/SEC/...) used to
-    score identically (found live: report_v2_assembler.py's
-    _matched_strengths_for produced byte-identical `why` text across
-    unrelated careers sharing a letter set)."""
+    Kept for the code-based fallback path (directions without `onet_vector`)
+    and for unit coverage of the legacy Iachan-style weights."""
     position = direction_code.find(letter)
     return 3 - position if 0 <= position < 3 else 0
 
 
+# Perfect alignment under positional 3/2/1 × 3/2/1 weights (PRO-385 fallback).
+_CODE_MATCH_MAX = 14
+
+
 def career_match_score(user_code: list[str], direction_code: str) -> int:
+    """Legacy positional congruence (0..14). Used only when a direction has
+    no O*NET 6-dim vector — see `direction_match_score`."""
     user_weights = [3, 2, 1]
     return sum(
         w * direction_letter_weight(letter, direction_code)
@@ -135,33 +137,62 @@ def career_match_score(user_code: list[str], direction_code: str) -> int:
     )
 
 
+def pearson_correlation(user: dict[str, float], profession: dict[str, float]) -> float:
+    """Pearson r between two 6-dim RIASEC profiles (shape similarity, -1..+1).
+
+    Absolute scale differences cancel out — only whether the two profiles
+    rise and fall on the same letters matters. Zero-variance inputs (flat
+    profile) return 0.0 rather than NaN."""
+    xs = [float(user.get(t, 0.0)) for t in HOLLAND_ORDER]
+    ys = [float(profession.get(t, 0.0)) for t in HOLLAND_ORDER]
+    mean_x = sum(xs) / len(HOLLAND_ORDER)
+    mean_y = sum(ys) / len(HOLLAND_ORDER)
+    num = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, ys))
+    den_x = sum((x - mean_x) ** 2 for x in xs)
+    den_y = sum((y - mean_y) ** 2 for y in ys)
+    if den_x == 0.0 or den_y == 0.0:
+        return 0.0
+    return num / (den_x * den_y) ** 0.5
+
+
+def _has_onet_vector(direction: Direction) -> bool:
+    vector = direction.onet_vector
+    return isinstance(vector, dict) and all(t in vector for t in HOLLAND_ORDER)
+
+
+def direction_match_score(normalized: dict[str, float], direction: Direction) -> float:
+    """Primary: Pearson r vs `onet_vector`. Fallback: legacy code score / 14.
+
+    Fallback keeps the three catalog professions without a US SOC analogue
+    (Военный / Дипломат / Госслужащий) rankable without inventing a vector.
+    Dividing by `_CODE_MATCH_MAX` puts the legacy score on a 0..1 scale so it
+    can sit in the same ordered list as Pearson r without dominating it."""
+    if _has_onet_vector(direction):
+        return round(pearson_correlation(normalized, direction.onet_vector), 4)  # type: ignore[arg-type]
+    user_code = top_code(normalized)
+    return round(career_match_score(user_code, direction.holland_code) / _CODE_MATCH_MAX, 4)
+
+
 async def matched_careers(
-    user_code: list[str], db: AsyncSession, limit: int = 10
-) -> list[tuple[Direction, int]]:
-    # Names/descriptions are resolved by the caller (report_service._career_dict)
-    # via pick_locale — one row per direction now, no locale filter needed.
+    normalized: dict[str, float], db: AsyncSession, limit: int = 10
+) -> list[tuple[Direction, float]]:
+    """Rank directions by full-profile Pearson match (PRO-385).
+
+    Takes the full 6-dim `normalized` profile — not a truncated top-3 code —
+    so a 0.04pp swap between 2nd and 3rd letters can no longer flip the
+    entire top-10. Names/descriptions are resolved by the caller via
+    pick_locale."""
     directions = (await db.execute(select(Direction))).scalars().all()
-    scored = [(d, career_match_score(user_code, d.holland_code)) for d in directions]
+    scored = [(d, direction_match_score(normalized, d)) for d in directions]
     # Tie-break on slug (ascending) so equal scores don't depend on DB row
     # order — same convention as top_code's HOLLAND_ORDER tie-break above.
     scored.sort(key=lambda pair: (-pair[1], pair[0].slug))
-    # Used to drop every direction but one for an exact-duplicate
-    # holland_code here (found live: 3 of 5 careers shown to a student all
-    # had holland_code=="CSE", reading as the app repeating itself) — but
-    # that also permanently hid every OTHER direction sharing that code from
-    # EVERY student, no matter how well any of them actually fit, which
-    # stopped scaling once the catalog grew past ~120 directions (more
-    # entries than there are distinct 3-distinct-letter codes, so exact
-    # collisions become unavoidable). The repetition problem this was
-    # guarding against is now handled correctly downstream instead —
-    # report_v2_assembler.py's build_riasec_careers gives any career sharing
-    # already-shown matched evidence its own distinguishing clause (that
-    # career's own skills_needed[0]) rather than repeating the sentence — so
-    # nothing needs to be hidden here to avoid reading as copy-pasted.
     return scored[:limit]
 
 
-async def answer_evidence(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, dict]:
+async def answer_evidence(
+    assessment_id: uuid.UUID, db: AsyncSession, *, locale: str | None = None
+) -> dict[str, dict]:
     """Per-type breakdown of the student's own RIASEC answers — what the
     interest_map level is actually made of (PRO-336).
 
@@ -190,10 +221,11 @@ async def answer_evidence(assessment_id: uuid.UUID, db: AsyncSession) -> dict[st
         entry = evidence.setdefault(letter, {"distribution": [0, 0, 0, 0, 0]})
         if 1 <= value <= 5:
             entry["distribution"][5 - value] += 1
+        statement_text = pick_locale(text, locale=locale) if isinstance(text, dict) else str(text)
         if value >= 4:
-            liked.setdefault(letter, []).append((-value, -order, text))
+            liked.setdefault(letter, []).append((-value, -order, statement_text))
         elif value <= _AVERSION_MAX_VALUE:
-            disliked.setdefault(letter, []).append((value, -order, text))
+            disliked.setdefault(letter, []).append((value, -order, statement_text))
     for letter, entry in evidence.items():
         entry["liked"] = [t for *_, t in sorted(liked.get(letter, []))]
         entry["disliked"] = [t for *_, t in sorted(disliked.get(letter, []))]

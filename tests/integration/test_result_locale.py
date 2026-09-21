@@ -11,7 +11,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.analysis_result import AnalysisResult
+from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
@@ -54,6 +54,7 @@ def _force_complete_llm_off(monkeypatch: pytest.MonkeyPatch, *, senior: bool) ->
     else:
         monkeypatch.setattr(motivation_pair_service, "answered_count", AsyncMock(return_value=1))
         monkeypatch.setattr(motivation_pair_service, "total_pairs", AsyncMock(return_value=1))
+    monkeypatch.setattr(assessment_shared, "belbin_and_astur_completed", AsyncMock(return_value=True))
     monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
 
 
@@ -149,6 +150,18 @@ async def test_get_report_signals_locale_not_generated_vs_not_found(
     # (b) a ru row exists, owner is now kk -> 404 with the KZ-406 code
     assessment_b, user_b = await _senior_ru_then_kk(db_session, monkeypatch)
     headers_b = {"Authorization": f"Bearer {auth_service.create_jwt_token(user_b.id)}"}
+    await db_session.commit()
+
+    # PRO-337: while the ru report waits for psychologist review it is hidden
+    # in every locale — the pending envelope takes precedence over KZ-406.
+    r = await client.get(f"/api/v1/result/{assessment_b.id}", headers=headers_b)
+    assert r.status_code == 200
+    assert r.json() == {"status": "pending_review", "assessment_id": str(assessment_b.id)}
+
+    ru_row = (await db_session.execute(
+        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_b.id)
+    )).scalar_one()
+    ru_row.review_status = ReviewStatus.published
     await db_session.commit()
 
     r = await client.get(f"/api/v1/result/{assessment_b.id}", headers=headers_b)
