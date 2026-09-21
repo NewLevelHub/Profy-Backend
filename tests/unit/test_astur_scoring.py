@@ -45,7 +45,7 @@ def test_awareness_scoring_is_case_and_whitespace_insensitive() -> None:
 
 
 def test_classification_requires_exactly_the_2_key_words_in_any_order() -> None:
-    item = CLASSIFICATION_ITEMS[0]  # дог, спаниель
+    item = CLASSIFICATION_ITEMS[0]  # собака, спаниель
     answer = item["answer"]["ru"]
     assert astur_scoring._score_classification(item, list(reversed(answer))) == 1
     assert astur_scoring._score_classification(item, [answer[0], "стол"]) == 0
