@@ -4,7 +4,10 @@ Detail + full report also covered here."""
 import uuid
 
 import httpx
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
+from app.models.profile import AgeGroup, Profile
 from app.models.user import User
 
 
@@ -128,3 +131,48 @@ async def test_get_student_report_unknown_assessment_404(
         headers=psychologist_headers,
     )
     assert response.status_code == 404
+
+
+async def test_available_students_flags_completed_assessment(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    psychologist_headers: dict[str, str],
+    test_user: User,
+) -> None:
+    """PRO-402: claim CTA needs has_completed_assessment, not only pending review."""
+    before = await client.get(
+        "/api/v1/psychologist/students/available", headers=psychologist_headers
+    )
+    assert before.status_code == 200
+    row = next(item for item in before.json() if item["id"] == str(test_user.id))
+    assert row["has_completed_assessment"] is False
+    assert row["has_pending_review"] is False
+
+    profile = Profile(
+        user_id=test_user.id,
+        name="Test Student",
+        age=16,
+        grade=10,
+        city="Алматы",
+        country="Казахстан",
+        language="ru",
+        age_group=AgeGroup.senior,
+    )
+    db_session.add(profile)
+    await db_session.flush()
+    db_session.add(
+        Assessment(
+            profile_id=profile.id,
+            goal=AssessmentGoal.explore,
+            status=AssessmentStatus.completed,
+        )
+    )
+    await db_session.commit()
+
+    after = await client.get(
+        "/api/v1/psychologist/students/available", headers=psychologist_headers
+    )
+    assert after.status_code == 200
+    row = next(item for item in after.json() if item["id"] == str(test_user.id))
+    assert row["has_completed_assessment"] is True
+    assert row["has_pending_review"] is False
