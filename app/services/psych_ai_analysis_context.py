@@ -15,7 +15,7 @@ BLOCK_LABELS: dict[str, str] = {
     "personality": "Личность (Big Five)",
     "thinking_style": "Стиль мышления",
     "motivation": "Мотивация",
-    "validity": "Достоверность протокола",
+
     "psychoemotional": "Психоэмоциональное состояние (МЦВ)",
     "professional_types": "ДДО (интересы и способности)",
     "temperament": "Темперамент (Айзенк)",
@@ -65,8 +65,7 @@ def build_context(
         add("thinking_style", {"notes": [n.model_dump() for n in report.thinking_style_notes]})
     if report.motivation_highlights:
         add("motivation", {"highlights": report.motivation_highlights})
-    if report.validity:
-        add("validity", report.validity.model_dump())
+
     if report.psychoemotional:
         add("psychoemotional", report.psychoemotional.model_dump())
 

@@ -65,6 +65,7 @@ async def _seed_new_instrument_questions(db: AsyncSession, *, n_per_instrument: 
 
 
 async def test_new_instruments_do_not_change_riasec_or_bigfive_scoring(db_session: AsyncSession) -> None:
+    await db_session.execute(delete(Question))
     assessment = await _make_assessment(db_session, AgeGroup.senior)
 
     riasec_questions = [
@@ -108,6 +109,7 @@ async def test_new_instruments_do_not_change_riasec_or_bigfive_scoring(db_sessio
 
 
 async def test_new_instruments_do_not_change_mi_scoring_for_junior(db_session: AsyncSession) -> None:
+    await db_session.execute(delete(Question))
     assessment = await _make_assessment(db_session, AgeGroup.junior)
 
     mi_questions = [

@@ -85,8 +85,7 @@ docker-compose exec api python scripts/seed_boyko_empathy_questions.py
 docker-compose exec api python scripts/seed_kondash_anxiety_questions.py
 # Ожидается: Total kondash_anxiety items in bank: 40
 
-docker-compose exec api python scripts/seed_lie_scale_questions.py
-# Ожидается: Total validity items in banks: 25 (20 MC-SDS + 5 infrequency)
+
 docker-compose exec api python scripts/seed_question_pairs.py
 # Ожидается: Total pairs in bank: 67
 

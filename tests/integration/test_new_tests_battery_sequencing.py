@@ -51,7 +51,7 @@ async def _seed_full_battery(db: AsyncSession) -> Assessment:
     # drop them inside this test's rolled-back transaction so the count/
     # contiguity assertions below see exactly what this file seeds, same
     # precaution as test_validity_items_in_battery.py takes for `validity`.
-    await db.execute(delete(Question).where(Question.instrument.in_(_NEW_TESTS_INSTRUMENTS)))
+    await db.execute(delete(Question).where(Question.instrument.in_(_NEW_TESTS_INSTRUMENTS | {QuestionInstrument.riasec, QuestionInstrument.big_five})))
 
     for i in range(20):
         db.add(Question(
