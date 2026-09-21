@@ -24,7 +24,7 @@ from sqlalchemy.orm import aliased
 from app.i18n import DEFAULT_LOCALE
 from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
-from app.models.assessment import Assessment
+from app.models.assessment import Assessment, AssessmentStatus
 from app.models.extended_block_assignment import ExtendedBlock, ExtendedBlockAssignment
 from app.models.profile import Profile
 from app.models.psychologist_assignment import PsychologistStudentAssignment
@@ -209,8 +209,24 @@ async def list_available_students(
         )
         .exists()
     )
+    completed = (
+        select(Assessment.id)
+        .join(Profile, Profile.id == Assessment.profile_id)
+        .where(
+            Profile.user_id == User.id,
+            Assessment.status == AssessmentStatus.completed,
+        )
+        .exists()
+    )
     query = (
-        select(User.id, User.email, Profile.name, Profile.age_group, pending.label("has_pending"))
+        select(
+            User.id,
+            User.email,
+            Profile.name,
+            Profile.age_group,
+            pending.label("has_pending"),
+            completed.label("has_completed"),
+        )
         .outerjoin(Profile, Profile.user_id == User.id)
         .where(User.role == UserRole.student, ~User.id.in_(already_mine))
         .order_by(User.created_at.desc())
@@ -223,6 +239,7 @@ async def list_available_students(
             profile_name=row.name,
             age_group=row.age_group.value if row.age_group is not None else None,
             has_pending_review=bool(row.has_pending),
+            has_completed_assessment=bool(row.has_completed),
         )
         for row in rows
     ]

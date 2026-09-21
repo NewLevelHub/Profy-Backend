@@ -33,6 +33,8 @@ class PsychologistAvailableStudentItem(BaseModel):
     profile_name: str | None = None
     age_group: str | None = None
     has_pending_review: bool = False
+    # PRO-402: claim CTA is only meaningful after at least one completed test.
+    has_completed_assessment: bool = False
 
 
 class PsychologistAssessmentSummary(BaseModel):
