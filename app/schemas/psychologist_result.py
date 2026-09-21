@@ -65,12 +65,17 @@ class ReviewTextCardPatch(BaseModel):
 
 class ReviewCareerPatch(BaseModel):
     """Same shape `report_service._career_dict` stores — the student report
-    is rebuilt from these keys, so an edited career must keep all of them."""
+    is rebuilt from these keys, so an edited career must keep all of them.
+
+    `match_score` is a float in [0, 1] (Pearson / normalized code match after
+    PRO-385). It used to be an int 0–100; keeping `int` here 422'd every
+    careers PATCH once the scorer started writing fractional scores
+    (PRO-415 — reorder → save → publish)."""
 
     slug: str = Field(min_length=1)
     name: str = Field(min_length=1)
     holland_code: str
-    match_score: int
+    match_score: float
     description: str
     professions: list[str]
     skills_needed: list[str]
