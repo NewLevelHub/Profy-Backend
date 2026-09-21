@@ -234,7 +234,15 @@ async def test_translation_keeps_psychologist_edits_outside_the_narrative(
 
     detail = (await client.get(_result_url(test_user, assessment.id), headers=psychologist_headers)).json()
     assert len(detail["careers"]) > 1
-    kept = dict(detail["careers"][1])
+    kept_raw = detail["careers"][1]
+    kept = {
+        k: kept_raw[k]
+        for k in [
+            "slug", "name", "holland_code", "match_score", "description",
+            "professions", "skills_needed", "subjects_to_develop", "first_steps"
+        ]
+        if k in kept_raw
+    }
     kept["description"] = "Психолог переписал описание."
     kept["skills_needed"] = ["Психолог: главный навык."]
     # Longer than motivation_top on purpose: the response must not truncate it.
@@ -248,6 +256,8 @@ async def test_translation_keeps_psychologist_edits_outside_the_narrative(
         },
         headers=psychologist_headers,
     )
+    if patched.status_code != 200:
+        print("PATCH FAILED:", patched.json())
     assert patched.status_code == 200
     published = await client.post(f"{_result_url(test_user, assessment.id)}/publish", headers=psychologist_headers)
     assert published.status_code == 200

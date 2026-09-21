@@ -10,14 +10,13 @@ from sqlalchemy import case, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings, validity_thresholds
+from app.config import settings
 from app.errors import AppError
 from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES, MissingLocalizedText, pick_locale, pick_locale_list, use_locale
 from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
-from app.models.assessment_validity import AssessmentValidity
 from app.models.consent import CONSENT_SCOPE_PSYCH_BLOCK
 from app.models.direction import Direction
 from app.models.profile import AgeGroup, Profile
@@ -33,7 +32,6 @@ from app.schemas.result_v2 import (
     RiasecResultResponse,
     StudentStrengthCard,
     StudentThinkingStyleNote,
-    ValiditySection,
 )
 from app.services import (
     assessment_shared,
@@ -52,7 +50,6 @@ from app.services import (
     report_v2_assembler,
     riasec_service,
     thinking_style_service,
-    validity_service,
 )
 from app.services.bigfive_content import strength_phrases
 from app.services.motivation_content import highlight_phrases as motivation_highlight_phrases
@@ -536,43 +533,7 @@ def psych_sections_for(
     return viewer_role in (UserRole.psychologist, UserRole.admin)
 
 
-async def _build_validity_section(
-    assessment_id: uuid.UUID, db: AsyncSession, *, consent_ok: bool
-) -> ValiditySection | None:
-    """Фаза 1 «Достоверность протокола». Assembled from the
-    `assessment_validity` row written by validity_service (PRO-299) after a
-    completed battery. `None` (→ `/result` `validity: null`) until that row
-    exists — i.e. scoring failed, or an assessment reported before PRO-299
-    (retrospective compute is deliberately not done). PRO-300 maps the full
-    verdict here: traffic light, sd_raw + sd_level + applied bounds,
-    carelessness indices, failed traps, `thresholds_version`, `consent_ok`.
-    This is the ONLY seam Фаза 1 plugs into — not a new call site in
-    build_report()."""
-    row = (
-        await db.execute(
-            select(AssessmentValidity).where(
-                AssessmentValidity.assessment_id == assessment_id
-            )
-        )
-    ).scalar_one_or_none()
-    if row is None:
-        return None
-    # `details.sd_bounds` are the bounds that were actually applied when the
-    # verdict was computed; fall back to the current config if an older row
-    # predates that key.
-    bounds = (row.details or {}).get("sd_bounds") or list(validity_thresholds.sd_bounds)
-    return ValiditySection(
-        consent_ok=consent_ok,
-        traffic_light=row.traffic_light.value,
-        sd_raw=row.sd_raw,
-        sd_level=row.sd_level.value,
-        sd_bounds=(int(bounds[0]), int(bounds[1])),
-        longstring_max=row.longstring_max,
-        irv=round(row.irv, 2),
-        infrequency_failed=row.infrequency_failed,
-        careless_flag=row.careless_flag,
-        thresholds_version=row.thresholds_version,
-    )
+
 
 
 def _psychoemotional_run_number(metrics: dict | None, field: str) -> int | None:
@@ -720,7 +681,6 @@ async def _attach_psych_sections(
     # a future phase can monkeypatch an individual builder and have it take
     # effect here.
     builders = {
-        "validity": _build_validity_section,
         "psychoemotional": _build_psychoemotional_section,
     }
 
@@ -740,27 +700,7 @@ async def _attach_psych_sections(
     return response.model_copy(update=updates)
 
 
-async def _run_validity_scoring(
-    assessment_id: uuid.UUID,
-    age_group: AgeGroup,
-    analysis: AnalysisResult,
-    db: AsyncSession,
-) -> None:
-    """Fire the PRO-299 validity scoring after the main report is committed.
-    Isolated: the report already persists, so a raised exception here only
-    loses the validity verdict — it is logged, the partial writes are rolled
-    back, and report generation continues."""
-    try:
-        await validity_service.score_and_store(
-            assessment_id, db, age_group=age_group, analysis=analysis
-        )
-    except Exception:  # noqa: BLE001 — validity must never break the main report
-        logger.exception(
-            "validity scoring failed for assessment=%s — verdict omitted, "
-            "main RIASEC/BigFive/MI report unaffected",
-            assessment_id,
-        )
-        await db.rollback()
+
 
 
 async def _run_psychoemotional_scoring(
@@ -1158,14 +1098,6 @@ async def _build_report(
                 evidence=evidence,
             )
     await _cache_if_published(redis, analysis, response)
-
-    # Protocol-validity verdict (PRO-299) — the main report row is already
-    # committed above, so this is fully isolated: any failure is logged and
-    # swallowed and the RIASEC/BigFive/MI report below is returned regardless
-    # (эпик §4 / psych-block-spec.md §A / ТестЛжи.md §3.7). Run after
-    # `response` is already built and cached (plain data by this point), so a
-    # rollback inside these calls expiring the `analysis` ORM object is safe.
-    await _run_validity_scoring(assessment_id, age_group, analysis, db)
 
     # Psychoemotional (МЦВ Собчик) metrics (PRO-307) — same isolation.
     await _run_psychoemotional_scoring(assessment_id, db)

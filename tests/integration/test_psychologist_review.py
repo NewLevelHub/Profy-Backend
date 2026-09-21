@@ -329,7 +329,9 @@ async def test_publish_is_irreversible_and_notifies_student(
     assert body["published_at"] is not None
     # Published without edits — publishing counts as the review.
     assert body["reviewed_by"] == str(psychologist_user.id)
-    emails["published"].assert_awaited_once_with(test_user.email, STUDENT_NAME, locale=test_user.locale)
+    emails["published"].assert_awaited_once_with(
+        test_user.email, STUDENT_NAME, locale=test_user.locale, results_url="http://localhost:5173/results"
+    )
 
     again = await client.post(f"{_result_url(test_user, assessment.id)}/publish", headers=psychologist_headers)
     assert again.status_code == 409

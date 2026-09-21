@@ -101,49 +101,7 @@ class Settings(BaseSettings):
 settings = Settings()
 
 
-# --- Protocol-validity thresholds (epic PRO-282, phase 1; PRO-297) ----------
-# Cut-offs for the "шкала лжи" / carelessness module live in a versioned JSON
-# file, NOT hardcoded here: changing a threshold is an edit to
-# app/data/validity_thresholds.json + a `version` bump, with no code change
-# (psych-block-spec.md §A4). validity_service (PRO-299) stores the applied
-# `version` on assessment_validity.thresholds_version so every result records
-# which cut-offs produced it.
-_VALIDITY_THRESHOLDS_PATH = Path(__file__).parent / "data" / "validity_thresholds.json"
 
-
-class ValidityThresholds(BaseModel):
-    # extra="allow" — new threshold keys can be added to the JSON and read
-    # (via attribute / .model_extra) before any consumer knows about them,
-    # keeping "new threshold = data-only change" true.
-    model_config = ConfigDict(frozen=True, extra="allow")
-
-    version: int
-    # [ok_max, sd_max]: sd_raw <= ok_max → ok; <= sd_max → social_desirability;
-    # else → high. See ValidityThresholds.sd_level.
-    sd_bounds: tuple[int, int]
-    longstring_max_flag: int  # LongString >= this → a carelessness signal
-    irv_low_flag: float  # IRV <= this → a carelessness signal
-    infrequency_fail_flag: int  # failed traps >= this → a carelessness signal
-
-    def sd_level(self, sd_raw: int) -> str:
-        """Bucket a raw MC-SDS score. Returns an `SdLevel` value
-        ("ok" | "social_desirability" | "high") as a plain string so
-        app.config stays free of a models import."""
-        ok_max, sd_max = self.sd_bounds
-        if sd_raw <= ok_max:
-            return "ok"
-        if sd_raw <= sd_max:
-            return "social_desirability"
-        return "high"
-
-
-def load_validity_thresholds(
-    path: Path = _VALIDITY_THRESHOLDS_PATH,
-) -> ValidityThresholds:
-    return ValidityThresholds.model_validate(json.loads(path.read_text(encoding="utf-8")))
-
-
-validity_thresholds: ValidityThresholds = load_validity_thresholds()
 
 
 # --- Psychoemotional (МЦВ Собчик) thresholds (epic PRO-282, phase 2; PRO-305)

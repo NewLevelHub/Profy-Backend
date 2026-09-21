@@ -83,7 +83,7 @@ class AnalysisResult(Base):
     # its calculation (validity → Фаза 1 PRO-296…300, psychoemotional →
     # Фаза 2 PRO-307…309). Shape of each blob is owned by its phase — see
     # docs/psych-block-contract.md.
-    validity: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
     psychoemotional: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     # PRO-338 Ф0.2 — specialist-only containers for the 4 "simple" new tests
     # (one shot per assessment, no timing/replay concerns), same JSONB-on-

@@ -91,12 +91,6 @@ async def test_pick_locale_falls_back_per_row_when_kk_is_missing(db_session: Asy
 async def test_get_all_questions_kk_serves_the_full_kk_set(db_session: AsyncSession) -> None:
     """All three Likert instruments are fully translated, so a `kk` senior
     test is served entirely as `kk` text with no fallback."""
-    # Validity items (PRO-298) are untranslated until PRO-301; in CI only
-    # Likert items are seeded, but if validity items exist in a local DB,
-    # exclude them so we test the three Likert instruments as intended.
-    await db_session.execute(
-        delete(Question).where(Question.instrument == QuestionInstrument.validity)
-    )
     all_questions = (await db_session.execute(select(Question))).scalars().all()
     by_id = {q.id: q for q in all_questions}
     i18n._current_locale.set("kk")
