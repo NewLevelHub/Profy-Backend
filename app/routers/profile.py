@@ -16,6 +16,7 @@ from app.schemas.profile import (
     ProfileUpdateRequest,
 )
 from app.services import artifact_service, certificate_service, profile_service
+from app.services.profile_service import AgeGradeMismatchError
 
 router = APIRouter(tags=["profile"])
 
@@ -109,6 +110,8 @@ async def update_profile(
         profile, artifacts, certificates = await profile_service.update_profile(
             current_user.id, data, db
         )
+    except AgeGradeMismatchError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     return _to_response(profile, artifacts, certificates)
