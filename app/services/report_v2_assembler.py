@@ -354,7 +354,7 @@ def build_riasec_careers(
     vetted evidence the way citing an unconfirmed RIASEC letter would.
 
     A flat profile can push most/all of the 10 cards into the no-overlap
-    fallback branch — cycling through NEUTRAL_CAREER_WHY_VARIANTS (rather
+    fallback branch — cycling through neutral_career_why_variants() (rather
     than repeating one sentence) keeps those cards from reading as
     copy-pasted; once every variant has been used once, later cards also
     get the same skills_needed[0] clause as the matched-evidence dedup

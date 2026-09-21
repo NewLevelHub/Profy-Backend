@@ -394,6 +394,24 @@ async def _resolve_owner_locale(
     return resolved
 
 
+async def _interest_evidence(
+    assessment_id: uuid.UUID,
+    db: AsyncSession,
+    *,
+    age_group: AgeGroup | None = None,
+    profile: dict | None = None,
+    locale: str | None = None,
+) -> dict[str, dict] | None:
+    """Per-type RIASEC answer breakdown for interest details (PRO-336).
+    Junior (MI) has no RIASEC answers — skip."""
+    if age_group is None and profile is not None:
+        instrument = _stored_interest_instrument(profile)
+        age_group = AgeGroup.junior if instrument == "mi" else AgeGroup.senior
+    if age_group == AgeGroup.junior:
+        return None
+    return await riasec_service.answer_evidence(assessment_id, db, locale=locale)
+
+
 def _shape_response(
     analysis: AnalysisResult,
     evidence: dict[str, dict] | None = None,
@@ -799,7 +817,9 @@ async def _build_report(
     if existing:
         response = _shape_response(
             existing,
-            await riasec_service.answer_evidence(assessment_id, db, locale=locale),
+            await _interest_evidence(
+                assessment_id, db, profile=dict(existing.profile or {}), locale=locale
+            ),
             locale=locale,
         )
         await _cache_if_published(redis, existing, response)
@@ -824,7 +844,9 @@ async def _build_report(
     if existing:
         response = _shape_response(
             existing,
-            await riasec_service.answer_evidence(assessment_id, db, locale=locale),
+            await _interest_evidence(
+                assessment_id, db, profile=dict(existing.profile or {}), locale=locale
+            ),
             locale=locale,
         )
         await _cache_if_published(redis, existing, response)
@@ -1099,7 +1121,9 @@ async def _build_report(
             analysis = existing_result.scalar_one()
             response = _shape_response(
                 analysis,
-                await riasec_service.answer_evidence(assessment_id, db, locale=locale),
+                await _interest_evidence(
+                    assessment_id, db, age_group=age_group, locale=locale
+                ),
                 locale=locale,
             )
             await _cache_if_published(redis, analysis, response)
@@ -1112,14 +1136,14 @@ async def _build_report(
             # Shape it from the row just stored, exactly like every later read.
             response = _shape_response(
                 analysis,
-                await riasec_service.answer_evidence(assessment_id, db, locale=locale),
+                await _interest_evidence(
+                    assessment_id, db, age_group=age_group, locale=locale
+                ),
                 locale=locale,
             )
         else:
-            evidence = (
-                None
-                if age_group == AgeGroup.junior
-                else await riasec_service.answer_evidence(assessment_id, db, locale=locale)
+            evidence = await _interest_evidence(
+                assessment_id, db, age_group=age_group, locale=locale
             )
             response = report_v2_assembler.assemble_result_v2(
                 assessment_id=assessment_id,
@@ -1265,7 +1289,11 @@ async def resolve_report(
         return None, ReportLookup.LOCALE_NOT_GENERATED
 
     response = _shape_response(
-        analysis, await riasec_service.answer_evidence(assessment_id, db, locale=locale), locale=locale
+        analysis,
+        await _interest_evidence(
+            assessment_id, db, profile=dict(analysis.profile or {}), locale=locale
+        ),
+        locale=locale,
     )
     await _cache_if_published(redis, analysis, response)
     return response, ReportLookup.OK
@@ -1304,7 +1332,12 @@ async def get_report_with_analysis(
     response = await _attach_psych_sections(
         _shape_response(
             analysis,
-            await riasec_service.answer_evidence(assessment_id, db, locale=analysis.locale),
+            await _interest_evidence(
+                assessment_id,
+                db,
+                profile=dict(analysis.profile or {}),
+                locale=analysis.locale,
+            ),
             locale=analysis.locale,
         ),
         viewer_role=viewer_role,
