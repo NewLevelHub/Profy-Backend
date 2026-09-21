@@ -8,6 +8,11 @@ from app.models.certificate import Certificate
 from app.models.profile import Profile, compute_age_group
 from app.schemas.profile import ProfileCreateRequest, ProfileUpdateRequest
 from app.services import artifact_service, certificate_service
+from app.services.age_grade import age_grade_mismatch_message, is_age_grade_compatible
+
+
+class AgeGradeMismatchError(ValueError):
+    """Raised when the resulting age/grade pair is impossible (PRO-420)."""
 
 
 async def create_profile(
@@ -74,6 +79,13 @@ async def update_profile(
 
     if "age" in updates:
         profile.age_group = compute_age_group(updates["age"])
+
+    # Partial updates may change only age or only grade — re-check the pair
+    # that will actually be stored (PRO-420).
+    if not is_age_grade_compatible(profile.age, profile.grade):
+        raise AgeGradeMismatchError(
+            age_grade_mismatch_message(profile.age, profile.grade)
+        )
 
     if data.artifacts is not None:
         artifacts = await artifact_service.save_artifacts(profile.id, data.artifacts, db, commit=False)

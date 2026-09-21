@@ -1,10 +1,11 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.schemas.artifact import ArtifactItem
 from app.schemas.certificate import CertificateItem
+from app.services.age_grade import age_grade_mismatch_message, is_age_grade_compatible
 
 # Letters (any script) plus space/hyphen/apostrophe for names like
 # "Анна-Мария" or "O'Brien" — no digits, no other symbols. Mirrors the
@@ -48,6 +49,12 @@ class ProfileCreateRequest(BaseModel):
     # certificates here; any list (including `[]`) replaces them wholesale.
     certificates: list[CertificateItem] | None = None
 
+    @model_validator(mode="after")
+    def _age_matches_grade(self) -> "ProfileCreateRequest":
+        if not is_age_grade_compatible(self.age, self.grade):
+            raise ValueError(age_grade_mismatch_message(self.age, self.grade))
+        return self
+
 
 class ProfileUpdateRequest(BaseModel):
     name: str | None = Field(None, min_length=3, max_length=60, pattern=NAME_PATTERN)
@@ -67,6 +74,15 @@ class ProfileUpdateRequest(BaseModel):
     artifacts: list[ArtifactItem] | None = None
     # Same semantics as `artifacts`, backed by certificate_service instead.
     certificates: list[CertificateItem] | None = None
+
+    @model_validator(mode="after")
+    def _age_matches_grade_when_both_sent(self) -> "ProfileUpdateRequest":
+        # Partial updates that touch only one of the pair are checked in
+        # profile_service against the stored other field (PRO-420).
+        if self.age is not None and self.grade is not None:
+            if not is_age_grade_compatible(self.age, self.grade):
+                raise ValueError(age_grade_mismatch_message(self.age, self.grade))
+        return self
 
 
 class ProfileResponse(BaseModel):
