@@ -33,9 +33,11 @@ from app.models.user_response import UserResponse  # noqa: F401 — keep model i
 
 from app.models.goal_overlay import GoalOverlay  # noqa: F401 — keep model imported so Alembic discovers it
 
+from app.models.content_override import ContentOverride  # noqa: F401 — keep model imported so Alembic discovers it
+
 __all__ = [
     "Base", "AnalysisResult", "Artifact", "Assessment", "AsturRun", "BelbinRun", "Consent",
-    "Direction", "DirectionInquiry", "DirectionRoadmap", "ExtendedBlockAssignment",
+    "ContentOverride", "Direction", "DirectionInquiry", "DirectionRoadmap", "ExtendedBlockAssignment",
     "EmailVerificationToken", "MotivationPair", "MotivationPairResponse",
     "MotivationResponse", "MotivationStatement", "PasswordResetToken",
     "ProductFeedback", "Profile", "Program", "PsychoEmotionalRun",

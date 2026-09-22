@@ -24,6 +24,7 @@ comparing, and returns 0 for a missing/malformed submission rather than
 raising — a partially-answered or garbled item degrades gracefully to "not
 credited", never crashes scoring for the other 89 items.
 """
+import re
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -41,8 +42,18 @@ from scripts.astur_bank import (
 )
 
 
+# Stripped before comparison so a trailing/embedded ".", ",", ";" etc. (a
+# respondent typing "хвойные деревья." or "деревья, растения" as one string)
+# never costs a point that the wording itself would've earned — applied to
+# both sides of every comparison (submitted text AND the answer-key/synonym
+# strings from the bank), so it only ever loosens matching, never changes
+# which strings are considered equal to each other.
+_PUNCTUATION_RE = re.compile(r"[.,;:!?()\"'«»\-–—]")
+
+
 def _normalize(value: object) -> str:
-    return " ".join(str(value).strip().casefold().split())
+    text = _PUNCTUATION_RE.sub(" ", str(value))
+    return " ".join(text.strip().casefold().split())
 
 
 def _score_mc(item: dict, submitted: object, *, locale: str = "ru") -> int:
@@ -59,13 +70,81 @@ def _score_classification(item: dict, submitted: object, *, locale: str = "ru") 
     return 1 if got == expected else 0
 
 
+def _levenshtein(a: str, b: str) -> int:
+    """Classic O(len(a)*len(b)) edit distance, single-row DP. Only ever
+    called on individual normalized words (a handful of characters each),
+    never whole phrases — cheap enough with no memoization/library needed."""
+    if a == b:
+        return 0
+    if not a or not b:
+        return max(len(a), len(b))
+    prev_row = list(range(len(b) + 1))
+    for i, ca in enumerate(a, start=1):
+        curr_row = [i] + [0] * len(b)
+        for j, cb in enumerate(b, start=1):
+            cost = 0 if ca == cb else 1
+            curr_row[j] = min(
+                prev_row[j] + 1,       # deletion
+                curr_row[j - 1] + 1,   # insertion
+                prev_row[j - 1] + cost,  # substitution
+            )
+        prev_row = curr_row
+    return prev_row[-1]
+
+
+def _word_typo_tolerance(word: str) -> int:
+    """Max edit distance still treated as "the same word, mistyped" — a
+    fixed threshold would either let short words match totally different
+    real words, or be too strict to catch a single dropped/swapped letter
+    in a long word, so the budget scales with word length instead.
+
+    Threshold 4 was tried and rejected: distance-1 on a 4-letter word turns
+    "суша" into "душа" — a real, unrelated word, not a typo — so anything
+    under 5 characters gets exact-only matching; a genuine typo on a word
+    that short just doesn't carry enough signal to safely fuzz.
+      <5 chars  -> 0 (exact only)
+      5-7 chars -> 1 (one dropped/added/swapped letter, e.g. "вещестао")
+      8+ chars  -> 2 (two, e.g. a keyboard/T9 slip plus autocorrect noise)"""
+    n = len(word)
+    if n < 5:
+        return 0
+    return 1 if n <= 7 else 2
+
+
+def _fuzzy_phrase_match(submitted_norm: str, candidate_norm: str) -> bool:
+    """Typo-tolerant phrase match used only as a fallback once exact
+    matching (both tiers) has already failed — word count must match
+    exactly (fuzzing away a whole missing/extra word would credit a
+    different, incomplete answer, not just a mistyped one) and every word
+    pair must be within that word's own typo budget."""
+    submitted_words = submitted_norm.split()
+    candidate_words = candidate_norm.split()
+    if len(submitted_words) != len(candidate_words):
+        return False
+    return all(
+        _levenshtein(sw, cw) <= _word_typo_tolerance(cw)
+        for sw, cw in zip(submitted_words, candidate_words)
+    )
+
+
 def _score_generalization(item: dict, submitted: object, *, locale: str = "ru") -> int:
     if not isinstance(submitted, str) or not submitted.strip():
         return 0
     norm = _normalize(submitted)
-    if norm in {_normalize(s) for s in pick_locale(item["score_2"], locale)}:
+    score_2_variants = [_normalize(s) for s in pick_locale(item["score_2"], locale)]
+    score_1_variants = [_normalize(s) for s in pick_locale(item["score_1"], locale)]
+
+    if norm in score_2_variants:
         return 2
-    if norm in {_normalize(s) for s in pick_locale(item["score_1"], locale)}:
+    if norm in score_1_variants:
+        return 1
+    # Fuzzy fallback (typo/autocorrect tolerance, Ф3.5 revision) — only
+    # reached once neither tier matched exactly, so this can only ever ADD
+    # credit an exact-match respondent would already have gotten, never
+    # take any away.
+    if any(_fuzzy_phrase_match(norm, v) for v in score_2_variants):
+        return 2
+    if any(_fuzzy_phrase_match(norm, v) for v in score_1_variants):
         return 1
     return 0
 

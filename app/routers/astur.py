@@ -1,6 +1,8 @@
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,18 +20,27 @@ from app.schemas.astur import (
 from app.services import assessment_shared, astur_service
 
 router = APIRouter(tags=["astur"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("/astur/content", response_model=AsturContentResponse)
 async def get_astur_content(
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> AsturContentResponse:
     """PRO-338 Ф3.6 prerequisite — static content, same for every user, no
     `assessment_id` in the path (unlike start/submit): the frontend fetches
     this once to render all 7 subtests, independent of which assessment
     the eventual submits target. Mirrors Ф2.6's own `GET .../belbin/content`
     gap-fix for the same reason: nothing exposed item text before this."""
-    return AsturContentResponse(**astur_service.build_content())
+    try:
+        return AsturContentResponse(**await astur_service.build_content(db))
+    except (ValidationError, TypeError, AttributeError):
+        # An admin content override with a bad shape must not take the
+        # whole test down for every real test-taker — fall back to the
+        # bank's own content until the override is fixed.
+        logger.exception("Malformed ASTUR content override, falling back to bank default")
+        return AsturContentResponse(**await astur_service.build_content(db, ignore_override=True))
 
 
 async def _require_owned_assessment(

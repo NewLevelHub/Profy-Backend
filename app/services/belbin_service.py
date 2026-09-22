@@ -21,10 +21,61 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import BelbinThresholds, belbin_thresholds
-from app.i18n import pick_locale
+from app.i18n import pick_locale, get_locale
 from app.models.belbin_run import BelbinRun
 from app.services import ipsative_battery
-from scripts.belbin_bank import BLOCK_TOTAL, ITEM_ROLE, ROLES, SECTIONS
+from scripts.belbin_bank import BLOCK_TOTAL, ITEM_ROLE, ROLES, SECTIONS, INSTRUCTION
+
+
+async def get_belbin_config(db: AsyncSession, ignore_override: bool = False) -> dict:
+    base = {
+        "instruction": INSTRUCTION,
+        "block_total": BLOCK_TOTAL,
+        "sections": SECTIONS,
+        "roles": ROLES,
+        "item_role": ITEM_ROLE,
+    }
+
+    if ignore_override:
+        return base
+
+    from app.services.admin_content_service import get_content_override
+    override = await get_content_override(db, "belbin")
+
+    if override:
+        locale = get_locale()
+        override_data = override.content_ru if locale == "ru" else override.content_kk
+        if not override_data and locale == "kk":
+            override_data = override.content_ru
+        if override_data:
+            base.update(override_data)
+
+    return base
+
+
+async def build_content(db: AsyncSession, ignore_override: bool = False) -> dict:
+    """`ignore_override` is the fallback path the router takes when a saved
+    override doesn't resolve (admin's visual editor saved a section missing
+    a locale) — rather than 500ing for every real test-taker until someone
+    fixes the override, it re-renders straight from the bank."""
+    config = await get_belbin_config(db, ignore_override=ignore_override)
+            
+    # Prepare sections for response
+    sections_response = [
+        {
+            "section": section["section"],
+            "title": pick_locale(section.get("title", "")),
+            "items": [
+                {"id": item["id"], "text": pick_locale(item.get("text", ""))} for item in section["items"]
+            ],
+        }
+        for section in config["sections"]
+    ]
+    return {
+        "instruction": pick_locale(config["instruction"]),
+        "block_total": config["block_total"],
+        "sections": sections_response,
+    }
 
 
 async def get_latest_run(assessment_id: uuid.UUID, db: AsyncSession) -> BelbinRun | None:
@@ -55,11 +106,12 @@ async def submit_run(
     Raises HTTPException(422) via `validate_allocation` on the first block
     that doesn't sum to exactly `BLOCK_TOTAL` across exactly that section's
     8 item ids."""
-    for section, block in zip(SECTIONS, allocations, strict=True):
+    config = await get_belbin_config(db)
+    for section, block in zip(config["sections"], allocations, strict=True):
         expected_items = [item["id"] for item in section["items"]]
-        ipsative_battery.validate_allocation(block, expected_items=expected_items, total=BLOCK_TOTAL)
+        ipsative_battery.validate_allocation(block, expected_items=expected_items, total=config["block_total"])
 
-    role_totals = ipsative_battery.aggregate_by_key(allocations, ITEM_ROLE)
+    role_totals = ipsative_battery.aggregate_by_key(allocations, config["item_role"])
 
     run = BelbinRun(
         assessment_id=assessment_id,
@@ -73,7 +125,7 @@ async def submit_run(
     return run
 
 
-def role_evidence(run: BelbinRun) -> dict[str, dict]:
+async def role_evidence(db: AsyncSession, run: BelbinRun) -> dict[str, dict]:
     """Per-role breakdown of the student's own point allocations across all
     7 blocks — the ipsative-battery equivalent of
     riasec_service.answer_evidence's "what is this score actually made of"
@@ -92,18 +144,26 @@ def role_evidence(run: BelbinRun) -> dict[str, dict]:
     always has exactly 7 (`submit_run` enforces it), so this only matters
     for incomplete data, which should degrade the evidence, not the whole
     report section."""
-    evidence: dict[str, dict] = {role: {"points_by_block": [], "items": []} for role in ROLES}
-    for i, section in enumerate(SECTIONS):
+    config = await get_belbin_config(db)
+    evidence: dict[str, dict] = {role: {"points_by_block": [], "items": []} for role in config["roles"]}
+    for i, section in enumerate(config["sections"]):
         block = run.allocations[i] if i < len(run.allocations) else {}
         for item in section["items"]:
             role = item["role"]
             points = block.get(item["id"], 0)
-            evidence[role]["points_by_block"].append(points)
-            evidence[role]["items"].append({
-                "block": section["section"],
-                "text": pick_locale(item["text"]),
-                "points": points,
-            })
+            if role in evidence:
+                evidence[role]["items"].append({
+                    "block": section["section"],
+                    "text": pick_locale(item["text"]),
+                    "points": points,
+                })
+
+    for role, role_data in evidence.items():
+        # Derive per-block totals for this role from the items we just grouped
+        by_block = {item["block"]: 0 for item in role_data["items"]}
+        for item in role_data["items"]:
+            by_block[item["block"]] += item["points"]
+        role_data["points_by_block"] = list(by_block.values())
     return evidence
 
 
