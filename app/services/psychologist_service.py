@@ -41,13 +41,13 @@ from app.schemas.psychologist import (
     PsychologistReportResponse,
     PsychologistStudentDetailResponse,
     PsychologistStudentListItem,
+    PsychologistTestResultsResponse,
 )
 from app.schemas.psychologist_result import (
     PsychologistResultDetailResponse,
     PsychologistResultPatch,
     PsychologistReviewQueueItem,
 )
-from app.schemas.result_v2 import ResultResponseV2
 from app.services import (
     admin_service,
     assessment_shared,
@@ -312,31 +312,42 @@ async def get_assigned_student_detail(
     return _to_psychologist_detail(detail)
 
 
-async def get_student_report(
+async def get_assigned_student_test_results(
     db: AsyncSession,
     *,
     psychologist_id: uuid.UUID,
     student_id: uuid.UUID,
     assessment_id: uuid.UUID,
-    viewer: User,
-) -> ResultResponseV2:
-    """The student's full /result v2 report. `viewer` is the psychologist, so
-    report_service.psych_sections_for → True and the validity / psychoemotional
-    sections are attached (a student never sees these on their own
-    /result)."""
+    viewer_role: UserRole,
+) -> PsychologistTestResultsResponse:
+    """Pure test-results surface for one assessment: the same 7 instruments
+    `get_assigned_student_report` bundles into `new_tests`/`report.
+    psychoemotional`, flattened into one narrative-free payload — no
+    summary/careers/strength_cards/personality_notes from the student-shape
+    report. Same auth/lookup contract as `get_assigned_student_report`
+    (ValueError → 404 in the router)."""
     await _require_assigned_student(
         db, psychologist_id=psychologist_id, student_id=student_id
     )
-
-    owns = await db.execute(
-        select(Assessment.id)
-        .join(Profile, Assessment.profile_id == Profile.id)
-        .where(Assessment.id == assessment_id, Profile.user_id == student_id)
+    await _require_student_assessment(
+        db, student_id=student_id, assessment_id=assessment_id
     )
-    if owns.scalar_one_or_none() is None:
-        raise ValueError("Assessment not found")
-
-    return await report_service.build_report(assessment_id, db, viewer=viewer)
+    result = await report_service.get_report_with_analysis(assessment_id, db, viewer_role=viewer_role)
+    if result is None:
+        raise ValueError("Report not found")
+    report, analysis = result
+    new_tests = await new_tests_report_service.build_new_tests_sections(
+        analysis, assessment_id=assessment_id, db=db
+    )
+    return PsychologistTestResultsResponse(
+        professional_types=new_tests.professional_types,
+        team_role=new_tests.team_role,
+        temperament=new_tests.temperament,
+        intelligence=new_tests.intelligence,
+        aspiration_level=new_tests.aspiration_level,
+        empathy_confidence=new_tests.empathy_confidence,
+        psychoemotional=report.psychoemotional,
+    )
 
 
 async def create_note(
