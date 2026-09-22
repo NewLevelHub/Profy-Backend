@@ -93,20 +93,20 @@ async def test_get_unknown_student_returns_404(
     assert response.status_code == 404
 
 
-async def test_get_student_report_requires_assignment(
+async def test_get_student_test_results_requires_assignment(
     client: httpx.AsyncClient,
     psychologist_headers: dict[str, str],
     test_user: User,
 ) -> None:
     # No assignment created — must 404 before the assessment lookup even runs.
     response = await client.get(
-        f"/api/v1/psychologist/students/{test_user.id}/result/{uuid.uuid4()}",
+        f"/api/v1/psychologist/students/{test_user.id}/assessments/{uuid.uuid4()}/test-results",
         headers=psychologist_headers,
     )
     assert response.status_code == 404
 
 
-async def test_get_student_report_unknown_assessment_404(
+async def test_get_student_test_results_unknown_assessment_404(
     client: httpx.AsyncClient,
     admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
@@ -124,7 +124,7 @@ async def test_get_student_report_unknown_assessment_404(
     assert created.status_code == 201
 
     response = await client.get(
-        f"/api/v1/psychologist/students/{test_user.id}/result/{uuid.uuid4()}",
+        f"/api/v1/psychologist/students/{test_user.id}/assessments/{uuid.uuid4()}/test-results",
         headers=psychologist_headers,
     )
     assert response.status_code == 404

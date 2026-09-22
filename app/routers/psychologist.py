@@ -26,13 +26,13 @@ from app.schemas.psychologist import (
     PsychologistReportResponse,
     PsychologistStudentDetailResponse,
     PsychologistStudentListItem,
+    PsychologistTestResultsResponse,
 )
 from app.schemas.psychologist_result import (
     PsychologistResultDetailResponse,
     PsychologistResultPatch,
     PsychologistReviewQueueItem,
 )
-from app.schemas.result_v2 import ResultResponseV2, ResultV2Schema
 from app.services import extended_block_service, psychologist_service
 from app.services.psychologist_service import (
     ResultAlreadyPublishedError,
@@ -169,31 +169,6 @@ async def get_student(
 
 
 @router.get(
-    "/students/{student_id}/result/{assessment_id}",
-    response_model=ResultV2Schema,
-)
-async def get_student_report(
-    student_id: uuid.UUID,
-    assessment_id: uuid.UUID,
-    current_user: User = Depends(_require_psychologist),
-    db: AsyncSession = Depends(get_db),
-) -> ResultResponseV2:
-    """The student's full RIASEC / Big Five / (Люшер) психоэмоциональный /
-    достоверность report — psych-block sections included because the viewer
-    is a psychologist."""
-    try:
-        return await psychologist_service.get_student_report(
-            db,
-            psychologist_id=current_user.id,
-            student_id=student_id,
-            assessment_id=assessment_id,
-            viewer=current_user,
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-
-
-@router.get(
     "/students/{student_id}/notes",
     response_model=list[PsychologistNoteItem],
 )
@@ -259,6 +234,32 @@ async def get_student_assessment_report(
 ) -> PsychologistReportResponse:
     try:
         return await psychologist_service.get_assigned_student_report(
+            db,
+            psychologist_id=current_user.id,
+            student_id=student_id,
+            assessment_id=assessment_id,
+            viewer_role=current_user.role,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.get(
+    "/students/{student_id}/assessments/{assessment_id}/test-results",
+    response_model=PsychologistTestResultsResponse,
+)
+async def get_student_assessment_test_results(
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+    current_user: User = Depends(_require_psychologist_or_admin),
+    db: AsyncSession = Depends(get_db),
+) -> PsychologistTestResultsResponse:
+    """Pure test-results surface: the 7 instruments alone, no narrative
+    report content mixed in (contrast with `report`, above, which bundles
+    `new_tests` together with the full student-shape RIASEC/BigFive/roadmap
+    report)."""
+    try:
+        return await psychologist_service.get_assigned_student_test_results(
             db,
             psychologist_id=current_user.id,
             student_id=student_id,
