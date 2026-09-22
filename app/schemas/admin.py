@@ -155,6 +155,30 @@ class AdminMotivationResponseItem(BaseModel):
     created_at: datetime
 
 
+class AdminAsturRunResponse(BaseModel):
+    id: uuid.UUID
+    raw_score: int | None = None
+    spn_group: int | None = None
+    answers: dict
+    lability_answers: dict
+    subtest_scores: dict
+    created_at: datetime
+
+
+class AdminBelbinRunResponse(BaseModel):
+    id: uuid.UUID
+    allocations: list[dict]
+    role_totals: dict
+    created_at: datetime
+
+
+class AdminPsychoemotionalRunResponse(BaseModel):
+    id: uuid.UUID
+    checkin: dict
+    metrics: dict
+    created_at: datetime
+
+
 class AdminAssessmentDetailResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
@@ -168,6 +192,9 @@ class AdminAssessmentDetailResponse(BaseModel):
     completed_at: datetime | None = None
     responses: list[AdminResponseItem] = []
     motivation_responses: list[AdminMotivationResponseItem] = []
+    astur_runs: list[AdminAsturRunResponse] = []
+    belbin_runs: list[AdminBelbinRunResponse] = []
+    psychoemotional_runs: list[AdminPsychoemotionalRunResponse] = []
     analysis_result: AdminAnalysisResultResponse | None = None
     roadmap: RoadmapResponse | None = None
 
@@ -258,3 +285,20 @@ class PsychologistAssignmentListResponse(BaseModel):
     total: int
     page: int
     limit: int
+
+
+class AdminContentOverrideRequest(BaseModel):
+    content_ru: dict | list | None = None
+    content_kk: dict | list | None = None
+
+
+class AdminContentOverrideResponse(BaseModel):
+    id: uuid.UUID
+    instrument: str
+    content_ru: dict | list | None
+    content_kk: dict | list | None
+    # None when no override has been saved for this instrument yet — the
+    # GET endpoint returns a placeholder row rather than 404ing so the
+    # admin editor always has something to render.
+    created_at: datetime | None
+    updated_at: datetime | None

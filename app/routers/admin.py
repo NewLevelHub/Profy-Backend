@@ -23,6 +23,8 @@ from app.schemas.admin import (
     PsychologistAssignmentCreate,
     PsychologistAssignmentItem,
     PsychologistAssignmentListResponse,
+    AdminContentOverrideRequest,
+    AdminContentOverrideResponse,
 )
 from app.schemas.admin_university import (
     AdminUniversityCountry,
@@ -619,6 +621,49 @@ async def update_motivation_statement(
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.get("/belbin-schema")
+async def get_belbin_schema(
+    _: User = Depends(get_current_admin_user),
+):
+    return admin_content_service.get_belbin_schema()
+
+
+@router.get("/astur-schema")
+async def get_astur_schema(
+    _: User = Depends(get_current_admin_user),
+):
+    return admin_content_service.get_astur_schema()
+
+
+@router.get("/content-overrides/{instrument}", response_model=AdminContentOverrideResponse)
+async def get_content_override(
+    instrument: str,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    override = await admin_content_service.get_content_override(db, instrument)
+    if not override:
+        return AdminContentOverrideResponse(
+            id=uuid.uuid4(),
+            instrument=instrument,
+            content_ru=None,
+            content_kk=None,
+            created_at=None,
+            updated_at=None
+        )
+    return override
+
+
+@router.put("/content-overrides/{instrument}", response_model=AdminContentOverrideResponse)
+async def set_content_override(
+    instrument: str,
+    data: AdminContentOverrideRequest,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await admin_content_service.set_content_override(db, instrument, data)
 
 
 @router.get("/motivation-pairs", response_model=AdminMotivationPairListResponse)

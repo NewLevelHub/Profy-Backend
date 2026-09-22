@@ -8,6 +8,9 @@ from app.i18n import DEFAULT_LOCALE, pick_locale
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
+from app.models.astur_run import AsturRun
+from app.models.belbin_run import BelbinRun
+from app.models.psychoemotional_run import PsychoEmotionalRun
 from app.models.motivation import MotivationResponse
 from app.models.product_feedback import ProductFeedback
 from app.models.profile import AgeGroup, Profile
@@ -18,6 +21,9 @@ from app.models.user_response import UserResponse
 from app.schemas.admin import (
     AdminAssessmentDetailResponse,
     AdminAssessmentSummary,
+    AdminAsturRunResponse,
+    AdminBelbinRunResponse,
+    AdminPsychoemotionalRunResponse,
     AdminFeedbackListItem,
     AdminFeedbackListResponse,
     AdminFeedbackStatsResponse,
@@ -573,6 +579,51 @@ async def get_assessment_detail(
     )
     total_questions = total_questions_result.scalar_one()
 
+    astur_runs_result = await db.execute(
+        select(AsturRun)
+        .where(AsturRun.assessment_id == assessment.id)
+        .order_by(AsturRun.created_at)
+    )
+    astur_runs = [
+        AdminAsturRunResponse(
+            id=run.id,
+            raw_score=run.raw_score,
+            spn_group=run.spn_group,
+            answers=run.answers,
+            lability_answers=run.lability_answers,
+            subtest_scores=run.subtest_scores,
+            created_at=run.created_at,
+        ) for run in astur_runs_result.scalars().all()
+    ]
+
+    belbin_runs_result = await db.execute(
+        select(BelbinRun)
+        .where(BelbinRun.assessment_id == assessment.id)
+        .order_by(BelbinRun.created_at)
+    )
+    belbin_runs = [
+        AdminBelbinRunResponse(
+            id=run.id,
+            allocations=run.allocations,
+            role_totals=run.role_totals,
+            created_at=run.created_at,
+        ) for run in belbin_runs_result.scalars().all()
+    ]
+
+    psycho_runs_result = await db.execute(
+        select(PsychoEmotionalRun)
+        .where(PsychoEmotionalRun.assessment_id == assessment.id)
+        .order_by(PsychoEmotionalRun.created_at)
+    )
+    psycho_runs = [
+        AdminPsychoemotionalRunResponse(
+            id=run.id,
+            checkin=run.checkin,
+            metrics=run.metrics,
+            created_at=run.created_at,
+        ) for run in psycho_runs_result.scalars().all()
+    ]
+
     return AdminAssessmentDetailResponse(
         id=assessment.id,
         user_id=user.id,
@@ -586,6 +637,9 @@ async def get_assessment_detail(
         completed_at=assessment.completed_at,
         responses=responses,
         motivation_responses=motivation_responses,
+        astur_runs=astur_runs,
+        belbin_runs=belbin_runs,
+        psychoemotional_runs=psycho_runs,
         analysis_result=analysis_result,
         roadmap=roadmap_result,
     )

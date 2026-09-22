@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
 from app.i18n import DEFAULT_LOCALE, pick_locale
+from app.models.content_override import ContentOverride
 from app.models.direction import LOCALIZED_FIELDS as DIRECTION_LOCALIZED_FIELDS
 from app.models.direction import Direction
 from app.models.motivation import LOCALIZED_FIELDS as MOTIVATION_STATEMENT_LOCALIZED_FIELDS
@@ -18,6 +19,7 @@ from app.models.question import Question, QuestionInstrument
 from app.models.question_pair import LOCALIZED_FIELDS as QUESTION_PAIR_LOCALIZED_FIELDS
 from app.models.question_pair import QuestionPair
 from app.models.university import University
+from scripts.belbin_bank import SECTIONS as BELBIN_SECTIONS
 from app.schemas.admin_content import (
     AdminDirectionDetail,
     AdminDirectionListItem,
@@ -824,3 +826,50 @@ async def clear_direction_overrides(
         db, Direction, direction_id, "Direction not found", field
     )
     return await _build_direction_detail(db, direction)
+
+
+def get_belbin_schema() -> dict:
+    return {"sections": BELBIN_SECTIONS}
+
+
+def get_astur_schema() -> dict:
+    """Bilingual, unresolved bank content for the admin ASTUR editor — the
+    same per-subtest/per-item shape `astur_service._resolve_subtests`
+    merges an override into, restricted to the fields real test-takers
+    ever see (`_PUBLIC_ITEM_FIELDS`) — never the `answer`/scoring keys, so
+    the editor structurally cannot expose or edit them."""
+    from app.services.astur_service import _PUBLIC_ITEM_FIELDS, _bank_subtests
+
+    subtests = []
+    for subtest in _bank_subtests():
+        public_fields = _PUBLIC_ITEM_FIELDS[subtest["key"]]
+        subtests.append({
+            **{k: subtest[k] for k in ("number", "key", "name", "instruction", "item_count", "scored")},
+            "items": [
+                {field: item[field] for field in public_fields}
+                for item in subtest["items"]
+            ],
+        })
+    return {"subtests": subtests}
+
+
+async def get_content_override(db: AsyncSession, instrument: str):
+    result = await db.execute(select(ContentOverride).where(ContentOverride.instrument == instrument))
+    return result.scalar_one_or_none()
+
+
+async def set_content_override(db: AsyncSession, instrument: str, data: "AdminContentOverrideRequest"):
+    row = await get_content_override(db, instrument)
+    if not row:
+        row = ContentOverride(instrument=instrument)
+        db.add(row)
+    
+    payload = data.model_dump(exclude_unset=True)
+    if "content_ru" in payload:
+        row.content_ru = payload["content_ru"]
+    if "content_kk" in payload:
+        row.content_kk = payload["content_kk"]
+
+    await db.commit()
+    await db.refresh(row)
+    return row

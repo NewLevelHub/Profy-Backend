@@ -101,7 +101,7 @@ async def _build_team_role_section(
             supporting_roles=interpretation.supporting_roles,
             avoidance_roles=interpretation.avoidance_roles,
             methodological_note=_BELBIN_METHODOLOGICAL_NOTE,
-            role_evidence=belbin_service.role_evidence(run),
+            role_evidence=await belbin_service.role_evidence(db, run),
         )
     except Exception:
         logger.exception("Failed to build team_role section for assessment %s", assessment_id)
