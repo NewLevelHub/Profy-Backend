@@ -3,7 +3,8 @@ Seed script: populate the `questions` table with the 57 `eysenck` items
 from eysenck_bank.py (content-only — `scale`/`keyed` live in the bank file
 for Ф1.5's future scoring service to resolve via `Question.order`, not a
 DB column, same as professional_types_service.py). PRO-338 Ф0.8/Ф1.4,
-pattern 1:1 with seed_lie_scale_questions.py (PRO-298).
+pattern 1:1 with seed_riasec_questions.py (it originally mirrored the lie-scale
+seed, removed in PRO-388).
 
 Run inside Docker, AFTER seed_professional_types_questions.py (shares the
 same `order` numbering space, contiguous within the "Дополнительные тесты"

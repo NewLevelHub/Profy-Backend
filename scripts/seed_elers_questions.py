@@ -3,7 +3,8 @@ Seed script: populate the `questions` table with the 41 canonical `elers`
 items from elers_bank.py (content-only — `keyed` lives in the bank file for
 the future scoring service to resolve via `Question.order`, not a DB
 column, same as eysenck_service.py). PRO-338 Ф0.8/Ф1.7, pattern 1:1 with
-seed_lie_scale_questions.py (PRO-298).
+seed_riasec_questions.py (it originally mirrored the lie-scale seed, removed
+in PRO-388).
 
 Run inside Docker, AFTER seed_eysenck_questions.py (shares the same `order`
 numbering space, contiguous within the "Дополнительные тесты" sub-section

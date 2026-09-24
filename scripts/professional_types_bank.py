@@ -5,7 +5,7 @@
 Тикеты-новые-тесты/02-Фаза1-Лёгкие-тесты.md §1.А Ф1.1 ("не заблокировано —
 весь контент уже полон в спецификации").
 
-Pattern 1:1 with riasec_question_bank.py/lie_scale_bank.py: this file is
+Pattern 1:1 with riasec_question_bank.py: this file is
 pure content data, no DB access — scripts/seed_professional_types_questions.py
 does the seeding.
 

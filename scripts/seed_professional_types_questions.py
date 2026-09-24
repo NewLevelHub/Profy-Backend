@@ -4,7 +4,8 @@ professional_types_bank.py — the 5-item `professional_types_abilities`
 Likert block (QUESTIONS) AND the 20 forced-choice "интересы" pairs (PAIRS):
 40 dedicated backing `questions` rows (instrument='professional_types') +
 20 `question_pairs` rows. PRO-338 Ф1.1, pattern 1:1 with
-seed_lie_scale_questions.py (PRO-298) for the Likert half, and with
+seed_riasec_questions.py for the Likert half (originally the lie-scale seed,
+removed in PRO-388), and with
 seed_question_pairs.py for the pairs half — self-contained here rather than
 routed through that shared script, since every other single-instrument
 Likert bank (RIASEC/BigFive/MI) already owns its own seed script end-to-end
