@@ -13,10 +13,9 @@ class University(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    # Stable identifier from university-data/*.py — lets seed_kz_universities.py
-    # upsert idempotently. Nullable because the older hand-written entries in
-    # seed_universities.py predate this column; those get backfilled by slug
-    # via the LEGACY_NAME_BY_SLUG alias map when seed_kz_universities.py runs.
+    # Stable identifier — build_universities.py upserts by it from
+    # scripts/data/university_snapshot.clean.json. Nullable because the
+    # oldest hand-written entries predate this column.
     slug: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True, index=True)
     # Canonical external ID from the Research Organization Registry (ror.org).
     # Populated for foreign universities looked up via scripts/find_ror_id.py
@@ -25,16 +24,15 @@ class University(Base):
     # across spelling variants of the same institution). See docs/university-module-fix-plan.md B1.
     ror_id: Mapped[str | None] = mapped_column(String(50), nullable=True, unique=True, index=True)
     # Official 3-digit code from the MES RK grant-competition registry
-    # (scripts/data/ovpo_registry_2026.json, transcribed from the "Список
-    # обладателей образовательных грантов" PDF appendix). Canonical
+    # (transcribed from the "Список обладателей образовательных грантов"
+    # PDF appendix; values now ship in the university snapshot). Canonical
     # identifier for reconciling a University row against that PDF's
     # admission-score data — replaces fuzzy name matching (LEGACY_NAME_BY_SLUG),
     # which is why ~27 of 64 KZ universities never got grant-score data despite
     # the PDF actually covering them (see docs/ovpo-registry-gap-analysis.md).
     ovpo_code: Mapped[str | None] = mapped_column(String(10), nullable=True, unique=True, index=True)
-    # Already present in university-data/*.py source records but previously
-    # discarded by seed_kz_universities.py — restored so the researched data
-    # (abbreviation, name variants, campus address) isn't thrown away.
+    # Researched data (abbreviation, name variants, campus address) from the
+    # original KZ source records, kept rather than thrown away.
     short_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     aliases: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
     location: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -54,6 +52,18 @@ class University(Base):
     # columns above since those are Integer and can't hold a status string.
     uniranks_note: Mapped[str | None] = mapped_column(String(50), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # KZ-501: {"kk": "..."} — per-locale override of `description` (which holds
+    # the `ru` text). Nullable, filled incrementally by KZ-504's batch
+    # translation; the read side falls back to `description` (ru) when the
+    # requested locale key is absent, so an empty map changes no response.
+    # `ru` is never duplicated here.
+    description_i18n: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    # {"kk": "..."} — per-locale override of `name` (which holds the `ru`
+    # official name, KZ-206). Filled for Kazakhstan universities only, by
+    # scripts/apply_catalog_descriptions_kk.py from the `university_names`
+    # section of catalog_descriptions_kk.json. Same fallback rule as
+    # description_i18n; `ru` is never duplicated here.
+    name_i18n: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

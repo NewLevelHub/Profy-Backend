@@ -2,7 +2,7 @@ import uuid
 
 from pydantic import BaseModel
 
-from app.models.question import BigFiveDomain, HollandType, MIType, QuestionInstrument
+from app.models.question import BigFiveDomain, HollandType, QuestionInstrument
 
 
 class QuestionPairOption(BaseModel):
@@ -11,7 +11,6 @@ class QuestionPairOption(BaseModel):
     icon: str | None
     riasec_type: HollandType | None
     bigfive_domain: BigFiveDomain | None
-    mi_category: MIType | None
 
     model_config = {"from_attributes": True}
 
@@ -22,8 +21,7 @@ class QuestionPairItem(BaseModel):
     frame: str | None
     # min(option_a's, option_b's) underlying Question.order — lets the
     # frontend interleave a pair into its position in the plain-Likert
-    # sequence (middle only; junior's screen ignores it and just uses
-    # pair_index order). See buildDisplaySequence.ts.
+    # sequence. See buildDisplaySequence.ts.
     display_order: int
     option_a: QuestionPairOption
     option_b: QuestionPairOption

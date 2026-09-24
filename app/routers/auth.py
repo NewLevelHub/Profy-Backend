@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_user
+from app.i18n import KNOWN_LOCALES, normalize_locale
 from app.models.user import User
 from app.schemas.auth import (
     ForgotPasswordRequest,
@@ -15,6 +16,7 @@ from app.schemas.auth import (
     ResendVerificationRequest,
     ResetPasswordRequest,
     TokenResponse,
+    UpdateMeRequest,
     UserResponse,
     VerifyEmailRequest,
     VerifyResetCodeRequest,
@@ -64,8 +66,12 @@ async def _check_rate_limit(key: str, limit: int, window: int) -> None:
 async def register(body: RegisterRequest, request: Request, db: AsyncSession = Depends(get_db)):
     client_ip = _client_ip(request)
     await _check_rate_limit(f"register_ip:{client_ip}", _REGISTER_IP_LIMIT, _REGISTER_IP_WINDOW)
+    # Seed the new user's UI locale from Accept-Language. KNOWN_LOCALES (not the
+    # runtime gate) so a "kk" browser preference is preserved for KZ-603; the
+    # user can still change it via PATCH /auth/me.
+    locale = normalize_locale(request.headers.get("accept-language"), allowed=KNOWN_LOCALES)
     try:
-        return await auth_service.register(body.email, body.password, db)
+        return await auth_service.register(body.email, body.password, db, locale=locale)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
@@ -129,6 +135,26 @@ async def resend_verification(body: ResendVerificationRequest, db: AsyncSession 
 
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+@router.patch("/me", response_model=UserResponse)
+async def update_me(
+    body: UpdateMeRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    locale_changed = current_user.locale != body.locale
+    current_user.locale = body.locale
+    current_user.locale_explicit = True
+    await db.commit()
+    await db.refresh(current_user)
+    if locale_changed:
+        # The report is generated in the owner's language (KZ-403/405); drop
+        # the cached owner-locale pointer + per-locale report cache so the
+        # next /result read resolves the new language (KZ-406).
+        from app.services import report_service
+        await report_service.invalidate_owner_locale_cache(current_user.id, db)
     return current_user
 
 

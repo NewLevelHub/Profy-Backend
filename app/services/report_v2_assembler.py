@@ -23,24 +23,25 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from app.models.profile import AgeGroup
+from app.i18n.catalog import tr
 from app.schemas.report_narrative import ReportNarrativeOutput
 from app.schemas.report_narrative_context import ReportNarrativeContext
 from app.schemas.result_v2 import (
-    MiResultResponse,
     ResultResponseV2,
     RiasecResultResponse,
     StudentCareer,
+    StudentInterestCombination,
+    StudentInterestDetails,
     StudentInterestMapItem,
+    StudentInterestQuote,
     StudentPersonalityNote,
     StudentStrengthCard,
     StudentThinkingStyleNote,
 )
 from app.services import bigfive_content
-from app.services.mi_content import MI_ACTIVITIES, MI_LABELS
-from app.services.mi_service import MI_ORDER
-from app.services.riasec_content import NEUTRAL_CAREER_WHY_VARIANTS, NEUTRAL_TRY_NOW, RIASEC_LABELS
-from app.services.riasec_service import HOLLAND_ORDER, direction_letter_weight
+from app.services.riasec_content import neutral_career_why_variants, neutral_try_now, riasec_labels
+from app.services.riasec_explanations import COMBINATION_TEXTS, QUOTE_MIX, TYPE_EXPLANATIONS
+from app.services.riasec_service import HOLLAND_ORDER, consistency, direction_letter_weight
 from app.services.scoring_levels import LEVEL_HIGH_MIN, LEVEL_MEDIUM_MIN
 
 # TZ_Profi.md §16.6: "разброс между максимальной и минимальной категорией
@@ -51,25 +52,21 @@ _FLAT_PROFILE_THRESHOLD = 25.0
 
 _GOOD_TIER_MAX_RANK = 3
 
-# Career matching (career_match_score, riasec_service.py) runs purely on the
-# RIASEC top-3 code — it has no way to know about subjects/artifacts, and a
-# flat profile means that top-3 is itself close to noise (the difference
-# between rank 3 and rank 4 might be a single point). Found live: a student
+# Career matching (direction_match_score / Pearson, riasec_service.py) runs on
+# the full 6-dim RIASEC profile — it has no way to know about subjects/artifacts,
+# and a flat profile means that ranking is itself close to noise (the
+# difference between rank 3 and rank 4 might be tiny). Found live: a student
 # with clear self-reported programming/robotics interest, but a flat RIASEC
 # profile (differentiation 11.5), got Архивариус/Аудитор/Бухгалтер — three
 # clerical directions with zero connection to what they'd actually told the
-# app about themselves. Redesigning career_match_score to weigh non-RIASEC
-# evidence is a real methodology change (result-quality-fixes.md §3, variant
-# C) — not done here. The mitigation is the honest disclaimer below, not a
+# app about themselves. Weighing non-RIASEC evidence into the match score is
+# a real methodology change (result-quality-fixes.md §3, variant C) — not
+# done here. The mitigation is the honest disclaimer below, not a
 # shortened/uniform-tier career list (product decision, 2026-08-17): the
 # ranking itself is still real RIASEC-derived signal even when it's a close
 # call, so a flat profile shows the same ranked top-10 as everyone else.
-_FLAT_PROFILE_ARTIFACT_NOTE = (
-    " Отдельно ты рассказал(а) о своих увлечениях в профиле — когда баллы "
-    "по разным сферам близки друг к другу, как сейчас, эти увлечения могут "
-    "точнее говорить о твоих склонностях, чем сам тест. Стоит присмотреться "
-    "и к направлениям, связанным с ними, даже если их нет в списке ниже."
-)
+# The flat-profile artifact addendum text is catalog result_v2
+# ["flat_profile_artifact_note"] (KZ-403).
 
 
 def is_flat_profile(differentiation: float) -> bool:
@@ -82,6 +79,17 @@ def _level(value: float) -> Literal["low", "medium", "high"]:
     if value >= LEVEL_MEDIUM_MIN:
         return "medium"
     return "low"
+
+
+def build_fixed_framings() -> dict[str, str]:
+    """The server-authored framing lines that carry zero personalization and
+    never come from the LLM (`disclaimer`, `exploration_note`). The schema
+    still defines them as field defaults in ru; filling the fields from the
+    catalog here is what lets a `kk` report actually show them in `kk`
+    (KZ-403 gap). Both assembly paths — fresh generation and the stored-row
+    rebuild in report_service._shape_response — merge this into `common`."""
+    t = tr("result_v2")
+    return {"disclaimer": t["disclaimer"], "exploration_note": t["exploration_note"]}
 
 
 def build_interest_map_note(items: list[StudentInterestMapItem]) -> str:
@@ -97,57 +105,107 @@ def build_interest_map_note(items: list[StudentInterestMapItem]) -> str:
     contradictory (calling out "most notable" while also saying nothing
     stands out) and useless as a highlight. That case now falls through to
     the honest flat-profile message instead."""
+    t = tr("result_v2")
     high = [i.sphere for i in items if i.level == "high"]
     if high:
-        return f"Ярко выражено: {_join_ru(high)}. Остальные сферы проявляются тише — и это нормально."
+        return t["interest_map_note_high"].format(spheres=_join(high))
     medium = [i.sphere for i in items if i.level == "medium"]
     if medium and len(medium) < len(items) / 2:
-        return (
-            f"Заметнее всего проявляется: {_join_ru(medium)} — без резких пиков, "
-            f"интересы распределены довольно ровно."
-        )
-    return (
-        "Пока сложно выделить одну явно ведущую сферу — интересы распределены "
-        "довольно ровно, и это нормально: есть время присмотреться к разным направлениям."
-    )
+        return t["interest_map_note_medium"].format(spheres=_join(medium))
+    return t["interest_map_note_flat"]
 
 
-def build_interest_map(age_group: AgeGroup, profile_scores: dict[str, float]) -> list[StudentInterestMapItem]:
-    """All 6 RIASEC spheres (middle/senior) or all 8 MI spheres (junior),
-    ranked most-to-least pronounced by score — every category, not just the
+def build_interest_map(
+    profile_scores: dict[str, float],
+    evidence: dict[str, dict] | None = None,
+) -> list[StudentInterestMapItem]:
+    """All 6 RIASEC spheres, ranked most-to-least pronounced by score — every category, not just the
     ones evidenced as a "strength" (that subset is what report_narrative's
     `interests` field covers instead, tier strong/steady; this is the
     numeric-level map). Same score-desc/canonical-index tie-break convention
-    as riasec_service.py's strengths/weaknesses ranking, just unfiltered."""
-    if age_group == AgeGroup.junior:
-        order, labels = MI_ORDER, MI_LABELS
-    else:
-        order, labels = HOLLAND_ORDER, RIASEC_LABELS
+    as riasec_service.py's strengths/weaknesses ranking, just unfiltered.
+
+    `evidence` (riasec_service.answer_evidence) adds the per-type "why this
+    level" breakdown; RIASEC only, and a type with no answers gets none."""
+    order, labels = HOLLAND_ORDER, riasec_labels()
     ranked = sorted(order, key=lambda key: (-profile_scores.get(key, 0.0), order.index(key)))
-    return [
-        StudentInterestMapItem(code=key, sphere=labels[key], level=_level(profile_scores.get(key, 0.0)))
-        for key in ranked
-    ]
+    items = []
+    for key in ranked:
+        score = profile_scores.get(key, 0.0)
+        level = _level(score)
+        details = None
+        if evidence and key in evidence:
+            details = build_interest_details(key, level, score, evidence[key])
+        items.append(StudentInterestMapItem(code=key, sphere=labels[key], level=level, details=details))
+    return items
 
 
-def build_personality_notes(is_junior: bool, personality_profile: dict[str, float]) -> list[StudentPersonalityNote]:
-    """"Твой характер" — the Big Five instrument is answered identically by
-    all three age groups (only interests/motivation branch by age), so
-    unlike interest_map this never varies by instrument, only by wording
-    (junior gets bigfive_content._NOTES_JUNIOR's short, concrete phrasing
-    instead of the adult table). Entirely deterministic, no LLM, no
+def build_interest_details(
+    code: str,
+    level: Literal["low", "medium", "high"],
+    score: float,
+    evidence: dict,
+) -> StudentInterestDetails:
+    distribution = list(evidence["distribution"])
+    liked, disliked = evidence.get("liked", []), evidence.get("disliked", [])
+    want_liked, want_disliked = QUOTE_MIX[level]
+    # Fill a short side from the other one so every type shows up to 4
+    # quotes — a leading type with a single "не нравится" still gets 4.
+    total = want_liked + want_disliked
+    take_liked = min(len(liked), max(want_liked, total - len(disliked)))
+    take_disliked = min(len(disliked), total - take_liked)
+    quotes = [StudentInterestQuote(text=t, answer="like") for t in liked[:take_liked]]
+    quotes += [StudentInterestQuote(text=t, answer="dislike") for t in disliked[:take_disliked]]
+    means, follows = TYPE_EXPLANATIONS[code][level]
+    return StudentInterestDetails(
+        answered=sum(distribution),
+        distribution=distribution,
+        likes=distribution[0] + distribution[1],
+        dislikes=distribution[3] + distribution[4],
+        score=round(score, 1),
+        means=means,
+        follows=follows,
+        quotes=quotes,
+    )
+
+
+def build_interest_combination(items: list[StudentInterestMapItem]) -> StudentInterestCombination | None:
+    """Holland hexagon relation of the two most pronounced RIASEC types
+    (`items` is already ranked). Skipped when the runner-up isn't at least
+    "medium" — pairing a leading type with an absent one explains nothing."""
+    if len(items) < 2 or items[1].level == "low":
+        return None
+    first, second = items[0], items[1]
+    relation, template = COMBINATION_TEXTS[consistency([first.code, second.code])]
+    return StudentInterestCombination(
+        codes=[first.code, second.code],
+        relation=relation,
+        text=template.format(a=first.sphere, b=second.sphere),
+    )
+
+
+def build_personality_notes(
+    personality_profile: dict[str, float],
+    overrides: dict[str, str] | None = None,
+) -> list[StudentPersonalityNote]:
+    """"Твой характер". Entirely deterministic, no LLM, no
     narrative pipeline involved — `personality_profile` is already a plain
-    5-domain float dict (report_service.py computes it once, unconditionally,
-    for every age group). Ranked most-to-least pronounced, same
+    5-domain float dict (report_service.py computes it once). Ranked most-to-least pronounced, same
     score-desc/canonical-index tie-break convention as
     build_interest_map/riasec_service.py's strengths ranking. `level` is the
     trait's band relative to the student's own five-trait average
     (bigfive_content.relative_bands), not an absolute cutoff."""
     if not personality_profile:
         return []
-    notes = bigfive_content.personality_notes_for_age(is_junior, personality_profile)
+
+    notes = bigfive_content.personality_notes(personality_profile)
+    # A psychologist's correction replaces the computed phrase for that trait
+    # only (PRO-337); traits they left alone keep the computed default.
+    for trait, text in (overrides or {}).items():
+        if trait in notes and text.strip():
+            notes[trait] = text
     bands = bigfive_content.relative_bands(personality_profile)
-    traits = list(bigfive_content.PERSONALITY_LABELS.items())
+    traits = list(bigfive_content.personality_labels().items())
     ranked = sorted(traits, key=lambda item: (-personality_profile.get(item[0], 0.0), traits.index(item)))
     return [
         StudentPersonalityNote(
@@ -190,7 +248,8 @@ def build_personality_note(personality_profile: dict[str, float]) -> str:
     spread check is needed here."""
     if not personality_profile:
         return ""
-    labels = bigfive_content.PERSONALITY_LABELS
+
+    labels = bigfive_content.personality_labels()
     bands = bigfive_content.relative_bands(personality_profile)
     high = [
         label for trait, label in labels.items()
@@ -201,45 +260,23 @@ def build_personality_note(personality_profile: dict[str, float]) -> str:
         if trait in bigfive_content.GROWTH_ELIGIBLE_TRAITS
         and bands.get(trait) == "low"
     ]
+    t = tr("result_v2")
     sentences = []
     if high and len(high) < len(labels):
-        sentences.append(
-            f"Ярко выражено: {_join_ru(high)} — это то, что тебе, скорее всего, "
-            f"даётся естественнее всего."
-        )
+        sentences.append(t["personality_note_high"].format(traits=_join(high)))
     if low and len(low) < len(bigfive_content.GROWTH_ELIGIBLE_TRAITS):
-        sentences.append(f"Есть, над чем интересно поработать: {_join_ru(low)}.")
+        sentences.append(t["personality_note_low"].format(traits=_join(low)))
     if sentences:
         return " ".join(sentences)
-    return (
-        "Черты характера выражены сбалансированно, без одной резко доминирующей — "
-        "и это нормально, у характера не обязательно должна быть одна главная черта."
-    )
+    return t["personality_note_balanced"]
 
 
-def build_exploration_activities(context: ReportNarrativeContext) -> list[str]:
-    """Always non-empty — MI never fakes career matching (TZ_Profi.md
-    §4.1), it offers activities instead. Built from the top MI categories in
-    context; if none qualified as evidence at all (an extremely flat
-    profile with nothing vetted as a "strength"), falls back to one
-    activity per category so the student still gets something safe to try
-    rather than an empty list."""
-    mi_items = [e for e in context.evidence if e.source_type == "mi_category"]
-    activities: list[str] = []
-    for item in mi_items:
-        key = item.source_id.split(":", 1)[1]
-        activities.extend(MI_ACTIVITIES.get(key, [])[:2])
-    if activities:
-        return activities
-    return [acts[0] for acts in MI_ACTIVITIES.values() if acts]
-
-
-def _join_ru(items: list[str]) -> str:
+def _join(items: list[str]) -> str:
     if not items:
         return ""
     if len(items) == 1:
         return items[0]
-    return ", ".join(items[:-1]) + " и " + items[-1]
+    return ", ".join(items[:-1]) + tr("result_v2")["list_conjunction"] + items[-1]
 
 
 def _matched_strengths_for(direction_code: str, context: ReportNarrativeContext) -> list[str]:
@@ -291,11 +328,12 @@ def build_riasec_careers(
     vetted evidence the way citing an unconfirmed RIASEC letter would.
 
     A flat profile can push most/all of the 10 cards into the no-overlap
-    fallback branch — cycling through NEUTRAL_CAREER_WHY_VARIANTS (rather
+    fallback branch — cycling through neutral_career_why_variants() (rather
     than repeating one sentence) keeps those cards from reading as
     copy-pasted; once every variant has been used once, later cards also
     get the same skills_needed[0] clause as the matched-evidence dedup
     above, so a 6th+ fallback card still reads distinct from the 1st."""
+    t = tr("result_v2")
     top = careers[:10]
     result: list[StudentCareer] = []
     seen_evidence: set[tuple[str, ...]] = set()
@@ -305,15 +343,16 @@ def build_riasec_careers(
         matched_strengths = _matched_strengths_for(holland_code, context)
         skills_needed = list(career.get("skills_needed") or [])
         if matched_strengths:
-            why = f"Совпадает с тем, что у тебя выражено: {_join_ru(matched_strengths)}."
+            why = t["career_why_match"].format(strengths=_join(matched_strengths))
             evidence_key = tuple(matched_strengths)
             if evidence_key in seen_evidence and skills_needed:
-                why += f" Именно здесь особенно пригодится: {skills_needed[0]}."
+                why += t["career_why_skill_matched"].format(skill=skills_needed[0])
             seen_evidence.add(evidence_key)
         else:
-            why = NEUTRAL_CAREER_WHY_VARIANTS[fallback_uses % len(NEUTRAL_CAREER_WHY_VARIANTS)]
-            if fallback_uses >= len(NEUTRAL_CAREER_WHY_VARIANTS) and skills_needed:
-                why += f" В этой сфере особенно ценится: {skills_needed[0]}."
+            _why_variants = neutral_career_why_variants()
+            why = _why_variants[fallback_uses % len(_why_variants)]
+            if fallback_uses >= len(_why_variants) and skills_needed:
+                why += t["career_why_skill_neutral"].format(skill=skills_needed[0])
             fallback_uses += 1
         # Direction.first_steps may hold several catalog entries, but the
         # student only ever sees one, as `try_now` — a separate "3 first
@@ -327,7 +366,7 @@ def build_riasec_careers(
             tier=_tier_for_rank(rank),
             why=why,
             matched_strengths=matched_strengths,
-            try_now=first_steps[0] if first_steps else NEUTRAL_TRY_NOW,
+            try_now=first_steps[0] if first_steps else neutral_try_now(),
             description=career.get("description") or None,
             skills_needed=skills_needed,
             subjects_to_develop=list(career.get("subjects_to_develop") or []),
@@ -346,7 +385,6 @@ def _map_thinking_notes(cards: list) -> list[StudentThinkingStyleNote]:
 def assemble_result_v2(
     *,
     assessment_id: uuid.UUID,
-    age_group: AgeGroup,
     context: ReportNarrativeContext,
     narrative: ReportNarrativeOutput,
     profile_scores: dict[str, float],
@@ -354,6 +392,7 @@ def assemble_result_v2(
     differentiation: float,
     careers: list[dict],
     created_at: datetime,
+    evidence: dict[str, dict] | None = None,
 ) -> ResultResponseV2:
     """Always succeeds, never raises, never leaves a required field empty —
     this is what makes /result return 200 with a complete v2 form
@@ -361,14 +400,15 @@ def assemble_result_v2(
     deterministic fallback (report_service decides that; this function
     doesn't care which)."""
     flat = is_flat_profile(differentiation)
-    interest_map = build_interest_map(age_group, profile_scores)
+    interest_map = build_interest_map(profile_scores, evidence)
     common = dict(
         assessment_id=assessment_id,
         summary=narrative.summary,
+        **build_fixed_framings(),
         strength_cards=_map_cards(narrative.strength_cards),
         interest_map_note=build_interest_map_note(interest_map),
         thinking_style_notes=_map_thinking_notes(narrative.thinking_style_notes),
-        personality_notes=build_personality_notes(age_group == AgeGroup.junior, personality_profile),
+        personality_notes=build_personality_notes(personality_profile),
         personality_note=build_personality_note(personality_profile),
         motivation_highlights=[e.text for e in context.evidence if e.source_type == "motivation"],
         is_flat_profile=flat,
@@ -376,18 +416,12 @@ def assemble_result_v2(
         created_at=created_at,
     )
 
-    if age_group == AgeGroup.junior:
-        return MiResultResponse(
-            **common,
-            interest_map=interest_map,
-            exploration_activities=build_exploration_activities(context),
-        )
-
     if flat and any(e.source_type == "artifact" for e in context.evidence):
-        common["summary"] = common["summary"] + _FLAT_PROFILE_ARTIFACT_NOTE
+        common["summary"] = common["summary"] + tr("result_v2")["flat_profile_artifact_note"]
 
     return RiasecResultResponse(
         **common,
         interest_map=interest_map,
+        interest_combination=build_interest_combination(interest_map),
         careers=build_riasec_careers(context, careers),
     )

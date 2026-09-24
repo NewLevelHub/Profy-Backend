@@ -6,8 +6,7 @@
 дублирует, а раскрывает «под капотом».
 
 Точка входа: `app/services/report_service.py::build_report()`.
-Всё, что ниже, относится к `AgeGroup.senior` (middle работает почти так же — общий RIASEC-путь,
-разница только в подаче текста и наборе вопросов; junior — отдельная ветка на MI, не описана здесь).
+Возрастных веток нет (PRO-425): аудитория 14–18, у всех одна и та же батарея.
 
 ---
 
@@ -17,14 +16,12 @@
 
 | Блок | Что измеряет | Кол-во | Шкала | Таблица |
 |---|---|---|---|---|
-| RIASEC | 6 категорий интересов (Holland) | все вопросы junior+middle+senior уровней (`visible_tiers`, `app/services/age_tiers.py`) | 1–5 | `questions` (instrument=`riasec`) |
+| RIASEC | 6 категорий интересов (Holland) | все вопросы банка | 1–5 | `questions` (instrument=`riasec`) |
 | Big Five | 5 черт характера (IPIP-NEO-120 Johnson), с фасетами | 120 вопросов | 1–5 | `questions` (instrument=`big_five`) |
 | Мотивация | 9 категорий (interest/challenge/helping/freedom/money/recognition/stability/creation/teamwork) | N троек по 3 утверждения (MOST/LEAST) | форс-чойс | `motivation_statements` / `motivation_responses` |
 
-Senior — единственная группа, где мотивация задаётся тройками MOST/LEAST
-(`motivation_service.py`); junior/middle отвечают на парные Хартеровские вопросы
-(`motivation_pair_service.py`) — другая таблица, другая формула, тот же итоговый шейп
-(`{категория: балл}`).
+Мотивация задаётся тройками MOST/LEAST (`motivation_service.py`), итоговый шейп —
+`{категория: балл}`.
 
 **Гейт завершённости** (`report_service._assert_assessment_complete`): отчёт не начнёт
 собираться, пока не отвечены ВСЕ вопросы RIASEC+Big Five (`assessment_shared.likert_*`)
@@ -383,11 +380,6 @@ _level(value):  ≥70 → "high"; ≥50 → "medium"; иначе → "low"
   под КОНКРЕТНУЮ выбранную профессию (не общий топ-10, а `Program.directions` JOIN по
   slug направления), сортировка: `University.ranking` (QS World) → `uniranks_world_rank`
   (KZ-рынок) → имя по алфавиту.
-- **`app/services/roadmap_builder.py`** — отдельная, более крупная ИИ-генерация (план на
-  1мес/3мес/полгода/год), с явно другим промптом под каждую цель — таблица дословных
-  формулировок уже есть в
-  [`kak-schitaetsya-rezultat.md`, раздел 5](./kak-schitaetsya-rezultat.md#а-вот-что-меняется-по-настоящему--персональный-план-roadmap).
-  За рамками этого документа (он про то, как формируется САМ результат теста).
 
 ---
 
@@ -406,8 +398,5 @@ _level(value):  ≥70 → "high"; ≥50 → "medium"; иначе → "low"
 | Запасной шаблон без ИИ | `app/services/report_narrative_fallback.py` |
 | Сборка финального ответа | `app/services/report_v2_assembler.py` |
 | Пороги high/medium/low (общие) | `app/services/scoring_levels.py` |
-| Видимость вопросов по возрасту | `app/services/age_tiers.py` |
-| Gap-анализ под программу вуза | `app/services/gap_analysis_service.py` |
 | Подбор программ вуза под профессию | `app/services/university_service.py` |
 | Блок «Фокус под твою цель» | `app/services/goal_overlay_service.py` |
-| Личный план (roadmap) | `app/services/roadmap_builder.py` |

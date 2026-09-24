@@ -6,22 +6,18 @@ this exists instead of reusing StudentContext.
 Pure function, no DB access: called from report_service.build_report with
 values it has already computed in memory (scores aren't re-fetched from a
 stored AnalysisResult, since this runs before that row exists). This is
-also why it never touches a response table regardless of which motivation
-input-flow produced its inputs — junior/middle answer Harter pairs
-(motivation_pair_service), senior answers MOST/LEAST triplets
-(motivation_service), but both are already collapsed into the same
-motivation_top/motivation_highlights shape before this function ever runs,
-so it has nothing flow-specific to know about.
+also why it never touches a response table: the motivation triplets are
+already collapsed into motivation_top/motivation_highlights before this
+function runs.
 """
 import re
 
+from app.i18n.catalog import tr
 from app.models.artifact import Artifact
-from app.models.profile import AgeGroup
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
 from app.services.bigfive_content import relative_bands
-from app.services.mi_content import MI_STRENGTH_PHRASES
-from app.services.riasec_content import RIASEC_STRENGTH_PHRASES
-from app.services.thinking_style_content import THINKING_STYLE_NOTES
+from app.services.riasec_content import riasec_strength_phrases
+from app.services.thinking_style_content import thinking_style_notes
 
 # Fixed order for deterministic top-N selection — same tie-break convention
 # as riasec_service.HOLLAND_ORDER (equal scores must not depend on dict
@@ -44,24 +40,17 @@ _TOP_THINKING_STYLES = 2
 STRENGTH_CARD_EXCLUDED_SOURCE_TYPES: frozenset[str] = frozenset({"thinking_style", "motivation", "personality"})
 
 
-def _interest_evidence(age_group: AgeGroup, strengths: list[str]) -> tuple[str, list[EvidenceItem]]:
-    """Junior's top interests are MI categories; middle/senior's are RIASEC
-    letters — never both, and never the other age group's instrument. Text
-    is the fuller *_STRENGTH_PHRASES sentence (fallback strength-card
-    material), not the bare *_LABELS type name — interest_map (all 6/8
-    spheres, not just these vetted top ones) uses the bare name instead,
-    built separately in report_fallback.py from the full profile."""
-    if age_group == AgeGroup.junior:
-        phrases, source_type, instrument = MI_STRENGTH_PHRASES, "mi_category", "mi"
-    else:
-        phrases, source_type, instrument = RIASEC_STRENGTH_PHRASES, "riasec_category", "riasec"
-
-    items = [
-        EvidenceItem(source_id=f"{instrument}:{key}", source_type=source_type, text=phrases[key])
+def _interest_evidence(strengths: list[str]) -> list[EvidenceItem]:
+    """Top RIASEC letters. Text is the fuller RIASEC_STRENGTH_PHRASES
+    sentence (fallback strength-card material), not the bare label —
+    interest_map (all 6 spheres, not just these vetted top ones) uses the
+    bare name instead, built separately from the full profile."""
+    phrases = riasec_strength_phrases()
+    return [
+        EvidenceItem(source_id=f"riasec:{key}", source_type="riasec_category", text=phrases[key])
         for key in strengths
         if key in phrases
     ]
-    return instrument, items
 
 
 def _personality_evidence(
@@ -100,14 +89,23 @@ def _thinking_style_evidence(thinking_style: dict[str, float]) -> list[EvidenceI
         key=lambda key: (-thinking_style[key], _THINKING_STYLE_ORDER.index(key)),
     )
     return [
-        EvidenceItem(source_id=f"thinking_style:{key}", source_type="thinking_style", text=THINKING_STYLE_NOTES[key])
+        EvidenceItem(source_id=f"thinking_style:{key}", source_type="thinking_style", text=thinking_style_notes()[key])
         for key in ranked[:_TOP_THINKING_STYLES]
     ]
 
 
 def _subject_evidence(subjects: list[str], source_type: str) -> list[EvidenceItem]:
+    # `name` is the canonical Russian subject string stored on the profile —
+    # keep it as the (stable, locale-independent) source_id, but show the
+    # locale-resolved name (KZ-503). `tr()` reads the locale the caller set
+    # via i18n.use_locale(); an off-list custom subject passes through as-is.
+    school_subjects = tr("subjects")["school_subjects"]
     return [
-        EvidenceItem(source_id=f"{source_type}:{name}", source_type=source_type, text=name)
+        EvidenceItem(
+            source_id=f"{source_type}:{name}",
+            source_type=source_type,
+            text=school_subjects.get(name, name),
+        )
         for name in subjects
     ]
 
@@ -158,7 +156,7 @@ def _artifact_evidence(artifacts: list[Artifact]) -> list[EvidenceItem]:
 
 # subject_liked/subject_easy/artifact are self-reported at onboarding, not
 # measured by the test — capped so they can't crowd out test-derived
-# evidence (riasec_category/mi_category/personality) in strength_cards.
+# evidence (riasec_category/personality) in strength_cards.
 # Found live: a student with 3 onboarding artifacts about programming and
 # only 1 RIASEC + 2 personality facts ended up with HALF their strength
 # cards about onboarding hobbies, and the shown careers (driven only by the
@@ -174,7 +172,6 @@ _MAX_ONBOARDING_STRENGTH_EVIDENCE = 2
 
 def build_report_narrative_context(
     *,
-    age_group: AgeGroup,
     strengths: list[str],
     personality_profile: dict[str, float],
     personality_notes: dict[str, str],
@@ -192,7 +189,7 @@ def build_report_narrative_context(
     scores, careers[].match_score, or meta.aversion — they simply aren't
     accepted here, so there's nothing for a future caller to accidentally
     forward into the LLM context."""
-    instrument, evidence = _interest_evidence(age_group, strengths)
+    evidence = _interest_evidence(strengths)
     evidence += _personality_evidence(personality_profile, personality_notes)
     evidence += _motivation_evidence(motivation_top, motivation_highlights)
     evidence += _thinking_style_evidence(thinking_style)
@@ -204,11 +201,7 @@ def build_report_narrative_context(
     )
     evidence += onboarding_evidence[:_MAX_ONBOARDING_STRENGTH_EVIDENCE]
 
-    return ReportNarrativeContext(
-        age_group=age_group.value,
-        interest_instrument=instrument,
-        evidence=evidence,
-    )
+    return ReportNarrativeContext(evidence=evidence)
 
 
 def unknown_source_ids(context: ReportNarrativeContext, claimed_ids: list[str]) -> set[str]:

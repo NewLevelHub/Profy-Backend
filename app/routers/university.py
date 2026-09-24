@@ -1,19 +1,12 @@
-import json
 import uuid
 
-import redis.asyncio as aioredis
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
 from app.database import get_db
-from app.dependencies import get_current_student_user, get_current_user, get_current_user_optional
-from app.models.analysis_result import AnalysisResult
-from app.models.assessment import Assessment, AssessmentStatus
-from app.models.profile import AgeGroup, Profile
+from app.dependencies import get_current_user, get_current_user_optional
+from app.i18n import get_locale
 from app.models.user import User
-from app.schemas.gap import GapAnalysisResponse
 from app.schemas.university import (
     ProgramBrief,
     ProgramDetail,
@@ -21,12 +14,8 @@ from app.schemas.university import (
     UniversityDetail,
     UniversityListResponse,
 )
-from app.services import assessment_service
-from app.services.artifact_service import get_artifacts
-from app.services.gap_analysis_service import analyze_gap, to_response
 from app.services.university_service import (
     add_favorite,
-    get_program_by_id,
     get_program_detail,
     get_university_for_user,
     list_universities,
@@ -34,18 +23,6 @@ from app.services.university_service import (
     remove_favorite,
     search_programs_for_user,
 )
-
-GAP_CACHE_TTL = 60 * 60  # 1 hour
-
-_redis: aioredis.Redis | None = None
-
-
-def _get_redis() -> aioredis.Redis:
-    global _redis
-    if _redis is None:
-        _redis = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
-    return _redis
-
 
 router = APIRouter(tags=["universities"])
 
@@ -105,6 +82,7 @@ async def list_programs(
         country=country,
         limit=limit,
         user_id=current_user.id if current_user else None,
+        locale=get_locale(),
     )
 
 
@@ -117,81 +95,9 @@ async def get_program(
     return await get_program_detail(
         db,
         program_id,
+        locale=get_locale(),
         user_id=current_user.id if current_user else None,
     )
-
-
-@router.get("/programs/{program_id}/gap-analysis", response_model=GapAnalysisResponse)
-async def get_gap_analysis(
-    program_id: uuid.UUID,
-    assessment_id: uuid.UUID = Query(..., description="Assessment ID to use for scores"),
-    current_user: User = Depends(get_current_student_user),
-    db: AsyncSession = Depends(get_db),
-) -> GapAnalysisResponse:
-    profile_result = await db.execute(select(Profile).where(Profile.user_id == current_user.id))
-    profile = profile_result.scalar_one_or_none()
-    if profile is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
-
-    if profile.age_group != AgeGroup.senior:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Gap analysis is only available for senior age group",
-        )
-
-    cache_key = f"gap_analysis:{program_id}:{assessment_id}"
-    redis = _get_redis()
-    cached = await redis.get(cache_key)
-    if cached:
-        return GapAnalysisResponse.model_validate_json(cached)
-
-    program = await get_program_by_id(db, program_id)
-
-    assessment_result = await db.execute(
-        select(Assessment).where(
-            Assessment.id == assessment_id,
-            Assessment.profile_id == profile.id,
-        )
-    )
-    assessment = assessment_result.scalar_one_or_none()
-    if assessment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
-
-    if assessment.status != AssessmentStatus.completed:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Assessment is not completed yet",
-        )
-
-    analysis_result = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
-    )
-    analysis = analysis_result.scalar_one_or_none()
-    if analysis is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Generate a report for this assessment before running gap analysis",
-        )
-
-    # Program.profession_slugs directly lists which professions (Direction
-    # slugs) this specialty prepares someone for — check whether any of the
-    # user's matched professions overlap with it.
-    matched_profession_slugs = {d["slug"] for d in analysis.careers if isinstance(d, dict) and "slug" in d}
-    if not matched_profession_slugs.intersection(program.profession_slugs):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This program's direction does not match your assessment results",
-        )
-
-    artifacts = await get_artifacts(profile.id, db)
-    scores = await assessment_service.get_total_scores(assessment_id, db)
-
-    result = analyze_gap(profile, artifacts, scores, program)
-    response = to_response(program_id, result)
-
-    await redis.set(cache_key, response.model_dump_json(), ex=GAP_CACHE_TTL)
-
-    return response
 
 
 @router.get("/{university_id}", response_model=UniversityDetail)

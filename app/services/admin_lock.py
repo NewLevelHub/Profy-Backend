@@ -1,5 +1,6 @@
+from collections.abc import Collection, Iterable
 from enum import Enum
-from typing import Any, Iterable
+from typing import Any
 
 
 def lock_fields(row, field_names: Iterable[str]) -> None:
@@ -47,14 +48,17 @@ class AdminOverrideValidationError(Exception):
 
 
 # Question-bank content (Question/QuestionPair/MotivationStatement/
-# MotivationPair/Direction) uses a value-carrying `overrides` dict instead of
+# Direction) uses a value-carrying `overrides` dict instead of
 # `admin_locked_fields` above — bank-seeded rows can be deleted by a reseed,
 # not just have fields reverted, so the override needs to be recoverable from
 # the row itself. See docs/admin-questions-content-overrides-plan.md.
 # Each entry is {"value": <admin edit>, "bank_value": <what the bank had>}.
 # The bank value is captured at override time so a revert can put the row back
 # immediately instead of leaving the admin's text on screen until the next
-# deploy re-runs the seed script.
+# deploy re-runs the seed script. For a localized field (see `localized_fields`
+# below), `value`/`bank_value` are themselves `{locale: value}` maps rather
+# than scalars — same shape, one level deeper — so revert works identically
+# either way.
 #
 # "The original is unknown" is expressed by the KEY BEING ABSENT, never by a
 # null: plenty of overridable columns are nullable (icon, short_text, frame),
@@ -65,7 +69,7 @@ _BANK_VALUE = "bank_value"
 
 
 def _jsonable(value: Any) -> Any:
-    """Enum columns (category, age_tier, instrument, ...) must reach JSONB as
+    """Enum columns (category, instrument, ...) must reach JSONB as
     their plain value, not as the enum member."""
     return value.value if isinstance(value, Enum) else value
 
@@ -81,29 +85,72 @@ def _override_value(entry: Any) -> Any:
     return entry[_VALUE] if isinstance(entry, dict) and _VALUE in entry else entry
 
 
-def apply_overrides(row, updates: dict) -> None:
+def apply_overrides(
+    row,
+    updates: dict,
+    *,
+    localized_fields: Collection[str] = (),
+    locale: str | None = None,
+) -> None:
+    """`localized_fields` names which of `row`'s columns hold a `{locale:
+    value}` JSONB map (post the questions/pairs/motivation/directions
+    single-row-per-item redesign — see docs/i18n-contract.md §8) rather than
+    a plain scalar. For those fields `updates[key]` is the value for ONE
+    locale (the admin edits one language at a time), given via `locale`; it
+    is merged into both the live column's map and the recorded override's
+    `value` map, leaving the other locale's value untouched. Non-localized
+    fields behave exactly as before (bare value, no `locale` needed)."""
     overrides = dict(row.overrides or {})
     columns = {c.name: c for c in row.__table__.columns}
     for key, value in updates.items():
         column = columns.get(key)
-        if value is None and column is not None and not column.nullable:
-            raise AdminOverrideValidationError(f"{key} cannot be null")
-        existing = overrides.get(key)
-        if isinstance(existing, dict) and _BANK_VALUE in existing:
-            # Re-edit: the column holds the PREVIOUS ADMIN EDIT now, so the
-            # already-recorded bank value is the one to keep.
-            entry = _entry(value, existing[_BANK_VALUE])
-        elif existing is not None:
-            # Overridden before bank values were recorded. The column holds
-            # that old admin edit, so reading it here would label a typo as
-            # the bank's original — the original stays unknown instead.
-            entry = {_VALUE: _jsonable(value)}
-        else:
-            # First edit: the column still holds the bank's own value.
-            entry = _entry(value, getattr(row, key))
+        if key in localized_fields:
+            if not locale:
+                raise AdminOverrideValidationError(f"locale is required to edit {key}")
+            if value is None and column is not None and not column.nullable:
+                raise AdminOverrideValidationError(f"{key} cannot be null")
 
-        setattr(row, key, value)
-        overrides[key] = entry
+            current_map = dict(getattr(row, key) or {})
+            existing = overrides.get(key)
+            if isinstance(existing, dict) and _BANK_VALUE in existing:
+                # Re-edit (this or another locale of the same field): the
+                # already-recorded bank map is the one to keep.
+                bank_map: dict | None = existing[_BANK_VALUE]
+                value_map = dict(existing[_VALUE])
+            elif existing is not None:
+                # Overridden before bank values were recorded — original
+                # unknown, same treatment as the non-localized branch below.
+                bank_map = None
+                value_map = dict(existing) if isinstance(existing, dict) else {}
+            else:
+                # First edit on this field (any locale): the column still
+                # holds the bank's own map.
+                bank_map = dict(current_map)
+                value_map = {}
+
+            value_map[locale] = value
+            current_map[locale] = value
+            setattr(row, key, current_map)
+            overrides[key] = _entry(value_map, bank_map) if bank_map is not None else {_VALUE: value_map}
+        else:
+            if value is None and column is not None and not column.nullable:
+                raise AdminOverrideValidationError(f"{key} cannot be null")
+            existing = overrides.get(key)
+            if isinstance(existing, dict) and _BANK_VALUE in existing:
+                # Re-edit: the column holds the PREVIOUS ADMIN EDIT now, so the
+                # already-recorded bank value is the one to keep.
+                entry = _entry(value, existing[_BANK_VALUE])
+            elif existing is not None:
+                # Overridden before bank values were recorded. The column holds
+                # that old admin edit, so reading it here would label a typo as
+                # the bank's original — the original stays unknown instead.
+                entry = {_VALUE: _jsonable(value)}
+            else:
+                # First edit: the column still holds the bank's own value.
+                entry = _entry(value, getattr(row, key))
+
+            setattr(row, key, value)
+            overrides[key] = entry
     row.overrides = overrides
 
 
@@ -119,7 +166,9 @@ def clear_overrides(row, field_names: Iterable[str] | None = None) -> list[str]:
 
     A field whose bank value was never recorded (overridden before this was
     kept) still has its override dropped — the column keeps the admin's value
-    until the next seed run, which then restores the bank's."""
+    until the next seed run, which then restores the bank's. Works the same
+    for a localized field: `entry[_BANK_VALUE]` is just a `{locale: value}`
+    map there instead of a scalar, and `setattr` doesn't care which."""
     overrides = dict(row.overrides or {})
     targets = sorted(overrides if field_names is None else set(overrides) & set(field_names))
 
@@ -132,16 +181,26 @@ def clear_overrides(row, field_names: Iterable[str] | None = None) -> list[str]:
     return targets
 
 
-def effective_value(row, field_name: str, bank_value):
+def effective_value(row, field_name: str, bank_value, *, localized: bool = False):
     overrides = row.overrides or {}
-    return _override_value(overrides[field_name]) if field_name in overrides else bank_value
+    if field_name not in overrides:
+        return bank_value
+    if not localized:
+        return _override_value(overrides[field_name])
+    # `bank_value` is the full `{locale: value}` map from the bank; the
+    # admin's override only ever pins specific locale(s) within it, so merge
+    # rather than replace — an override on `kk` must not discard a `ru`
+    # value the bank still supplies.
+    merged = dict(bank_value or {})
+    merged.update(_override_value(overrides[field_name]) or {})
+    return merged
 
 
 def has_overrides(row) -> bool:
     return bool(row.overrides)
 
 
-def sync_fields(row, bank_values: dict) -> bool:
+def sync_fields(row, bank_values: dict, *, localized_fields: Collection[str] = ()) -> bool:
     """One call replacing the `target = effective_value(row, name, value);
     if row.name != target: ...` triple repeated per field across every
     scripts/seed_*.py — for each `field_name -> bank_value` pair, syncs
@@ -153,7 +212,7 @@ def sync_fields(row, bank_values: dict) -> bool:
     overrides_changed = False
 
     for field_name, bank_value in bank_values.items():
-        target = effective_value(row, field_name, bank_value)
+        target = effective_value(row, field_name, bank_value, localized=field_name in localized_fields)
         if getattr(row, field_name) != target:
             setattr(row, field_name, target)
             changed = True

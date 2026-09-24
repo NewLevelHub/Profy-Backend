@@ -15,12 +15,14 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from app.models.analysis_result import ReviewStatus
+
 
 class AdminCareerMatch(BaseModel):
     slug: str
     name: str
     holland_code: str
-    match_score: int
+    match_score: float
     description: str
     professions: list[str]
     skills_needed: list[str]
@@ -29,9 +31,7 @@ class AdminCareerMatch(BaseModel):
 
 
 class AnalysisMeta(BaseModel):
-    """Renamed from the old `RiasecMeta`: this shape is produced identically
-    by riasec_service (middle/senior) and mi_service (junior) — it was never
-    RIASEC-specific, only named as if it were."""
+    """Renamed from the old `RiasecMeta`; produced by riasec_service."""
 
     differentiation: float
     consistency: Literal["high", "medium", "low"]
@@ -65,9 +65,7 @@ class AdminThinkingStyleNote(BaseModel):
 
 class AdminAnalysisResultResponse(BaseModel):
     """Full raw analysis result — admin/internal only, never exposed to the
-    student-facing API. `profile` and `code` hold MI category keys for
-    junior assessments and RIASEC letters for middle/senior; nothing here
-    (or in any consumer of this schema) should assume one or the other."""
+    student-facing API. `profile` and `code` hold RIASEC letters."""
 
     id: uuid.UUID
     assessment_id: uuid.UUID
@@ -93,6 +91,13 @@ class AdminAnalysisResultResponse(BaseModel):
     strength_cards: list[AdminStrengthCard]
     thinking_style_notes: list[AdminThinkingStyleNote]
     report_version: int
+    # Psychologist review gate — admins see these unconditionally, their
+    # access is never gated by review_status.
+    review_status: ReviewStatus
+    reviewed_by: uuid.UUID | None = None
+    reviewed_at: datetime | None = None
+    published_by: uuid.UUID | None = None
+    published_at: datetime | None = None
     summary: str
     created_at: datetime
 

@@ -4,14 +4,19 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
+from app.i18n import DEFAULT_LOCALE, pick_locale
+from app.models.content_override import ContentOverride
+from app.models.direction import LOCALIZED_FIELDS as DIRECTION_LOCALIZED_FIELDS
 from app.models.direction import Direction
+from app.models.motivation import LOCALIZED_FIELDS as MOTIVATION_STATEMENT_LOCALIZED_FIELDS
 from app.models.motivation import MotivationCategory, MotivationStatement
-from app.models.motivation_pair import MotivationPair
-from app.models.profile import AgeGroup
 from app.models.program import Program, program_directions
+from app.models.question import LOCALIZED_FIELDS as QUESTION_LOCALIZED_FIELDS
 from app.models.question import Question, QuestionInstrument
+from app.models.question_pair import LOCALIZED_FIELDS as QUESTION_PAIR_LOCALIZED_FIELDS
 from app.models.question_pair import QuestionPair
 from app.models.university import University
+from scripts.belbin_bank import SECTIONS as BELBIN_SECTIONS
 from app.schemas.admin_content import (
     AdminDirectionDetail,
     AdminDirectionListItem,
@@ -19,9 +24,6 @@ from app.schemas.admin_content import (
     AdminDirectionProgram,
     AdminDirectionUpdateRequest,
     AdminLinkedQuestion,
-    AdminMotivationPairListItem,
-    AdminMotivationPairListResponse,
-    AdminMotivationPairUpdateRequest,
     AdminMotivationStatementListItem,
     AdminMotivationStatementListResponse,
     AdminMotivationStatementUpdateRequest,
@@ -52,16 +54,24 @@ async def _get_by_id(db: AsyncSession, model, row_id: uuid.UUID):
 
 
 async def _update_by_id(
-    db: AsyncSession, model, row_id: uuid.UUID, data, not_found_msg: str, validate=None
+    db: AsyncSession, model, row_id: uuid.UUID, data, not_found_msg: str,
+    *, localized_fields: frozenset[str], validate=None,
 ):
     row = await _get_by_id(db, model, row_id)
     if row is None:
         raise ValueError(not_found_msg)
 
-    updates = data.model_dump(exclude_unset=True)
+    payload = data.model_dump(exclude_unset=True)
+    locale = payload.pop("locale", None)
+    updates = payload
     if validate is not None:
         validate(row, updates)
-    apply_overrides(row, updates)
+    if any(key in localized_fields for key in updates) and not locale:
+        raise AdminOverrideValidationError(
+            "locale is required when editing a localized field: "
+            f"{sorted(k for k in updates if k in localized_fields)}"
+        )
+    apply_overrides(row, updates, localized_fields=localized_fields, locale=locale)
     await db.commit()
     await db.refresh(row)
     return row
@@ -88,18 +98,16 @@ async def _clear_overrides_by_id(
     return row
 
 
-# A Question's own-instrument taxonomy field (riasec_type/bigfive_domain/
-# mi_category) is nullable at the DB level only because the three
-# instruments share one table — each is null for the OTHER two instruments'
-# rows, never for its own. riasec_service.py/bigfive_service.py/mi_service.py
-# all do `{t.value: c for t, c in ...}` after grouping by that column, which
+# A Question's own-instrument taxonomy field (riasec_type/bigfive_domain)
+# is nullable at the DB level only because the instruments share one
+# table — each is null for the other instruments' rows, never for its own.
+# riasec_service.py/bigfive_service.py both do `{t.value: c for t, c in ...}` after grouping by that column, which
 # crashes with AttributeError on a None key. AdminQuestionUpdateRequest's
 # fields are typed `| None` only so PATCHing an unrelated field doesn't force
 # resending them (exclude_unset) — an explicit null must still be rejected.
 _INSTRUMENT_TYPE_FIELD = {
     QuestionInstrument.riasec: "riasec_type",
     QuestionInstrument.big_five: "bigfive_domain",
-    QuestionInstrument.mi: "mi_category",
 }
 
 
@@ -112,17 +120,18 @@ def _validate_question_update(row: Question, updates: dict) -> None:
         )
 
 
-def _effective_option_text(override: str | None, question: Question | None) -> str:
+def _effective_option_text(override: dict | None, question: Question | None) -> str:
     """The text a student actually sees for one side of a forced-choice pair.
     Mirrors question_pair_service._to_option() exactly — if the two ever
     disagree, the admin list stops showing what the test shows, which is the
     whole point of surfacing it. `question` is None only if the FK row went
-    missing, which the ON DELETE CASCADE makes unreachable in practice."""
+    missing, which the ON DELETE CASCADE makes unreachable in practice.
+    ru is the admin-panel display locale (i18n-contract §2)."""
     if override:
-        return override
+        return pick_locale(override, DEFAULT_LOCALE)
     if question is None:
         return ""
-    return question.short_text or question.text
+    return pick_locale(question.short_text or question.text, DEFAULT_LOCALE)
 
 
 async def _load_questions_by_id(
@@ -178,10 +187,9 @@ async def _count_and_paginate(
 QUESTION_SORT_FIELDS = {
     "order": Question.order,
     "instrument": Question.instrument,
-    "age_tier": Question.age_tier,
     # Russian text needs the ICU collation or it sorts by byte value — see
     # admin_listing.ru_text.
-    "text": ru_text(Question.text),
+    "text": ru_text(Question.text["ru"].astext),
 }
 
 
@@ -189,7 +197,6 @@ async def list_questions(
     db: AsyncSession,
     *,
     instrument: QuestionInstrument | None = None,
-    age_tier: AgeGroup | None = None,
     search: str | None = None,
     has_overrides_filter: bool | None = None,
     sort: str | None = None,
@@ -200,11 +207,16 @@ async def list_questions(
     filters = []
     if instrument:
         filters.append(Question.instrument == instrument)
-    if age_tier:
-        filters.append(Question.age_tier == age_tier)
     if search:
+        # ru is the admin-panel display locale (i18n-contract §2) — search
+        # matches the ru text specifically, not whatever's in the JSONB blob.
         like = f"%{search.strip()}%"
-        filters.append(or_(Question.text.ilike(like), Question.short_text.ilike(like)))
+        filters.append(
+            or_(
+                Question.text["ru"].astext.ilike(like),
+                Question.short_text["ru"].astext.ilike(like),
+            )
+        )
     if has_overrides_filter is not None:
         filters.append(_overrides_filter(Question, has_overrides_filter))
 
@@ -227,12 +239,10 @@ async def list_questions(
         AdminQuestionListItem(
             id=q.id,
             instrument=q.instrument,
-            text=q.text,
+            text=pick_locale(q.text, DEFAULT_LOCALE),
             order=q.order,
-            age_tier=q.age_tier,
             riasec_type=q.riasec_type,
             bigfive_domain=q.bigfive_domain,
-            mi_category=q.mi_category,
             has_overrides=has_overrides(q),
         )
         for q in rows
@@ -249,7 +259,8 @@ async def update_question(
     db: AsyncSession, question_id: uuid.UUID, data: AdminQuestionUpdateRequest
 ) -> Question:
     return await _update_by_id(
-        db, Question, question_id, data, "Question not found", validate=_validate_question_update
+        db, Question, question_id, data, "Question not found",
+        localized_fields=QUESTION_LOCALIZED_FIELDS, validate=_validate_question_update,
     )
 
 
@@ -265,7 +276,6 @@ async def clear_question_overrides(
 QUESTION_PAIR_SORT_FIELDS = {
     "pair_index": QuestionPair.pair_index,
     "instrument": QuestionPair.instrument,
-    "age_tier": QuestionPair.age_tier,
 }
 
 
@@ -273,7 +283,6 @@ async def list_question_pairs(
     db: AsyncSession,
     *,
     instrument: QuestionInstrument | None = None,
-    age_tier: AgeGroup | None = None,
     search: str | None = None,
     has_overrides_filter: bool | None = None,
     sort: str | None = None,
@@ -285,15 +294,13 @@ async def list_question_pairs(
     joins: tuple = ()
     if instrument:
         filters.append(QuestionPair.instrument == instrument)
-    if age_tier:
-        filters.append(QuestionPair.age_tier == age_tier)
     if has_overrides_filter is not None:
         filters.append(_overrides_filter(QuestionPair, has_overrides_filter))
     if search:
         # Search the text a student would actually see, which for a pair
         # without an override is the linked question's own wording — matching
-        # only the override columns would silently skip every junior pair,
-        # since junior pairs leave both overrides null.
+        # only the override columns would silently skip every pair that
+        # leaves both overrides null (all ДДО pairs by default).
         like = f"%{search.strip()}%"
         q_a = aliased(Question)
         q_b = aliased(Question)
@@ -303,9 +310,17 @@ async def list_question_pairs(
         )
         filters.append(
             or_(
-                QuestionPair.frame.ilike(like),
-                func.coalesce(QuestionPair.option_a_text, q_a.short_text, q_a.text).ilike(like),
-                func.coalesce(QuestionPair.option_b_text, q_b.short_text, q_b.text).ilike(like),
+                QuestionPair.frame["ru"].astext.ilike(like),
+                func.coalesce(
+                    QuestionPair.option_a_text["ru"].astext,
+                    q_a.short_text["ru"].astext,
+                    q_a.text["ru"].astext,
+                ).ilike(like),
+                func.coalesce(
+                    QuestionPair.option_b_text["ru"].astext,
+                    q_b.short_text["ru"].astext,
+                    q_b.text["ru"].astext,
+                ).ilike(like),
             )
         )
 
@@ -333,9 +348,8 @@ async def list_question_pairs(
         AdminQuestionPairListItem(
             id=p.id,
             instrument=p.instrument,
-            age_tier=p.age_tier,
             pair_index=p.pair_index,
-            frame=p.frame,
+            frame=pick_locale(p.frame, DEFAULT_LOCALE) if p.frame else None,
             option_a_text=_effective_option_text(p.option_a_text, questions.get(p.question_a_id)),
             option_b_text=_effective_option_text(p.option_b_text, questions.get(p.question_b_id)),
             has_overrides=has_overrides(p),
@@ -358,7 +372,19 @@ async def _build_pair_detail(db: AsyncSession, pair: QuestionPair) -> AdminQuest
 
 
 def _linked_question(question: Question | None) -> AdminLinkedQuestion | None:
-    return None if question is None else AdminLinkedQuestion.model_validate(question)
+    # `Question.text`/`short_text` are JSONB {locale: str} maps post the
+    # single-row-per-question redesign (docs/i18n-contract.md §8) — a plain
+    # model_validate(question) would hand pydantic a dict where
+    # AdminLinkedQuestion.text expects a str. ru is the admin-panel display
+    # locale (i18n-contract §2).
+    if question is None:
+        return None
+    return AdminLinkedQuestion(
+        id=question.id,
+        text=pick_locale(question.text, DEFAULT_LOCALE),
+        short_text=pick_locale(question.short_text, DEFAULT_LOCALE) if question.short_text else None,
+        icon=question.icon,
+    )
 
 
 async def get_question_pair_detail(
@@ -371,7 +397,10 @@ async def get_question_pair_detail(
 async def update_question_pair(
     db: AsyncSession, pair_id: uuid.UUID, data: AdminQuestionPairUpdateRequest
 ) -> AdminQuestionPairDetail:
-    pair = await _update_by_id(db, QuestionPair, pair_id, data, "Question pair not found")
+    pair = await _update_by_id(
+        db, QuestionPair, pair_id, data, "Question pair not found",
+        localized_fields=QUESTION_PAIR_LOCALIZED_FIELDS,
+    )
     return await _build_pair_detail(db, pair)
 
 
@@ -391,7 +420,7 @@ MOTIVATION_STATEMENT_SORT_FIELDS = {
     "triplet_index": MotivationStatement.triplet_index,
     "order": MotivationStatement.order,
     "category": MotivationStatement.category,
-    "text": ru_text(MotivationStatement.text),
+    "text": ru_text(MotivationStatement.text["ru"].astext),
 }
 
 
@@ -410,9 +439,7 @@ async def list_motivation_statements(
     filters = []
     if search:
         like = f"%{search.strip()}%"
-        filters.append(
-            or_(MotivationStatement.text.ilike(like), MotivationStatement.text_junior.ilike(like))
-        )
+        filters.append(MotivationStatement.text["ru"].astext.ilike(like))
     if triplet_index is not None:
         # A triplet is the real unit of meaning here: its three statements must
         # carry three different categories, and nothing server-side enforces
@@ -444,7 +471,7 @@ async def list_motivation_statements(
             triplet_index=s.triplet_index,
             order=s.order,
             category=s.category,
-            text=s.text,
+            text=pick_locale(s.text, DEFAULT_LOCALE),
             has_overrides=has_overrides(s),
         )
         for s in rows
@@ -502,7 +529,8 @@ async def update_motivation_statement(
         db, statement, data.model_dump(exclude_unset=True)
     )
     return await _update_by_id(
-        db, MotivationStatement, statement_id, data, "Motivation statement not found"
+        db, MotivationStatement, statement_id, data, "Motivation statement not found",
+        localized_fields=MOTIVATION_STATEMENT_LOCALIZED_FIELDS,
     )
 
 
@@ -511,89 +539,6 @@ async def clear_motivation_statement_overrides(
 ) -> MotivationStatement:
     return await _clear_overrides_by_id(
         db, MotivationStatement, statement_id, "Motivation statement not found", field
-    )
-
-
-# --- Motivation pairs ---
-
-
-MOTIVATION_PAIR_SORT_FIELDS = {
-    "pair_index": MotivationPair.pair_index,
-    "category_a": MotivationPair.category_a,
-}
-
-
-async def list_motivation_pairs(
-    db: AsyncSession,
-    *,
-    search: str | None = None,
-    category: MotivationCategory | None = None,
-    has_overrides_filter: bool | None = None,
-    sort: str | None = None,
-    order: SortOrder | None = None,
-    page: int = 1,
-    limit: int = 20,
-) -> AdminMotivationPairListResponse:
-    filters = []
-    if search:
-        like = f"%{search.strip()}%"
-        filters.append(or_(MotivationPair.text_a.ilike(like), MotivationPair.text_b.ilike(like)))
-    if category is not None:
-        # Both sides of a Harter pair are poles of the SAME category, so one
-        # parameter covers the row — matching either column keeps this correct
-        # even if that invariant is ever relaxed.
-        filters.append(
-            or_(MotivationPair.category_a == category, MotivationPair.category_b == category)
-        )
-    if has_overrides_filter is not None:
-        filters.append(_overrides_filter(MotivationPair, has_overrides_filter))
-
-    total, rows = await _count_and_paginate(
-        db,
-        MotivationPair,
-        filters,
-        order_by_clause(
-            sort,
-            order,
-            allowed=MOTIVATION_PAIR_SORT_FIELDS,
-            default=(MotivationPair.pair_index.asc(),),
-            tiebreaker=MotivationPair.id.asc(),
-        ),
-        page,
-        limit,
-    )
-
-    items = [
-        AdminMotivationPairListItem(
-            id=p.id,
-            pair_index=p.pair_index,
-            category_a=p.category_a,
-            category_b=p.category_b,
-            text_a=p.text_a,
-            text_b=p.text_b,
-            has_overrides=has_overrides(p),
-        )
-        for p in rows
-    ]
-
-    return AdminMotivationPairListResponse(items=items, total=total, page=page, limit=limit)
-
-
-async def get_motivation_pair_detail(db: AsyncSession, pair_id: uuid.UUID) -> MotivationPair | None:
-    return await _get_by_id(db, MotivationPair, pair_id)
-
-
-async def update_motivation_pair(
-    db: AsyncSession, pair_id: uuid.UUID, data: AdminMotivationPairUpdateRequest
-) -> MotivationPair:
-    return await _update_by_id(db, MotivationPair, pair_id, data, "Motivation pair not found")
-
-
-async def clear_motivation_pair_overrides(
-    db: AsyncSession, pair_id: uuid.UUID, field: str | None = None
-) -> MotivationPair:
-    return await _clear_overrides_by_id(
-        db, MotivationPair, pair_id, "Motivation pair not found", field
     )
 
 
@@ -616,7 +561,11 @@ _DIRECTION_CATALOG_FIELDS = (
 
 
 def _empty_catalog_fields(direction: Direction) -> list[str]:
-    return [f for f in _DIRECTION_CATALOG_FIELDS if not getattr(direction, f)]
+    # Each field is now a JSONB {locale: value} map (docs/i18n-contract.md
+    # §8) — "empty" means the ru value is empty ("" / [] / missing), not
+    # that the outer map itself is empty (it never is: the model default is
+    # {"ru": ""} / {"ru": []}).
+    return [f for f in _DIRECTION_CATALOG_FIELDS if not (getattr(direction, f) or {}).get("ru")]
 
 
 async def _programs_count_by_direction(
@@ -635,7 +584,7 @@ async def _programs_count_by_direction(
 
 
 DIRECTION_SORT_FIELDS = {
-    "name": ru_text(Direction.name),
+    "name": ru_text(Direction.name["ru"].astext),
     "holland_code": Direction.holland_code,
     # Slug is ASCII by construction (the seed transliterates), so the default
     # collation is already correct for it.
@@ -645,12 +594,14 @@ DIRECTION_SORT_FIELDS = {
 
 def _catalog_filled_clause():
     """SQL twin of _empty_catalog_fields() above — kept next to it so the
-    filter and the per-row flag can't drift apart. The four list columns
-    default to `[]`, never null, so jsonb_array_length is always safe."""
+    filter and the per-row flag can't drift apart. Each field is a JSONB
+    {locale: value} map; the ru value is what "filled" checks — the four
+    list columns default their ru entry to `[]`, never null, so
+    jsonb_array_length on `field['ru']` is always safe."""
     return and_(
-        Direction.description != "",
+        Direction.description["ru"].astext != "",
         *(
-            func.jsonb_array_length(getattr(Direction, field)) > 0
+            func.jsonb_array_length(getattr(Direction, field)["ru"]) > 0
             for field in _DIRECTION_CATALOG_FIELDS
             if field != "description"
         ),
@@ -670,8 +621,9 @@ async def list_directions(
 ) -> AdminDirectionListResponse:
     filters = []
     if search:
-        like = f"%{search.strip()}%"
-        filters.append(or_(Direction.name.ilike(like), Direction.slug.ilike(like)))
+        # ru is the admin-panel display locale (i18n-contract §2) — search
+        # matches the ru text specifically, not whatever's in the JSONB blob.
+        filters.append(Direction.name["ru"].astext.ilike(f"%{search.strip()}%"))
     if catalog_filled is not None:
         clause = _catalog_filled_clause()
         filters.append(clause if catalog_filled else ~clause)
@@ -686,7 +638,7 @@ async def list_directions(
             sort,
             order,
             allowed=DIRECTION_SORT_FIELDS,
-            default=(ru_text(Direction.name).asc(),),
+            default=(Direction.name["ru"].astext.asc(),),
             tiebreaker=Direction.id.asc(),
         ),
         page,
@@ -701,7 +653,7 @@ async def list_directions(
         items.append(
             AdminDirectionListItem(
                 id=d.id,
-                name=d.name,
+                name=pick_locale(d.name, DEFAULT_LOCALE),
                 slug=d.slug,
                 holland_code=d.holland_code,
                 programs_count=counts.get(d.id, 0),
@@ -745,7 +697,10 @@ async def get_direction_detail(
 async def update_direction(
     db: AsyncSession, direction_id: uuid.UUID, data: AdminDirectionUpdateRequest
 ) -> AdminDirectionDetail:
-    direction = await _update_by_id(db, Direction, direction_id, data, "Direction not found")
+    direction = await _update_by_id(
+        db, Direction, direction_id, data, "Direction not found",
+        localized_fields=DIRECTION_LOCALIZED_FIELDS,
+    )
     return await _build_direction_detail(db, direction)
 
 
@@ -756,3 +711,50 @@ async def clear_direction_overrides(
         db, Direction, direction_id, "Direction not found", field
     )
     return await _build_direction_detail(db, direction)
+
+
+def get_belbin_schema() -> dict:
+    return {"sections": BELBIN_SECTIONS}
+
+
+def get_astur_schema() -> dict:
+    """Bilingual, unresolved bank content for the admin ASTUR editor — the
+    same per-subtest/per-item shape `astur_service._resolve_subtests`
+    merges an override into, restricted to the fields real test-takers
+    ever see (`_PUBLIC_ITEM_FIELDS`) — never the `answer`/scoring keys, so
+    the editor structurally cannot expose or edit them."""
+    from app.services.astur_service import _PUBLIC_ITEM_FIELDS, _bank_subtests
+
+    subtests = []
+    for subtest in _bank_subtests():
+        public_fields = _PUBLIC_ITEM_FIELDS[subtest["key"]]
+        subtests.append({
+            **{k: subtest[k] for k in ("number", "key", "name", "instruction", "item_count", "scored")},
+            "items": [
+                {field: item[field] for field in public_fields}
+                for item in subtest["items"]
+            ],
+        })
+    return {"subtests": subtests}
+
+
+async def get_content_override(db: AsyncSession, instrument: str):
+    result = await db.execute(select(ContentOverride).where(ContentOverride.instrument == instrument))
+    return result.scalar_one_or_none()
+
+
+async def set_content_override(db: AsyncSession, instrument: str, data: "AdminContentOverrideRequest"):
+    row = await get_content_override(db, instrument)
+    if not row:
+        row = ContentOverride(instrument=instrument)
+        db.add(row)
+    
+    payload = data.model_dump(exclude_unset=True)
+    if "content_ru" in payload:
+        row.content_ru = payload["content_ru"]
+    if "content_kk" in payload:
+        row.content_kk = payload["content_kk"]
+
+    await db.commit()
+    await db.refresh(row)
+    return row

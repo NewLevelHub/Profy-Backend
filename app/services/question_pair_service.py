@@ -1,14 +1,5 @@
-"""Forced-choice-pair format. Middle (10-13) gets a subset of its own
-tier-exclusive RIASEC questions woven into the ordinary Likert flow, to
-break up monotony (TZ_Profi.md §14) without abandoning Likert (still fine
-for that age). `QuestionPair.age_tier` is an exact match, unlike
-`Question.age_tier` (checked via visible_tiers(), cumulative) — a middle
-pair is never returned to another profile.
-
-Junior (6-9) had its whole test in this format (TZ_Profi.md §13 bans Likert
-outright for that age) built entirely from Big Five items — with Big Five
-retired from the active pool (docs/big-five-retirement.md), junior has no
-pairs phase at all anymore; `get_pairs` short-circuits to `[]` for it.
+"""Forced-choice-pair format — the ДДО «интересы» pairs, woven into the
+ordinary Likert flow.
 
 A pair pick is written as two ordinary `UserResponse` rows (picked=5,
 other=1) — riasec_service/bigfive_service and the Likert-completion
@@ -24,9 +15,9 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
+from app.i18n import pick_locale
 from app.models.assessment import Assessment, AssessmentStatus
-from app.models.profile import AgeGroup
-from app.models.question import Question
+from app.models.question import Question, QuestionInstrument
 from app.models.question_pair import QuestionPair
 from app.models.user_response import UserResponse
 from app.schemas.question_pair import (
@@ -36,57 +27,45 @@ from app.schemas.question_pair import (
     SubmitPairAnswersResponse,
 )
 from app.services import assessment_shared
-from app.services.age_tiers import RETIRED_INSTRUMENTS
 
 _PICKED_VALUE = 5
 _OTHER_VALUE = 1
 
 
 def _to_option(
-    question: Question, override_text: str | None = None, override_icon: str | None = None
+    question: Question, override_text: dict | None = None, override_icon: str | None = None
 ) -> QuestionPairOption:
+    text_source = override_text or question.short_text or question.text
     return QuestionPairOption(
         id=question.id,
-        text=override_text or question.short_text or question.text,
+        text=pick_locale(text_source),
         icon=override_icon or question.icon,
         riasec_type=question.riasec_type,
         bigfive_domain=question.bigfive_domain,
-        mi_category=question.mi_category,
     )
 
 
-async def get_pairs(db: AsyncSession, age_group: AgeGroup) -> list[QuestionPairItem]:
-    if age_group == AgeGroup.junior:
-        # Junior's whole pairs phase was 100% Big Five (retired — see
-        # docs/big-five-retirement.md) and junior's RIASEC content was
-        # already retired in favor of MI before that (TZ_Profi.md §4.1),
-        # leaving nothing junior-eligible left to pair. Short-circuit
-        # outright rather than filtering instrument to zero, so the intent
-        # ("junior has no pairs phase at all now") stays unambiguous even if
-        # a future junior-tagged QuestionPair row is added for some other
-        # instrument.
-        return []
+async def get_pairs(db: AsyncSession) -> list[QuestionPairItem]:
     question_a = aliased(Question)
     question_b = aliased(Question)
     query = (
         select(QuestionPair, question_a, question_b)
         .join(question_a, QuestionPair.question_a_id == question_a.id)
         .join(question_b, QuestionPair.question_b_id == question_b.id)
-        .where(QuestionPair.age_tier == age_group)
-        .where(QuestionPair.instrument.not_in(RETIRED_INSTRUMENTS))
+        .where(QuestionPair.instrument != QuestionInstrument.big_five)
         .order_by(QuestionPair.pair_index)
     )
-    result = await db.execute(query)
+    rows = (await db.execute(query)).all()
     return [
         QuestionPairItem(
             pair_index=pair.pair_index,
             instrument=pair.instrument,
-            frame=pair.frame,
+            frame=pick_locale(pair.frame) if pair.frame else None,
             display_order=min(q_a.order, q_b.order),
             option_a=_to_option(q_a, pair.option_a_text, pair.option_a_icon),
             option_b=_to_option(q_b, pair.option_b_text, pair.option_b_icon),
         )
-        for pair, q_a, q_b in result.all()
+        for pair, q_a, q_b in rows
     ]
 
 
@@ -104,11 +83,13 @@ async def submit_pair_answers(
     if assessment.profile_id != current_profile_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    age_group = await assessment_shared.get_profile_age_group(assessment.profile_id, db)
 
     pair_indexes = [item.pair_index for item in answers]
     pairs_result = await db.execute(
-        select(QuestionPair).where(QuestionPair.pair_index.in_(pair_indexes))
+        select(QuestionPair).where(
+            QuestionPair.pair_index.in_(pair_indexes),
+            QuestionPair.instrument != QuestionInstrument.big_five,
+        )
     )
     pairs_by_index = {p.pair_index: p for p in pairs_result.scalars().all()}
 
@@ -151,7 +132,7 @@ async def submit_pair_answers(
         await assessment_shared.invalidate_retake(assessment, db, redis)
 
     answered = await assessment_shared.likert_answered_count(assessment_id, db)
-    total = await assessment_shared.likert_total_questions(db, age_group)
+    total = await assessment_shared.likert_total_questions(db)
     # Same caveat as assessment_service.submit_answers: this phase being done
     # does not flip assessment.status — motivation_service does that once
     # both phases are confirmed answered.

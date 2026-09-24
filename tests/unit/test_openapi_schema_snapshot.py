@@ -1,6 +1,5 @@
-"""OpenAPI schema snapshots — student (`MiResultResponse`/
-`RiasecResultResponse`) and admin (`AdminAnalysisResultResponse`) contracts,
-pinned to `tests/snapshots/*.json`.
+"""OpenAPI schema snapshots — student (`RiasecResultResponse`) and admin
+(`AdminAnalysisResultResponse`) contracts, pinned to `tests/snapshots/*.json`.
 
 Deliberately normalized rather than diffing the raw `app.openapi()` output
 byte-for-byte: pydantic auto-generates a `title` for every property from its
@@ -56,10 +55,6 @@ def _load_snapshot(name: str) -> dict:
 
 def _component(name: str) -> dict:
     return app.openapi()["components"]["schemas"][name]
-
-
-def test_mi_result_response_schema_matches_snapshot():
-    assert _normalize_schema(_component("MiResultResponse")) == _load_snapshot("openapi_mi_result_response")
 
 
 def test_riasec_result_response_schema_matches_snapshot():

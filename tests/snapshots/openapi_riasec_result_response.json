@@ -29,6 +29,12 @@
       "default": "Каждый раздел этого отчёта — отдельный кусочек общей картины: не разрозненные факты, а разные стороны одного и того же человека. Используй их вместе, а не по одному, когда будешь решать, что попробовать дальше.",
       "type": "string"
     },
+    "interest_combination": {
+      "anyOf": [
+        "StudentInterestCombination",
+        "null"
+      ]
+    },
     "interest_instrument": {
       "const": "riasec",
       "default": "riasec",
@@ -58,6 +64,12 @@
     "personality_notes": {
       "items": "StudentPersonalityNote",
       "type": "array"
+    },
+    "psychoemotional": {
+      "anyOf": [
+        "PsychoEmotionalSection",
+        "null"
+      ]
     },
     "report_version": {
       "const": 2,

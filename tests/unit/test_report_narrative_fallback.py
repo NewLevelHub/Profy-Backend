@@ -4,26 +4,18 @@ passes report_narrative_validator.validate(), across sparse and rich
 evidence and all three age groups, since this is what the student sees when
 the LLM is unavailable or fails validation three times running.
 """
-from app.models.profile import AgeGroup
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
-from app.services.mi_content import MI_LABELS
 from app.services.report_narrative_fallback import build_fallback_narrative
 from app.services.report_narrative_validator import validate
-from app.services.riasec_content import RIASEC_LABELS
+from app.services.riasec_content import riasec_labels
 
 
-def _context(age_group: AgeGroup, instrument: str, evidence: list[EvidenceItem]) -> ReportNarrativeContext:
-    return ReportNarrativeContext(age_group=age_group.value, interest_instrument=instrument, evidence=evidence)
+def _context(evidence: list[EvidenceItem]) -> ReportNarrativeContext:
+    return ReportNarrativeContext(evidence=evidence)
 
 
-def test_fallback_is_valid_with_empty_evidence_junior():
-    context = _context(AgeGroup.junior, "mi", [])
-    output = build_fallback_narrative(context)
-    assert validate(output, context) == []
-
-
-def test_fallback_is_valid_with_empty_evidence_middle():
-    context = _context(AgeGroup.middle, "riasec", [])
+def test_fallback_is_valid_with_empty_evidence():
+    context = _context([])
     output = build_fallback_narrative(context)
     assert validate(output, context) == []
 
@@ -40,27 +32,20 @@ def test_fallback_is_valid_with_rich_evidence_senior():
         EvidenceItem(source_id="subject_liked:Физика", source_type="subject_liked", text="Физика"),
         EvidenceItem(source_id="artifact:1", source_type="artifact", text="Робототехника"),
     ]
-    context = _context(AgeGroup.senior, "riasec", evidence)
+    context = _context(evidence)
     output = build_fallback_narrative(context)
     assert validate(output, context) == []
 
 
-def test_junior_mi_interests_always_cover_all_eight_categories_regardless_of_evidence():
-    context = _context(AgeGroup.junior, "mi", [])
+def test_riasec_interests_always_cover_all_six_categories_regardless_of_evidence():
+    context = _context([])
     output = build_fallback_narrative(context)
-    assert {i.category for i in output.interests} == set(MI_LABELS.keys())
-    assert len(output.interests) == 8
-
-
-def test_middle_senior_riasec_interests_always_cover_all_six_categories_regardless_of_evidence():
-    context = _context(AgeGroup.middle, "riasec", [])
-    output = build_fallback_narrative(context)
-    assert {i.category for i in output.interests} == set(RIASEC_LABELS.keys())
+    assert {i.category for i in output.interests} == set(riasec_labels().keys())
     assert len(output.interests) == 6
 
 
 def test_evidenced_interest_categories_are_tiered_strong_others_steady():
-    context = _context(AgeGroup.senior, "riasec", [
+    context = _context([
         EvidenceItem(source_id="riasec:R", source_type="riasec_category", text="Реалистичный"),
     ])
     output = build_fallback_narrative(context)
@@ -69,20 +54,12 @@ def test_evidenced_interest_categories_are_tiered_strong_others_steady():
     assert all(tier == "steady" for cat, tier in by_category.items() if cat != "R")
 
 
-def test_junior_never_gets_a_career_narrative():
-    context = _context(AgeGroup.junior, "mi", [
-        EvidenceItem(source_id="mi:logical", source_type="mi_category", text="Логика и счёт"),
-    ])
-    output = build_fallback_narrative(context)
-    assert output.career_narrative == []
-
-
 def test_senior_career_narrative_capped_at_three_and_grounded_in_riasec_evidence():
     evidence = [
-        EvidenceItem(source_id=f"riasec:{letter}", source_type="riasec_category", text=RIASEC_LABELS[letter])
+        EvidenceItem(source_id=f"riasec:{letter}", source_type="riasec_category", text=riasec_labels()[letter])
         for letter in ["R", "I", "A", "S"]
     ]
-    context = _context(AgeGroup.senior, "riasec", evidence)
+    context = _context(evidence)
     output = build_fallback_narrative(context)
     assert len(output.career_narrative) == 3
     for card in output.career_narrative:
@@ -90,8 +67,8 @@ def test_senior_career_narrative_capped_at_three_and_grounded_in_riasec_evidence
 
 
 def test_strength_card_count_never_exceeds_available_evidence():
-    context = _context(AgeGroup.junior, "mi", [
-        EvidenceItem(source_id="mi:logical", source_type="mi_category", text="Логика и счёт"),
+    context = _context([
+        EvidenceItem(source_id="riasec:I", source_type="riasec_category", text="Логика и счёт"),
     ])
     output = build_fallback_narrative(context)
     assert len(output.strength_cards) == 1
@@ -104,7 +81,7 @@ def test_thinking_style_and_motivation_evidence_never_leak_into_strength_cards_e
     thinking_style_notes / the "Что тебя драйвит" motivation section
     (TZ_Profi.md §18.2 п.2 vs п.4/п.5 are three separate sections). Confirms
     that doesn't happen even in this sparse case."""
-    context = _context(AgeGroup.senior, "riasec", [
+    context = _context([
         EvidenceItem(source_id="riasec:R", source_type="riasec_category", text="Реалистичный"),
         EvidenceItem(source_id="thinking_style:creative_think", source_type="thinking_style", text="Генерация идей"),
         EvidenceItem(source_id="thinking_style:systematic", source_type="thinking_style", text="Порядок и система"),
@@ -131,7 +108,7 @@ def test_thinking_style_notes_merge_two_signals_into_one_card_for_senior():
     """Two separate cards, both titled generically "Как тебе легче думать",
     read as a duplicated section (user feedback) — must merge into one card
     naming both styles, citing both source_ids."""
-    context = _context(AgeGroup.senior, "riasec", [
+    context = _context([
         EvidenceItem(source_id="thinking_style:creative_think", source_type="thinking_style", text="x"),
         EvidenceItem(source_id="thinking_style:strategic", source_type="thinking_style", text="y"),
     ])
@@ -144,7 +121,7 @@ def test_thinking_style_notes_merge_two_signals_into_one_card_for_senior():
 
 
 def test_thinking_style_notes_single_signal_names_that_one_style_for_senior():
-    context = _context(AgeGroup.senior, "riasec", [
+    context = _context([
         EvidenceItem(source_id="thinking_style:practical", source_type="thinking_style", text="x"),
     ])
     output = build_fallback_narrative(context)
@@ -153,31 +130,13 @@ def test_thinking_style_notes_single_signal_names_that_one_style_for_senior():
     assert output.thinking_style_notes[0].title == "Тебе близко практическое мышление"
 
 
-def test_thinking_style_notes_junior_has_no_style_labels_or_career_language():
-    """TZ_Profi.md §4.1: junior gets no abstract typology labels and no
-    career/work-adjacent framing anywhere — thinking_style_notes must stay
-    purely behavioral even when merging two signals into one card."""
-    context = _context(AgeGroup.junior, "mi", [
-        EvidenceItem(source_id="thinking_style:creative_think", source_type="thinking_style", text="x"),
-        EvidenceItem(source_id="thinking_style:systematic", source_type="thinking_style", text="y"),
-    ])
-    output = build_fallback_narrative(context)
-
-    assert len(output.thinking_style_notes) == 1
-    card = output.thinking_style_notes[0]
-    assert card.title == "Как тебе легче думать"
-    for banned in ("творческое", "системное", "мышление", "работ", "роль", "карьер"):
-        assert banned not in card.description.lower()
-    assert validate(output, context) == []
-
-
 def test_thinking_style_notes_adds_personality_synthesis_for_senior_when_evidence_present():
     """User feedback: wanted thinking_style + personality combined into a
     new synthesis sentence, WITHOUT repeating the personality trait's own
     note text (that's already shown verbatim in "Твой характер" —
     report_v2_assembler.build_personality_notes)."""
     personality_text = "Ты организован, доводишь дела до конца и держишь слово"
-    context = _context(AgeGroup.senior, "riasec", [
+    context = _context([
         EvidenceItem(source_id="thinking_style:systematic", source_type="thinking_style", text="x"),
         EvidenceItem(source_id="personality:conscientiousness", source_type="personality", text=personality_text),
     ])
@@ -192,7 +151,7 @@ def test_thinking_style_notes_adds_personality_synthesis_for_senior_when_evidenc
 
 
 def test_thinking_style_notes_no_personality_synthesis_when_no_personality_evidence():
-    context = _context(AgeGroup.senior, "riasec", [
+    context = _context([
         EvidenceItem(source_id="thinking_style:systematic", source_type="thinking_style", text="x"),
     ])
     output = build_fallback_narrative(context)
@@ -202,22 +161,8 @@ def test_thinking_style_notes_no_personality_synthesis_when_no_personality_evide
     assert "твоя" not in card.description.lower()
 
 
-def test_thinking_style_notes_junior_never_gets_personality_synthesis():
-    """TZ_Profi.md §4.1: junior gets no trait labels at all, even when
-    personality evidence exists in the catalog."""
-    context = _context(AgeGroup.junior, "mi", [
-        EvidenceItem(source_id="thinking_style:systematic", source_type="thinking_style", text="x"),
-        EvidenceItem(source_id="personality:conscientiousness", source_type="personality", text="Ты организован"),
-    ])
-    output = build_fallback_narrative(context)
-
-    card = output.thinking_style_notes[0]
-    assert "personality:conscientiousness" not in card.evidence_ids
-    assert "организован" not in card.description.lower()
-
-
 def test_final_analysis_has_at_least_three_sentences_and_no_disclaimer_duplicate():
-    context = _context(AgeGroup.senior, "riasec", [
+    context = _context([
         EvidenceItem(source_id="riasec:R", source_type="riasec_category", text="Любишь работать руками"),
         EvidenceItem(source_id="motivation:interest", source_type="motivation", text="Тебя драйвит интерес"),
     ])
@@ -228,7 +173,7 @@ def test_final_analysis_has_at_least_three_sentences_and_no_disclaimer_duplicate
 
 
 def test_final_analysis_mentions_available_sections():
-    context = _context(AgeGroup.senior, "riasec", [
+    context = _context([
         EvidenceItem(source_id="riasec:R", source_type="riasec_category", text="Любишь работать руками"),
         EvidenceItem(source_id="thinking_style:systematic", source_type="thinking_style", text="x"),
         EvidenceItem(source_id="motivation:interest", source_type="motivation", text="Тебя драйвит интерес"),
@@ -244,7 +189,7 @@ def test_final_analysis_mentions_available_sections():
 def test_final_analysis_valid_with_no_evidence_at_all():
     """Graceful degradation — must still produce a valid 3+ sentence text
     even when there's nothing to synthesize."""
-    context = _context(AgeGroup.junior, "mi", [])
+    context = _context([])
     output = build_fallback_narrative(context)
 
     assert validate(output, context) == []
@@ -258,7 +203,7 @@ def test_strength_card_title_is_the_specific_observation_not_a_generic_bucket_la
     интересно" — otherwise every interest-derived card looks identically
     titled. The evidence text (already a specific, human formulation) is
     the title; the description grounds it in how it was observed."""
-    context = _context(AgeGroup.senior, "riasec", [
+    context = _context([
         EvidenceItem(source_id="riasec:R", source_type="riasec_category", text="Любишь работать руками"),
     ])
     output = build_fallback_narrative(context)
@@ -275,7 +220,7 @@ def test_motivation_narrative_joins_multiple_drivers_into_one_readable_sentence(
     not naively space-join the bare phrases either, or the description reads
     as several capitalized sentence fragments run together with no
     punctuation between them."""
-    context = _context(AgeGroup.senior, "riasec", [
+    context = _context([
         EvidenceItem(source_id="motivation:interest", source_type="motivation",
                      text="Заниматься тем, что по-настоящему интересно"),
         EvidenceItem(source_id="motivation:creation", source_type="motivation",
@@ -299,7 +244,7 @@ def test_onboarding_sourced_strength_cards_are_explicitly_marked_as_not_from_the
     next to an "accountant" suggestion read as if the app didn't know what
     it was talking about."""
     for source_type in ("subject_liked", "subject_easy", "artifact"):
-        context = _context(AgeGroup.senior, "riasec", [
+        context = _context([
             EvidenceItem(source_id=f"{source_type}:x", source_type=source_type, text="Программирование"),
         ])
         output = build_fallback_narrative(context)

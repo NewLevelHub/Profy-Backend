@@ -4,8 +4,8 @@ Program row *only* by a bare `uuid4()` primary key.
 Those ids are generated independently per row per database, so a hardcoded
 `University.id` / `Program.id` snapshotted from one database resolves to
 nothing on any other one — the apply script then silently no-ops on every
-entry (this is PRO-244; it already bit `apply_uniranks_world_rank.py` and
-`apply_foreign_university_dedup.py`). Every such reference must travel with
+entry (this is PRO-244; it already bit two apply scripts, since removed in
+PRO-425). Every such reference must travel with
 a cross-DB-portable key — `slug` / `university_slug` / `jinaq_external_id` /
 `ror_id` for a University, and a program *name* (resolved under its parent
 University) for a Program — so `scripts/entity_resolver.py` can re-resolve
@@ -48,8 +48,6 @@ _UNIVERSITY_PORTABLE_FIELDS = (
 # path (posix, relative to repo root) -> ticket that removes it
 _ALLOWLIST = {
     "scripts/data/uniranks_world_rank_review.json": "PRO-245",
-    "scripts/data/foreign_university_dedup_review.json": "PRO-247",
-    "scripts/program_requirements_review_2027.json": "PRO-246 follow-up (regenerate with per-program names)",
 }
 
 
@@ -69,7 +67,7 @@ def _is_uuid(value: object) -> bool:
 def _iter_records(data: object):
     """Yield (locator, record_dict, key_ref) for every row-like record in a
     parsed review file. `key_ref` is the dict key when it is itself a bare
-    uuid row reference (the `db_updates_2026.json` shape), else None.
+    uuid row reference (a `{program_uuid: {...}}` map), else None.
     """
     if isinstance(data, list):
         for i, item in enumerate(data):

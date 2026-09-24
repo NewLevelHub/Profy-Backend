@@ -20,10 +20,8 @@ import uuid
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.profile import AgeGroup
 from app.models.question import Keyed, Question, QuestionInstrument
 from app.models.user_response import UserResponse
-from app.services.age_tiers import visible_tiers
 
 BIGFIVE_ORDER: list[str] = ["N", "E", "O", "A", "C"]
 
@@ -53,7 +51,7 @@ def _acquiescence_shift(minus_count: int, plus_count: int, mean_answer: float) -
     return (minus_count - plus_count) * (mean_answer - _SCALE_MIDPOINT)
 
 
-async def grand_mean(assessment_id: uuid.UUID, db: AsyncSession, age_group: AgeGroup) -> float:
+async def grand_mean(assessment_id: uuid.UUID, db: AsyncSession) -> float:
     """Respondent's mean answer (raw 1-5, before reverse-keying) across every
     Big Five item they were shown — the acquiescence estimate. Midpoint
     (3.0) when there are no responses, so the correction is a no-op."""
@@ -63,35 +61,14 @@ async def grand_mean(assessment_id: uuid.UUID, db: AsyncSession, age_group: AgeG
         .where(
             UserResponse.assessment_id == assessment_id,
             Question.instrument == QuestionInstrument.big_five,
-            Question.age_tier.in_(visible_tiers(age_group)),
         )
     )
     avg = result.scalar_one_or_none()
     return float(avg) if avg is not None else _SCALE_MIDPOINT
 
 
-async def question_counts(db: AsyncSession, age_group: AgeGroup) -> dict[str, int]:
-    """Questions per domain, scoped to what this age branch was actually
-    shown — computed live, never hardcoded (bank/age tiering can change size)."""
-    result = await db.execute(
-        select(Question.bigfive_domain, func.count(Question.id))
-        .where(
-            Question.instrument == QuestionInstrument.big_five,
-            Question.age_tier.in_(visible_tiers(age_group)),
-        )
-        .group_by(Question.bigfive_domain)
-    )
-    counts = {d.value: c for d, c in result.all()}
-    return {d: counts.get(d, 0) for d in BIGFIVE_ORDER}
-
-
 async def answered_count(assessment_id: uuid.UUID, db: AsyncSession) -> int:
-    """How many Big Five UserResponse rows this assessment actually has —
-    used only to gate whether report_service computes a personality profile
-    at all (see build_report's compute_bigfive check), never for domain-level
-    scoring itself. Unscoped by age_tier on purpose: a mid-deploy transition
-    case (answered some Big Five before the active pool excluded it) must
-    still be caught here regardless of which tier's item they answered."""
+    """Number of Big Five responses retained for legacy report support."""
     result = await db.execute(
         select(func.count(UserResponse.id))
         .join(Question, UserResponse.question_id == Question.id)
@@ -103,15 +80,27 @@ async def answered_count(assessment_id: uuid.UUID, db: AsyncSession) -> int:
     return result.scalar_one()
 
 
-async def keying_counts(db: AsyncSession, age_group: AgeGroup) -> dict[str, tuple[int, int]]:
-    """(plus_count, minus_count) per domain for the items this age branch was
-    shown — live from the bank, same rationale as `question_counts`. Feeds
+async def question_counts(db: AsyncSession) -> dict[str, int]:
+    """Questions per domain — computed live, never hardcoded (the bank can
+    change size)."""
+    result = await db.execute(
+        select(Question.bigfive_domain, func.count(Question.id))
+        .where(
+            Question.instrument == QuestionInstrument.big_five,
+        )
+        .group_by(Question.bigfive_domain)
+    )
+    counts = {d.value: c for d, c in result.all()}
+    return {d: counts.get(d, 0) for d in BIGFIVE_ORDER}
+
+
+async def keying_counts(db: AsyncSession) -> dict[str, tuple[int, int]]:
+    """(plus_count, minus_count) per domain — live from the bank, same rationale as `question_counts`. Feeds
     the acquiescence correction in `raw_scores`."""
     result = await db.execute(
         select(Question.bigfive_domain, Question.keyed, func.count(Question.id))
         .where(
             Question.instrument == QuestionInstrument.big_five,
-            Question.age_tier.in_(visible_tiers(age_group)),
         )
         .group_by(Question.bigfive_domain, Question.keyed)
     )
@@ -123,7 +112,7 @@ async def keying_counts(db: AsyncSession, age_group: AgeGroup) -> dict[str, tupl
 
 
 async def facet_keying_counts(
-    db: AsyncSession, age_group: AgeGroup
+    db: AsyncSession
 ) -> dict[tuple[str, int], tuple[int, int]]:
     """(plus_count, minus_count) per (domain, facet) — facet-level counterpart
     of `keying_counts`, feeding the acquiescence correction in `facet_raw`."""
@@ -131,7 +120,6 @@ async def facet_keying_counts(
         select(Question.bigfive_domain, Question.facet, Question.keyed, func.count(Question.id))
         .where(
             Question.instrument == QuestionInstrument.big_five,
-            Question.age_tier.in_(visible_tiers(age_group)),
         )
         .group_by(Question.bigfive_domain, Question.facet, Question.keyed)
     )
@@ -146,7 +134,6 @@ async def facet_keying_counts(
 async def raw_scores(
     assessment_id: uuid.UUID,
     db: AsyncSession,
-    age_group: AgeGroup,
     *,
     mean_answer: float | None = None,
 ) -> dict[str, float]:
@@ -154,7 +141,7 @@ async def raw_scores(
     docstring). Float, not int, because the correction is fractional.
 
     `mean_answer` lets a caller that also needs `facet_raw()` for the same
-    (assessment_id, age_group) pass in the grand mean it already fetched
+    (assessment_id) pass in the grand mean it already fetched
     once, instead of this function and `facet_raw()` each re-running the
     identical query. Left as None, it's computed here."""
     result = await db.execute(
@@ -163,15 +150,14 @@ async def raw_scores(
         .where(
             UserResponse.assessment_id == assessment_id,
             Question.instrument == QuestionInstrument.big_five,
-            Question.age_tier.in_(visible_tiers(age_group)),
         )
         .group_by(Question.bigfive_domain)
     )
     sums = {d.value: float(s) for d, s in result.all()}
 
     if mean_answer is None:
-        mean_answer = await grand_mean(assessment_id, db, age_group)
-    keying = await keying_counts(db, age_group)
+        mean_answer = await grand_mean(assessment_id, db)
+    keying = await keying_counts(db)
     return {
         d: sums.get(d, 0.0) + _acquiescence_shift(keying[d][1], keying[d][0], mean_answer)
         for d in BIGFIVE_ORDER
@@ -200,7 +186,6 @@ def _clamp(value: float) -> float:
 async def facet_raw(
     assessment_id: uuid.UUID,
     db: AsyncSession,
-    age_group: AgeGroup,
     *,
     mean_answer: float | None = None,
 ) -> dict[tuple[str, int], float]:
@@ -213,27 +198,25 @@ async def facet_raw(
         .where(
             UserResponse.assessment_id == assessment_id,
             Question.instrument == QuestionInstrument.big_five,
-            Question.age_tier.in_(visible_tiers(age_group)),
         )
         .group_by(Question.bigfive_domain, Question.facet)
     )
     sums = {(d.value, f): float(s) for d, f, s in result.all()}
 
     if mean_answer is None:
-        mean_answer = await grand_mean(assessment_id, db, age_group)
-    keying = await facet_keying_counts(db, age_group)
+        mean_answer = await grand_mean(assessment_id, db)
+    keying = await facet_keying_counts(db)
     return {
         key: total + _acquiescence_shift(keying.get(key, (0, 0))[1], keying.get(key, (0, 0))[0], mean_answer)
         for key, total in sums.items()
     }
 
 
-async def facet_counts(db: AsyncSession, age_group: AgeGroup) -> dict[tuple[str, int], int]:
+async def facet_counts(db: AsyncSession) -> dict[tuple[str, int], int]:
     result = await db.execute(
         select(Question.bigfive_domain, Question.facet, func.count(Question.id))
         .where(
             Question.instrument == QuestionInstrument.big_five,
-            Question.age_tier.in_(visible_tiers(age_group)),
         )
         .group_by(Question.bigfive_domain, Question.facet)
     )

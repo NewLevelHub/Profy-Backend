@@ -4,7 +4,7 @@ countries, 10,113 majors, source site "jinaq") into University/Program.
 
 Links each jinaq institution to an existing University row by exact match on
 normalized (name, city, country) — no fuzzy matching, same discipline as
-scripts/apply_ovpo_codes.py (whose own fuzzy-matching attempt produced false
+the OVPO-code pass (whose own fuzzy-matching attempt produced false
 positives, e.g. matching "Satbayev University" to "SDU University", and was
 discarded in favor of only trusting exact/hand-checked matches). Most of the
 ~2211 non-Kazakhstan institutions are expected to have no existing match at

@@ -1,23 +1,31 @@
 import logging
 import uuid
 from datetime import datetime, timezone
+from enum import Enum
 
 import redis.asyncio as aioredis
 from fastapi import HTTPException, status
 from pydantic import ValidationError
-from sqlalchemy import select, text
+from sqlalchemy import case, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models.analysis_result import AnalysisResult
+from app.errors import AppError
+from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES, MissingLocalizedText, pick_locale, pick_locale_list, use_locale
+from app.models.analysis_result import AnalysisResult, ReviewStatus
+from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
+from app.models.consent import CONSENT_SCOPE_PSYCH_BLOCK
 from app.models.direction import Direction
-from app.models.profile import AgeGroup, Profile
+from app.models.profile import Profile
+from app.models.psychoemotional_run import PsychoEmotionalRun
+from app.models.user import User, UserRole
 from app.schemas.report_narrative import ReportNarrativeOutput
 from app.schemas.result_v2 import (
-    MiResultResponse,
+    PsychoEmotionalHistoryItem,
+    PsychoEmotionalSection,
     ResultResponseV2,
     ResultV2Adapter,
     RiasecResultResponse,
@@ -28,9 +36,13 @@ from app.services import (
     assessment_shared,
     bigfive_content,
     bigfive_service,
-    mi_service,
-    motivation_pair_service,
+    boyko_empathy_service,
+    consent_service,
+    elers_service,
+    eysenck_service,
+    kondash_anxiety_service,
     motivation_service,
+    professional_types_service,
     report_narrative_context,
     report_v2_assembler,
     riasec_service,
@@ -38,11 +50,23 @@ from app.services import (
 )
 from app.services.bigfive_content import strength_phrases
 from app.services.motivation_content import highlight_phrases as motivation_highlight_phrases
-from app.services.report_narrative_service import generate_report_narrative
+from app.services.psychoemotional import scoring as psychoemotional_scoring
+from app.services.report_narrative_service import (
+    generate_report_narrative,
+    translate_report_narrative,
+)
 
 logger = logging.getLogger(__name__)
 
 CACHE_TTL = 60 * 60 * 24  # 24 hours
+
+# The owner-locale pointer (`_resolve_owner_locale`) is a cheap 2-join query to
+# recompute, and its invalidation on retake / PATCH /auth/me is best-effort
+# (`safe_redis_delete` swallows RedisError). A short TTL bounds how long a
+# silently-missed delete can keep `/result` pointed at the previous language —
+# instead of the full 24h report TTL — while still being long enough that the
+# ~2s GET /result poll during generation is served entirely from cache.
+OWNER_LOCALE_CACHE_TTL = 60 * 5  # 5 minutes
 
 _redis: aioredis.Redis | None = None
 
@@ -71,9 +95,11 @@ async def _cache_get(redis: aioredis.Redis, key: str) -> str | None:
         return None
 
 
-async def _cache_set(redis: aioredis.Redis, key: str, value: str) -> None:
+async def _cache_set(
+    redis: aioredis.Redis, key: str, value: str, *, ttl: int = CACHE_TTL
+) -> None:
     try:
-        await redis.setex(key, CACHE_TTL, value)
+        await redis.setex(key, ttl, value)
     except aioredis.RedisError:
         logger.warning("redis set failed for key=%s — response served without caching", key, exc_info=True)
 
@@ -96,23 +122,67 @@ async def _cache_get_response(redis: aioredis.Redis, key: str) -> ResultResponse
         return None
 
 
-def _career_dict(direction: Direction, match_score: int) -> dict:
+async def _cache_if_published(
+    redis: aioredis.Redis, analysis: AnalysisResult, response: ResultResponseV2
+) -> None:
+    """The student-facing cache must only ever hold published reports
+    (docs/psychologist-review-gate-plan.md §6). The router gates on
+    review_status before reading, but a cached unpublished report would be
+    one careless future caller away from leaking to the student."""
+    if analysis.review_status != ReviewStatus.published:
+        return
+    await _cache_set(redis, _cache_key(analysis.assessment_id, analysis.locale), response.model_dump_json())
+
+
+def _career_dict(direction: Direction, match_score: float) -> dict:
+    # Resolves against the current-request locale (this runs inside the
+    # `use_locale()` block build_report/get_report wrap scoring+text+assembly
+    # in — KZ-403) — Direction's text fields are `{"ru": ..., "kk": ...}` maps.
+    #
+    # `description` may still be blank (`{"ru": ""}`) when
+    # apply_direction_content.py hasn't run — pick_locale treats blank as
+    # missing and would 500 the whole report. Soft-empty here; name stays
+    # strict (seed always fills it).
+    try:
+        description = pick_locale(direction.description)
+    except MissingLocalizedText:
+        description = ""
     return {
         "slug": direction.slug,
-        "name": direction.name,
+        "name": pick_locale(direction.name),
         "holland_code": direction.holland_code,
         "match_score": match_score,
-        "description": direction.description or "",
-        "professions": list(direction.professions or []),
-        "skills_needed": list(direction.skills_needed or []),
-        "subjects_to_develop": list(direction.subjects_to_develop or []),
-        "first_steps": list(direction.first_steps or []),
+        "description": description,
+        "professions": pick_locale_list(direction.professions),
+        "skills_needed": pick_locale_list(direction.skills_needed),
+        "subjects_to_develop": pick_locale_list(direction.subjects_to_develop),
+        "first_steps": pick_locale_list(direction.first_steps),
     }
+
+
+async def _find_primary_analysis(
+    assessment_id: uuid.UUID, db: AsyncSession, *, exclude_locale: str
+) -> AnalysisResult | None:
+    """An already-generated report for this assessment in a *different*
+    locale, to translate from instead of generating a second one from
+    scratch. Prefers the `ru` row (source of truth), then the earliest
+    generated."""
+    rows = (
+        await db.execute(
+            select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        )
+    ).scalars().all()
+    others = [r for r in rows if r.locale != exclude_locale and r.summary]
+    if not others:
+        return None
+    others.sort(key=lambda r: (r.locale != DEFAULT_LOCALE, r.created_at))
+    return others[0]
 
 
 async def _build_narrative(
     *,
-    age_group: AgeGroup,
+    assessment_id: uuid.UUID,
+    db: AsyncSession,
     strengths: list[str],
     personality_profile: dict[str, float],
     personality_notes: dict[str, str],
@@ -121,14 +191,21 @@ async def _build_narrative(
     motivation_highlights: list[str],
     profile: Profile | None,
     artifacts: list[Artifact],
-) -> tuple[report_narrative_context.ReportNarrativeContext, ReportNarrativeOutput]:
-    """One LLM→validate→fallback call (report_narrative_service) produces
-    everything text-shaped: summary, strength_cards, thinking_style_notes —
-    used for all three, not just strength_cards/thinking_style_notes, so a
-    personalized summary and the cards it's consistent with never diverge
-    into two independent generations."""
+    locale: str = DEFAULT_LOCALE,
+) -> tuple[report_narrative_context.ReportNarrativeContext, ReportNarrativeOutput, bool | None]:
+    """Produces everything text-shaped (summary, strength_cards,
+    thinking_style_notes, final_analysis) for this locale.
+
+    If a report already exists in another locale, that one's narrative is
+    *translated* into this locale with a single LLM call — so a `ru` and a
+    `kk` report say the same thing, not two independently generated takes.
+    Only the first-ever locale is generated from scratch. Either path ends
+    in a deterministic fallback (never raises, never leaves a field empty)."""
+    # Caller runs this whole block under i18n.use_locale(locale) so the
+    # KZ-307 accessors inside the context builder and the deterministic
+    # fallback resolve to the artifact owner's language. The AI prompt still
+    # gets `language=locale` explicitly.
     context = report_narrative_context.build_report_narrative_context(
-        age_group=age_group,
         strengths=strengths,
         personality_profile=personality_profile,
         personality_notes=personality_notes,
@@ -139,14 +216,34 @@ async def _build_narrative(
         subjects_easy=list(profile.subjects_easy or []) if profile else [],
         artifacts=artifacts,
     )
-    # `profile.language` is the student's school language of instruction
-    # (a free-text onboarding fact, e.g. "Английский") — unrelated to report
-    # output language. Report narrative localization is future scope
-    # (TZ_Profi.md §30, unimplemented); until then this must always be "ru",
-    # never derived from profile data.
-    narrative, is_ai = await generate_report_narrative(context, language="ru")
-    logger.info("report_narrative generated is_ai=%s age_group=%s", is_ai, age_group.value)
-    return context, narrative
+
+    primary = await _find_primary_analysis(assessment_id, db, exclude_locale=locale)
+    if primary is not None:
+        narrative, is_ai = await translate_report_narrative(
+            context,
+            source={
+                "summary": primary.summary,
+                "final_analysis": primary.final_analysis,
+                "strength_cards": [dict(c) for c in (primary.strength_cards or [])],
+                "thinking_style_notes": [dict(n) for n in (primary.thinking_style_notes or [])],
+            },
+            source_locale=primary.locale,
+            target_locale=locale,
+        )
+        logger.info(
+            "report_narrative translated from=%s to=%s is_ai=%s",
+            primary.locale, locale, is_ai,
+        )
+        # Third value: whether the "translation" is an AI translation of the
+        # primary row (True) or the deterministic fallback — fresh text (False).
+        return context, narrative, is_ai
+
+    narrative, is_ai = await generate_report_narrative(context, language=locale)
+    logger.info(
+        "report_narrative generated is_ai=%s locale=%s",
+        is_ai, locale,
+    )
+    return context, narrative, None
 
 
 async def _acquire_generation_lock(assessment_id: uuid.UUID, db: AsyncSession) -> None:
@@ -165,26 +262,152 @@ async def _acquire_generation_lock(assessment_id: uuid.UUID, db: AsyncSession) -
     await db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:key))"), {"key": str(assessment_id)})
 
 
-def _stored_interest_instrument(profile: dict) -> str:
-    """riasec_service.HOLLAND_ORDER keys are single uppercase letters, MI
-    keys are lowercase words — unambiguous either way, so a stored row's
-    own `profile` dict is enough to tell the two apart without also having
-    to persist age_group on AnalysisResult."""
-    return "riasec" if any(key in riasec_service.HOLLAND_ORDER for key in profile) else "mi"
+async def lock_report_generation(assessment_id: uuid.UUID, db: AsyncSession) -> None:
+    """The per-assessment generation lock, for writers that must not
+    interleave with a locale row being generated — a review edit dropping
+    stale translations, a publish covering every locale row (PRO-337)."""
+    await _acquire_generation_lock(assessment_id, db)
 
 
-def _shape_response(analysis: AnalysisResult) -> ResultResponseV2:
+async def _carry_over_review_edits(
+    reviewed: AnalysisResult,
+    db: AsyncSession,
+    *,
+    motivation_highlights: list[str],
+) -> tuple[list[str], list[str], list[dict], list[str], set[str]]:
+    """Content of a new locale row that must match the row a psychologist
+    reviewed (PRO-337 × KZ-405) — the rest of generation recomputes from the
+    scores and would silently undo their edits.
+
+    Category codes are locale-free and copied as-is. The career list keeps
+    the reviewed selection and order; each career is re-rendered in the
+    current locale from the catalog, except the keys the psychologist changed
+    (and careers they added), which are kept verbatim in the language they
+    were written in — there is nothing to translate them with. Motivation
+    highlights they edited are kept verbatim too.
+
+    "Changed" is read from the edit history as old→new *within one edit*,
+    never by comparing across rows: rows in different locales differ in every
+    rendered field, so a cross-row compare would mark untouched text as
+    edited. Also returns the set of edited top-level fields."""
+    edits = (
+        await db.execute(
+            select(AnalysisResultReviewEdit.changed_fields)
+            .where(AnalysisResultReviewEdit.analysis_result_id == reviewed.id)
+            .order_by(AnalysisResultReviewEdit.edited_at.asc())
+        )
+    ).scalars().all()
+    edited_fields = {field for change in edits for field in change}
+
+    edited_keys: dict[str, set[str]] = {}
+    added: set[str] = set()
+    for change in edits:
+        if "careers" not in change:
+            continue
+        before = {c.get("slug"): c for c in change["careers"].get("old") or []}
+        for career in change["careers"].get("new") or []:
+            slug = career.get("slug")
+            if slug not in before:
+                added.add(slug)
+                continue
+            keys = {key for key, value in career.items() if before[slug].get(key) != value}
+            if keys:
+                edited_keys.setdefault(slug, set()).update(keys)
+
+    reviewed_careers = list(reviewed.careers or [])
+    slugs = [c.get("slug") for c in reviewed_careers if c.get("slug")]
+    directions = (
+        {d.slug: d for d in (await db.execute(select(Direction).where(Direction.slug.in_(slugs)))).scalars().all()}
+        if slugs
+        else {}
+    )
+    careers: list[dict] = []
+    for career in reviewed_careers:
+        slug = career.get("slug")
+        direction = directions.get(slug)
+        if direction is None or slug in added:
+            # Not in the catalog, or written by the psychologist from scratch.
+            careers.append(dict(career))
+            continue
+        rendered = _career_dict(direction, career.get("match_score", 0))
+        for key in edited_keys.get(slug, ()):
+            if key in career:
+                rendered[key] = career[key]
+        careers.append(rendered)
+
+    highlights = (
+        list(reviewed.motivation_highlights)
+        if "motivation_highlights" in edited_fields
+        else motivation_highlights
+    )
+    return list(reviewed.strengths), list(reviewed.weaknesses), careers, highlights, edited_fields
+
+
+async def _resolve_owner_locale(
+    assessment_id: uuid.UUID, db: AsyncSession, redis: aioredis.Redis
+) -> str:
+    """The report renders in the *artifact owner's* language (`users.locale`),
+    never the locale of whoever opened `/results` — an admin on `ru` must
+    still see a `kk` student's report in `kk`. `kk` isn't a SUPPORTED_LOCALES
+    value pre-KZ-603, so it's read straight off the row (KNOWN_LOCALES-gated)
+    and applied through `i18n.use_locale`, not the request-locale machinery.
+
+    Cached in Redis (`owner_locale_cache_key`, short `OWNER_LOCALE_CACHE_TTL`):
+    the value changes only on retake or `PATCH /auth/me`, both of which delete
+    this key, so the hot `GET /result` poll path avoids a 2-join query before
+    every cache hit. The TTL is short (not the report's 24h) because that
+    delete is best-effort — a silently-missed one must not pin the wrong
+    language for a day.
+    """
+    loc_key = assessment_shared.owner_locale_cache_key(assessment_id)
+    cached = await _cache_get(redis, loc_key)
+    if cached in KNOWN_LOCALES:
+        return cached
+
+    owner_locale = (
+        await db.execute(
+            select(User.locale)
+            .select_from(Assessment)
+            .join(Profile, Profile.id == Assessment.profile_id)
+            .join(User, User.id == Profile.user_id)
+            .where(Assessment.id == assessment_id)
+        )
+    ).scalar_one_or_none()
+    resolved = owner_locale if owner_locale in KNOWN_LOCALES else DEFAULT_LOCALE
+    await _cache_set(redis, loc_key, resolved, ttl=OWNER_LOCALE_CACHE_TTL)
+    return resolved
+
+
+async def _interest_evidence(
+    assessment_id: uuid.UUID, db: AsyncSession, *, locale: str | None = None
+) -> dict[str, dict] | None:
+    """Per-type RIASEC answer breakdown for interest details (PRO-336)."""
+    return await riasec_service.answer_evidence(assessment_id, db, locale=locale)
+
+
+def _shape_response(
+    analysis: AnalysisResult,
+    evidence: dict[str, dict] | None = None,
+    *,
+    locale: str = DEFAULT_LOCALE,
+) -> ResultResponseV2:
     """Rebuilds the v2 shape from an already-generated, already-stored row —
     no LLM call, no re-generation. `strength_cards`/`thinking_style_notes`
     are read back verbatim (already the final {title, description} shape,
     migration 0041); `careers`/`interest_map`/`is_flat_profile`/
     `exploration_activities` are recomputed from the other stored raw
     fields via report_v2_assembler — the same functions generation uses,
-    just fed from storage instead of a fresh context."""
-    instrument = _stored_interest_instrument(analysis.profile)
-    effective_age_group = AgeGroup.junior if instrument == "mi" else AgeGroup.senior
+    just fed from storage instead of a fresh context. Those recompute
+    label/synthesis text, so the whole rebuild runs under the owner's
+    locale (KZ-403)."""
+    with use_locale(locale):
+        return _shape_response_inner(analysis, evidence)
+
+
+def _shape_response_inner(
+    analysis: AnalysisResult, evidence: dict[str, dict] | None = None
+) -> ResultResponseV2:
     minimal_context = report_narrative_context.build_report_narrative_context(
-        age_group=effective_age_group,
         strengths=list(analysis.strengths),
         personality_profile={}, personality_notes={}, thinking_style={},
         motivation_top=[], motivation_highlights=[],
@@ -192,20 +415,23 @@ def _shape_response(analysis: AnalysisResult) -> ResultResponseV2:
     )
     differentiation = float((analysis.meta or {}).get("differentiation", 0.0))
     flat = report_v2_assembler.is_flat_profile(differentiation)
-    interest_map = report_v2_assembler.build_interest_map(effective_age_group, dict(analysis.profile))
+    interest_map = report_v2_assembler.build_interest_map(dict(analysis.profile), evidence)
 
     common = dict(
         assessment_id=analysis.assessment_id,
         summary=analysis.summary,
+        # Server-authored framing lines resolved for the owner's locale — the
+        # schema default is ru-only (KZ-403). Runs inside use_locale() above.
+        **report_v2_assembler.build_fixed_framings(),
         strength_cards=[StudentStrengthCard.model_validate(c) for c in analysis.strength_cards],
         interest_map=interest_map,
         interest_map_note=report_v2_assembler.build_interest_map_note(interest_map),
         thinking_style_notes=[StudentThinkingStyleNote.model_validate(n) for n in analysis.thinking_style_notes],
-        # personality_profile is stored on every row regardless of
-        # interest_instrument (Big Five doesn't branch by age) — read back
-        # directly, no need to recompute or route through minimal_context.
+        # personality_profile is stored on every row — read back directly,
+        # no need to recompute or route through minimal_context.
         personality_notes=report_v2_assembler.build_personality_notes(
-            instrument == "mi", dict(analysis.personality_profile)
+            dict(analysis.personality_profile),
+            dict(analysis.personality_notes_override),
         ),
         personality_note=report_v2_assembler.build_personality_note(dict(analysis.personality_profile)),
         motivation_highlights=list(analysis.motivation_highlights),
@@ -214,67 +440,286 @@ def _shape_response(analysis: AnalysisResult) -> ResultResponseV2:
         created_at=analysis.created_at,
     )
 
-    if instrument == "mi":
-        return MiResultResponse(
-            **common,
-            exploration_activities=report_v2_assembler.build_exploration_activities(minimal_context),
-        )
-
     return RiasecResultResponse(
         **common,
+        interest_combination=report_v2_assembler.build_interest_combination(interest_map),
         careers=report_v2_assembler.build_riasec_careers(minimal_context, list(analysis.careers)),
     )
 
 
-async def _assert_assessment_complete(
-    assessment_id: uuid.UUID, age_group: AgeGroup, db: AsyncSession
-) -> None:
+async def _assert_assessment_complete(assessment_id: uuid.UUID, db: AsyncSession) -> None:
     """Server-side re-check, independent of whatever `completed` flag a
     client last saw from /assessment/answers or /assessment/motivation —
     each of those only ever confirms its own phase, not the whole test.
-    Required counts are age-specific since the MI/Harter merge: junior's
-    Likert total is MI + Big Five with the retired RIASEC rows excluded
-    (assessment_shared.likert_total_questions already does this), middle
-    and senior are RIASEC + Big Five (question pairs land in the same
-    Question/UserResponse tables, so no separate count is needed for them).
-    Motivation is Harter pairs for junior/middle, MOST/LEAST triplets for
-    senior — different tables, so the right counter has to be picked here."""
+    Question pairs land in the same Question/UserResponse tables as Likert
+    answers, so no separate count is needed for them. Belbin + АСТУР are also required (assessment_shared.
+    belbin_and_astur_completed): they're not optional/psychologist-only —
+    the continuous flow routes every student through both right after
+    motivation — so a report must not be generatable (and `assessment.status`
+    must not read as `completed`) before they're done too."""
     likert_answered = await assessment_shared.likert_answered_count(assessment_id, db)
-    likert_total = await assessment_shared.likert_total_questions(db, age_group)
+    likert_total = await assessment_shared.likert_total_questions(db)
     likert_done = likert_total > 0 and likert_answered >= likert_total
 
-    if age_group == AgeGroup.senior:
-        mot_answered = await motivation_service.answered_count(assessment_id, db)
-        mot_total = await motivation_service.total_triplets(db)
-    else:
-        mot_answered = await motivation_pair_service.answered_count(assessment_id, db)
-        mot_total = await motivation_pair_service.total_pairs(db)
-    mot_done = mot_total > 0 and mot_answered >= mot_total
+    mot_done = await assessment_shared.motivation_completed(assessment_id, db)
+    battery_done = await assessment_shared.belbin_and_astur_completed(assessment_id, db)
 
-    if not (likert_done and mot_done):
-        raise HTTPException(
+    if not (likert_done and mot_done and battery_done):
+        raise AppError(
             status_code=status.HTTP_409_CONFLICT,
+            error_code="assessment_not_completed",
             detail="Тест ещё не завершён — сначала ответь на все обязательные вопросы",
         )
 
 
+# --------------------------------------------------------------------------
+# Psychology block (PRO-282 epic) — validity / psychoemotional sections
+# --------------------------------------------------------------------------
+# THE single place that decides whether the psych-block sections (validity /
+# psychoemotional) appear in a report. Since the role system was merged
+# from pro-281 (PRO-321): only a psychologist or an admin viewer sees them —
+# a student's own /result never carries them. A psychologist reaches a
+# student's report through GET /api/v1/psychologist/students/{id}/result/{aid},
+# which passes the psychologist as `viewer`. Никакой другой код видимость
+# секций не решает — см. docs/user-roles-integration-plan.md.
+def psych_sections_for(
+    viewer_role: UserRole | None, *, assessment_id: uuid.UUID
+) -> bool:
+    # A plain role value, not the ORM `User` — `_run_*_scoring` may `rollback`
+    # and expire the viewer object before this runs.
+    return viewer_role in (UserRole.psychologist, UserRole.admin)
+
+
+
+
+
+def _psychoemotional_run_number(metrics: dict | None, field: str) -> int | None:
+    """`metrics[field]["value"|"score"]` для компактной строки динамики; `None`,
+    если то прохождение не было посчитано."""
+    if not metrics or field not in metrics:
+        return None
+    node = metrics[field] or {}
+    return node.get("value", node.get("score"))
+
+
+async def _build_psychoemotional_section(
+    assessment_id: uuid.UUID, db: AsyncSession, *, consent_ok: bool
+) -> PsychoEmotionalSection | None:
+    """Фаза 2 «Психоэмоциональный тест» — полный состав вывода специалисту
+    (§B8 / PRO-309). Собирается из ПОСЛЕДНЕЙ строки `psychoemotional_runs`
+    (история append-only) + всех предыдущих для динамики. `None`
+    (→ `/result` `psychoemotional: null`), пока прохождения нет либо последнее
+    не посчитано движком (PRO-307) — так же, как validity. Это единственный
+    шов Фазы 2, новых точек вызова в build_report() нет."""
+    rows = (
+        await db.execute(
+            select(PsychoEmotionalRun)
+            .where(PsychoEmotionalRun.assessment_id == assessment_id)
+            .order_by(PsychoEmotionalRun.created_at.asc())
+        )
+    ).scalars().all()
+    if not rows:
+        return None
+
+    latest = rows[-1]
+    m = latest.metrics or {}
+    if "pairs" not in m:  # сырое / не посчитанное / расчёт упал → секции нет
+        return None
+
+    split = m["split"]
+    anxiety = m["anxiety"]
+    compensation = m["compensation"]
+
+    history = [
+        PsychoEmotionalHistoryItem(
+            run_number=i + 1,
+            completed_at=run.created_at,
+            so=_psychoemotional_run_number(run.metrics, "so"),
+            anxiety_score=_psychoemotional_run_number(run.metrics, "anxiety"),
+            validity_flag=(
+                run.validity_flag.value if run.validity_flag is not None else None
+            ),
+        )
+        for i, run in enumerate(rows[:-1])
+    ]
+    history.reverse()  # новые прохождения сверху
+
+    return PsychoEmotionalSection(
+        consent_ok=consent_ok,
+        thresholds_version=latest.thresholds_version,
+        run_number=len(rows),
+        completed_at=latest.created_at,
+        history=history,
+        checkin=dict(latest.checkin or {}),
+        validity_flag=(
+            latest.validity_flag.value if latest.validity_flag is not None else None
+        ),
+        validity_reasons=list(latest.validity_reasons or []),
+        choice_1=list(latest.list1),
+        choice_2=list(latest.list2),
+        d_value=m["d"]["value"],
+        d_memory=m["d"]["memory"],
+        d_situationally_unstable=m["d"]["situationally_unstable"],
+        positional_pairs=[
+            {"sign": sign, "colors": m["pairs"][sign]}
+            for sign in ("plus", "cross", "equal", "minus")
+        ],
+        root_conflict=tuple(m["pairs"]["root_conflict"]),
+        split_pairs=[
+            {"colors": pair["colors"], "stable": pair["stable"]}
+            for pair in split["pairs"]
+        ],
+        split_count=split["split_count"],
+        instability=split["instability"],
+        anxiety={
+            "score": anxiety["score"],
+            "level": anxiety["level"],
+            "breakdown": {str(k): v for k, v in anxiety["breakdown"].items()},
+        },
+        compensation={
+            "score": compensation["score"],
+            "level": compensation["level"],
+            "breakdown": {str(k): v for k, v in compensation["breakdown"].items()},
+            "purple_forward": compensation["purple_forward"],
+            "purple_position": compensation["purple_position"],
+        },
+        so_value=m["so"]["value"],
+        so_level=m["so"]["level"],
+        vk_value=m["vk"]["value"],
+        vk_level=m["vk"]["level"],
+        black_first=list(latest.list2)[0] == 7,
+    )
+
+
+async def _attach_psych_sections(
+    response: ResultResponseV2,
+    *,
+    viewer_role: UserRole | None,
+    assessment_id: uuid.UUID,
+    db: AsyncSession,
+) -> ResultResponseV2:
+    """Attach the psych-block sections to an already-built main report.
+
+    Isolation contract (PRO-282 §4 / PRO-291): each section's calculation is
+    wrapped so a raised exception is logged and leaves that section `None` —
+    the RIASEC/BigFive report is already assembled and is returned
+    untouched no matter what any block does. The base report is what gets
+    cached (in _build_report/_get_report); these sections are re-attached on
+    every request so the cache stays viewer-agnostic ahead of PRO-321."""
+    if not psych_sections_for(viewer_role, assessment_id=assessment_id):
+        return response
+
+    # `consent_ok` reflects the *student's* recorded parental consent, not the
+    # viewer's — a psychologist opening a student's report must see the
+    # student's consent state, not their own.
+    consent_ok = False
+    try:
+        owner_id = (
+            await db.execute(
+                select(Profile.user_id)
+                .join(Assessment, Assessment.profile_id == Profile.id)
+                .where(Assessment.id == assessment_id)
+            )
+        ).scalar_one_or_none()
+        if owner_id is not None:
+            consent_ok = await consent_service.has_consent(
+                db,
+                user_id=owner_id,
+                scope=CONSENT_SCOPE_PSYCH_BLOCK,
+                assessment_id=assessment_id,
+            )
+    except Exception:  # noqa: BLE001 — consent is a non-blocking annotation
+        logger.exception(
+            "consent lookup failed for assessment=%s — treating as not signed",
+            assessment_id,
+        )
+
+    # Resolved by name at call time (not a module-level dict) so a test /
+    # a future phase can monkeypatch an individual builder and have it take
+    # effect here.
+    builders = {
+        "psychoemotional": _build_psychoemotional_section,
+    }
+
+    updates: dict[str, object | None] = {}
+    for field, builder in builders.items():
+        try:
+            updates[field] = await builder(assessment_id, db, consent_ok=consent_ok)
+        except Exception:  # noqa: BLE001 — a block must never break the main report
+            logger.exception(
+                "psych section %r failed for assessment=%s — section omitted, "
+                "main RIASEC/BigFive report unaffected",
+                field,
+                assessment_id,
+            )
+            updates[field] = None
+
+    return response.model_copy(update=updates)
+
+
+
+
+
+async def _run_psychoemotional_scoring(
+    assessment_id: uuid.UUID, db: AsyncSession
+) -> None:
+    """Fire the PRO-307 psychoemotional (МЦВ Собчик) metrics engine after the
+    main report is committed. Same isolation contract as validity above: any
+    failure is logged, partial writes rolled back, report generation continues."""
+    try:
+        await psychoemotional_scoring.score_and_store(assessment_id, db)
+    except Exception:  # noqa: BLE001 — must never break the main report
+        logger.exception(
+            "psychoemotional scoring failed for assessment=%s — metrics omitted, "
+            "main report unaffected",
+            assessment_id,
+        )
+        await db.rollback()
+
+
 async def build_report(
+    assessment_id: uuid.UUID, db: AsyncSession, *, viewer: User | None = None
+) -> ResultResponseV2:
+    """Public entrypoint: build/load the main report, then attach the
+    isolated psych-block sections. `viewer` is optional so internal callers
+    that only need the report materialized (e.g. goal_overlay_service) keep
+    working unchanged."""
+    # Bind the role now — _build_report runs the psych-block scorers, which
+    # may rollback and expire `viewer` before _attach_psych_sections reads it.
+    viewer_role = viewer.role if viewer is not None else None
+    response = await _build_report(assessment_id, db)
+    return await _attach_psych_sections(
+        response, viewer_role=viewer_role, assessment_id=assessment_id, db=db
+    )
+
+
+async def _build_report(
     assessment_id: uuid.UUID, db: AsyncSession
 ) -> ResultResponseV2:
-    cache_key = _cache_key(assessment_id)
     redis = _get_redis()
+    locale = await _resolve_owner_locale(assessment_id, db, redis)
+    cache_key = _cache_key(assessment_id, locale)
 
     cached_response = await _cache_get_response(redis, cache_key)
     if cached_response is not None:
         return cached_response
 
     existing_result = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        select(AnalysisResult).where(
+            AnalysisResult.assessment_id == assessment_id,
+            AnalysisResult.locale == locale,
+        )
     )
     existing = existing_result.scalar_one_or_none()
     if existing:
-        response = _shape_response(existing)
-        await _cache_set(redis, cache_key, response.model_dump_json())
+        response = _shape_response(
+            existing,
+            await _interest_evidence(
+                assessment_id, db, locale=locale
+            ),
+            locale=locale,
+        )
+        await _cache_if_published(redis, existing, response)
         return response
 
     # No result yet — but a concurrent request for this same assessment_id
@@ -287,12 +732,21 @@ async def build_report(
     # primary mechanism.
     await _acquire_generation_lock(assessment_id, db)
     existing_result = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        select(AnalysisResult).where(
+            AnalysisResult.assessment_id == assessment_id,
+            AnalysisResult.locale == locale,
+        )
     )
     existing = existing_result.scalar_one_or_none()
     if existing:
-        response = _shape_response(existing)
-        await _cache_set(redis, cache_key, response.model_dump_json())
+        response = _shape_response(
+            existing,
+            await _interest_evidence(
+                assessment_id, db, locale=locale
+            ),
+            locale=locale,
+        )
+        await _cache_if_published(redis, existing, response)
         return response
 
     assessment_result = await db.execute(
@@ -308,40 +762,27 @@ async def build_report(
         select(Profile).where(Profile.id == assessment.profile_id)
     )
     profile = profile_result.scalar_one_or_none()
-    age_group = profile.age_group if profile is not None else AgeGroup.senior
 
     # Gate before any write: an incomplete assessment must not flip to
     # `completed` and must not get a partial AnalysisResult.
-    await _assert_assessment_complete(assessment_id, age_group, db)
+    await _assert_assessment_complete(assessment_id, db)
 
     artifacts_result = await db.execute(
         select(Artifact).where(Artifact.profile_id == assessment.profile_id)
     )
     artifacts = list(artifacts_result.scalars().all())
 
-    if age_group == AgeGroup.junior:
-        # Junior (6-9) is not career-oriented (TZ_Profi.md §4.1) — RIASEC and
-        # its career matching are replaced with an MI-style "what to try"
-        # instrument. Big Five stays unchanged below for personality/thinking_style.
-        raw = await mi_service.raw_scores(assessment_id, db, age_group)
-        counts = await mi_service.question_counts(db, age_group)
-        profile_scores = mi_service.normalize(raw, counts)
-        aversion_counts = await mi_service.aversion(assessment_id, db, age_group)
-
-        code = mi_service.top_code(profile_scores)
-        meta = {
-            "differentiation": mi_service.differentiation(profile_scores),
-            "consistency": mi_service.consistency(profile_scores),
-            "aversion": aversion_counts,
-        }
-        strengths, weaknesses = mi_service.strengths_weaknesses(profile_scores, aversion_counts, counts)
-        plan = mi_service.development_plan(code, weaknesses, aversion_counts, counts)
-        careers: list[dict] = []
-    else:
-        raw = await riasec_service.raw_scores(assessment_id, db, age_group)
-        counts = await riasec_service.question_counts(db, age_group)
+    # The whole scoring -> deterministic-text -> assemble pass renders in the
+    # artifact owner's language: development_plan, matched_careers,
+    # strength_phrases, the narrative (LLM or fallback) and assemble_result_v2
+    # all read get_locale() through the KZ-307 accessors. `kk` isn't a
+    # SUPPORTED_LOCALES value pre-KZ-603 so use_locale (KNOWN_LOCALES-gated)
+    # is what carries it, not set_locale. (KZ-401/KZ-403.)
+    with use_locale(locale):
+        raw = await riasec_service.raw_scores(assessment_id, db)
+        counts = await riasec_service.question_counts(db)
         profile_scores = riasec_service.normalize(raw, counts)
-        aversion_counts = await riasec_service.aversion(assessment_id, db, age_group)
+        aversion_counts = await riasec_service.aversion(assessment_id, db)
 
         code = riasec_service.top_code(profile_scores)
         meta = {
@@ -352,148 +793,450 @@ async def build_report(
         strengths, weaknesses = riasec_service.strengths_weaknesses(profile_scores, aversion_counts, counts)
         plan = riasec_service.development_plan(code, weaknesses, aversion_counts, counts)
 
-        matched = await riasec_service.matched_careers(code, db)
+        matched = await riasec_service.matched_careers(profile_scores, db)
         careers = [_career_dict(d, score) for d, score in matched]
 
-    # Big Five is retired from the active test pool (docs/big-five-retirement.md)
-    # — new assessments never get Big Five questions/pairs served to them, so
-    # bf_answered is normally 0 for anything without a pre-retirement
-    # AnalysisResult. Gate on FULL completion, not "any answered": the only
-    # way bf_answered can be >0 here is a user mid-test at the moment the
-    # exclusion deployed (answered some Big Five items under the old serving
-    # code, finishes after). A partial set would score exactly as broken as
-    # zero (normalize()'s min-max floor turns "no answers" into a *fake*
-    # 100% Emotional Stability, not an honest "no data") — so it's shown
-    # only when genuinely complete, never half-computed.
-    bf_counts = await bigfive_service.question_counts(db, age_group)
-    bf_total = sum(bf_counts.values())
-    bf_answered = await bigfive_service.answered_count(assessment_id, db)
-    compute_bigfive = bf_total > 0 and bf_answered >= bf_total
+        bf_counts = await bigfive_service.question_counts(db)
+        bf_total = sum(bf_counts.values())
+        bf_answered = await bigfive_service.answered_count(assessment_id, db)
+        compute_bigfive = bf_total > 0 and bf_answered >= bf_total
 
-    if compute_bigfive:
-        # grand_mean is the same query for both raw_scores() and facet_raw()
-        # below (same assessment_id/age_group) — fetch it once here instead
-        # of each function independently re-running it.
-        bf_mean_answer = await bigfive_service.grand_mean(assessment_id, db, age_group)
+        if compute_bigfive:
+            # Historical, fully completed Big Five attempts remain readable.
+            bf_mean_answer = await bigfive_service.grand_mean(assessment_id, db)
+            bf_raw = await bigfive_service.raw_scores(
+                assessment_id, db, mean_answer=bf_mean_answer
+            )
+            bigfive_scores = bigfive_service.normalize(bf_raw, bf_counts)
 
-        bf_raw = await bigfive_service.raw_scores(assessment_id, db, age_group, mean_answer=bf_mean_answer)
-        bigfive_scores = bigfive_service.normalize(bf_raw, bf_counts)
+            bf_facet_raw = await bigfive_service.facet_raw(
+                assessment_id, db, mean_answer=bf_mean_answer
+            )
+            bf_facet_counts = await bigfive_service.facet_counts(db)
+            bf_facet_norm = bigfive_service.facet_normalize(
+                bf_facet_raw, bf_facet_counts
+            )
+            thinking_style = thinking_style_service.compute(bf_facet_norm)
 
-        bf_facet_raw = await bigfive_service.facet_raw(assessment_id, db, age_group, mean_answer=bf_mean_answer)
-        bf_facet_counts = await bigfive_service.facet_counts(db, age_group)
-        bf_facet_norm = bigfive_service.facet_normalize(bf_facet_raw, bf_facet_counts)
-        thinking_style = thinking_style_service.compute(bf_facet_norm)
+            personality_profile, personality_notes = (
+                bigfive_content.build_personality_profile(bigfive_scores)
+            )
+            personality_highlights = strength_phrases(personality_profile)
+        else:
+            # New attempts never receive Big Five questions. Partial legacy
+            # attempts must not produce fabricated personality conclusions.
+            bigfive_scores, thinking_style = {}, {}
+            personality_profile, personality_notes = {}, {}
+            personality_highlights = []
 
-        personality_profile, personality_notes = bigfive_content.build_personality_profile(bigfive_scores)
-        personality_highlights = strength_phrases(personality_profile)
-    else:
-        bigfive_scores, thinking_style = {}, {}
-        personality_profile, personality_notes = {}, {}
-        personality_highlights = []
-
-    # Junior/middle answer the Harter-format pairs instead of the 3-way
-    # MOST/LEAST triplets (senior) — different tables/scoring, same shape.
-    if age_group in (AgeGroup.junior, AgeGroup.middle):
-        mot_scores = await motivation_pair_service.raw_scores(assessment_id, db)
-    else:
         mot_scores = await motivation_service.raw_scores(assessment_id, db)
-    mot_top = motivation_service.top_categories(mot_scores)
-    mot_highlights = motivation_highlight_phrases(mot_top)
+        mot_top = motivation_service.top_categories(mot_scores)
+        mot_highlights = motivation_highlight_phrases(mot_top)
 
-    # One narrative call feeds summary + strength_cards + thinking_style_notes
-    # together (LLM when enabled and valid, deterministic fallback otherwise
-    # — report_narrative_service never raises and never leaves any of the
-    # three empty/inconsistent with each other).
-    context, narrative = await _build_narrative(
-        age_group=age_group,
-        strengths=strengths,
-        personality_profile=personality_profile,
-        personality_notes=personality_notes,
-        thinking_style=thinking_style,
-        motivation_top=mot_top,
-        motivation_highlights=mot_highlights,
-        profile=profile,
-        artifacts=artifacts,
-    )
-    strength_cards_stored = [card.model_dump(exclude={"evidence_ids"}) for card in narrative.strength_cards]
-    thinking_style_notes_stored = [
-        note.model_dump(exclude={"evidence_ids"}) for note in narrative.thinking_style_notes
-    ]
-
-    analysis = AnalysisResult(
-        assessment_id=assessment_id,
-        summary=narrative.summary,
-        profile=profile_scores,
-        code=code,
-        meta=meta,
-        careers=careers,
-        strengths=strengths,
-        weaknesses=weaknesses,
-        development_plan=plan,
-        big_five=bigfive_scores,
-        thinking_style=thinking_style,
-        personality_highlights=personality_highlights,
-        personality_profile=personality_profile,
-        personality_notes=personality_notes,
-        motivation=mot_scores,
-        motivation_top=mot_top,
-        motivation_highlights=mot_highlights,
-        strength_cards=strength_cards_stored,
-        thinking_style_notes=thinking_style_notes_stored,
-        final_analysis=narrative.final_analysis,
-        report_version=2,
-    )
-    db.add(analysis)
-    if assessment.status != AssessmentStatus.completed:
-        # Same transaction as the AnalysisResult insert below — either both
-        # land or neither does, so a completed-without-a-report assessment
-        # can no longer exist.
-        assessment.status = AssessmentStatus.completed
-        assessment.completed_at = datetime.now(timezone.utc)
-    try:
-        await db.commit()
-        await db.refresh(analysis)
-    except IntegrityError:
-        await db.rollback()
-        existing_result = await db.execute(
-            select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        # KZ-405: a row in another locale means this one is a translation of an
+        # already-generated report. It carries that report's review status —
+        # a language switch must neither hide a published report behind "under
+        # review" again nor start a second review. Only a first-ever report
+        # starts as pending_review (and notifies the psychologist, below).
+        sibling = (
+            await db.execute(
+                select(AnalysisResult)
+                .where(AnalysisResult.assessment_id == assessment_id, AnalysisResult.locale != locale)
+                # The row under review: ru first, then the earliest — the same
+                # rule as psychologist_service._is_original_row.
+                .order_by(
+                    case((AnalysisResult.locale == DEFAULT_LOCALE, 0), else_=1),
+                    AnalysisResult.created_at.asc(),
+                    AnalysisResult.id.asc(),
+                )
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        carried_edits: set[str] = set()
+        if sibling is not None:
+            # Inheriting the status is only honest if the content matches what
+            # was reviewed. The narrative is translated from that row
+            # (_build_narrative); everything else a psychologist can edit is
+            # carried over instead of being recomputed from the scores.
+            strengths, weaknesses, careers, mot_highlights, carried_edits = await _carry_over_review_edits(
+                sibling, db, motivation_highlights=mot_highlights
+            )
+        inherited_review = (
+            dict(
+                review_status=sibling.review_status,
+                reviewed_by=sibling.reviewed_by,
+                reviewed_at=sibling.reviewed_at,
+                published_by=sibling.published_by,
+                published_at=sibling.published_at,
+                personality_notes_override=dict(sibling.personality_notes_override),
+            )
+            if sibling is not None
+            # Explicit, not just the column default: a new report is never
+            # visible to the student until a psychologist publishes it.
+            else dict(review_status=ReviewStatus.pending_review)
         )
-        analysis = existing_result.scalar_one()
-        response = _shape_response(analysis)
-        await _cache_set(redis, cache_key, response.model_dump_json())
-        return response
+        # One narrative call feeds summary + strength_cards + thinking_style_notes
+        # together (LLM when enabled and valid, deterministic fallback otherwise
+        # — report_narrative_service never raises and never leaves any of the
+        # three empty/inconsistent with each other).
+        context, narrative, narrative_translated_by_ai = await _build_narrative(
+            assessment_id=assessment_id,
+            db=db,
+            strengths=strengths,
+            personality_profile=personality_profile,
+            personality_notes=personality_notes,
+            thinking_style=thinking_style,
+            motivation_top=mot_top,
+            motivation_highlights=mot_highlights,
+            profile=profile,
+            artifacts=artifacts,
+            locale=locale,
+        )
+        strength_cards_stored = [card.model_dump(exclude={"evidence_ids"}) for card in narrative.strength_cards]
+        thinking_style_notes_stored = [
+            note.model_dump(exclude={"evidence_ids"}) for note in narrative.thinking_style_notes
+        ]
+        summary_stored = narrative.summary
+        final_analysis_stored = narrative.final_analysis
+        if sibling is not None and not narrative_translated_by_ai:
+            # The deterministic fallback (LLM off, or every attempt failed) is
+            # fresh text, not a translation of the reviewed row — it would
+            # silently drop what the psychologist wrote. Narrative fields they
+            # edited come over verbatim instead, like every other carried edit;
+            # untouched ones keep the target-locale fallback text.
+            if "summary" in carried_edits:
+                summary_stored = sibling.summary
+            if "final_analysis" in carried_edits:
+                final_analysis_stored = sibling.final_analysis
+            if "strength_cards" in carried_edits:
+                strength_cards_stored = [dict(card) for card in sibling.strength_cards]
+            if "thinking_style_notes" in carried_edits:
+                thinking_style_notes_stored = [dict(note) for note in sibling.thinking_style_notes]
 
-    response = report_v2_assembler.assemble_result_v2(
-        assessment_id=assessment_id,
-        age_group=age_group,
-        context=context,
-        narrative=narrative,
-        profile_scores=profile_scores,
-        personality_profile=personality_profile,
-        differentiation=meta["differentiation"],
-        careers=careers,
-        created_at=analysis.created_at,
-    )
-    await _cache_set(redis, cache_key, response.model_dump_json())
+        # PRO-338 Ф1.2 — specialist-only; both raw-score reads come back None
+        # when the student never answered ДДО, collapsing to
+        # `professional_types=None` on the row.
+        pt_interest_scores = await professional_types_service.interest_raw_scores(assessment_id, db)
+        pt_abilities_scores = await professional_types_service.abilities_raw_scores(assessment_id, db)
+        professional_types_data = (
+            {
+                "interest_scores": pt_interest_scores,
+                "hybrid_profile": professional_types_service.hybrid_profile(pt_interest_scores),
+                "abilities_scores": pt_abilities_scores,
+            }
+            if pt_interest_scores is not None or pt_abilities_scores is not None
+            else None
+        )
+
+        # PRO-338 Ф1.5 — same "specialist-only, None if unanswered" convention.
+        eysenck_scores = await eysenck_service.raw_scores(assessment_id, db)
+        eysenck_data = eysenck_service.build_section_data(eysenck_scores)
+
+        # PRO-338 Ф1.8 — same "specialist-only, None if unanswered" convention.
+        elers_score = await elers_service.raw_score(assessment_id, db)
+        elers_data = elers_service.build_section_data(elers_score)
+
+        # PRO-338 Ф1.11 — Бойко (эмпатия) + Кондаш/Прихожан (соц. уверенность)
+        # share one report section (empathy_confidence); each half falls back to
+        # None independently on its own instrument being unanswered, then the
+        # two dicts are merged (never both None -> None, since either half alone
+        # is still real data worth showing).
+        boyko_scores = await boyko_empathy_service.raw_scores(assessment_id, db)
+        boyko_data = boyko_empathy_service.build_section_data(boyko_scores)
+        kondash_interpersonal_raw = await kondash_anxiety_service.interpersonal_raw_score(assessment_id, db)
+        kondash_data = kondash_anxiety_service.build_confidence_data(
+            kondash_interpersonal_raw, age=profile.age if profile is not None else 16
+        )
+        empathy_confidence_data = (
+            {**(boyko_data or {}), **(kondash_data or {})}
+            if boyko_data is not None or kondash_data is not None
+            else None
+        )
+
+        analysis = AnalysisResult(
+            assessment_id=assessment_id,
+            locale=locale,
+            summary=summary_stored,
+            profile=profile_scores,
+            code=code,
+            meta=meta,
+            careers=careers,
+            strengths=strengths,
+            weaknesses=weaknesses,
+            development_plan=plan,
+            big_five=bigfive_scores,
+            thinking_style=thinking_style,
+            personality_highlights=personality_highlights,
+            personality_profile=personality_profile,
+            personality_notes=personality_notes,
+            motivation=mot_scores,
+            motivation_top=mot_top,
+            motivation_highlights=mot_highlights,
+            strength_cards=strength_cards_stored,
+            thinking_style_notes=thinking_style_notes_stored,
+            final_analysis=final_analysis_stored,
+            professional_types=professional_types_data,
+            eysenck=eysenck_data,
+            elers=elers_data,
+            empathy_confidence=empathy_confidence_data,
+            report_version=2,
+            **inherited_review,
+        )
+        # Read before commit — the profile instance is expired afterwards.
+        student_user_id = profile.user_id if profile is not None else None
+        student_name = profile.name if profile is not None else None
+        db.add(analysis)
+        if assessment.status != AssessmentStatus.completed:
+            # Same transaction as the AnalysisResult insert below — either both
+            # land or neither does, so a completed-without-a-report assessment
+            # can no longer exist.
+            assessment.status = AssessmentStatus.completed
+            assessment.completed_at = datetime.now(timezone.utc)
+        try:
+            await db.commit()
+            await db.refresh(analysis)
+        except IntegrityError:
+            await db.rollback()
+            existing_result = await db.execute(
+                select(AnalysisResult).where(
+                    AnalysisResult.assessment_id == assessment_id,
+                    AnalysisResult.locale == locale,
+                )
+            )
+            analysis = existing_result.scalar_one()
+            response = _shape_response(
+                analysis,
+                await _interest_evidence(
+                    assessment_id, db, locale=locale
+                ),
+                locale=locale,
+            )
+            await _cache_if_published(redis, analysis, response)
+            return response
+
+        if sibling is not None:
+            # A translation carries reviewed content — careers, motivation
+            # highlights, personality_notes_override — that assemble_result_v2
+            # would rebuild from the scores, and this response is cached as-is.
+            # Shape it from the row just stored, exactly like every later read.
+            response = _shape_response(
+                analysis,
+                await _interest_evidence(
+                    assessment_id, db, locale=locale
+                ),
+                locale=locale,
+            )
+        else:
+            evidence = await _interest_evidence(
+                assessment_id, db, locale=locale
+            )
+            response = report_v2_assembler.assemble_result_v2(
+                assessment_id=assessment_id,
+                context=context,
+                narrative=narrative,
+                profile_scores=profile_scores,
+                personality_profile=personality_profile,
+                differentiation=meta["differentiation"],
+                careers=careers,
+                created_at=analysis.created_at,
+                evidence=evidence,
+            )
+    await _cache_if_published(redis, analysis, response)
+
+    # Psychoemotional (МЦВ Собчик) metrics (PRO-307) — same isolation.
+    await _run_psychoemotional_scoring(assessment_id, db)
+
+    # Only a first-ever report starts a review — a new locale row inherited the
+    # status above, and the "already exists" / IntegrityError branches return
+    # before reaching this.
+    if sibling is None and student_user_id is not None:
+        from app.services import psychologist_service
+
+        await psychologist_service.notify_review_pending(
+            db,
+            student_id=student_user_id,
+            student_name=student_name,
+            assessment_id=assessment_id,
+        )
     return response
 
 
-async def get_report(
+def student_personality_notes(
+    analysis: AnalysisResult, *, include_overrides: bool = True
+) -> dict[str, str]:
+    """Exactly the "Твой характер" text the student reads: the computed
+    phrase per trait, with the psychologist's corrections applied.
+    The psychologist's own view edits this, not the adult-phrased stored
+    `personality_notes` (which the student never sees)."""
+    # In the row's own language, never the reviewer's request locale — a kk
+    # psychologist reviewing a ru report must see (and correct) the ru phrase.
+    with use_locale(analysis.locale):
+        return {
+            note.trait: note.description
+            for note in report_v2_assembler.build_personality_notes(
+                dict(analysis.personality_profile),
+                dict(analysis.personality_notes_override) if include_overrides else {},
+            )
+        }
+
+
+async def get_review_status(assessment_id: uuid.UUID, db: AsyncSession) -> ReviewStatus | None:
+    """Single source of truth for the student-facing review gate — always
+    read from the DB, never from the report cache. None = no report yet."""
+    # KZ-405: one row per locale, all sharing the report's review status
+    # (build_report inherits it onto every new locale row) — any one answers.
+    result = await db.execute(
+        select(AnalysisResult.review_status)
+        .where(AnalysisResult.assessment_id == assessment_id)
+        .order_by(
+            case((AnalysisResult.locale == DEFAULT_LOCALE, 0), else_=1),
+            AnalysisResult.created_at.asc(),
+            AnalysisResult.id.asc(),
+        )
+        .limit(1)
+    )
+    return result.scalars().first()
+
+
+class ReportLookup(str, Enum):
+    """Outcome of a `/result` read (KZ-406), resolved from a single query."""
+
+    OK = "ok"
+    # A report exists, but only in a locale other than the owner's current one
+    # — the "switched language, needs lazy regeneration" case.
+    LOCALE_NOT_GENERATED = "locale_not_generated"
+    NOT_FOUND = "not_found"
+
+
+async def resolve_report(
     assessment_id: uuid.UUID, db: AsyncSession
-) -> ResultResponseV2 | None:
-    cache_key = _cache_key(assessment_id)
+) -> tuple[ResultResponseV2 | None, ReportLookup]:
+    """`/result` read with a 3-state outcome: the owner-locale report, or a
+    signal distinguishing "a report exists only in another locale" (KZ-406
+    lazy regen) from "no report at all". Both cases are derived from one
+    query, so the ~2s GET /result poll during generation never runs a second
+    near-duplicate SELECT on top of it."""
     redis = _get_redis()
+    locale = await _resolve_owner_locale(assessment_id, db, redis)
+    cache_key = _cache_key(assessment_id, locale)
 
     cached_response = await _cache_get_response(redis, cache_key)
     if cached_response is not None:
-        return cached_response
+        return cached_response, ReportLookup.OK
 
+    # No locale filter: an assessment has at most len(KNOWN_LOCALES) rows, so
+    # this costs the same as the old locale-filtered SELECT but also reveals
+    # whether a *different* locale's report exists — without a second query.
+    rows = (
+        await db.execute(
+            select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        )
+    ).scalars().all()
+    if not rows:
+        return None, ReportLookup.NOT_FOUND
+
+    analysis = next((row for row in rows if row.locale == locale), None)
+    if analysis is None:
+        # A report exists, just not for the owner's current locale — KZ-406
+        # will lazily (re)generate it. Do NOT fall back to another locale's row.
+        return None, ReportLookup.LOCALE_NOT_GENERATED
+
+    response = _shape_response(
+        analysis,
+        await _interest_evidence(
+            assessment_id, db, locale=locale
+        ),
+        locale=locale,
+    )
+    await _cache_if_published(redis, analysis, response)
+    return response, ReportLookup.OK
+
+
+async def get_report_with_analysis(
+    assessment_id: uuid.UUID, db: AsyncSession, *, viewer_role: UserRole | None = None
+) -> tuple[ResultResponseV2, AnalysisResult] | None:
+    """PRO-338 Ф0.3 — the psychologist specialist report surface needs both
+    the already-existing student-shape report AND the raw `AnalysisResult`
+    row (for the 6 new-tests JSONB containers,
+    `new_tests_report_service.build_new_tests_sections`). `get_report()`
+    alone only ever returns the shaped response and, on a cache hit, never
+    touches the DB row at all. Bypasses the response cache on purpose: the
+    specialist view is low-traffic and always needs the raw row anyway, so
+    caching only the shaped half saves nothing.
+
+    PRO-338 Ф4.1: also attaches PRO-282's `validity`/`psychoemotional`
+    sections when `viewer_role` is given — same `_attach_psych_sections`
+    seam `get_report()` uses, called here explicitly because this function
+    bypasses that one entirely (it reads `AnalysisResult` directly, not
+    `_get_report`/the response cache). Before this, the specialist report
+    endpoint (Ф0.3) built its response via this function WITHOUT ever
+    calling `_attach_psych_sections` — `validity`/`psychoemotional` stayed
+    `null` here even for a psychologist viewer, despite PRO-282 already
+    being merged into this backend branch (see this function's own Ф0.3
+    history / 01-Фаза0-Фундамент.md's note on the gap). `viewer_role=None`
+    (the default) preserves every other caller's existing behavior — only
+    `psychologist_service.get_assigned_student_report` (Ф4.1) passes a role."""
     result = await db.execute(
         select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
     )
     analysis = result.scalar_one_or_none()
     if analysis is None:
         return None
-    response = _shape_response(analysis)
-    await _cache_set(redis, cache_key, response.model_dump_json())
+    response = await _attach_psych_sections(
+        _shape_response(
+            analysis,
+            await _interest_evidence(
+                assessment_id,
+                db,
+                locale=analysis.locale,
+            ),
+            locale=analysis.locale,
+        ),
+        viewer_role=viewer_role,
+        assessment_id=assessment_id,
+        db=db,
+    )
+    return response, analysis
+
+
+async def get_report(
+    assessment_id: uuid.UUID, db: AsyncSession, *, viewer: User | None = None
+) -> ResultResponseV2 | None:
+    """Public entrypoint — see build_report(). Returns None (unchanged) when
+    no report exists yet; otherwise the report with psych-block sections
+    attached."""
+    viewer_role = viewer.role if viewer is not None else None
+    response = await _get_report(assessment_id, db)
+    if response is None:
+        return None
+    return await _attach_psych_sections(
+        response, viewer_role=viewer_role, assessment_id=assessment_id, db=db
+    )
+
+
+async def _get_report(
+    assessment_id: uuid.UUID, db: AsyncSession
+) -> ResultResponseV2 | None:
+    """The owner-locale report, or None when there is none for that locale
+    (whether or not one exists in another locale). Callers that must tell
+    those two apart use `resolve_report`."""
+    response, _ = await resolve_report(assessment_id, db)
     return response
+
+
+async def invalidate_owner_locale_cache(user_id: uuid.UUID, db: AsyncSession) -> None:
+    """Drop the cached owner-locale pointer (and the per-locale report cache
+    entries) for every assessment this user owns. Called from `PATCH /auth/me`
+    when `users.locale` changes: the report itself is keyed per-locale so a
+    switch never *serves* the wrong language, but `_resolve_owner_locale`'s
+    Redis cache would otherwise keep pointing `/result` at the old locale's
+    key until it expired."""
+    rows = await db.execute(
+        select(Assessment.id)
+        .join(Profile, Profile.id == Assessment.profile_id)
+        .where(Profile.user_id == user_id)
+    )
+    redis = _get_redis()
+    keys = [k for aid in rows.scalars().all() for k in assessment_shared.report_cache_keys(aid)]
+    if keys:
+        await assessment_shared.safe_redis_delete(redis, *keys)

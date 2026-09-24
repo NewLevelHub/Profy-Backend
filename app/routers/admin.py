@@ -20,9 +20,8 @@ from app.schemas.admin import (
     AdminUserDetailResponse,
     AdminUserListResponse,
     AdminUserStatsResponse,
-    PsychologistAssignmentCreate,
-    PsychologistAssignmentItem,
-    PsychologistAssignmentListResponse,
+    AdminContentOverrideRequest,
+    AdminContentOverrideResponse,
 )
 from app.schemas.admin_university import (
     AdminUniversityCountry,
@@ -32,15 +31,11 @@ from app.schemas.admin_university import (
     AdminProgramDetail,
     AdminProgramUpdateRequest,
 )
-from app.models.profile import AgeGroup
 from app.models.question import QuestionInstrument
 from app.schemas.admin_content import (
     AdminDirectionDetail,
     AdminDirectionListResponse,
     AdminDirectionUpdateRequest,
-    AdminMotivationPairDetail,
-    AdminMotivationPairListResponse,
-    AdminMotivationPairUpdateRequest,
     AdminMotivationStatementDetail,
     AdminMotivationStatementListResponse,
     AdminMotivationStatementUpdateRequest,
@@ -54,7 +49,6 @@ from app.schemas.admin_content import (
 from app.services import (
     admin_content_service,
     admin_export_service,
-    admin_psychologist_service,
     admin_service,
     admin_university_service,
     university_service,
@@ -75,7 +69,6 @@ async def list_users(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
     search: str | None = Query(default=None),
-    age_group: AgeGroup | None = Query(default=None),
     status: AssessmentStatus | None = Query(default=None),
     goal: AssessmentGoal | None = Query(default=None),
     # Defaults to student: this list predates the role system, and every
@@ -95,7 +88,6 @@ async def list_users(
         page=page,
         limit=limit,
         search=search,
-        age_group=age_group,
         status=status,
         goal=goal,
         role=role,
@@ -119,59 +111,6 @@ async def create_user(
     return detail
 
 
-@router.get(
-    "/psychologist-assignments",
-    response_model=PsychologistAssignmentListResponse,
-)
-async def list_psychologist_assignments(
-    page: int = Query(default=1, ge=1),
-    limit: int = Query(default=20, ge=1, le=100),
-    psychologist_id: uuid.UUID | None = Query(default=None),
-    student_id: uuid.UUID | None = Query(default=None),
-    _: User = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
-):
-    return await admin_psychologist_service.list_assignments(
-        db,
-        page=page,
-        limit=limit,
-        psychologist_id=psychologist_id,
-        student_id=student_id,
-    )
-
-
-@router.post(
-    "/psychologist-assignments",
-    response_model=PsychologistAssignmentItem,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_psychologist_assignment(
-    body: PsychologistAssignmentCreate,
-    _: User = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
-):
-    try:
-        return await admin_psychologist_service.create_assignment(db, body)
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-
-@router.delete(
-    "/psychologist-assignments/{assignment_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-async def delete_psychologist_assignment(
-    assignment_id: uuid.UUID,
-    _: User = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
-):
-    try:
-        await admin_psychologist_service.delete_assignment(db, assignment_id)
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
 @router.get("/users/stats", response_model=AdminUserStatsResponse)
 async def get_user_stats(
     inactive_days: int = Query(
@@ -188,7 +127,6 @@ async def get_user_stats(
 @router.get("/users/export")
 async def export_users(
     search: str | None = Query(default=None),
-    age_group: AgeGroup | None = Query(default=None),
     status: AssessmentStatus | None = Query(default=None),
     goal: AssessmentGoal | None = Query(default=None),
     role: UserRole = Query(default=UserRole.student),
@@ -200,7 +138,6 @@ async def export_users(
         items = await admin_service.export_users(
             db,
             search=search,
-            age_group=age_group,
             status=status,
             goal=goal,
             role=role,
@@ -274,7 +211,6 @@ async def list_feedback(
     search: str | None = Query(default=None, description="Substring of the free-text comment"),
     score_min: int | None = Query(default=None, ge=1, le=5),
     score_max: int | None = Query(default=None, ge=1, le=5),
-    age_group: AgeGroup | None = Query(default=None),
     section: str | None = Query(default=None, description="One entry of helpful_sections"),
     has_comment: bool | None = Query(default=None),
     sort: str | None = _SORT_QUERY,
@@ -289,7 +225,6 @@ async def list_feedback(
         search=search,
         score_min=score_min,
         score_max=score_max,
-        age_group=age_group,
         section=section,
         has_comment=has_comment,
         sort=sort,
@@ -302,7 +237,6 @@ async def get_feedback_stats(
     search: str | None = Query(default=None),
     score_min: int | None = Query(default=None, ge=1, le=5),
     score_max: int | None = Query(default=None, ge=1, le=5),
-    age_group: AgeGroup | None = Query(default=None),
     section: str | None = Query(default=None),
     has_comment: bool | None = Query(default=None),
     _: User = Depends(get_current_admin_user),
@@ -315,7 +249,6 @@ async def get_feedback_stats(
         search=search,
         score_min=score_min,
         score_max=score_max,
-        age_group=age_group,
         section=section,
         has_comment=has_comment,
     )
@@ -412,12 +345,12 @@ async def update_program(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
+# Admin content lists show one row per (logical unit, locale) since KZ-301, so
 @router.get("/questions", response_model=AdminQuestionListResponse)
 async def list_questions(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
     instrument: QuestionInstrument | None = Query(default=None),
-    age_tier: AgeGroup | None = Query(default=None),
     search: str | None = Query(default=None),
     has_overrides: bool | None = Query(
         default=None, description="Only rows edited by hand (or only untouched ones)"
@@ -430,7 +363,6 @@ async def list_questions(
     return await admin_content_service.list_questions(
         db,
         instrument=instrument,
-        age_tier=age_tier,
         search=search,
         has_overrides_filter=has_overrides,
         sort=sort,
@@ -472,7 +404,6 @@ async def list_question_pairs(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
     instrument: QuestionInstrument | None = Query(default=None),
-    age_tier: AgeGroup | None = Query(default=None),
     search: str | None = Query(
         default=None, description="Matches the frame and the option texts a student sees"
     ),
@@ -485,7 +416,6 @@ async def list_question_pairs(
     return await admin_content_service.list_question_pairs(
         db,
         instrument=instrument,
-        age_tier=age_tier,
         search=search,
         has_overrides_filter=has_overrides,
         sort=sort,
@@ -526,7 +456,7 @@ async def update_question_pair(
 async def list_motivation_statements(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
-    search: str | None = Query(default=None, description="Matches text or text_junior"),
+    search: str | None = Query(default=None, description="Matches text"),
     triplet_index: int | None = Query(
         default=None, description="Show one whole triplet — its three statements"
     ),
@@ -583,57 +513,47 @@ async def update_motivation_statement(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
-@router.get("/motivation-pairs", response_model=AdminMotivationPairListResponse)
-async def list_motivation_pairs(
-    page: int = Query(default=1, ge=1),
-    limit: int = Query(default=20, ge=1, le=100),
-    search: str | None = Query(default=None, description="Matches text_a or text_b"),
-    category: MotivationCategory | None = Query(default=None),
-    has_overrides: bool | None = Query(default=None),
-    sort: str | None = _SORT_QUERY,
-    order: SortOrder = _ORDER_QUERY,
+@router.get("/belbin-schema")
+async def get_belbin_schema(
+    _: User = Depends(get_current_admin_user),
+):
+    return admin_content_service.get_belbin_schema()
+
+
+@router.get("/astur-schema")
+async def get_astur_schema(
+    _: User = Depends(get_current_admin_user),
+):
+    return admin_content_service.get_astur_schema()
+
+
+@router.get("/content-overrides/{instrument}", response_model=AdminContentOverrideResponse)
+async def get_content_override(
+    instrument: str,
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await admin_content_service.list_motivation_pairs(
-        db,
-        search=search,
-        category=category,
-        has_overrides_filter=has_overrides,
-        sort=sort,
-        order=order,
-        page=page,
-        limit=limit,
-    )
-
-
-@router.get("/motivation-pairs/{pair_id}", response_model=AdminMotivationPairDetail)
-async def get_motivation_pair_detail(
-    pair_id: uuid.UUID,
-    _: User = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
-):
-    detail = await admin_content_service.get_motivation_pair_detail(db, pair_id)
-    if not detail:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Motivation pair not found"
+    override = await admin_content_service.get_content_override(db, instrument)
+    if not override:
+        return AdminContentOverrideResponse(
+            id=uuid.uuid4(),
+            instrument=instrument,
+            content_ru=None,
+            content_kk=None,
+            created_at=None,
+            updated_at=None
         )
-    return detail
+    return override
 
 
-@router.patch("/motivation-pairs/{pair_id}", response_model=AdminMotivationPairDetail)
-async def update_motivation_pair(
-    pair_id: uuid.UUID,
-    data: AdminMotivationPairUpdateRequest,
+@router.put("/content-overrides/{instrument}", response_model=AdminContentOverrideResponse)
+async def set_content_override(
+    instrument: str,
+    data: AdminContentOverrideRequest,
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    try:
-        return await admin_content_service.update_motivation_pair(db, pair_id, data)
-    except AdminOverrideValidationError as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    return await admin_content_service.set_content_override(db, instrument, data)
 
 
 @router.get("/directions", response_model=AdminDirectionListResponse)
@@ -792,40 +712,6 @@ async def clear_motivation_statement_override_field(
 ):
     try:
         return await admin_content_service.clear_motivation_statement_overrides(db, row_id, field)
-    except AdminNothingToClearError as e:
-        # The row is fine; the caller's view of it was stale. 409, not 404,
-        # so the client can refresh the row instead of leaving the page.
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-
-
-@router.delete("/motivation-pairs/{row_id}/overrides", response_model=AdminMotivationPairDetail)
-async def clear_motivation_pair_overrides(
-    row_id: uuid.UUID,
-    _: User = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """Drop every override on the row, putting it fully back under the bank."""
-    try:
-        return await admin_content_service.clear_motivation_pair_overrides(db, row_id)
-    except AdminNothingToClearError as e:
-        # The row is fine; the caller's view of it was stale. 409, not 404,
-        # so the client can refresh the row instead of leaving the page.
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-
-
-@router.delete("/motivation-pairs/{row_id}/overrides/{field}", response_model=AdminMotivationPairDetail)
-async def clear_motivation_pair_override_field(
-    row_id: uuid.UUID,
-    field: str,
-    _: User = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
-):
-    try:
-        return await admin_content_service.clear_motivation_pair_overrides(db, row_id, field)
     except AdminNothingToClearError as e:
         # The row is fine; the caller's view of it was stale. 409, not 404,
         # so the client can refresh the row instead of leaving the page.

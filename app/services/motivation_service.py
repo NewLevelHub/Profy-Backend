@@ -6,7 +6,6 @@ bigfive_service (response rows store which *statement* was picked, not its
 category; category is read via a join/lookup at scoring time)."""
 
 import uuid
-from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
@@ -25,12 +24,11 @@ _LEAST_POINTS = 0
 
 
 async def triplets(db: AsyncSession) -> dict[int, list[MotivationStatement]]:
-    result = await db.execute(
-        select(MotivationStatement).order_by(
-            MotivationStatement.triplet_index, MotivationStatement.order
-        )
+    stmt = select(MotivationStatement).order_by(
+        MotivationStatement.triplet_index, MotivationStatement.order
     )
     grouped: dict[int, list[MotivationStatement]] = {}
+    result = await db.execute(stmt)
     for statement in result.scalars().all():
         grouped.setdefault(statement.triplet_index, []).append(statement)
     return grouped
@@ -146,14 +144,17 @@ async def submit_motivation_answers(
     mot_total = await total_triplets(db)
     mot_completed = mot_total > 0 and mot_answered >= mot_total
 
-    age_group = await assessment_shared.get_profile_age_group(assessment.profile_id, db)
     likert_answered = await assessment_shared.likert_answered_count(assessment_id, db)
-    likert_total = await assessment_shared.likert_total_questions(db, age_group)
+    likert_total = await assessment_shared.likert_total_questions(db)
     likert_completed = likert_total > 0 and likert_answered >= likert_total
 
-    if mot_completed and likert_completed and assessment.status != AssessmentStatus.completed:
-        assessment.status = AssessmentStatus.completed
-        assessment.completed_at = datetime.now(timezone.utc)
+    # `assessment.status` only flips once Belbin + АСТУР are done too (they're
+    # not optional/psychologist-only despite an older comment elsewhere
+    # claiming that — the continuous flow routes every student through both
+    # right after this triplet phase) — see try_complete_assessment.
+    await assessment_shared.try_complete_assessment(
+        assessment, likert_completed=likert_completed, motivation_completed=mot_completed, db=db
+    )
 
     await db.commit()
 
