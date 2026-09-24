@@ -11,16 +11,12 @@ Structured Outputs (strict mode) forbids minItems/maxItems, so "exactly 4 stages
 caller (`_valid_stages`).
 """
 import json
-from typing import TYPE_CHECKING
 
 from app.i18n import pick_locale, pick_locale_list
 from app.models.direction import Direction
 from app.prompts._locale import glossary_block, language_directive
 from app.schemas.roadmap import DIRECTION_HORIZONS, STEP_TRACKS, UniversityRequirement
 from app.schemas.student_context import StudentContext
-
-if TYPE_CHECKING:
-    from app.services.gap_analysis_service import GapAnalysisResult
 
 CATEGORIES = [
     "knowledge", "skill", "practice", "project", "portfolio",
@@ -479,21 +475,12 @@ def _direction_brief(direction: Direction) -> dict:
     }
 
 
-def _gap_brief(gap: "GapAnalysisResult") -> dict:
-    return {
-        "уже_есть": [{"требование": i.requirement, "комментарий": i.comment} for i in gap.met],
-        "в_процессе": [{"требование": i.requirement, "комментарий": i.comment} for i in gap.in_progress],
-        "пока_не_начато": [{"требование": i.requirement, "комментарий": i.comment} for i in gap.not_met],
-    }
-
-
 def build_messages(
     context: StudentContext,
     direction: Direction,
     university_requirements: list[UniversityRequirement] | None = None,
     selected_program: dict | None = None,
     *,
-    gap: "GapAnalysisResult | None" = None,
     locale: str | None = None,
 ) -> list[dict[str, str]]:
     target_locale = locale or getattr(context, "locale", "ru")
@@ -520,17 +507,6 @@ def build_messages(
             "ВЫБРАННАЯ ПРОГРАММА (для блока program_fit; извлекай только явно "
             "названные в требованиях предметы):\n"
             f"{json.dumps(selected_program, ensure_ascii=False, indent=2)}"
-        )
-    if gap is not None:
-        # Real gap-analysis for the ONE program this plan is built for —
-        # backend-computed (gap_analysis_service.analyze_gap), same
-        # "проверенные факты" principle. Lets months_3/months_6 prioritise
-        # exactly what this student is missing instead of guessing.
-        user_sections.append(
-            "ТВОЙ GAP-АНАЛИЗ ПО ЭТОЙ ПРОГРАММЕ (проверенные факты, НЕ придумывай "
-            "ничего сверх этого — используй, чтобы приоритизировать growth-шаги "
-            "и месяцы months_3/months_6 на то, чего реально не хватает):\n"
-            f"{json.dumps(_gap_brief(gap), ensure_ascii=False, indent=2)}"
         )
     user_sections.append(
         f"Разрешённые значения category: {allowed}.\n\n"

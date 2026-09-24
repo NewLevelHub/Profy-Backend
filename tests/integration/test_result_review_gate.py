@@ -9,10 +9,8 @@ import pytest
 from unittest.mock import ANY
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from sqlalchemy import select
 
-from app.models.analysis_result import AnalysisResult, ReviewStatus
-from app.models.assessment import AssessmentGoal
+from app.models.analysis_result import ReviewStatus
 from app.models.user import User
 from app.services import assessment_shared, email_service
 
@@ -126,7 +124,6 @@ async def test_generation_emails_assigned_psychologist_once(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
     test_user: User,
     psychologist_user: User,
     monkeypatch: pytest.MonkeyPatch,
@@ -134,7 +131,7 @@ async def test_generation_emails_assigned_psychologist_once(
     emails = capture_emails(monkeypatch)
     force_complete_senior(monkeypatch)
     assessment = await make_student_assessment(db_session, test_user)
-    await assign(client, admin_headers, psychologist_user, test_user)
+    await assign(db_session, psychologist_user, test_user)
 
     await generate(client, auth_headers, assessment)
     await generate(client, auth_headers, assessment)
@@ -146,7 +143,6 @@ async def test_notification_failure_does_not_break_generation(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
     test_user: User,
     psychologist_user: User,
     monkeypatch: pytest.MonkeyPatch,
@@ -159,42 +155,12 @@ async def test_notification_failure_does_not_break_generation(
     monkeypatch.setattr(email_service, "send_review_pending_email", _explode)
     assessment = await make_student_assessment(db_session, test_user)
     assessment_id = str(assessment.id)
-    await assign(client, admin_headers, psychologist_user, test_user)
+    await assign(db_session, psychologist_user, test_user)
 
     response = await generate(client, auth_headers, assessment)
     assert response.status_code == 200
     assert response.json() == {"status": "pending_review", "assessment_id": assessment_id}
     assert (await stored_result(db_session, assessment.id)).review_status == ReviewStatus.pending_review
-
-
-async def test_goal_context_does_not_generate_a_report_behind_the_gate(
-    client: httpx.AsyncClient,
-    db_session: AsyncSession,
-    auth_headers: dict[str, str],
-    test_user: User,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """goal-context builds the report itself when there is none — without its
-    own gate that is a way to generate one and read its content straight
-    away, review or no review."""
-    capture_emails(monkeypatch)
-    force_complete_senior(monkeypatch)
-    assessment = await make_student_assessment(db_session, test_user)
-
-    response = await client.get(
-        f"/api/v1/result/{assessment.id}/goal-context", headers=auth_headers
-    )
-    assert response.status_code == 409
-
-    # It may generate the report on the way (that is pre-existing behaviour,
-    # and the psychologist queue picks it up) — what must not happen is
-    # serving content derived from it.
-    stored = (
-        await db_session.execute(
-            select(AnalysisResult).where(AnalysisResult.assessment_id == assessment.id)
-        )
-    ).scalar_one_or_none()
-    assert stored is None or stored.review_status == ReviewStatus.pending_review
 
 
 async def test_unknown_assessment_is_404(
@@ -211,21 +177,14 @@ async def test_report_derived_endpoints_are_gated_until_published(
     test_user: User,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """The envelope alone isn't the gate: goal overlay, roadmaps and gap
-    analysis are all built from the same stored AnalysisResult, and would
-    otherwise hand the student its content (top spheres, matched directions,
-    a generated plan) before the psychologist published anything."""
+    """The envelope alone isn't the gate: roadmaps and the direction inquiry
+    are built from the same stored AnalysisResult, and would otherwise hand
+    the student its content (matched directions, a generated plan) before the
+    psychologist published anything."""
     capture_emails(monkeypatch)
     force_complete_senior(monkeypatch)
     assessment = await make_student_assessment(db_session, test_user)
     await generate(client, auth_headers, assessment)
-
-    goal_context = await client.get(
-        f"/api/v1/result/{assessment.id}/goal-context", headers=auth_headers
-    )
-    assert goal_context.status_code == 409
-    # Distinct from the `assessment_not_completed` 409 on the same endpoints.
-    assert goal_context.json()["error_code"] == "report_pending_review"
 
     generated_roadmap = await client.post(
         "/api/v1/roadmap/generate",
@@ -233,6 +192,8 @@ async def test_report_derived_endpoints_are_gated_until_published(
         headers=auth_headers,
     )
     assert generated_roadmap.status_code == 409
+    # Distinct from the `assessment_not_completed` 409 on the same endpoints.
+    assert generated_roadmap.json()["error_code"] == "report_pending_review"
 
     fetched_roadmap = await client.get(
         f"/api/v1/roadmap/{assessment.id}", headers=auth_headers
@@ -254,29 +215,6 @@ async def test_report_derived_endpoints_are_gated_until_published(
     # Only the gate is asserted here — whatever these endpoints answer after
     # publication is their own contract, tested elsewhere.
     reopened = await client.get(
-        f"/api/v1/result/{assessment.id}/goal-context", headers=auth_headers
+        f"/api/v1/roadmap/{assessment.id}", headers=auth_headers
     )
     assert reopened.status_code != 409
-
-
-async def test_goal_choice_interstitial_works_while_report_is_pending(
-    client: httpx.AsyncClient,
-    db_session: AsyncSession,
-    auth_headers: dict[str, str],
-    test_user: User,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Choosing a goal needs no report — the unsure-goal answer must not be
-    blocked by the review gate while a report waits for the psychologist."""
-    capture_emails(monkeypatch)
-    force_complete_senior(monkeypatch)
-    assessment = await make_student_assessment(db_session, test_user)
-    await generate(client, auth_headers, assessment)
-    assessment.goal = AssessmentGoal.unsure
-    await db_session.flush()
-
-    response = await client.get(
-        f"/api/v1/result/{assessment.id}/goal-context", headers=auth_headers
-    )
-    assert response.status_code == 200
-    assert response.json()["needs_goal_selection"] is True

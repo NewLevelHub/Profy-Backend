@@ -699,7 +699,8 @@ class _DirectionPlan:
 def direction_cache_key(
     assessment_id: uuid.UUID, slug: str, program_id: uuid.UUID | None = None
 ) -> str:
-    """`program_id` only matters for the generate-by-program path: without it,
+    """`program_id` only matters when the plan is built for a chosen program
+    (`POST /roadmap/direction` with `program_id`): without it,
     regenerating the same direction under a *different* program within the
     24h TTL would silently return the previous program's cached plan. Plain
     GET (`get_direction_roadmap`) intentionally omits it — it just reads
@@ -717,19 +718,6 @@ def direction_cache_key(
 # program-detail screen (ProgramDetail.requirements_summary) so both surfaces
 # render the exact same clean facts instead of each parsing the raw JSON its
 # own way (see that module's docstring for the two seed-source shapes).
-
-
-async def _program_and_university(
-    program_id: uuid.UUID, db: AsyncSession
-) -> tuple[Program, University] | None:
-    row = (
-        await db.execute(
-            select(Program, University)
-            .join(University, Program.university_id == University.id)
-            .where(Program.id == program_id)
-        )
-    ).first()
-    return (row[0], row[1]) if row else None
 
 
 async def _university_requirements_for(slug: str, db: AsyncSession) -> list[UniversityRequirement]:
@@ -848,10 +836,9 @@ async def _require_direction_roadmap_access(
     `_INQUIRY_REQUIRED` is on, and for every goal except "university" — the
     student has actually gone through the AI inquiry for this direction.
 
-    University always skips the inquiry: picking a specific program and
-    seeing its gap-analysis (see `generate_direction_roadmap_for_program`)
-    already is the "does this fit me" check for that scenario, so requiring
-    the generic inquiry on top would be redundant friction, not extra safety.
+    University always skips the inquiry: picking a specific program already
+    is the "does this fit me" check for that scenario, so requiring the
+    generic inquiry on top would be redundant friction, not extra safety.
 
     `university` used to be excluded here entirely (it had its own, poorer
     branch — see goal roadmap's `_build_university`). It now goes through the
@@ -903,7 +890,6 @@ async def _generate_plan(
     direction,
     university_requirements: list[UniversityRequirement],
     selected_program: dict | None,
-    gap: GapAnalysisResult | None = None,
 ) -> _DirectionPlan | None:
     """Ask the LLM for a plan, retrying once if it breaks the structural rules.
 
@@ -914,14 +900,12 @@ async def _generate_plan(
     and never part of the LLM's JSON schema — it is only surfaced to the model as
     reference facts (via `build_messages`) and stapled onto the validated plan
     afterwards, same as `skills_to_build`/`university_track` are the model's call
-    but this field never is. `gap` is the same kind of backend-only fact block,
-    only ever populated for the generate-by-program university path."""
+    but this field never is."""
     messages = direction_prompt.build_messages(
         context,
         direction,
         university_requirements,
         selected_program,
-        gap=gap,
     )
 
     for attempt in range(1, _MAX_PLAN_ATTEMPTS + 1):
@@ -1021,107 +1005,6 @@ async def generate_direction_roadmap(
     return response
 
 
-async def generate_direction_roadmap_for_program(
-    assessment_id: uuid.UUID, program_id: uuid.UUID, db: AsyncSession
-) -> DirectionRoadmapResponse:
-    """University scenario (C) entry point: same direction-roadmap engine as
-    `generate_direction_roadmap`, but driven by a chosen Program instead of a
-    direction slug, and without the AI-inquiry precondition (see
-    `_require_direction_roadmap_access` — picking a program and seeing its
-    gap-analysis already is this scenario's "does it fit" check).
-
-    The direction is resolved server-side from `program.profession_slugs`
-    against the student's own `careers` (`direction_service.best_matching_slug`)
-    — never trust a client-supplied slug for this. The plan is grounded in the
-    real gap-analysis for this exact program (`analyze_gap`) plus this one
-    program's facts, not every program that happens to prepare for the same
-    direction (contrast `_university_requirements_for`)."""
-    if not llm_client.is_enabled():
-        raise _AI_UNAVAILABLE
-
-    assessment = (
-        await db.execute(select(Assessment).where(Assessment.id == assessment_id))
-    ).scalar_one_or_none()
-    if assessment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
-
-    profile = (
-        await db.execute(select(Profile).where(Profile.id == assessment.profile_id))
-    ).scalar_one_or_none()
-    if profile is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
-
-    if profile.age_group == AgeGroup.junior:
-        raise AppError(
-            status_code=status.HTTP_403_FORBIDDEN,
-            error_code="feature_requires_age_10",
-            detail="Эта возможность доступна с 10 лет",
-        )
-
-    program_university = await _program_and_university(program_id, db)
-    if program_university is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Program not found")
-    program, university = program_university
-
-    analysis_row = await db.execute(
-        select(AnalysisResult)
-        .where(AnalysisResult.assessment_id == assessment_id)
-        .order_by((AnalysisResult.locale == DEFAULT_LOCALE).desc())  # KZ-405: prefer ru row
-        .limit(1)
-    )
-    analysis = analysis_row.scalar_one_or_none()
-    careers: list = analysis.careers if analysis else []
-    slug = direction_service.best_matching_slug(program.profession_slugs or [], careers)
-    if slug is None:
-        raise AppError(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            error_code="program_has_no_direction",
-            detail="Эта программа не связана ни с одним направлением",
-        )
-
-    direction = await direction_service.get_direction_by_slug(slug, db)
-    if direction is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Direction not found")
-
-    redis = _get_redis()
-    key = direction_cache_key(assessment_id, slug, program_id)
-    cached = await redis.get(key)
-    if cached:
-        return DirectionRoadmapResponse.model_validate_json(cached)
-
-    context = await build_student_context(assessment_id, db)
-    if context is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
-
-    artifacts_row = await db.execute(
-        select(Artifact).where(Artifact.profile_id == assessment.profile_id)
-    )
-    artifacts = list(artifacts_row.scalars().all())
-    scores = await assessment_service.get_total_scores(assessment_id, db)
-    gap = analyze_gap(profile, artifacts, scores, program)
-    university_requirements = [ureq.map_program_requirement(program, university)]
-    selected_program = _selected_program_context(program, university)
-
-    plan = await _generate_plan(
-        context, direction, university_requirements, selected_program, gap=gap
-    )
-    if plan is None:
-        raise _AI_UNAVAILABLE
-
-    roadmap = await _upsert_direction_roadmap(
-        assessment_id, slug, direction, plan, db, program_id=program_id
-    )
-    assessment.selected_direction_slug = slug
-    from app.services.goal_overlay_service import invalidate_goal_overlay_cache
-    await invalidate_goal_overlay_cache(assessment_id, db)
-    await db.commit()
-    await db.refresh(roadmap)
-
-    response = DirectionRoadmapResponse.model_validate(roadmap)
-    await redis.setex(key, CACHE_TTL, response.model_dump_json())
-    return response
-
-
 async def _upsert_direction_roadmap(
     assessment_id: uuid.UUID,
     slug: str,
@@ -1171,7 +1054,7 @@ async def _upsert_direction_roadmap(
     # mode="json" — program_fit.program_id is a uuid.UUID; a plain
     # model_dump() leaves it as a UUID object, which the JSONB column's
     # encoder can't serialize ("Object of type UUID is not JSON
-    # serializable"), failing every by-program direction roadmap at insert
+    # serializable"), failing every program-bound direction roadmap at insert
     # time (only ever caught by a test, not production, because the
     # LLM-enabled program_fit path is rarely exercised locally — real bug,
     # not just a stale fixture). The other model_dump() calls above carry
@@ -1183,7 +1066,7 @@ async def _upsert_direction_roadmap(
     )
     roadmap.additional_resources = resource_catalog.resources_for_category(category)
     # Always set explicitly (including back to None) — a row previously
-    # generated by-program and later regenerated via the plain slug path
+    # generated for a program and later regenerated via the plain slug path
     # must not keep pointing at a program whose facts are no longer what
     # `university_requirements` above actually reflects.
     return roadmap

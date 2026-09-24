@@ -8,7 +8,6 @@ from app.routers.auth import router as auth_router
 from app.routers.belbin import router as belbin_router
 from app.routers.certificates import router as certificates_router
 from app.routers.direction_inquiry import router as direction_inquiry_router
-from app.routers.directions import router as directions_router
 from app.routers.extended_blocks import router as extended_blocks_router
 from app.routers.motivation import router as motivation_router
 from app.routers.motivation_pairs import router as motivation_pairs_router
@@ -37,7 +36,6 @@ api_router.include_router(psychoemotional_router, prefix="/api/v1/assessment")
 api_router.include_router(belbin_router, prefix="/api/v1/assessment")
 api_router.include_router(astur_router, prefix="/api/v1/assessment")
 api_router.include_router(extended_blocks_router, prefix="/api/v1/assessment")
-api_router.include_router(directions_router, prefix="/api/v1/directions")
 api_router.include_router(direction_inquiry_router, prefix="/api/v1/inquiry")
 api_router.include_router(result_router, prefix="/api/v1/result")
 api_router.include_router(roadmap_router, prefix="/api/v1/roadmap")

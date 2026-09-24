@@ -37,7 +37,6 @@ async def test_queue_lists_only_assigned_pending_results(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     test_user: User,
     psychologist_user: User,
@@ -52,7 +51,7 @@ async def test_queue_lists_only_assigned_pending_results(
     assert before.json() == []
 
     # Assigned after generation — the existing result is pulled in live.
-    await assign(client, admin_headers, psychologist_user, test_user)
+    await assign(db_session, psychologist_user, test_user)
     queue = (await client.get("/api/v1/psychologist/reviews", headers=psychologist_headers)).json()
     assert len(queue) == 1
     item = queue[0]
@@ -74,7 +73,6 @@ async def test_result_detail_requires_assignment_and_ownership(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     test_user: User,
     psychologist_user: User,
@@ -88,7 +86,7 @@ async def test_result_detail_requires_assignment_and_ownership(
     unassigned = await client.get(_result_url(test_user, assessment.id), headers=psychologist_headers)
     assert unassigned.status_code == 404
 
-    await assign(client, admin_headers, psychologist_user, test_user)
+    await assign(db_session, psychologist_user, test_user)
     detail = await client.get(_result_url(test_user, assessment.id), headers=psychologist_headers)
     assert detail.status_code == 200
     body = detail.json()
@@ -105,7 +103,6 @@ async def test_patch_edits_content_audits_and_publish_shows_it_to_student(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     test_user: User,
     psychologist_user: User,
@@ -115,7 +112,7 @@ async def test_patch_edits_content_audits_and_publish_shows_it_to_student(
     force_complete_senior(monkeypatch)
     assessment = await make_student_assessment(db_session, test_user)
     await generate(client, auth_headers, assessment)
-    await assign(client, admin_headers, psychologist_user, test_user)
+    await assign(db_session, psychologist_user, test_user)
     original_summary = (await stored_result(db_session, assessment.id)).summary
 
     patched = await client.patch(
@@ -178,7 +175,6 @@ async def test_personality_note_edit_reaches_the_student(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     test_user: User,
     psychologist_user: User,
@@ -191,7 +187,7 @@ async def test_personality_note_edit_reaches_the_student(
     force_complete_senior(monkeypatch)
     assessment = await make_student_assessment(db_session, test_user)
     await generate(client, auth_headers, assessment)
-    await assign(client, admin_headers, psychologist_user, test_user)
+    await assign(db_session, psychologist_user, test_user)
 
     detail = await client.get(_result_url(test_user, assessment.id), headers=psychologist_headers)
     notes = detail.json()["personality_notes"]
@@ -227,7 +223,6 @@ async def test_second_partial_personality_patch_keeps_earlier_corrections(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     test_user: User,
     psychologist_user: User,
@@ -238,7 +233,7 @@ async def test_second_partial_personality_patch_keeps_earlier_corrections(
     force_complete_senior(monkeypatch)
     assessment = await make_student_assessment(db_session, test_user)
     await generate(client, auth_headers, assessment)
-    await assign(client, admin_headers, psychologist_user, test_user)
+    await assign(db_session, psychologist_user, test_user)
     url = _result_url(test_user, assessment.id)
 
     first = await client.patch(
@@ -283,7 +278,6 @@ async def test_patch_rejects_invalid_payloads(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     test_user: User,
     psychologist_user: User,
@@ -294,7 +288,7 @@ async def test_patch_rejects_invalid_payloads(
     force_complete_senior(monkeypatch)
     assessment = await make_student_assessment(db_session, test_user)
     await generate(client, auth_headers, assessment)
-    await assign(client, admin_headers, psychologist_user, test_user)
+    await assign(db_session, psychologist_user, test_user)
 
     response = await client.patch(
         _result_url(test_user, assessment.id), json=payload, headers=psychologist_headers
@@ -306,7 +300,6 @@ async def test_publish_is_irreversible_and_notifies_student(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     test_user: User,
     psychologist_user: User,
@@ -316,7 +309,7 @@ async def test_publish_is_irreversible_and_notifies_student(
     force_complete_senior(monkeypatch)
     assessment = await make_student_assessment(db_session, test_user)
     await generate(client, auth_headers, assessment)
-    await assign(client, admin_headers, psychologist_user, test_user)
+    await assign(db_session, psychologist_user, test_user)
 
     student_detail = await client.get(f"/api/v1/psychologist/students/{test_user.id}", headers=psychologist_headers)
     assert student_detail.json()["assessments"][0]["review_status"] == "pending_review"
@@ -348,75 +341,10 @@ async def test_publish_is_irreversible_and_notifies_student(
     await assessment_shared.get_redis().delete(assessment_shared.report_cache_key(assessment.id))
 
 
-async def test_admin_unassigned_queue_and_publish(
-    client: httpx.AsyncClient,
-    db_session: AsyncSession,
-    auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
-    admin_user: User,
-    psychologist_headers: dict[str, str],
-    test_user: User,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    capture_emails(monkeypatch)
-    force_complete_senior(monkeypatch)
-    assessment = await make_student_assessment(db_session, test_user)
-    await generate(client, auth_headers, assessment)
-
-    forbidden = await client.get("/api/v1/admin/psychologist-reviews/unassigned", headers=psychologist_headers)
-    assert forbidden.status_code == 403
-
-    unassigned = await client.get("/api/v1/admin/psychologist-reviews/unassigned", headers=admin_headers)
-    assert unassigned.status_code == 200
-    assert str(assessment.id) in {item["assessment_id"] for item in unassigned.json()}
-
-    published = await client.post(
-        f"/api/v1/admin/psychologist-reviews/{assessment.id}/publish", headers=admin_headers
-    )
-    assert published.status_code == 200
-    assert published.json()["published_by"] == str(admin_user.id)
-
-    again = await client.post(
-        f"/api/v1/admin/psychologist-reviews/{assessment.id}/publish", headers=admin_headers
-    )
-    assert again.status_code == 409
-    missing = await client.post(
-        f"/api/v1/admin/psychologist-reviews/{uuid.uuid4()}/publish", headers=admin_headers
-    )
-    assert missing.status_code == 404
-
-    after = await client.get("/api/v1/admin/psychologist-reviews/unassigned", headers=admin_headers)
-    assert str(assessment.id) not in {item["assessment_id"] for item in after.json()}
-
-    from app.services import assessment_shared
-
-    await assessment_shared.get_redis().delete(assessment_shared.report_cache_key(assessment.id))
-
-
-async def test_assigned_student_leaves_admin_unassigned_queue(
-    client: httpx.AsyncClient,
-    db_session: AsyncSession,
-    auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
-    test_user: User,
-    psychologist_user: User,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    capture_emails(monkeypatch)
-    force_complete_senior(monkeypatch)
-    assessment = await make_student_assessment(db_session, test_user)
-    await generate(client, auth_headers, assessment)
-    await assign(client, admin_headers, psychologist_user, test_user)
-
-    unassigned = await client.get("/api/v1/admin/psychologist-reviews/unassigned", headers=admin_headers)
-    assert str(assessment.id) not in {item["assessment_id"] for item in unassigned.json()}
-
-
 async def test_personality_notes_follow_the_report_language_not_the_reviewer(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     test_user: User,
     psychologist_user: User,
@@ -429,7 +357,7 @@ async def test_personality_notes_follow_the_report_language_not_the_reviewer(
     force_complete_senior(monkeypatch)
     assessment = await make_student_assessment(db_session, test_user)
     await generate(client, auth_headers, assessment)
-    await assign(client, admin_headers, psychologist_user, test_user)
+    await assign(db_session, psychologist_user, test_user)
 
     url = _result_url(test_user, assessment.id)
     in_ru = await client.get(url, headers={**psychologist_headers, "Accept-Language": "ru"})

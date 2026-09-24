@@ -18,7 +18,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.i18n import use_locale
+from app.i18n import pick_locale, pick_locale_list, use_locale
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.direction import Direction
 from app.models.profile import AgeGroup, Profile
@@ -141,14 +141,18 @@ async def test_direction_detail_serves_real_kazakh_content(db_session: AsyncSess
     )).scalar_one_or_none()
     assert slug, "no seeded kk direction with content — run apply_direction_content.py"
 
+    direction = await direction_service.get_direction_by_slug(slug, db_session)
+    assert direction is not None
+    # Read the way live consumers (roadmap, inquiry) do: pick_locale on the row.
     with use_locale("kk"):
-        detail = await direction_service.get_direction_details(slug, db_session)
+        description = pick_locale(direction.description)
+        skills_needed = pick_locale_list(direction.skills_needed)
+        first_steps = pick_locale_list(direction.first_steps)
 
-    assert detail is not None
-    _assert_kk_prose(f"direction[{slug}].description", detail.description)
-    for i, item in enumerate(detail.skills_needed or []):
+    _assert_kk_prose(f"direction[{slug}].description", description)
+    for i, item in enumerate(skills_needed):
         _assert_kk_label(f"direction[{slug}].skills_needed[{i}]", item)
-    for i, item in enumerate(detail.first_steps or []):
+    for i, item in enumerate(first_steps):
         _assert_kk_prose(f"direction[{slug}].first_steps[{i}]", item)
 
 

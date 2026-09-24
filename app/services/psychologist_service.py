@@ -839,27 +839,6 @@ async def publish_result(
     return await _publish(db, analysis, publisher_id=psychologist_id)
 
 
-async def publish_result_as_admin(
-    db: AsyncSession, *, admin_id: uuid.UUID, assessment_id: uuid.UUID
-) -> PsychologistResultDetailResponse:
-    """Admin fallback for results whose student has no psychologist
-    (docs/psychologist-review-gate-plan.md §4) — not assignment-gated."""
-    # Serialize with report generation: a locale row generated in between
-    # would be a translation of the pre-edit text (edit) or miss the
-    # published status (publish).
-    await report_service.lock_report_generation(assessment_id, db)
-    query = (
-        select(AnalysisResult)
-        .where(AnalysisResult.assessment_id == assessment_id, _is_original_row())
-        .with_for_update(of=AnalysisResult)
-        .execution_options(populate_existing=True)
-    )
-    analysis = (await db.execute(query)).scalar_one_or_none()
-    if analysis is None:
-        raise ValueError("Result not found")
-    return await _publish(db, analysis, publisher_id=admin_id)
-
-
 async def _publish(
     db: AsyncSession, analysis: AnalysisResult, *, publisher_id: uuid.UUID
 ) -> PsychologistResultDetailResponse:

@@ -249,7 +249,7 @@ class DirectionRoadmapResponse(BaseModel):
     # LLM-picked. Shown as a single "Дополнительный источник" block at the end.
     additional_resources: list[RoadmapResource] = []
     # Set only when this plan was built from a specific chosen Program
-    # (goal="university" generate-by-program path). None otherwise.
+    # (`POST /roadmap/direction` with `program_id`). None otherwise.
     program_id: uuid.UUID | None = None
 
     model_config = {"from_attributes": True}
@@ -259,8 +259,3 @@ class GenerateDirectionRoadmapRequest(BaseModel):
     assessment_id: uuid.UUID
     direction_slug: str
     program_id: uuid.UUID | None = None
-
-
-class GenerateDirectionRoadmapForProgramRequest(BaseModel):
-    assessment_id: uuid.UUID
-    program_id: uuid.UUID

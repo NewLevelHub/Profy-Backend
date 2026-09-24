@@ -5,7 +5,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from app.errors import AppError
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
 from app.models.question import Question
@@ -206,83 +205,3 @@ async def get_total_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[s
     raw = await riasec_service.raw_scores(assessment_id, db, age_group)
     counts = await riasec_service.question_counts(db, age_group)
     return riasec_service.normalize(raw, counts)
-
-
-async def update_assessment_goal(
-    assessment_id: uuid.UUID,
-    goal: AssessmentGoal,
-    secondary_goals: list[AssessmentGoal],
-    current_profile_id: uuid.UUID,
-    db: AsyncSession,
-) -> AssessmentResponse:
-    row_result = await db.execute(select(Assessment).where(Assessment.id == assessment_id))
-    assessment = row_result.scalar_one_or_none()
-    if assessment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
-
-    if assessment.profile_id != current_profile_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-
-    # Age validation
-    age_group = await assessment_shared.get_profile_age_group(assessment.profile_id, db)
-    if age_group == AgeGroup.junior:
-        if goal != AssessmentGoal.explore or any(g != AssessmentGoal.explore for g in secondary_goals):
-            raise AppError(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                error_code="goal_not_allowed_for_junior",
-                detail="Для младшей возрастной группы доступна только цель 'исследовать себя'",
-            )
-    # Backend mirror of the frontend gate (ASSESSMENT_GOAL_ALLOWED_AGE_GROUPS in
-    # constants.ts): "university" is senior-only. Without this, a direct API
-    # call or a future client could set a middle assessment's raw goal to
-    # "university" — `get_effective_goal` would still downgrade it to
-    # "profession" for generation, but the goal-change UI would misleadingly
-    # show "поступление" as accepted.
-    if age_group == AgeGroup.middle:
-        if goal == AssessmentGoal.university or any(
-            g == AssessmentGoal.university for g in secondary_goals
-        ):
-            raise AppError(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                error_code="admission_goal_not_allowed_for_middle",
-                detail="Для учеников 5-8 классов поступление пока недоступно как цель",
-            )
-
-    # Check limit of changes
-    is_primary_changing = (assessment.goal != goal)
-    if is_primary_changing and assessment.status == AssessmentStatus.completed:
-        if assessment.goal_changed_count >= 3:
-            raise AppError(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                error_code="goal_change_limit_reached",
-                detail="Достигнут лимит смены целей (максимум 3 раза)",
-            )
-        assessment.goal_changed_count += 1
-
-    assessment.goal = goal
-    
-    # Store unique secondary goals, excluding the primary goal
-    unique_secondaries = []
-    for g in secondary_goals:
-        if g not in unique_secondaries and g != goal:
-            unique_secondaries.append(g)
-    assessment.secondary_goals = unique_secondaries
-
-    from app.services.goal_overlay_service import invalidate_goal_overlay_cache
-    await invalidate_goal_overlay_cache(assessment_id, db)
-
-    # ТЗ §10.5: смена цели обязана перегенерировать роадмап (и, при
-    # необходимости, университетский блок) — диагностика не пересчитывается,
-    # но план, построенный под старую цель, больше не имеет смысла и не
-    # должен продолжать показываться. Without this, a goal change from
-    # "explore" to "university" left the previously auto-generated explore
-    # roadmap (and any confirmed direction/its plan) untouched — the student
-    # saw a plan with no relation to their actual goal.
-    if is_primary_changing:
-        redis = assessment_shared.get_redis()
-        await assessment_shared.invalidate_goal_roadmap(assessment_id, db, redis)
-        await assessment_shared.invalidate_direction_flow(assessment, db, redis)
-
-    await db.commit()
-    return await _to_response(assessment, db)
-

@@ -230,7 +230,7 @@ async def get_program_detail(
     same clean, typed mapping the direction-roadmap prompt uses
     (app/services/university_requirements.py), not a re-derivation. Separate
     from `get_program_by_id` because that one returns the raw ORM `Program`
-    for callers that need it as-is (gap-analysis).
+    for callers that need it as-is (admin program editor).
 
     `description` / `who_its_for` are resolved for `locale` (KZ-501): the `kk`
     override when present, else the `ru` base column, with `*_locale` fields

@@ -12,6 +12,8 @@ from app.models.profile import AgeGroup, Profile
 from app.models.user import User
 from app.services import auth_service
 
+from tests.integration.review_helpers import assign
+
 
 async def _make_assessment_for(db: AsyncSession, owner: User) -> Assessment:
     profile = Profile(
@@ -26,24 +28,14 @@ async def _make_assessment_for(db: AsyncSession, owner: User) -> Assessment:
     return assessment
 
 
-async def _assign_api(client: httpx.AsyncClient, admin_headers: dict, psychologist_id: uuid.UUID, student_id: uuid.UUID) -> None:
-    response = await client.post(
-        "/api/v1/admin/psychologist-assignments",
-        json={"psychologist_id": str(psychologist_id), "student_id": str(student_id)},
-        headers=admin_headers,
-    )
-    assert response.status_code == 201
-
-
 async def test_psychologist_assigns_a_block_and_student_sees_it(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     psychologist_user: User,
     test_user: User,
 ) -> None:
-    await _assign_api(client, admin_headers, psychologist_user.id, test_user.id)
+    await assign(db_session, psychologist_user, test_user)
     assessment = await _make_assessment_for(db_session, test_user)
 
     resp = await client.post(
@@ -70,12 +62,11 @@ async def test_psychologist_assigns_a_block_and_student_sees_it(
 async def test_assigning_twice_is_idempotent(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     psychologist_user: User,
     test_user: User,
 ) -> None:
-    await _assign_api(client, admin_headers, psychologist_user.id, test_user.id)
+    await assign(db_session, psychologist_user, test_user)
     assessment = await _make_assessment_for(db_session, test_user)
 
     for _ in range(2):
@@ -96,12 +87,11 @@ async def test_assigning_twice_is_idempotent(
 async def test_completed_flag_reflects_a_real_belbin_run(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     psychologist_user: User,
     test_user: User,
 ) -> None:
-    await _assign_api(client, admin_headers, psychologist_user.id, test_user.id)
+    await assign(db_session, psychologist_user, test_user)
     assessment = await _make_assessment_for(db_session, test_user)
     await client.post(
         f"/api/v1/psychologist/students/{test_user.id}/assessments/{assessment.id}/extended-blocks",
@@ -124,12 +114,11 @@ async def test_completed_flag_reflects_a_real_belbin_run(
 async def test_astur_completed_requires_all_scored_subtests_not_just_any_row(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     psychologist_user: User,
     test_user: User,
 ) -> None:
-    await _assign_api(client, admin_headers, psychologist_user.id, test_user.id)
+    await assign(db_session, psychologist_user, test_user)
     assessment = await _make_assessment_for(db_session, test_user)
     await client.post(
         f"/api/v1/psychologist/students/{test_user.id}/assessments/{assessment.id}/extended-blocks",
@@ -153,12 +142,11 @@ async def test_astur_completed_requires_all_scored_subtests_not_just_any_row(
 async def test_a_different_student_cannot_see_another_students_assignments(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     psychologist_user: User,
     test_user: User,
 ) -> None:
-    await _assign_api(client, admin_headers, psychologist_user.id, test_user.id)
+    await assign(db_session, psychologist_user, test_user)
     assessment = await _make_assessment_for(db_session, test_user)
     await client.post(
         f"/api/v1/psychologist/students/{test_user.id}/assessments/{assessment.id}/extended-blocks",

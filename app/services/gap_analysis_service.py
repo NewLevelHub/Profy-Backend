@@ -4,7 +4,7 @@ from app.i18n.catalog import tr
 from app.models.artifact import Artifact, ArtifactType
 from app.models.profile import Profile
 from app.models.program import Program
-from app.schemas.gap import GapAnalysisResponse, GapItem, GapStatus
+from app.schemas.gap import GapItem, GapStatus
 
 # The `_*_KEYS` / `_*_TERMS` sets below match Russian substrings inside backend
 # requirement / artifact data (Program.requirements keys, Artifact.value text) —
@@ -193,15 +193,4 @@ def analyze_gap(
         in_progress=in_progress,
         unknown=unknown,
         readiness_score=readiness_score,
-    )
-
-
-def to_response(program_id, result: GapAnalysisResult) -> GapAnalysisResponse:
-    return GapAnalysisResponse(
-        program_id=program_id,
-        met=result.met,
-        not_met=result.not_met,
-        in_progress=result.in_progress,
-        unknown=result.unknown,
-        readiness_score=result.readiness_score,
     )

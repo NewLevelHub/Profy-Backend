@@ -10,6 +10,7 @@ keyed by `error_code` (KZ-203). These tests assert the response shape and that
 import uuid
 
 import httpx
+import pytest
 from fastapi import FastAPI, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,7 +19,7 @@ from app.main import app_error_handler
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
-from app.services import auth_service
+from app.services import auth_service, llm_client
 
 
 async def test_app_error_handler_emits_detail_and_error_code() -> None:
@@ -53,9 +54,13 @@ def test_app_error_is_an_httpexception_subclass() -> None:
     assert err.error_code == "x"
 
 
-async def test_goal_gate_error_carries_code_and_unchanged_detail(
-    client: httpx.AsyncClient, db_session: AsyncSession
+async def test_age_gate_error_carries_code_and_unchanged_detail(
+    client: httpx.AsyncClient, db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    # The LLM check runs before the age gate — switch it on so the request
+    # reaches the gate without a real key (nothing is generated: it 403s first).
+    monkeypatch.setattr(llm_client, "is_enabled", lambda: True)
+
     user = User(
         email=f"kz309-{uuid.uuid4()}@example.com",
         hashed_password="x",
@@ -84,16 +89,14 @@ async def test_goal_gate_error_carries_code_and_unchanged_detail(
     await db_session.commit()
 
     headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user.id)}"}
-    resp = await client.patch(
-        f"/api/v1/assessment/{assessment.id}/goal",
-        json={"goal": "profession", "secondary_goals": []},
+    resp = await client.post(
+        "/api/v1/roadmap/direction",
+        json={"assessment_id": str(assessment.id), "direction_slug": "developer"},
         headers=headers,
     )
 
-    assert resp.status_code == 400
+    assert resp.status_code == 403
     body = resp.json()
-    assert body["error_code"] == "goal_not_allowed_for_junior"
+    assert body["error_code"] == "feature_requires_age_10"
     # detail stays the exact pre-KZ-309 Russian string
-    assert body["detail"] == (
-        "Для младшей возрастной группы доступна только цель 'исследовать себя'"
-    )
+    assert body["detail"] == "Эта возможность доступна с 10 лет"

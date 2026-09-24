@@ -260,33 +260,6 @@ class AdminFeedbackStatsResponse(BaseModel):
     no_sections_count: int = 0
 
 
-class PsychologistAssignmentCreate(BaseModel):
-    """Admin-only link between a psychologist and a student (PRO-326).
-
-    Role validation happens in the service layer on create — not here and
-    not as a DB constraint (see PsychologistStudentAssignment).
-    """
-
-    psychologist_id: uuid.UUID
-    student_id: uuid.UUID
-
-
-class PsychologistAssignmentItem(BaseModel):
-    id: uuid.UUID
-    psychologist_id: uuid.UUID
-    student_id: uuid.UUID
-    created_at: datetime
-
-    model_config = {"from_attributes": True}
-
-
-class PsychologistAssignmentListResponse(BaseModel):
-    items: list[PsychologistAssignmentItem]
-    total: int
-    page: int
-    limit: int
-
-
 class AdminContentOverrideRequest(BaseModel):
     content_ru: dict | list | None = None
     content_kk: dict | list | None = None
