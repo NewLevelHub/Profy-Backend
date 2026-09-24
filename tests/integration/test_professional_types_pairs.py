@@ -30,7 +30,7 @@ async def _seed_professional_types_pairs(db: AsyncSession) -> dict[int, tuple[uu
         for option in (pair["option_a"], pair["option_b"]):
             q = Question(
                 instrument=QuestionInstrument.professional_types,
-                text=option["text"], order=option["order"], age_tier=AgeGroup.senior,
+                text=option["text"], order=option["order"],
             )
             db.add(q)
             await db.flush()
@@ -42,7 +42,6 @@ async def _seed_professional_types_pairs(db: AsyncSession) -> dict[int, tuple[uu
         b_id = ids_by_order[pair["option_b"]["order"]]
         db.add(QuestionPair(
             instrument=QuestionInstrument.professional_types,
-            age_tier=AgeGroup.senior,
             pair_index=pair["pair_index"],
             question_a_id=a_id, question_b_id=b_id,
         ))
@@ -67,16 +66,12 @@ async def _make_assessment(db: AsyncSession, age_group: AgeGroup) -> Assessment:
     return assessment
 
 
-async def test_pairs_are_returned_for_senior_but_not_middle_or_junior(db_session: AsyncSession) -> None:
+async def test_all_twenty_pairs_are_returned(db_session: AsyncSession) -> None:
     await _seed_professional_types_pairs(db_session)
 
-    senior_pairs = await question_pair_service.get_pairs(db_session, AgeGroup.senior)
-    middle_pairs = await question_pair_service.get_pairs(db_session, AgeGroup.middle)
-    junior_pairs = await question_pair_service.get_pairs(db_session, AgeGroup.junior)
+    pairs = await question_pair_service.get_pairs(db_session)
 
-    assert len([p for p in senior_pairs if p.instrument == QuestionInstrument.professional_types]) == 20
-    assert all(p.instrument != QuestionInstrument.professional_types for p in middle_pairs)
-    assert all(p.instrument != QuestionInstrument.professional_types for p in junior_pairs)
+    assert len([p for p in pairs if p.instrument == QuestionInstrument.professional_types]) == 20
 
 
 async def test_submitting_a_pair_answer_resolves_the_correct_pair_not_a_colliding_one(
@@ -102,7 +97,7 @@ async def test_professional_types_pairs_do_not_leak_into_riasec_scoring(db_sessi
     pair_ids = await _seed_professional_types_pairs(db_session)
     assessment = await _make_assessment(db_session, AgeGroup.senior)
 
-    before = await riasec_service.raw_scores(assessment.id, db_session, AgeGroup.senior)
+    before = await riasec_service.raw_scores(assessment.id, db_session)
 
     for pair_index, (a_id, _b_id) in pair_ids.items():
         await question_pair_service.submit_pair_answers(
@@ -112,5 +107,5 @@ async def test_professional_types_pairs_do_not_leak_into_riasec_scoring(db_sessi
             db_session,
         )
 
-    after = await riasec_service.raw_scores(assessment.id, db_session, AgeGroup.senior)
+    after = await riasec_service.raw_scores(assessment.id, db_session)
     assert after == before

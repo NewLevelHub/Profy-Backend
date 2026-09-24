@@ -1,7 +1,7 @@
 """Deterministic, LLM-free narrative builder — TZ_Profi.md §17.8: shown to
 the student when the LLM is disabled/unavailable or fails validation on all
 attempts (see report_narrative_service.py). Reuses the exact same evidence
-catalog and label tables (mi_content.py/riasec_content.py) as the AI path —
+catalog and label tables (riasec_content.py) as the AI path —
 same source of truth, just no personalization — so it tells the same
 underlying story instead of a generic placeholder.
 
@@ -23,7 +23,6 @@ from typing import Any
 
 from app.i18n import DEFAULT_LOCALE
 from app.i18n.catalog import tr
-from app.models.profile import AgeGroup
 from app.schemas.report_narrative import (
     InterestCard,
     MotivationNarrative,
@@ -32,16 +31,11 @@ from app.schemas.report_narrative import (
 )
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
 from app.services.bigfive_content import personality_labels
-from app.services.mi_content import mi_labels
 from app.services.report_narrative_context import STRENGTH_CARD_EXCLUDED_SOURCE_TYPES
 from app.services.riasec_content import riasec_labels
-from app.services.thinking_style_content import (
-    thinking_style_adj,
-    thinking_style_cue_short,
-    thinking_style_impact,
-)
+from app.services.thinking_style_content import thinking_style_adj, thinking_style_impact
 
-# middle/senior only — a short "helps to..." clause per Big Five trait, used
+# A short "helps to..." clause per Big Five trait, used
 # to synthesize thinking_style_notes with personality WITHOUT quoting the
 # trait's own note text (that's already shown verbatim in "Твой характер" —
 # report_v2_assembler.build_personality_notes). New wording, not a repeat.
@@ -71,15 +65,13 @@ def _join(t: dict[str, Any], items: list[str]) -> str:
     return ", ".join(items[:-1]) + t["list_conjunction"] + items[-1]
 
 
-def _summary(t: dict[str, Any], age_group: AgeGroup) -> str:
+def _summary(t: dict[str, Any]) -> str:
     # TZ_Profi.md §18.2 п.1 wants a short but real summary — 5-6 sentences
     # (product decision, 2026-08-17), each adding genuinely new framing
     # rather than repeating a claim that already has its own section. None
     # repeat the "не окончательный выбор / карта возможных направлений" idea
     # — `disclaimer` (result_v2.py DISCLAIMER) already says that next to it.
-    if age_group == AgeGroup.junior:
-        return t["summary_junior"]
-    return t["summary_middle_senior"]
+    return t["summary"]
 
 
 def _strength_cards(t: dict[str, Any], context: ReportNarrativeContext) -> list[NarrativeCard]:
@@ -101,11 +93,9 @@ def _strength_cards(t: dict[str, Any], context: ReportNarrativeContext) -> list[
 
 
 def _interests(t: dict[str, Any], context: ReportNarrativeContext) -> list[InterestCard]:
-    is_mi = context.interest_instrument == "mi"
-    labels = mi_labels() if is_mi else riasec_labels()
-    source_type = "mi_category" if is_mi else "riasec_category"
+    labels = riasec_labels()
     strong: dict[str, EvidenceItem] = {
-        e.source_id.split(":", 1)[1]: e for e in context.evidence if e.source_type == source_type
+        e.source_id.split(":", 1)[1]: e for e in context.evidence if e.source_type == "riasec_category"
     }
     cards = []
     for key, label in labels.items():
@@ -116,25 +106,15 @@ def _interests(t: dict[str, Any], context: ReportNarrativeContext) -> list[Inter
     return cards
 
 
-def _thinking_style_notes(
-    t: dict[str, Any], context: ReportNarrativeContext, age_group: AgeGroup
-) -> list[NarrativeCard]:
+def _thinking_style_notes(t: dict[str, Any], context: ReportNarrativeContext) -> list[NarrativeCard]:
     """One merged card, not one per style — 2 separate cards both titled
-    generically read as a duplicated section (user feedback). Junior gets no
-    abstract style labels or career-adjacent framing (TZ_Profi.md §4.1);
-    middle/senior get a named title plus a short real-world-relevance
-    sentence."""
+    generically read as a duplicated section (user feedback). A named title
+    plus a short real-world-relevance sentence."""
     items = [e for e in context.evidence if e.source_type == "thinking_style"]
     if not items:
         return []
     keys = [e.source_id.split(":", 1)[1] for e in items]
     evidence_ids = [e.source_id for e in items]
-
-    if age_group == AgeGroup.junior:
-        clauses = [thinking_style_cue_short()[key] for key in keys]
-        description = _join(t, clauses) + "."
-        description = description[0].upper() + description[1:]
-        return [NarrativeCard(title=t["thinking_style_junior_title"], description=description, evidence_ids=evidence_ids)]
 
     verb = t["thinking_style_verb_singular"] if len(keys) == 1 else t["thinking_style_verb_plural"]
     adjectives = _join(t, [thinking_style_adj()[key] for key in keys])
@@ -175,11 +155,7 @@ def _motivation_narrative(t: dict[str, Any], context: ReportNarrativeContext) ->
     )
 
 
-def _career_narrative(
-    t: dict[str, Any], context: ReportNarrativeContext, age_group: AgeGroup
-) -> list[NarrativeCard]:
-    if age_group == AgeGroup.junior:
-        return []
+def _career_narrative(t: dict[str, Any], context: ReportNarrativeContext) -> list[NarrativeCard]:
     riasec_items = [e for e in context.evidence if e.source_type == "riasec_category"][:3]
     return [
         NarrativeCard(
@@ -191,12 +167,12 @@ def _career_narrative(
     ]
 
 
-def _final_analysis(t: dict[str, Any], context: ReportNarrativeContext, age_group: AgeGroup) -> str:
+def _final_analysis(t: dict[str, Any], context: ReportNarrativeContext) -> str:
     # Shown once, describing what each section *is for* — never the evidence
     # text itself — so this reads as a synthesis, not a fourth repeat.
     clauses = t["final_analysis_clauses"]
     present = []
-    if any(e.source_type in ("riasec_category", "mi_category") for e in context.evidence):
+    if any(e.source_type == "riasec_category" for e in context.evidence):
         present.append(clauses["interests"])
     if any(e.source_type == "personality" for e in context.evidence):
         present.append(clauses["personality"])
@@ -210,22 +186,19 @@ def _final_analysis(t: dict[str, Any], context: ReportNarrativeContext, age_grou
     else:
         first = t["final_analysis_no_signal"]
 
-    if age_group == AgeGroup.junior:
-        return first + t["final_analysis_junior_suffix"]
-    return first + t["final_analysis_middle_senior_suffix"]
+    return first + t["final_analysis_suffix"]
 
 
 def build_fallback_narrative(
     context: ReportNarrativeContext, *, locale: str = DEFAULT_LOCALE
 ) -> ReportNarrativeOutput:
     t = tr("narrative_fallback", locale=locale)
-    age_group = AgeGroup(context.age_group)
     return ReportNarrativeOutput(
-        summary=_summary(t, age_group),
+        summary=_summary(t),
         strength_cards=_strength_cards(t, context),
         interests=_interests(t, context),
-        thinking_style_notes=_thinking_style_notes(t, context, age_group),
+        thinking_style_notes=_thinking_style_notes(t, context),
         motivation_narrative=_motivation_narrative(t, context),
-        career_narrative=_career_narrative(t, context, age_group),
-        final_analysis=_final_analysis(t, context, age_group),
+        career_narrative=_career_narrative(t, context),
+        final_analysis=_final_analysis(t, context),
     )

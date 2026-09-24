@@ -1,6 +1,6 @@
 """One-off: merges Program rows that are the same real specialty duplicated
 under two names at the same university — a bare name from the bulk KZ scrape
-(seed_kz_universities.py) and a "<name> (бакалавр)"-suffixed name from the
+and a "<name> (бакалавр)"-suffixed name from the
 older hand-picked legacy batch (see docs/ovpo-registry-gap-analysis.md /
 the 16-program min_gpa investigation earlier in this project). Found by
 normalizing away only degree-level suffixes ("(бакалавр)", "(магистратура)",

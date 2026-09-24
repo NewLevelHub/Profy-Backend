@@ -35,7 +35,7 @@ JSON_SCHEMA: dict = {
         # Structured Outputs strict mode forbids a truly optional/nullable
         # sub-object with its own `required` list in some SDKs' json_schema
         # validators, so this is always present; a careers-less context
-        # (junior) gets an explicit sentinel slug the validator treats as
+        # (no matching direction) gets an explicit sentinel slug the validator treats as
         # "no recommendation", rather than a bare null the schema can't
         # cleanly express here.
         "recommended_profession": {

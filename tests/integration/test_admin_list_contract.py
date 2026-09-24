@@ -231,13 +231,12 @@ async def _user_with_profile(
     return user
 
 
-async def test_users_sort_by_joined_column_together_with_an_assessment_filter(
+async def test_users_sort_together_with_an_assessment_filter(
     db_session: AsyncSession,
 ) -> None:
-    """The one combination that Postgres rejects outright if built naively:
-    filtering by assessment status forces SELECT DISTINCT, and DISTINCT
-    requires every ORDER BY expression to be in the select list — which
-    Profile.age_group is not, since the query selects User."""
+    """Filtering by assessment status forces SELECT DISTINCT, and DISTINCT
+    requires every ORDER BY expression to be in the select list — sorting
+    must still work, and a user with two matching assessments is one row."""
     marker = _marker()
     senior = await _user_with_profile(
         db_session, marker, AgeGroup.senior, [AssessmentStatus.completed]
@@ -250,12 +249,13 @@ async def test_users_sort_by_joined_column_together_with_an_assessment_filter(
         db_session,
         search=marker,
         status=AssessmentStatus.completed,
-        sort="age_group",
+        sort="email",
         order="asc",
         limit=100,
     )
 
-    assert [i.id for i in result.items] == [junior.id, senior.id]
+    expected = sorted([junior, senior], key=lambda u: u.email)
+    assert [i.id for i in result.items] == [u.id for u in expected]
     # two matching assessments on one user must still count as one user
     assert result.total == 2
 
@@ -343,12 +343,10 @@ async def test_feedback_score_range_and_comment_filters(db_session: AsyncSession
     assert result.total == 1
 
 
-async def test_feedback_comment_search_and_age_group_filter(db_session: AsyncSession) -> None:
-    """age_group lives on the profile behind the assessment, so filtering by it
-    joins through both — and feedback whose assessment was deleted has no
-    knowable age group and must not be counted as a match."""
+async def test_feedback_comment_search(db_session: AsyncSession) -> None:
+    """Comment search matches feedback with and without an assessment."""
     marker = _marker()
-    senior = await _feedback(
+    await _feedback(
         db_session, marker, score=3, comment="откуда выводы", age_group=AgeGroup.senior
     )
     await _feedback(db_session, marker, score=3, comment="откуда выводы", age_group=AgeGroup.junior)
@@ -357,12 +355,8 @@ async def test_feedback_comment_search_and_age_group_filter(db_session: AsyncSes
     by_comment = await admin_service.list_feedback(
         db_session, section=marker, search="откуда", limit=100
     )
-    by_age = await admin_service.list_feedback(
-        db_session, section=marker, age_group=AgeGroup.senior, limit=100
-    )
 
     assert by_comment.total == 3
-    assert [i.id for i in by_age.items] == [senior.id]
 
 
 async def test_feedback_stats_describe_the_filtered_rows(db_session: AsyncSession) -> None:
@@ -456,21 +450,19 @@ async def test_question_pair_search_matches_the_text_a_student_sees(
         instrument=QuestionInstrument.big_five,
         text={"ru": f"{marker} чинить самокат"},
         order=900_101,
-        age_tier=AgeGroup.junior,
     )
     question_b = Question(
         instrument=QuestionInstrument.big_five, text={"ru": "играть в салки"}, order=900_102,
-        age_tier=AgeGroup.junior,
     )
     db_session.add_all([question_a, question_b])
     await db_session.flush()
 
     fallback_pair = QuestionPair(
-        instrument=QuestionInstrument.big_five, age_tier=AgeGroup.junior,
+        instrument=QuestionInstrument.big_five,
         pair_index=900_001, question_a_id=question_a.id, question_b_id=question_b.id,
     )
     overridden_pair = QuestionPair(
-        instrument=QuestionInstrument.big_five, age_tier=AgeGroup.junior,
+        instrument=QuestionInstrument.big_five,
         pair_index=900_002, question_a_id=question_b.id, question_b_id=question_b.id,
         option_a_text={"ru": f"{marker} рисовать комикс"},
     )
@@ -496,13 +488,12 @@ async def test_question_pair_search_does_not_match_a_shadowed_fallback(
         instrument=QuestionInstrument.big_five,
         text={"ru": f"{marker} скрытый текст"},
         order=900_103,
-        age_tier=AgeGroup.junior,
     )
     db_session.add(question)
     await db_session.flush()
 
     pair = QuestionPair(
-        instrument=QuestionInstrument.big_five, age_tier=AgeGroup.junior,
+        instrument=QuestionInstrument.big_five,
         pair_index=900_003, question_a_id=question.id, question_b_id=question.id,
         option_a_text={"ru": "видимый текст"}, option_b_text={"ru": "видимый текст"},
     )

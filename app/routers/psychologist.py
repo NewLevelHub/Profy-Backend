@@ -256,7 +256,7 @@ async def get_student_assessment_test_results(
 ) -> PsychologistTestResultsResponse:
     """Pure test-results surface: the 7 instruments alone, no narrative
     report content mixed in (contrast with `report`, above, which bundles
-    `new_tests` together with the full student-shape RIASEC/BigFive/roadmap
+    `new_tests` together with the full student-shape RIASEC/BigFive
     report)."""
     try:
         return await psychologist_service.get_assigned_student_test_results(

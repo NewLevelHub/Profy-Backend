@@ -3,7 +3,7 @@
 Single source of truth for what counts as "high"/"low" on this scale —
 used both to label interest_map spheres (report_v2_assembler._level) and
 to gate which types qualify as a vetted "strength"/"weakness"
-(riasec_service/mi_service.strengths_weaknesses). Keeping these in one
+(riasec_service.strengths_weaknesses). Keeping these in one
 place is what stops the two from disagreeing about whether a given score
 is a real signal — found live: a type sitting at the scale's floor (tied
 with three "weaknesses") was still surfaced as a strength by

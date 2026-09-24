@@ -80,7 +80,7 @@ class Program(Base):
     # ЕС") — same pattern as University.ranking_label next to
     # University.ranking. UI shows cost_per_year when set, else this.
     cost_label: Mapped[str | None] = mapped_column(Text, nullable=True)
-    # Numeric range parsed out of cost_label/cost_text (scripts/parse_cost_label.py)
+    # Numeric range parsed out of cost_label/cost_text
     # where the text states exactly one unambiguous annual figure — most of
     # this dataset's cost_label text has a second, different number for
     # something else (living costs, another program level, a currency
@@ -120,9 +120,8 @@ class Program(Base):
     # Row-level fallback source — set once when the row was first created,
     # rarely reflects any one field's actual origin once a row has been
     # touched by more than one seed/backfill script (nearly every row here
-    # has, by now — KZ scrape + apply_grant_admission_data_2026.py +
-    # apply_program_requirements_content_2027.py all write into the same
-    # `requirements` dict). `fact_sources` below is the real per-field
+    # has, by now — KZ scrape + the 2026 grant-score and 2027 requirements
+    # passes all wrote into the same `requirements` dict). `fact_sources` below is the real per-field
     # answer; keep this only for rows nothing more specific has touched yet.
     source_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Per-fact provenance: {field_path: {"url": str, "checked_at": "YYYY-MM-DD"}},
@@ -148,7 +147,7 @@ class Program(Base):
     @property
     def profession_slugs(self) -> list[str]:
         """Read-only view of `directions` as slugs — kept so existing callers
-        (schemas, roadmap_builder, direction_service) that only need the
+        (schemas, direction_service) that only need the
         slug strings don't have to touch the relationship directly. Assign
         `.directions` (a list of `Direction` rows) to change the mapping,
         not this property."""

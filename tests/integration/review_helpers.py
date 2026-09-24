@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.profile import AgeGroup, Profile
+from app.models.psychologist_assignment import PsychologistStudentAssignment
 from app.models.user import User
 from app.services import assessment_shared, email_service, llm_client, motivation_service
 
@@ -71,14 +72,16 @@ async def generate(
 
 
 async def assign(
-    client: httpx.AsyncClient, admin_headers: dict[str, str], psychologist: User, student: User
-) -> None:
-    response = await client.post(
-        "/api/v1/admin/psychologist-assignments",
-        json={"psychologist_id": str(psychologist.id), "student_id": str(student.id)},
-        headers=admin_headers,
-    )
-    assert response.status_code == 201
+    db_session: AsyncSession, psychologist: User, student: User
+) -> PsychologistStudentAssignment:
+    """Links psychologist ↔ student straight in the DB. In production the
+    psychologist self-claims (`POST /psychologist/students/{id}/claim`), but
+    that flow has its own eligibility rules (unclaimed student, has a
+    result) that these tests aren't about — they only need the link."""
+    assignment = PsychologistStudentAssignment(psychologist_id=psychologist.id, student_id=student.id)
+    db_session.add(assignment)
+    await db_session.flush()
+    return assignment
 
 
 async def stored_result(db_session: AsyncSession, assessment_id: uuid.UUID) -> AnalysisResult:

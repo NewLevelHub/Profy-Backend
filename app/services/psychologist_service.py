@@ -169,7 +169,7 @@ async def list_assigned_students(
             student.id,
             student.email,
             Profile.name,
-            Profile.age_group,
+            Profile.age,
             PsychologistStudentAssignment.created_at,
         )
         .join(student, student.id == PsychologistStudentAssignment.student_id)
@@ -183,7 +183,7 @@ async def list_assigned_students(
             id=row.id,
             email=row.email,
             profile_name=row.name,
-            age_group=row.age_group.value if row.age_group is not None else None,
+            age=row.age,
             assigned_at=row.created_at,
         )
         for row in rows
@@ -210,7 +210,7 @@ async def list_available_students(
         .exists()
     )
     query = (
-        select(User.id, User.email, Profile.name, Profile.age_group, pending.label("has_pending"))
+        select(User.id, User.email, Profile.name, Profile.age, pending.label("has_pending"))
         .outerjoin(Profile, Profile.user_id == User.id)
         .where(User.role == UserRole.student, ~User.id.in_(already_mine))
         .order_by(User.created_at.desc())
@@ -221,7 +221,7 @@ async def list_available_students(
             id=row.id,
             email=row.email,
             profile_name=row.name,
-            age_group=row.age_group.value if row.age_group is not None else None,
+            age=row.age,
             has_pending_review=bool(row.has_pending),
         )
         for row in rows
@@ -262,7 +262,7 @@ async def claim_student(
         id=student.id,
         email=student.email,
         profile_name=profile.name if profile is not None else None,
-        age_group=profile.age_group.value if profile is not None and profile.age_group is not None else None,
+        age=profile.age if profile is not None else None,
         assigned_at=assignment.created_at,
     )
 
@@ -289,7 +289,6 @@ def _to_psychologist_detail(
                 completed_at=a.completed_at,
                 has_result=a.has_result,
                 review_status=a.review_status,
-                has_roadmap=a.has_roadmap,
             )
             for a in detail.assessments
         ],
@@ -563,7 +562,7 @@ def review_queue_select(limit: int = REVIEW_QUEUE_LIMIT) -> Select:
             student.id.label("student_id"),
             student.email.label("student_email"),
             Profile.name.label("student_name"),
-            Profile.age_group,
+            Profile.age,
         )
         .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
         .join(Profile, Profile.id == Assessment.profile_id)
@@ -581,7 +580,7 @@ def to_review_queue_items(rows: Any) -> list[PsychologistReviewQueueItem]:
             student_id=row.student_id,
             student_name=row.student_name,
             student_email=row.student_email,
-            age_group=row.age_group.value if row.age_group is not None else None,
+            age=row.age,
             goal=row.goal.value,
             generated_at=row.generated_at,
             reviewed_at=row.reviewed_at,
@@ -837,27 +836,6 @@ async def publish_result(
         db, student_id=student_id, assessment_id=assessment_id, for_update=True
     )
     return await _publish(db, analysis, publisher_id=psychologist_id)
-
-
-async def publish_result_as_admin(
-    db: AsyncSession, *, admin_id: uuid.UUID, assessment_id: uuid.UUID
-) -> PsychologistResultDetailResponse:
-    """Admin fallback for results whose student has no psychologist
-    (docs/psychologist-review-gate-plan.md §4) — not assignment-gated."""
-    # Serialize with report generation: a locale row generated in between
-    # would be a translation of the pre-edit text (edit) or miss the
-    # published status (publish).
-    await report_service.lock_report_generation(assessment_id, db)
-    query = (
-        select(AnalysisResult)
-        .where(AnalysisResult.assessment_id == assessment_id, _is_original_row())
-        .with_for_update(of=AnalysisResult)
-        .execution_options(populate_existing=True)
-    )
-    analysis = (await db.execute(query)).scalar_one_or_none()
-    if analysis is None:
-        raise ValueError("Result not found")
-    return await _publish(db, analysis, publisher_id=admin_id)
 
 
 async def _publish(

@@ -17,7 +17,7 @@ Backend API платформы профориентации Profi.
 
 ### 1. Файлы вне гита
 
-`start.sh`, `.env`, `docker-compose.local.yml`, `nginx.local.conf` лежат в `.gitignore` — возьми их у команды и положи в корень репозитория. Шаблон переменных — [`.env.example`](.env.example).
+`start.sh`, `.env`, `.env.local`, `docker-compose.local.yml`, `nginx.local.conf` лежат в `.gitignore` — возьми их у команды и положи в корень репозитория. Шаблоны переменных — [`.env.example`](.env.example) и [`.env.local.example`](.env.local.example) (`cp .env.local.example .env.local`; `docker-compose.local.yml` читает оба файла).
 
 ### 2. Фотографии вузов
 
@@ -72,7 +72,7 @@ Backend API платформы профориентации Profi.
   ```
 - Бэкенд хранения — `STORAGE_BACKEND`: `fs` (дефолт, файлы на диске) или `s3` (S3-совместимое). Код — `app/integrations/storage/`.
 
-Основные группы эндпоинтов (все под `/api/v1`): `auth`, `admin`, `profile` (+ `profile/artifacts`), `assessment` (+ questions/question-pairs/motivation/motivation-pairs), `directions`, `inquiry`, `result`, `roadmap`, `universities`. Полный список — в Swagger UI.
+Основные группы эндпоинтов (все под `/api/v1`): `auth`, `admin`, `profile` (+ `profile/artifacts`), `assessment` (+ questions/question-pairs/motivation), `result`, `universities`, `psychologist`. Полный список — в Swagger UI.
 
 ## Переменные окружения
 
@@ -84,9 +84,8 @@ Backend API платформы профориентации Profi.
 | `REDIS_URL` | Redis URL |
 | `SECRET_KEY` | Секрет для JWT (сменить в production) |
 | `LLM_API_KEY` | Ключ LLM-провайдера (опционально) |
-| `LLM_ENABLED` | Включает генерацию roadmap через LLM; `false` по умолчанию — тогда используются статические шаблоны |
+| `LLM_ENABLED` | Включает LLM-нарратив отчёта и AI-анализ для психолога; `false` по умолчанию — тогда нарратив собирается из шаблонов |
 | `LLM_MODEL`, `LLM_BASE_URL`, `LLM_TIMEOUT`, `LLM_MAX_TOKENS`, `LLM_TEMPERATURE` | Настройки обычных (лёгких) LLM-вызовов |
-| `LLM_ROADMAP_TIMEOUT`, `LLM_ROADMAP_MAX_TOKENS`, `LLM_ROADMAP_MODEL` | Отдельные, более щедрые настройки для генерации roadmap — она заметно крупнее остальных LLM-вызовов |
 | `RESEND_API_KEY` | Ключ [Resend](https://resend.com) для отправки email (коды подтверждения, сброс пароля). Пусто — коды просто логируются в консоль, письма не отправляются |
 | `EMAIL_FROM` | Адрес отправителя писем |
 | `GOOGLE_CLIENT_ID` | Client ID из Google Cloud Console для входа через Google (веб) |
@@ -116,9 +115,9 @@ docker compose exec api alembic heads
 
 ## Seed-данные
 
-Вопросы (RIASEC / Big Five / MI), forced-choice пары, мотивационные утверждения/пары и RIASEC-направления описаны в Python-файлах-«банках» (`scripts/*_bank.py`) — это источник правды, а не БД напрямую. Соответствующий `scripts/seed_*.py` при каждом запуске **полностью синхронизирует** БД с банком: обновляет изменившиеся поля, добавляет новые строки и **удаляет** те, ключа которых больше нет в банке. Чтобы поменять контент — редактируйте файл-банк и перезапускайте seed-скрипт, а не правьте строки в БД напрямую (правки не переживут следующий деплой/reseed).
+Вопросы (RIASEC / Big Five / психологические тесты), forced-choice пары (ДДО), мотивационные утверждения и RIASEC-направления описаны в Python-файлах-«банках» (`scripts/*_bank.py`) — это источник правды, а не БД напрямую. Соответствующий `scripts/seed_*.py` при каждом запуске **полностью синхронизирует** БД с банком: обновляет изменившиеся поля, добавляет новые строки и **удаляет** те, ключа которых больше нет в банке. Чтобы поменять контент — редактируйте файл-банк и перезапускайте seed-скрипт, а не правьте строки в БД напрямую (правки не переживут следующий деплой/reseed).
 
-Полный и актуальный порядок всех seed/backfill/apply-скриптов, которые гоняются на каждый деплой, — в `.github/workflows/cd.yml` / `cd-dev.yml`.
+Полный и актуальный порядок всех seed/apply-скриптов (и `build_universities.py`), которые гоняются на каждый деплой, — в `.github/workflows/cd.yml` / `cd-dev.yml`.
 
 ## Тесты
 
@@ -158,7 +157,7 @@ profi-backend/
 
 ## Деплой
 
-Push в `dev` или `main` триггерит `.github/workflows/cd-dev.yml` / `cd.yml`: сборка образа → деплой на соответствующий сервер → миграции → полный прогон seed/backfill-скриптов. `dev.profy.newlevelhub.kz` и `profy.newlevelhub.kz` обслуживаются одним общим edge-nginx контейнером на проде — при правках `nginx.prod.conf` см. `docs/nginx-prod-points-to-dev-incident.md`. Фото на сервер кладутся один раз вручную (`/srv/profy-media`, монтируется в контейнеры как `/srv/media`) — CI их не трогает.
+Push в `dev` или `main` триггерит `.github/workflows/cd-dev.yml` / `cd.yml`: сборка образа → деплой на соответствующий сервер → миграции → полный прогон seed-скриптов и `build_universities.py`. `dev.profy.newlevelhub.kz` и `profy.newlevelhub.kz` обслуживаются одним общим edge-nginx контейнером на проде — при правках `nginx.prod.conf` см. `docs/nginx-prod-points-to-dev-incident.md`. Фото на сервер кладутся один раз вручную (`/srv/profy-media`, монтируется в контейнеры как `/srv/media`) — CI их не трогает.
 
 ## Дополнительная документация
 

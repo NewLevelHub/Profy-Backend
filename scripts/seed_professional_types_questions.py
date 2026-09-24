@@ -4,14 +4,12 @@ professional_types_bank.py — the 5-item `professional_types_abilities`
 Likert block (QUESTIONS) AND the 20 forced-choice "интересы" pairs (PAIRS):
 40 dedicated backing `questions` rows (instrument='professional_types') +
 20 `question_pairs` rows. PRO-338 Ф1.1, pattern 1:1 with
-seed_lie_scale_questions.py (PRO-298) for the Likert half, and with
-seed_question_pairs.py for the pairs half — self-contained here rather than
-routed through that shared script, since every other single-instrument
-Likert bank (RIASEC/BigFive/MI) already owns its own seed script end-to-end
-without touching its siblings' scripts.
+seed_riasec_questions.py for the Likert half (originally the lie-scale seed,
+removed in PRO-388) — self-contained, like every other single-instrument
+bank (RIASEC/BigFive) that owns its own seed script end-to-end.
 
-Run inside Docker, AFTER seed_mi_questions.py (shares the same `order`
-numbering space, contiguous right after MI so the battery renders the
+Run inside Docker, AFTER seed_bigfive_questions.py (shares the same `order`
+numbering space, contiguous so the battery renders the
 Likert half as one unbroken "Дополнительные тесты" sub-section, not
 interleaved):
     docker-compose exec api python scripts/seed_professional_types_questions.py
@@ -32,7 +30,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session
-from app.models.profile import AgeGroup
 from app.models.question import Question, QuestionInstrument
 from app.models.question_pair import QuestionPair
 from app.services.admin_lock import has_overrides, sync_fields
@@ -50,7 +47,6 @@ async def _seed_abilities(db: AsyncSession) -> tuple[int, int, int, int]:
     inserted = updated = skipped = deleted = 0
 
     for data in QUESTIONS:
-        age_tier = AgeGroup(data["age_tier"])
         # `Question.text` is `{locale: str}` JSONB (docs/i18n-contract.md §8)
         # — the bank already builds this dict itself (kk added PRO-338
         # Ф4.4, see professional_types_bank.py's own `_abilities_text`
@@ -59,14 +55,14 @@ async def _seed_abilities(db: AsyncSession) -> tuple[int, int, int, int]:
         existing = existing_by_order.get(data["order"])
 
         if existing is not None:
-            changed = sync_fields(existing, {"text": text, "age_tier": age_tier})
+            changed = sync_fields(existing, {"text": text})
             updated += 1 if changed else 0
             skipped += 0 if changed else 1
             continue
 
         db.add(Question(
             instrument=QuestionInstrument.professional_types_abilities,
-            text=text, order=data["order"], age_tier=age_tier,
+            text=text, order=data["order"],
         ))
         inserted += 1
 
@@ -83,7 +79,7 @@ async def _seed_pair_options(db: AsyncSession) -> tuple[dict[int, uuid.UUID], tu
     instrument='professional_types'. Returns an order->id map for
     `_seed_pairs` to resolve `question_a_id`/`question_b_id` from."""
     options = [
-        {**option, "age_tier": "senior"}
+        option
         for pair in PAIRS
         for option in (pair["option_a"], pair["option_b"])
     ]
@@ -97,7 +93,6 @@ async def _seed_pair_options(db: AsyncSession) -> tuple[dict[int, uuid.UUID], tu
     inserted = updated = skipped = deleted = 0
 
     for data in options:
-        age_tier = AgeGroup(data["age_tier"])
         # `Question.text` is `{locale: str}` JSONB (docs/i18n-contract.md §8)
         # — the bank already builds this dict itself (kk added PRO-338
         # Ф4.4, see professional_types_bank.py's own `_KK_PAIR_TEXT`
@@ -106,14 +101,14 @@ async def _seed_pair_options(db: AsyncSession) -> tuple[dict[int, uuid.UUID], tu
         existing = existing_by_order.get(data["order"])
 
         if existing is not None:
-            changed = sync_fields(existing, {"text": text, "age_tier": age_tier})
+            changed = sync_fields(existing, {"text": text})
             updated += 1 if changed else 0
             skipped += 0 if changed else 1
             continue
 
         question = Question(
             instrument=QuestionInstrument.professional_types,
-            text=text, order=data["order"], age_tier=age_tier,
+            text=text, order=data["order"],
         )
         db.add(question)
         existing_by_order[data["order"]] = question
@@ -141,14 +136,12 @@ async def _seed_pairs(db: AsyncSession, order_to_id: dict[int, uuid.UUID]) -> tu
     inserted = updated = skipped = deleted = 0
 
     for data in PAIRS:
-        age_tier = AgeGroup.senior
         question_a_id = order_to_id[data["option_a"]["order"]]
         question_b_id = order_to_id[data["option_b"]["order"]]
         existing = existing_by_index.get(data["pair_index"])
 
         if existing is not None:
             changed = sync_fields(existing, {
-                "age_tier": age_tier,
                 "question_a_id": question_a_id,
                 "question_b_id": question_b_id,
             })
@@ -158,7 +151,6 @@ async def _seed_pairs(db: AsyncSession, order_to_id: dict[int, uuid.UUID]) -> tu
 
         db.add(QuestionPair(
             instrument=QuestionInstrument.professional_types,
-            age_tier=age_tier,
             pair_index=data["pair_index"],
             question_a_id=question_a_id,
             question_b_id=question_b_id,

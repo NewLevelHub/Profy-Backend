@@ -36,7 +36,7 @@ class Direction(Base):
     # without a US SOC analogue — those fall back to holland_code scoring.
     onet_vector: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
     # Descriptive fields kept for downstream consumers (report_service,
-    # roadmap_builder, direction_inquiry_service, frontend DirectionDetailPage)
+    # frontend DirectionDetailPage)
     # that predate this migration. The new profession catalog (seeded from
     # scripts/riasec_professions.py) only has name+code, so these are empty
     # by default until a future content pass fills them in — see

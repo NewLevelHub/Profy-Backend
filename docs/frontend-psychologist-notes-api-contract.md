@@ -132,11 +132,12 @@ Authorization: Bearer <psychologist-token>
 
 ## 6. Типовой happy-path (+ soft cutoff)
 
-1. Админ назначает ученика психологу
-   (`POST /api/v1/admin/psychologist-assignments`, см. контракт назначений).
+1. Психолог берёт ученика
+   (`POST /api/v1/psychologist/students/{id}/claim`, см. контракт назначений).
 2. Психолог: `POST .../students/{id}/notes` → 201; `GET .../notes` → массив.
 3. `PATCH` / `DELETE` по `note_id` → 200 / 204.
-4. Админ снимает назначение (`DELETE .../psychologist-assignments/{id}`).
+4. Назначение снято (API для этого после PRO-425 нет — admin CRUD удалён;
+   в тестах строка удаляется напрямую в БД).
 5. Психолог: новый `POST .../notes` → **404**; `GET` / `PATCH` / `DELETE` по
    старой заметке → по-прежнему ок.
 

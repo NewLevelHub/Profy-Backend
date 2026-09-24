@@ -18,7 +18,6 @@ from app.models.user import User
 from app.services import (
     assessment_shared,
     llm_client,
-    motivation_pair_service,
     motivation_service,
     report_service,
 )
@@ -45,15 +44,11 @@ async def _kk_assessment(db_session: AsyncSession, age_group: AgeGroup, age: int
     return assessment
 
 
-def _force_complete_llm_off(monkeypatch: pytest.MonkeyPatch, *, senior: bool) -> None:
+def _force_complete_llm_off(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(assessment_shared, "likert_answered_count", AsyncMock(return_value=1))
     monkeypatch.setattr(assessment_shared, "likert_total_questions", AsyncMock(return_value=1))
-    if senior:
-        monkeypatch.setattr(motivation_service, "answered_count", AsyncMock(return_value=1))
-        monkeypatch.setattr(motivation_service, "total_triplets", AsyncMock(return_value=1))
-    else:
-        monkeypatch.setattr(motivation_pair_service, "answered_count", AsyncMock(return_value=1))
-        monkeypatch.setattr(motivation_pair_service, "total_pairs", AsyncMock(return_value=1))
+    monkeypatch.setattr(motivation_service, "answered_count", AsyncMock(return_value=1))
+    monkeypatch.setattr(motivation_service, "total_triplets", AsyncMock(return_value=1))
     monkeypatch.setattr(assessment_shared, "belbin_and_astur_completed", AsyncMock(return_value=True))
     monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
 
@@ -66,7 +61,7 @@ async def test_kk_owner_gets_a_kazakh_deterministic_report(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     assessment = await _kk_assessment(db_session, AgeGroup.senior, 16)
-    _force_complete_llm_off(monkeypatch, senior=True)
+    _force_complete_llm_off(monkeypatch)
 
     response = await report_service.build_report(assessment.id, db_session)
 
@@ -85,7 +80,7 @@ async def test_kk_report_is_stable_on_cold_cache_reshape(
     """get_report()/_shape_response recomputes the synthesis text — it must
     also honour the owner locale, not fall back to ru."""
     assessment = await _kk_assessment(db_session, AgeGroup.senior, 17)
-    _force_complete_llm_off(monkeypatch, senior=True)
+    _force_complete_llm_off(monkeypatch)
 
     await report_service.build_report(assessment.id, db_session)
     # cold cache: force the storage-reshape path
@@ -112,7 +107,7 @@ async def test_ru_owner_report_is_unaffected(
     assessment = Assessment(profile_id=profile.id, goal=AssessmentGoal.explore)
     db_session.add(assessment)
     await db_session.flush()
-    _force_complete_llm_off(monkeypatch, senior=True)
+    _force_complete_llm_off(monkeypatch)
 
     response = await report_service.build_report(assessment.id, db_session)
 
@@ -177,7 +172,7 @@ async def test_second_locale_translates_the_first_narrative_not_regenerates(
     and kk say the same thing."""
     # 1. ru report first (LLM off -> deterministic ru narrative)
     assessment, user = await _senior_assessment_ru(db_session)
-    _force_complete_llm_off(monkeypatch, senior=True)
+    _force_complete_llm_off(monkeypatch)
     ru_report = await report_service.build_report(assessment.id, db_session)
     ru_row = (await db_session.execute(
         select(AnalysisResult).where(
@@ -235,7 +230,7 @@ async def test_translation_works_kk_to_ru_and_rejects_a_kazakh_leak(
     assessment, user = await _senior_assessment_ru(db_session)
     user.locale = "kk"
     await db_session.flush()
-    _force_complete_llm_off(monkeypatch, senior=True)
+    _force_complete_llm_off(monkeypatch)
     kk_report = await report_service.build_report(assessment.id, db_session)
     assert _is_kk(kk_report.summary)
 
@@ -269,7 +264,7 @@ async def _senior_ru_then_kk(db_session, monkeypatch):
     """A senior assessment with a `ru` AnalysisResult row whose owner is now kk."""
     from app.models.user import User as _User
     assessment, user = await _senior_assessment_ru(db_session)
-    _force_complete_llm_off(monkeypatch, senior=True)
+    _force_complete_llm_off(monkeypatch)
     await report_service.build_report(assessment.id, db_session)  # -> ru row
     user.locale = "kk"
     await db_session.flush()

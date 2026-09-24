@@ -11,10 +11,8 @@ always produces zero issues here.
 import re
 from dataclasses import dataclass
 
-from app.models.profile import AgeGroup
 from app.schemas.report_narrative import ReportNarrativeOutput
 from app.schemas.report_narrative_context import ReportNarrativeContext
-from app.services.mi_content import mi_labels
 from app.services.report_narrative_context import STRENGTH_CARD_EXCLUDED_SOURCE_TYPES, unknown_source_ids
 from app.services.riasec_content import riasec_labels
 
@@ -42,13 +40,6 @@ BANNED_PHRASES: tuple[str, ...] = (
     "диагноз", "расстройство", "синдром", "психическое состояние",
 )
 
-# TZ §4.1 / mi_content.py: junior is not career-oriented — no profession,
-# university or exam language anywhere in a junior narrative.
-JUNIOR_CAREER_TERMS: tuple[str, ...] = (
-    "професси", "карьер", "университет", "поступлени", "специальност",
-    "экзамен", "зарплат", "резюме", "собеседован", "диплом",
-)
-
 # KZ-402/KZ-403: the quality guards below match Russian substrings; a Kazakh
 # narrative (AI or fallback) needs the same checks in Kazakh. Kept separate,
 # not merged, so ru output is byte-unaffected. Both sets are checked for a
@@ -72,31 +63,24 @@ BANNED_PHRASES_KK: tuple[str, ...] = (
     "диагноз", "бұзылыс", "синдром", "психикалық жағдай",
 )
 
-JUNIOR_CAREER_TERMS_KK: tuple[str, ...] = (
-    "мамандық", "мансап", "университет", "жоғары оқу орны", "оқуға түсу",
-    "емтихан", "ұбт", "жалақы", "түйіндеме", "диплом", "сұхбат",
-)
-
 _MAX_CAREER_CARDS = 3
 
-# Not exact TZ numbers (the TZ gives relative guidance — "объём в 2-3 раза
-# меньше" — not char counts): a generous per-age ceiling that still keeps
-# junior meaningfully shorter than senior, catching a runaway/rambling
+# Not exact TZ numbers: a generous ceiling that catches a runaway/rambling
 # generation without rejecting normal evidence-derived sentences. Raised
 # 2026-08-17 alongside the 3->5-6 sentence bump (product decision) — must
-# stay above report_narrative_fallback._summary()'s own length for every
-# age group, or the fallback would fail its own validator.
-_SUMMARY_MAX_LEN = {AgeGroup.junior: 550, AgeGroup.middle: 800, AgeGroup.senior: 1000}
-_CARD_DESC_MAX_LEN = {AgeGroup.junior: 160, AgeGroup.middle: 240, AgeGroup.senior: 320}
+# stay above report_narrative_fallback._summary()'s own length, or the
+# fallback would fail its own validator.
+_SUMMARY_MAX_LEN = 1000
+_CARD_DESC_MAX_LEN = 320
 # thinking_style_notes gets its own, larger budget: it's now one card
-# merging up to 2 signals (cue + example each) plus, for middle/senior, a
+# merging up to 2 signals (cue + example each) plus a
 # real-world-relevance sentence AND (when there's a high-tier personality
 # trait) one more sentence synthesizing it with the style — more genuine
 # content than a single strength/career card ever carries, not padding.
-_THINKING_STYLE_DESC_MAX_LEN = {AgeGroup.junior: 220, AgeGroup.middle: 480, AgeGroup.senior: 560}
+_THINKING_STYLE_DESC_MAX_LEN = 560
 # final_analysis: last section of the report, 3-5 sentences tying multiple
 # earlier sections together — naturally longer than a single card.
-_FINAL_ANALYSIS_MAX_LEN = {AgeGroup.junior: 400, AgeGroup.middle: 550, AgeGroup.senior: 650}
+_FINAL_ANALYSIS_MAX_LEN = 650
 
 _CYRILLIC_RE = re.compile(r"[а-яё]", re.IGNORECASE)
 _CYRILLIC_KK_RE = re.compile(r"[а-яёәғқңөұүһі]", re.IGNORECASE)
@@ -243,9 +227,7 @@ def _check_language(texts: list[str], language: str) -> list[ValidationIssue]:
     return []
 
 
-def _check_banned_vocabulary(
-    texts: list[str], age_group: AgeGroup, language: str = "ru"
-) -> list[ValidationIssue]:
+def _check_banned_vocabulary(texts: list[str], language: str = "ru") -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     lowered = [t.lower() for t in texts]
 
@@ -253,12 +235,6 @@ def _check_banned_vocabulary(
     for phrase in banned:
         if any(phrase in t for t in lowered):
             issues.append(ValidationIssue("banned_phrase", phrase))
-
-    if age_group == AgeGroup.junior:
-        junior_terms = JUNIOR_CAREER_TERMS + (JUNIOR_CAREER_TERMS_KK if language == "kk" else ())
-        for term in junior_terms:
-            if any(term in t for t in lowered):
-                issues.append(ValidationIssue("junior_career_term", term))
     return issues
 
 
@@ -277,7 +253,7 @@ def _check_evidence_ids(output: ReportNarrativeOutput, context: ReportNarrativeC
 
 
 def _check_interests(output: ReportNarrativeOutput, context: ReportNarrativeContext) -> list[ValidationIssue]:
-    labels = mi_labels() if context.interest_instrument == "mi" else riasec_labels()
+    labels = riasec_labels()
     expected = set(labels.keys())
     got_categories = [i.category for i in output.interests]
     issues: list[ValidationIssue] = []
@@ -292,9 +268,8 @@ def _check_interests(output: ReportNarrativeOutput, context: ReportNarrativeCont
             f"expected categories {sorted(expected)}, got {sorted(set(got_categories))}",
         ))
 
-    strength_source_type = "mi_category" if context.interest_instrument == "mi" else "riasec_category"
     strong_categories = {
-        e.source_id.split(":", 1)[1] for e in context.evidence if e.source_type == strength_source_type
+        e.source_id.split(":", 1)[1] for e in context.evidence if e.source_type == "riasec_category"
     }
     for item in output.interests:
         if item.tier == "strong" and item.category not in strong_categories:
@@ -366,14 +341,7 @@ def _check_strength_card_duplicate_evidence(output: ReportNarrativeOutput) -> li
     return issues
 
 
-def _check_career_narrative(
-    output: ReportNarrativeOutput, context: ReportNarrativeContext, age_group: AgeGroup
-) -> list[ValidationIssue]:
-    if age_group == AgeGroup.junior:
-        if output.career_narrative:
-            return [ValidationIssue("junior_career_narrative", "junior must not receive a career narrative")]
-        return []
-
+def _check_career_narrative(output: ReportNarrativeOutput, context: ReportNarrativeContext) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     if len(output.career_narrative) > _MAX_CAREER_CARDS:
         issues.append(ValidationIssue(
@@ -474,25 +442,25 @@ def _check_final_analysis_sentence_count(output: ReportNarrativeOutput) -> list[
     return []
 
 
-def _check_lengths(output: ReportNarrativeOutput, age_group: AgeGroup) -> list[ValidationIssue]:
+def _check_lengths(output: ReportNarrativeOutput) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
-    summary_max = _SUMMARY_MAX_LEN[age_group]
+    summary_max = _SUMMARY_MAX_LEN
     if not (10 <= len(output.summary) <= summary_max):
         issues.append(ValidationIssue("summary_length", f"len={len(output.summary)}, max={summary_max}"))
 
-    final_analysis_max = _FINAL_ANALYSIS_MAX_LEN[age_group]
+    final_analysis_max = _FINAL_ANALYSIS_MAX_LEN
     if not (10 <= len(output.final_analysis) <= final_analysis_max):
         issues.append(ValidationIssue(
             "final_analysis_length", f"len={len(output.final_analysis)}, max={final_analysis_max}",
         ))
 
-    desc_max = _CARD_DESC_MAX_LEN[age_group]
+    desc_max = _CARD_DESC_MAX_LEN
     all_cards = output.strength_cards + output.career_narrative + [output.motivation_narrative]
     for card in all_cards:
         if not (5 <= len(card.description) <= desc_max):
             issues.append(ValidationIssue("card_length", f"{card.title!r} len={len(card.description)}, max={desc_max}"))
 
-    ts_max = _THINKING_STYLE_DESC_MAX_LEN[age_group]
+    ts_max = _THINKING_STYLE_DESC_MAX_LEN
     for card in output.thinking_style_notes:
         if not (5 <= len(card.description) <= ts_max):
             issues.append(ValidationIssue("card_length", f"{card.title!r} len={len(card.description)}, max={ts_max}"))
@@ -505,12 +473,11 @@ def validate(
     *,
     language: str = "ru",
 ) -> list[ValidationIssue]:
-    age_group = AgeGroup(context.age_group)
     texts = _all_texts(output)
 
     issues: list[ValidationIssue] = []
     issues += _check_language(texts, language)
-    issues += _check_banned_vocabulary(texts, age_group, language)
+    issues += _check_banned_vocabulary(texts, language)
     issues += _check_no_new_numbers(texts)
     issues += _check_evidence_ids(output, context)
     issues += _check_interests(output, context)
@@ -518,11 +485,11 @@ def validate(
     issues += _check_strength_card_count(output, context)
     issues += _check_strength_card_sources(output, context)
     issues += _check_strength_card_duplicate_evidence(output)
-    issues += _check_career_narrative(output, context, age_group)
+    issues += _check_career_narrative(output, context)
     issues += _check_no_source_id_leak(output, context)
     issues += _check_motivation_grounding(output, context)
     issues += _check_summary_sentence_count(output)
     issues += _check_final_analysis_sentence_count(output)
     issues += _check_no_disclaimer_duplicate(output, language)
-    issues += _check_lengths(output, age_group)
+    issues += _check_lengths(output)
     return issues

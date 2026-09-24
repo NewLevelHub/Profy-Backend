@@ -4,27 +4,18 @@ starts from a known-good baseline (report_narrative_fallback's own output,
 which is guaranteed valid — see test_report_narrative_fallback.py) and
 mutates exactly one thing, so a failure always isolates to one rule.
 """
-from app.models.profile import AgeGroup
 from app.schemas.report_narrative import NarrativeCard
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
 from app.services.report_narrative_fallback import build_fallback_narrative
 from app.services.report_narrative_validator import validate
 
 
-def _context(age_group: AgeGroup, instrument: str, evidence: list[EvidenceItem]) -> ReportNarrativeContext:
-    return ReportNarrativeContext(age_group=age_group.value, interest_instrument=instrument, evidence=evidence)
-
-
-def _junior_context() -> ReportNarrativeContext:
-    return _context(AgeGroup.junior, "mi", [
-        EvidenceItem(source_id="mi:logical", source_type="mi_category", text="Логика и счёт"),
-        EvidenceItem(source_id="mi:musical", source_type="mi_category", text="Музыка и ритм"),
-        EvidenceItem(source_id="motivation:interest", source_type="motivation", text="Тебя драйвит интерес"),
-    ])
+def _context(evidence: list[EvidenceItem]) -> ReportNarrativeContext:
+    return ReportNarrativeContext(evidence=evidence)
 
 
 def _senior_context() -> ReportNarrativeContext:
-    return _context(AgeGroup.senior, "riasec", [
+    return _context([
         EvidenceItem(source_id="riasec:R", source_type="riasec_category", text="Реалистичный"),
         EvidenceItem(source_id="riasec:I", source_type="riasec_category", text="Исследовательский"),
         EvidenceItem(source_id="personality:openness", source_type="personality", text="Открыт новому"),
@@ -34,12 +25,17 @@ def _senior_context() -> ReportNarrativeContext:
     ])
 
 
-def test_valid_fallback_output_has_no_issues_junior():
-    context = _junior_context()
-    assert validate(build_fallback_narrative(context), context) == []
+def _sparse_context() -> ReportNarrativeContext:
+    """2 strength-eligible interests + 1 motivation (excluded from strength
+    cards), no thinking_style evidence."""
+    return _context([
+        EvidenceItem(source_id="riasec:I", source_type="riasec_category", text="Логика и счёт"),
+        EvidenceItem(source_id="riasec:A", source_type="riasec_category", text="Музыка и ритм"),
+        EvidenceItem(source_id="motivation:interest", source_type="motivation", text="Тебя драйвит интерес"),
+    ])
 
 
-def test_valid_fallback_output_has_no_issues_senior():
+def test_valid_fallback_output_has_no_issues():
     context = _senior_context()
     assert validate(build_fallback_narrative(context), context) == []
 
@@ -143,30 +139,8 @@ def test_final_analysis_without_disclaimer_framing_is_accepted():
     assert not any(i.code == "final_analysis_duplicates_disclaimer" for i in issues)
 
 
-def test_junior_career_narrative_is_rejected():
-    context = _junior_context()
-    output = build_fallback_narrative(context)
-    output.career_narrative = [
-        NarrativeCard(title="Профессии", description="Можно стать инженером", evidence_ids=["mi:logical"])
-    ]
-
-    issues = validate(output, context)
-
-    assert any(i.code == "junior_career_narrative" for i in issues)
-
-
-def test_junior_career_term_in_any_section_is_rejected():
-    context = _junior_context()
-    output = build_fallback_narrative(context)
-    output.summary = "Тебе подойдёт профессия инженера"
-
-    issues = validate(output, context)
-
-    assert any(i.code == "junior_career_term" for i in issues)
-
-
-def test_mi_interest_count_must_be_exactly_eight():
-    context = _junior_context()
+def test_interest_count_must_be_exactly_six():
+    context = _senior_context()
     output = build_fallback_narrative(context)
     output.interests = output.interests[:-1]
 
@@ -256,7 +230,7 @@ def test_strength_card_citing_motivation_evidence_is_rejected():
 
 
 def test_thinking_style_count_must_match_real_signal_count():
-    context = _junior_context()  # no thinking_style evidence at all
+    context = _sparse_context()  # no thinking_style evidence at all
     output = build_fallback_narrative(context)
     assert output.thinking_style_notes == []
     output.thinking_style_notes = [
@@ -269,7 +243,7 @@ def test_thinking_style_count_must_match_real_signal_count():
 
 
 def _context_with_two_thinking_style_signals() -> ReportNarrativeContext:
-    return _context(AgeGroup.senior, "riasec", [
+    return _context([
         EvidenceItem(source_id="thinking_style:creative_think", source_type="thinking_style", text="Генерация идей"),
         EvidenceItem(source_id="thinking_style:strategic", source_type="thinking_style", text="Планирование"),
     ])
@@ -322,7 +296,7 @@ def test_strength_card_count_matches_sparse_evidence_exactly():
     """With only 2 strength-eligible facts available (motivation is its own
     section, excluded here), exactly 2 cards is correct — the validator must
     not demand 5 cards out of thin air."""
-    context = _junior_context()  # 2 mi_category + 1 motivation (excluded)
+    context = _sparse_context()  # 2 riasec_category + 1 motivation (excluded)
     output = build_fallback_narrative(context)
 
     issues = validate(output, context)
@@ -442,10 +416,10 @@ def test_non_russian_text_is_rejected_for_ru_language():
     assert any(i.code == "language" for i in issues)
 
 
-def test_summary_too_long_for_junior_is_rejected():
-    context = _junior_context()
+def test_summary_too_long_is_rejected():
+    context = _senior_context()
     output = build_fallback_narrative(context)
-    output.summary = "Тебе интересно очень многое. " * 30
+    output.summary = "Тебе интересно очень многое. " * 40
 
     issues = validate(output, context)
 

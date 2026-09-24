@@ -88,81 +88,12 @@ PHRASES: dict[str, list[str]] = {
 assert set(PHRASES) == set(CATEGORIES)
 assert all(len(v) == 4 for v in PHRASES.values())
 
-# Junior (6-9) rewrite of PHRASES — same category, same position (index N of
-# a category here is the junior version of PHRASES[category][N], paired 1:1
-# in the STATEMENTS loop below) — worded around school/friends/hobbies
-# instead of career/money/work, since a 6-9 year old has no personal
-# experience of "a stable job" or "earning money". Shown instead of `text`
-# only for junior profiles (app/routers/motivation.py); middle/senior are
-# unaffected. Same tone-neutral principle as PHRASES: all 4 phrasings of a
-# category read at the same register, so forced-choice isn't biased toward
-# the better-written option.
-PHRASES_JUNIOR: dict[str, list[str]] = {
-    "interest": [
-        "Делать то, что мне по-настоящему нравится",
-        "Заниматься тем, что увлекает, даже если не за оценку",
-        "С головой уходить в то, что меня зацепило",
-        "Пробовать и узнавать то, что мне любопытно",
-    ],
-    "challenge": [
-        "Решать трудные задачи, которые не все берутся решать",
-        "Пробовать то, что сначала кажется слишком трудным",
-        "Постоянно учиться новому и становиться лучше",
-        "Проверять себя на по-настоящему трудных заданиях",
-    ],
-    "helping": [
-        "Помогать людям и быть им полезным",
-        "Делать что-то, что правда помогает другим",
-        "Быть рядом с теми, кому нужна помощь",
-        "Стараться, чтобы другим было лучше",
-    ],
-    "freedom": [
-        "Самому решать, что и как делать",
-        "Делать всё в своём темпе, без строгих указаний",
-        "Самому решать, чем заняться прямо сейчас",
-        "Делать по-своему, не спрашивая разрешения",
-    ],
-    "money": [
-        "Получать много всего хорошего за старания",
-        "Получать хорошую награду за то, что делаю",
-        "Иметь возможность покупать себе, что хочется",
-        "Получать достаточно, чтобы ни о чём не беспокоиться",
-    ],
-    "recognition": [
-        "Чтобы меня уважали за то, что я умею",
-        "Стать тем, кто лучше всех разбирается в своём деле",
-        "Чтобы замечали, когда я делаю что-то хорошо",
-        "Чтобы другие видели, что я в этом хорош",
-    ],
-    "stability": [
-        "Чтобы моя жизнь была спокойной и предсказуемой",
-        "Знать заранее, что будет завтра",
-        "Заниматься тем, где не бывает внезапных перемен",
-        "Заниматься тем, в чём я уверен",
-    ],
-    "creation": [
-        "Создать что-то своё, что раньше не существовало",
-        "Придумать и сделать что-то с нуля",
-        "Собрать или смастерить что-то своё",
-        "Оставить после себя то, что я сам придумал и сделал",
-    ],
-    "teamwork": [
-        "Быть в команде, где все друг друга поддерживают",
-        "Делать общее дело вместе с другими",
-        "Быть частью дружной команды",
-        "Добиваться результата вместе, а не одному",
-    ],
-}
-
-assert set(PHRASES_JUNIOR) == set(CATEGORIES)
-assert all(len(v) == 4 for v in PHRASES_JUNIOR.values())
-
 # ── Kazakh (kk) — KZ-305 ──────────────────────────────────────────────────────
 #
 # LLM-primary translation against docs/i18n.md's glossary; native review pending
 # (checklist: ProfOr/Тикеты-локализация-KZ/KZ-305-вычитка-kk.md). Positional
-# copies of PHRASES / PHRASES_JUNIOR (index N = the kk of PHRASES[cat][N]);
-# folded into `text` / `text_junior` = `{"ru": …, "kk": …}` in the STATEMENTS
+# copies of PHRASES (index N = the kk of PHRASES[cat][N]);
+# folded into `text` = `{"ru": …, "kk": …}` in the STATEMENTS
 # loop (per-locale-row storage, KZ-301). Same tone-neutral, one-register
 # principle as the `ru` phrasings — no phrasing reads "better written" than
 # another (that would bias the forced choice toward wording, not value).
@@ -223,66 +154,8 @@ _KK_PHRASES: dict[str, list[str]] = {
     ],
 }
 
-_KK_PHRASES_JUNIOR: dict[str, list[str]] = {
-    "interest": [
-        "Маған шынымен ұнайтын нәрсені істеу",
-        "Баға үшін болмаса да, қызықтыратын іспен айналысу",
-        "Қызықтырған іске бас-көзсіз берілу",
-        "Қызық көрген нәрсемді сынап көріп, білу",
-    ],
-    "challenge": [
-        "Бәрі шеше бермейтін қиын есептерді шешу",
-        "Әуелі тым қиын көрінген нәрсені сынап көру",
-        "Үнемі жаңаны үйреніп, жақсара түсу",
-        "Өзімді шын қиын тапсырмаларда сынау",
-    ],
-    "helping": [
-        "Адамдарға көмектесіп, пайдалы болу",
-        "Басқаларға шынымен көмектесетін нәрсе істеу",
-        "Көмек керек жандардың қасында болу",
-        "Басқаларға жақсы болсын деп тырысу",
-    ],
-    "freedom": [
-        "Не істеуді әрі қалай істеуді өзім шешу",
-        "Қатаң нұсқаусыз, бәрін өз қарқыныммен істеу",
-        "Дәл қазір немен айналысуды өзім шешу",
-        "Рұқсат сұрамай, өзімше істеу",
-    ],
-    "money": [
-        "Тырысқаным үшін көп жақсы нәрсе алу",
-        "Істеген ісім үшін жақсы сыйлық алу",
-        "Қалаған нәрсемді өзіме сатып алуға мүмкіндік болу",
-        "Ешнәрсеге алаңдамайтындай жеткілікті алу",
-    ],
-    "recognition": [
-        "Не білетінім үшін мені сыйлауы",
-        "Өз ісін бәрінен жақсы білетін адам болу",
-        "Бір нәрсені жақсы істегенде байқауы",
-        "Басқалар менің бұған жүйрік екенімді көруі",
-    ],
-    "stability": [
-        "Өмірім тыныш әрі болжамды болуы",
-        "Ертең не болатынын алдын ала білу",
-        "Кенеттен өзгерістер болмайтын іспен айналысу",
-        "Өзім сенімді болатын іспен айналысу",
-    ],
-    "creation": [
-        "Бұрын болмаған, өзімдікі бір нәрсе жасау",
-        "Бір нәрсені нөлден ойлап тауып, жасау",
-        "Өзімдікі бір нәрсені құрастыру не жасау",
-        "Өзім ойлап тауып жасаған нәрсені артымда қалдыру",
-    ],
-    "teamwork": [
-        "Бәрі бір-бірін қолдайтын командада болу",
-        "Ортақ істі басқалармен бірге істеу",
-        "Тату команданың бір бөлігі болу",
-        "Нәтижеге жалғыз емес, бірге жету",
-    ],
-}
-
-for _m in (_KK_PHRASES, _KK_PHRASES_JUNIOR):
-    assert set(_m) == set(CATEGORIES), f"kk phrase-map category drift: {set(_m) ^ set(CATEGORIES)}"
-    assert all(len(v) == 4 for v in _m.values()), "every kk phrase list must have 4 items"
+assert set(_KK_PHRASES) == set(CATEGORIES), f"kk phrase-map category drift: {set(_KK_PHRASES) ^ set(CATEGORIES)}"
+assert all(len(v) == 4 for v in _KK_PHRASES.values()), "every kk phrase list must have 4 items"
 
 
 def _generate_lines() -> list[list[int]]:
@@ -312,10 +185,6 @@ for _triplet_index, _line in enumerate(LINES):
                 "order": _order,
                 "category": _category,
                 "text": {"ru": PHRASES[_category][_i], "kk": _KK_PHRASES[_category][_i]},
-                "text_junior": {
-                    "ru": PHRASES_JUNIOR[_category][_i],
-                    "kk": _KK_PHRASES_JUNIOR[_category][_i],
-                },
             }
         )
         _seen[_category] += 1

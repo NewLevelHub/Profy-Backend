@@ -19,7 +19,6 @@ from pydantic import ValidationError
 from app.schemas.admin_result import AdminAnalysisResultResponse
 from app.schemas.result_v2 import (
     DISCLAIMER,
-    MiResultResponse,
     ResultV2Adapter,
     RiasecResultResponse,
     StudentCareer,
@@ -60,27 +59,7 @@ def _personality_notes() -> list[StudentPersonalityNote]:
     ]
 
 
-_MI_CODES = ["verbal", "logical", "musical", "visual", "bodily", "interpersonal", "intrapersonal", "naturalistic"]
 _RIASEC_CODES = ["R", "I", "A", "S", "E", "C"]
-
-
-def _junior_fixture(**overrides) -> MiResultResponse:
-    """schema fixture — junior (MI)."""
-    kwargs = dict(
-        assessment_id=uuid.uuid4(),
-        summary="Тебе нравится решать логические задачки.",
-        strength_cards=[_strength_card()],
-        interest_map=_interest_items(_MI_CODES),
-        thinking_style_notes=[_thinking_note()],
-        personality_notes=_personality_notes(),
-        motivation_highlights=["Тебе важно разбираться в интересном"],
-        careers=[],
-        exploration_activities=["Собери конструктор LEGO"],
-        is_flat_profile=False,
-        created_at=_NOW,
-    )
-    kwargs.update(overrides)
-    return MiResultResponse(**kwargs)
 
 
 def _middle_fixture(**overrides) -> RiasecResultResponse:
@@ -121,12 +100,6 @@ def _senior_fixture(**overrides) -> RiasecResultResponse:
     return RiasecResultResponse(**kwargs)
 
 
-def test_junior_fixture_is_valid():
-    response = _junior_fixture()
-    assert response.interest_instrument == "mi"
-    assert len(response.interest_map) == 8
-
-
 def test_middle_fixture_is_valid():
     response = _middle_fixture()
     assert response.interest_instrument == "riasec"
@@ -140,29 +113,14 @@ def test_senior_flat_profile_fixture_is_valid():
 
 
 def test_disclaimer_defaults_to_the_fixed_server_text():
-    response = _junior_fixture()
+    response = _middle_fixture()
     assert response.disclaimer == DISCLAIMER
     assert response.disclaimer  # never blank
 
 
 def test_extra_raw_field_is_rejected():
     with pytest.raises(ValidationError):
-        _junior_fixture(match_score=42)
-
-
-def test_mi_with_a_nonempty_careers_list_is_impossible():
-    with pytest.raises(ValidationError):
-        _junior_fixture(careers=[_career()])
-
-
-def test_mi_interest_map_must_have_exactly_eight_items():
-    with pytest.raises(ValidationError):
-        _junior_fixture(interest_map=_interest_items(_MI_CODES[:7]))
-
-
-def test_mi_exploration_activities_cannot_be_empty():
-    with pytest.raises(ValidationError):
-        _junior_fixture(exploration_activities=[])
+        _middle_fixture(match_score=42)
 
 
 def test_riasec_interest_map_must_have_exactly_six_items():
@@ -206,14 +164,12 @@ def test_non_flat_profile_is_not_bound_by_a_three_careers_rule():
 
 def test_personality_notes_must_have_exactly_five_items():
     with pytest.raises(ValidationError):
-        _junior_fixture(personality_notes=_personality_notes()[:4])
+        _middle_fixture(personality_notes=_personality_notes()[:4])
 
 
-def test_personality_notes_present_on_both_branches():
-    junior = _junior_fixture()
-    senior = _senior_fixture()
-    assert {n.trait for n in junior.personality_notes} == set(PERSONALITY_LABELS)
-    assert {n.trait for n in senior.personality_notes} == set(PERSONALITY_LABELS)
+def test_personality_notes_cover_every_trait():
+    response = _senior_fixture()
+    assert {n.trait for n in response.personality_notes} == set(PERSONALITY_LABELS)
 
 
 def test_personality_note_level_defaults_to_medium_for_cache_compat():
@@ -234,12 +190,6 @@ def test_personality_note_level_rejects_an_invalid_value():
         StudentPersonalityNote(trait="openness", label="Открытость новому", description="x", level="not_a_level")
 
 
-def test_adapter_picks_the_mi_branch_from_a_plain_dict():
-    data = _junior_fixture().model_dump(mode="json")
-    parsed = ResultV2Adapter.validate_python(data)
-    assert isinstance(parsed, MiResultResponse)
-
-
 def test_adapter_picks_the_riasec_branch_from_a_plain_dict():
     data = _middle_fixture().model_dump(mode="json")
     parsed = ResultV2Adapter.validate_python(data)
@@ -247,7 +197,7 @@ def test_adapter_picks_the_riasec_branch_from_a_plain_dict():
 
 
 def test_adapter_rejects_an_unknown_interest_instrument():
-    data = _junior_fixture().model_dump(mode="json")
+    data = _middle_fixture().model_dump(mode="json")
     data["interest_instrument"] = "holland-lite"
     with pytest.raises(ValidationError):
         ResultV2Adapter.validate_python(data)
@@ -267,5 +217,5 @@ def test_no_admin_only_raw_field_names_leak_into_the_student_schema():
     }
     assert admin_only <= admin_fields  # sanity: not a typo'd set
 
-    student_fields = set(MiResultResponse.model_fields) | set(RiasecResultResponse.model_fields)
+    student_fields = set(RiasecResultResponse.model_fields)
     assert student_fields & admin_only == set()

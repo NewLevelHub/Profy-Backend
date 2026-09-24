@@ -1,7 +1,7 @@
 """Prompt localization directives and Kazakh terminology glossary (KZ-401).
 
 Centralizes model language instructions and terminology enforcement for all LLM
-prompts (report narrative, goal roadmap, direction roadmap, direction inquiry).
+prompts (report narrative).
 
 KZ-401 acceptance criteria:
 - No prompt builder hardcodes "русский" / "Язык ответа" — only language_directive(locale).

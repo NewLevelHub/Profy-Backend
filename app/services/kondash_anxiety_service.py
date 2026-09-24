@@ -29,9 +29,8 @@ _INTERPERSONAL = "interpersonal"
 
 async def interpersonal_raw_score(assessment_id: uuid.UUID, db: AsyncSession) -> int | None:
     """Sum of the 10 межличностная-subscale items' raw 0-4 answers.
-    `None` when nothing in this subscale has been answered yet (junior/
-    middle never see this senior-only content, or a senior assessment still
-    in progress) — not 0, which would misreport "took it, scored nothing"
+    `None` when nothing in this subscale has been answered yet (an assessment
+    still in progress) — not 0, which would misreport "took it, scored nothing"
     as if it were a real result."""
     result = await db.execute(
         select(Question.order, UserResponse.answer_value)

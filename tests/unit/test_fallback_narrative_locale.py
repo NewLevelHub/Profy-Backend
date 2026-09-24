@@ -14,7 +14,6 @@ import pytest
 
 from app import i18n
 from app.i18n import use_locale
-from app.models.profile import AgeGroup
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
 from app.services.report_narrative_fallback import build_fallback_narrative
 from app.services.report_narrative_validator import validate
@@ -22,8 +21,8 @@ from app.services.report_narrative_validator import validate
 _KK_CHARS = set("әғқңөұүһі")
 
 
-def _context(age_group: AgeGroup, instrument: str, evidence: list[EvidenceItem]) -> ReportNarrativeContext:
-    return ReportNarrativeContext(age_group=age_group.value, interest_instrument=instrument, evidence=evidence)
+def _context(evidence: list[EvidenceItem]) -> ReportNarrativeContext:
+    return ReportNarrativeContext(evidence=evidence)
 
 
 def _all_texts(output) -> list[str]:
@@ -65,20 +64,16 @@ def _rich_evidence_kk() -> list[EvidenceItem]:
     ]
 
 
-@pytest.mark.parametrize("age_group,instrument", [
-    (AgeGroup.junior, "mi"),
-    (AgeGroup.middle, "riasec"),
-    (AgeGroup.senior, "riasec"),
-])
-def test_kk_fallback_is_valid_by_construction(age_group, instrument):
-    ctx = _context(age_group, instrument, [] if age_group == AgeGroup.junior else _rich_evidence_kk())
+@pytest.mark.parametrize("rich", [False, True])
+def test_kk_fallback_is_valid_by_construction(rich):
+    ctx = _context(_rich_evidence_kk() if rich else [])
     with use_locale("kk"):
         out = build_fallback_narrative(ctx, locale="kk")
         assert validate(out, ctx, language="kk") == []
 
 
 def test_kk_fallback_has_no_russian_dominant_field():
-    ctx = _context(AgeGroup.senior, "riasec", _rich_evidence_kk())
+    ctx = _context(_rich_evidence_kk())
     with use_locale("kk"):
         out = build_fallback_narrative(ctx, locale="kk")
     for text in _all_texts(out):
@@ -88,16 +83,15 @@ def test_kk_fallback_has_no_russian_dominant_field():
 
 
 def test_kk_summary_keeps_the_5_to_6_sentence_shape():
-    for ag in (AgeGroup.junior, AgeGroup.senior):
-        ctx = _context(ag, "riasec", [])
-        with use_locale("kk"):
-            out = build_fallback_narrative(ctx, locale="kk")
-        n = out.summary.count(".") + out.summary.count("!") + out.summary.count("?")
-        assert 5 <= n <= 6, (ag, n, out.summary)
+    ctx = _context([])
+    with use_locale("kk"):
+        out = build_fallback_narrative(ctx, locale="kk")
+    n = out.summary.count(".") + out.summary.count("!") + out.summary.count("?")
+    assert 5 <= n <= 6, (n, out.summary)
 
 
 def test_kk_placeholders_are_all_filled():
-    ctx = _context(AgeGroup.senior, "riasec", _rich_evidence_kk())
+    ctx = _context(_rich_evidence_kk())
     with use_locale("kk"):
         out = build_fallback_narrative(ctx, locale="kk")
     for text in _all_texts(out):
@@ -108,7 +102,7 @@ def test_kk_placeholders_are_all_filled():
 
 def test_ru_output_is_unchanged_snapshot():
     """locale=ru must be byte-for-byte what it was before KZ-403."""
-    ctx = _context(AgeGroup.senior, "riasec", [
+    ctx = _context([
         EvidenceItem(source_id="riasec:R", source_type="riasec_category", text="Реалистичный интерес"),
         EvidenceItem(source_id="thinking_style:creative_think", source_type="thinking_style", text="Идеи."),
         EvidenceItem(source_id="motivation:interest", source_type="motivation", text="Заниматься интересным"),

@@ -6,18 +6,15 @@ Consumes only app.schemas.report_narrative_context.ReportNarrativeContext —
 the safe evidence catalog with no raw scores, percentages, match_score or
 aversion data (see that module's docstring for why). Structured Outputs
 (strict mode) forbids minItems/maxItems/enum-from-data, so exact cardinality
-(8 MI / 6 RIASEC interests, exactly one merged thinking_style_notes card
-covering every real signal, no career_narrative for junior) is asked for
+(6 RIASEC interests, exactly one merged thinking_style_notes card
+covering every real signal) is asked for
 here in the prompt text and
-enforced by app.services.report_narrative_validator after the fact — same
-pattern as app/prompts/roadmap.py's "exactly 5 horizons".
+enforced by app.services.report_narrative_validator after the fact.
 """
 import json
 
-from app.models.profile import AgeGroup
 from app.prompts._locale import glossary_block, language_directive
 from app.schemas.report_narrative_context import ReportNarrativeContext
-from app.services.mi_content import mi_labels
 from app.services.riasec_content import riasec_labels
 
 
@@ -101,45 +98,21 @@ _ALLOWED_PHRASING_TEXT = """\
 попробовать».\
 """
 
-_AGE_STYLE = {
-    AgeGroup.junior: (
-        "junior (6-9 лет): очень короткие предложения, конкретные образы, "
-        "никаких абстракций и терминов. Summary — ровно 5-6 коротких "
-        "предложений (даже совсем короткие считаются — просто их должно "
-        "быть не меньше пяти и не больше шести). Никаких профессий, карьеры, вуза, экзаменов — "
-        "этой возрастной группе они не подаются вообще ни в одном разделе, включая summary и "
-        "interests. career_narrative обязан быть пустым списком []."
-    ),
-    AgeGroup.middle: (
-        "middle (10-13 лет): простой язык, примеры из школьной жизни. Можно "
-        "аккуратно начинать разговор о профессиях в career_narrative (не "
-        "больше 3 карточек), но без названий конкретных вузов/специальностей "
-        "и без чисел — только «стоит посмотреть в сторону…». ОБЯЗАТЕЛЬНО: "
-        f"evidence_ids каждой карточки career_narrative — минимум один "
-        f"реальный source_id с source_type \"riasec_category\" из каталога "
-        f"ниже (например {['riasec:R']!r} для «стоит посмотреть в сторону "
-        f"того, что связано с работой руками»); если ни один riasec_category "
-        f"source_id не подходит по смыслу — не пиши эту карточку вообще, "
-        f"пустой evidence_ids здесь недопустим."
-    ),
-    AgeGroup.senior: (
-        "senior (14-18 лет): взрослый тон без снисходительности, конкретика. "
-        "career_narrative — не больше 3 карточек, объясняющих, почему "
-        "направление совпало с ответами ученика; конкретные профессии, "
-        "университеты и экзамены сюда не пиши — это отдельные разделы отчёта, "
-        "которые берут факты из базы данных, а не из твоего текста. "
-        "ОБЯЗАТЕЛЬНО: evidence_ids каждой карточки career_narrative — минимум "
-        f"один реальный source_id с source_type \"riasec_category\" из "
-        f"каталога ниже; если ни один не подходит по смыслу — не пиши эту "
-        f"карточку вообще, пустой evidence_ids здесь недопустим."
-    ),
-}
+_AGE_STYLE = (
+    "senior (14-18 лет): взрослый тон без снисходительности, конкретика. "
+    "career_narrative — не больше 3 карточек, объясняющих, почему "
+    "направление совпало с ответами ученика; конкретные профессии, "
+    "университеты и экзамены сюда не пиши — это отдельные разделы отчёта, "
+    "которые берут факты из базы данных, а не из твоего текста. "
+    "ОБЯЗАТЕЛЬНО: evidence_ids каждой карточки career_narrative — минимум "
+    f"один реальный source_id с source_type \"riasec_category\" из "
+    f"каталога ниже; если ни один не подходит по смыслу — не пиши эту "
+    f"карточку вообще, пустой evidence_ids здесь недопустим."
+)
 
 
 def _system_prompt(context: ReportNarrativeContext, *, locale: str = "ru") -> str:
-    age_group = AgeGroup(context.age_group)
-    is_mi = context.interest_instrument == "mi"
-    labels = mi_labels() if is_mi else riasec_labels()
+    labels = riasec_labels()
     categories_line = ", ".join(f"{key} ({label})" for key, label in labels.items())
     glossary = glossary_block(locale)
     glossary_section = f"\n{glossary}\n" if glossary else ""
@@ -170,11 +143,10 @@ interests) обязана перечислять в evidence_ids ровно те
 Дополнительно запрещено: диагнозы, оценки способностей, прогнозы \
 успешности, сравнение с другими детьми.
 
-Возрастной стиль: {_AGE_STYLE[age_group]}
+Возрастной стиль: {_AGE_STYLE}
 
 Структура ответа:
-- summary: РОВНО 5-6 предложений, не меньше и не больше (у junior тоже 5-6, \
-но короче и проще по словам). Каждое предложение обязано добавлять НОВОЕ \
+- summary: РОВНО 5-6 предложений, не меньше и не больше. Каждое предложение обязано добавлять НОВОЕ \
 содержание — не повторяй мысль, которую уже сказал(а) в одном из предыдущих \
 предложений summary, другими словами, и не пересказывай факты, у которых \
 дальше в отчёте есть своя отдельная секция (сильные стороны, характер, \
@@ -212,8 +184,8 @@ career_narrative подбираются именно по результатам
 тем, что подтвердил тест — иначе читатель решит, что подходящее направление \
 подобрано по этому увлечению, хотя это не так.
 - interests: ровно по одной карточке на каждую из категорий инструмента \
-{"MI" if is_mi else "RIASEC"} — {categories_line}. Категория, у которой есть \
-evidence с source_type {"mi_category" if is_mi else "riasec_category"} в \
+RIASEC — {categories_line}. Категория, у которой есть \
+evidence с source_type "riasec_category" в \
 каталоге, получает tier="strong"; остальные — tier="steady" с нейтральным, \
 неосуждающим текстом (см. рамку возможностей выше) — никогда не в тоне \
 «слабая сторона».
@@ -222,7 +194,7 @@ evidence с source_type {"mi_category" if is_mi else "riasec_category"} в \
 не делай 2 отдельные карточки с одинаковым общим заголовком, объедини оба \
 сигнала в одну). evidence_ids этой карточки обязан включать source_id \
 КАЖДОГО сигнала thinking_style из каталога, а не только одного из двух. \
-Для middle/senior: title называет стиль(и) по имени (например «Тебе близко \
+title называет стиль(и) по имени (например «Тебе близко \
 стратегическое мышление» или «Тебе близки творческое и стратегическое \
 мышление»), description — пример(ы) задач для каждого стиля плюс отдельное \
 предложение о том, где это обычно проявляется в жизни/работе (без названий \
@@ -233,10 +205,7 @@ source_type "personality" — добавь в конце ЕЩЁ ОДНО пре�
 характер" — дословный повтор там же будет читаться как дублирование). Вместо \
 цитаты — новая мысль на стыке двух фактов: как эта черта характера обычно \
 помогает или проявляется вместе с этим стилем мышления. Если такого evidence \
-нет — просто не добавляй это предложение, ничего не выдумывай. Для junior: \
-НИКАКИХ названий стилей и НИКАКИХ формулировок про работу/будущее/роли — \
-только конкретное поведенческое описание («тебе легко...», «тебе \
-нравится...»), без абстрактных ярлыков, и без черт характера — тоже.
+нет — просто не добавляй это предложение, ничего не выдумывай.
 - motivation_narrative: одна карточка, ссылается на все evidence с \
 source_type "motivation", если они есть; если мотивационных evidence нет — \
 опиши это мягко и нейтрально, evidence_ids оставь пустым.

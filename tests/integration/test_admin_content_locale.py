@@ -1,7 +1,6 @@
 """Admin editing of localized bank-seeded content — single-row redesign.
 
-`questions`/`question_pairs`/`motivation_statements`/`motivation_pairs`/
-`directions` used to carry one physical row per locale (KZ-301), so an admin
+`questions`/`question_pairs`/`motivation_statements`/`directions` used to carry one physical row per locale (KZ-301), so an admin
 editing "the" question picked one language's row and the other was a
 separate, independently-editable row. That's gone — one row now holds both
 `{"ru": ..., "kk": ...}` values for a localized field (docs/i18n-contract.md
@@ -26,12 +25,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.direction import Direction
 from app.models.motivation import MotivationStatement
-from app.models.motivation_pair import MotivationPair
 from app.models.question import Question, QuestionInstrument
 from app.models.question_pair import QuestionPair
 from app.schemas.admin_content import (
     AdminDirectionUpdateRequest,
-    AdminMotivationPairUpdateRequest,
     AdminMotivationStatementUpdateRequest,
     AdminQuestionPairUpdateRequest,
     AdminQuestionUpdateRequest,
@@ -119,16 +116,6 @@ async def test_motivation_statement_patch_edits_only_the_given_locale(db_session
     )
     assert updated.text["kk"] == "Жаңа мәтін"
     assert updated.text["ru"] == original_ru
-
-
-async def test_motivation_pair_patch_edits_only_the_given_locale(db_session: AsyncSession) -> None:
-    p = await _first(db_session, MotivationPair)
-    original_ru = p.text_a["ru"]
-    updated = await admin_content_service.update_motivation_pair(
-        db_session, p.id, AdminMotivationPairUpdateRequest(text_a="Жаңа мәтін", locale="kk")
-    )
-    assert updated.text_a["kk"] == "Жаңа мәтін"
-    assert updated.text_a["ru"] == original_ru
 
 
 async def test_direction_detail_exposes_both_locales_for_every_content_field(

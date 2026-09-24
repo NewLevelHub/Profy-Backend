@@ -8,7 +8,6 @@ llm_client`), so patching `llm_client.complete_json` here is exactly what
 """
 import logging
 
-from app.models.profile import AgeGroup
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
 from app.services import llm_client, report_narrative_service as service
 from app.services.report_narrative_fallback import build_fallback_narrative
@@ -17,8 +16,6 @@ from app.services.report_narrative_validator import validate
 
 def _senior_context() -> ReportNarrativeContext:
     return ReportNarrativeContext(
-        age_group=AgeGroup.senior.value,
-        interest_instrument="riasec",
         evidence=[
             EvidenceItem(source_id="riasec:R", source_type="riasec_category", text="Реалистичный"),
             EvidenceItem(source_id="riasec:I", source_type="riasec_category", text="Исследовательский"),

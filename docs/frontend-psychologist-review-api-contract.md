@@ -53,11 +53,10 @@ Auth тот же JWT Bearer + `require_role(psychologist)` на всём
 Коды ошибок не изменились: `403` — чужой assessment, `404` — отчёта ещё нет,
 `409` — тест не завершён. Pending-ответ никогда не кэшируется.
 
-Производные от отчёта ручки (goal-context, roadmap, уточнение направления,
-gap-анализ), пока отчёт на проверке, отвечают `409` с
-`error_code: "report_pending_review"` — отличать по `error_code` от
-`assessment_not_completed`, который отдают те же ручки. Экран выбора цели
-(цель «не определился») гейтом не закрыт — отчёт ему не нужен.
+Производные от отчёта ручки (roadmap, уточнение направления — удалены в PRO-425), пока отчёт на
+проверке, отвечают `409` с `error_code: "report_pending_review"` — отличать по
+`error_code` от `assessment_not_completed`, который отдают те же ручки.
+(`goal-context` и отдельный gap-анализ удалены в PRO-425.)
 
 ## 2. Эндпоинты психолога
 
@@ -175,12 +174,12 @@ gap-анализ), пока отчёт на проверке, отвечают `
 
 ## 3. Админ
 
-- `GET /api/v1/admin/psychologist-reviews/unassigned` — неопубликованные
-  отчёты учеников без единого назначения (форма элементов — §2.1). Без этой
-  очереди такие отчёты никто бы не опубликовал.
-- `POST /api/v1/admin/psychologist-reviews/{assessment_id}/publish` — та же
-  публикация от имени админа (`published_by` = id админа), без проверки
-  назначений. `404` / `409` — как у психолога.
+- ~~`GET /api/v1/admin/psychologist-reviews/unassigned`~~ и
+  ~~`POST /api/v1/admin/psychologist-reviews/{assessment_id}/publish`~~ —
+  удалены в PRO-425 (фронтенд их не вызывал). Ученика без психолога теперь
+  забирает сам психолог через self-claim
+  (`GET /psychologist/students/available` → `POST /psychologist/students/{id}/claim`),
+  после чего отчёт попадает в его очередь и публикуется им.
 - `AdminAnalysisResultResponse` (детали assessment в админке) получил поля
   `review_status`, `reviewed_by`, `reviewed_at`, `published_by`,
   `published_at`. Доступ админа статусом не ограничивается.
