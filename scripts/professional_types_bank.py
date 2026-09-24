@@ -14,7 +14,7 @@ instruction) — `practical` (Ч-П), `technical` (Ч-Т), `social` (Ч-Ч), `si
 (Ч-З), `artistic` (Ч-Х). No scoring service reads `scale` yet (no model
 column for it — see PAIRS' own docstring below) — Ф1.2 (backend scoring:
 1 point per pick + hybrid-profile flag) adds that when it implements
-scoring; this bank only carries text/order/age_tier for now, matching the
+scoring; this bank only carries text/order for now, matching the
 Ф0.8 scope decision (2026-09-15) applied consistently here.
 """
 
@@ -66,7 +66,6 @@ QUESTIONS: list[dict] = [
             "подолгу что-нибудь мастерить, способность легко разбираться в "
             "технических чертежах и схемах"
         ),
-        "age_tier": "senior",
     },
     {
         "order": 401,
@@ -76,7 +75,6 @@ QUESTIONS: list[dict] = [
             "информацию в виде цифр, знаков, текстов, способность ясно "
             "излагать мысли в письменной форме"
         ),
-        "age_tier": "senior",
     },
     {
         "order": 402,
@@ -85,7 +83,6 @@ QUESTIONS: list[dict] = [
             "Способность увидеть в обычном необычное, умение нестандартно "
             "мыслить, готовность подолгу заниматься рисованием или музыкой"
         ),
-        "age_tier": "senior",
     },
     {
         "order": 403,
@@ -95,7 +92,6 @@ QUESTIONS: list[dict] = [
             "вызывать симпатию, умение улаживать разногласия и находить "
             "компромиссы"
         ),
-        "age_tier": "senior",
     },
     {
         "order": 404,
@@ -104,15 +100,12 @@ QUESTIONS: list[dict] = [
             "Наблюдательность за живой природой, выносливость при работе в "
             "полевых условиях"
         ),
-        "age_tier": "senior",
     },
 ]
 
 # ─── Интересы (20 forced-choice pairs) — instrument=professional_types ─────
-# Each pair's two options are DEDICATED new Question rows (unlike
-# question_pairing.py's junior/middle pairs, which reuse existing riasec/
-# big_five content) — ДДО's activities aren't shared with any other
-# instrument. `scale` on each option is the Ф1.2 scoring key (1 point to
+# Each pair's two options are DEDICATED Question rows — ДДО's activities
+# aren't shared with any other instrument. `scale` on each option is the Ф1.2 scoring key (1 point to
 # that scale when picked) — not read by any code yet, same "content+order
 # only" scope as QUESTIONS above.
 #
@@ -124,18 +117,12 @@ QUESTIONS: list[dict] = [
 # per-row identity (the seed script's upsert key) and `display_order`
 # (min of the two options' `order`, used to sort pairs among themselves).
 #
-# age_tier "senior" only — matches QUESTIONS above and the rest of the
-# "Дополнительные тесты" block (epic's "14-18 only" note); `get_pairs`
-# checks `QuestionPair.age_tier == age_group` (exact match, not cumulative
-# like Question.age_tier), so middle/junior never see these.
-#
 # pair_index starts at 68, NOT 1 — question_pair_service.submit_pair_answers
 # resolves a submitted answer via `QuestionPair.pair_index.in_(...)` with NO
-# instrument/age_tier filter, so pair_index must be unique across the WHOLE
-# question_pairs table, not just within this instrument. question_pairing.py
-# already occupies 1-67 (one shared running counter across junior/middle
-# riasec+big_five) — continuing at 68 avoids colliding with an existing
-# riasec/big_five pair and getting the wrong one resolved on submit.
+# instrument filter, so pair_index must be unique across the WHOLE
+# question_pairs table. 1-67 were the retired junior/middle RIASEC/Big Five
+# pairs (removed in PRO-425); the numbering is kept so existing answers stay
+# resolvable.
 PAIRS: list[dict] = [
     {
         "pair_index": 68,

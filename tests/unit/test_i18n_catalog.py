@@ -5,7 +5,7 @@
 import pytest
 
 from app import i18n
-from app.i18n.catalog import _AREAS, key, tr
+from app.i18n.catalog import _AREAS, tr
 
 
 @pytest.fixture(autouse=True)
@@ -49,8 +49,7 @@ def test_default_locale_returns_ru_and_records_nothing() -> None:
 def test_kk_locale_returns_kk() -> None:
     i18n._current_locale.set("kk")
     assert tr("riasec")["labels"]["R"] == "Реалистік"
-    assert key("mi", "labels", "verbal") == "Сөздер мен әңгімелер"
-    assert i18n.fallback_counts() == {}  # riasec/mi fully translated
+    assert i18n.fallback_counts() == {}  # riasec fully translated
 
 
 def test_missing_kk_key_falls_back_to_ru_and_is_recorded(monkeypatch) -> None:
@@ -74,19 +73,16 @@ def test_explicit_locale_arg_overrides_request_locale() -> None:
 
 def test_deterministic_report_pieces_follow_the_request_locale() -> None:
     """A consumer service (not just the catalog) yields `kk` under `kk`."""
-    from app.services import mi_service, riasec_service
+    from app.services import riasec_service
     from app.services.motivation_content import highlight_phrases
 
     ru_plan = riasec_service.development_plan(["R"], [], {}, {"R": 4})
-    ru_mi = mi_service.development_plan(["logical"], [], {}, {"logical": 4})
     ru_drivers = highlight_phrases(["interest"])
 
     i18n._current_locale.set("kk")
     kk_plan = riasec_service.development_plan(["R"], [], {}, {"R": 4})
-    kk_mi = mi_service.development_plan(["logical"], [], {}, {"logical": 4})
     kk_drivers = highlight_phrases(["interest"])
 
     assert kk_plan["reinforce"] and kk_plan["reinforce"] != ru_plan["reinforce"]
-    assert kk_mi["reinforce"] and kk_mi["reinforce"] != ru_mi["reinforce"]
     assert kk_drivers and kk_drivers != ru_drivers
     assert "жұмыс" in " ".join(kk_drivers) or "қызық" in " ".join(kk_drivers)

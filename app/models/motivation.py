@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 
-LOCALIZED_FIELDS = frozenset({"text", "text_junior"})
+LOCALIZED_FIELDS = frozenset({"text"})
 
 
 class MotivationCategory(str, enum.Enum):
@@ -41,12 +41,6 @@ class MotivationStatement(Base):
         Enum(MotivationCategory, name="motivation_category_enum"), nullable=False, index=True
     )
     text: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    # Junior (6-9) rewrite of `text` — same category/position, worded around
-    # school/friends/hobbies instead of career/money/work (TZ_Profi.md §13's
-    # format ban doesn't apply here, this is a wording-only fix). Null means
-    # "show `text` to everyone", which is what happens for middle/senior
-    # always, and for junior until this is seeded.
-    text_junior: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     # Field-name -> admin-edited value, composed on top of the bank content
     # by scripts/seed_motivation_statements.py at resync time (see
     # docs/admin-questions-content-overrides-plan.md).

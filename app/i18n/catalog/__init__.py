@@ -1,7 +1,7 @@
 """Per-locale catalog for methodology reference strings (KZ-307).
 
 Every string that used to be a Russian literal in the deterministic content
-services — `app/services/{riasec,bigfive,mi,thinking_style}_content.py`,
+services — `app/services/{riasec,bigfive,thinking_style}_content.py`,
 `university_requirements.py` and `goal_overlay_service.py` — now lives here
 as an area module with
 identical-shape ``RU`` and ``KK`` trees. Callers get the request-locale tree
@@ -24,7 +24,6 @@ from . import (
     bigfive,
     email,
     goal_overlay,
-    mi,
     motivation,
     narrative_fallback,
     result_v2,
@@ -38,7 +37,6 @@ from . import (
 _AREAS: dict[str, Any] = {
     "riasec": riasec,
     "bigfive": bigfive,
-    "mi": mi,
     "motivation": motivation,
     "thinking_style": thinking_style,
     "university_requirements": university_requirements,

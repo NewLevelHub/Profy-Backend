@@ -22,7 +22,7 @@ class PsychologistReviewQueueItem(BaseModel):
     student_id: uuid.UUID
     student_name: str | None = None
     student_email: str
-    age_group: str | None = None
+    age: int | None = None
     goal: str
     generated_at: datetime
     reviewed_at: datetime | None = None

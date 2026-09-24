@@ -103,8 +103,6 @@ def test_no_hardcoded_russian_literals_in_prompts():
 
 def test_report_narrative_ru_backward_compatibility():
     context = ReportNarrativeContext(
-        age_group="senior",
-        interest_instrument="riasec",
         categories=["R", "I"],
         personality_notes={},
         thinking_style_notes={},
@@ -122,8 +120,6 @@ def test_report_narrative_ru_backward_compatibility():
 
 def test_report_narrative_kk_generation():
     context = ReportNarrativeContext(
-        age_group="senior",
-        interest_instrument="riasec",
         categories=["R", "I"],
         personality_notes={},
         thinking_style_notes={},

@@ -59,7 +59,7 @@ async def test_queue_lists_only_assigned_pending_results(
     assert item["student_id"] == str(test_user.id)
     assert item["student_name"] == STUDENT_NAME
     assert item["student_email"] == test_user.email
-    assert item["age_group"] == "senior"
+    assert item["age"] == 16
     assert item["goal"] == "explore"
     assert item["reviewed_at"] is None
 

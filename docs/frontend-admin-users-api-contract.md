@@ -69,13 +69,11 @@ UI: форма "создать сотрудника" — email, пароль, с
 ## 2. Список юзеров
 
 ```text
-GET /api/v1/admin/users?page=1&limit=20&search=ivan&age_group=senior&status=completed&goal=university
+GET /api/v1/admin/users?page=1&limit=20&search=ivan&status=completed&goal=university
 ```
 
 - `page`/`limit` — как везде в админке (1-based, лимит 1..100, по умолчанию 20).
 - `search` — по `User.email`, регистронезависимо, частичное совпадение.
-- `age_group` — новый фильтр, опционален: `junior`/`middle`/`senior`. Фильтрует
-  по `Profile.age_group` юзера напрямую.
 - `status` — новый фильтр, опционален: `in_progress`/`completed`.
 - `goal` — новый фильтр, опционален: `explore`/`profession`/`university`/`unsure`.
 - `role` — **новое, опционален, по умолчанию `student`**. Этот список
@@ -113,7 +111,7 @@ GET /api/v1/admin/users?page=1&limit=20&search=ivan&age_group=senior&status=comp
       "created_at": "2026-08-28T09:20:13Z",
       "has_profile": true,
       "profile_name": "Arman",
-      "age_group": "senior",              // новое поле; null если анкета не заполнена
+      "age": 16,                          // PRO-425: вместо age_group; null если анкета не заполнена
       "assessments_count": 2,
       "latest_assessment_status": "completed",
       "latest_assessment_goal": "university",  // новое поле; null если тестов ещё нет
@@ -121,8 +119,7 @@ GET /api/v1/admin/users?page=1&limit=20&search=ivan&age_group=senior&status=comp
       // тесту (не обязательно latest — если самый свежий тест ещё in_progress,
       // берётся последний перед ним completed). Ключи фиксированы:
       "riasec": {"R": 60.8, "I": 62.6, "A": 62.3, "S": 57.4, "E": 57.5, "C": 63.8},
-      // null для junior (там инструмент MI, не RIASEC — намеренно не путается
-      // в одну форму) и для юзеров без завершённого теста вообще.
+      // null для юзеров без завершённого теста.
       "big_five": {"N": 51.0, "E": 52.1, "O": 47.9, "A": 56.2, "C": 42.7}
     }
   ],
@@ -135,7 +132,7 @@ GET /api/v1/admin/users?page=1&limit=20&search=ivan&age_group=senior&status=comp
 ## 3. Экспорт списка в CSV
 
 ```text
-GET /api/v1/admin/users/export?search=...&age_group=...&status=...&goal=...&role=...
+GET /api/v1/admin/users/export?search=...&status=...&goal=...&role=...
 Authorization: Bearer <token>
 ```
 
@@ -151,7 +148,7 @@ filename=users_export.csv`. На фронте — обычная ссылка/к
 
 ```
 id,email,is_verified,is_active,role,is_admin,created_at,has_profile,profile_name,
-age_group,assessments_count,latest_assessment_status,latest_assessment_goal,
+age,assessments_count,latest_assessment_status,latest_assessment_goal,
 riasec_R,riasec_I,riasec_A,riasec_S,riasec_E,riasec_C,
 big_five_N,big_five_E,big_five_O,big_five_A,big_five_C
 ```
@@ -159,12 +156,12 @@ big_five_N,big_five_E,big_five_O,big_five_A,big_five_C
 `role` — новая колонка (`pro-281`), значение — plain-строка (`student`/
 `admin`/`psychologist`), не enum-repr.
 
-`riasec_*`/`big_five_*` — пустые для junior/без результата, как и в JSON-версии.
+`riasec_*`/`big_five_*` — пустые для юзеров без результата, как и в JSON-версии.
 
 **⚠️ Жёсткий лимит: если под фильтр попадает больше 5000 юзеров, запрос
 вернёт 400** вместо файла:
 ```json
-{"detail": "Export matches 6421 users, exceeding the 5000-row limit — narrow the search/age_group/status/goal filters first."}
+{"detail": "Export matches 6421 users, exceeding the 5000-row limit — narrow the search/status/goal filters first."}
 ```
 Это не пагинация "первые 5000", а отказ целиком — экспорт либо отдаёт всех
 подходящих под фильтр, либо не отдаёт ничего, чтобы не создавать иллюзию
@@ -221,8 +218,8 @@ GET /api/v1/admin/assessments/{assessment_id}
   "created_at": "...", "completed_at": "...",
   "responses": [
     {
-      "question_id": "...", "instrument": "riasec",   // "riasec" | "big_five" | "mi"
-      "category": "R",     // riasec_type / bigfive_domain / mi_category letter-or-key, в зависимости от instrument
+      "question_id": "...", "instrument": "riasec",   // значение QuestionInstrument
+      "category": "R",     // riasec_type / bigfive_domain, "?" для остальных инструментов
       "question_text": "Мне нравится решать практические, приземлённые задачи",
       "question_order": 1,
       "answer_value": 5, "selected_answer_text": "Точно про меня",
@@ -244,12 +241,11 @@ GET /api/v1/admin/assessments/{assessment_id}
       "not_picked_text": "...", "not_picked_category": "stability",
       "created_at": "..."
     }
-    // senior's MOST/LEAST-триплеты; пусто для junior/middle (у них своя
-    // motivation-pairs форма, здесь пока не эндпоинчена отдельно)
+    // MOST/LEAST-триплеты; пусто, если мотивацию ещё не проходили
   ],
   "analysis_result": {
     // AdminAnalysisResultResponse — null пока тест не завершён/не посчитан.
-    // Полный сырой результат: profile (riasec ИЛИ mi-ключи, см. ниже),
+    // Полный сырой результат: profile (RIASEC-буквы),
     // code, meta (differentiation/consistency/aversion), careers[],
     // strengths[], weaknesses[], development_plan, big_five, thinking_style,
     // personality_profile/notes/highlights, motivation/motivation_top/
@@ -277,16 +273,10 @@ GET /api/v1/admin/assessments/{assessment_id}
 }
 ```
 
-### 5.1 `analysis_result.profile` — RIASEC или MI, зависит от возраста
+### 5.1 `analysis_result.profile`
 
-**Ключи `profile`/`code` — НЕ всегда RIASEC-буквы.** Для junior (инструмент —
-MI, не Holland-коды) это ключи вида `verbal`/`logical`/`musical`/`visual`/
-`bodily`/`interpersonal`/`intrapersonal`/`naturalistic`. Для middle/senior —
-привычные `R`/`I`/`A`/`S`/`E`/`C`. Определяйте, что показывать, по
-`profile.age_group` соответствующего юзера (§4), не по форме самого объекта.
-Ровно поэтому в списковом эндпоинте (§2) `riasec` — отдельное, фиксированной
-формы поле, которое бэкенд сам оставляет `null` для junior, а не переиспользует
-`profile` напрямую.
+Ключи `profile`/`code` — всегда RIASEC-буквы `R`/`I`/`A`/`S`/`E`/`C` (MI-ветка
+для junior удалена в PRO-425).
 
 ## 6. Экспорт одного теста в CSV (внутри ZIP)
 
@@ -357,9 +347,8 @@ question_order,instrument,category,question_text,answer_value,selected_answer_te
 пустой — только с заголовком, если `answered_count=0`).
 
 **`motivation.csv`** — таблица мотивационных триплетов, **7 колонок, но
-файла в архиве вообще не будет**, если `motivation_responses` пуст (junior/
-middle — у них своей мотивационной формы здесь нет, не путать с пустым
-файлом-с-заголовком, как у `responses.csv`):
+файла в архиве вообще не будет**, если `motivation_responses` пуст (не путать
+с пустым файлом-с-заголовком, как у `responses.csv`):
 ```
 triplet_index,picked_most_text,picked_most_category,picked_least_text,picked_least_category,not_picked_text,not_picked_category
 0,"Решать сложные задачи, за которые не все берутся",challenge,"Заниматься тем, что мне по-настоящему интересно",interest,Приносить пользу людям и помогать им,helping
@@ -398,7 +387,7 @@ already exists"}` на дубликат, **403** не-админу.
 
 1. **Таблица юзеров** — колонки из §2 (email, профиль, возраст, статус/цель
    последнего теста, riasec/big_five как компактные бейджи или мини-график),
-   фильтры `age_group`/`status`/`goal` как селекты рядом с поиском по email,
+   фильтры `status`/`goal` как селекты рядом с поиском по email,
    пагинация. Помните разницу "нашёлся по фильтру" vs. "его последний тест"
    (§2, предупреждение) — не путайте их визуально.
 2. **Кнопка "Экспорт CSV"** на этой же странице, дергает §3 с текущими
@@ -411,10 +400,7 @@ already exists"}` на дубликат, **403** не-админу.
    personality_profile/notes, плюс таблица всех сырых ответов (`responses`)
    для тех, кто хочет провалиться в детали. Кнопка "Скачать (ZIP)" рядом,
    дергает §6.
-5. Общий момент: `profile`/`code` внутри `analysis_result` — MI-ключи для
-   junior, RIASEC-буквы для middle/senior (§5.1) — не хардкодьте набор из 6
-   RIASEC-букв при рендере этого конкретного поля, только для отдельного
-   `riasec`-поля в списковом эндпоинте (§2) это безопасно.
+5. `profile`/`code` внутри `analysis_result` — всегда RIASEC-буквы (§5.1).
 6. **Новое (`pro-281`): колонка/бейдж роли** в таблице юзеров (§2) — `role`
    вместо (или рядом с) старого `is_admin`-чекбокса; учтите три значения, не
    только "админ/не админ".

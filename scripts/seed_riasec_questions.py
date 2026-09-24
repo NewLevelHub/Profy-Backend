@@ -20,7 +20,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sqlalchemy import select
 
 from app.database import async_session
-from app.models.profile import AgeGroup
 from app.models.question import LOCALIZED_FIELDS, HollandType, Question, QuestionInstrument
 from app.services.admin_lock import has_overrides, sync_fields
 from scripts.riasec_question_bank import QUESTIONS
@@ -42,7 +41,6 @@ async def main() -> None:
 
         for data in QUESTIONS:
             riasec_type = HollandType(data["riasec_type"])
-            age_tier = AgeGroup(data["age_tier"])
             text = data["text"]
             short_text = data.get("short_text")
             icon = data.get("icon")
@@ -54,7 +52,6 @@ async def main() -> None:
                     {
                         "riasec_type": riasec_type,
                         "text": text,
-                        "age_tier": age_tier,
                         "short_text": short_text,
                         "icon": icon,
                     },
@@ -66,7 +63,7 @@ async def main() -> None:
 
             db.add(Question(
                 riasec_type=riasec_type, text=text, order=data["order"],
-                age_tier=age_tier, short_text=short_text, icon=icon,
+                short_text=short_text, icon=icon,
                 instrument=QuestionInstrument.riasec,
             ))
             inserted += 1

@@ -8,7 +8,6 @@ for every entrypoint.
 """
 import uuid
 
-import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,7 +18,6 @@ from app.models.user import User
 from app.services import (
     assessment_service,
     assessment_shared,
-    motivation_pair_service,
     motivation_service,
     question_pair_service,
 )
@@ -119,17 +117,7 @@ async def test_question_pairs_retake_clears_every_artifact(db_session: AsyncSess
     await _assert_everything_gone(assessment, keys, db_session)
 
 
-async def test_harter_motivation_pairs_retake_clears_every_artifact(db_session: AsyncSession) -> None:
-    assessment = await _make_assessment(db_session)
-    profile = (await db_session.execute(select(Profile).where(Profile.id == assessment.profile_id))).scalar_one()
-    keys = await _seed_stale_artifacts(assessment, db_session)
-
-    await motivation_pair_service.submit_pair_answers(assessment.id, [], profile.id, db_session)
-
-    await _assert_everything_gone(assessment, keys, db_session)
-
-
-async def test_senior_motivation_triplets_retake_clears_every_artifact(db_session: AsyncSession) -> None:
+async def test_motivation_triplets_retake_clears_every_artifact(db_session: AsyncSession) -> None:
     assessment = await _make_assessment(db_session)
     profile = (await db_session.execute(select(Profile).where(Profile.id == assessment.profile_id))).scalar_one()
     keys = await _seed_stale_artifacts(assessment, db_session)

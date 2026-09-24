@@ -17,7 +17,6 @@ import logging
 from pydantic import ValidationError
 
 from app.i18n.catalog import tr
-from app.models.profile import AgeGroup
 from app.prompts import report_narrative as prompt
 from app.prompts import report_narrative_translate as translate_prompt
 from app.schemas.report_narrative import NarrativeCard, ReportNarrativeOutput
@@ -242,8 +241,8 @@ async def generate_report_narrative(
         record_fallback("validation")
 
     logger.warning(
-        "report_narrative fallback age_group=%s interest_instrument=%s language=%s had_language_mismatch=%s",
-        context.age_group, context.interest_instrument, language, had_language_mismatch,
+        "report_narrative fallback language=%s had_language_mismatch=%s",
+        language, had_language_mismatch,
     )
     return build_fallback_narrative(context, locale=language), False
 
@@ -300,7 +299,6 @@ async def translate_report_narrative(
     if not llm_client.is_enabled():
         return base, False
 
-    age_group = AgeGroup(context.age_group)
     n_cards = len(source["strength_cards"])
     n_notes = len(source["thinking_style_notes"])
     messages = translate_prompt.build_messages(
@@ -324,7 +322,7 @@ async def translate_report_narrative(
                                           f"cards {len(cards)}/{n_cards} notes {len(notes)}/{n_notes}")]
         texts = _translated_texts(raw)
         issues = structural + _check_language(texts, target_locale) + \
-            _check_banned_vocabulary(texts, age_group, target_locale)
+            _check_banned_vocabulary(texts, target_locale)
         if target_locale == "ru":
             issues += _kazakh_leak_into_ru(texts)
         _log_attempt(attempt, issues)

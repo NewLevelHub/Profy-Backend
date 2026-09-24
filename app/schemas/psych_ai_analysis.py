@@ -36,6 +36,5 @@ class PsychAiAnalysisOutput(BaseModel):
     # Up to ~7 sentences synthesizing everything for the psychologist.
     final_summary: str
     # None when the assessment has no career list to pick from at all
-    # (junior — TZ_Profi.md §4.1, not career-oriented, `careers` is always
-    # empty) — the model is never asked to invent one in that case.
+    # (`careers` empty) — the model is never asked to invent one in that case.
     recommended_profession: ProfessionRecommendation | None = None

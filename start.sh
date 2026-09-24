@@ -61,19 +61,17 @@ set +e
 }
 set -e
 
-# Question banks — order matters: bigfive/mi/question_pairs each resolve
-# `order`/name references against whatever was seeded before them.
+# Question banks — order matters: later banks resolve `order`/name
+# references against whatever was seeded before them.
 docker-compose exec api python scripts/seed_riasec_questions.py
 # Ожидается: Total questions in bank: 146
 docker-compose exec api python scripts/seed_bigfive_questions.py
 # Ожидается: Total questions in bank: 120
-docker-compose exec api python scripts/seed_mi_questions.py
-# Ожидается: Total questions in bank: 48
 
 # "Дополнительные тесты" — PRO-338 Ф0.8/Ф1.10: professional_types_abilities/
 # eysenck/elers/boyko_empathy/kondash_anxiety form one contiguous,
-# non-interleaved sub-section right after MI (order 400-586) — unlike the
-# validity items above, they are never woven into RIASEC/BigFive/MI.
+# non-interleaved sub-section after RIASEC/BigFive (order 400-586) and are
+# never woven into them.
 docker-compose exec api python scripts/seed_professional_types_questions.py
 # Ожидается: Total professional_types_abilities items in bank: 5
 docker-compose exec api python scripts/seed_eysenck_questions.py
@@ -86,13 +84,8 @@ docker-compose exec api python scripts/seed_kondash_anxiety_questions.py
 # Ожидается: Total kondash_anxiety items in bank: 40
 
 
-docker-compose exec api python scripts/seed_question_pairs.py
-# Ожидается: Total pairs in bank: 67
-
-# Motivation block (senior triplets + junior/middle Harter pairs)
+# Motivation block (triplets)
 docker-compose exec api python scripts/seed_motivation_statements.py
-docker-compose exec api python scripts/seed_motivation_pairs.py
-# Ожидается: Total pairs in bank: 18
 
 docker-compose exec api python scripts/seed_riasec_directions.py
 # Direction description/skills_needed/subjects_to_develop/first_steps — empty

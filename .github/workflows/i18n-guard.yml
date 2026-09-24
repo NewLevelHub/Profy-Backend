@@ -60,12 +60,9 @@ jobs:
         run: |
           python scripts/seed_riasec_questions.py
           python scripts/seed_bigfive_questions.py
-          python scripts/seed_mi_questions.py
-          python scripts/seed_question_pairs.py
           python scripts/seed_riasec_directions.py
           python scripts/apply_direction_content.py
           python scripts/seed_motivation_statements.py
-          python scripts/seed_motivation_pairs.py
 
       - name: i18n guard tests
         run: >-

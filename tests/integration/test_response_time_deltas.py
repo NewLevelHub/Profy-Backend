@@ -39,7 +39,7 @@ async def _questions(db: AsyncSession, n: int) -> list[Question]:
     qs = [
         Question(
             instrument=QuestionInstrument.big_five, text={"ru": f"q{i}"},
-            order=i, age_tier=AgeGroup.senior,
+            order=i,
         )
         for i in range(n)
     ]

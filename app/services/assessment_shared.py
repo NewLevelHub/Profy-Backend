@@ -16,10 +16,9 @@ from app.config import settings
 from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
-from app.models.profile import AgeGroup, Profile
-from app.models.question import Question, QuestionInstrument
+from app.models.profile import AgeGroup
+from app.models.question import Question
 from app.models.user_response import UserResponse
-from app.services.age_tiers import visible_tiers
 
 logger = logging.getLogger(__name__)
 
@@ -103,11 +102,6 @@ async def invalidate_retake(
     await safe_redis_delete(redis, *report_cache_keys(assessment_id))
 
 
-async def get_profile_age_group(profile_id: uuid.UUID, db: AsyncSession) -> AgeGroup:
-    result = await db.execute(select(Profile.age_group).where(Profile.id == profile_id))
-    return result.scalar_one()
-
-
 def get_effective_goal(age_group: AgeGroup, primary_goal: AssessmentGoal) -> AssessmentGoal:
     """The goal actually used to pick a scenario/engine — ТЗ §10.3's soft
     downgrade (middle + "university" -> "profession") applied to the raw
@@ -129,16 +123,8 @@ def get_effective_goal(age_group: AgeGroup, primary_goal: AssessmentGoal) -> Ass
     return primary_goal
 
 
-async def likert_total_questions(db: AsyncSession, age_group: AgeGroup) -> int:
-    query = select(func.count(Question.id)).where(
-        Question.age_tier.in_(visible_tiers(age_group)),
-    )
-    if age_group == AgeGroup.junior:
-        # Junior's RIASEC content is retired in favor of the MI instrument
-        # (see question_pair_service.get_pairs) — exclude it from the total
-        # so completion tracking doesn't count stale, never-shown questions.
-        query = query.where(Question.instrument != QuestionInstrument.riasec)
-    result = await db.execute(query)
+async def likert_total_questions(db: AsyncSession) -> int:
+    result = await db.execute(select(func.count(Question.id)))
     return result.scalar_one()
 
 
@@ -149,20 +135,14 @@ async def likert_answered_count(assessment_id: uuid.UUID, db: AsyncSession) -> i
     return result.scalar_one()
 
 
-async def motivation_completed(assessment_id: uuid.UUID, age_group: AgeGroup, db: AsyncSession) -> bool:
-    """Whether the motivation phase is done, picking the right format by age
-    group — senior's MOST/LEAST triplets (motivation_service) vs junior/
-    middle's Harter pairs (motivation_pair_service), same branch
-    report_service.py uses. Local import for the same circular-import reason
-    as try_complete_assessment below (both those modules import this one)."""
-    from app.services import motivation_pair_service, motivation_service
+async def motivation_completed(assessment_id: uuid.UUID, db: AsyncSession) -> bool:
+    """Whether the motivation triplets are all answered. Local import for
+    the same circular-import reason as try_complete_assessment below
+    (motivation_service imports this module)."""
+    from app.services import motivation_service
 
-    if age_group == AgeGroup.senior:
-        mot_answered = await motivation_service.answered_count(assessment_id, db)
-        mot_total = await motivation_service.total_triplets(db)
-    else:
-        mot_answered = await motivation_pair_service.answered_count(assessment_id, db)
-        mot_total = await motivation_pair_service.total_pairs(db)
+    mot_answered = await motivation_service.answered_count(assessment_id, db)
+    mot_total = await motivation_service.total_triplets(db)
     return mot_total > 0 and mot_answered >= mot_total
 
 
@@ -170,7 +150,7 @@ async def belbin_and_astur_completed(assessment_id: uuid.UUID, db: AsyncSession)
     """Whether both Belbin and АСТУР are done for this assessment. Belbin/
     АСТУР used to be treated as separate/optional (an older comment
     elsewhere in this codebase claimed they're psychologist-only), but the
-    continuous flow (MotivationTripletFlow.tsx / MotivationHarterFlow.tsx)
+    continuous flow (MotivationTripletFlow.tsx)
     routes every student through both right after motivation — so anything
     that decides "is this assessment actually done" (report generation,
     `assessment.status`) must require them too, or a student who exits
@@ -196,7 +176,7 @@ async def try_complete_assessment(
     """Flips `assessment.status` to `completed` once every required phase is
     actually done — Likert/pairs, motivation, Belbin, AND АСТУР (see
     `belbin_and_astur_completed`). Called from the tail end of each phase's
-    own submit (motivation_service, motivation_pair_service, astur router)
+    own submit (motivation_service, astur router)
     since none of them alone knows when the *last* phase finishes; whichever
     call lands last is the one that actually flips it.
 

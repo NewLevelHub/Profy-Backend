@@ -30,8 +30,7 @@ async def raw_score(assessment_id: uuid.UUID, db: AsyncSession) -> int | None:
     """1 point per non-buffer item whose answer matches its own keyed
     direction (`keyed="yes"` scores on Да=2, `keyed="no"` scores on Нет=1,
     `keyed="buffer"` never scores regardless of answer). `None` when nothing
-    has been answered yet (junior/middle never see this senior-only content,
-    or a senior assessment still in progress) — not 0, which would misreport
+    has been answered yet (an assessment still in progress) — not 0, which would misreport
     "took it, scored nothing" as if it were a real result."""
     result = await db.execute(
         select(Question.order, UserResponse.answer_value)

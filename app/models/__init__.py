@@ -11,7 +11,6 @@ from app.models.consent import Consent  # noqa: F401 — keep model imported so 
 from app.models.direction import Direction  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.extended_block_assignment import ExtendedBlockAssignment  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.motivation import MotivationResponse, MotivationStatement  # noqa: F401 — keep model imported so Alembic discovers it
-from app.models.motivation_pair import MotivationPair, MotivationPairResponse  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.password_reset import PasswordResetToken  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.product_feedback import ProductFeedback  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.profile import Profile  # noqa: F401 — keep model imported so Alembic discovers it
@@ -33,7 +32,7 @@ from app.models.content_override import ContentOverride  # noqa: F401 — keep m
 __all__ = [
     "Base", "AnalysisResult", "Artifact", "Assessment", "AsturRun", "BelbinRun", "Consent",
     "ContentOverride", "Direction", "ExtendedBlockAssignment",
-    "EmailVerificationToken", "MotivationPair", "MotivationPairResponse",
+    "EmailVerificationToken",
     "MotivationResponse", "MotivationStatement", "PasswordResetToken",
     "ProductFeedback", "Profile", "Program", "PsychoEmotionalRun",
     "PsychologistNote", "PsychologistStudentAssignment", "Question", "QuestionPair",

@@ -6,7 +6,6 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
-from app.models.profile import AgeGroup
 
 LOCALIZED_FIELDS = frozenset({"text", "short_text"})
 
@@ -23,7 +22,6 @@ class HollandType(str, enum.Enum):
 class QuestionInstrument(str, enum.Enum):
     riasec = "riasec"
     big_five = "big_five"
-    mi = "mi"
 
     # PRO-338 Ф0.2: ДДО "интересы" (20 форс-чойс пар) — QuestionPair-based,
     # doesn't touch Question rows itself, but shares the same instrument
@@ -60,20 +58,6 @@ class Keyed(str, enum.Enum):
     minus = "minus"
 
 
-# Multiple-Intelligences-style categories replacing RIASEC for junior (6-9) —
-# TZ_Profi.md §4.1 explicitly excludes career orientation for this age group,
-# so junior's "interests" instrument is this instead of Holland codes.
-class MIType(str, enum.Enum):
-    verbal = "verbal"
-    logical = "logical"
-    musical = "musical"
-    visual = "visual"
-    bodily = "bodily"
-    interpersonal = "interpersonal"
-    intrapersonal = "intrapersonal"
-    naturalistic = "naturalistic"
-
-
 class Question(Base):
     __tablename__ = "questions"
 
@@ -97,32 +81,20 @@ class Question(Base):
     bigfive_domain: Mapped[BigFiveDomain | None] = mapped_column(
         Enum(BigFiveDomain, name="bigfive_domain_enum"), nullable=True
     )
-    mi_category: Mapped[MIType | None] = mapped_column(
-        Enum(MIType, name="mi_type_enum"), nullable=True
-    )
     facet: Mapped[int | None] = mapped_column(Integer, nullable=True)
     keyed: Mapped[Keyed | None] = mapped_column(
         Enum(Keyed, name="keyed_enum"), nullable=True
     )
 
     text: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    # Short button-label form of `text`, used by the junior forced-choice-pair
-    # UI instead of the full Likert statement. Null for middle/senior rows.
+    # Short button-label form of `text`, used when the question is a
+    # forced-choice pair option. Legacy: still seeded for RIASEC/Big Five
+    # items, but only the retired junior pairs displayed it (PRO-425
+    # follow-up: drop the column and the bank values).
     short_text: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    # Single emoji rendered as the "icon" the junior format requires
-    # (TZ_Profi.md §13 — junior's allowed formats all mandate icons).
+    # Optional emoji for a forced-choice pair option. Legacy, like short_text.
     icon: Mapped[str | None] = mapped_column(String, nullable=True)
     order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    # Minimum age branch this question is shown to — junior sees only
-    # age_tier='junior' rows, middle sees junior+middle, senior sees all
-    # (app/services/age_tiers.py:visible_tiers). Reuses profiles' own
-    # age_group_enum Postgres type, not a duplicate.
-    age_tier: Mapped[AgeGroup] = mapped_column(
-        Enum(AgeGroup, name="age_group_enum", create_type=False),
-        nullable=False,
-        server_default="senior",
-        index=True,
-    )
     # Field-name -> admin-edited value, composed on top of the bank content
     # by every scripts/seed_*.py at resync time so admin edits survive
     # redeploys (see docs/admin-questions-content-overrides-plan.md).

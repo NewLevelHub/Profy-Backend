@@ -2,9 +2,9 @@
 
 Not a replacement for the manual native-speaker walkthrough
 (`docs/qa-kz-e2e-checklist.md`) — this is the automated floor: the key
-seams a `kk` student hits (report narrative for every age tier, direction
-detail, program-description overlay, the "russian-only" transit badge, gap
-analysis) come back non-empty, not an i18n key, and Kazakh by the same
+seams a `kk` student hits (report narrative, direction
+detail, program-description overlay, the "russian-only" transit badge)
+come back non-empty, not an i18n key, and Kazakh by the same
 heuristic the runtime validator uses.
 
 Real transactional Postgres session — synthetic rows never escape it, and the
@@ -29,7 +29,6 @@ from app.services import (
     assessment_shared,
     direction_service,
     llm_client,
-    motivation_pair_service,
     motivation_service,
     university_service,
 )
@@ -60,15 +59,15 @@ def _assert_kk_label(label: str, text: str | None) -> None:
     assert not _looks_like_key(text), f"{label}: looks like an i18n key -> {text!r}"
 
 
-# ── report narrative, every age tier ────────────────────────────────────────
+# ── report narrative ────────────────────────────────────────
 
-async def _kk_report(db: AsyncSession, monkeypatch, age_group: AgeGroup):
+async def _kk_report(db: AsyncSession, monkeypatch):
     user = User(email=f"{uuid.uuid4()}@example.com", hashed_password="x",
                 is_active=True, is_verified=True, locale="kk")
     db.add(user)
     await db.flush()
     profile = Profile(user_id=user.id, name="Тест", age=16, grade=9, city="Алматы",
-                      country="Қазақстан", language="қазақша", age_group=age_group)
+                      country="Қазақстан", language="қазақша", age_group=AgeGroup.senior)
     db.add(profile)
     await db.flush()
     assessment = Assessment(profile_id=profile.id, goal=AssessmentGoal.explore)
@@ -79,8 +78,6 @@ async def _kk_report(db: AsyncSession, monkeypatch, age_group: AgeGroup):
     monkeypatch.setattr(assessment_shared, "likert_total_questions", AsyncMock(return_value=1))
     monkeypatch.setattr(motivation_service, "answered_count", AsyncMock(return_value=1))
     monkeypatch.setattr(motivation_service, "total_triplets", AsyncMock(return_value=1))
-    monkeypatch.setattr(motivation_pair_service, "answered_count", AsyncMock(return_value=1))
-    monkeypatch.setattr(motivation_pair_service, "total_pairs", AsyncMock(return_value=1))
     monkeypatch.setattr(assessment_shared, "belbin_and_astur_completed", AsyncMock(return_value=True))
     monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
 
@@ -88,24 +85,23 @@ async def _kk_report(db: AsyncSession, monkeypatch, age_group: AgeGroup):
     return await report_service.build_report(assessment.id, db)
 
 
-@pytest.mark.parametrize("age_group", [AgeGroup.junior, AgeGroup.middle, AgeGroup.senior])
-async def test_report_narrative_is_kazakh_for_every_age_tier(
-    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch, age_group: AgeGroup
+async def test_report_narrative_is_kazakh(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    resp = await _kk_report(db_session, monkeypatch, age_group)
+    resp = await _kk_report(db_session, monkeypatch)
 
     for field in ("summary", "final_analysis", "interest_map_note", "personality_note"):
         value = getattr(resp, field, None)
-        if value:  # junior/middle variants may omit some sections
-            _assert_kk_prose(f"{age_group.value}.{field}", value)
+        if value:
+            _assert_kk_prose(field, value)
 
     for card in getattr(resp, "strength_cards", []) or []:
-        _assert_kk_prose(f"{age_group.value}.strength_card", card.description)
+        _assert_kk_prose("strength_card", card.description)
 
     spheres = [item.sphere for item in getattr(resp, "interest_map", []) or []]
-    assert spheres, f"{age_group.value}: empty interest map"
+    assert spheres, "empty interest map"
     for sphere in spheres:
-        _assert_kk_label(f"{age_group.value}.sphere", sphere)
+        _assert_kk_label("sphere", sphere)
     # ru sphere names must not leak through
     assert not ({"Реалистичный", "Исследовательский", "Артистичный"} & set(spheres))
 
@@ -113,7 +109,7 @@ async def test_report_narrative_is_kazakh_for_every_age_tier(
 async def test_report_has_no_empty_or_key_like_sections(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    resp = await _kk_report(db_session, monkeypatch, AgeGroup.senior)
+    resp = await _kk_report(db_session, monkeypatch)
     payload = resp.model_dump()
 
     def _walk(node, path="$"):

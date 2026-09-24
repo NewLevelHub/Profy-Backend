@@ -25,7 +25,7 @@ class AdminUserListItem(BaseModel):
     last_active_at: datetime | None = None
     has_profile: bool
     profile_name: str | None = None
-    age_group: str | None = None
+    age: int | None = None
     # A product for Kazakhstan makes "where do our users live" an obvious
     # question of any export, and neither field was reachable from this list.
     city: str | None = None
@@ -34,18 +34,12 @@ class AdminUserListItem(BaseModel):
     latest_assessment_status: str | None = None
     latest_assessment_goal: str | None = None
     # From the profile's latest COMPLETED assessment's AnalysisResult, admin-
-    # only raw percentages (TZ_Profi.md §18.3). `riasec` is None for junior
-    # (whose instrument is MI, not RIASEC — deliberately not shown here) and
-    # for users with no completed assessment yet. `big_five` is the raw
+    # only raw percentages (TZ_Profi.md §18.3). `riasec` is None for users
+    # with no completed assessment yet. `big_five` is the raw
     # N/E/O/A/C dict (AnalysisResult.big_five), not the student-facing
     # flipped/relabeled `personality_profile` — admin sees true raw numbers,
     # same convention DiagnosticSummaryBlock already uses for RIASEC.
     riasec: dict[str, float] | None = None
-    # Junior's interest instrument is MI, not RIASEC, so `riasec` is None for
-    # every junior. Without this the export showed a completed junior
-    # diagnostic as eleven empty score columns — indistinguishable from a
-    # broken row rather than from a different instrument.
-    mi: dict[str, float] | None = None
     big_five: dict[str, float] | None = None
 
 
@@ -204,7 +198,7 @@ class AdminListParams(BaseModel):
 
 class AdminFeedbackListItem(BaseModel):
     """Feedback row alongside the submitting user's context — TZ_Profi.md
-    §28.4. `assessment_id`/`age_group`/`scenario`/`top_direction_name` are
+    §28.4. `assessment_id`/`scenario`/`top_direction_name` are
     all nullable: `assessment_id` is SET NULL if the assessment was deleted
     (feedback itself is never deleted with it), and the rest are only
     derivable when the assessment still exists and has a stored result."""
@@ -214,7 +208,6 @@ class AdminFeedbackListItem(BaseModel):
     user_email: str
     profile_name: str | None = None
     assessment_id: uuid.UUID | None = None
-    age_group: str | None = None
     scenario: str | None = None  # effective scenario A/B/C, see goal_overlay_service
     top_direction_name: str | None = None
     relevance_score: int
@@ -246,7 +239,6 @@ class AdminFeedbackStatsResponse(BaseModel):
     # the main chart of the feedback screen, and an average alone cannot
     # reconstruct it — two very different distributions share a mean.
     score_counts: dict[str, int] = {}
-    by_age_group: list[FeedbackBreakdownItem] = []
     by_scenario: list[FeedbackBreakdownItem] = []
     by_top_direction: list[FeedbackBreakdownItem] = []
     helpful_section_counts: dict[str, int] = {}

@@ -34,16 +34,14 @@ from app.services import (
     assessment_service,
     assessment_shared,
     llm_client,
-    motivation_pair_service,
     motivation_service,
     question_pair_service,
     report_service,
 )
 
-_AGE_SAMPLE = {AgeGroup.junior: 8, AgeGroup.middle: 12, AgeGroup.senior: 16}
 
 
-async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> Assessment:
+async def _make_assessment(db_session: AsyncSession) -> Assessment:
     user = User(
         email=f"{uuid.uuid4()}@example.test", hashed_password="x", is_active=True, is_verified=True,
     )
@@ -51,8 +49,8 @@ async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> Ass
     await db_session.flush()
 
     profile = Profile(
-        user_id=user.id, name="Тест", age=_AGE_SAMPLE[age_group], grade=5,
-        city="Алматы", country="Казахстан", language="ru", age_group=age_group,
+        user_id=user.id, name="Тест", age=16, grade=5,
+        city="Алматы", country="Казахстан", language="ru", age_group=AgeGroup.senior,
     )
     db_session.add(profile)
     await db_session.flush()
@@ -63,15 +61,11 @@ async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> Ass
     return assessment
 
 
-def _force_complete_and_llm_disabled(monkeypatch: pytest.MonkeyPatch, *, senior: bool) -> None:
+def _force_complete_and_llm_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(assessment_shared, "likert_answered_count", AsyncMock(return_value=1))
     monkeypatch.setattr(assessment_shared, "likert_total_questions", AsyncMock(return_value=1))
-    if senior:
-        monkeypatch.setattr(motivation_service, "answered_count", AsyncMock(return_value=1))
-        monkeypatch.setattr(motivation_service, "total_triplets", AsyncMock(return_value=1))
-    else:
-        monkeypatch.setattr(motivation_pair_service, "answered_count", AsyncMock(return_value=1))
-        monkeypatch.setattr(motivation_pair_service, "total_pairs", AsyncMock(return_value=1))
+    monkeypatch.setattr(motivation_service, "answered_count", AsyncMock(return_value=1))
+    monkeypatch.setattr(motivation_service, "total_triplets", AsyncMock(return_value=1))
     monkeypatch.setattr(assessment_shared, "belbin_and_astur_completed", AsyncMock(return_value=True))
     monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
 
@@ -114,8 +108,8 @@ async def test_report_cache_key_is_centralized_and_versioned() -> None:
 async def test_build_report_writes_and_get_report_reads_the_same_cache_key(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    assessment = await _make_assessment(db_session, AgeGroup.senior)
-    _force_complete_and_llm_disabled(monkeypatch, senior=True)
+    assessment = await _make_assessment(db_session)
+    _force_complete_and_llm_disabled(monkeypatch)
 
     await report_service.build_report(assessment.id, db_session)
 
@@ -145,8 +139,8 @@ async def test_legacy_unversioned_cache_payload_is_never_read_as_v2(
     `report:{id}` key when this ships. get_report/build_report must ignore
     it completely (they only ever address `report:v4:{locale}:{id}`) rather than try
     to parse it as ResultResponseV2 and blow up."""
-    assessment = await _make_assessment(db_session, AgeGroup.senior)
-    _force_complete_and_llm_disabled(monkeypatch, senior=True)
+    assessment = await _make_assessment(db_session)
+    _force_complete_and_llm_disabled(monkeypatch)
 
     redis = assessment_shared.get_redis()
     legacy_key = f"report:{assessment.id}"
@@ -166,8 +160,8 @@ async def test_legacy_unversioned_cache_payload_is_never_read_as_v2(
 async def test_build_report_survives_redis_outage_via_db(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    assessment = await _make_assessment(db_session, AgeGroup.senior)
-    _force_complete_and_llm_disabled(monkeypatch, senior=True)
+    assessment = await _make_assessment(db_session)
+    _force_complete_and_llm_disabled(monkeypatch)
     monkeypatch.setattr(report_service, "_get_redis", lambda: _BrokenRedis())
 
     response = await report_service.build_report(assessment.id, db_session)
@@ -182,8 +176,8 @@ async def test_build_report_survives_redis_outage_via_db(
 async def test_get_report_survives_redis_outage_via_db(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    assessment = await _make_assessment(db_session, AgeGroup.senior)
-    _force_complete_and_llm_disabled(monkeypatch, senior=True)
+    assessment = await _make_assessment(db_session)
+    _force_complete_and_llm_disabled(monkeypatch)
 
     generated = await report_service.build_report(assessment.id, db_session)
 
@@ -203,8 +197,8 @@ async def test_stale_cached_payload_missing_a_new_required_field_falls_back_to_d
     that and falls through to a fresh DB-backed rebuild instead."""
     import json
 
-    assessment = await _make_assessment(db_session, AgeGroup.senior)
-    _force_complete_and_llm_disabled(monkeypatch, senior=True)
+    assessment = await _make_assessment(db_session)
+    _force_complete_and_llm_disabled(monkeypatch)
 
     generated = await report_service.build_report(assessment.id, db_session)
 
@@ -226,7 +220,7 @@ async def test_invalidate_retake_survives_redis_outage(
     """invalidate_retake must still delete the stale AnalysisResult row even
     when Redis itself is unreachable — cache cleanup is best-effort, DB
     cleanup is not optional."""
-    assessment = await _make_assessment(db_session, AgeGroup.senior)
+    assessment = await _make_assessment(db_session)
     db_session.add(AnalysisResult(
         assessment_id=assessment.id, summary="stale", profile={}, code="RIA", meta={},
         careers=[], strengths=[], weaknesses=[], development_plan=[], big_five={},
@@ -245,16 +239,16 @@ async def test_invalidate_retake_survives_redis_outage(
 
 @pytest.mark.parametrize(
     "entrypoint_name",
-    ["assessment_service", "question_pair_service", "motivation_pair_service", "motivation_service"],
+    ["assessment_service", "question_pair_service", "motivation_service"],
 )
 async def test_every_retake_entrypoint_clears_the_versioned_report_cache(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch, entrypoint_name: str
 ) -> None:
-    """All four submit-answers entrypoints funnel through invalidate_retake
+    """All three submit-answers entrypoints funnel through invalidate_retake
     (report_service.py), so this pins the observable contract at each of
     their own call sites rather than trusting that they all really do call
     the shared function."""
-    assessment = await _make_assessment(db_session, AgeGroup.senior)
+    assessment = await _make_assessment(db_session)
 
     user_result = await db_session.execute(select(Profile).where(Profile.id == assessment.profile_id))
     profile = user_result.scalar_one()
@@ -270,8 +264,6 @@ async def test_every_retake_entrypoint_clears_the_versioned_report_cache(
         await assessment_service.submit_answers(assessment.id, [], profile.id, db_session)
     elif entrypoint_name == "question_pair_service":
         await question_pair_service.submit_pair_answers(assessment.id, [], profile.id, db_session)
-    elif entrypoint_name == "motivation_pair_service":
-        await motivation_pair_service.submit_pair_answers(assessment.id, [], profile.id, db_session)
     else:
         await motivation_service.submit_motivation_answers(assessment.id, [], profile.id, db_session)
 

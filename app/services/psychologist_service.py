@@ -169,7 +169,7 @@ async def list_assigned_students(
             student.id,
             student.email,
             Profile.name,
-            Profile.age_group,
+            Profile.age,
             PsychologistStudentAssignment.created_at,
         )
         .join(student, student.id == PsychologistStudentAssignment.student_id)
@@ -183,7 +183,7 @@ async def list_assigned_students(
             id=row.id,
             email=row.email,
             profile_name=row.name,
-            age_group=row.age_group.value if row.age_group is not None else None,
+            age=row.age,
             assigned_at=row.created_at,
         )
         for row in rows
@@ -210,7 +210,7 @@ async def list_available_students(
         .exists()
     )
     query = (
-        select(User.id, User.email, Profile.name, Profile.age_group, pending.label("has_pending"))
+        select(User.id, User.email, Profile.name, Profile.age, pending.label("has_pending"))
         .outerjoin(Profile, Profile.user_id == User.id)
         .where(User.role == UserRole.student, ~User.id.in_(already_mine))
         .order_by(User.created_at.desc())
@@ -221,7 +221,7 @@ async def list_available_students(
             id=row.id,
             email=row.email,
             profile_name=row.name,
-            age_group=row.age_group.value if row.age_group is not None else None,
+            age=row.age,
             has_pending_review=bool(row.has_pending),
         )
         for row in rows
@@ -262,7 +262,7 @@ async def claim_student(
         id=student.id,
         email=student.email,
         profile_name=profile.name if profile is not None else None,
-        age_group=profile.age_group.value if profile is not None and profile.age_group is not None else None,
+        age=profile.age if profile is not None else None,
         assigned_at=assignment.created_at,
     )
 
@@ -562,7 +562,7 @@ def review_queue_select(limit: int = REVIEW_QUEUE_LIMIT) -> Select:
             student.id.label("student_id"),
             student.email.label("student_email"),
             Profile.name.label("student_name"),
-            Profile.age_group,
+            Profile.age,
         )
         .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
         .join(Profile, Profile.id == Assessment.profile_id)
@@ -580,7 +580,7 @@ def to_review_queue_items(rows: Any) -> list[PsychologistReviewQueueItem]:
             student_id=row.student_id,
             student_name=row.student_name,
             student_email=row.student_email,
-            age_group=row.age_group.value if row.age_group is not None else None,
+            age=row.age,
             goal=row.goal.value,
             generated_at=row.generated_at,
             reviewed_at=row.reviewed_at,

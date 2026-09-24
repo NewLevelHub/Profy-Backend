@@ -3,8 +3,7 @@
 review pending.
 
 Top-level keys: `notes` (cue + concrete example), `adj` (short adjective,
-middle/senior title), `cue_short` (junior, bare clause, no example),
-`impact` (middle/senior, verb phrase).
+title), `impact` (verb phrase).
 """
 
 RU = {
@@ -31,12 +30,6 @@ RU = {
         "systematic": "системное",
         "strategic": "стратегическое",
         "practical": "практическое",
-    },
-    "cue_short": {
-        "creative_think": "тебе легко придумывать несколько разных способов сделать одно и то же",
-        "systematic": "тебе удобнее, когда сначала есть понятный порядок действий",
-        "strategic": "тебе нравится заранее продумывать, что будет дальше",
-        "practical": "тебе важно быстро попробовать и увидеть результат",
     },
     "impact": {
         "creative_think": "предлагать новые идеи",
@@ -70,12 +63,6 @@ KK = {
         "systematic": "жүйелі",
         "strategic": "стратегиялық",
         "practical": "практикалық",
-    },
-    "cue_short": {
-        "creative_think": "саған бір істі жасаудың бірнеше түрлі жолын ойлап табу оңай",
-        "systematic": "саған алдымен түсінікті әрекет реті болғаны ыңғайлы",
-        "strategic": "саған әрі қарай не болатынын алдын ала ойластырған ұнайды",
-        "practical": "саған тез сынап көріп, нәтижені көру маңызды",
     },
     "impact": {
         "creative_think": "жаңа идеялар ұсыну",

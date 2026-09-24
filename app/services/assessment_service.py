@@ -6,33 +6,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
-from app.models.profile import AgeGroup, Profile
+from app.models.profile import Profile
 from app.models.question import Question
 from app.models.user_response import UserResponse
 from app.schemas.assessment import AssessmentResponse
 from app.schemas.response import AnswerItem, SubmitAnswersResponse
-from app.services import (
-    assessment_shared,
-    astur_service,
-    belbin_service,
-    motivation_pair_service,
-    motivation_service,
-    riasec_service,
-)
+from app.services import assessment_shared, astur_service, belbin_service, motivation_service
 
 
 async def _to_response(assessment: Assessment, db: AsyncSession) -> AssessmentResponse:
-    age_group = await assessment_shared.get_profile_age_group(assessment.profile_id, db)
     answered = await assessment_shared.likert_answered_count(assessment.id, db)
-    total = await assessment_shared.likert_total_questions(db, age_group)
-    # Junior/middle answer the Harter-format pairs instead of the 3-way
-    # MOST/LEAST triplets (senior) — different tables, see motivation_pair_service.py.
-    if age_group in (AgeGroup.junior, AgeGroup.middle):
-        mot_answered = await motivation_pair_service.answered_count(assessment.id, db)
-        mot_total = await motivation_pair_service.total_pairs(db)
-    else:
-        mot_answered = await motivation_service.answered_count(assessment.id, db)
-        mot_total = await motivation_service.total_triplets(db)
+    total = await assessment_shared.likert_total_questions(db)
+    mot_answered = await motivation_service.answered_count(assessment.id, db)
+    mot_total = await motivation_service.total_triplets(db)
 
     belbin_run = await belbin_service.get_latest_run(assessment.id, db)
     belbin_completed = belbin_run is not None
@@ -79,8 +65,8 @@ async def create_assessment(
         # on". An abandoned attempt with e.g. Likert done but motivation
         # never touched isn't that, and previously got stuck exactly there:
         # status said completed, but no AnalysisResult could ever be built.
-        # Deleting cascades to its UserResponse/MotivationPairResponse/
-        # MotivationResponse rows (all FK ondelete="CASCADE") — same
+        # Deleting cascades to its UserResponse/MotivationResponse
+        # rows (all FK ondelete="CASCADE") — same
         # "discard stale artifacts on a fresh start" pattern retake
         # invalidation already uses elsewhere in this codebase.
         await db.delete(existing)
@@ -138,7 +124,6 @@ async def submit_answers(
     if assessment.profile_id != current_profile_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    age_group = await assessment_shared.get_profile_age_group(assessment.profile_id, db)
 
     question_ids = [item.question_id for item in answers]
     questions_result = await db.execute(select(Question.id).where(Question.id.in_(question_ids)))
@@ -174,7 +159,7 @@ async def submit_answers(
         await assessment_shared.invalidate_retake(assessment, db, redis)
 
     answered = await assessment_shared.likert_answered_count(assessment_id, db)
-    total = await assessment_shared.likert_total_questions(db, age_group)
+    total = await assessment_shared.likert_total_questions(db)
     # This phase (Likert) being done does NOT mean the whole test is done —
     # the motivation phase may still be pending. assessment.status only
     # flips to completed once motivation_service.submit_motivation_answers
@@ -184,17 +169,3 @@ async def submit_answers(
     await db.commit()
 
     return SubmitAnswersResponse(answered_count=answered, total=total, completed=completed)
-
-
-async def _age_group_for_assessment(assessment_id: uuid.UUID, db: AsyncSession) -> AgeGroup:
-    result = await db.execute(
-        select(Profile.age_group)
-        .join(Assessment, Assessment.profile_id == Profile.id)
-        .where(Assessment.id == assessment_id)
-    )
-    return result.scalar_one()
-
-
-async def get_raw_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, int]:
-    age_group = await _age_group_for_assessment(assessment_id, db)
-    return await riasec_service.raw_scores(assessment_id, db, age_group)

@@ -15,7 +15,6 @@ from pydantic import BaseModel
 class EvidenceItem(BaseModel):
     source_id: str
     source_type: Literal[
-        "mi_category",
         "riasec_category",
         "personality",
         "motivation",
@@ -28,6 +27,4 @@ class EvidenceItem(BaseModel):
 
 
 class ReportNarrativeContext(BaseModel):
-    age_group: str
-    interest_instrument: Literal["mi", "riasec"]
     evidence: list[EvidenceItem] = []

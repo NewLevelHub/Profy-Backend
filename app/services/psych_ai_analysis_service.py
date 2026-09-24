@@ -91,7 +91,7 @@ def _correction_message(issues: list[ValidationIssue]) -> str:
 
 
 def _drop_no_recommendation_sentinel(output: PsychAiAnalysisOutput) -> PsychAiAnalysisOutput:
-    """After validation passes, a sentinel slug (junior / careers-less
+    """After validation passes, a sentinel slug (careers-less
     context) becomes a real `None` for every downstream consumer — no
     caller outside this module should ever see the sentinel string."""
     if output.recommended_profession is not None and output.recommended_profession.slug == prompt.NO_RECOMMENDATION_SLUG:

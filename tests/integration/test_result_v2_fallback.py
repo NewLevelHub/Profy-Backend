@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
-from app.models.question import HollandType, MIType, Question, QuestionInstrument
+from app.models.question import HollandType, Question, QuestionInstrument
 from app.models.user import User
 from app.models.user_response import UserResponse
 from app.schemas.response import AnswerItem
@@ -27,17 +27,12 @@ from app.services import (
     assessment_service,
     assessment_shared,
     llm_client,
-    mi_service,
-    motivation_pair_service,
     motivation_service,
     report_service,
     riasec_service,
 )
-from app.services.age_tiers import visible_tiers
-from app.services.mi_service import MI_ORDER
 from app.services.riasec_service import HOLLAND_ORDER
 
-_AGE_SAMPLE = {AgeGroup.junior: 8, AgeGroup.middle: 12, AgeGroup.senior: 16}
 _MAX_ANSWER = 5  # top of the Likert scale — see riasec_service.normalize
 # Far outside real seed data's order range (~300 real questions) — see
 # test_age_matrix_full_flow.py's identical convention.
@@ -65,7 +60,7 @@ async def _seed_riasec_dominant(
     for i, letter in enumerate(HOLLAND_ORDER):
         q = Question(
             instrument=QuestionInstrument.riasec, riasec_type=HollandType(letter),
-            text={"ru": f"test-fallback-riasec-{letter}"}, age_tier=AgeGroup.senior, order=_SENTINEL_BASE + i,
+            text={"ru": f"test-fallback-riasec-{letter}"}, order=_SENTINEL_BASE + i,
         )
         db.add(q)
         await db.flush()
@@ -74,24 +69,7 @@ async def _seed_riasec_dominant(
     return len(answers)
 
 
-async def _seed_mi_dominant(
-    db: AsyncSession, assessment: Assessment, profile_id: uuid.UUID, *, dominant: str,
-) -> int:
-    """Junior/MI equivalent of _seed_riasec_dominant — see its docstring."""
-    answers = []
-    for i, category in enumerate(MI_ORDER):
-        q = Question(
-            instrument=QuestionInstrument.mi, mi_category=MIType(category),
-            text={"ru": f"test-fallback-mi-{category}"}, age_tier=AgeGroup.junior, order=_SENTINEL_BASE + i,
-        )
-        db.add(q)
-        await db.flush()
-        answers.append(AnswerItem(question_id=q.id, value=5 if category == dominant else 2))
-    await assessment_service.submit_answers(assessment.id, answers, profile_id, db)
-    return len(answers)
-
-
-async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> Assessment:
+async def _make_assessment(db_session: AsyncSession) -> Assessment:
     user = User(
         email=f"{uuid.uuid4()}@example.test", hashed_password="x", is_active=True, is_verified=True,
     )
@@ -99,8 +77,8 @@ async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> Ass
     await db_session.flush()
 
     profile = Profile(
-        user_id=user.id, name="Тест", age=_AGE_SAMPLE[age_group], grade=5,
-        city="Алматы", country="Казахстан", language="ru", age_group=age_group,
+        user_id=user.id, name="Тест", age=16, grade=5,
+        city="Алматы", country="Казахстан", language="ru", age_group=AgeGroup.senior,
     )
     db_session.add(profile)
     await db_session.flush()
@@ -111,9 +89,7 @@ async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> Ass
     return assessment
 
 
-async def _answer_all_of_type_at_max(
-    db_session: AsyncSession, assessment: Assessment, age_group: AgeGroup
-) -> None:
+async def _answer_all_of_type_at_max(db_session: AsyncSession, assessment: Assessment) -> None:
     """Give the assessment one genuinely strong interest type by answering
     every question of that type with the maximum value.
 
@@ -128,25 +104,15 @@ async def _answer_all_of_type_at_max(
 
     Only the counters are monkeypatched to make the assessment "complete";
     these rows are real answers, so the resulting score is real too."""
-    if age_group == AgeGroup.junior:
-        type_filter = (
-            Question.instrument == QuestionInstrument.mi,
-            Question.mi_category == MIType.logical,
-        )
-    else:
-        type_filter = (
-            Question.instrument == QuestionInstrument.riasec,
-            Question.riasec_type == HollandType.R,
-        )
-
     question_ids = (
         await db_session.execute(
             select(Question.id).where(
-                *type_filter, Question.age_tier.in_(visible_tiers(age_group))
+                Question.instrument == QuestionInstrument.riasec,
+                Question.riasec_type == HollandType.R,
             )
         )
     ).scalars().all()
-    assert question_ids, "seeded question bank is missing rows for this instrument/age tier"
+    assert question_ids, "seeded question bank is missing RIASEC R rows"
 
     db_session.add_all(
         [
@@ -158,15 +124,11 @@ async def _answer_all_of_type_at_max(
 
 
 
-def _force_complete_and_llm_disabled(monkeypatch: pytest.MonkeyPatch, *, senior: bool) -> None:
+def _force_complete_and_llm_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(assessment_shared, "likert_answered_count", AsyncMock(return_value=1))
     monkeypatch.setattr(assessment_shared, "likert_total_questions", AsyncMock(return_value=1))
-    if senior:
-        monkeypatch.setattr(motivation_service, "answered_count", AsyncMock(return_value=1))
-        monkeypatch.setattr(motivation_service, "total_triplets", AsyncMock(return_value=1))
-    else:
-        monkeypatch.setattr(motivation_pair_service, "answered_count", AsyncMock(return_value=1))
-        monkeypatch.setattr(motivation_pair_service, "total_pairs", AsyncMock(return_value=1))
+    monkeypatch.setattr(motivation_service, "answered_count", AsyncMock(return_value=1))
+    monkeypatch.setattr(motivation_service, "total_triplets", AsyncMock(return_value=1))
     # Belbin + АСТУР are also required for completion now (assessment_shared.
     # belbin_and_astur_completed) — this file never seeds either.
     monkeypatch.setattr(assessment_shared, "belbin_and_astur_completed", AsyncMock(return_value=True))
@@ -174,9 +136,9 @@ def _force_complete_and_llm_disabled(monkeypatch: pytest.MonkeyPatch, *, senior:
 
 
 async def _seed_dominant_interest_signal(
-    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch, assessment: Assessment, age_group: AgeGroup,
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch, assessment: Assessment,
 ) -> None:
-    """A tiny, controlled RIASEC/MI signal so the deterministic fallback has
+    """A tiny, controlled RIASEC signal so the deterministic fallback has
     real per-type differentiation to build strength-card evidence from.
     Without this, every type scores 0% on this assessment's zero real
     answers and riasec_service.strengths_weaknesses honestly returns no
@@ -185,28 +147,15 @@ async def _seed_dominant_interest_signal(
     these tests are pinning (report_version=2 wiring + a populated v2
     shape). question_counts is monkeypatched to match exactly what's
     seeded here, not the ~150 real rows already in the dev DB."""
-    if age_group == AgeGroup.junior:
-        service = mi_service
-        category = MIType.logical
-        questions = [
-            Question(
-                instrument=QuestionInstrument.mi, mi_category=category,
-                text={"ru": f"test-mi-signal-{i}"}, age_tier=age_group, order=_SENTINEL_ORDER + i,
-            )
-            for i in range(3)
-        ]
-        counts = {c: (3 if c == category.value else 0) for c in mi_service.MI_ORDER}
-    else:
-        service = riasec_service
-        rtype = HollandType.R
-        questions = [
-            Question(
-                instrument=QuestionInstrument.riasec, riasec_type=rtype,
-                text={"ru": f"test-riasec-signal-{i}"}, age_tier=age_group, order=_SENTINEL_ORDER + i,
-            )
-            for i in range(3)
-        ]
-        counts = {t: (3 if t == rtype.value else 0) for t in riasec_service.HOLLAND_ORDER}
+    rtype = HollandType.R
+    questions = [
+        Question(
+            instrument=QuestionInstrument.riasec, riasec_type=rtype,
+            text={"ru": f"test-riasec-signal-{i}"}, order=_SENTINEL_ORDER + i,
+        )
+        for i in range(3)
+    ]
+    counts = {t: (3 if t == rtype.value else 0) for t in riasec_service.HOLLAND_ORDER}
 
     db_session.add_all(questions)
     await db_session.flush()
@@ -214,16 +163,16 @@ async def _seed_dominant_interest_signal(
         UserResponse(assessment_id=assessment.id, question_id=q.id, answer_value=5) for q in questions
     )
     await db_session.flush()
-    monkeypatch.setattr(service, "question_counts", AsyncMock(return_value=counts))
+    monkeypatch.setattr(riasec_service, "question_counts", AsyncMock(return_value=counts))
 
 
-async def test_disabled_llm_returns_full_v2_form_for_senior(
+async def test_disabled_llm_returns_full_v2_form(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    assessment = await _make_assessment(db_session, AgeGroup.senior)
-    await _answer_all_of_type_at_max(db_session, assessment, AgeGroup.senior)
-    _force_complete_and_llm_disabled(monkeypatch, senior=True)
-    await _seed_dominant_interest_signal(db_session, monkeypatch, assessment, AgeGroup.senior)
+    assessment = await _make_assessment(db_session)
+    await _answer_all_of_type_at_max(db_session, assessment)
+    _force_complete_and_llm_disabled(monkeypatch)
+    await _seed_dominant_interest_signal(db_session, monkeypatch, assessment)
 
     # A real, non-flat RIASEC battery — riasec_service.strengths_weaknesses()
     # deliberately returns [] for a flat/all-zero profile (see its
@@ -263,43 +212,13 @@ async def test_disabled_llm_returns_full_v2_form_for_senior(
     assert stored.strength_cards
 
 
-async def test_disabled_llm_returns_full_v2_form_for_junior(
-    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    assessment = await _make_assessment(db_session, AgeGroup.junior)
-    await _answer_all_of_type_at_max(db_session, assessment, AgeGroup.junior)
-    _force_complete_and_llm_disabled(monkeypatch, senior=False)
-    await _seed_dominant_interest_signal(db_session, monkeypatch, assessment, AgeGroup.junior)
-
-    # Real, non-flat MI battery — see the matching comment in the senior test.
-    seeded = await _seed_mi_dominant(db_session, assessment, assessment.profile_id, dominant="verbal")
-    monkeypatch.setattr(assessment_shared, "likert_answered_count", AsyncMock(return_value=seeded))
-    monkeypatch.setattr(assessment_shared, "likert_total_questions", AsyncMock(return_value=seeded))
-    monkeypatch.setattr(
-        mi_service, "question_counts",
-        AsyncMock(return_value={category: 1 for category in MI_ORDER}),
-    )
-
-    response = await report_service.build_report(assessment.id, db_session)
-
-    assert isinstance(response, ResultResponseV2)
-    assert response.report_version == 2
-    assert response.interest_instrument == "mi"
-    assert len(response.interest_map) == 8
-    assert response.careers == []
-    assert response.exploration_activities
-    assert response.summary
-    assert response.disclaimer == DISCLAIMER
-    assert response.strength_cards
-
-
 async def test_get_report_after_generate_returns_the_same_v2_shape(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Cache-hit path (report:v2:{id}) round-trips the exact same response —
     no silent reshaping/regeneration on a plain re-read."""
-    assessment = await _make_assessment(db_session, AgeGroup.senior)
-    _force_complete_and_llm_disabled(monkeypatch, senior=True)
+    assessment = await _make_assessment(db_session)
+    _force_complete_and_llm_disabled(monkeypatch)
 
     generated = await report_service.build_report(assessment.id, db_session)
     fetched = await report_service.get_report(assessment.id, db_session)
@@ -314,8 +233,8 @@ async def test_get_report_reshapes_from_storage_when_cache_is_cold(
     """DB-only path (report_service._shape_response): flush the Redis
     cache after generation and confirm a fresh read still reconstructs a
     valid, equivalent v2 response purely from the stored AnalysisResult row."""
-    assessment = await _make_assessment(db_session, AgeGroup.senior)
-    _force_complete_and_llm_disabled(monkeypatch, senior=True)
+    assessment = await _make_assessment(db_session)
+    _force_complete_and_llm_disabled(monkeypatch)
 
     generated = await report_service.build_report(assessment.id, db_session)
 

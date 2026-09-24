@@ -4,8 +4,7 @@ from typing import Any
 from pydantic import BaseModel, model_validator
 
 from app.models.motivation import MotivationCategory
-from app.models.profile import AgeGroup
-from app.models.question import BigFiveDomain, HollandType, Keyed, MIType, QuestionInstrument
+from app.models.question import BigFiveDomain, HollandType, Keyed, QuestionInstrument
 
 # One row per item now (docs/i18n-contract.md §8) — list items show the `ru`
 # text (admin panel itself stays ru-only, i18n-contract §2); Detail schemas
@@ -45,7 +44,7 @@ class AdminFieldOverride(BaseModel):
         return data
 
 
-# --- Questions (RIASEC / Big Five / MI, one shared table) ---
+# --- Questions (all instruments, one shared table) ---
 
 
 class AdminQuestionListItem(BaseModel):
@@ -53,10 +52,8 @@ class AdminQuestionListItem(BaseModel):
     instrument: QuestionInstrument
     text: str
     order: int
-    age_tier: AgeGroup
     riasec_type: HollandType | None
     bigfive_domain: BigFiveDomain | None
-    mi_category: MIType | None
     has_overrides: bool
 
 
@@ -72,14 +69,12 @@ class AdminQuestionDetail(BaseModel):
     instrument: QuestionInstrument
     riasec_type: HollandType | None
     bigfive_domain: BigFiveDomain | None
-    mi_category: MIType | None
     facet: int | None
     keyed: Keyed | None
     text: dict[str, str]
     short_text: dict[str, str] | None
     icon: str | None
     order: int
-    age_tier: AgeGroup
     overrides: dict[str, AdminFieldOverride]
 
     model_config = {"from_attributes": True}
@@ -89,11 +84,9 @@ class AdminQuestionUpdateRequest(BaseModel):
     locale: str | None = None
     riasec_type: HollandType | None = None
     bigfive_domain: BigFiveDomain | None = None
-    mi_category: MIType | None = None
     facet: int | None = None
     keyed: Keyed | None = None
     text: str | None = None
-    age_tier: AgeGroup | None = None
     short_text: str | None = None
     icon: str | None = None
 
@@ -113,7 +106,6 @@ class AdminQuestionPairListItem(BaseModel):
 
     id: uuid.UUID
     instrument: QuestionInstrument
-    age_tier: AgeGroup
     pair_index: int
     frame: str | None
     option_a_text: str
@@ -144,7 +136,6 @@ class AdminLinkedQuestion(BaseModel):
 class AdminQuestionPairDetail(BaseModel):
     id: uuid.UUID
     instrument: QuestionInstrument
-    age_tier: AgeGroup
     pair_index: int
     question_a_id: uuid.UUID
     question_b_id: uuid.UUID
@@ -194,7 +185,6 @@ class AdminMotivationStatementDetail(BaseModel):
     order: int
     category: MotivationCategory
     text: dict[str, str]
-    text_junior: dict[str, str] | None
     overrides: dict[str, AdminFieldOverride]
 
     model_config = {"from_attributes": True}
@@ -204,51 +194,6 @@ class AdminMotivationStatementUpdateRequest(BaseModel):
     locale: str | None = None
     category: MotivationCategory | None = None
     text: str | None = None
-    text_junior: str | None = None
-
-
-# --- Motivation pairs (junior/middle Harter-style pairs) ---
-
-
-class AdminMotivationPairListItem(BaseModel):
-    """Nine categories over eighteen pairs means category_a/category_b alone
-    identify no row uniquely — each label pair occurs exactly twice. text_a/
-    text_b are the only fields that tell two rows apart in a list."""
-
-    id: uuid.UUID
-    pair_index: int
-    category_a: MotivationCategory
-    category_b: MotivationCategory
-    text_a: str
-    text_b: str
-    has_overrides: bool
-
-
-class AdminMotivationPairListResponse(BaseModel):
-    items: list[AdminMotivationPairListItem]
-    total: int
-    page: int
-    limit: int
-
-
-class AdminMotivationPairDetail(BaseModel):
-    id: uuid.UUID
-    pair_index: int
-    category_a: MotivationCategory
-    category_b: MotivationCategory
-    text_a: dict[str, str]
-    text_b: dict[str, str]
-    overrides: dict[str, AdminFieldOverride]
-
-    model_config = {"from_attributes": True}
-
-
-class AdminMotivationPairUpdateRequest(BaseModel):
-    locale: str | None = None
-    category_a: MotivationCategory | None = None
-    category_b: MotivationCategory | None = None
-    text_a: str | None = None
-    text_b: str | None = None
 
 
 # --- Directions (career/profession catalog) ---

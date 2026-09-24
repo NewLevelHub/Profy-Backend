@@ -29,7 +29,7 @@ class PsychologistStudentListItem(BaseModel):
     id: uuid.UUID
     email: str
     profile_name: str | None = None
-    age_group: str | None = None
+    age: int | None = None
     assigned_at: datetime
 
 
@@ -39,7 +39,7 @@ class PsychologistAvailableStudentItem(BaseModel):
     id: uuid.UUID
     email: str
     profile_name: str | None = None
-    age_group: str | None = None
+    age: int | None = None
     has_pending_review: bool = False
 
 
