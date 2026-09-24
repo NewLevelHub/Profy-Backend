@@ -17,7 +17,7 @@ from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup
-from app.models.question import Question
+from app.models.question import Question, QuestionInstrument
 from app.models.user_response import UserResponse
 
 logger = logging.getLogger(__name__)
@@ -124,7 +124,11 @@ def get_effective_goal(age_group: AgeGroup, primary_goal: AssessmentGoal) -> Ass
 
 
 async def likert_total_questions(db: AsyncSession) -> int:
-    result = await db.execute(select(func.count(Question.id)))
+    result = await db.execute(
+        select(func.count(Question.id)).where(
+            Question.instrument != QuestionInstrument.big_five
+        )
+    )
     return result.scalar_one()
 
 

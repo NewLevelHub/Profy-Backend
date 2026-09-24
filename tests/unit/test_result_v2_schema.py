@@ -162,9 +162,15 @@ def test_non_flat_profile_is_not_bound_by_a_three_careers_rule():
     assert len(response.careers) == 5
 
 
-def test_personality_notes_must_have_exactly_five_items():
+def test_personality_notes_must_have_zero_or_exactly_five_items():
     with pytest.raises(ValidationError):
         _middle_fixture(personality_notes=_personality_notes()[:4])
+
+
+def test_personality_notes_can_be_empty_without_big_five_data():
+    response = _middle_fixture(personality_notes=[])
+
+    assert response.personality_notes == []
 
 
 def test_personality_notes_cover_every_trait():

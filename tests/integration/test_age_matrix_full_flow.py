@@ -211,7 +211,6 @@ async def test_full_flow_gives_six_riasec_interests_ranked_careers_and_motivatio
 
     riasec_by_id = await _seed_riasec_questions(db_session)
     await _answer_likert(db_session, assessment, profile_id, riasec_by_id, dominant="A")
-    await _seed_bigfive_minimal(db_session, assessment, profile_id)
 
     await _seed_triplet_and_answer(db_session, assessment, profile_id, MotivationCategory.creation)
 
@@ -245,10 +244,7 @@ async def test_full_flow_gives_six_riasec_interests_ranked_careers_and_motivatio
         assert career.why
         assert career.try_now
 
-    # "Твой характер" — always all 5 Big Five traits, never duplicated into strength_cards.
-    assert len(response.personality_notes) == 5
-    assert {n.trait for n in response.personality_notes} == {
-        "openness", "conscientiousness", "extraversion", "agreeableness", "emotional_stability",
-    }
-    strength_texts = " ".join(c.title + c.description for c in response.strength_cards)
-    assert not any(n.description in strength_texts for n in response.personality_notes)
+    # New attempts do not expose the retired Big Five-derived sections.
+    assert response.personality_notes == []
+    assert response.personality_note == ""
+    assert response.thinking_style_notes == []

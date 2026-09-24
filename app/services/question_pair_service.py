@@ -17,7 +17,7 @@ from sqlalchemy.orm import aliased
 
 from app.i18n import pick_locale
 from app.models.assessment import Assessment, AssessmentStatus
-from app.models.question import Question
+from app.models.question import Question, QuestionInstrument
 from app.models.question_pair import QuestionPair
 from app.models.user_response import UserResponse
 from app.schemas.question_pair import (
@@ -52,6 +52,7 @@ async def get_pairs(db: AsyncSession) -> list[QuestionPairItem]:
         select(QuestionPair, question_a, question_b)
         .join(question_a, QuestionPair.question_a_id == question_a.id)
         .join(question_b, QuestionPair.question_b_id == question_b.id)
+        .where(QuestionPair.instrument != QuestionInstrument.big_five)
         .order_by(QuestionPair.pair_index)
     )
     rows = (await db.execute(query)).all()
@@ -85,7 +86,10 @@ async def submit_pair_answers(
 
     pair_indexes = [item.pair_index for item in answers]
     pairs_result = await db.execute(
-        select(QuestionPair).where(QuestionPair.pair_index.in_(pair_indexes))
+        select(QuestionPair).where(
+            QuestionPair.pair_index.in_(pair_indexes),
+            QuestionPair.instrument != QuestionInstrument.big_five,
+        )
     )
     pairs_by_index = {p.pair_index: p for p in pairs_result.scalars().all()}
 

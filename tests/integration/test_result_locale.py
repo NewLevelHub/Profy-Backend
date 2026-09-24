@@ -68,7 +68,7 @@ async def test_kk_owner_gets_a_kazakh_deterministic_report(
     assert _is_kk(response.summary), response.summary
     assert _is_kk(response.final_analysis), response.final_analysis
     assert _is_kk(response.interest_map_note), response.interest_map_note
-    assert _is_kk(response.personality_note), response.personality_note
+    assert response.personality_note == ""
     # every interest-map sphere label is Kazakh (riasec_labels() under kk)
     assert all(_is_kk(item.sphere) for item in response.interest_map)
     assert "Реалистичный" not in {item.sphere for item in response.interest_map}
@@ -89,7 +89,7 @@ async def test_kk_report_is_stable_on_cold_cache_reshape(
 
     assert reshaped is not None
     assert _is_kk(reshaped.interest_map_note), reshaped.interest_map_note
-    assert _is_kk(reshaped.personality_note), reshaped.personality_note
+    assert reshaped.personality_note == ""
     assert all(_is_kk(item.sphere) for item in reshaped.interest_map)
 
 

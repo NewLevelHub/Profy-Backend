@@ -13,7 +13,9 @@ from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.profile import AgeGroup, Profile
 from app.models.psychologist_assignment import PsychologistStudentAssignment
+from app.models.question import Question, QuestionInstrument
 from app.models.user import User
+from app.models.user_response import UserResponse
 from app.services import assessment_shared, email_service, llm_client, motivation_service
 
 STUDENT_NAME = "Айгерим"
@@ -30,6 +32,31 @@ async def make_student_assessment(db_session: AsyncSession, student: User) -> As
     db_session.add(assessment)
     await db_session.flush()
     return assessment
+
+
+async def answer_legacy_big_five(
+    db_session: AsyncSession, assessment: Assessment
+) -> None:
+    """Populate a complete historical Big Five attempt for legacy-only tests."""
+    question_ids = (
+        await db_session.execute(
+            select(Question.id).where(
+                Question.instrument == QuestionInstrument.big_five
+            )
+        )
+    ).scalars().all()
+    assert question_ids, "seeded Big Five bank is required for the legacy fixture"
+    db_session.add_all(
+        [
+            UserResponse(
+                assessment_id=assessment.id,
+                question_id=question_id,
+                answer_value=4,
+            )
+            for question_id in question_ids
+        ]
+    )
+    await db_session.flush()
 
 
 async def make_other_student(db_session: AsyncSession) -> User:

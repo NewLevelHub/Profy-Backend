@@ -16,6 +16,7 @@ from app.models.user import User
 from app.services import assessment_shared
 
 from tests.integration.review_helpers import (
+    answer_legacy_big_five,
     assign,
     capture_emails,
     force_complete_senior,
@@ -224,6 +225,7 @@ async def test_translation_keeps_psychologist_edits_outside_the_narrative(
     capture_emails(monkeypatch)
     force_complete_senior(monkeypatch)
     assessment = await make_student_assessment(db_session, test_user)
+    await answer_legacy_big_five(db_session, assessment)
     await assign(db_session, psychologist_user, test_user)
     await generate(client, auth_headers, assessment)
 

@@ -195,6 +195,9 @@ def build_personality_notes(
     build_interest_map/riasec_service.py's strengths ranking. `level` is the
     trait's band relative to the student's own five-trait average
     (bigfive_content.relative_bands), not an absolute cutoff."""
+    if not personality_profile:
+        return []
+
     notes = bigfive_content.personality_notes(personality_profile)
     # A psychologist's correction replaces the computed phrase for that trait
     # only (PRO-337); traits they left alone keep the computed default.
@@ -243,6 +246,9 @@ def build_personality_note(personality_profile: dict[str, float]) -> str:
     (bigfive_content.relative_bands) — an even profile comes back all
     "medium", which is itself the meaningful-outlier gate, so no separate
     spread check is needed here."""
+    if not personality_profile:
+        return ""
+
     labels = bigfive_content.personality_labels()
     bands = bigfive_content.relative_bands(personality_profile)
     high = [

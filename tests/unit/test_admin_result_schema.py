@@ -93,3 +93,31 @@ def test_admin_response_keeps_numeric_and_raw_fields() -> None:
     assert validated.motivation == {"interest": 6, "money": 2}
     assert validated.personality_profile == {"openness": 70.0}
     assert validated.careers[0].match_score == 42
+
+
+def test_admin_response_validates_for_an_assessment_with_no_big_five_data() -> None:
+    """Big Five retired from the active pool (docs/big-five-retirement.md) —
+    a new assessment's AnalysisResult stores big_five/thinking_style/
+    personality_* as empty. `AdminThinkingStyle` used to have 4 required
+    floats with no default, which raised ValidationError here; regression
+    pin for giving those fields `= 0.0` defaults."""
+    analysis = _analysis(
+        profile={"R": 80.0}, code=["R"],
+        meta={"differentiation": 20.0, "consistency": "medium", "aversion": {}},
+    )
+    analysis.big_five = {}
+    analysis.thinking_style = {}
+    analysis.personality_profile = {}
+    analysis.personality_notes = {}
+    analysis.personality_highlights = []
+
+    validated = AdminAnalysisResultResponse.model_validate(analysis)
+
+    assert validated.big_five == {}
+    assert validated.thinking_style.creative_think == 0.0
+    assert validated.thinking_style.systematic == 0.0
+    assert validated.thinking_style.strategic == 0.0
+    assert validated.thinking_style.practical == 0.0
+    assert validated.personality_profile == {}
+    assert validated.personality_notes == {}
+    assert validated.personality_highlights == []

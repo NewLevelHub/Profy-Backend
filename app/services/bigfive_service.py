@@ -67,6 +67,19 @@ async def grand_mean(assessment_id: uuid.UUID, db: AsyncSession) -> float:
     return float(avg) if avg is not None else _SCALE_MIDPOINT
 
 
+async def answered_count(assessment_id: uuid.UUID, db: AsyncSession) -> int:
+    """Number of Big Five responses retained for legacy report support."""
+    result = await db.execute(
+        select(func.count(UserResponse.id))
+        .join(Question, UserResponse.question_id == Question.id)
+        .where(
+            UserResponse.assessment_id == assessment_id,
+            Question.instrument == QuestionInstrument.big_five,
+        )
+    )
+    return result.scalar_one()
+
+
 async def question_counts(db: AsyncSession) -> dict[str, int]:
     """Questions per domain — computed live, never hardcoded (the bank can
     change size)."""
