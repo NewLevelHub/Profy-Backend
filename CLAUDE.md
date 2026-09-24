@@ -59,6 +59,10 @@ Any review/data file under `scripts/data/**` (or `scripts/*review*.json`) that p
 
 ### Assessment: age tiers and multiple instruments
 
+### Agent localization rule
+
+Every user-facing API detail, validation error, notification, and response text must use the localization catalog. Never add Russian, Kazakh, or English UI copy as a literal in a router, service, schema, or handler. Add matching `ru` and `kk` keys under `app/i18n/catalog/`, preserve interpolation placeholders, and resolve text through the active request locale. Technical logs, identifiers, SQL, paths, and protocol values are excluded.
+
 `app/services/age_tiers.py` defines the core visibility rule: a shorter test is a **prefix**, not a separate set — `junior ⊆ middle ⊆ senior` (`visible_tiers()`). Each `Question` row (`app/models/question.py`) carries an `age_tier` and an `instrument` (`riasec` / `big_five` / `mi`) in one shared table. Junior uses MI-style categories instead of RIASEC/Holland codes for its "interests" instrument. Forced-choice `QuestionPair` rows (junior's own screen) and Likert `Question` rows are scored through the same `UserResponse` path — a picked pair choice is written as two synthetic Likert-equivalent responses (see `app/services/question_pair_service.py`), so `riasec_service`/`bigfive_service` scoring doesn't need to know pairs exist.
 
 ### Roadmap generation: LLM with template fallback
