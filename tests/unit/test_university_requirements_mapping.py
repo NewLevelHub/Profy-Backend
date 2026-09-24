@@ -6,10 +6,9 @@ discipline against this richer `Program.requirements` key shape (min_gpa/
 exams/min_ielts/min_sat/needs_portfolio/needs_essay/needs_recommendations/
 needs_interview), not the old pre-RIASEC design doc's guessed names.
 
-scripts/seed_universities.py, which used to seed this richer shape, was
-removed 2026-08-13 (scripts/seed_kz_universities.py / university-data/*.py
-is the single source of truth now, seeding a sparser {"notes": [...]}
-shape instead) — this test still pins the mapping's correct behavior for
+The seed script that used to write this richer shape was removed 2026-08-13
+(the KZ catalogue, now scripts/data/university_snapshot.clean.json loaded by
+build_universities.py, carries a sparser {"notes": [...]} shape instead) — this test still pins the mapping's correct behavior for
 this key shape, since _map_program_requirement must keep handling it
 correctly if it's ever the input.
 """
@@ -81,7 +80,7 @@ def test_portfolio_needed_is_none_when_key_absent():
 
 
 def test_required_documents_is_none_when_no_document_keys_present():
-    # Sparser seed shape (scripts/seed_kz_universities.py: requirements =
+    # Sparser catalogue shape (KZ bulk batch: requirements =
     # {"notes": [...]}) carries none of needs_essay/needs_recommendations/
     # needs_interview at all — that must read as "no data", not "[]" (which
     # would falsely claim "confirmed: nothing needed").
@@ -107,7 +106,7 @@ def test_language_level_none_when_no_min_ielts():
 
 
 def test_missing_deadlines_and_grants_are_empty_not_error():
-    # scripts/seed_kz_universities.py seeds deadlines={} and grants=[] for the
+    # The KZ bulk batch carries deadlines={} and grants=[] for the
     # 55-university scrape — must map cleanly, not raise.
     program = _program(requirements={"notes": []}, deadlines={}, grants=[])
     req = _map_program_requirement(program, _UNIVERSITY)

@@ -22,7 +22,7 @@ Structure: list of clusters. Each cluster has:
     and marketing) — the seeder links it to each cluster's directions.
 
 Currency/cost is a rough range from the source (report or web search), not
-authoritative Kazakhstan admissions data (unlike scripts/data/db_updates_2026.json)
+authoritative Kazakhstan admissions data (unlike the 2026 grant-competition PDF scores)
 — kept as free text in Program.requirements["notes"], not coerced into the
 Decimal Program.cost_per_year field, since ranges + mixed currencies don't
 fit a single number.
@@ -1107,7 +1107,7 @@ CLUSTERS = [
                 # Same real-world school as the "hec-paris" entry further below
                 # (Бизнес, торговля и управление рисками category) — same slug
                 # so the seeder (matches existing universities by slug/ror_id
-                # first, see seed_92_professions_universities.py) attaches both
+                # first) attaches both
                 # sets of programs to one university row instead of creating a
                 # duplicate. Whichever entry is processed first "wins" on the
                 # shared university fields, so city/ranking_label here are kept

@@ -157,7 +157,7 @@ class UniversityRequirement(BaseModel):
     distinguishable from "we don't know" (`None`).
 
     `min_ent_threshold`/`admission_scores_2026`/`notes` are disjoint by seed
-    source (scripts/apply_grant_admission_data_2026.py): a program gets EITHER
+    source (the 2026 grant-competition PDF pass): a program gets EITHER
     a `min_ent_threshold` (no 2026-2027 grant-competition data exists) OR
     `admission_scores_2026` entries (this year's real grant-winning scores),
     rarely both. Both represent the state grant-competition eligibility bar

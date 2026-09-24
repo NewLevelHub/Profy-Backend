@@ -118,7 +118,7 @@ docker compose exec api alembic heads
 
 Вопросы (RIASEC / Big Five / MI), forced-choice пары, мотивационные утверждения/пары и RIASEC-направления описаны в Python-файлах-«банках» (`scripts/*_bank.py`) — это источник правды, а не БД напрямую. Соответствующий `scripts/seed_*.py` при каждом запуске **полностью синхронизирует** БД с банком: обновляет изменившиеся поля, добавляет новые строки и **удаляет** те, ключа которых больше нет в банке. Чтобы поменять контент — редактируйте файл-банк и перезапускайте seed-скрипт, а не правьте строки в БД напрямую (правки не переживут следующий деплой/reseed).
 
-Полный и актуальный порядок всех seed/backfill/apply-скриптов, которые гоняются на каждый деплой, — в `.github/workflows/cd.yml` / `cd-dev.yml`.
+Полный и актуальный порядок всех seed/apply-скриптов (и `build_universities.py`), которые гоняются на каждый деплой, — в `.github/workflows/cd.yml` / `cd-dev.yml`.
 
 ## Тесты
 
@@ -158,7 +158,7 @@ profi-backend/
 
 ## Деплой
 
-Push в `dev` или `main` триггерит `.github/workflows/cd-dev.yml` / `cd.yml`: сборка образа → деплой на соответствующий сервер → миграции → полный прогон seed/backfill-скриптов. `dev.profy.newlevelhub.kz` и `profy.newlevelhub.kz` обслуживаются одним общим edge-nginx контейнером на проде — при правках `nginx.prod.conf` см. `docs/nginx-prod-points-to-dev-incident.md`. Фото на сервер кладутся один раз вручную (`/srv/profy-media`, монтируется в контейнеры как `/srv/media`) — CI их не трогает.
+Push в `dev` или `main` триггерит `.github/workflows/cd-dev.yml` / `cd.yml`: сборка образа → деплой на соответствующий сервер → миграции → полный прогон seed-скриптов и `build_universities.py`. `dev.profy.newlevelhub.kz` и `profy.newlevelhub.kz` обслуживаются одним общим edge-nginx контейнером на проде — при правках `nginx.prod.conf` см. `docs/nginx-prod-points-to-dev-incident.md`. Фото на сервер кладутся один раз вручную (`/srv/profy-media`, монтируется в контейнеры как `/srv/media`) — CI их не трогает.
 
 ## Дополнительная документация
 

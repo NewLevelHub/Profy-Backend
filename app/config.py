@@ -73,14 +73,14 @@ class Settings(BaseSettings):
     # build_public_url() just prepends it to the stored storage_key.
     STORAGE_PUBLIC_BASE_URL: str = "http://localhost/media"
 
-    # University photo import (scripts/import_jinaq_university_photos.py).
+    # University photo import (app/services/university_photo_import_service.py).
     SCRAPER_USER_AGENT: str = "ProfyUniversityPhotoBot/1.0"
     SCRAPER_REQUEST_DELAY_SECONDS: float = 1.0
     SCRAPER_REQUEST_TIMEOUT_SECONDS: float = 20.0
     # Real domain of the jinaq source site — imageUrl in universities.json is
     # a relative path (e.g. "/cdn/jinaq-media/institutions/3109/image.webp");
     # this is prepended to build the absolute download URL. Fill in before
-    # running scripts/import_jinaq_university_photos.py for real.
+    # running a jinaq photo import for real.
     JINAQ_MEDIA_BASE_URL: str = "https://TODO-set-real-jinaq-domain"
 
     @model_validator(mode="after")

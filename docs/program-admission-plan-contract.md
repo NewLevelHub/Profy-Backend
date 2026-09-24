@@ -38,9 +38,9 @@ Profy-Frontend), исследование кода проведено прямы
 
 **В бэкенде нигде нет структурированных данных «какие предметы нужны для
 программы».** `Program.requirements` — свободный JSONB-словарь, и для
-реального набора из 55 засеянных университетов (`scripts/seed_kz_universities.py`,
-`university-data/almaty_universities_data.py` /
-`astana_universities_data.py`) он содержит только `{"notes": [...]}` —
+реального набора из 55 засеянных университетов (тогда — `seed_kz_universities.py`
+и `university-data/*.py`, удалены в PRO-425; сейчас каталог —
+`scripts/data/university_snapshot.clean.json`) он содержит только `{"notes": [...]}` —
 свободный текст на русском **на уровне университета** (один и тот же список
 дублируется на все специальности этого вуза), например:
 

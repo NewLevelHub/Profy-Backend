@@ -9,8 +9,8 @@ this mapping at all — see `ProgramDetailPage.tsx`'s `RequirementsTable`.
 Program.requirements is heterogeneous by seed source (see app/models/direction.py-
 style docstrings elsewhere): an older, richer hand-picked batch
 (min_ent/min_gpa/min_sat/min_ielts/needs_*/extracurriculars) and the current bulk
-`scripts/seed_kz_universities.py` batch (sparser: exams/notes, sometimes
-min_ent_threshold or admission_scores_2026 from scripts/apply_grant_admission_data_2026.py).
+KZ bulk batch (sparser: exams/notes, sometimes min_ent_threshold or
+admission_scores_2026 from the 2026 grant-competition PDF).
 `None` always means "no data", never "not required" — `dict.get` already gives us
 that distinction, so never coerce a missing key to `False`.
 """
@@ -26,7 +26,7 @@ _DOCUMENT_FLAGS = ("needs_essay", "needs_recommendations", "needs_interview")
 
 def admission_scores_2026_brief(requirements: dict) -> list[str]:
     """Human-readable lines from the 2026-2027 grant-competition scores
-    (scripts/apply_grant_admission_data_2026.py) — real min/max scores that
+    (from the grant-competition PDF) — real min/max scores that
     won a grant this admission cycle, per quota/specialty."""
     entries = requirements.get("admission_scores_2026") or []
     briefs = []
