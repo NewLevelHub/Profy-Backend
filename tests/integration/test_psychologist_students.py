@@ -6,6 +6,8 @@ import uuid
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
+from app.models.profile import AgeGroup, Profile
 from app.models.user import User
 
 from tests.integration.review_helpers import assign
@@ -115,3 +117,81 @@ async def test_get_student_test_results_unknown_assessment_404(
         headers=psychologist_headers,
     )
     assert response.status_code == 404
+
+
+async def test_available_students_flags_completed_assessment(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    psychologist_headers: dict[str, str],
+    test_user: User,
+) -> None:
+    """PRO-402: claim CTA needs has_completed_assessment, not only pending review."""
+    before = await client.get(
+        "/api/v1/psychologist/students/available", headers=psychologist_headers
+    )
+    assert before.status_code == 200
+    row = next(item for item in before.json() if item["id"] == str(test_user.id))
+    assert row["has_completed_assessment"] is False
+    assert row["has_pending_review"] is False
+
+    profile = Profile(
+        user_id=test_user.id,
+        name="Test Student",
+        age=16,
+        grade=10,
+        city="Алматы",
+        country="Казахстан",
+        language="ru",
+        age_group=AgeGroup.senior,
+    )
+    db_session.add(profile)
+    await db_session.flush()
+    db_session.add(
+        Assessment(
+            profile_id=profile.id,
+            goal=AssessmentGoal.explore,
+            status=AssessmentStatus.completed,
+        )
+    )
+    await db_session.commit()
+
+    after = await client.get(
+        "/api/v1/psychologist/students/available", headers=psychologist_headers
+    )
+    assert after.status_code == 200
+    row = next(item for item in after.json() if item["id"] == str(test_user.id))
+    assert row["has_completed_assessment"] is True
+    assert row["has_pending_review"] is False
+
+
+async def test_scope_available_excludes_already_claimed_student(
+    client: httpx.AsyncClient,
+    admin_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    psychologist_user: User,
+    test_user: User,
+) -> None:
+    """PRO-422: ?scope=available must not return students already claimed."""
+    created = await client.post(
+        "/api/v1/admin/psychologist-assignments",
+        json={
+            "psychologist_id": str(psychologist_user.id),
+            "student_id": str(test_user.id),
+        },
+        headers=admin_headers,
+    )
+    assert created.status_code == 201
+
+    mine = await client.get(
+        "/api/v1/psychologist/students?scope=mine", headers=psychologist_headers
+    )
+    assert mine.status_code == 200
+    assert any(item["id"] == str(test_user.id) for item in mine.json())
+
+    for path in (
+        "/api/v1/psychologist/students?scope=available",
+        "/api/v1/psychologist/students/available",
+    ):
+        available = await client.get(path, headers=psychologist_headers)
+        assert available.status_code == 200, path
+        assert all(item["id"] != str(test_user.id) for item in available.json()), path

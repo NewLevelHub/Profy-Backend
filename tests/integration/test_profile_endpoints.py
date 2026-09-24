@@ -125,6 +125,21 @@ async def test_combined_create_rejects_invalid_artifact_without_creating_profile
     assert result.scalar_one_or_none() is None
 
 
+async def test_create_rejects_incompatible_age_and_grade(
+    client: httpx.AsyncClient,
+    auth_headers: dict[str, str],
+    test_user: User,
+    db_session: AsyncSession,
+) -> None:
+    """PRO-420: 17 years + grade 3 must 422, not land in the DB."""
+    payload = {**_BASE_PAYLOAD, "age": 17, "grade": 3}
+    response = await client.post("/api/v1/profile", json=payload, headers=auth_headers)
+    assert response.status_code == 422
+
+    result = await db_session.execute(select(Profile).where(Profile.user_id == test_user.id))
+    assert result.scalar_one_or_none() is None
+
+
 async def test_combined_create_conflict_when_profile_already_exists(
     client: httpx.AsyncClient, auth_headers: dict[str, str], test_user: User
 ) -> None:

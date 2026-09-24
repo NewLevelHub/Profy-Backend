@@ -104,7 +104,7 @@ Auth тот же JWT Bearer + `require_role(psychologist)` на всём
   "published_by": null, "published_at": null,
   "summary": "...",
   "careers": [
-    { "slug": "...", "name": "...", "holland_code": "RIA", "match_score": 82,
+    { "slug": "...", "name": "...", "holland_code": "RIA", "match_score": 0.82,
       "description": "...", "professions": [], "skills_needed": [],
       "subjects_to_develop": [], "first_steps": [] }
   ],
