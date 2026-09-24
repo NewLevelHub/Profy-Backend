@@ -3,10 +3,7 @@ its export contract are Russian-only."""
 
 RU = {
     "account_active": "Аккаунт активен",
-    "age_group": "Класс (группа)",
-    "age_group_junior": "5–7 класс",
-    "age_group_middle": "8–9 класс",
-    "age_group_senior": "10–11 класс",
+    "age": "Возраст",
     "answer_score": "Ответ (1-5)",
     "answer_words": "Ответ словами",
     "answered_at": "Время ответа",
@@ -22,10 +19,7 @@ RU = {
     "goal_unsure": "Не уверен",
     "grade": "Класс",
     "has_profile": "Есть профиль",
-    "has_roadmap": "Есть роадмап",
     "instrument": "Инструмент",
-    "instrument_mi": "Множественный интеллект",
-    "interest_instrument": "Инструмент интересов",
     "last_active_at": "Последняя активность",
     "latest_goal": "Цель последнего",
     "latest_status": "Статус последнего",
@@ -59,12 +53,12 @@ RU = {
 
 KK = {
     "account_active": "Аккаунт белсенді",
-    "age_group": "Сынып (топ)", "age_group_junior": "5–7 сынып", "age_group_middle": "8–9 сынып", "age_group_senior": "10–11 сынып",
+    "age": "Жас",
     "answer_score": "Жауап (1-5)", "answer_words": "Жауап сөзбен", "answered_at": "Жауап уақыты", "answered_questions": "Жауап берілген сұрақтар",
     "assessment_count": "Тест саны", "city": "Қала", "completed_at": "Аяқталды", "email_verified": "Пошта расталған",
     "goal": "Мақсат", "goal_explore": "Зерттеу", "goal_profession": "Мамандық таңдау", "goal_university": "Университетке түсу", "goal_unsure": "Сенімді емеспін",
-    "grade": "Сынып", "has_profile": "Профиль бар", "has_roadmap": "Жол картасы бар", "instrument": "Құрал", "instrument_mi": "Көптік интеллект",
-    "interest_instrument": "Қызығушылық құралы", "last_active_at": "Соңғы белсенділік", "latest_goal": "Соңғы мақсат", "latest_status": "Соңғы мәртебе",
+    "grade": "Сынып", "has_profile": "Профиль бар","instrument": "Құрал",
+"last_active_at": "Соңғы белсенділік", "latest_goal": "Соңғы мақсат", "latest_status": "Соңғы мәртебе",
     "least_category": "Маңызды емес санат", "least_selected": "Маңызды емес ретінде таңдалды", "metric": "Көрсеткіш", "most_category": "Маңызды санат",
     "most_selected": "Маңызды ретінде таңдалды", "name": "Аты", "no": "жоқ", "question": "Сұрақ", "question_number": "Сұрақ №",
     "registered_at": "Тіркелген уақыты", "role": "Рөл", "role_admin": "Әкімші", "role_psychologist": "Психолог маманы", "role_student": "Оқушы",

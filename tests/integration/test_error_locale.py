@@ -53,7 +53,7 @@ def test_app_error_is_an_httpexception_subclass() -> None:
     assert err.error_code == "x"
 
 
-async def test_goal_gate_error_carries_code_and_unchanged_detail(
+async def test_unfinished_assessment_error_carries_code_and_unchanged_detail(
     client: httpx.AsyncClient, db_session: AsyncSession
 ) -> None:
     user = User(
@@ -68,32 +68,30 @@ async def test_goal_gate_error_carries_code_and_unchanged_detail(
     profile = Profile(
         user_id=user.id,
         name="Тест",
-        age=9,
-        grade=3,
+        age=16,
+        grade=10,
         city="Алматы",
         country="Казахстан",
         language="ru",
-        age_group=AgeGroup.junior,
+        age_group=AgeGroup.senior,
     )
     db_session.add(profile)
     await db_session.flush()
 
-    assessment = Assessment(profile_id=profile.id, goal=AssessmentGoal.explore)
+    assessment = Assessment(profile_id=profile.id, goal=AssessmentGoal.university)
     db_session.add(assessment)
     await db_session.flush()
     await db_session.commit()
 
     headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user.id)}"}
-    resp = await client.patch(
-        f"/api/v1/assessment/{assessment.id}/goal",
-        json={"goal": "profession", "secondary_goals": []},
+    resp = await client.post(
+        "/api/v1/result/generate",
+        json={"assessment_id": str(assessment.id)},
         headers=headers,
     )
 
-    assert resp.status_code == 400
+    assert resp.status_code == 409
     body = resp.json()
-    assert body["error_code"] == "goal_not_allowed_for_junior"
+    assert body["error_code"] == "assessment_not_completed"
     # detail stays the exact pre-KZ-309 Russian string
-    assert body["detail"] == (
-        "Для младшей возрастной группы доступна только цель 'исследовать себя'"
-    )
+    assert body["detail"] == "Тест ещё не завершён — сначала ответь на все обязательные вопросы"

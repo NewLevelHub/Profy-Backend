@@ -11,9 +11,6 @@ from app.models.direction import LOCALIZED_FIELDS as DIRECTION_LOCALIZED_FIELDS
 from app.models.direction import Direction
 from app.models.motivation import LOCALIZED_FIELDS as MOTIVATION_STATEMENT_LOCALIZED_FIELDS
 from app.models.motivation import MotivationCategory, MotivationStatement
-from app.models.motivation_pair import LOCALIZED_FIELDS as MOTIVATION_PAIR_LOCALIZED_FIELDS
-from app.models.motivation_pair import MotivationPair
-from app.models.profile import AgeGroup
 from app.models.program import Program, program_directions
 from app.models.question import LOCALIZED_FIELDS as QUESTION_LOCALIZED_FIELDS
 from app.models.question import Question, QuestionInstrument
@@ -28,9 +25,6 @@ from app.schemas.admin_content import (
     AdminDirectionProgram,
     AdminDirectionUpdateRequest,
     AdminLinkedQuestion,
-    AdminMotivationPairListItem,
-    AdminMotivationPairListResponse,
-    AdminMotivationPairUpdateRequest,
     AdminMotivationStatementListItem,
     AdminMotivationStatementListResponse,
     AdminMotivationStatementUpdateRequest,
@@ -104,18 +98,16 @@ async def _clear_overrides_by_id(
     return row
 
 
-# A Question's own-instrument taxonomy field (riasec_type/bigfive_domain/
-# mi_category) is nullable at the DB level only because the three
-# instruments share one table — each is null for the OTHER two instruments'
-# rows, never for its own. riasec_service.py/bigfive_service.py/mi_service.py
-# all do `{t.value: c for t, c in ...}` after grouping by that column, which
+# A Question's own-instrument taxonomy field (riasec_type/bigfive_domain)
+# is nullable at the DB level only because the instruments share one
+# table — each is null for the other instruments' rows, never for its own.
+# riasec_service.py/bigfive_service.py both do `{t.value: c for t, c in ...}` after grouping by that column, which
 # crashes with AttributeError on a None key. AdminQuestionUpdateRequest's
 # fields are typed `| None` only so PATCHing an unrelated field doesn't force
 # resending them (exclude_unset) — an explicit null must still be rejected.
 _INSTRUMENT_TYPE_FIELD = {
     QuestionInstrument.riasec: "riasec_type",
     QuestionInstrument.big_five: "bigfive_domain",
-    QuestionInstrument.mi: "mi_category",
 }
 
 
@@ -194,7 +186,6 @@ async def _count_and_paginate(
 QUESTION_SORT_FIELDS = {
     "order": Question.order,
     "instrument": Question.instrument,
-    "age_tier": Question.age_tier,
     # Russian text needs the ICU collation or it sorts by byte value — see
     # admin_listing.ru_text.
     "text": ru_text(Question.text["ru"].astext),
@@ -205,7 +196,6 @@ async def list_questions(
     db: AsyncSession,
     *,
     instrument: QuestionInstrument | None = None,
-    age_tier: AgeGroup | None = None,
     search: str | None = None,
     has_overrides_filter: bool | None = None,
     sort: str | None = None,
@@ -216,8 +206,6 @@ async def list_questions(
     filters = []
     if instrument:
         filters.append(Question.instrument == instrument)
-    if age_tier:
-        filters.append(Question.age_tier == age_tier)
     if search:
         # ru is the admin-panel display locale (i18n-contract §2) — search
         # matches the ru text specifically, not whatever's in the JSONB blob.
@@ -252,10 +240,8 @@ async def list_questions(
             instrument=q.instrument,
             text=pick_locale(q.text, DEFAULT_LOCALE),
             order=q.order,
-            age_tier=q.age_tier,
             riasec_type=q.riasec_type,
             bigfive_domain=q.bigfive_domain,
-            mi_category=q.mi_category,
             has_overrides=has_overrides(q),
         )
         for q in rows
@@ -289,7 +275,6 @@ async def clear_question_overrides(
 QUESTION_PAIR_SORT_FIELDS = {
     "pair_index": QuestionPair.pair_index,
     "instrument": QuestionPair.instrument,
-    "age_tier": QuestionPair.age_tier,
 }
 
 
@@ -297,7 +282,6 @@ async def list_question_pairs(
     db: AsyncSession,
     *,
     instrument: QuestionInstrument | None = None,
-    age_tier: AgeGroup | None = None,
     search: str | None = None,
     has_overrides_filter: bool | None = None,
     sort: str | None = None,
@@ -309,15 +293,13 @@ async def list_question_pairs(
     joins: tuple = ()
     if instrument:
         filters.append(QuestionPair.instrument == instrument)
-    if age_tier:
-        filters.append(QuestionPair.age_tier == age_tier)
     if has_overrides_filter is not None:
         filters.append(_overrides_filter(QuestionPair, has_overrides_filter))
     if search:
         # Search the text a student would actually see, which for a pair
         # without an override is the linked question's own wording — matching
-        # only the override columns would silently skip every junior pair,
-        # since junior pairs leave both overrides null.
+        # only the override columns would silently skip every pair that
+        # leaves both overrides null (all ДДО pairs by default).
         like = f"%{search.strip()}%"
         q_a = aliased(Question)
         q_b = aliased(Question)
@@ -365,7 +347,6 @@ async def list_question_pairs(
         AdminQuestionPairListItem(
             id=p.id,
             instrument=p.instrument,
-            age_tier=p.age_tier,
             pair_index=p.pair_index,
             frame=pick_locale(p.frame, DEFAULT_LOCALE) if p.frame else None,
             option_a_text=_effective_option_text(p.option_a_text, questions.get(p.question_a_id)),
@@ -457,12 +438,7 @@ async def list_motivation_statements(
     filters = []
     if search:
         like = f"%{search.strip()}%"
-        filters.append(
-            or_(
-                MotivationStatement.text["ru"].astext.ilike(like),
-                MotivationStatement.text_junior["ru"].astext.ilike(like),
-            )
-        )
+        filters.append(MotivationStatement.text["ru"].astext.ilike(like))
     if triplet_index is not None:
         # A triplet is the real unit of meaning here: its three statements must
         # carry three different categories, and nothing server-side enforces
@@ -559,97 +535,6 @@ async def clear_motivation_statement_overrides(
 ) -> MotivationStatement:
     return await _clear_overrides_by_id(
         db, MotivationStatement, statement_id, i18n_key("api_errors", "motivation_statement_not_found", locale="ru"), field
-    )
-
-
-# --- Motivation pairs ---
-
-
-MOTIVATION_PAIR_SORT_FIELDS = {
-    "pair_index": MotivationPair.pair_index,
-    "category_a": MotivationPair.category_a,
-}
-
-
-async def list_motivation_pairs(
-    db: AsyncSession,
-    *,
-    search: str | None = None,
-    category: MotivationCategory | None = None,
-    has_overrides_filter: bool | None = None,
-    sort: str | None = None,
-    order: SortOrder | None = None,
-    page: int = 1,
-    limit: int = 20,
-) -> AdminMotivationPairListResponse:
-    filters = []
-    if search:
-        like = f"%{search.strip()}%"
-        filters.append(
-            or_(
-                MotivationPair.text_a["ru"].astext.ilike(like),
-                MotivationPair.text_b["ru"].astext.ilike(like),
-            )
-        )
-    if category is not None:
-        # Both sides of a Harter pair are poles of the SAME category, so one
-        # parameter covers the row — matching either column keeps this correct
-        # even if that invariant is ever relaxed.
-        filters.append(
-            or_(MotivationPair.category_a == category, MotivationPair.category_b == category)
-        )
-    if has_overrides_filter is not None:
-        filters.append(_overrides_filter(MotivationPair, has_overrides_filter))
-
-    total, rows = await _count_and_paginate(
-        db,
-        MotivationPair,
-        filters,
-        order_by_clause(
-            sort,
-            order,
-            allowed=MOTIVATION_PAIR_SORT_FIELDS,
-            default=(MotivationPair.pair_index.asc(),),
-            tiebreaker=MotivationPair.id.asc(),
-        ),
-        page,
-        limit,
-    )
-
-    items = [
-        AdminMotivationPairListItem(
-            id=p.id,
-            pair_index=p.pair_index,
-            category_a=p.category_a,
-            category_b=p.category_b,
-            text_a=pick_locale(p.text_a, DEFAULT_LOCALE),
-            text_b=pick_locale(p.text_b, DEFAULT_LOCALE),
-            has_overrides=has_overrides(p),
-        )
-        for p in rows
-    ]
-
-    return AdminMotivationPairListResponse(items=items, total=total, page=page, limit=limit)
-
-
-async def get_motivation_pair_detail(db: AsyncSession, pair_id: uuid.UUID) -> MotivationPair | None:
-    return await _get_by_id(db, MotivationPair, pair_id)
-
-
-async def update_motivation_pair(
-    db: AsyncSession, pair_id: uuid.UUID, data: AdminMotivationPairUpdateRequest
-) -> MotivationPair:
-    return await _update_by_id(
-        db, MotivationPair, pair_id, data, i18n_key("api_errors", "motivation_pair_not_found", locale="ru"),
-        localized_fields=MOTIVATION_PAIR_LOCALIZED_FIELDS,
-    )
-
-
-async def clear_motivation_pair_overrides(
-    db: AsyncSession, pair_id: uuid.UUID, field: str | None = None
-) -> MotivationPair:
-    return await _clear_overrides_by_id(
-        db, MotivationPair, pair_id, i18n_key("api_errors", "motivation_pair_not_found", locale="ru"), field
     )
 
 

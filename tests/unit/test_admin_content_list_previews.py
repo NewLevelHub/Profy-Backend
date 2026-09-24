@@ -1,6 +1,6 @@
 """PRO-262 §12/§13: admin list rows must be distinguishable without opening
 each one. Before this, a page of question pairs was 20 rows of
-"Пара #12 · RIASEC · Junior" and the frontend had to fetch every row's detail
+"Пара #12 · RIASEC" and the frontend had to fetch every row's detail
 just to render a label (docs/admin-backend-requests-pro-242.md)."""
 
 import uuid
@@ -8,9 +8,6 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.direction import Direction
-from app.models.motivation import MotivationCategory
-from app.models.motivation_pair import MotivationPair
-from app.models.profile import AgeGroup
 from app.models.program import Program
 from app.models.question import Question, QuestionInstrument
 from app.models.question_pair import QuestionPair
@@ -27,7 +24,6 @@ async def _question(db: AsyncSession, *, text: str, short_text: str | None = Non
         # order) pair — a test creating two big_five questions can't both use
         # the "don't-care" 0.
         order=abs(hash(uuid.uuid4())) % 100_000,
-        age_tier=AgeGroup.junior,
     )
     db.add(question)
     await db.commit()
@@ -41,7 +37,6 @@ async def _pair(db: AsyncSession, q_a: Question, q_b: Question, **kwargs) -> Que
             kwargs[key] = {"ru": kwargs[key]}
     pair = QuestionPair(
         instrument=QuestionInstrument.big_five,
-        age_tier=AgeGroup.junior,
         pair_index=abs(hash(uuid.uuid4())) % 100_000,
         question_a_id=q_a.id,
         question_b_id=q_b.id,
@@ -108,29 +103,6 @@ async def test_pair_detail_inlines_linked_questions(db_session: AsyncSession) ->
     assert detail.question_a.text == "Утверждение A"
     assert detail.question_a.short_text == "Коротко A"
     assert detail.question_b.short_text is None
-
-
-# --- Motivation pairs -------------------------------------------------------
-
-
-async def test_motivation_pair_list_carries_texts(db_session: AsyncSession) -> None:
-    """category_a always equals category_b on these rows (both poles of one
-    category), so the categories cannot tell two rows apart at all."""
-    pair = MotivationPair(
-        pair_index=abs(hash(uuid.uuid4())) % 100_000,
-        category_a=MotivationCategory.challenge,
-        category_b=MotivationCategory.challenge,
-        text_a={"ru": "Одни ребята любят сложные задачи"},
-        text_b={"ru": "Другие выбирают задачи полегче"},
-    )
-    db_session.add(pair)
-    await db_session.commit()
-
-    result = await admin_content_service.list_motivation_pairs(db_session, limit=100)
-    item = _find(result.items, pair.id)
-
-    assert item.text_a == "Одни ребята любят сложные задачи"
-    assert item.text_b == "Другие выбирают задачи полегче"
 
 
 # --- Directions -------------------------------------------------------------

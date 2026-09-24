@@ -42,8 +42,8 @@ class PsychAiAnalysisContext(BaseModel):
     student_name: str
     blocks: list[BlockData]
     # The student's own already-ranked top professions (report.careers) —
-    # the ONLY professions the model is allowed to recommend from. Empty
-    # for junior (TZ_Profi.md §4.1, not career-oriented) — the prompt/
+    # the ONLY professions the model is allowed to recommend from. When
+    # empty (no matching direction), the prompt/
     # validator both treat an empty list as "don't recommend a profession
     # at all", never as license to invent one.
     careers: list[CareerOption]

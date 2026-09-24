@@ -1,8 +1,7 @@
 """build_report_narrative_context is a pure function — no DB session needed.
-Covers the acceptance bar: every item has source_id/source_type/text; junior
-gets MI evidence and never RIASEC; middle/senior gets RIASEC evidence;
-Harter-pair and MOST/LEAST-triplet motivation inputs produce the same
-evidence shape; unknown source_ids are rejected; and — the actual point of
+Covers the acceptance bar: every item has source_id/source_type/text;
+interests come as RIASEC evidence; unknown source_ids are rejected; and —
+the actual point of
 the whole catalog — nothing here ever carries a raw score or a percentage."""
 
 import re
@@ -10,7 +9,6 @@ import uuid
 
 from app.i18n import use_locale
 from app.models.artifact import Artifact, ArtifactType
-from app.models.profile import AgeGroup
 from app.services.report_narrative_context import (
     build_report_narrative_context,
     unknown_source_ids,
@@ -26,7 +24,6 @@ def _artifact(value: str) -> Artifact:
 
 def test_every_evidence_item_has_source_id_type_and_text() -> None:
     context = build_report_narrative_context(
-        age_group=AgeGroup.senior,
         strengths=["R", "I"],
         personality_profile={"openness": 70.0, "conscientiousness": 30.0},
         personality_notes={"openness": "Тебе интересно узнавать новое", "conscientiousness": "..."},
@@ -53,7 +50,7 @@ def test_subject_evidence_is_localized_but_source_id_stays_canonical() -> None:
     card, while the source_id keeps the canonical Russian string for
     stability/dedup. Custom off-list subjects pass through untouched."""
     kwargs = dict(
-        age_group=AgeGroup.senior, strengths=["R"],
+        strengths=["R"],
         personality_profile={}, personality_notes={}, thinking_style={},
         motivation_top=[], motivation_highlights=[], artifacts=[],
     )
@@ -72,30 +69,8 @@ def test_subject_evidence_is_localized_but_source_id_stays_canonical() -> None:
     assert {e.source_id: e for e in ctx_ru.evidence}["subject_liked:История"].text == "История"
 
 
-def test_junior_context_has_mi_evidence_and_no_riasec_claims() -> None:
+def test_context_has_riasec_evidence() -> None:
     context = build_report_narrative_context(
-        age_group=AgeGroup.junior,
-        strengths=["logical", "musical"],
-        personality_profile={},
-        personality_notes={},
-        thinking_style={},
-        motivation_top=[],
-        motivation_highlights=[],
-        subjects_liked=[],
-        subjects_easy=[],
-        artifacts=[],
-    )
-
-    assert context.interest_instrument == "mi"
-    mi_items = [e for e in context.evidence if e.source_type == "mi_category"]
-    assert {e.source_id for e in mi_items} == {"mi:logical", "mi:musical"}
-    assert not any(e.source_type == "riasec_category" for e in context.evidence)
-    assert not any(e.source_id.startswith("riasec:") for e in context.evidence)
-
-
-def test_middle_senior_context_has_riasec_evidence() -> None:
-    context = build_report_narrative_context(
-        age_group=AgeGroup.middle,
         strengths=["R", "I"],
         personality_profile={},
         personality_notes={},
@@ -107,38 +82,12 @@ def test_middle_senior_context_has_riasec_evidence() -> None:
         artifacts=[],
     )
 
-    assert context.interest_instrument == "riasec"
     riasec_items = [e for e in context.evidence if e.source_type == "riasec_category"]
     assert {e.source_id for e in riasec_items} == {"riasec:R", "riasec:I"}
-    assert not any(e.source_type == "mi_category" for e in context.evidence)
-
-
-def test_harter_pairs_and_triplets_produce_identical_motivation_evidence_shape() -> None:
-    """The catalog only ever sees motivation_top/motivation_highlights — it
-    can't tell whether junior/middle's Harter pairs or senior's MOST/LEAST
-    triplets produced them, and the resulting evidence must be identical
-    either way for the same top/highlights values."""
-    shared_kwargs = dict(
-        personality_profile={}, personality_notes={}, thinking_style={},
-        motivation_top=["interest", "helping"],
-        motivation_highlights=[
-            "Тебя больше всего драйвит — заниматься тем, что по-настоящему интересно",
-            "Тебя больше всего драйвит — приносить пользу другим",
-        ],
-        subjects_liked=[], subjects_easy=[], artifacts=[],
-    )
-
-    junior_from_harter = build_report_narrative_context(age_group=AgeGroup.junior, strengths=[], **shared_kwargs)
-    senior_from_triplets = build_report_narrative_context(age_group=AgeGroup.senior, strengths=[], **shared_kwargs)
-
-    junior_motivation = [e for e in junior_from_harter.evidence if e.source_type == "motivation"]
-    senior_motivation = [e for e in senior_from_triplets.evidence if e.source_type == "motivation"]
-    assert junior_motivation == senior_motivation
 
 
 def test_personality_evidence_only_includes_high_tier_traits() -> None:
     context = build_report_narrative_context(
-        age_group=AgeGroup.senior,
         strengths=[],
         personality_profile={"openness": 75.0, "conscientiousness": 45.0, "agreeableness": 20.0},
         personality_notes={
@@ -157,7 +106,6 @@ def test_personality_evidence_only_includes_high_tier_traits() -> None:
 
 def test_thinking_style_evidence_picks_top_two_deterministically_on_ties() -> None:
     context = build_report_narrative_context(
-        age_group=AgeGroup.senior,
         strengths=[],
         personality_profile={}, personality_notes={},
         # creative_think and systematic tie at 50 — fixed order must break the tie.
@@ -175,7 +123,6 @@ def test_thinking_style_evidence_omitted_when_there_is_no_real_signal() -> None:
     still hand out a confident-looking "top 2" — that would be a fact this
     catalog fabricated, not one it observed."""
     empty = build_report_narrative_context(
-        age_group=AgeGroup.senior,
         strengths=[],
         personality_profile={}, personality_notes={},
         thinking_style={},
@@ -183,7 +130,6 @@ def test_thinking_style_evidence_omitted_when_there_is_no_real_signal() -> None:
         subjects_liked=[], subjects_easy=[], artifacts=[],
     )
     all_zero = build_report_narrative_context(
-        age_group=AgeGroup.senior,
         strengths=[],
         personality_profile={}, personality_notes={},
         thinking_style={"creative_think": 0.0, "systematic": 0.0, "strategic": 0.0, "practical": 0.0},
@@ -199,7 +145,6 @@ def test_thinking_style_evidence_includes_only_the_one_real_signal() -> None:
     """A partial signal (one non-zero category) must yield exactly that one
     item, not padded out to 2 with unmeasured categories."""
     context = build_report_narrative_context(
-        age_group=AgeGroup.senior,
         strengths=[],
         personality_profile={}, personality_notes={},
         thinking_style={"creative_think": 40.0, "systematic": 0.0, "strategic": 0.0, "practical": 0.0},
@@ -213,7 +158,6 @@ def test_thinking_style_evidence_includes_only_the_one_real_signal() -> None:
 
 def test_unknown_source_ids_are_rejected() -> None:
     context = build_report_narrative_context(
-        age_group=AgeGroup.senior,
         strengths=["R"],
         personality_profile={}, personality_notes={}, thinking_style={},
         motivation_top=[], motivation_highlights=[],
@@ -233,7 +177,6 @@ def test_evidence_contains_no_raw_numbers_or_percent_signs() -> None:
     are exempt from this check on purpose: a digit there is real content,
     not a leaked score, and banning it would make honest input fragile."""
     context = build_report_narrative_context(
-        age_group=AgeGroup.senior,
         strengths=["R", "I", "A"],
         personality_profile={
             "openness": 90.0, "conscientiousness": 85.0,
@@ -248,7 +191,7 @@ def test_evidence_contains_no_raw_numbers_or_percent_signs() -> None:
         artifacts=[_artifact("Робототехника, 2 года")],
     )
 
-    derived_types = {"mi_category", "riasec_category", "personality", "motivation", "thinking_style"}
+    derived_types = {"riasec_category", "personality", "motivation", "thinking_style"}
     derived_items = [e for e in context.evidence if e.source_type in derived_types]
     assert derived_items, "sanity check: this input should produce derived evidence"
     for item in derived_items:
@@ -301,7 +244,6 @@ def test_onboarding_evidence_is_capped_but_test_derived_evidence_is_not() -> Non
     those hobbies. Onboarding evidence (self-reported, not measured by the
     test) must never outnumber/crowd out what the test actually found."""
     context = build_report_narrative_context(
-        age_group=AgeGroup.senior,
         strengths=["R", "I", "C"],  # 3 riasec_category items, never capped
         personality_profile={
             "openness": 90.0, "conscientiousness": 85.0,

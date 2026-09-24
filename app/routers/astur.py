@@ -115,13 +115,10 @@ async def submit_astur_subtest(
         assessment_row = (
             await db.execute(select(Assessment).where(Assessment.id == assessment_id))
         ).scalar_one()
-        age_group = await assessment_shared.get_profile_age_group(assessment_row.profile_id, db)
         likert_answered = await assessment_shared.likert_answered_count(assessment_id, db)
-        likert_total = await assessment_shared.likert_total_questions(db, age_group)
+        likert_total = await assessment_shared.likert_total_questions(db)
         likert_completed = likert_total > 0 and likert_answered >= likert_total
-        motivation_completed = await assessment_shared.motivation_completed(
-            assessment_id, age_group, db
-        )
+        motivation_completed = await assessment_shared.motivation_completed(assessment_id, db)
         if await assessment_shared.try_complete_assessment(
             assessment_row,
             likert_completed=likert_completed,

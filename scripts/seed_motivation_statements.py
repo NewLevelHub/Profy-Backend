@@ -7,8 +7,7 @@ row whose key is no longer present in STATEMENTS. Admin-overridden
 fields/rows are preserved (admin_lock.sync_fields / has_overrides).
 
 Localized (single-row redesign, docs/i18n-contract.md §8): one logical
-statement = one row, `text`/`text_junior` stored whole as their bank
-`{locale: str}` maps.
+statement = one row, `text` stored whole as its bank `{locale: str}` map.
 """
 import asyncio
 import os
@@ -43,7 +42,6 @@ async def main() -> None:
                     {
                         "category": MotivationCategory(data["category"]),
                         "text": data["text"],
-                        "text_junior": data["text_junior"],
                     },
                     localized_fields=LOCALIZED_FIELDS,
                 )
@@ -57,7 +55,6 @@ async def main() -> None:
                     order=data["order"],
                     category=MotivationCategory(data["category"]),
                     text=data["text"],
-                    text_junior=data["text_junior"],
                 )
             )
             inserted += 1

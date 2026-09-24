@@ -152,7 +152,6 @@ QUESTIONS: list[dict] = [
     {
         "order": 511 + i,
         "text": {"ru": text, "kk": _KK_TEXT[text]},
-        "age_tier": "senior",
         "channel": _CHANNEL_OF[i + 1],
         "keyed": _KEYED[i + 1],
     }

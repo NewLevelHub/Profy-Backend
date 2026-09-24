@@ -50,7 +50,7 @@ class AdminOverrideValidationError(Exception):
 
 
 # Question-bank content (Question/QuestionPair/MotivationStatement/
-# MotivationPair/Direction) uses a value-carrying `overrides` dict instead of
+# Direction) uses a value-carrying `overrides` dict instead of
 # `admin_locked_fields` above — bank-seeded rows can be deleted by a reseed,
 # not just have fields reverted, so the override needs to be recoverable from
 # the row itself. See docs/admin-questions-content-overrides-plan.md.
@@ -71,7 +71,7 @@ _BANK_VALUE = "bank_value"
 
 
 def _jsonable(value: Any) -> Any:
-    """Enum columns (category, age_tier, instrument, ...) must reach JSONB as
+    """Enum columns (category, instrument, ...) must reach JSONB as
     their plain value, not as the enum member."""
     return value.value if isinstance(value, Enum) else value
 

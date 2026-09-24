@@ -39,8 +39,8 @@ _ABILITIES_ORDER_TO_SCALE: dict[int, str] = {q["order"]: q["scale"] for q in QUE
 
 async def interest_raw_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, int] | None:
     """1 point per picked option, summed into its scale. `None` when the
-    student hasn't answered any of the 20 pairs yet (never taken this test,
-    e.g. junior/middle, or a senior assessment still in progress) — not a
+    student hasn't answered any of the 20 pairs yet (an assessment
+    still in progress) — not a
     zero-filled dict, which would misreport "took the test, scored nothing
     everywhere" as if it were real data."""
     result = await db.execute(

@@ -11,7 +11,7 @@ preserved for each rewrite, so the scoring key is unaffected).
 direction of the item: `minus` items are reverse-scored at read time
 (app/services/bigfive_service.py), never inverted here or at storage time.
 
-Block-1 items (age_tier="junior", assigned below) additionally carry
+The first 30 items additionally carry
 `short_text`/`icon` — a short child-friendly button label + emoji, used by
 the junior forced-choice-pair format instead of the full Likert statement
 (TZ_Profi.md §13 bans Likert for junior).
@@ -159,24 +159,7 @@ for _i, _q in enumerate(QUESTIONS, start=_BASE + 1):
     _q["order"] = _i
     _q["instrument"] = "big_five"
 
-# age_tier: the 120 items are laid out as 4 blocks of 30 (each block = one
-# full pass through all 30 domain x facet combos). Cutting whole blocks
-# — not individual items — guarantees every facet still has >=1 item at
-# every age tier, which thinking_style_service.compute() depends on (it
-# reads specific facets O1/O2/C1/C2/C4). Block 0 -> junior, block 1 also
-# unlocks at middle, blocks 2-3 are senior-only.
-for _idx, _q in enumerate(QUESTIONS):
-    _block = _idx // 30
-    if _block == 0:
-        _q["age_tier"] = "junior"
-    elif _block == 1:
-        _q["age_tier"] = "middle"
-    else:
-        _q["age_tier"] = "senior"
-    if _q["age_tier"] != "junior":
-        assert "short_text" not in _q, f"non-junior item unexpectedly has short_text: {_q['text']!r}"
-
-assert sum(1 for _q in QUESTIONS if _q.get("short_text")) == 30, "expected exactly 30 junior short_text items"
+assert sum(1 for _q in QUESTIONS if _q.get("short_text")) == 30, "expected exactly 30 short_text items"
 
 
 # ── Kazakh (kk) — KZ-303 ──────────────────────────────────────────────────────

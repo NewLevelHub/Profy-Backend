@@ -4,13 +4,13 @@ to `completed`) for an assessment that isn't actually done.
 This runs against the shared dev DB (see tests/conftest.py — rollback-
 isolated, but real seeded content: ~300 questions, dozens of motivation
 pairs/triplets already exist). Required *totals* are global counts
-(assessment_shared.likert_total_questions, motivation_service.total_triplets,
-motivation_pair_service.total_pairs all count every matching row in the
+(assessment_shared.likert_total_questions, motivation_service.total_triplets
+all count every matching row in the
 table, not just this assessment's), so there's no way to seed a small,
 literally-complete assessment without also answering every real seeded row.
 Instead of fighting that, the completion counters are monkeypatched to
-known values — this tests _assert_assessment_complete's age-branching (does
-it consult the right counters for the right age group) precisely, without
+known values — this tests _assert_assessment_complete's gating (Likert,
+motivation triplets, Belbin + АСТУР) precisely, without
 depending on exactly what happens to be seeded."""
 
 import uuid
@@ -27,19 +27,16 @@ from app.models.profile import AgeGroup, Profile
 from app.models.question import (
     BigFiveDomain,
     HollandType,
-    MIType,
     Question,
     QuestionInstrument,
 )
 from app.models.user import User
 from app.models.user_response import UserResponse
 from app.schemas.response import AnswerItem
-from app.services.age_tiers import visible_tiers
 from app.services import (
     assessment_service,
     assessment_shared,
     llm_client,
-    motivation_pair_service,
     motivation_service,
     report_service,
     riasec_service,
@@ -50,12 +47,11 @@ from app.services.riasec_service import HOLLAND_ORDER
 # test_age_matrix_full_flow.py's identical convention.
 _SENTINEL_ORDER = 900_300
 
-_AGE_SAMPLE = {AgeGroup.junior: 8, AgeGroup.middle: 12, AgeGroup.senior: 16}
 _SENTINEL_BASE = 960_000
 _MAX_ANSWER = 5  # top of the Likert scale — see riasec_service.normalize
 
 
-async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> Assessment:
+async def _make_assessment(db_session: AsyncSession) -> Assessment:
     user = User(
         email=f"{uuid.uuid4()}@example.test",
         hashed_password="x",
@@ -68,12 +64,12 @@ async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> Ass
     profile = Profile(
         user_id=user.id,
         name="Тест",
-        age=_AGE_SAMPLE[age_group],
+        age=16,
         grade=5,
         city="Алматы",
         country="Казахстан",
         language="ru",
-        age_group=age_group,
+        age_group=AgeGroup.senior,
     )
     db_session.add(profile)
     await db_session.flush()
@@ -84,9 +80,7 @@ async def _make_assessment(db_session: AsyncSession, age_group: AgeGroup) -> Ass
     return assessment
 
 
-async def _answer_all_of_type_at_max(
-    db_session: AsyncSession, assessment: Assessment, age_group: AgeGroup
-) -> None:
+async def _answer_all_of_type_at_max(db_session: AsyncSession, assessment: Assessment) -> None:
     """Give the assessment one genuinely strong interest type by answering
     every question of that type with the maximum value.
 
@@ -101,25 +95,15 @@ async def _answer_all_of_type_at_max(
 
     Only the counters are monkeypatched to make the assessment "complete";
     these rows are real answers, so the resulting score is real too."""
-    if age_group == AgeGroup.junior:
-        type_filter = (
-            Question.instrument == QuestionInstrument.mi,
-            Question.mi_category == MIType.logical,
-        )
-    else:
-        type_filter = (
-            Question.instrument == QuestionInstrument.riasec,
-            Question.riasec_type == HollandType.R,
-        )
-
     question_ids = (
         await db_session.execute(
             select(Question.id).where(
-                *type_filter, Question.age_tier.in_(visible_tiers(age_group))
+                Question.instrument == QuestionInstrument.riasec,
+                Question.riasec_type == HollandType.R,
             )
         )
     ).scalars().all()
-    assert question_ids, "seeded question bank is missing rows for this instrument/age tier"
+    assert question_ids, "seeded question bank is missing RIASEC R rows"
 
     db_session.add_all(
         [
@@ -142,16 +126,11 @@ def _patch_senior_motivation(monkeypatch: pytest.MonkeyPatch, *, answered: int, 
     monkeypatch.setattr(motivation_service, "total_triplets", AsyncMock(return_value=total))
 
 
-def _patch_pair_motivation(monkeypatch: pytest.MonkeyPatch, *, answered: int, total: int) -> None:
-    monkeypatch.setattr(motivation_pair_service, "answered_count", AsyncMock(return_value=answered))
-    monkeypatch.setattr(motivation_pair_service, "total_pairs", AsyncMock(return_value=total))
-
-
 def _patch_battery(monkeypatch: pytest.MonkeyPatch, *, completed: bool) -> None:
     """Belbin + АСТУР are also required for completion (assessment_shared.
     belbin_and_astur_completed) — every student is routed through both right
-    after motivation in the continuous flow (MotivationTripletFlow.tsx /
-    MotivationHarterFlow.tsx), not just psychologist-assigned ones. Patched
+    after motivation in the continuous flow (MotivationTripletFlow.tsx), not
+    just psychologist-assigned ones. Patched
     the same way the Likert/motivation counters above are: these tests pin
     _assert_assessment_complete's own branching, not belbin_service/
     astur_service's real run-tracking (covered separately)."""
@@ -172,7 +151,7 @@ async def _seed_riasec_dominant(
     for i, letter in enumerate(HOLLAND_ORDER):
         q = Question(
             instrument=QuestionInstrument.riasec, riasec_type=HollandType(letter),
-            text={"ru": f"test-completion-gate-riasec-{letter}"}, age_tier=AgeGroup.senior,
+            text={"ru": f"test-completion-gate-riasec-{letter}"},
             order=_SENTINEL_BASE + i,
         )
         db.add(q)
@@ -182,50 +161,12 @@ async def _seed_riasec_dominant(
     return len(answers)
 
 
-async def test_junior_incomplete_harter_returns_409_and_does_not_complete(
+async def test_incomplete_triplet_returns_409_and_does_not_complete(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    assessment = await _make_assessment(db_session, AgeGroup.junior)
-    _patch_likert(monkeypatch, answered=5, total=5)  # Likert phase fully done
-    _patch_pair_motivation(monkeypatch, answered=1, total=2)  # Harter pairs incomplete
-    # Senior's counter must not even be consulted for a junior assessment.
-    senior_mot = AsyncMock(side_effect=AssertionError("senior triplet counter used for junior"))
-    monkeypatch.setattr(motivation_service, "answered_count", senior_mot)
-
-    with pytest.raises(HTTPException) as exc_info:
-        await report_service.build_report(assessment.id, db_session)
-
-    assert exc_info.value.status_code == 409
-    await db_session.refresh(assessment)
-    assert assessment.status == AssessmentStatus.in_progress
-    assert assessment.completed_at is None
-    senior_mot.assert_not_called()
-
-
-async def test_middle_incomplete_harter_returns_409_and_does_not_complete(
-    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    assessment = await _make_assessment(db_session, AgeGroup.middle)
-    _patch_likert(monkeypatch, answered=5, total=5)
-    _patch_pair_motivation(monkeypatch, answered=0, total=1)  # untouched
-
-    with pytest.raises(HTTPException) as exc_info:
-        await report_service.build_report(assessment.id, db_session)
-
-    assert exc_info.value.status_code == 409
-    await db_session.refresh(assessment)
-    assert assessment.status == AssessmentStatus.in_progress
-
-
-async def test_senior_incomplete_triplet_returns_409_and_does_not_complete(
-    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    assessment = await _make_assessment(db_session, AgeGroup.senior)
+    assessment = await _make_assessment(db_session)
     _patch_likert(monkeypatch, answered=5, total=5)
     _patch_senior_motivation(monkeypatch, answered=0, total=1)  # untouched
-    # Junior/middle's counter must not be consulted for a senior assessment.
-    pair_mot = AsyncMock(side_effect=AssertionError("Harter pair counter used for senior"))
-    monkeypatch.setattr(motivation_pair_service, "answered_count", pair_mot)
 
     with pytest.raises(HTTPException) as exc_info:
         await report_service.build_report(assessment.id, db_session)
@@ -233,18 +174,17 @@ async def test_senior_incomplete_triplet_returns_409_and_does_not_complete(
     assert exc_info.value.status_code == 409
     await db_session.refresh(assessment)
     assert assessment.status == AssessmentStatus.in_progress
-    pair_mot.assert_not_called()
 
 
-async def test_senior_likert_and_motivation_done_but_belbin_astur_missing_returns_409(
+async def test_likert_and_motivation_done_but_belbin_astur_missing_returns_409(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Regression for the live bug: a student who finished Likert + motivation
     but hasn't done Belbin/АСТУР yet must not get a "report ready" screen —
     those two are mandatory continuation steps in the flow
-    (MotivationTripletFlow.tsx / MotivationHarterFlow.tsx route every
-    student through both right after motivation), not optional extras."""
-    assessment = await _make_assessment(db_session, AgeGroup.senior)
+    (MotivationTripletFlow.tsx routes every student through both right
+    after motivation), not optional extras."""
+    assessment = await _make_assessment(db_session)
     _patch_likert(monkeypatch, answered=1, total=1)
     _patch_senior_motivation(monkeypatch, answered=1, total=1)
     _patch_battery(monkeypatch, completed=False)
@@ -258,38 +198,10 @@ async def test_senior_likert_and_motivation_done_but_belbin_astur_missing_return
     assert assessment.completed_at is None
 
 
-async def test_junior_likert_total_excludes_stale_riasec_but_counts_mi(
-    db_session: AsyncSession,
-) -> None:
-    """Not an absolute-count assertion (the real dev DB already has ~300
-    seeded questions) — a delta: adding a junior-tier RIASEC row must not
-    move the junior Likert total, adding a junior-tier MI row must."""
-    before = await assessment_shared.likert_total_questions(db_session, AgeGroup.junior)
-
-    from app.models.question import HollandType
-    stale_riasec_q = Question(
-        instrument=QuestionInstrument.riasec, riasec_type=HollandType.R,
-        text={"ru": "retired"}, age_tier=AgeGroup.junior,
-    )
-    db_session.add(stale_riasec_q)
-    await db_session.flush()
-    after_riasec = await assessment_shared.likert_total_questions(db_session, AgeGroup.junior)
-    assert after_riasec == before, "junior total must not count a RIASEC-instrument row"
-
-    mi_q = Question(
-        instrument=QuestionInstrument.mi, mi_category=MIType.logical,
-        text={"ru": "mi"}, age_tier=AgeGroup.junior,
-    )
-    db_session.add(mi_q)
-    await db_session.flush()
-    after_mi = await assessment_shared.likert_total_questions(db_session, AgeGroup.junior)
-    assert after_mi == before + 1, "junior total must count an MI-instrument row"
-
-
 async def test_successful_generation_atomically_sets_completion_and_result(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    assessment = await _make_assessment(db_session, AgeGroup.senior)
+    assessment = await _make_assessment(db_session)
     _patch_likert(monkeypatch, answered=1, total=1)
     _patch_senior_motivation(monkeypatch, answered=1, total=1)
     _patch_battery(monkeypatch, completed=True)
@@ -321,8 +233,8 @@ async def test_successful_generation_populates_v2_narrative_fields(
     list, not the old report_version=1/empty-list default. LLM is forced
     off (see comment in the previous test) so this exercises the
     deterministic fallback builder, not a real model call."""
-    assessment = await _make_assessment(db_session, AgeGroup.senior)
-    await _answer_all_of_type_at_max(db_session, assessment, AgeGroup.senior)
+    assessment = await _make_assessment(db_session)
+    await _answer_all_of_type_at_max(db_session, assessment)
     _patch_likert(monkeypatch, answered=1, total=1)
     _patch_senior_motivation(monkeypatch, answered=1, total=1)
     _patch_battery(monkeypatch, completed=True)
@@ -339,7 +251,7 @@ async def test_successful_generation_populates_v2_narrative_fields(
     signal_questions = [
         Question(
             instrument=QuestionInstrument.riasec, riasec_type=HollandType.R,
-            text={"ru": f"test-riasec-signal-{i}"}, age_tier=AgeGroup.senior, order=_SENTINEL_ORDER + i,
+            text={"ru": f"test-riasec-signal-{i}"}, order=_SENTINEL_ORDER + i,
         )
         for i in range(3)
     ]

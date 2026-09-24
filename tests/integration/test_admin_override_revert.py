@@ -13,7 +13,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.direction import Direction
 from app.models.motivation import MotivationCategory, MotivationStatement
-from app.models.profile import AgeGroup
 from app.models.program import Program
 from app.models.question import LOCALIZED_FIELDS as QUESTION_LOCALIZED_FIELDS
 from app.models.question import Question, QuestionInstrument
@@ -41,7 +40,6 @@ async def _question(db: AsyncSession, text: str) -> Question:
         # uq_questions_instrument_order needs a distinct order per (instrument,
         # order) pair — a test creating two riasec questions can't both use 0.
         order=abs(hash(uuid.uuid4())) % 100_000,
-        age_tier=AgeGroup.senior,
     )
     db.add(question)
     await db.commit()

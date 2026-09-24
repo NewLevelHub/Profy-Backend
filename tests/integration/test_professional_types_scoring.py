@@ -24,7 +24,7 @@ async def _seed_bank(db: AsyncSession) -> None:
     for q in QUESTIONS:
         db.add(Question(
             instrument=QuestionInstrument.professional_types_abilities,
-            text=q["text"], order=q["order"], age_tier=AgeGroup.senior,
+            text=q["text"], order=q["order"],
         ))
 
     ids_by_order: dict[int, uuid.UUID] = {}
@@ -32,7 +32,7 @@ async def _seed_bank(db: AsyncSession) -> None:
         for option in (pair["option_a"], pair["option_b"]):
             question = Question(
                 instrument=QuestionInstrument.professional_types,
-                text=option["text"], order=option["order"], age_tier=AgeGroup.senior,
+                text=option["text"], order=option["order"],
             )
             db.add(question)
             await db.flush()
@@ -41,7 +41,6 @@ async def _seed_bank(db: AsyncSession) -> None:
     for pair in PAIRS:
         db.add(QuestionPair(
             instrument=QuestionInstrument.professional_types,
-            age_tier=AgeGroup.senior,
             pair_index=pair["pair_index"],
             question_a_id=ids_by_order[pair["option_a"]["order"]],
             question_b_id=ids_by_order[pair["option_b"]["order"]],

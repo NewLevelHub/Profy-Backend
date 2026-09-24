@@ -14,7 +14,6 @@ from app.models.assessment import Assessment
 from app.models.profile import Profile
 from app.models.user import User
 from app.schemas.feedback import ProductFeedbackCreate, ProductFeedbackResponse
-from app.schemas.goal_overlay import GoalOverlayResponse
 from app.schemas.result_v2 import (
     ResultOrPendingSchema,
     ResultPendingReviewResponse,
@@ -111,22 +110,3 @@ async def submit_feedback(
 ) -> ProductFeedbackResponse:
     await _require_assessment_access(data.assessment_id, current_user, db)
     return await feedback_service.submit_feedback(current_user.id, data, db)
-
-
-@router.get("/{assessment_id}/goal-context", response_model=GoalOverlayResponse)
-async def get_goal_context(
-    assessment_id: uuid.UUID,
-    program_id: uuid.UUID | None = None,
-    current_user: User = Depends(get_current_student_user),
-    db: AsyncSession = Depends(get_db),
-) -> GoalOverlayResponse:
-    from app.services import goal_overlay_service
-    await _require_assessment_access(assessment_id, current_user, db)
-    # The review gate lives inside goal_overlay_service, right where it first
-    # reads (or generates) the report. Not here: the goal-choice interstitial
-    # (unsure goal) answers before that and needs no report, so gating the
-    # whole endpoint would block choosing a goal while a report is pending.
-    return await goal_overlay_service.get_or_create_goal_overlay(
-        assessment_id, db, program_id=program_id
-    )
-

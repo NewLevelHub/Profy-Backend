@@ -1,9 +1,8 @@
 """Generates scripts/data/uniranks_world_rank_review.json — a review of
 candidate UNIRANKS 2027 world-rank matches for every University row that
 doesn't have one yet (all 2462, not just the ~61 Kazakhstani ones already
-covered by scripts/apply_uniranks_kz_2027.py / apply_uniranks_not_ranked.py,
-which came from manually transcribing uniranks.com's Kazakhstan-only ranking
-page).
+covered by scripts/data/uniranks_kz_2027.json, which came from manually
+transcribing uniranks.com's Kazakhstan-only ranking page).
 
 Unlike that earlier pass, this one does NOT scrape uniranks' per-country
 ranking tables (those only exist for a handful of countries and require
@@ -39,7 +38,8 @@ any variant) are simply not rated by uniranks at all, a normal, expected
 outcome for most small regional colleges, not an error.
 
 Read-only against uniranks.com; writes nothing to our DB. Confirmed entries
-get applied by scripts/apply_uniranks_world_rank.py.
+get stamped into the catalogue by scripts/build_world_rank_map.py
+(build_catalog.py step 2).
 
 Run inside the api container:
   docker-compose exec api python scripts/generate_uniranks_world_rank_review.py [--limit N]
@@ -78,8 +78,8 @@ def _slugify(name: str) -> str:
 def _name_variants(uni: University) -> list[str]:
     """Try, in order: full name, name with a trailing "(...)" stripped, each
     segment of a "X — Y" / "X, Y" name, short_name, then aliases — same
-    rationale as generate_foreign_university_photo_review.py's
-    _name_search_variants (curated names often carry an abbreviation or
+    rationale as the (since-removed) foreign photo review's name variants
+    (curated names often carry an abbreviation or
     name a sub-unit uniranks won't have its own page for)."""
     variants = [uni.name]
     stripped = re.sub(r"\s*\([^)]*\)\s*$", "", uni.name).strip()
@@ -143,8 +143,8 @@ async def _process_one(
         # shortened/derived variant is weaker and gets a human glance.
         confidence = "high" if variant_index == 0 else "low"
         return {
-            # Portable keys — how apply_uniranks_world_rank.py resolves the
-            # row on whatever DB it runs against. `slug` is University.slug
+            # Portable keys — how build_world_rank_map.py resolves the
+            # row (slug / ror_id / jinaq_id, never a per-DB uuid). `slug` is University.slug
             # (NOT `matched_slug`, which is a uniranks.com URL slug derived
             # from the name). `university_id` is a per-DB snapshot kept only
             # as a breadcrumb / for same-DB enrichment.

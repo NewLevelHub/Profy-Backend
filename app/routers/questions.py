@@ -23,7 +23,7 @@ async def get_questions(
     db: AsyncSession = Depends(get_db),
 ) -> list[QuestionResponse]:
     row_result = await db.execute(
-        select(Assessment, Profile.user_id, Profile.age_group)
+        select(Assessment, Profile.user_id)
         .join(Profile, Assessment.profile_id == Profile.id)
         .where(Assessment.id == assessment_id)
     )
@@ -31,10 +31,8 @@ async def get_questions(
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
 
-    _, owner_user_id, age_group = row
+    _, owner_user_id = row
     if owner_user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
 
-    return await question_service.get_all_questions(
-        db, age_group, assessment_id=assessment_id
-    )
+    return await question_service.get_all_questions(db, assessment_id=assessment_id)

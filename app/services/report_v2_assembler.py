@@ -24,11 +24,9 @@ from datetime import datetime
 from typing import Literal
 
 from app.i18n.catalog import tr
-from app.models.profile import AgeGroup
 from app.schemas.report_narrative import ReportNarrativeOutput
 from app.schemas.report_narrative_context import ReportNarrativeContext
 from app.schemas.result_v2 import (
-    MiResultResponse,
     ResultResponseV2,
     RiasecResultResponse,
     StudentCareer,
@@ -41,8 +39,6 @@ from app.schemas.result_v2 import (
     StudentThinkingStyleNote,
 )
 from app.services import bigfive_content
-from app.services.mi_content import mi_activities, mi_labels
-from app.services.mi_service import MI_ORDER
 from app.services.riasec_content import neutral_career_why_variants, neutral_try_now, riasec_labels
 from app.services.riasec_explanations import (
     COMBINATION_TEXTS,
@@ -126,12 +122,10 @@ def build_interest_map_note(items: list[StudentInterestMapItem]) -> str:
 
 
 def build_interest_map(
-    age_group: AgeGroup,
     profile_scores: dict[str, float],
     evidence: dict[str, dict] | None = None,
 ) -> list[StudentInterestMapItem]:
-    """All 6 RIASEC spheres (middle/senior) or all 8 MI spheres (junior),
-    ranked most-to-least pronounced by score — every category, not just the
+    """All 6 RIASEC spheres, ranked most-to-least pronounced by score — every category, not just the
     ones evidenced as a "strength" (that subset is what report_narrative's
     `interests` field covers instead, tier strong/steady; this is the
     numeric-level map). Same score-desc/canonical-index tie-break convention
@@ -139,17 +133,14 @@ def build_interest_map(
 
     `evidence` (riasec_service.answer_evidence) adds the per-type "why this
     level" breakdown; RIASEC only, and a type with no answers gets none."""
-    if age_group == AgeGroup.junior:
-        order, labels = MI_ORDER, mi_labels()
-    else:
-        order, labels = HOLLAND_ORDER, riasec_labels()
+    order, labels = HOLLAND_ORDER, riasec_labels()
     ranked = sorted(order, key=lambda key: (-profile_scores.get(key, 0.0), order.index(key)))
     items = []
     for key in ranked:
         score = profile_scores.get(key, 0.0)
         level = _level(score)
         details = None
-        if age_group != AgeGroup.junior and evidence and key in evidence:
+        if evidence and key in evidence:
             details = build_interest_details(key, level, score, evidence[key])
         items.append(StudentInterestMapItem(code=key, sphere=labels[key], level=level, details=details))
     return items
@@ -200,25 +191,19 @@ def build_interest_combination(items: list[StudentInterestMapItem]) -> StudentIn
 
 
 def build_personality_notes(
-    is_junior: bool,
     personality_profile: dict[str, float],
     overrides: dict[str, str] | None = None,
 ) -> list[StudentPersonalityNote]:
-    """"Твой характер" — the Big Five instrument is answered identically by
-    all three age groups (only interests/motivation branch by age), so
-    unlike interest_map this never varies by instrument, only by wording
-    (junior gets bigfive_content._NOTES_JUNIOR's short, concrete phrasing
-    instead of the adult table). Entirely deterministic, no LLM, no
+    """"Твой характер". Entirely deterministic, no LLM, no
     narrative pipeline involved — `personality_profile` is already a plain
-    5-domain float dict (report_service.py computes it once, unconditionally,
-    for every age group). Ranked most-to-least pronounced, same
+    5-domain float dict (report_service.py computes it once). Ranked most-to-least pronounced, same
     score-desc/canonical-index tie-break convention as
     build_interest_map/riasec_service.py's strengths ranking. `level` is the
     trait's band relative to the student's own five-trait average
     (bigfive_content.relative_bands), not an absolute cutoff."""
-    notes = bigfive_content.personality_notes_for_age(is_junior, personality_profile)
+    notes = bigfive_content.personality_notes(personality_profile)
     # A psychologist's correction replaces the computed phrase for that trait
-    # only (PRO-337); traits they left alone keep the age-appropriate default.
+    # only (PRO-337); traits they left alone keep the computed default.
     for trait, text in (overrides or {}).items():
         if trait in notes and text.strip():
             notes[trait] = text
@@ -284,23 +269,6 @@ def build_personality_note(personality_profile: dict[str, float]) -> str:
     if sentences:
         return " ".join(sentences)
     return t["personality_note_balanced"]
-
-
-def build_exploration_activities(context: ReportNarrativeContext) -> list[str]:
-    """Always non-empty — MI never fakes career matching (TZ_Profi.md
-    §4.1), it offers activities instead. Built from the top MI categories in
-    context; if none qualified as evidence at all (an extremely flat
-    profile with nothing vetted as a "strength"), falls back to one
-    activity per category so the student still gets something safe to try
-    rather than an empty list."""
-    mi_items = [e for e in context.evidence if e.source_type == "mi_category"]
-    activities: list[str] = []
-    for item in mi_items:
-        key = item.source_id.split(":", 1)[1]
-        activities.extend(mi_activities().get(key, [])[:2])
-    if activities:
-        return activities
-    return [acts[0] for acts in mi_activities().values() if acts]
 
 
 def _join(items: list[str]) -> str:
@@ -417,7 +385,6 @@ def _map_thinking_notes(cards: list) -> list[StudentThinkingStyleNote]:
 def assemble_result_v2(
     *,
     assessment_id: uuid.UUID,
-    age_group: AgeGroup,
     context: ReportNarrativeContext,
     narrative: ReportNarrativeOutput,
     profile_scores: dict[str, float],
@@ -433,7 +400,7 @@ def assemble_result_v2(
     deterministic fallback (report_service decides that; this function
     doesn't care which)."""
     flat = is_flat_profile(differentiation)
-    interest_map = build_interest_map(age_group, profile_scores, evidence)
+    interest_map = build_interest_map(profile_scores, evidence)
     common = dict(
         assessment_id=assessment_id,
         summary=narrative.summary,
@@ -441,20 +408,13 @@ def assemble_result_v2(
         strength_cards=_map_cards(narrative.strength_cards),
         interest_map_note=build_interest_map_note(interest_map),
         thinking_style_notes=_map_thinking_notes(narrative.thinking_style_notes),
-        personality_notes=build_personality_notes(age_group == AgeGroup.junior, personality_profile),
+        personality_notes=build_personality_notes(personality_profile),
         personality_note=build_personality_note(personality_profile),
         motivation_highlights=[e.text for e in context.evidence if e.source_type == "motivation"],
         is_flat_profile=flat,
         final_analysis=narrative.final_analysis,
         created_at=created_at,
     )
-
-    if age_group == AgeGroup.junior:
-        return MiResultResponse(
-            **common,
-            interest_map=interest_map,
-            exploration_activities=build_exploration_activities(context),
-        )
 
     if flat and any(e.source_type == "artifact" for e in context.evidence):
         common["summary"] = common["summary"] + tr("result_v2")["flat_profile_artifact_note"]

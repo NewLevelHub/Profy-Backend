@@ -10,18 +10,17 @@ from fastapi import HTTPException
 from pydantic import ValidationError
 
 from app.i18n import use_locale
-from app.i18n.catalog import _AREAS, api_errors, roadmap
+from app.i18n.catalog import _AREAS, api_errors
 from app.main import app
 from app.routers import auth
 from app.schemas.auth import RegisterRequest, UpdateMeRequest
 from app.schemas.certificate import CertificateItem
-from app.services import astur_service, auth_service, direction_inquiry_service, ipsative_battery
-from app.services.roadmap_builder import _build_profession
+from app.services import astur_service, auth_service, ipsative_battery
 
 
 @pytest.mark.parametrize(
     "area",
-    ["api_errors", "api_messages", "admin_export", "report_copy", "riasec_explanations", "roadmap"],
+    ["api_errors", "api_messages", "admin_export", "report_copy", "riasec_explanations"],
 )
 def test_extracted_templates_preserve_placeholders_in_both_locales(area):
     module = _AREAS[area]
@@ -85,13 +84,6 @@ def test_nested_http_error_keeps_contract_and_interpolated_values(locale, monkey
     }
 
 
-def test_shared_app_error_keeps_its_code_and_original_detail():
-    error = direction_inquiry_service._AI_UNAVAILABLE
-    assert error.status_code == 503
-    assert error.error_code == "ai_unavailable"
-    assert error.detail == "ИИ временно недоступен, попробуй ещё раз"
-
-
 def test_validation_resolves_locale_at_call_time_without_changing_password_rules(monkeypatch):
     monkeypatch.setitem(api_errors.KK, "password_letter_required", "Құпиясөзде әріп болуы керек")
     with use_locale("kk"), pytest.raises(ValidationError) as error:
@@ -115,17 +107,3 @@ def test_dynamic_validation_values_keep_their_original_format():
     with pytest.raises(HTTPException) as error:
         astur_service._subtest_meta(99)
     assert error.value.detail == "No such АСТУР subtest: 99"
-
-
-def test_roadmap_template_is_resolved_per_call_and_keeps_task_metadata(monkeypatch):
-    monkeypatch.setitem(roadmap.KK, "profession_online_course", "Курс: {skill}")
-    monkeypatch.setitem(roadmap.KK, "fallback_key_skills", "негізгі дағдылар")
-    with use_locale("ru"):
-        ru = _build_profession([])
-    with use_locale("kk"):
-        kk = _build_profession([])
-    assert ru[1].tasks[1].text == "Пройди онлайн-курс по ключевым навыкам"
-    assert kk[1].tasks[1].text == "Курс: негізгі дағдылар"
-    assert [(m.horizon, [(t.category, t.priority) for t in m.tasks]) for m in ru] == [
-        (m.horizon, [(t.category, t.priority) for t in m.tasks]) for m in kk
-    ]

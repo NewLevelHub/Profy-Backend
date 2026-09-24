@@ -6,21 +6,14 @@ shape) — this is the only schema a student ever sees: no percentages, no
 match_score, no raw category letters/keys outside of `interest_map[].code`
 and `careers[].slug`, which are opaque identifiers, not scores.
 
-Discriminated union on `interest_instrument` rather than one flat model:
-"MI with a non-empty careers list" or "8 RIASEC interest items" must be
-impossible to construct at all, not just something the assembler happens
-to never do. `ResultResponseV2` (bare Union) is what code that needs
-`isinstance()`/type hints should import — Python's isinstance() works on a
-bare `Union`/`X | Y` since 3.10 but not on an `Annotated[...]` wrapper.
-`ResultV2Schema` (Annotated + discriminator) is what FastAPI's
-`response_model` and the cache (de)serializer (`ResultV2Adapter`) use — it's
-the one that gets pydantic to actually pick the right branch instead of
-just trying both.
+`ResultResponseV2` / `ResultV2Schema` are the RIASEC result — the only
+shape since the junior MI branch was removed (PRO-425). `ResultV2Adapter`
+is the cache (de)serializer.
 """
 
 import uuid
 from datetime import datetime
-from typing import Annotated, Literal, Union
+from typing import Literal, Union
 
 from pydantic import BaseModel, Field, TypeAdapter
 
@@ -36,15 +29,9 @@ DISCLAIMER = (
     i18n_key("result_v2", "disclaimer", locale="ru")
 )
 
-# Closing encouragement under junior's "Что можно попробовать" list — same
-# pattern as DISCLAIMER: fixed, server-authored framing, not LLM text, so it
-# can't be dropped/mangled by a bad generation. A *default*, not a required
-# field, so an already-cached response serialized before this field existed
-# still deserializes cleanly (ResultV2Adapter.validate_json in
-# report_service.py) instead of raising on a missing key. Present on both
-# branches (mirrors exploration_activities itself) even though it's only
-# ever meaningful for junior — the frontend component already no-ops when
-# exploration_activities is empty, which it always is for riasec.
+# Closing line of the old junior "Что можно попробовать" list. Kept in the
+# contract (with `exploration_activities`, always empty now) because the
+# frontend still reads both; the component no-ops on an empty list.
 EXPLORATION_CLOSING_NOTE = (
     i18n_key("result_v2", "exploration_note", locale="ru")
 )
@@ -73,7 +60,6 @@ PERSONALITY_NOTE_FALLBACK = (
     i18n_key("report_copy", "personality_note_fallback", locale="ru")
 )
 
-_MI_INTEREST_COUNT = 8  # len(mi_content.MI_LABELS) — every MI category, always
 _RIASEC_INTEREST_COUNT = 6  # len(riasec_content.RIASEC_LABELS) — every Holland letter, always
 _PERSONALITY_TRAIT_COUNT = 5  # len(bigfive_content.PERSONALITY_LABELS) — every Big Five domain, always
 _MAX_CAREERS = 10
@@ -230,11 +216,7 @@ class StudentThinkingStyleNote(BaseModel):
 
 class StudentPersonalityNote(BaseModel):
     """"Твой характер" — one card per Big Five domain, always exactly 5
-    (Field constraint below), same for every age group/interest_instrument:
-    unlike interests, the Big Five instrument itself never varies by age
-    (only the *wording* does — junior gets simplified phrasing, see
-    bigfive_content.personality_notes_for_age — the shape here is
-    identical either way)."""
+    (Field constraint below); wording from bigfive_content.personality_notes."""
 
     trait: str  # "openness" | "conscientiousness" | "extraversion" | "agreeableness" | "emotional_stability"
     label: str  # "Открытость новому" — for display
@@ -280,7 +262,7 @@ class StudentInterestMapItem(BaseModel):
     code: str
     sphere: str
     level: Literal["low", "medium", "high"]  # render-state only
-    # RIASEC only; None for MI and for responses cached before PRO-336.
+    # None for responses cached before PRO-336.
     details: StudentInterestDetails | None = None
     model_config = _model_config
 
@@ -321,11 +303,6 @@ class _ResultResponseBase(BaseModel):
     # already-computed levels, nothing to personalize beyond that.
     interest_map_note: str = INTEREST_MAP_NOTE_FALLBACK
     thinking_style_notes: list[StudentThinkingStyleNote]
-    # Big Five is answered identically by all three age groups (only the
-    # interest instrument/motivation format branch by age — TZ_Profi.md's
-    # confirmed methodology: junior = MI + Big Five + Harter, middle =
-    # RIASEC + Big Five + Harter, senior = RIASEC + Big Five + triplets),
-    # so this lives on the common base, not per-branch.
     personality_notes: list[StudentPersonalityNote] = Field(
         min_length=_PERSONALITY_TRAIT_COUNT, max_length=_PERSONALITY_TRAIT_COUNT
     )
@@ -355,20 +332,8 @@ class _ResultResponseBase(BaseModel):
     model_config = _model_config
 
 
-class MiResultResponse(_ResultResponseBase):
-    """junior — TZ_Profi.md §4.1: not career-oriented at all. `careers` is
-    pinned to an empty list at the schema level (max_length=0), not just
-    "the assembler happens to always pass []" — constructing this class
-    with any career is a ValidationError, not a silent bug."""
-
-    interest_instrument: Literal["mi"] = "mi"
-    interest_map: list[StudentInterestMapItem] = Field(min_length=_MI_INTEREST_COUNT, max_length=_MI_INTEREST_COUNT)
-    careers: list[StudentCareer] = Field(default_factory=list, max_length=0)
-    exploration_activities: list[str] = Field(min_length=1)
-
-
 class RiasecResultResponse(_ResultResponseBase):
-    """middle/senior. `is_flat_profile` (TZ_Profi.md §16.6) no longer bounds
+    """`is_flat_profile` (TZ_Profi.md §16.6) no longer bounds
     `careers` — a flat profile gets the same ranked top-10 as everyone else
     (product decision, 2026-08-17); the honest disclaimer lives in `summary`
     instead, not in a shortened/uniform-tier career list."""
@@ -384,8 +349,8 @@ class RiasecResultResponse(_ResultResponseBase):
     exploration_activities: list[str] = Field(default_factory=list, max_length=0)
 
 
-ResultResponseV2 = Union[MiResultResponse, RiasecResultResponse]
-ResultV2Schema = Annotated[ResultResponseV2, Field(discriminator="interest_instrument")]
+ResultResponseV2 = RiasecResultResponse
+ResultV2Schema = RiasecResultResponse
 ResultV2Adapter: TypeAdapter[ResultResponseV2] = TypeAdapter(ResultV2Schema)
 
 

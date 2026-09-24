@@ -12,8 +12,7 @@ stack, prod on its first run of the jinaq pipeline. So a review file that
 hardcodes `University.id` values snapshotted from whatever DB it was
 generated against does not resolve on any other database: the apply script
 silently matches nothing and reports "not found" / "already done" for every
-entry (confirmed for `apply_uniranks_world_rank.py` and
-`apply_foreign_university_dedup.py` — see PRO-244).
+entry (confirmed for two since-removed apply scripts — see PRO-244).
 
 The durable keys that DO survive a re-seed, in the order this module tries
 them:
@@ -21,9 +20,8 @@ them:
 1. ``jinaq_external_id`` — jinaq's own source-system institution id, written
    into ``university_external_refs`` (``source="jinaq"``) by
    ``import_jinaq_universities.py`` on every import regardless of which
-   database it runs against. The reference pattern is
-   ``apply_kz_university_merge.py``'s ``_resolve_jinaq_university`` (this
-   module hoists it out so every script shares one implementation).
+   database it runs against. This module is the one shared implementation
+   (it started as a private helper in a since-removed merge script).
 2. ``slug`` — ``University.slug`` is unique, indexed, and the de-facto stable
    key for curated rows; ~10 existing scripts already resolve by it.
 3. ``ror_id`` — ``University.ror_id`` (Research Organization Registry) is the
@@ -79,7 +77,7 @@ _PORTABLE_KEY_FIELDS = (
 async def resolve_jinaq_university(db, external_id: str) -> University | None:
     """The current University row for a jinaq source id, via
     ``university_external_refs`` — the only key stable across database
-    instances. Mirrors ``apply_kz_university_merge.py._resolve_jinaq_university``.
+    instances.
     """
     if external_id is None:
         return None
@@ -154,7 +152,7 @@ async def repoint_jinaq_ref(db, external_id: str, target_university_id: uuid.UUI
     """Point the jinaq external ref for ``external_id`` at
     ``target_university_id`` and mark it ``match_method="manual"`` — the
     post-merge step that lets a later run recognise "already merged" instead
-    of re-resolving a stale id (see ``apply_kz_university_merge.py``).
+    of re-resolving a stale id.
     """
     ref = (
         await db.execute(

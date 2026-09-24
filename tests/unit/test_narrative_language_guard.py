@@ -2,7 +2,6 @@
 from unittest.mock import AsyncMock, patch
 import pytest
 
-from app.models.profile import AgeGroup
 from app.schemas.report_narrative import (
     InterestCard,
     MotivationNarrative,
@@ -60,8 +59,6 @@ REAL_KAZAKH_PARAGRAPHS: list[str] = [
 
 def _sample_context() -> ReportNarrativeContext:
     return ReportNarrativeContext(
-        age_group=AgeGroup.senior.value,
-        interest_instrument="riasec",
         categories=["R", "I"],
         personality_notes={"openness": "любит исследовать"},
         thinking_style_notes={"systematic": "логичен"},
@@ -329,19 +326,6 @@ def test_kazakh_condescending_phrase_is_flagged():
     )
     issues = validate(out, _sample_context(), language="kk")
     assert any(i.code == "banned_phrase" for i in issues), issues
-
-
-def test_kazakh_junior_career_term_is_flagged():
-    ctx = ReportNarrativeContext(
-        age_group=AgeGroup.junior.value, interest_instrument="mi",
-        categories=[], evidence=[],
-    )
-    out = _kk_output(
-        summary=_KK_SUMMARY_OK.replace("салалар", "мамандықтар және емтихан"),
-        final_analysis=_KK_FINAL_OK,
-    )
-    issues = validate(out, ctx, language="kk")
-    assert any(i.code == "junior_career_term" for i in issues), issues
 
 
 def test_kazakh_disclaimer_paraphrase_is_flagged():
