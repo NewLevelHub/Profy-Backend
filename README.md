@@ -17,7 +17,7 @@ Backend API платформы профориентации Profi.
 
 ### 1. Файлы вне гита
 
-`start.sh`, `.env`, `docker-compose.local.yml`, `nginx.local.conf` лежат в `.gitignore` — возьми их у команды и положи в корень репозитория. Шаблон переменных — [`.env.example`](.env.example).
+`start.sh`, `.env`, `.env.local`, `docker-compose.local.yml`, `nginx.local.conf` лежат в `.gitignore` — возьми их у команды и положи в корень репозитория. Шаблоны переменных — [`.env.example`](.env.example) и [`.env.local.example`](.env.local.example) (`cp .env.local.example .env.local`; `docker-compose.local.yml` читает оба файла).
 
 ### 2. Фотографии вузов
 
