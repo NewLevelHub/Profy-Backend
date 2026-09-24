@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.database import get_db
 from app.dependencies import get_current_student_user
 from app.models.assessment import AssessmentGoal
@@ -19,7 +20,7 @@ router = APIRouter(tags=["assessment"])
 async def _require_profile_id(current_user: User, db: AsyncSession) -> uuid.UUID:
     profile = await get_profile(current_user.id, db)
     if profile is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "profile_not_found", locale="ru"))
     return profile.id
 
 
@@ -41,7 +42,7 @@ async def get_current_assessment(
     profile_id = await _require_profile_id(current_user, db)
     assessment = await assessment_service.get_current_assessment(profile_id, db)
     if assessment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No active assessment found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "no_active_assessment_found", locale="ru"))
     return assessment
 
 

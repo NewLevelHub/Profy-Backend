@@ -11,6 +11,7 @@ assignment for every call.
 
 from __future__ import annotations
 
+
 import asyncio
 import logging
 import uuid
@@ -21,6 +22,7 @@ from sqlalchemy import Select, case, delete, select, tuple_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
+from app.i18n.catalog import key as i18n_key
 from app.i18n import DEFAULT_LOCALE
 from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
@@ -123,7 +125,7 @@ async def _require_assigned_student(
     )
     assignment = result.scalar_one_or_none()
     if assignment is None:
-        raise ValueError("Student not found")
+        raise ValueError(i18n_key("api_errors", "student_not_found", locale="ru"))
     return assignment
 
 
@@ -144,7 +146,7 @@ async def _require_student_assessment(
     )
     assessment = result.scalar_one_or_none()
     if assessment is None:
-        raise ValueError("Assessment not found")
+        raise ValueError(i18n_key("api_errors", "assessment_not_found", locale="ru"))
     return assessment
 
 
@@ -156,7 +158,7 @@ async def _require_own_note(
 ) -> PsychologistNote:
     note = await db.get(PsychologistNote, note_id)
     if note is None or note.psychologist_id != psychologist_id:
-        raise ValueError("Note not found")
+        raise ValueError(i18n_key("api_errors", "note_not_found", locale="ru"))
     return note
 
 
@@ -234,7 +236,7 @@ async def claim_student(
     """Psychologist self-assigns a student. Admin is not in this flow."""
     student = await db.get(User, student_id)
     if student is None or student.role != UserRole.student:
-        raise ValueError("Student not found")
+        raise ValueError(i18n_key("api_errors", "student_not_found", locale="ru"))
 
     existing = await db.execute(
         select(PsychologistStudentAssignment).where(
@@ -308,7 +310,7 @@ async def get_assigned_student_detail(
     detail = await admin_service.get_user_detail(db, student_id)
     if detail is None:
         # Assignment pointed at a deleted user mid-request — treat as missing.
-        raise ValueError("Student not found")
+        raise ValueError(i18n_key("api_errors", "student_not_found", locale="ru"))
     return _to_psychologist_detail(detail)
 
 
@@ -334,7 +336,7 @@ async def get_assigned_student_test_results(
     )
     result = await report_service.get_report_with_analysis(assessment_id, db, viewer_role=viewer_role)
     if result is None:
-        raise ValueError("Report not found")
+        raise ValueError(i18n_key("api_errors", "report_not_found", locale="ru"))
     report, analysis = result
     new_tests = await new_tests_report_service.build_new_tests_sections(
         analysis, assessment_id=assessment_id, db=db
@@ -457,7 +459,7 @@ async def get_assigned_student_report(
     )
     result = await report_service.get_report_with_analysis(assessment_id, db, viewer_role=viewer_role)
     if result is None:
-        raise ValueError("Report not found")
+        raise ValueError(i18n_key("api_errors", "report_not_found", locale="ru"))
     report, analysis = result
     new_tests = await new_tests_report_service.build_new_tests_sections(
         analysis, assessment_id=assessment_id, db=db
@@ -472,7 +474,7 @@ async def _student_profile_name(student_id: uuid.UUID, db: AsyncSession) -> str:
     name = (
         await db.execute(select(Profile.name).where(Profile.user_id == student_id))
     ).scalar_one_or_none()
-    return name or "Ученик"
+    return name or i18n_key("report_copy", "student_fallback_name", locale="ru")
 
 
 async def _get_or_generate_psych_ai_analysis(
@@ -625,7 +627,7 @@ async def _require_result_for_student(
         )
     analysis = (await db.execute(query)).scalar_one_or_none()
     if analysis is None:
-        raise ValueError("Result not found")
+        raise ValueError(i18n_key("api_errors", "result_not_found", locale="ru"))
     return analysis
 
 
@@ -671,7 +673,7 @@ async def regenerate_psych_ai_analysis(
     await _require_student_assessment(db, student_id=student_id, assessment_id=assessment_id)
     result = await report_service.get_report_with_analysis(assessment_id, db, viewer_role=viewer_role)
     if result is None:
-        raise ValueError("Report not found")
+        raise ValueError(i18n_key("api_errors", "report_not_found", locale="ru"))
     report, analysis = result
     new_tests = await new_tests_report_service.build_new_tests_sections(
         analysis, assessment_id=assessment_id, db=db
@@ -724,7 +726,7 @@ async def update_result_content(
         db, student_id=student_id, assessment_id=assessment_id, for_update=True
     )
     if analysis.review_status != ReviewStatus.pending_review:
-        raise ResultAlreadyPublishedError("Result is already published")
+        raise ResultAlreadyPublishedError(i18n_key("api_errors", "result_is_already_published", locale="ru"))
 
     values = patch.model_dump(exclude_unset=True, mode="json")
 
@@ -736,10 +738,10 @@ async def update_result_content(
         unknown_traits = set(notes_patch) - set(bigfive_content.personality_labels())
         if unknown_traits:
             raise ResultPatchInvalidError(
-                f"personality_notes: неизвестные черты {sorted(unknown_traits)}"
+                i18n_key("api_errors", "unknown_personality_traits", locale="ru").format(traits=sorted(unknown_traits))
             )
         if any(not text.strip() for text in notes_patch.values()):
-            raise ResultPatchInvalidError("personality_notes: текст не может быть пустым")
+            raise ResultPatchInvalidError(i18n_key("api_errors", "empty_personality_note", locale="ru"))
 
     # strengths/weaknesses are category codes the student report is rebuilt
     # from (careers "why", interest map) — free text there would break it.
@@ -748,7 +750,7 @@ async def update_result_content(
         unknown = set(values.get(field, [])) - allowed_codes
         if unknown:
             raise ResultPatchInvalidError(
-                f"{field}: unknown codes {sorted(unknown)}, allowed {sorted(allowed_codes)}"
+                i18n_key("api_errors", "unknown_result_codes", locale="ru").format(field=field, codes=sorted(unknown), allowed_codes=sorted(allowed_codes))
             )
 
     changed: dict[str, dict[str, Any]] = {}
@@ -856,7 +858,7 @@ async def publish_result_as_admin(
     )
     analysis = (await db.execute(query)).scalar_one_or_none()
     if analysis is None:
-        raise ValueError("Result not found")
+        raise ValueError(i18n_key("api_errors", "result_not_found", locale="ru"))
     return await _publish(db, analysis, publisher_id=admin_id)
 
 
@@ -864,7 +866,7 @@ async def _publish(
     db: AsyncSession, analysis: AnalysisResult, *, publisher_id: uuid.UUID
 ) -> PsychologistResultDetailResponse:
     if analysis.review_status == ReviewStatus.published:
-        raise ResultAlreadyPublishedError("Result is already published")
+        raise ResultAlreadyPublishedError(i18n_key("api_errors", "result_is_already_published", locale="ru"))
     now = datetime.now(timezone.utc)
     analysis.review_status = ReviewStatus.published
     analysis.published_by = publisher_id
@@ -935,7 +937,7 @@ async def notify_review_pending(
     await _send_within_budget(
         [
             email_service.send_review_pending_email(
-                email, student_name or "без имени", review_url=review_url
+                email, student_name or i18n_key("report_copy", "unnamed_student", locale="ru"), review_url=review_url
             )
             for email in emails
         ]

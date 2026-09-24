@@ -3,12 +3,14 @@ no DB access — keeps admin_service.py focused on data assembly, this module
 on presentation. See docs/frontend-admin-users-api-contract.md for the
 column layout this produces."""
 
+
 import csv
 import io
 import re
 import zipfile
 from datetime import datetime
 
+from app.i18n.catalog import key as i18n_key
 from app.schemas.admin import AdminAssessmentDetailResponse, AdminUserListItem
 from app.services.bigfive_content import bigfive_labels
 from app.services.mi_content import mi_labels
@@ -32,36 +34,36 @@ _DATETIME_FORMAT = "%Y-%m-%d %H:%M"
 _UTC_SUFFIX = " (UTC)"
 
 # Python's True/False are not booleans to Excel, just words.
-_YES, _NO = "да", "нет"
+_YES, _NO = i18n_key("admin_export", "yes", locale="ru"), i18n_key("admin_export", "no", locale="ru")
 
 # Localized exactly as the admin UI shows them
 # (Profy-Frontend/src/shared/lib/assessmentLabels.ts and
 # shared/config/constants.ts): an export that says `age_group=senior` while
 # the screen says "10–11 класс" makes the reader translate by hand.
 _AGE_GROUP_LABELS = {
-    "junior": "5–7 класс",
-    "middle": "8–9 класс",
-    "senior": "10–11 класс",
+    "junior": i18n_key("admin_export", "age_group_junior", locale="ru"),
+    "middle": i18n_key("admin_export", "age_group_middle", locale="ru"),
+    "senior": i18n_key("admin_export", "age_group_senior", locale="ru"),
 }
 _GOAL_LABELS = {
-    "explore": "Исследовать",
-    "profession": "Выбрать профессию",
-    "university": "Поступить в вуз",
-    "unsure": "Не уверен",
+    "explore": i18n_key("admin_export", "goal_explore", locale="ru"),
+    "profession": i18n_key("admin_export", "goal_profession", locale="ru"),
+    "university": i18n_key("admin_export", "goal_university", locale="ru"),
+    "unsure": i18n_key("admin_export", "goal_unsure", locale="ru"),
 }
 _STATUS_LABELS = {
-    "in_progress": "В процессе",
-    "completed": "Завершён",
+    "in_progress": i18n_key("admin_export", "status_in_progress", locale="ru"),
+    "completed": i18n_key("admin_export", "status_completed", locale="ru"),
 }
 _ROLE_LABELS = {
-    "student": "Ученик",
-    "admin": "Администратор",
-    "psychologist": "Психолог",
+    "student": i18n_key("admin_export", "role_student", locale="ru"),
+    "admin": i18n_key("admin_export", "role_admin", locale="ru"),
+    "psychologist": i18n_key("admin_export", "role_psychologist", locale="ru"),
 }
 _INSTRUMENT_LABELS = {
     "riasec": "RIASEC",
     "big_five": "Big Five",
-    "mi": "Множественный интеллект",
+    "mi": i18n_key("admin_export", "instrument_mi", locale="ru"),
 }
 
 
@@ -94,21 +96,21 @@ _MI_KEYS = tuple(mi_labels())
 _USER_COLUMNS = (
     "ID",
     "Email",
-    "Почта подтверждена",
-    "Аккаунт активен",
-    "Роль",
-    "Администратор",
-    "Регистрация" + _UTC_SUFFIX,
-    "Последняя активность" + _UTC_SUFFIX,
-    "Есть профиль",
-    "Имя",
-    "Класс (группа)",
-    "Класс",
-    "Город",
-    "Тестирований",
-    "Статус последнего",
-    "Цель последнего",
-    "Инструмент интересов",
+    i18n_key("admin_export", "email_verified", locale="ru"),
+    i18n_key("admin_export", "account_active", locale="ru"),
+    i18n_key("admin_export", "role", locale="ru"),
+    i18n_key("admin_export", "role_admin", locale="ru"),
+    i18n_key("admin_export", "registered_at", locale="ru") + _UTC_SUFFIX,
+    i18n_key("admin_export", "last_active_at", locale="ru") + _UTC_SUFFIX,
+    i18n_key("admin_export", "has_profile", locale="ru"),
+    i18n_key("admin_export", "name", locale="ru"),
+    i18n_key("admin_export", "age_group", locale="ru"),
+    i18n_key("admin_export", "grade", locale="ru"),
+    i18n_key("admin_export", "city", locale="ru"),
+    i18n_key("admin_export", "assessment_count", locale="ru"),
+    i18n_key("admin_export", "latest_status", locale="ru"),
+    i18n_key("admin_export", "latest_goal", locale="ru"),
+    i18n_key("admin_export", "interest_instrument", locale="ru"),
     *(f"RIASEC: {riasec_labels()[k]}" for k in _RIASEC_KEYS),
     *(f"MI: {mi_labels()[k]}" for k in _MI_KEYS),
     *(f"Big Five: {bigfive_labels()[k]}" for k in _BIG_FIVE_KEYS),
@@ -203,16 +205,16 @@ def _summary_csv(detail: AdminAssessmentDetailResponse) -> str:
     buffer = io.StringIO()
     writer = csv.writer(buffer)
 
-    writer.writerow(["Показатель", "Значение"])
+    writer.writerow([i18n_key("admin_export", "metric", locale="ru"), i18n_key("admin_export", "value", locale="ru")])
     writer.writerow(["Email", detail.user_email])
-    writer.writerow(["Имя", detail.profile_name or ""])
-    writer.writerow(["Цель", _label(_GOAL_LABELS, detail.goal)])
-    writer.writerow(["Статус", _label(_STATUS_LABELS, detail.status)])
-    writer.writerow(["Начато" + _UTC_SUFFIX, _at(detail.created_at)])
-    writer.writerow(["Завершено" + _UTC_SUFFIX, _at(detail.completed_at)])
-    writer.writerow(["Отвечено вопросов", detail.answered_count])
-    writer.writerow(["Всего вопросов", detail.total_questions])
-    writer.writerow(["Есть роадмап", _yes_no(detail.roadmap is not None)])
+    writer.writerow([i18n_key("admin_export", "name", locale="ru"), detail.profile_name or ""])
+    writer.writerow([i18n_key("admin_export", "goal", locale="ru"), _label(_GOAL_LABELS, detail.goal)])
+    writer.writerow([i18n_key("admin_export", "status", locale="ru"), _label(_STATUS_LABELS, detail.status)])
+    writer.writerow([i18n_key("admin_export", "started_at", locale="ru") + _UTC_SUFFIX, _at(detail.created_at)])
+    writer.writerow([i18n_key("admin_export", "completed_at", locale="ru") + _UTC_SUFFIX, _at(detail.completed_at)])
+    writer.writerow([i18n_key("admin_export", "answered_questions", locale="ru"), detail.answered_count])
+    writer.writerow([i18n_key("admin_export", "total_questions", locale="ru"), detail.total_questions])
+    writer.writerow([i18n_key("admin_export", "has_roadmap", locale="ru"), _yes_no(detail.roadmap is not None)])
     if detail.analysis_result is not None:
         for metric, value in _analysis_result_rows(detail.analysis_result.model_dump()):
             writer.writerow([metric, value])
@@ -239,14 +241,14 @@ def _responses_csv(detail: AdminAssessmentDetailResponse) -> str:
     writer = csv.writer(buffer)
     writer.writerow(
         [
-            "№ вопроса",
-            "Инструмент",
-            "Код шкалы",
-            "Шкала",
-            "Вопрос",
-            "Ответ (1-5)",
-            "Ответ словами",
-            "Время ответа" + _UTC_SUFFIX,
+            i18n_key("admin_export", "question_number", locale="ru"),
+            i18n_key("admin_export", "instrument", locale="ru"),
+            i18n_key("admin_export", "scale_code", locale="ru"),
+            i18n_key("admin_export", "scale", locale="ru"),
+            i18n_key("admin_export", "question", locale="ru"),
+            i18n_key("admin_export", "answer_score", locale="ru"),
+            i18n_key("admin_export", "answer_words", locale="ru"),
+            i18n_key("admin_export", "answered_at", locale="ru") + _UTC_SUFFIX,
         ]
     )
     for response in detail.responses:
@@ -275,13 +277,13 @@ def _motivation_csv(detail: AdminAssessmentDetailResponse) -> str:
     writer = csv.writer(buffer)
     writer.writerow(
         [
-            "№ триплета",
-            "Выбрано как важное",
-            "Категория важного",
-            "Выбрано как неважное",
-            "Категория неважного",
-            "Не выбрано",
-            "Категория невыбранного",
+            i18n_key("admin_export", "triplet_number", locale="ru"),
+            i18n_key("admin_export", "most_selected", locale="ru"),
+            i18n_key("admin_export", "most_category", locale="ru"),
+            i18n_key("admin_export", "least_selected", locale="ru"),
+            i18n_key("admin_export", "least_category", locale="ru"),
+            i18n_key("admin_export", "unselected", locale="ru"),
+            i18n_key("admin_export", "unselected_category", locale="ru"),
         ]
     )
     for row in detail.motivation_responses:

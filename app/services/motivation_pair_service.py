@@ -8,6 +8,7 @@ scripts/motivation_pair_bank.py. Mirrors motivation_service.py's shape
 (pairs/total/answered/raw_scores/submit) so report_service.py can call
 whichever one matches the profile's age_group."""
 
+
 import uuid
 
 from fastapi import HTTPException, status
@@ -15,6 +16,7 @@ from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.i18n import pick_locale
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.motivation_pair import MotivationIntensity, MotivationPair, MotivationPairResponse, PairSide
@@ -87,9 +89,9 @@ async def submit_pair_answers(
     row_result = await db.execute(select(Assessment).where(Assessment.id == assessment_id))
     assessment = row_result.scalar_one_or_none()
     if assessment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
     if assessment.profile_id != current_profile_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
 
     pairs_by_index = {p.pair_index: p for p in await pairs(db)}
 
@@ -99,7 +101,7 @@ async def submit_pair_answers(
         if pair is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Unknown pair {item.pair_index}",
+                detail=i18n_key("api_errors", "unknown_pair", locale="ru").format(pair_index=item.pair_index),
             )
         chosen_category = pair.category_a if item.chosen_side == "a" else pair.category_b
         response_rows.append({

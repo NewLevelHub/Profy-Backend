@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi import status as http_status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.database import get_db
 from app.dependencies import get_current_admin_user
 from app.models.assessment import AssessmentGoal, AssessmentStatus
@@ -265,7 +266,7 @@ async def get_user_detail(
 ):
     detail = await admin_service.get_user_detail(db, user_id)
     if not detail:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "user_not_found", locale="ru"))
     return detail
 
 
@@ -277,7 +278,7 @@ async def get_assessment_detail(
 ):
     detail = await admin_service.get_assessment_detail(db, assessment_id)
     if not detail:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
     return detail
 
 
@@ -289,7 +290,7 @@ async def export_assessment(
 ):
     detail = await admin_service.get_assessment_detail(db, assessment_id)
     if not detail:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
     zip_bytes = admin_export_service.assessment_detail_to_zip(detail)
     filename = admin_export_service.assessment_export_filename(detail)
     return Response(
@@ -409,7 +410,7 @@ async def get_university_detail(
 ):
     detail = await admin_university_service.get_university_detail(db, university_id)
     if not detail:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="University not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "university_not_found", locale="ru"))
     return detail
 
 
@@ -435,7 +436,7 @@ async def get_program_detail(
     try:
         return await university_service.get_program_by_id(db, program_id)
     except HTTPException:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Program not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "program_not_found", locale="ru"))
 
 
 @router.patch("/programs/{program_id}", response_model=AdminProgramDetail)
@@ -488,7 +489,7 @@ async def get_question_detail(
 ):
     detail = await admin_content_service.get_question_detail(db, question_id)
     if not detail:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "question_not_found", locale="ru"))
     return detail
 
 
@@ -543,7 +544,7 @@ async def get_question_pair_detail(
 ):
     detail = await admin_content_service.get_question_pair_detail(db, pair_id)
     if not detail:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question pair not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "question_pair_not_found", locale="ru"))
     return detail
 
 
@@ -601,7 +602,7 @@ async def get_motivation_statement_detail(
     detail = await admin_content_service.get_motivation_statement_detail(db, statement_id)
     if not detail:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Motivation statement not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "motivation_statement_not_found", locale="ru")
         )
     return detail
 
@@ -699,7 +700,7 @@ async def get_motivation_pair_detail(
     detail = await admin_content_service.get_motivation_pair_detail(db, pair_id)
     if not detail:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Motivation pair not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "motivation_pair_not_found", locale="ru")
         )
     return detail
 
@@ -753,7 +754,7 @@ async def get_direction_detail(
 ):
     detail = await admin_content_service.get_direction_detail(db, direction_id)
     if not detail:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Direction not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "direction_not_found", locale="ru"))
     return detail
 
 

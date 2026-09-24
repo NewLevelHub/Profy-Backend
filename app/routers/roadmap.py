@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.database import get_db
 from app.dependencies import get_current_student_user
 from app.models.assessment import Assessment
@@ -39,10 +40,10 @@ async def _require_assessment_access(
     )
     row_data = row.one_or_none()
     if row_data is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
     _, owner_user_id = row_data
     if owner_user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
     # Every roadmap route builds on AnalysisResult.careers — the gate lives
     # here, in the one helper all of them already call, so a new roadmap
     # endpoint cannot forget it.
@@ -74,12 +75,12 @@ async def generate_direction_roadmap(
         if program is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Program not found",
+                detail=i18n_key("api_errors", "program_not_found", locale="ru"),
             )
         if data.direction_slug not in (program.profession_slugs or []):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Program does not belong to this direction",
+                detail=i18n_key("api_errors", "program_does_not_belong_to_this_direction", locale="ru"),
             )
     return await roadmap_builder.generate_direction_roadmap(
         data.assessment_id, data.direction_slug, db, data.program_id
@@ -110,7 +111,7 @@ async def get_direction_roadmap(
     await _require_assessment_access(assessment_id, current_user, db)
     result = await roadmap_builder.get_direction_roadmap(assessment_id, slug, db)
     if result is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Roadmap not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "roadmap_not_found", locale="ru"))
     return result
 
 
@@ -123,5 +124,5 @@ async def get_roadmap(
     await _require_assessment_access(assessment_id, current_user, db)
     result = await roadmap_builder.get_roadmap(assessment_id, db)
     if result is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Roadmap not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "roadmap_not_found", locale="ru"))
     return result

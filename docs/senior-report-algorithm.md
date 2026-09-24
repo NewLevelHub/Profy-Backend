@@ -96,42 +96,63 @@ compensate = до 2 активности на САМУЮ слабую букву
 
 ## 2. Подбор профессий — прямое сопоставление, без ИИ
 
-Файл: `riasec_service.py` (`direction_letter_weight`, `career_match_score`,
-`matched_careers`) + `app/models/direction.py` (`holland_code` — 3-буквенный код каждой
-профессии в базе, напр. `"SAE"`).
+**Обновлено PRO-385** (2026-09): подбор больше не сравнивает усечённый топ-3 код студента
+с 3-буквенным `holland_code` направления — он сравнивает **полный нормализованный
+6-мерный профиль** (`normalize`, §1.1) со средним O*NET-профилем профессии через
+корреляцию Пирсона. Старое позиционное сопоставление осталось только как fallback для
+направлений без вектора.
 
-### 2.1 Вес буквы в коде направления
+Файл: `riasec_service.py` (`pearson_correlation`, `direction_match_score`,
+`matched_careers`) + `app/models/direction.py` (`onet_vector` — JSONB `{R,I,A,S,E,C}`,
+среднее по профессиям того же O*NET SOC-кода; `holland_code` — 3-буквенный код,
+сохранён для fallback и юнит-тестов легаси-веса).
+
+### 2.1 Основной путь — корреляция Пирсона по 6 измерениям
+
+```python
+def pearson_correlation(user, profession):  # -1..+1, форма профиля, не абсолютный уровень
+    ...  # стандартный Пирсон по 6 точкам (R,I,A,S,E,C); 0.0 при нулевой дисперсии
+```
+Сравнивается **форма** профиля (какие категории выше/ниже друг друга), а не абсолютный
+уровень баллов — студент с равномерно низкими баллами и студент с равномерно высокими,
+но одинаковым "рельефом" по буквам, получат близкий r с одной и той же профессией.
+
+`onet_vector` есть у 141 из 144 направлений в каталоге (сид-скрипт
+`seed_riasec_directions.py` печатает это число при каждом запуске); 3 направления без
+US SOC-аналога (Военный / Дипломат / Госслужащий) вектора не имеют.
+
+### 2.2 Fallback — позиционное совпадение кода (только для направлений без вектора)
 
 ```python
 def direction_letter_weight(letter, direction_code):
     position = direction_code.find(letter)
     return 3 - position if 0 <= position < 3 else 0
-```
-То есть: буква на 1-й позиции направления даёт вес **3**, на 2-й — **2**, на 3-й — **1**,
-отсутствует — **0**. Позиционный вес важен: направления «ESC» и «SEC» — это разные веса
-для одних и тех же трёх букв (раньше `letter in direction_code` не различало их вообще,
-и все анаграммы одного набора букв получали одинаковый score).
 
-### 2.2 Итоговый матч-скор
-
-```python
 def career_match_score(user_code, direction_code):
     user_weights = [3, 2, 1]   # вес места студента в ЕГО топ-3
     return sum(w * direction_letter_weight(letter, direction_code)
                for w, letter in zip(user_weights, user_code))
 ```
-Максимум — **14** (когда топ-3 студента дословно совпадает с кодом направления в том же
-порядке: `3·3 + 2·2 + 1·1`).
+Максимум — **14**. Делится на 14, чтобы сесть в тот же 0..1 диапазон, что и Пирсон, и не
+доминировать над ним при сортировке общего списка (`direction_match_score`):
+
+```python
+def direction_match_score(normalized, direction):
+    if _has_onet_vector(direction):
+        return pearson_correlation(normalized, direction.onet_vector)
+    user_code = top_code(normalized)                       # только здесь код ещё нужен
+    return career_match_score(user_code, direction.holland_code) / 14
+```
 
 ### 2.3 Ранжирование и лимит
 
 ```python
-matched = [(direction, career_match_score(user_code, direction.holland_code))
+matched = [(direction, direction_match_score(normalized, direction))
            for direction in all_directions]
 matched.sort(key=lambda pair: (-score, direction.slug))   # тай-брейк по slug
 top10 = matched[:10]
 ```
-Сортировка по всей базе направлений (145 штук на момент этого документа), не только
+Сортировка по всей базе направлений (144 на момент этого документа), не только
 по тем, что связаны с университетскими программами — это отдельный, более широкий
 список; университетские программы уже подбираются ПОД конкретную выбранную профессию
 отдельным запросом (см. §7).

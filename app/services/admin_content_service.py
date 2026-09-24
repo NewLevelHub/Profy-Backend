@@ -4,6 +4,7 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
+from app.i18n.catalog import key as i18n_key
 from app.i18n import DEFAULT_LOCALE, pick_locale
 from app.models.content_override import ContentOverride
 from app.models.direction import LOCALIZED_FIELDS as DIRECTION_LOCALIZED_FIELDS
@@ -74,8 +75,7 @@ async def _update_by_id(
         validate(row, updates)
     if any(key in localized_fields for key in updates) and not locale:
         raise AdminOverrideValidationError(
-            "locale is required when editing a localized field: "
-            f"{sorted(k for k in updates if k in localized_fields)}"
+            i18n_key("api_errors", "localized_fields_require_locale", locale="ru").format(fields=sorted(k for k in updates if k in localized_fields))
         )
     apply_overrides(row, updates, localized_fields=localized_fields, locale=locale)
     await db.commit()
@@ -97,7 +97,7 @@ async def _clear_overrides_by_id(
 
     cleared = clear_overrides(row, None if field is None else [field])
     if field is not None and not cleared:
-        raise AdminNothingToClearError(f"Field '{field}' is not overridden on this row")
+        raise AdminNothingToClearError(i18n_key("api_errors", "field_not_overridden", locale="ru").format(field=field))
 
     await db.commit()
     await db.refresh(row)
@@ -123,8 +123,7 @@ def _validate_question_update(row: Question, updates: dict) -> None:
     type_field = _INSTRUMENT_TYPE_FIELD.get(row.instrument)
     if type_field and type_field in updates and updates[type_field] is None:
         raise AdminOverrideValidationError(
-            f"{type_field} cannot be null on a {row.instrument.value} question — "
-            "scoring groups responses by this field for every student."
+            i18n_key("api_errors", "question_type_required", locale="ru").format(type_field=type_field, instrument=row.instrument.value)
         )
 
 
@@ -273,7 +272,7 @@ async def update_question(
     db: AsyncSession, question_id: uuid.UUID, data: AdminQuestionUpdateRequest
 ) -> Question:
     return await _update_by_id(
-        db, Question, question_id, data, "Question not found",
+        db, Question, question_id, data, i18n_key("api_errors", "question_not_found", locale="ru"),
         localized_fields=QUESTION_LOCALIZED_FIELDS, validate=_validate_question_update,
     )
 
@@ -281,7 +280,7 @@ async def update_question(
 async def clear_question_overrides(
     db: AsyncSession, question_id: uuid.UUID, field: str | None = None
 ) -> Question:
-    return await _clear_overrides_by_id(db, Question, question_id, "Question not found", field)
+    return await _clear_overrides_by_id(db, Question, question_id, i18n_key("api_errors", "question_not_found", locale="ru"), field)
 
 
 # --- Question pairs ---
@@ -417,7 +416,7 @@ async def update_question_pair(
     db: AsyncSession, pair_id: uuid.UUID, data: AdminQuestionPairUpdateRequest
 ) -> AdminQuestionPairDetail:
     pair = await _update_by_id(
-        db, QuestionPair, pair_id, data, "Question pair not found",
+        db, QuestionPair, pair_id, data, i18n_key("api_errors", "question_pair_not_found", locale="ru"),
         localized_fields=QUESTION_PAIR_LOCALIZED_FIELDS,
     )
     return await _build_pair_detail(db, pair)
@@ -427,7 +426,7 @@ async def clear_question_pair_overrides(
     db: AsyncSession, pair_id: uuid.UUID, field: str | None = None
 ) -> AdminQuestionPairDetail:
     pair = await _clear_overrides_by_id(
-        db, QuestionPair, pair_id, "Question pair not found", field
+        db, QuestionPair, pair_id, i18n_key("api_errors", "question_pair_not_found", locale="ru"), field
     )
     return await _build_pair_detail(db, pair)
 
@@ -535,10 +534,7 @@ async def _assert_triplet_categories_stay_unique(
     clash = result.scalars().first()
     if clash is not None:
         raise AdminOverrideValidationError(
-            f"Category '{new_category.value}' is already used by statement #{clash.order} "
-            f"in triplet {statement.triplet_index} — the three statements of a triplet "
-            "must carry three different categories, or scoring cannot tell the picked "
-            "motives apart."
+            i18n_key("api_errors", "duplicate_triplet_category", locale="ru").format(new_category=new_category.value, order=clash.order, triplet_index=statement.triplet_index)
         )
 
 
@@ -547,13 +543,13 @@ async def update_motivation_statement(
 ) -> MotivationStatement:
     statement = await _get_by_id(db, MotivationStatement, statement_id)
     if statement is None:
-        raise ValueError("Motivation statement not found")
+        raise ValueError(i18n_key("api_errors", "motivation_statement_not_found", locale="ru"))
 
     await _assert_triplet_categories_stay_unique(
         db, statement, data.model_dump(exclude_unset=True)
     )
     return await _update_by_id(
-        db, MotivationStatement, statement_id, data, "Motivation statement not found",
+        db, MotivationStatement, statement_id, data, i18n_key("api_errors", "motivation_statement_not_found", locale="ru"),
         localized_fields=MOTIVATION_STATEMENT_LOCALIZED_FIELDS,
     )
 
@@ -562,7 +558,7 @@ async def clear_motivation_statement_overrides(
     db: AsyncSession, statement_id: uuid.UUID, field: str | None = None
 ) -> MotivationStatement:
     return await _clear_overrides_by_id(
-        db, MotivationStatement, statement_id, "Motivation statement not found", field
+        db, MotivationStatement, statement_id, i18n_key("api_errors", "motivation_statement_not_found", locale="ru"), field
     )
 
 
@@ -644,7 +640,7 @@ async def update_motivation_pair(
     db: AsyncSession, pair_id: uuid.UUID, data: AdminMotivationPairUpdateRequest
 ) -> MotivationPair:
     return await _update_by_id(
-        db, MotivationPair, pair_id, data, "Motivation pair not found",
+        db, MotivationPair, pair_id, data, i18n_key("api_errors", "motivation_pair_not_found", locale="ru"),
         localized_fields=MOTIVATION_PAIR_LOCALIZED_FIELDS,
     )
 
@@ -653,7 +649,7 @@ async def clear_motivation_pair_overrides(
     db: AsyncSession, pair_id: uuid.UUID, field: str | None = None
 ) -> MotivationPair:
     return await _clear_overrides_by_id(
-        db, MotivationPair, pair_id, "Motivation pair not found", field
+        db, MotivationPair, pair_id, i18n_key("api_errors", "motivation_pair_not_found", locale="ru"), field
     )
 
 
@@ -813,7 +809,7 @@ async def update_direction(
     db: AsyncSession, direction_id: uuid.UUID, data: AdminDirectionUpdateRequest
 ) -> AdminDirectionDetail:
     direction = await _update_by_id(
-        db, Direction, direction_id, data, "Direction not found",
+        db, Direction, direction_id, data, i18n_key("api_errors", "direction_not_found", locale="ru"),
         localized_fields=DIRECTION_LOCALIZED_FIELDS,
     )
     return await _build_direction_detail(db, direction)
@@ -823,7 +819,7 @@ async def clear_direction_overrides(
     db: AsyncSession, direction_id: uuid.UUID, field: str | None = None
 ) -> AdminDirectionDetail:
     direction = await _clear_overrides_by_id(
-        db, Direction, direction_id, "Direction not found", field
+        db, Direction, direction_id, i18n_key("api_errors", "direction_not_found", locale="ru"), field
     )
     return await _build_direction_detail(db, direction)
 

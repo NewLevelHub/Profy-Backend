@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.database import get_db
 from app.schemas.direction import DirectionBase, DirectionDetail
 from app.services import direction_service
@@ -18,5 +19,5 @@ async def list_directions(db: AsyncSession = Depends(get_db)) -> list[DirectionB
 async def get_direction(slug: str, db: AsyncSession = Depends(get_db)) -> DirectionDetail:
     detail = await direction_service.get_direction_details(slug, db)
     if detail is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Direction not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "direction_not_found", locale="ru"))
     return detail

@@ -3,6 +3,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.models.artifact import Artifact
 from app.models.certificate import Certificate
 from app.models.profile import Profile, compute_age_group
@@ -27,7 +28,7 @@ async def create_profile(
     """
     existing = await db.execute(select(Profile).where(Profile.user_id == user_id))
     if existing.scalar_one_or_none() is not None:
-        raise ValueError("Profile already exists for this user")
+        raise ValueError(i18n_key("api_errors", "profile_already_exists_for_this_user", locale="ru"))
 
     # `artifacts`/`certificates` (if present) are handled by the caller via
     # artifact_service/certificate_service, not Profile columns — exclude
@@ -66,7 +67,7 @@ async def update_profile(
     result = await db.execute(select(Profile).where(Profile.user_id == user_id))
     profile = result.scalar_one_or_none()
     if profile is None:
-        raise ValueError("Profile not found")
+        raise ValueError(i18n_key("api_errors", "profile_not_found", locale="ru"))
 
     updates = data.model_dump(exclude={"artifacts", "certificates"}, exclude_none=True)
     for key, value in updates.items():

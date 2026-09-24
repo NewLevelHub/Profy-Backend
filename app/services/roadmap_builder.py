@@ -1,5 +1,6 @@
 """Template-based roadmap generation. Interface is LLM-ready: swap build_roadmap body only."""
 
+
 import json
 import logging
 import uuid
@@ -11,6 +12,7 @@ from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.config import settings
 from app.data import resource_catalog
 from app.errors import AppError
@@ -119,16 +121,16 @@ def _decide_explore_paths(directions: list[_DirectionSummary]) -> list[Recommend
         RecommendedPath(
             key=chr(ord("A") + i),
             label=d.name,
-            why=f"По результатам теста направление «{d.name}» — один из твоих самых сильных откликов.",
-            future_benefit=f"Развитие в «{d.name}» может привести к кружкам и конкурсам следующего уровня, а дальше — к профессиям в этой сфере.",
+            why=i18n_key("roadmap", "explore_direction_why").format(name=d.name),
+            future_benefit=i18n_key("roadmap", "explore_direction_benefit").format(name=d.name),
         )
         for i, d in enumerate(top)
     ] or [
         RecommendedPath(
             key="A",
-            label="интересующей сфере",
-            why="Пока по тесту не выделилось одно явное направление — начни с общей разведки интересов.",
-            future_benefit="Это поможет нащупать, какая сфера откликается сильнее всего.",
+            label=i18n_key("roadmap", "fallback_interest_area"),
+            why=i18n_key("roadmap", "explore_fallback_why"),
+            future_benefit=i18n_key("roadmap", "explore_fallback_benefit"),
         )
     ]
 
@@ -144,69 +146,69 @@ def _build_explore_track(path: RecommendedPath) -> list[RoadmapMilestone]:
         return RoadmapTask(text=text, category=category, priority=priority)
 
     month1_tasks = [
-        task(f"Узнай подробнее о направлении «{path.label}»: посмотри видео, статьи или пробное занятие", "explore", 1),
-        task("Сравни впечатления от попробованного и запиши, что понравилось больше всего", "planning", 2),
-        task("Обсуди с родителями или учителем, что из попробованного откликнулось сильнее", "planning", 3),
-        task("Найди ещё один формат по этому же направлению (видео другого автора, другой кружок) и сравни впечатления", "explore", 4),
+        task(i18n_key("roadmap", "explore_learn_direction").format(label=path.label), "explore", 1),
+        task(i18n_key("roadmap", "explore_compare_impressions"), "planning", 2),
+        task(i18n_key("roadmap", "explore_discuss_impressions"), "planning", 3),
+        task(i18n_key("roadmap", "explore_try_another_format"), "explore", 4),
     ]
 
     months3_tasks = [
-        task(f"Найди регулярный формат (кружок, секция, курс) по направлению «{path.label}» и сходи на первое занятие", "explore", 1),
-        task("Попробуй сделать что-то своё на основе того, что уже пробовал, а не по инструкции", "skill", 2),
-        task("Уточни у руководителя кружка/секции, что нужно для более серьёзных занятий дальше", "planning", 3),
-        task("Составь список того, что хочешь попробовать сделать сам(а) в следующий раз", "planning", 4),
+        task(i18n_key("roadmap", "explore_find_regular_activity").format(label=path.label), "explore", 1),
+        task(i18n_key("roadmap", "explore_create_original_work"), "skill", 2),
+        task(i18n_key("roadmap", "explore_ask_about_next_level"), "planning", 3),
+        task(i18n_key("roadmap", "explore_plan_own_attempt"), "planning", 4),
     ]
 
     months6_tasks = [
-        task(f"Занимайся направлением «{path.label}» регулярно (раз в неделю) и сделай небольшой проект руками", "skill", 1),
-        task("Найди наставника или ментора в выбранной сфере", "explore", 2),
-        task("Покажи то, что сделал, кому-то ещё (семье, друзьям, руководителю кружка) и собери отклик", "practice", 3),
-        task("Запиши, что даётся легко, а что пока сложно в этом направлении", "planning", 4),
+        task(i18n_key("roadmap", "explore_practice_regularly").format(label=path.label), "skill", 1),
+        task(i18n_key("roadmap", "explore_find_mentor"), "explore", 2),
+        task(i18n_key("roadmap", "explore_collect_feedback"), "practice", 3),
+        task(i18n_key("roadmap", "explore_note_difficulties"), "planning", 4),
     ]
 
     year1_tasks = [
-        task(f"Прими участие в конкурсе, соревновании или открытом показе по направлению «{path.label}»", "portfolio", 1),
-        task("Составь список навыков, которые хочешь развить дальше в этой сфере", "planning", 2),
-        task("Найди профессиональное сообщество (онлайн или офлайн) по этой сфере", "explore", 3),
-        task("Обсуди с наставником или родителями цели на следующий год", "planning", 4),
+        task(i18n_key("roadmap", "explore_present_work").format(label=path.label), "portfolio", 1),
+        task(i18n_key("roadmap", "explore_list_skills"), "planning", 2),
+        task(i18n_key("roadmap", "explore_find_community"), "explore", 3),
+        task(i18n_key("roadmap", "explore_discuss_next_year"), "planning", 4),
     ]
 
     until_goal_tasks = [
-        task("Сформулируй свои интересы и цели в этой сфере в письменном виде", "planning", 1),
-        task("Исследуй пути дальнейшего обучения и развития по выбранному направлению", "planning", 2),
-        task("Обсуди планы с родителями, учителями или школьным куратором", "planning", 3),
-        task("Составь план на следующий год с конкретными шагами и датами", "planning", 4),
+        task(i18n_key("roadmap", "explore_write_goals"), "planning", 1),
+        task(i18n_key("roadmap", "explore_learning_paths"), "planning", 2),
+        task(i18n_key("roadmap", "explore_discuss_plans"), "planning", 3),
+        task(i18n_key("roadmap", "explore_plan_next_year"), "planning", 4),
     ]
 
     return [
         RoadmapMilestone(
             horizon="month_1",
-            title="Первые пробы",
-            outcome=f"Понимание, откликается ли направление «{path.label}».",
+            title=i18n_key("roadmap", "explore_month_1_title"),
+            outcome=i18n_key("roadmap", "explore_month_1_outcome").format(label=path.label),
             tasks=month1_tasks,
         ),
         RoadmapMilestone(
             horizon="months_3",
-            title="Регулярный формат",
-            outcome="Первый регулярный формат занятий и самостоятельная попытка.",
+            title=i18n_key("roadmap", "explore_months_3_title"),
+            outcome=i18n_key("roadmap", "explore_months_3_outcome"),
             tasks=months3_tasks,
         ),
         RoadmapMilestone(
             horizon="months_6",
-            title="Углубление",
-            outcome="Регулярные занятия и первый самостоятельный проект.",
+            title=i18n_key("roadmap", "explore_months_6_title"),
+            outcome=i18n_key("roadmap", "explore_months_6_outcome"),
             tasks=months6_tasks,
         ),
         RoadmapMilestone(
             horizon="year_1",
-            title="Предъявление результата",
-            outcome="Первый публичный результат — участие в конкурсе, соревновании или показе.",
+            title=i18n_key("roadmap", "explore_year_1_title"),
+            outcome=i18n_key("roadmap", "explore_year_1_outcome"),
             tasks=year1_tasks,
         ),
         RoadmapMilestone(
             horizon="until_goal",
-            title="Чёткое видение будущего",
-            outcome="Чёткое представление о сфере и путях дальнейшего обучения.",
+            title=i18n_key("roadmap", "explore_until_goal_title"),
+            outcome=i18n_key("roadmap", "explore_until_goal_outcome"),
             tasks=until_goal_tasks,
         ),
     ]
@@ -214,57 +216,57 @@ def _build_explore_track(path: RecommendedPath) -> list[RoadmapMilestone]:
 
 def _build_profession(directions: list[_DirectionSummary]) -> list[RoadmapMilestone]:
     top = directions[0] if directions else None
-    top_name = top.name if top else "выбранном направлении"
-    first_skills = (top.skills_needed[:2] if top else []) or ["ключевым навыкам"]
-    first_steps = (top.first_steps[:3] if top else []) or ["Изучи базовые материалы по направлению"]
+    top_name = top.name if top else i18n_key("roadmap", "fallback_direction")
+    first_skills = (top.skills_needed[:2] if top else []) or [i18n_key("roadmap", "fallback_key_skills")]
+    first_steps = (top.first_steps[:3] if top else []) or [i18n_key("roadmap", "profession_study_basics")]
 
     return [
         RoadmapMilestone(
             horizon="month_1",
-            title="Изучить профессии по результатам",
-            outcome="Сформированное понимание ключевых профессий в выбранной сфере.",
+            title=i18n_key("roadmap", "profession_month_1_title"),
+            outcome=i18n_key("roadmap", "profession_month_1_outcome"),
             tasks=[
-                RoadmapTask(text=f"Изучи профессии в сфере «{top_name}» и выбери 1–2 наиболее интересных", category="knowledge", priority=1),
-                RoadmapTask(text=f"Посмотри «день из жизни» специалиста в «{top_name}»", category="knowledge", priority=2),
-                RoadmapTask(text="Составь список навыков, необходимых для работы в этой сфере", category="knowledge", priority=3),
+                RoadmapTask(text=i18n_key("roadmap", "profession_choose_careers").format(top_name=top_name), category="knowledge", priority=1),
+                RoadmapTask(text=i18n_key("roadmap", "profession_day_in_life").format(top_name=top_name), category="knowledge", priority=2),
+                RoadmapTask(text=i18n_key("roadmap", "profession_list_skills"), category="knowledge", priority=3),
             ],
         ),
         RoadmapMilestone(
             horizon="months_3",
-            title="Начать развивать ключевые навыки",
-            outcome="Освоение базовых теоретических и практических навыков.",
+            title=i18n_key("roadmap", "profession_months_3_title"),
+            outcome=i18n_key("roadmap", "profession_months_3_outcome"),
             tasks=[
                 RoadmapTask(text=first_steps[0], category="skill", priority=1),
-                RoadmapTask(text=f"Пройди онлайн-курс по {first_skills[0] if first_skills else 'базовым навыкам направления'}", category="skill", priority=2),
-                RoadmapTask(text="Найди учебные задачи или мини-проекты для практики", category="skill", priority=3),
+                RoadmapTask(text=i18n_key("roadmap", "profession_online_course").format(skill=first_skills[0] if first_skills else i18n_key("roadmap", "fallback_basic_skills")), category="skill", priority=2),
+                RoadmapTask(text=i18n_key("roadmap", "profession_find_practice"), category="skill", priority=3),
             ],
         ),
         RoadmapMilestone(
             horizon="months_6",
-            title="Первый практический опыт",
-            outcome="Создание первого учебного проекта для портфолио.",
+            title=i18n_key("roadmap", "profession_months_6_title"),
+            outcome=i18n_key("roadmap", "profession_months_6_outcome"),
             tasks=[
-                RoadmapTask(text=f"Сделай первый учебный проект в сфере «{top_name}»", category="practice", priority=1),
-                RoadmapTask(text="Ищи возможности для волонтёрства или стажировки по теме", category="practice", priority=2),
-                RoadmapTask(text="Собери первое портфолио своих работ", category="portfolio", priority=3),
+                RoadmapTask(text=i18n_key("roadmap", "profession_first_project").format(top_name=top_name), category="practice", priority=1),
+                RoadmapTask(text=i18n_key("roadmap", "profession_find_internship"), category="practice", priority=2),
+                RoadmapTask(text=i18n_key("roadmap", "profession_first_portfolio"), category="portfolio", priority=3),
             ],
         ),
         RoadmapMilestone(
             horizon="year_1",
-            title="Профессиональное позиционирование",
+            title=i18n_key("roadmap", "profession_year_1_title"),
             tasks=[
-                RoadmapTask(text="Дополни портфолио 2–3 значимыми проектами", category="portfolio", priority=1),
-                RoadmapTask(text="Сформулируй карьерные цели на ближайшие 3–5 лет", category="career", priority=2),
-                RoadmapTask(text="Пройди профессиональную консультацию или карьерное тестирование", category="career", priority=3),
+                RoadmapTask(text=i18n_key("roadmap", "profession_expand_portfolio"), category="portfolio", priority=1),
+                RoadmapTask(text=i18n_key("roadmap", "profession_career_goals"), category="career", priority=2),
+                RoadmapTask(text=i18n_key("roadmap", "profession_career_counselling"), category="career", priority=3),
             ],
         ),
         RoadmapMilestone(
             horizon="until_goal",
-            title="Начало профессионального пути",
+            title=i18n_key("roadmap", "profession_until_goal_title"),
             tasks=[
-                RoadmapTask(text="Подготовь резюме и начни поиск первой работы или практики", category="career", priority=1),
-                RoadmapTask(text=f"Поступи на профессиональную программу обучения по направлению «{top_name}»", category="education", priority=2),
-                RoadmapTask(text="Найди ментора в выбранной сфере для карьерной поддержки", category="career", priority=3),
+                RoadmapTask(text=i18n_key("roadmap", "profession_first_job"), category="career", priority=1),
+                RoadmapTask(text=i18n_key("roadmap", "profession_training_program").format(top_name=top_name), category="education", priority=2),
+                RoadmapTask(text=i18n_key("roadmap", "profession_find_mentor"), category="career", priority=3),
             ],
         ),
     ]
@@ -275,7 +277,7 @@ def _build_university(directions: list[_DirectionSummary], gap: GapAnalysisResul
     if gap and gap.not_met:
         month1_tasks = [
             RoadmapTask(
-                text=f"Закрыть требование «{item.requirement}»: {item.comment}",
+                text=i18n_key("roadmap", "university_close_requirement").format(requirement=item.requirement, comment=item.comment),
                 category="requirement",
                 priority=i + 1,
             )
@@ -283,16 +285,16 @@ def _build_university(directions: list[_DirectionSummary], gap: GapAnalysisResul
         ]
     else:
         month1_tasks = [
-            RoadmapTask(text="Изучи требования к поступлению в целевой университет", category="planning", priority=1),
-            RoadmapTask(text="Составь список документов, необходимых для подачи заявки", category="documents", priority=2),
-            RoadmapTask(text="Найди дедлайны подачи документов и запиши их", category="planning", priority=3),
+            RoadmapTask(text=i18n_key("roadmap", "university_study_requirements"), category="planning", priority=1),
+            RoadmapTask(text=i18n_key("roadmap", "university_list_documents"), category="documents", priority=2),
+            RoadmapTask(text=i18n_key("roadmap", "university_find_deadlines"), category="planning", priority=3),
         ]
 
     # months_3: work on in_progress requirements
     if gap and gap.in_progress:
         months3_tasks = [
             RoadmapTask(
-                text=f"Продолжить работу над «{item.requirement}»: {item.comment}",
+                text=i18n_key("roadmap", "university_continue_requirement").format(requirement=item.requirement, comment=item.comment),
                 category="requirement",
                 priority=i + 1,
             )
@@ -300,52 +302,52 @@ def _build_university(directions: list[_DirectionSummary], gap: GapAnalysisResul
         ]
     else:
         months3_tasks = [
-            RoadmapTask(text="Подготовься к сдаче вступительных экзаменов или тестов", category="exam", priority=1),
-            RoadmapTask(text="Запишись на курсы подготовки к экзаменам (при необходимости)", category="exam", priority=2),
-            RoadmapTask(text="Начни собирать портфолио достижений", category="portfolio", priority=3),
+            RoadmapTask(text=i18n_key("roadmap", "university_prepare_exams"), category="exam", priority=1),
+            RoadmapTask(text=i18n_key("roadmap", "university_exam_courses"), category="exam", priority=2),
+            RoadmapTask(text=i18n_key("roadmap", "university_start_portfolio"), category="portfolio", priority=3),
         ]
 
     return [
         RoadmapMilestone(
             horizon="month_1",
-            title="Закрыть критические пробелы",
-            outcome="План закрытия критических пробелов для поступления.",
+            title=i18n_key("roadmap", "university_month_1_title"),
+            outcome=i18n_key("roadmap", "university_month_1_outcome"),
             tasks=month1_tasks,
         ),
         RoadmapMilestone(
             horizon="months_3",
-            title="Устранить пробелы в процессе",
-            outcome="Устранение пробелов в знаниях и навыках для вуза.",
+            title=i18n_key("roadmap", "university_months_3_title"),
+            outcome=i18n_key("roadmap", "university_months_3_outcome"),
             tasks=months3_tasks,
         ),
         RoadmapMilestone(
             horizon="months_6",
-            title="Подготовить документы к поступлению",
-            outcome="Собранный комплект документов и готовое эссе.",
+            title=i18n_key("roadmap", "university_months_6_title"),
+            outcome=i18n_key("roadmap", "university_months_6_outcome"),
             tasks=[
-                RoadmapTask(text="Собери все необходимые документы для подачи заявки", category="documents", priority=1),
-                RoadmapTask(text="Напиши мотивационное письмо или вступительное эссе", category="documents", priority=2),
-                RoadmapTask(text="Проверь дедлайны подачи документов и расставь напоминания", category="planning", priority=3),
+                RoadmapTask(text=i18n_key("roadmap", "university_collect_documents"), category="documents", priority=1),
+                RoadmapTask(text=i18n_key("roadmap", "university_write_essay"), category="documents", priority=2),
+                RoadmapTask(text=i18n_key("roadmap", "university_deadline_reminders"), category="planning", priority=3),
             ],
         ),
         RoadmapMilestone(
             horizon="year_1",
-            title="Подать заявку",
-            outcome="Поданные заявления в выбранные вузы.",
+            title=i18n_key("roadmap", "university_year_1_title"),
+            outcome=i18n_key("roadmap", "university_year_1_outcome"),
             tasks=[
-                RoadmapTask(text="Отправь заявку на поступление в университет", category="application", priority=1),
-                RoadmapTask(text="Изучи возможности стипендий и грантов для поступающих", category="finance", priority=2),
-                RoadmapTask(text="Подготовь 2–3 запасных варианта университетов", category="planning", priority=3),
+                RoadmapTask(text=i18n_key("roadmap", "university_submit_application"), category="application", priority=1),
+                RoadmapTask(text=i18n_key("roadmap", "university_scholarships"), category="finance", priority=2),
+                RoadmapTask(text=i18n_key("roadmap", "university_backup_choices"), category="planning", priority=3),
             ],
         ),
         RoadmapMilestone(
             horizon="until_goal",
-            title="Поступление",
-            outcome="Успешное прохождение испытаний и зачисление.",
+            title=i18n_key("roadmap", "university_until_goal_title"),
+            outcome=i18n_key("roadmap", "university_until_goal_outcome"),
             tasks=[
-                RoadmapTask(text="Пройди вступительные испытания или собеседование", category="admission", priority=1),
-                RoadmapTask(text="Подпиши оферт о зачислении", category="admission", priority=2),
-                RoadmapTask(text="Оформи необходимые документы (виза, общежитие, регистрация)", category="admission", priority=3),
+                RoadmapTask(text=i18n_key("roadmap", "university_entrance_tests"), category="admission", priority=1),
+                RoadmapTask(text=i18n_key("roadmap", "university_accept_offer"), category="admission", priority=2),
+                RoadmapTask(text=i18n_key("roadmap", "university_admission_documents"), category="admission", priority=3),
             ],
         ),
     ]
@@ -365,17 +367,17 @@ def build_roadmap(
     The AI path lives in `_build_roadmap_ai`; `generate_roadmap` tries it first."""
     if goal == AssessmentGoal.university:
         milestones = _build_university(matched_directions, gap_analysis)
-        focus = "Этот план сфокусирован на подготовке к поступлению в вуз: закрытии академических пробелов, сборе необходимых документов, подготовке к экзаменам и успешной подаче заявления."
+        focus = i18n_key("roadmap", "university_focus")
         return milestones, focus, []
     if goal == AssessmentGoal.profession:
         milestones = _build_profession(matched_directions)
-        focus = "План ориентирован на развитие практических навыков в выбранной профессии, создание первого портфолио проектов и подготовку к старту в профессиональной среде."
+        focus = i18n_key("roadmap", "profession_focus")
         return milestones, focus, []
     # explore and unsure ("Пока не знаю") share the exploratory roadmap
     recommended_paths = _decide_explore_paths(matched_directions)
     for path in recommended_paths:
         path.milestones = _build_explore_track(path)
-    focus = "Судя по твоим ответам, у тебя есть явные интересы и сильные стороны — этот план поможет попробовать ведущие направления на практике и сделать осознанный выбор без давления и спешки."
+    focus = i18n_key("roadmap", "explore_focus")
     return recommended_paths[0].milestones, focus, recommended_paths
 
 
@@ -549,13 +551,13 @@ async def generate_roadmap(
     assessment_row = await db.execute(select(Assessment).where(Assessment.id == assessment_id))
     assessment = assessment_row.scalar_one_or_none()
     if assessment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
 
     # Load profile
     profile_row = await db.execute(select(Profile).where(Profile.id == assessment.profile_id))
     profile = profile_row.scalar_one_or_none()
     if profile is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "profile_not_found", locale="ru"))
 
     # ТЗ §10.3 soft downgrade (middle + "university" -> "profession") must hold
     # for generation too, not just for the goal-overlay banner — see
@@ -675,7 +677,7 @@ async def get_roadmap(
 _AI_UNAVAILABLE = AppError(
     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
     error_code="ai_unavailable",
-    detail="ИИ временно недоступен, попробуй ещё раз",
+    detail=i18n_key("api_errors", "ai_unavailable", locale="ru"),
 )
 
 
@@ -769,14 +771,14 @@ async def _program_row_for_direction(
     if row is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Program not found",
+            detail=i18n_key("api_errors", "program_not_found", locale="ru"),
         )
 
     program, university = row
     if slug not in (program.profession_slugs or []):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Program does not belong to this direction",
+            detail=i18n_key("api_errors", "program_does_not_belong_to_this_direction", locale="ru"),
         )
     return program, university
 
@@ -862,19 +864,19 @@ async def _require_direction_roadmap_access(
         await db.execute(select(Assessment).where(Assessment.id == assessment_id))
     ).scalar_one_or_none()
     if assessment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
 
     profile = (
         await db.execute(select(Profile).where(Profile.id == assessment.profile_id))
     ).scalar_one_or_none()
     if profile is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "profile_not_found", locale="ru"))
 
     if profile.age_group == AgeGroup.junior:
         raise AppError(
             status_code=status.HTTP_403_FORBIDDEN,
             error_code="feature_requires_age_10",
-            detail="Эта возможность доступна с 10 лет",
+            detail=i18n_key("api_errors", "feature_requires_age_10", locale="ru"),
         )
 
     if _INQUIRY_REQUIRED:
@@ -885,12 +887,12 @@ async def _require_direction_roadmap_access(
                 raise AppError(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     error_code="direction_inquiry_not_completed",
-                    detail="Сначала пройди опрос по этому направлению",
+                    detail=i18n_key("api_errors", "direction_inquiry_not_completed", locale="ru"),
                 )
 
     direction = await direction_service.get_direction_by_slug(slug, db)
     if direction is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Direction not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "direction_not_found", locale="ru"))
 
     return assessment, direction
 
@@ -982,7 +984,7 @@ async def generate_direction_roadmap(
 
     context = await build_student_context(assessment_id, db, inquiry_slug=slug)
     if context is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
 
     # Backend-only university facts — never the model's job, and never asked of
     # it for any goal other than "university". Gated on the EFFECTIVE goal
@@ -1043,24 +1045,24 @@ async def generate_direction_roadmap_for_program(
         await db.execute(select(Assessment).where(Assessment.id == assessment_id))
     ).scalar_one_or_none()
     if assessment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
 
     profile = (
         await db.execute(select(Profile).where(Profile.id == assessment.profile_id))
     ).scalar_one_or_none()
     if profile is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "profile_not_found", locale="ru"))
 
     if profile.age_group == AgeGroup.junior:
         raise AppError(
             status_code=status.HTTP_403_FORBIDDEN,
             error_code="feature_requires_age_10",
-            detail="Эта возможность доступна с 10 лет",
+            detail=i18n_key("api_errors", "feature_requires_age_10", locale="ru"),
         )
 
     program_university = await _program_and_university(program_id, db)
     if program_university is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Program not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "program_not_found", locale="ru"))
     program, university = program_university
 
     analysis_row = await db.execute(
@@ -1076,12 +1078,12 @@ async def generate_direction_roadmap_for_program(
         raise AppError(
             status_code=status.HTTP_400_BAD_REQUEST,
             error_code="program_has_no_direction",
-            detail="Эта программа не связана ни с одним направлением",
+            detail=i18n_key("api_errors", "program_has_no_direction", locale="ru"),
         )
 
     direction = await direction_service.get_direction_by_slug(slug, db)
     if direction is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Direction not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "direction_not_found", locale="ru"))
 
     redis = _get_redis()
     key = direction_cache_key(assessment_id, slug, program_id)
@@ -1091,7 +1093,7 @@ async def generate_direction_roadmap_for_program(
 
     context = await build_student_context(assessment_id, db)
     if context is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
 
     artifacts_row = await db.execute(
         select(Artifact).where(Artifact.profile_id == assessment.profile_id)

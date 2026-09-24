@@ -44,7 +44,13 @@ from app.services import bigfive_content
 from app.services.mi_content import mi_activities, mi_labels
 from app.services.mi_service import MI_ORDER
 from app.services.riasec_content import neutral_career_why_variants, neutral_try_now, riasec_labels
-from app.services.riasec_explanations import COMBINATION_TEXTS, QUOTE_MIX, TYPE_EXPLANATIONS
+from app.services.riasec_explanations import (
+    COMBINATION_TEXTS,
+    QUOTE_MIX,
+    TYPE_EXPLANATIONS,
+    localized_combination_text,
+    localized_type_explanation,
+)
 from app.services.riasec_service import HOLLAND_ORDER, consistency, direction_letter_weight
 from app.services.scoring_levels import LEVEL_HIGH_MIN, LEVEL_MEDIUM_MIN
 
@@ -165,7 +171,7 @@ def build_interest_details(
     take_disliked = min(len(disliked), total - take_liked)
     quotes = [StudentInterestQuote(text=t, answer="like") for t in liked[:take_liked]]
     quotes += [StudentInterestQuote(text=t, answer="dislike") for t in disliked[:take_disliked]]
-    means, follows = TYPE_EXPLANATIONS[code][level]
+    means, follows = localized_type_explanation(code, level)
     return StudentInterestDetails(
         answered=sum(distribution),
         distribution=distribution,
@@ -185,7 +191,7 @@ def build_interest_combination(items: list[StudentInterestMapItem]) -> StudentIn
     if len(items) < 2 or items[1].level == "low":
         return None
     first, second = items[0], items[1]
-    relation, template = COMBINATION_TEXTS[consistency([first.code, second.code])]
+    relation, template = localized_combination_text(consistency([first.code, second.code]))
     return StudentInterestCombination(
         codes=[first.code, second.code],
         relation=relation,

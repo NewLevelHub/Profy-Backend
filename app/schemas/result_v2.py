@@ -17,11 +17,14 @@ bare `Union`/`X | Y` since 3.10 but not on an `Annotated[...]` wrapper.
 the one that gets pydantic to actually pick the right branch instead of
 just trying both.
 """
+
 import uuid
 from datetime import datetime
 from typing import Annotated, Literal, Union
 
 from pydantic import BaseModel, Field, TypeAdapter
+
+from app.i18n.catalog import key as i18n_key
 
 # TZ_Profi.md §17.5 point 7 / Приложение C В.2: every report must carry this
 # framing, verbatim and unconditionally — server-authored, not LLM text, so
@@ -30,8 +33,7 @@ from pydantic import BaseModel, Field, TypeAdapter
 # narrative pipeline's own prompt/validator — this field is the guarantee,
 # that one is the personalization).
 DISCLAIMER = (
-    "Это не окончательный выбор, а карта возможных направлений — со временем "
-    "картина может измениться, и это нормально."
+    i18n_key("result_v2", "disclaimer", locale="ru")
 )
 
 # Closing encouragement under junior's "Что можно попробовать" list — same
@@ -44,9 +46,7 @@ DISCLAIMER = (
 # ever meaningful for junior — the frontend component already no-ops when
 # exploration_activities is empty, which it always is for riasec.
 EXPLORATION_CLOSING_NOTE = (
-    "Не обязательно пробовать всё сразу — начни с того, что откликается "
-    "больше всего. Даже маленький шаг сегодня помогает лучше понять, что "
-    "тебе действительно нравится."
+    i18n_key("result_v2", "exploration_note", locale="ru")
 )
 
 # Default for `interest_map_note` — a *default*, not a required field, same
@@ -56,17 +56,13 @@ EXPLORATION_CLOSING_NOTE = (
 # report_v2_assembler.build_interest_map_note() overrides this with a real,
 # personalized note every time a fresh response is assembled.
 INTEREST_MAP_NOTE_FALLBACK = (
-    "Карта показывает, какие сферы проявляются ярче, а какие — тише. Это не "
-    "оценка, а просто снимок текущего состояния."
+    i18n_key("report_copy", "interest_map_note_fallback", locale="ru")
 )
 
 # Same reasoning again for `final_analysis` — a plain default so old cached
 # responses (from before this field existed) don't fail to deserialize.
 FINAL_ANALYSIS_FALLBACK = (
-    "Каждый раздел этого отчёта — отдельный кусочек общей картины: не "
-    "разрозненные факты, а разные стороны одного и того же человека. "
-    "Используй их вместе, а не по одному, когда будешь решать, что "
-    "попробовать дальше."
+    i18n_key("report_copy", "closing_bridge_fallback", locale="ru")
 )
 
 # Same reasoning again for `personality_note` — a plain default so old
@@ -74,8 +70,7 @@ FINAL_ANALYSIS_FALLBACK = (
 # deserialize. report_v2_assembler.build_personality_note() overrides this
 # with a real synthesis every time a fresh response is assembled.
 PERSONALITY_NOTE_FALLBACK = (
-    "Каждая черта характера проявляется по-своему — вместе они складываются "
-    "в общую картину того, как тебе комфортнее действовать и общаться."
+    i18n_key("report_copy", "personality_note_fallback", locale="ru")
 )
 
 _MI_INTEREST_COUNT = 8  # len(mi_content.MI_LABELS) — every MI category, always

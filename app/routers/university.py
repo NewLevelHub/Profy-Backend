@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_student_user, get_current_user, get_current_user_optional
@@ -134,12 +135,12 @@ async def get_gap_analysis(
     profile_result = await db.execute(select(Profile).where(Profile.user_id == current_user.id))
     profile = profile_result.scalar_one_or_none()
     if profile is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "profile_not_found", locale="ru"))
 
     if profile.age_group != AgeGroup.senior:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Gap analysis is only available for senior age group",
+            detail=i18n_key("api_errors", "gap_analysis_senior_only", locale="ru"),
         )
 
     program = await get_program_by_id(db, program_id)
@@ -152,12 +153,12 @@ async def get_gap_analysis(
     )
     assessment = assessment_result.scalar_one_or_none()
     if assessment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
 
     if assessment.status != AssessmentStatus.completed:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Assessment is not completed yet",
+            detail=i18n_key("api_errors", "assessment_is_not_completed_yet", locale="ru"),
         )
 
     # Built from AnalysisResult.careers — same review gate as the report.
@@ -184,7 +185,7 @@ async def get_gap_analysis(
     if analysis is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Generate a report for this assessment before running gap analysis",
+            detail=i18n_key("api_errors", "gap_analysis_report_required", locale="ru"),
         )
 
     # Program.profession_slugs directly lists which professions (Direction
@@ -194,7 +195,7 @@ async def get_gap_analysis(
     if not matched_profession_slugs.intersection(program.profession_slugs):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This program's direction does not match your assessment results",
+            detail=i18n_key("api_errors", "program_direction_mismatch", locale="ru"),
         )
 
     artifacts = await get_artifacts(profile.id, db)

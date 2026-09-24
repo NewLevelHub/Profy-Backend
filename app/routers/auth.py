@@ -2,6 +2,7 @@ import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_user
@@ -58,7 +59,7 @@ async def _check_rate_limit(key: str, limit: int, window: int) -> None:
     if count > limit:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many requests. Please try again later.",
+            detail=i18n_key("api_errors", "rate_limit_exceeded", locale="ru"),
         )
 
 
@@ -122,7 +123,7 @@ async def resend_verification(body: ResendVerificationRequest, db: AsyncSession 
     if await redis.exists(rate_key):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Please wait 60 seconds before requesting a new code",
+            detail=i18n_key("api_errors", "verification_resend_too_soon", locale="ru"),
         )
 
     await redis.set(rate_key, "1", ex=60)
@@ -171,7 +172,7 @@ async def forgot_password(body: ForgotPasswordRequest, request: Request, db: Asy
         # случаях, иначе форма становится оракулом для перебора почт. Тот же
         # приём, что и в /resend-verification выше.
         pass
-    return {"message": "If an account exists, a reset code has been sent."}
+    return {"message": i18n_key("api_messages", "password_reset_requested")}
 
 
 @router.post("/verify-reset-code", status_code=status.HTTP_200_OK)
@@ -182,7 +183,7 @@ async def verify_reset_code(body: VerifyResetCodeRequest, db: AsyncSession = Dep
     try:
         await password_reset_service.verify_code(body.email, body.code, db)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired code")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=i18n_key("api_errors", "invalid_or_expired_code", locale="ru"))
     return {"valid": True}
 
 
@@ -194,5 +195,5 @@ async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(
     try:
         await password_reset_service.reset_password(body.email, body.code, body.new_password, db)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired code")
-    return {"message": "Password has been reset successfully."}
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=i18n_key("api_errors", "invalid_or_expired_code", locale="ru"))
+    return {"message": i18n_key("api_messages", "password_reset_completed")}

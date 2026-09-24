@@ -7,11 +7,13 @@ docs/user-roles-integration-plan.md Milestone 2.
 
 from __future__ import annotations
 
+
 import uuid
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.models.profile import Profile
 from app.models.psychologist_assignment import PsychologistStudentAssignment
 from app.models.user import User, UserRole
@@ -29,15 +31,15 @@ async def create_assignment(
 ) -> PsychologistStudentAssignment:
     psychologist = await db.get(User, body.psychologist_id)
     if psychologist is None:
-        raise ValueError("Psychologist not found")
+        raise ValueError(i18n_key("api_errors", "psychologist_not_found", locale="ru"))
     if psychologist.role != UserRole.psychologist:
-        raise ValueError("psychologist_id must refer to a user with role=psychologist")
+        raise ValueError(i18n_key("api_errors", "invalid_psychologist_role", locale="ru"))
 
     student = await db.get(User, body.student_id)
     if student is None:
-        raise ValueError("Student not found")
+        raise ValueError(i18n_key("api_errors", "student_not_found", locale="ru"))
     if student.role != UserRole.student:
-        raise ValueError("student_id must refer to a user with role=student")
+        raise ValueError(i18n_key("api_errors", "invalid_student_role", locale="ru"))
 
     existing = await db.execute(
         select(PsychologistStudentAssignment).where(
@@ -46,7 +48,7 @@ async def create_assignment(
         )
     )
     if existing.scalar_one_or_none() is not None:
-        raise ValueError("Assignment already exists")
+        raise ValueError(i18n_key("api_errors", "assignment_already_exists", locale="ru"))
 
     assignment = PsychologistStudentAssignment(
         psychologist_id=body.psychologist_id,
@@ -119,6 +121,6 @@ async def list_unassigned_reviews(
 async def delete_assignment(db: AsyncSession, assignment_id: uuid.UUID) -> None:
     assignment = await db.get(PsychologistStudentAssignment, assignment_id)
     if assignment is None:
-        raise ValueError("Assignment not found")
+        raise ValueError(i18n_key("api_errors", "assignment_not_found", locale="ru"))
     await db.delete(assignment)
     await db.commit()

@@ -8,12 +8,14 @@ section` and neighbors. Consumed by Ф0.3's specialist report endpoint
 (GET /psychologist/students/{id}/assessments/{assessment_id}/report), never
 by the student-facing /result.
 """
+
 import logging
 import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment
 from app.models.profile import Profile
@@ -45,10 +47,7 @@ logger = logging.getLogger(__name__)
 # platform's own age range, 14-18, is otherwise unaffected — see
 # 00-ЭПИК-PRO-338.md's "Возраст" row).
 _BELBIN_METHODOLOGICAL_NOTE = (
-    "Методика Белбина изначально разработана для взрослых сотрудников в "
-    "корпоративном контексте (18+). Результат школьника стоит трактовать с "
-    "поправкой на возраст — это не формальное ограничение платформы, а "
-    "методическая особенность источника."
+    i18n_key("report_copy", "belbin_methodological_note", locale="ru")
 )
 
 

@@ -4,12 +4,14 @@ psychologist.py (only a psychologist/admin may assign) — this router is
 the read-only counterpart the STUDENT's own UI polls to discover what's
 been assigned to them, replacing the raw hand-delivered link Ф2.6/Ф3.6
 originally shipped with."""
+
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.assessment import Assessment
@@ -37,9 +39,9 @@ async def get_extended_blocks(
         )
     ).one_or_none()
     if row is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
     if row.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
 
     assignments = await extended_block_service.list_assignments(assessment_id, db)
     return ExtendedBlocksResponse(

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.i18n import DEFAULT_LOCALE, pick_locale
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
@@ -229,8 +230,7 @@ async def export_users(
     total = total_result.scalar_one()
     if total > EXPORT_MAX_ROWS:
         raise ExportTooLargeError(
-            f"Export matches {total} users, exceeding the {EXPORT_MAX_ROWS}-row limit — "
-            "narrow the search/age_group/status/goal filters first."
+            i18n_key("api_errors", "export_too_large", locale="ru").format(total=total, export_max_rows=EXPORT_MAX_ROWS)
         )
 
     query = _user_base_query(needs_distinct=needs_distinct).where(*filters).order_by(User.created_at.desc())
@@ -427,7 +427,7 @@ async def create_user(db: AsyncSession, body: AdminUserCreate) -> User:
     entirely — `is_verified` is set directly from the request body."""
     result = await db.execute(select(User).where(User.email == body.email))
     if result.scalar_one_or_none():
-        raise ValueError("Email already exists")
+        raise ValueError(i18n_key("api_errors", "email_already_exists", locale="ru"))
 
     user = User(
         email=body.email,
@@ -486,7 +486,7 @@ async def get_assessment_detail(
                     question_id=response.question_id,
                     instrument="?",
                     category="?",
-                    question_text="Вопрос удалён",
+                    question_text=i18n_key("report_copy", "deleted_question", locale="ru"),
                     question_order=0,
                     answer_value=response.answer_value,
                     selected_answer_text=_selected_answer_text(response.answer_value),

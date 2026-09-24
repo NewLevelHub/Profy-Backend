@@ -9,6 +9,7 @@ not "start over". A submit only starts a NEW row when the latest one for
 this assessment is already complete (every scored subtest + lability
 present) — so a genuine retake still gets its own fresh append-only row,
 matching astur_runs' own append-only contract (Ф3.3)."""
+
 import random
 import uuid
 
@@ -16,6 +17,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.config import astur_timer_config
 from app.i18n import pick_locale, pick_locale_list
 from app.models.astur_run import AsturRun
@@ -165,7 +167,7 @@ def _subtest_meta(n: int) -> dict:
     if meta is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No such АСТУР subtest: {n}",
+            detail=i18n_key("api_errors", "astur_subtest_not_found", locale="ru").format(n=n),
         )
     return meta
 
@@ -177,7 +179,7 @@ def _validate_item_keys(payload: dict, item_count: int, *, field_name: str) -> N
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={
-                "detail": f"{field_name} does not cover exactly this subtest's items",
+                "detail": i18n_key("api_errors", "astur_item_keys_mismatch", locale="ru").format(field_name=field_name),
                 "missing_items": sorted(expected - got),
                 "unexpected_items": sorted(got - expected),
             },
@@ -262,13 +264,13 @@ async def submit_subtest(
         if elapsed_ms is None:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="elapsed_ms is required for the lability subtest",
+                detail=i18n_key("api_errors", "lability_elapsed_ms_required", locale="ru"),
             )
         _validate_item_keys(elapsed_ms, item_count, field_name="elapsed_ms")
     elif elapsed_ms is not None:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="elapsed_ms is only accepted for the lability subtest",
+            detail=i18n_key("api_errors", "elapsed_ms_lability_only", locale="ru"),
         )
 
     run = await _get_or_create_active_run(assessment_id, user_id=user_id, db=db)

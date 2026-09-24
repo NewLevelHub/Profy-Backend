@@ -4,6 +4,7 @@ middle/senior only. Questions are cached in Redis so the verdict step can rebuil
 the exact Q&A from the answer indices. No template fallback — the whole feature is
 AI, so failures surface as HTTP 503.
 """
+
 import uuid
 
 import redis.asyncio as aioredis
@@ -12,6 +13,7 @@ from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.config import settings
 from app.errors import AppError
 from app.i18n import pick_locale
@@ -34,7 +36,7 @@ _redis: aioredis.Redis | None = None
 _AI_UNAVAILABLE = AppError(
     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
     error_code="ai_unavailable",
-    detail="ИИ временно недоступен, попробуй ещё раз",
+    detail=i18n_key("api_errors", "ai_unavailable", locale="ru"),
 )
 
 
@@ -54,22 +56,22 @@ async def _load_context_and_direction(
 ) -> tuple[StudentContext, object]:
     context = await build_student_context(assessment_id, db)
     if context is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
     if context.age_group == "junior":
         raise AppError(
             status_code=status.HTTP_403_FORBIDDEN,
             error_code="feature_requires_age_10",
-            detail="Эта возможность доступна с 10 лет",
+            detail=i18n_key("api_errors", "feature_requires_age_10", locale="ru"),
         )
     if slug not in {d.slug for d in context.careers}:
         raise AppError(
             status_code=status.HTTP_400_BAD_REQUEST,
             error_code="direction_not_in_results",
-            detail="Это направление не входит в твои результаты",
+            detail=i18n_key("api_errors", "direction_not_in_results", locale="ru"),
         )
     direction = await direction_service.get_direction_by_slug(slug, db)
     if direction is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Direction not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "direction_not_found", locale="ru"))
     return context, direction
 
 
@@ -119,7 +121,7 @@ async def build_verdict(
         raise AppError(
             status_code=status.HTTP_400_BAD_REQUEST,
             error_code="inquiry_questions_not_generated",
-            detail="Сначала получи вопросы по направлению",
+            detail=i18n_key("api_errors", "inquiry_questions_not_generated", locale="ru"),
         )
     questions = DirectionQuestionsResponse.model_validate_json(cached).questions
 
@@ -127,13 +129,13 @@ async def build_verdict(
         raise AppError(
             status_code=status.HTTP_400_BAD_REQUEST,
             error_code="inquiry_answer_count_mismatch",
-            detail="Число ответов не совпадает с числом вопросов",
+            detail=i18n_key("api_errors", "inquiry_answer_count_mismatch", locale="ru"),
         )
     if any(a < 0 or a >= len(likert_labels()) for a in answers):
         raise AppError(
             status_code=status.HTTP_400_BAD_REQUEST,
             error_code="inquiry_answer_invalid",
-            detail="Некорректный ответ",
+            detail=i18n_key("api_errors", "inquiry_answer_invalid", locale="ru"),
         )
 
     context, direction = await _load_context_and_direction(assessment_id, slug, db)

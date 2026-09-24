@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+from app.i18n.catalog import key as i18n_key
 from app.errors import AppError
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
@@ -62,7 +63,7 @@ async def create_assessment(
     profile_result = await db.execute(select(Profile).where(Profile.id == profile_id))
     profile = profile_result.scalar_one_or_none()
     if profile is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "profile_not_found", locale="ru"))
 
     existing_result = await db.execute(
         select(Assessment).where(
@@ -134,10 +135,10 @@ async def submit_answers(
     row_result = await db.execute(select(Assessment).where(Assessment.id == assessment_id))
     assessment = row_result.scalar_one_or_none()
     if assessment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
 
     if assessment.profile_id != current_profile_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
 
     age_group = await assessment_shared.get_profile_age_group(assessment.profile_id, db)
 
@@ -148,7 +149,7 @@ async def submit_answers(
         if item.question_id not in valid_ids:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Question {item.question_id} not found",
+                detail=i18n_key("api_errors", "question_id_not_found", locale="ru").format(question_id=item.question_id),
             )
 
     is_retake = assessment.status == AssessmentStatus.completed
@@ -218,10 +219,10 @@ async def update_assessment_goal(
     row_result = await db.execute(select(Assessment).where(Assessment.id == assessment_id))
     assessment = row_result.scalar_one_or_none()
     if assessment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
 
     if assessment.profile_id != current_profile_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
 
     # Age validation
     age_group = await assessment_shared.get_profile_age_group(assessment.profile_id, db)
@@ -230,7 +231,7 @@ async def update_assessment_goal(
             raise AppError(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 error_code="goal_not_allowed_for_junior",
-                detail="Для младшей возрастной группы доступна только цель 'исследовать себя'",
+                detail=i18n_key("api_errors", "goal_not_allowed_for_junior", locale="ru"),
             )
     # Backend mirror of the frontend gate (ASSESSMENT_GOAL_ALLOWED_AGE_GROUPS in
     # constants.ts): "university" is senior-only. Without this, a direct API
@@ -245,7 +246,7 @@ async def update_assessment_goal(
             raise AppError(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 error_code="admission_goal_not_allowed_for_middle",
-                detail="Для учеников 5-8 классов поступление пока недоступно как цель",
+                detail=i18n_key("api_errors", "admission_goal_not_allowed_for_middle", locale="ru"),
             )
 
     # Check limit of changes
@@ -255,7 +256,7 @@ async def update_assessment_goal(
             raise AppError(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 error_code="goal_change_limit_reached",
-                detail="Достигнут лимит смены целей (максимум 3 раза)",
+                detail=i18n_key("api_errors", "goal_change_limit_reached", locale="ru"),
             )
         assessment.goal_changed_count += 1
 

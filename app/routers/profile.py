@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.database import get_db
 from app.dependencies import get_current_student_user
 from app.i18n import guess_locale_from_language_field
@@ -87,7 +88,7 @@ async def get_profile(
 ) -> ProfileResponse:
     profile = await profile_service.get_profile(current_user.id, db)
     if profile is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "profile_not_found", locale="ru"))
     artifacts = await artifact_service.get_artifacts(profile.id, db)
     certificates = await certificate_service.get_certificates(profile.id, db)
     return _to_response(profile, artifacts, certificates)

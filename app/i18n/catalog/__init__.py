@@ -21,6 +21,13 @@ from typing import Any
 from app.i18n import DEFAULT_LOCALE, get_locale, record_fallback
 
 from . import (
+    admin_export,
+    api_errors,
+    api_messages,
+    report_copy,
+    riasec_explanations,
+    roadmap,
+
     bigfive,
     email,
     gap_analysis,
@@ -38,6 +45,13 @@ from . import (
 )
 
 _AREAS: dict[str, Any] = {
+    "admin_export": admin_export,
+    "api_errors": api_errors,
+    "api_messages": api_messages,
+    "report_copy": report_copy,
+    "riasec_explanations": riasec_explanations,
+    "roadmap": roadmap,
+
     "riasec": riasec,
     "bigfive": bigfive,
     "mi": mi,
@@ -80,7 +94,11 @@ def tr(area: str, *, locale: str | None = None) -> dict[str, Any]:
 
 def key(area: str, *path: str, locale: str | None = None) -> Any:
     """Convenience: ``tr(area)[path[0]][path[1]]…``."""
-    node: Any = tr(area, locale=locale)
+    # ``key`` is used by runtime service copy. Treat a legacy explicit ``ru``
+    # argument as a compatibility marker and resolve from the active request
+    # locale; callers that truly need a fixed language use ``tr`` directly.
+    resolved_locale = None if locale == DEFAULT_LOCALE else locale
+    node: Any = tr(area, locale=resolved_locale)
     for step in path:
         node = node[step]
     return node

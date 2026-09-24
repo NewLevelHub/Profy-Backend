@@ -8,6 +8,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.config import settings
 from app.errors import AppError
 from app.models.analysis_result import AnalysisResult
@@ -180,7 +181,7 @@ async def get_or_create_goal_overlay(
     res = await db.execute(stmt)
     assessment = res.scalar_one_or_none()
     if not assessment:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
 
     primary_goal = assessment.goal
 
@@ -195,7 +196,7 @@ async def get_or_create_goal_overlay(
     res = await db.execute(stmt)
     profile = res.scalar_one_or_none()
     if not profile:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "profile_not_found", locale="ru"))
 
     # 4. Handle unsure goal flow early
     if primary_goal == AssessmentGoal.unsure:
@@ -244,7 +245,7 @@ async def get_or_create_goal_overlay(
             raise AppError(
                 status_code=status.HTTP_404_NOT_FOUND,
                 error_code="assessment_results_unavailable",
-                detail="Не удалось получить результаты диагностики",
+                detail=i18n_key("api_errors", "assessment_results_unavailable", locale="ru"),
             )
 
     # Everything below is built from the report — top spheres, matched
