@@ -15,7 +15,7 @@ BLOCK_LABELS: dict[str, str] = {
     "personality": "Личность (Big Five)",
     "thinking_style": "Стиль мышления",
     "motivation": "Мотивация",
-    "validity": "Достоверность протокола",
+
     "psychoemotional": "Психоэмоциональное состояние (МЦВ)",
     "professional_types": "ДДО (интересы и способности)",
     "temperament": "Темперамент (Айзенк)",
@@ -42,8 +42,8 @@ class PsychAiAnalysisContext(BaseModel):
     student_name: str
     blocks: list[BlockData]
     # The student's own already-ranked top professions (report.careers) —
-    # the ONLY professions the model is allowed to recommend from. Empty
-    # for junior (TZ_Profi.md §4.1, not career-oriented) — the prompt/
+    # the ONLY professions the model is allowed to recommend from. When
+    # empty (no matching direction), the prompt/
     # validator both treat an empty list as "don't recommend a profession
     # at all", never as license to invent one.
     careers: list[CareerOption]
@@ -65,8 +65,7 @@ def build_context(
         add("thinking_style", {"notes": [n.model_dump() for n in report.thinking_style_notes]})
     if report.motivation_highlights:
         add("motivation", {"highlights": report.motivation_highlights})
-    if report.validity:
-        add("validity", report.validity.model_dump())
+
     if report.psychoemotional:
         add("psychoemotional", report.psychoemotional.model_dump())
 

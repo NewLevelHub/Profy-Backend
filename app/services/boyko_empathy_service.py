@@ -29,9 +29,8 @@ CHANNELS: tuple[str, ...] = ("rational", "emotional", "intuitive", "attitudes", 
 
 async def raw_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, int] | None:
     """1 point per item whose answer matches its own keyed direction, summed
-    per channel. `None` when nothing has been answered yet (junior/middle
-    never see this senior-only content, or a senior assessment still in
-    progress) — not a zero-filled dict, which would misreport "took it,
+    per channel. `None` when nothing has been answered yet (an assessment
+    still in progress) — not a zero-filled dict, which would misreport "took it,
     scored nothing everywhere" as if it were real data."""
     result = await db.execute(
         select(Question.order, UserResponse.answer_value)

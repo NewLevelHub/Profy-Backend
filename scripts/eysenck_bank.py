@@ -178,7 +178,6 @@ QUESTIONS: list[dict] = [
     {
         "order": 410 + i,
         "text": {"ru": text, "kk": _KK_TEXT[text]},
-        "age_tier": "senior",
         "scale": _KEY[i + 1][0],
         "keyed": _KEY[i + 1][1],
     }

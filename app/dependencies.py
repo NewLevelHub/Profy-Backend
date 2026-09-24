@@ -7,6 +7,7 @@ from jose import JWTError, jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.config import settings
 from app.database import get_db
 from app.i18n import SUPPORTED_LOCALES, set_locale
@@ -42,7 +43,7 @@ async def get_current_user(
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
+        detail=i18n_key("api_errors", "credentials_not_validated", locale="ru"),
         headers={"WWW-Authenticate": "Bearer"},
     )
 
@@ -116,7 +117,7 @@ async def get_current_admin_user(
     if not current_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
+            detail=i18n_key("api_errors", "admin_access_required", locale="ru"),
         )
     return current_user
 
@@ -131,7 +132,7 @@ async def get_current_student_user(
     if current_user.role != UserRole.student:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Student access required",
+            detail=i18n_key("api_errors", "student_access_required", locale="ru"),
         )
     return current_user
 
@@ -141,7 +142,7 @@ def require_role(*roles: UserRole):
         if current_user.role not in roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Insufficient role",
+                detail=i18n_key("api_errors", "insufficient_role", locale="ru"),
             )
         return current_user
 

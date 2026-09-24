@@ -5,6 +5,7 @@ Category lives on `MotivationStatement`, never duplicated onto
 bigfive_service (response rows store which *statement* was picked, not its
 category; category is read via a join/lookup at scoring time)."""
 
+
 import uuid
 
 from fastapi import HTTPException, status
@@ -12,6 +13,7 @@ from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.motivation import MotivationResponse, MotivationStatement
 from app.schemas.motivation import MotivationAnswerItem, SubmitMotivationResponse
@@ -88,9 +90,9 @@ async def submit_motivation_answers(
     row_result = await db.execute(select(Assessment).where(Assessment.id == assessment_id))
     assessment = row_result.scalar_one_or_none()
     if assessment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
     if assessment.profile_id != current_profile_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
 
     grouped = await triplets(db)
     for item in answers:
@@ -98,17 +100,17 @@ async def submit_motivation_answers(
         if not statements:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Unknown triplet {item.triplet_index}",
+                detail=i18n_key("api_errors", "unknown_triplet", locale="ru").format(triplet_index=item.triplet_index),
             )
         valid_ids = {s.id for s in statements}
         if item.most_statement_id not in valid_ids or item.least_statement_id not in valid_ids:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Statement does not belong to this triplet",
+                detail=i18n_key("api_errors", "statement_does_not_belong_to_this_triplet", locale="ru"),
             )
         if item.most_statement_id == item.least_statement_id:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="most and least must differ"
+                status_code=status.HTTP_400_BAD_REQUEST, detail=i18n_key("api_errors", "most_and_least_must_differ", locale="ru")
             )
 
     is_retake = assessment.status == AssessmentStatus.completed
@@ -144,9 +146,8 @@ async def submit_motivation_answers(
     mot_total = await total_triplets(db)
     mot_completed = mot_total > 0 and mot_answered >= mot_total
 
-    age_group = await assessment_shared.get_profile_age_group(assessment.profile_id, db)
     likert_answered = await assessment_shared.likert_answered_count(assessment_id, db)
-    likert_total = await assessment_shared.likert_total_questions(db, age_group)
+    likert_total = await assessment_shared.likert_total_questions(db)
     likert_completed = likert_total > 0 and likert_answered >= likert_total
 
     # `assessment.status` only flips once Belbin + АСТУР are done too (they're

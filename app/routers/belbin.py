@@ -1,12 +1,15 @@
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.i18n import pick_locale
+from app.i18n import MissingLocalizedText, pick_locale
 from app.models.assessment import Assessment
 from app.models.profile import Profile
 from app.models.user import User
@@ -19,30 +22,26 @@ from app.services import belbin_service
 from scripts.belbin_bank import BLOCK_TOTAL, INSTRUCTION, SECTIONS
 
 router = APIRouter(tags=["belbin"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("/belbin/content", response_model=BelbinContentResponse)
 async def get_belbin_content(
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> BelbinContentResponse:
     """PRO-338 Ф2.6 prerequisite — static content, same for every user, no
     `assessment_id` in the path (unlike submit): the frontend fetches this
     once to render the 7-block flow, independent of which assessment the
     eventual submit targets."""
-    return BelbinContentResponse(
-        instruction=pick_locale(INSTRUCTION),
-        block_total=BLOCK_TOTAL,
-        sections=[
-            {
-                "section": section["section"],
-                "title": pick_locale(section["title"]),
-                "items": [
-                    {"id": item["id"], "text": pick_locale(item["text"])} for item in section["items"]
-                ],
-            }
-            for section in SECTIONS
-        ],
-    )
+    try:
+        return BelbinContentResponse(**await belbin_service.build_content(db))
+    except (ValidationError, TypeError, AttributeError, MissingLocalizedText):
+        # An admin content override with a bad or incomplete shape must not
+        # take the whole test down for every real test-taker — fall back to
+        # the bank's own content until the override is fixed.
+        logger.exception("Malformed Belbin content override, falling back to bank default")
+        return BelbinContentResponse(**await belbin_service.build_content(db, ignore_override=True))
 
 
 async def _require_owned_assessment(
@@ -57,11 +56,11 @@ async def _require_owned_assessment(
     ).one_or_none()
     if row is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru")
         )
     if row.user_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+            status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru")
         )
 
 

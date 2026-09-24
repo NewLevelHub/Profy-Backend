@@ -53,7 +53,7 @@ async def test_abandoned_incomplete_in_progress_assessment_is_deleted_not_relabe
     # touched motivation. This is exactly the shape that used to get stuck.
     question = Question(
         instrument=QuestionInstrument.big_five, bigfive_domain=BigFiveDomain.O,
-        text={"ru": "test-q"}, age_tier=AgeGroup.middle,
+        text={"ru": "test-q"},
     )
     db_session.add(question)
     await db_session.flush()

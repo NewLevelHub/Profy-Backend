@@ -56,7 +56,6 @@ async def test_translation_of_a_published_report_is_published_and_not_requeued(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
     test_user: User,
     psychologist_user: User,
     monkeypatch: pytest.MonkeyPatch,
@@ -64,7 +63,7 @@ async def test_translation_of_a_published_report_is_published_and_not_requeued(
     emails = capture_emails(monkeypatch)
     force_complete_senior(monkeypatch)
     assessment = await make_student_assessment(db_session, test_user)
-    await assign(client, admin_headers, psychologist_user, test_user)
+    await assign(db_session, psychologist_user, test_user)
 
     await generate(client, auth_headers, assessment)
     (ru_row,) = await _rows(db_session, assessment.id)
@@ -95,7 +94,6 @@ async def test_pending_report_stays_hidden_in_every_locale_and_is_queued_once(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     test_user: User,
     psychologist_user: User,
@@ -104,7 +102,7 @@ async def test_pending_report_stays_hidden_in_every_locale_and_is_queued_once(
     capture_emails(monkeypatch)
     force_complete_senior(monkeypatch)
     assessment = await make_student_assessment(db_session, test_user)
-    await assign(client, admin_headers, psychologist_user, test_user)
+    await assign(db_session, psychologist_user, test_user)
     envelope = {"status": "pending_review", "assessment_id": str(assessment.id)}
 
     await generate(client, auth_headers, assessment)
@@ -132,7 +130,6 @@ async def test_review_edit_drops_stale_translations_and_retranslation_is_publish
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     test_user: User,
     psychologist_user: User,
@@ -141,7 +138,7 @@ async def test_review_edit_drops_stale_translations_and_retranslation_is_publish
     capture_emails(monkeypatch)
     force_complete_senior(monkeypatch)
     assessment = await make_student_assessment(db_session, test_user)
-    await assign(client, admin_headers, psychologist_user, test_user)
+    await assign(db_session, psychologist_user, test_user)
 
     await generate(client, auth_headers, assessment)
     await _switch_owner_locale(db_session, test_user, assessment.id, "kk")
@@ -184,7 +181,6 @@ async def test_publish_without_edits_publishes_every_locale_row(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     test_user: User,
     psychologist_user: User,
@@ -193,7 +189,7 @@ async def test_publish_without_edits_publishes_every_locale_row(
     capture_emails(monkeypatch)
     force_complete_senior(monkeypatch)
     assessment = await make_student_assessment(db_session, test_user)
-    await assign(client, admin_headers, psychologist_user, test_user)
+    await assign(db_session, psychologist_user, test_user)
 
     await generate(client, auth_headers, assessment)
     await _switch_owner_locale(db_session, test_user, assessment.id, "kk")
@@ -217,7 +213,6 @@ async def test_translation_keeps_psychologist_edits_outside_the_narrative(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     test_user: User,
     psychologist_user: User,
@@ -229,12 +224,20 @@ async def test_translation_keeps_psychologist_edits_outside_the_narrative(
     capture_emails(monkeypatch)
     force_complete_senior(monkeypatch)
     assessment = await make_student_assessment(db_session, test_user)
-    await assign(client, admin_headers, psychologist_user, test_user)
+    await assign(db_session, psychologist_user, test_user)
     await generate(client, auth_headers, assessment)
 
     detail = (await client.get(_result_url(test_user, assessment.id), headers=psychologist_headers)).json()
     assert len(detail["careers"]) > 1
-    kept = dict(detail["careers"][1])
+    kept_raw = detail["careers"][1]
+    kept = {
+        k: kept_raw[k]
+        for k in [
+            "slug", "name", "holland_code", "match_score", "description",
+            "professions", "skills_needed", "subjects_to_develop", "first_steps"
+        ]
+        if k in kept_raw
+    }
     kept["description"] = "Психолог переписал описание."
     kept["skills_needed"] = ["Психолог: главный навык."]
     # Longer than motivation_top on purpose: the response must not truncate it.
@@ -248,6 +251,8 @@ async def test_translation_keeps_psychologist_edits_outside_the_narrative(
         },
         headers=psychologist_headers,
     )
+    if patched.status_code != 200:
+        print("PATCH FAILED:", patched.json())
     assert patched.status_code == 200
     published = await client.post(f"{_result_url(test_user, assessment.id)}/publish", headers=psychologist_headers)
     assert published.status_code == 200
@@ -277,7 +282,6 @@ async def test_edit_history_moves_with_the_row_under_review(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     test_user: User,
     psychologist_user: User,
@@ -292,7 +296,7 @@ async def test_edit_history_moves_with_the_row_under_review(
     test_user.locale = "kk"
     await db_session.flush()
     assessment = await make_student_assessment(db_session, test_user)
-    await assign(client, admin_headers, psychologist_user, test_user)
+    await assign(db_session, psychologist_user, test_user)
     url = _result_url(test_user, assessment.id)
     await generate(client, auth_headers, assessment)
 
@@ -329,7 +333,6 @@ async def test_fallback_translation_keeps_edited_narrative_verbatim(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     test_user: User,
     psychologist_user: User,
@@ -342,7 +345,7 @@ async def test_fallback_translation_keeps_edited_narrative_verbatim(
     capture_emails(monkeypatch)
     force_complete_senior(monkeypatch)
     assessment = await make_student_assessment(db_session, test_user)
-    await assign(client, admin_headers, psychologist_user, test_user)
+    await assign(db_session, psychologist_user, test_user)
     url = _result_url(test_user, assessment.id)
     await generate(client, auth_headers, assessment)
 

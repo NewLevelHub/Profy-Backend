@@ -2,6 +2,8 @@ from collections.abc import Collection, Iterable
 from enum import Enum
 from typing import Any
 
+from app.i18n.catalog import key as i18n_key
+
 
 def lock_fields(row, field_names: Iterable[str]) -> None:
     locked = set(row.admin_locked_fields or [])
@@ -48,7 +50,7 @@ class AdminOverrideValidationError(Exception):
 
 
 # Question-bank content (Question/QuestionPair/MotivationStatement/
-# MotivationPair/Direction) uses a value-carrying `overrides` dict instead of
+# Direction) uses a value-carrying `overrides` dict instead of
 # `admin_locked_fields` above — bank-seeded rows can be deleted by a reseed,
 # not just have fields reverted, so the override needs to be recoverable from
 # the row itself. See docs/admin-questions-content-overrides-plan.md.
@@ -69,7 +71,7 @@ _BANK_VALUE = "bank_value"
 
 
 def _jsonable(value: Any) -> Any:
-    """Enum columns (category, age_tier, instrument, ...) must reach JSONB as
+    """Enum columns (category, instrument, ...) must reach JSONB as
     their plain value, not as the enum member."""
     return value.value if isinstance(value, Enum) else value
 
@@ -106,9 +108,9 @@ def apply_overrides(
         column = columns.get(key)
         if key in localized_fields:
             if not locale:
-                raise AdminOverrideValidationError(f"locale is required to edit {key}")
+                raise AdminOverrideValidationError(i18n_key("api_errors", "field_requires_locale", locale="ru").format(key=key))
             if value is None and column is not None and not column.nullable:
-                raise AdminOverrideValidationError(f"{key} cannot be null")
+                raise AdminOverrideValidationError(i18n_key("api_errors", "field_cannot_be_null", locale="ru").format(key=key))
 
             current_map = dict(getattr(row, key) or {})
             existing = overrides.get(key)
@@ -134,7 +136,7 @@ def apply_overrides(
             overrides[key] = _entry(value_map, bank_map) if bank_map is not None else {_VALUE: value_map}
         else:
             if value is None and column is not None and not column.nullable:
-                raise AdminOverrideValidationError(f"{key} cannot be null")
+                raise AdminOverrideValidationError(i18n_key("api_errors", "field_cannot_be_null", locale="ru").format(key=key))
             existing = overrides.get(key)
             if isinstance(existing, dict) and _BANK_VALUE in existing:
                 # Re-edit: the column holds the PREVIOUS ADMIN EDIT now, so the

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, func
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -65,6 +65,7 @@ class AsturRun(Base):
         nullable=False,
         index=True,
     )
+    locale: Mapped[str] = mapped_column(String, nullable=False, default="ru")
 
     # --- Сырые данные прохождения (наполняет Ф3.4, per-subtest) ---
     answers: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)

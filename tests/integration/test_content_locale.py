@@ -1,5 +1,5 @@
 """Bank-seeded content tables (`questions`, `question_pairs`,
-`motivation_statements`, `motivation_pairs`, `directions`) — single-row
+`motivation_statements`, `directions`) — single-row
 localization.
 
 These tables used to carry one physical row per locale (KZ-301 "variant A",
@@ -23,13 +23,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import i18n
 from app.models.direction import Direction
 from app.models.motivation import MotivationStatement
-from app.models.motivation_pair import MotivationPair
-from app.models.profile import AgeGroup
 from app.models.question import Question, QuestionInstrument
 from app.models.question_pair import QuestionPair
 from app.services import (
     assessment_shared,
-    motivation_pair_service,
     motivation_service,
     question_pair_service,
     question_service,
@@ -49,7 +46,6 @@ def _clear_fallback_counts():
     [
         (QuestionInstrument.riasec, 146),
         (QuestionInstrument.big_five, 120),
-        (QuestionInstrument.mi, 48),
     ],
 )
 async def test_question_bank_is_fully_translated(
@@ -89,19 +85,13 @@ async def test_pick_locale_falls_back_per_row_when_kk_is_missing(db_session: Asy
 
 
 async def test_get_all_questions_kk_serves_the_full_kk_set(db_session: AsyncSession) -> None:
-    """All three Likert instruments are fully translated, so a `kk` senior
+    """The Likert instruments are fully translated, so a `kk`
     test is served entirely as `kk` text with no fallback."""
-    # Validity items (PRO-298) are untranslated until PRO-301; in CI only
-    # Likert items are seeded, but if validity items exist in a local DB,
-    # exclude them so we test the three Likert instruments as intended.
-    await db_session.execute(
-        delete(Question).where(Question.instrument == QuestionInstrument.validity)
-    )
     all_questions = (await db_session.execute(select(Question))).scalars().all()
     by_id = {q.id: q for q in all_questions}
     i18n._current_locale.set("kk")
 
-    questions = await question_service.get_all_questions(db_session, AgeGroup.senior)
+    questions = await question_service.get_all_questions(db_session)
 
     assert questions
     for q in questions:
@@ -112,14 +102,14 @@ async def test_get_all_questions_kk_serves_the_full_kk_set(db_session: AsyncSess
 async def test_get_pairs_kk_serves_translated_frame_and_options(
     db_session: AsyncSession,
 ) -> None:
-    """Junior forced-choice pairs render `kk` frame + option text, and the
+    """Forced-choice pairs (ДДО) render `kk` frame + option text, and the
     pick still scores (option ids resolve to the same Question rows
     regardless of UI locale — there's only one Question row now)."""
     all_pairs = (await db_session.execute(select(QuestionPair))).scalars().all()
     ru_frames = {p.frame["ru"] for p in all_pairs if p.frame}
     i18n._current_locale.set("kk")
 
-    pairs = await question_pair_service.get_pairs(db_session, AgeGroup.junior)
+    pairs = await question_pair_service.get_pairs(db_session)
 
     assert pairs
     assert all(p.frame not in ru_frames for p in pairs)  # kk frames, not ru
@@ -147,9 +137,9 @@ async def test_directions_kk_names_and_shared_slug(db_session: AsyncSession) -> 
     assert ru_ranked == kk_ranked
 
 
-async def test_motivation_triplets_and_pairs_kk(db_session: AsyncSession) -> None:
-    """Motivation statements (senior triplets) and Harter pairs
-    (junior/middle) render `kk`; category assignment is unchanged."""
+async def test_motivation_triplets_kk(db_session: AsyncSession) -> None:
+    """Motivation statements (MOST/LEAST triplets) render `kk`; category
+    assignment is unchanged."""
     all_stmts_db = (await db_session.execute(select(MotivationStatement))).scalars().all()
     by_stmt_id = {s.id: s for s in all_stmts_db}
     i18n._current_locale.set("kk")
@@ -160,28 +150,19 @@ async def test_motivation_triplets_and_pairs_kk(db_session: AsyncSession) -> Non
     for s in all_stmts:
         assert i18n.pick_locale(s.text) == by_stmt_id[s.id].text["kk"]
 
-    all_pairs_db = (await db_session.execute(select(MotivationPair))).scalars().all()
-    assert len(all_pairs_db) == 18
-    for p in all_pairs_db:
-        assert p.text_a.get("kk") and p.text_b.get("kk")
-        assert p.category_a == p.category_b  # a/b poles still map to one category
-
-    pairs = await motivation_pair_service.pairs(db_session)
-    assert len(pairs) == 18
-
 
 async def test_scoring_denominators_count_the_single_row_set(db_session: AsyncSession) -> None:
     """riasec_service.question_counts / assessment_shared.likert_total_questions
     read `questions` directly with no locale filter — there's one row per
-    question now, so the count is simply "how many rows match the age tier",
+    question now, so the count is simply "how many rows there are",
     independent of which locale's text happens to be requested."""
     i18n._current_locale.set("ru")
-    ru_riasec = await riasec_service.question_counts(db_session, AgeGroup.senior)
-    ru_likert = await assessment_shared.likert_total_questions(db_session, AgeGroup.senior)
+    ru_riasec = await riasec_service.question_counts(db_session)
+    ru_likert = await assessment_shared.likert_total_questions(db_session)
 
     i18n._current_locale.set("kk")
-    kk_riasec = await riasec_service.question_counts(db_session, AgeGroup.senior)
-    kk_likert = await assessment_shared.likert_total_questions(db_session, AgeGroup.senior)
+    kk_riasec = await riasec_service.question_counts(db_session)
+    kk_likert = await assessment_shared.likert_total_questions(db_session)
 
     assert kk_riasec == ru_riasec
     assert kk_likert == ru_likert

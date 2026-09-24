@@ -11,6 +11,7 @@ assignment for every call.
 
 from __future__ import annotations
 
+
 import asyncio
 import logging
 import uuid
@@ -21,6 +22,7 @@ from sqlalchemy import Select, case, delete, select, tuple_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
+from app.i18n.catalog import key as i18n_key
 from app.i18n import DEFAULT_LOCALE
 from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
@@ -41,13 +43,13 @@ from app.schemas.psychologist import (
     PsychologistReportResponse,
     PsychologistStudentDetailResponse,
     PsychologistStudentListItem,
+    PsychologistTestResultsResponse,
 )
 from app.schemas.psychologist_result import (
     PsychologistResultDetailResponse,
     PsychologistResultPatch,
     PsychologistReviewQueueItem,
 )
-from app.schemas.result_v2 import ResultResponseV2
 from app.services import (
     admin_service,
     assessment_shared,
@@ -123,7 +125,7 @@ async def _require_assigned_student(
     )
     assignment = result.scalar_one_or_none()
     if assignment is None:
-        raise ValueError("Student not found")
+        raise ValueError(i18n_key("api_errors", "student_not_found", locale="ru"))
     return assignment
 
 
@@ -144,7 +146,7 @@ async def _require_student_assessment(
     )
     assessment = result.scalar_one_or_none()
     if assessment is None:
-        raise ValueError("Assessment not found")
+        raise ValueError(i18n_key("api_errors", "assessment_not_found", locale="ru"))
     return assessment
 
 
@@ -156,7 +158,7 @@ async def _require_own_note(
 ) -> PsychologistNote:
     note = await db.get(PsychologistNote, note_id)
     if note is None or note.psychologist_id != psychologist_id:
-        raise ValueError("Note not found")
+        raise ValueError(i18n_key("api_errors", "note_not_found", locale="ru"))
     return note
 
 
@@ -169,7 +171,7 @@ async def list_assigned_students(
             student.id,
             student.email,
             Profile.name,
-            Profile.age_group,
+            Profile.age,
             PsychologistStudentAssignment.created_at,
         )
         .join(student, student.id == PsychologistStudentAssignment.student_id)
@@ -183,7 +185,7 @@ async def list_assigned_students(
             id=row.id,
             email=row.email,
             profile_name=row.name,
-            age_group=row.age_group.value if row.age_group is not None else None,
+            age=row.age,
             assigned_at=row.created_at,
         )
         for row in rows
@@ -223,7 +225,7 @@ async def list_available_students(
             User.id,
             User.email,
             Profile.name,
-            Profile.age_group,
+            Profile.age,
             pending.label("has_pending"),
             completed.label("has_completed"),
         )
@@ -237,7 +239,7 @@ async def list_available_students(
             id=row.id,
             email=row.email,
             profile_name=row.name,
-            age_group=row.age_group.value if row.age_group is not None else None,
+            age=row.age,
             has_pending_review=bool(row.has_pending),
             has_completed_assessment=bool(row.has_completed),
         )
@@ -251,7 +253,7 @@ async def claim_student(
     """Psychologist self-assigns a student. Admin is not in this flow."""
     student = await db.get(User, student_id)
     if student is None or student.role != UserRole.student:
-        raise ValueError("Student not found")
+        raise ValueError(i18n_key("api_errors", "student_not_found", locale="ru"))
 
     existing = await db.execute(
         select(PsychologistStudentAssignment).where(
@@ -279,7 +281,7 @@ async def claim_student(
         id=student.id,
         email=student.email,
         profile_name=profile.name if profile is not None else None,
-        age_group=profile.age_group.value if profile is not None and profile.age_group is not None else None,
+        age=profile.age if profile is not None else None,
         assigned_at=assignment.created_at,
     )
 
@@ -306,7 +308,6 @@ def _to_psychologist_detail(
                 completed_at=a.completed_at,
                 has_result=a.has_result,
                 review_status=a.review_status,
-                has_roadmap=a.has_roadmap,
             )
             for a in detail.assessments
         ],
@@ -325,35 +326,46 @@ async def get_assigned_student_detail(
     detail = await admin_service.get_user_detail(db, student_id)
     if detail is None:
         # Assignment pointed at a deleted user mid-request — treat as missing.
-        raise ValueError("Student not found")
+        raise ValueError(i18n_key("api_errors", "student_not_found", locale="ru"))
     return _to_psychologist_detail(detail)
 
 
-async def get_student_report(
+async def get_assigned_student_test_results(
     db: AsyncSession,
     *,
     psychologist_id: uuid.UUID,
     student_id: uuid.UUID,
     assessment_id: uuid.UUID,
-    viewer: User,
-) -> ResultResponseV2:
-    """The student's full /result v2 report. `viewer` is the psychologist, so
-    report_service.psych_sections_for → True and the validity / psychoemotional
-    sections are attached (a student never sees these on their own
-    /result)."""
+    viewer_role: UserRole,
+) -> PsychologistTestResultsResponse:
+    """Pure test-results surface for one assessment: the same 7 instruments
+    `get_assigned_student_report` bundles into `new_tests`/`report.
+    psychoemotional`, flattened into one narrative-free payload — no
+    summary/careers/strength_cards/personality_notes from the student-shape
+    report. Same auth/lookup contract as `get_assigned_student_report`
+    (ValueError → 404 in the router)."""
     await _require_assigned_student(
         db, psychologist_id=psychologist_id, student_id=student_id
     )
-
-    owns = await db.execute(
-        select(Assessment.id)
-        .join(Profile, Assessment.profile_id == Profile.id)
-        .where(Assessment.id == assessment_id, Profile.user_id == student_id)
+    await _require_student_assessment(
+        db, student_id=student_id, assessment_id=assessment_id
     )
-    if owns.scalar_one_or_none() is None:
-        raise ValueError("Assessment not found")
-
-    return await report_service.build_report(assessment_id, db, viewer=viewer)
+    result = await report_service.get_report_with_analysis(assessment_id, db, viewer_role=viewer_role)
+    if result is None:
+        raise ValueError(i18n_key("api_errors", "report_not_found", locale="ru"))
+    report, analysis = result
+    new_tests = await new_tests_report_service.build_new_tests_sections(
+        analysis, assessment_id=assessment_id, db=db
+    )
+    return PsychologistTestResultsResponse(
+        professional_types=new_tests.professional_types,
+        team_role=new_tests.team_role,
+        temperament=new_tests.temperament,
+        intelligence=new_tests.intelligence,
+        aspiration_level=new_tests.aspiration_level,
+        empathy_confidence=new_tests.empathy_confidence,
+        psychoemotional=report.psychoemotional,
+    )
 
 
 async def create_note(
@@ -463,7 +475,7 @@ async def get_assigned_student_report(
     )
     result = await report_service.get_report_with_analysis(assessment_id, db, viewer_role=viewer_role)
     if result is None:
-        raise ValueError("Report not found")
+        raise ValueError(i18n_key("api_errors", "report_not_found", locale="ru"))
     report, analysis = result
     new_tests = await new_tests_report_service.build_new_tests_sections(
         analysis, assessment_id=assessment_id, db=db
@@ -478,7 +490,7 @@ async def _student_profile_name(student_id: uuid.UUID, db: AsyncSession) -> str:
     name = (
         await db.execute(select(Profile.name).where(Profile.user_id == student_id))
     ).scalar_one_or_none()
-    return name or "Ученик"
+    return name or i18n_key("report_copy", "student_fallback_name", locale="ru")
 
 
 async def _get_or_generate_psych_ai_analysis(
@@ -569,7 +581,7 @@ def review_queue_select(limit: int = REVIEW_QUEUE_LIMIT) -> Select:
             student.id.label("student_id"),
             student.email.label("student_email"),
             Profile.name.label("student_name"),
-            Profile.age_group,
+            Profile.age,
         )
         .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
         .join(Profile, Profile.id == Assessment.profile_id)
@@ -587,7 +599,7 @@ def to_review_queue_items(rows: Any) -> list[PsychologistReviewQueueItem]:
             student_id=row.student_id,
             student_name=row.student_name,
             student_email=row.student_email,
-            age_group=row.age_group.value if row.age_group is not None else None,
+            age=row.age,
             goal=row.goal.value,
             generated_at=row.generated_at,
             reviewed_at=row.reviewed_at,
@@ -631,7 +643,7 @@ async def _require_result_for_student(
         )
     analysis = (await db.execute(query)).scalar_one_or_none()
     if analysis is None:
-        raise ValueError("Result not found")
+        raise ValueError(i18n_key("api_errors", "result_not_found", locale="ru"))
     return analysis
 
 
@@ -677,7 +689,7 @@ async def regenerate_psych_ai_analysis(
     await _require_student_assessment(db, student_id=student_id, assessment_id=assessment_id)
     result = await report_service.get_report_with_analysis(assessment_id, db, viewer_role=viewer_role)
     if result is None:
-        raise ValueError("Report not found")
+        raise ValueError(i18n_key("api_errors", "report_not_found", locale="ru"))
     report, analysis = result
     new_tests = await new_tests_report_service.build_new_tests_sections(
         analysis, assessment_id=assessment_id, db=db
@@ -730,7 +742,7 @@ async def update_result_content(
         db, student_id=student_id, assessment_id=assessment_id, for_update=True
     )
     if analysis.review_status != ReviewStatus.pending_review:
-        raise ResultAlreadyPublishedError("Result is already published")
+        raise ResultAlreadyPublishedError(i18n_key("api_errors", "result_is_already_published", locale="ru"))
 
     values = patch.model_dump(exclude_unset=True, mode="json")
 
@@ -742,10 +754,10 @@ async def update_result_content(
         unknown_traits = set(notes_patch) - set(bigfive_content.personality_labels())
         if unknown_traits:
             raise ResultPatchInvalidError(
-                f"personality_notes: неизвестные черты {sorted(unknown_traits)}"
+                i18n_key("api_errors", "unknown_personality_traits", locale="ru").format(traits=sorted(unknown_traits))
             )
         if any(not text.strip() for text in notes_patch.values()):
-            raise ResultPatchInvalidError("personality_notes: текст не может быть пустым")
+            raise ResultPatchInvalidError(i18n_key("api_errors", "empty_personality_note", locale="ru"))
 
     # strengths/weaknesses are category codes the student report is rebuilt
     # from (careers "why", interest map) — free text there would break it.
@@ -754,7 +766,7 @@ async def update_result_content(
         unknown = set(values.get(field, [])) - allowed_codes
         if unknown:
             raise ResultPatchInvalidError(
-                f"{field}: unknown codes {sorted(unknown)}, allowed {sorted(allowed_codes)}"
+                i18n_key("api_errors", "unknown_result_codes", locale="ru").format(field=field, codes=sorted(unknown), allowed_codes=sorted(allowed_codes))
             )
 
     changed: dict[str, dict[str, Any]] = {}
@@ -845,32 +857,11 @@ async def publish_result(
     return await _publish(db, analysis, publisher_id=psychologist_id)
 
 
-async def publish_result_as_admin(
-    db: AsyncSession, *, admin_id: uuid.UUID, assessment_id: uuid.UUID
-) -> PsychologistResultDetailResponse:
-    """Admin fallback for results whose student has no psychologist
-    (docs/psychologist-review-gate-plan.md §4) — not assignment-gated."""
-    # Serialize with report generation: a locale row generated in between
-    # would be a translation of the pre-edit text (edit) or miss the
-    # published status (publish).
-    await report_service.lock_report_generation(assessment_id, db)
-    query = (
-        select(AnalysisResult)
-        .where(AnalysisResult.assessment_id == assessment_id, _is_original_row())
-        .with_for_update(of=AnalysisResult)
-        .execution_options(populate_existing=True)
-    )
-    analysis = (await db.execute(query)).scalar_one_or_none()
-    if analysis is None:
-        raise ValueError("Result not found")
-    return await _publish(db, analysis, publisher_id=admin_id)
-
-
 async def _publish(
     db: AsyncSession, analysis: AnalysisResult, *, publisher_id: uuid.UUID
 ) -> PsychologistResultDetailResponse:
     if analysis.review_status == ReviewStatus.published:
-        raise ResultAlreadyPublishedError("Result is already published")
+        raise ResultAlreadyPublishedError(i18n_key("api_errors", "result_is_already_published", locale="ru"))
     now = datetime.now(timezone.utc)
     analysis.review_status = ReviewStatus.published
     analysis.published_by = publisher_id
@@ -941,7 +932,7 @@ async def notify_review_pending(
     await _send_within_budget(
         [
             email_service.send_review_pending_email(
-                email, student_name or "без имени", review_url=review_url
+                email, student_name or i18n_key("report_copy", "unnamed_student", locale="ru"), review_url=review_url
             )
             for email in emails
         ]

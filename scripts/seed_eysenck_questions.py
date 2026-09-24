@@ -3,7 +3,8 @@ Seed script: populate the `questions` table with the 57 `eysenck` items
 from eysenck_bank.py (content-only — `scale`/`keyed` live in the bank file
 for Ф1.5's future scoring service to resolve via `Question.order`, not a
 DB column, same as professional_types_service.py). PRO-338 Ф0.8/Ф1.4,
-pattern 1:1 with seed_lie_scale_questions.py (PRO-298).
+pattern 1:1 with seed_riasec_questions.py (it originally mirrored the lie-scale
+seed, removed in PRO-388).
 
 Run inside Docker, AFTER seed_professional_types_questions.py (shares the
 same `order` numbering space, contiguous within the "Дополнительные тесты"
@@ -23,7 +24,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sqlalchemy import select
 
 from app.database import async_session
-from app.models.profile import AgeGroup
 from app.models.question import Question, QuestionInstrument
 from app.services.admin_lock import has_overrides, sync_fields
 from scripts.eysenck_bank import QUESTIONS
@@ -41,7 +41,6 @@ async def main() -> None:
         inserted = updated = skipped = deleted = 0
 
         for data in QUESTIONS:
-            age_tier = AgeGroup(data["age_tier"])
             # `Question.text` is `{locale: str}` JSONB (docs/i18n-contract.md
             # §8) — the bank already builds this dict itself (kk added
             # PRO-338 Ф4.4, see eysenck_bank.py's own `_KK_TEXT` fold-in), so
@@ -52,7 +51,6 @@ async def main() -> None:
             if existing is not None:
                 changed = sync_fields(existing, {
                     "text": text,
-                    "age_tier": age_tier,
                 })
                 updated += 1 if changed else 0
                 skipped += 0 if changed else 1
@@ -62,7 +60,6 @@ async def main() -> None:
                 instrument=QuestionInstrument.eysenck,
                 text=text,
                 order=data["order"],
-                age_tier=age_tier,
             ))
             inserted += 1
 

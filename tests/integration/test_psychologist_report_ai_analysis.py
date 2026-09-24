@@ -16,6 +16,8 @@ from app.models.profile import AgeGroup, Profile
 from app.models.user import User
 from app.services import llm_client
 
+from tests.integration.review_helpers import assign
+
 
 async def _make_assessment_for(db: AsyncSession, owner: User) -> Assessment:
     profile = Profile(
@@ -61,15 +63,6 @@ def _minimal_report_kwargs(assessment_id: uuid.UUID) -> dict:
     )
 
 
-async def _assign(client: httpx.AsyncClient, admin_headers: dict, psychologist_id: uuid.UUID, student_id: uuid.UUID) -> None:
-    response = await client.post(
-        "/api/v1/admin/psychologist-assignments",
-        json={"psychologist_id": str(psychologist_id), "student_id": str(student_id)},
-        headers=admin_headers,
-    )
-    assert response.status_code == 201
-
-
 def _valid_raw() -> dict:
     # Must cover every block `_minimal_report_kwargs` produces: interest_map
     # (always present) + personality_notes (always present) + this fixture's
@@ -89,12 +82,11 @@ def _valid_raw() -> dict:
 async def test_ai_analysis_is_generated_and_cached_on_first_view(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     psychologist_user: User,
     test_user: User,
 ) -> None:
-    await _assign(client, admin_headers, psychologist_user.id, test_user.id)
+    await assign(db_session, psychologist_user, test_user)
     assessment = await _make_assessment_for(db_session, test_user)
     db_session.add(AnalysisResult(**_minimal_report_kwargs(assessment.id)))
     await db_session.flush()
@@ -131,7 +123,6 @@ async def test_ai_analysis_is_generated_and_cached_on_first_view(
 async def test_ai_analysis_is_none_when_llm_disabled(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     psychologist_user: User,
     test_user: User,
@@ -139,9 +130,9 @@ async def test_ai_analysis_is_none_when_llm_disabled(
     """LLM disabled must never break the rest of the report — ai_analysis is
     just None. Explicitly patched (not relying on ambient .env config,
     since some local/dev environments DO have a real LLM_ENABLED=true +
-    LLM_API_KEY for other features like the roadmap generator — this test
+    LLM_API_KEY for other features like the report narrative — this test
     must never depend on that or risk a real, billed API call)."""
-    await _assign(client, admin_headers, psychologist_user.id, test_user.id)
+    await assign(db_session, psychologist_user, test_user)
     assessment = await _make_assessment_for(db_session, test_user)
     db_session.add(AnalysisResult(**_minimal_report_kwargs(assessment.id)))
     await db_session.flush()
@@ -162,12 +153,11 @@ async def test_ai_analysis_is_none_when_llm_disabled(
 async def test_regenerate_endpoint_bypasses_the_cache(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     psychologist_user: User,
     test_user: User,
 ) -> None:
-    await _assign(client, admin_headers, psychologist_user.id, test_user.id)
+    await assign(db_session, psychologist_user, test_user)
     assessment = await _make_assessment_for(db_session, test_user)
     db_session.add(AnalysisResult(**_minimal_report_kwargs(assessment.id)))
     await db_session.flush()

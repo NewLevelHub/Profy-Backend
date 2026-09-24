@@ -11,17 +11,25 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from app.schemas.artifact import ArtifactItem
-from app.schemas.new_tests import NewTestsSections
+from app.schemas.new_tests import (
+    AspirationLevelSection,
+    EmpathyConfidenceSection,
+    IntelligenceSection,
+    NewTestsSections,
+    ProfessionalTypesSection,
+    TeamRoleSection,
+    TemperamentSection,
+)
 from app.schemas.profile import ProfileResponse
 from app.schemas.psych_ai_analysis import PsychAiAnalysisOutput
-from app.schemas.result_v2 import ResultV2Schema
+from app.schemas.result_v2 import PsychoEmotionalSection, ResultV2Schema
 
 
 class PsychologistStudentListItem(BaseModel):
     id: uuid.UUID
     email: str
     profile_name: str | None = None
-    age_group: str | None = None
+    age: int | None = None
     assigned_at: datetime
 
 
@@ -31,7 +39,7 @@ class PsychologistAvailableStudentItem(BaseModel):
     id: uuid.UUID
     email: str
     profile_name: str | None = None
-    age_group: str | None = None
+    age: int | None = None
     has_pending_review: bool = False
     # PRO-402: claim CTA is only meaningful after at least one completed test.
     has_completed_assessment: bool = False
@@ -48,7 +56,6 @@ class PsychologistAssessmentSummary(BaseModel):
     has_result: bool = False
     # "pending_review" | "published", None when there is no result yet.
     review_status: str | None = None
-    has_roadmap: bool = False
 
 
 class PsychologistStudentDetailResponse(BaseModel):
@@ -98,4 +105,26 @@ class PsychologistReportResponse(BaseModel):
     report: ResultV2Schema
     new_tests: NewTestsSections
     ai_analysis: PsychAiAnalysisOutput | None = None
+    model_config = {"extra": "forbid"}
+
+
+class PsychologistTestResultsResponse(BaseModel):
+    """Pure test-results surface for one assessment: the 7 instruments
+    (ДДО/способности, Белбин, Айзенк, АСТУР, Элерс, Бойко+Кондаш, МЦВ
+    Собчик) and nothing else — no narrative/RIASEC content from the
+    student-facing report, unlike `PsychologistReportResponse.report`.
+
+    Reuses `NewTestsSections`' 6 fields as-is (same builder,
+    `new_tests_report_service.build_new_tests_sections`) plus
+    `psychoemotional`, which otherwise only exists bolted onto the RIASEC
+    report object via `report_service.psych_sections_for` — folded in here
+    so all 7 tests live in one flat, narrative-free payload."""
+
+    professional_types: ProfessionalTypesSection | None = None
+    team_role: TeamRoleSection | None = None
+    temperament: TemperamentSection | None = None
+    intelligence: IntelligenceSection | None = None
+    aspiration_level: AspirationLevelSection | None = None
+    empathy_confidence: EmpathyConfidenceSection | None = None
+    psychoemotional: PsychoEmotionalSection | None = None
     model_config = {"extra": "forbid"}

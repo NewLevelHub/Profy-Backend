@@ -8,12 +8,14 @@ section` and neighbors. Consumed by Ф0.3's specialist report endpoint
 (GET /psychologist/students/{id}/assessments/{assessment_id}/report), never
 by the student-facing /result.
 """
+
 import logging
 import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment
 from app.models.profile import Profile
@@ -45,10 +47,7 @@ logger = logging.getLogger(__name__)
 # platform's own age range, 14-18, is otherwise unaffected — see
 # 00-ЭПИК-PRO-338.md's "Возраст" row).
 _BELBIN_METHODOLOGICAL_NOTE = (
-    "Методика Белбина изначально разработана для взрослых сотрудников в "
-    "корпоративном контексте (18+). Результат школьника стоит трактовать с "
-    "поправкой на возраст — это не формальное ограничение платформы, а "
-    "методическая особенность источника."
+    i18n_key("report_copy", "belbin_methodological_note", locale="ru")
 )
 
 
@@ -101,7 +100,7 @@ async def _build_team_role_section(
             supporting_roles=interpretation.supporting_roles,
             avoidance_roles=interpretation.avoidance_roles,
             methodological_note=_BELBIN_METHODOLOGICAL_NOTE,
-            role_evidence=belbin_service.role_evidence(run),
+            role_evidence=await belbin_service.role_evidence(db, run),
         )
     except Exception:
         logger.exception("Failed to build team_role section for assessment %s", assessment_id)
@@ -162,18 +161,15 @@ async def _build_intelligence_section(
             )
         ).one_or_none()
         profile_name = profile_row.name if profile_row else None
-        # The STUDENT's own stored locale preference, not whoever happens to
-        # be viewing this report right now (a psychologist reading it in
-        # `ru` must not flip which weekday name item 2's dynamic lability
-        # answer is scored against — see astur_scoring.score_lability's
-        # own docstring). Falls back to "ru" if unset, same default as
-        # SUPPORTED_LOCALES' own convention.
-        student_locale = (profile_row.locale if profile_row else None) or "ru"
+        # The locale recorded when the attempt was started, preventing
+        # scoring mismatches if the user later changes their profile language.
+        # Falls back to "ru" for older attempts.
+        run_locale = getattr(run, "locale", "ru") or "ru"
 
         result = score_run(
             run.answers, run.lability_answers,
             submitted_at=run.created_at, profile_name=profile_name or "",
-            locale=student_locale,
+            locale=run_locale,
         )
 
         fatigue_signal = None

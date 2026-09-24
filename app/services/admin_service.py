@@ -4,20 +4,26 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.i18n import DEFAULT_LOCALE, pick_locale
 from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
+from app.models.astur_run import AsturRun
+from app.models.belbin_run import BelbinRun
+from app.models.psychoemotional_run import PsychoEmotionalRun
 from app.models.motivation import MotivationResponse
 from app.models.product_feedback import ProductFeedback
-from app.models.profile import AgeGroup, Profile
-from app.models.roadmap import Roadmap
+from app.models.profile import Profile
 from app.models.question import Question, QuestionInstrument
 from app.models.user import User, UserRole
 from app.models.user_response import UserResponse
 from app.schemas.admin import (
     AdminAssessmentDetailResponse,
     AdminAssessmentSummary,
+    AdminAsturRunResponse,
+    AdminBelbinRunResponse,
+    AdminPsychoemotionalRunResponse,
     AdminFeedbackListItem,
     AdminFeedbackListResponse,
     AdminFeedbackStatsResponse,
@@ -33,10 +39,8 @@ from app.schemas.admin import (
 from app.schemas.artifact import ArtifactItem
 from app.schemas.profile import ProfileResponse
 from app.schemas.admin_result import AdminAnalysisResultResponse
-from app.schemas.roadmap import RoadmapResponse
 from app.services import auth_service, bigfive_content, motivation_service
 from app.services.admin_listing import SortOrder, order_by_clause
-from app.services.age_tiers import visible_tiers
 from app.services.goal_overlay_service import _get_effective_goal_and_scenario
 from app.services.riasec_content import likert_labels as riasec_likert_labels
 
@@ -51,7 +55,7 @@ EXPORT_MAX_ROWS = 5000
 
 class ExportTooLargeError(Exception):
     """Raised by export_users() when the filtered result set exceeds
-    EXPORT_MAX_ROWS — narrow the filters (search/age_group/status/goal)
+    EXPORT_MAX_ROWS — narrow the filters (search/status/goal)
     instead of exporting everyone at once."""
 
 
@@ -79,7 +83,6 @@ def _last_known_activity():
 def _build_user_filters(
     *,
     search: str | None,
-    age_group: AgeGroup | None,
     status: AssessmentStatus | None,
     goal: AssessmentGoal | None,
     role: UserRole | None,
@@ -91,8 +94,7 @@ def _build_user_filters(
     exposed `latest_assessment_status`/`latest_assessment_goal` columns keep
     reflecting the true latest, independent of this filter. A user can have
     multiple assessments matching, so joining Assessment needs `.distinct()`
-    on the caller's side; `age_group` only needs the (always-present, 1:1)
-    Profile join, no distinct.
+    on the caller's side.
 
     `role` defaults to `student` at the call sites below (not here) — this
     endpoint predates the role system and every row used to be a student by
@@ -103,8 +105,6 @@ def _build_user_filters(
     filters = []
     if search:
         filters.append(User.email.ilike(f"%{search.strip()}%"))
-    if age_group is not None:
-        filters.append(Profile.age_group == age_group)
     if role is not None:
         filters.append(User.role == role)
     if inactive_days is not None:
@@ -142,7 +142,6 @@ USER_SORT_FIELDS = {
     "created_at": User.created_at,
     "last_active_at": User.last_active_at,
     "email": User.email,
-    "age_group": Profile.age_group,
     "latest_assessment_status": _LATEST_ASSESSMENT_STATUS,
 }
 
@@ -153,7 +152,6 @@ async def list_users(
     page: int = 1,
     limit: int = 20,
     search: str | None = None,
-    age_group: AgeGroup | None = None,
     status: AssessmentStatus | None = None,
     goal: AssessmentGoal | None = None,
     role: UserRole | None = UserRole.student,
@@ -162,7 +160,7 @@ async def list_users(
     order: SortOrder | None = None,
 ) -> AdminUserListResponse:
     filters, needs_distinct = _build_user_filters(
-        search=search, age_group=age_group, status=status, goal=goal,
+        search=search, status=status, goal=goal,
         role=role, inactive_days=inactive_days,
     )
 
@@ -202,7 +200,6 @@ async def export_users(
     db: AsyncSession,
     *,
     search: str | None = None,
-    age_group: AgeGroup | None = None,
     status: AssessmentStatus | None = None,
     goal: AssessmentGoal | None = None,
     role: UserRole | None = UserRole.student,
@@ -212,7 +209,7 @@ async def export_users(
     ExportTooLargeError instead of running an unbounded query if the
     filtered result set is bigger than EXPORT_MAX_ROWS."""
     filters, needs_distinct = _build_user_filters(
-        search=search, age_group=age_group, status=status, goal=goal,
+        search=search, status=status, goal=goal,
         role=role, inactive_days=inactive_days,
     )
 
@@ -223,8 +220,7 @@ async def export_users(
     total = total_result.scalar_one()
     if total > EXPORT_MAX_ROWS:
         raise ExportTooLargeError(
-            f"Export matches {total} users, exceeding the {EXPORT_MAX_ROWS}-row limit — "
-            "narrow the search/age_group/status/goal filters first."
+            i18n_key("api_errors", "export_too_large", locale="ru").format(total=total, export_max_rows=EXPORT_MAX_ROWS)
         )
 
     query = _user_base_query(needs_distinct=needs_distinct).where(*filters).order_by(User.created_at.desc())
@@ -286,16 +282,7 @@ async def _build_user_list_items(db: AsyncSession, users: list[User]) -> list[Ad
 
         latest_completed = next((a for a in assessments if a.status == AssessmentStatus.completed), None)
         latest_analysis = analysis_by_assessment.get(latest_completed.id) if latest_completed else None
-        # RIASEC is only meaningful for middle/senior — junior's instrument
-        # is MI, deliberately left blank here rather than mixing shapes.
-        is_junior = bool(profile and profile.age_group == AgeGroup.junior)
-        riasec = (
-            dict(latest_analysis.profile) if latest_analysis and not is_junior else None
-        )
-        # Same stored `profile` dict, but keyed by MI category instead of
-        # Holland letter for junior — the two shapes are kept in separate
-        # fields rather than mixed into one column set.
-        mi = dict(latest_analysis.profile) if latest_analysis and is_junior else None
+        riasec = dict(latest_analysis.profile) if latest_analysis else None
         big_five = dict(latest_analysis.big_five) if latest_analysis else None
 
         items.append(
@@ -310,14 +297,13 @@ async def _build_user_list_items(db: AsyncSession, users: list[User]) -> list[Ad
                 last_active_at=user.last_active_at,
                 has_profile=profile is not None,
                 profile_name=profile.name if profile else None,
-                age_group=profile.age_group.value if profile else None,
+                age=profile.age if profile else None,
                 city=profile.city if profile else None,
                 grade=profile.grade if profile else None,
                 assessments_count=len(assessments),
                 latest_assessment_status=latest.status.value if latest else None,
                 latest_assessment_goal=latest.goal.value if latest else None,
                 riasec=riasec,
-                mi=mi,
                 big_five=big_five,
             )
         )
@@ -355,7 +341,6 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
         assessment_ids = [row.id for row in assessment_rows]
 
         review_status_by_assessment: dict[uuid.UUID, str] = {}
-        roadmap_ids: set[uuid.UUID] = set()
         answered_by_assessment: dict[uuid.UUID, int] = {}
         if assessment_ids:
             results_result = await db.execute(
@@ -365,11 +350,6 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
             )
             review_status_by_assessment = {row[0]: row[1].value for row in results_result.all()}
 
-            roadmaps_result = await db.execute(
-                select(Roadmap.assessment_id).where(Roadmap.assessment_id.in_(assessment_ids))
-            )
-            roadmap_ids = {row[0] for row in roadmaps_result.all()}
-
             answered_result = await db.execute(
                 select(UserResponse.assessment_id, func.count(UserResponse.id))
                 .where(UserResponse.assessment_id.in_(assessment_ids))
@@ -377,11 +357,7 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
             )
             answered_by_assessment = dict(answered_result.all())
 
-        total_questions_result = await db.execute(
-            select(func.count(Question.id)).where(
-                Question.age_tier.in_(visible_tiers(profile.age_group)),
-            )
-        )
+        total_questions_result = await db.execute(select(func.count(Question.id)))
         total_questions = total_questions_result.scalar_one()
 
         assessments = [
@@ -395,7 +371,6 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
                 completed_at=assessment.completed_at,
                 has_result=assessment.id in review_status_by_assessment,
                 review_status=review_status_by_assessment.get(assessment.id),
-                has_roadmap=assessment.id in roadmap_ids,
             )
             for assessment in assessment_rows
         ]
@@ -421,7 +396,7 @@ async def create_user(db: AsyncSession, body: AdminUserCreate) -> User:
     entirely — `is_verified` is set directly from the request body."""
     result = await db.execute(select(User).where(User.email == body.email))
     if result.scalar_one_or_none():
-        raise ValueError("Email already exists")
+        raise ValueError(i18n_key("api_errors", "email_already_exists", locale="ru"))
 
     user = User(
         email=body.email,
@@ -480,7 +455,7 @@ async def get_assessment_detail(
                     question_id=response.question_id,
                     instrument="?",
                     category="?",
-                    question_text="Вопрос удалён",
+                    question_text=i18n_key("report_copy", "deleted_question", locale="ru"),
                     question_order=0,
                     answer_value=response.answer_value,
                     selected_answer_text=_selected_answer_text(response.answer_value),
@@ -489,7 +464,7 @@ async def get_assessment_detail(
             )
             continue
 
-        # riasec_type/bigfive_domain/mi_category are all nullable columns
+        # riasec_type/bigfive_domain are both nullable columns
         # (only the one matching `instrument` is normally populated) — since
         # admin PATCH /admin/questions/{id} can null any of them out
         # (app/services/admin_content_service.py::update_question), fall
@@ -500,7 +475,7 @@ async def get_assessment_detail(
         elif question.instrument == QuestionInstrument.big_five:
             category = question.bigfive_domain.value if question.bigfive_domain else "?"
         else:
-            category = question.mi_category.value if question.mi_category else "?"
+            category = "?"
         responses.append(
             AdminResponseItem(
                 question_id=response.question_id,
@@ -560,18 +535,53 @@ async def get_assessment_detail(
     if analysis:
         analysis_result = AdminAnalysisResultResponse.model_validate(analysis)
 
-    roadmap_result = None
-    roadmap_row = await db.execute(select(Roadmap).where(Roadmap.assessment_id == assessment.id))
-    roadmap = roadmap_row.scalar_one_or_none()
-    if roadmap:
-        roadmap_result = RoadmapResponse.model_validate(roadmap)
-
-    total_questions_result = await db.execute(
-        select(func.count(Question.id)).where(
-            Question.age_tier.in_(visible_tiers(profile.age_group)),
-        )
-    )
+    total_questions_result = await db.execute(select(func.count(Question.id)))
     total_questions = total_questions_result.scalar_one()
+
+    astur_runs_result = await db.execute(
+        select(AsturRun)
+        .where(AsturRun.assessment_id == assessment.id)
+        .order_by(AsturRun.created_at)
+    )
+    astur_runs = [
+        AdminAsturRunResponse(
+            id=run.id,
+            raw_score=run.raw_score,
+            spn_group=run.spn_group,
+            answers=run.answers,
+            lability_answers=run.lability_answers,
+            subtest_scores=run.subtest_scores,
+            created_at=run.created_at,
+        ) for run in astur_runs_result.scalars().all()
+    ]
+
+    belbin_runs_result = await db.execute(
+        select(BelbinRun)
+        .where(BelbinRun.assessment_id == assessment.id)
+        .order_by(BelbinRun.created_at)
+    )
+    belbin_runs = [
+        AdminBelbinRunResponse(
+            id=run.id,
+            allocations=run.allocations,
+            role_totals=run.role_totals,
+            created_at=run.created_at,
+        ) for run in belbin_runs_result.scalars().all()
+    ]
+
+    psycho_runs_result = await db.execute(
+        select(PsychoEmotionalRun)
+        .where(PsychoEmotionalRun.assessment_id == assessment.id)
+        .order_by(PsychoEmotionalRun.created_at)
+    )
+    psycho_runs = [
+        AdminPsychoemotionalRunResponse(
+            id=run.id,
+            checkin=run.checkin,
+            metrics=run.metrics,
+            created_at=run.created_at,
+        ) for run in psycho_runs_result.scalars().all()
+    ]
 
     return AdminAssessmentDetailResponse(
         id=assessment.id,
@@ -586,8 +596,10 @@ async def get_assessment_detail(
         completed_at=assessment.completed_at,
         responses=responses,
         motivation_responses=motivation_responses,
+        astur_runs=astur_runs,
+        belbin_runs=belbin_runs,
+        psychoemotional_runs=psycho_runs,
         analysis_result=analysis_result,
-        roadmap=roadmap_result,
     )
 
 
@@ -596,7 +608,7 @@ async def _enrich_feedback_rows(
 ) -> list[AdminFeedbackListItem]:
     """Shared join/enrichment for both `list_feedback` (one page) and
     `get_feedback_stats` (all rows) — attaches user + assessment context
-    (age_group, effective scenario, top matched direction) to each raw
+    (effective scenario, top matched direction) to each raw
     ProductFeedback row. `scenario` reuses goal_overlay_service's own
     age_group×goal matrix rather than re-deriving it, so it always agrees
     with what the student's actual results page showed them."""
@@ -652,7 +664,6 @@ async def _enrich_feedback_rows(
                 user_email=user.email if user else "",
                 profile_name=profile.name if profile else None,
                 assessment_id=fb.assessment_id,
-                age_group=profile.age_group.value if profile else None,
                 scenario=scenario,
                 top_direction_name=top_direction_name,
                 relevance_score=fb.relevance_score,
@@ -682,18 +693,11 @@ def _build_feedback_filters(
     search: str | None = None,
     score_min: int | None = None,
     score_max: int | None = None,
-    age_group: AgeGroup | None = None,
     section: str | None = None,
     has_comment: bool | None = None,
-) -> tuple[list, tuple]:
-    """Filter clauses for the feedback list/stats queries, plus the joins they
-    need. `age_group` is not stored on the feedback row — it lives on the
-    profile behind the assessment — so filtering by it joins through both and
-    therefore drops feedback whose assessment was deleted (assessment_id is
-    SET NULL): those rows have no knowable age group, and silently counting
-    them as a match would be worse than excluding them."""
+) -> list:
+    """Filter clauses for the feedback list/stats queries."""
     filters = []
-    joins: tuple = ()
 
     if score_min is not None:
         filters.append(ProductFeedback.relevance_score >= score_min)
@@ -708,21 +712,11 @@ def _build_feedback_filters(
         # helpful_sections is a JSONB array of frontend-owned strings; `@>`
         # asks "does this array contain that element", not a text match.
         filters.append(ProductFeedback.helpful_sections.contains([section]))
-    if age_group is not None:
-        joins = (
-            (Assessment, ProductFeedback.assessment_id == Assessment.id),
-            (Profile, Assessment.profile_id == Profile.id),
-        )
-        filters.append(Profile.age_group == age_group)
-
-    return filters, joins
+    return filters
 
 
-def _feedback_query(filters: list, joins: tuple):
-    query = select(ProductFeedback)
-    for target, onclause in joins:
-        query = query.join(target, onclause)
-    return query.where(*filters)
+def _feedback_query(filters: list):
+    return select(ProductFeedback).where(*filters)
 
 
 async def list_feedback(
@@ -733,28 +727,24 @@ async def list_feedback(
     search: str | None = None,
     score_min: int | None = None,
     score_max: int | None = None,
-    age_group: AgeGroup | None = None,
     section: str | None = None,
     has_comment: bool | None = None,
     sort: str | None = None,
     order: SortOrder | None = None,
 ) -> AdminFeedbackListResponse:
-    filters, joins = _build_feedback_filters(
+    filters = _build_feedback_filters(
         search=search,
         score_min=score_min,
         score_max=score_max,
-        age_group=age_group,
         section=section,
         has_comment=has_comment,
     )
 
     count_query = select(func.count()).select_from(ProductFeedback)
-    for target, onclause in joins:
-        count_query = count_query.join(target, onclause)
     total = (await db.execute(count_query.where(*filters))).scalar_one()
 
     feedback_result = await db.execute(
-        _feedback_query(filters, joins).order_by(
+        _feedback_query(filters).order_by(
             *order_by_clause(
                 sort,
                 order,
@@ -847,7 +837,6 @@ async def get_feedback_stats(
     search: str | None = None,
     score_min: int | None = None,
     score_max: int | None = None,
-    age_group: AgeGroup | None = None,
     section: str | None = None,
     has_comment: bool | None = None,
 ) -> AdminFeedbackStatsResponse:
@@ -860,15 +849,14 @@ async def get_feedback_stats(
 
     Takes the same filters as `list_feedback` so the summary describes the
     rows currently on screen. Unfiltered, it still describes everything."""
-    filters, joins = _build_feedback_filters(
+    filters = _build_feedback_filters(
         search=search,
         score_min=score_min,
         score_max=score_max,
-        age_group=age_group,
         section=section,
         has_comment=has_comment,
     )
-    feedback_result = await db.execute(_feedback_query(filters, joins))
+    feedback_result = await db.execute(_feedback_query(filters))
     feedback_rows = list(feedback_result.scalars().all())
     empty_histogram = {str(score): 0 for score in range(1, 6)}
     if not feedback_rows:
@@ -893,7 +881,6 @@ async def get_feedback_stats(
         total=len(items),
         avg_relevance_score=round(sum(i.relevance_score for i in items) / len(items), 2),
         score_counts=score_counts,
-        by_age_group=_breakdown(items, lambda i: i.age_group),
         by_scenario=_breakdown(items, lambda i: i.scenario),
         by_top_direction=_breakdown(items, lambda i: i.top_direction_name),
         helpful_section_counts=section_counts,

@@ -9,6 +9,7 @@ not "start over". A submit only starts a NEW row when the latest one for
 this assessment is already complete (every scored subtest + lability
 present) — so a genuine retake still gets its own fresh append-only row,
 matching astur_runs' own append-only contract (Ф3.3)."""
+
 import random
 import uuid
 
@@ -16,6 +17,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.config import astur_timer_config
 from app.i18n import pick_locale, pick_locale_list
 from app.models.astur_run import AsturRun
@@ -65,38 +67,99 @@ def _public_field_value(field: str, value: object) -> object:
     return value
 
 
-def build_content() -> dict:
-    """Static content for the whole test — same for every user (given the
-    caller's own request locale, PRO-338 Ф4.4), no DB access.
-    `logical_schemas`' `concepts` is the bank's correct order; this
-    shuffles a COPY per call so the respondent gets a scrambled hierarchy
-    to reassemble, never the answer itself."""
-    subtests = []
-    for n, meta in sorted(SUBTEST_BY_NUMBER.items()):
-        key = meta["key"]
-        public_fields = _PUBLIC_ITEM_FIELDS[key]
-        items = []
-        for item in SUBTEST_ITEMS[key]:
-            public_item = {field: _public_field_value(field, item[field]) for field in public_fields}
-            if key == "logical_schemas":
-                shuffled = list(public_item["concepts"])
-                random.shuffle(shuffled)
-                public_item["concepts"] = shuffled
-            items.append(public_item)
-        subtests.append({
+def _bank_subtests() -> list[dict]:
+    """The hardcoded bank, reshaped into the same bilingual
+    subtest/item tree an admin override carries — one function so both
+    sources feed `_resolve_subtests` identically (PRO-424)."""
+    return [
+        {
             "number": n,
-            "key": key,
-            "name": pick_locale(meta["name"]),
-            "instruction": pick_locale(meta["instruction"]),
+            "key": meta["key"],
+            "name": meta["name"],
+            "instruction": meta["instruction"],
             "item_count": meta["item_count"],
             "scored": meta["scored"],
+            "items": SUBTEST_ITEMS[meta["key"]],
+        }
+        for n, meta in sorted(SUBTEST_BY_NUMBER.items())
+    ]
+
+
+def _resolve_subtests(subtests_bank: list[dict]) -> list[dict]:
+    """Runs the request-locale resolution over a bilingual subtests tree —
+    the exact same shape whether it came from `_bank_subtests()` or an
+    admin override, so a malformed override (missing a locale key, wrong
+    field type) fails inside `pick_locale`/`pick_locale_list` the same way
+    the bank always would, and the router's fallback catches it the same
+    way (PRO-424)."""
+    resolved = []
+    for subtest in subtests_bank:
+        key = subtest["key"]
+        public_fields = _PUBLIC_ITEM_FIELDS[key]
+        items = []
+        for item in subtest["items"]:
+            public_item = {field: _public_field_value(field, item.get(field)) for field in public_fields}
+            items.append(public_item)
+        resolved.append({
+            "number": subtest["number"],
+            "key": key,
+            "name": pick_locale(subtest["name"]),
+            "instruction": pick_locale(subtest["instruction"]),
+            "item_count": subtest["item_count"],
+            "scored": subtest["scored"],
             "time_limit_sec": astur_timer_config.subtest_time_limit_sec.get(key),
             "items": items,
         })
-    return {
-        "subtests": subtests,
+    return resolved
+
+
+def _shuffle_logical_schemas(content: dict) -> None:
+    """`logical_schemas`' `concepts` is the bank's (or override's) correct
+    order; this shuffles a COPY per call so the respondent gets a scrambled
+    hierarchy to reassemble, never the answer itself — done after locale
+    resolution so it applies identically to bank and override content."""
+    for subtest in content["subtests"]:
+        if subtest["key"] != "logical_schemas":
+            continue
+        for item in subtest["items"]:
+            concepts = item.get("concepts")
+            if concepts:
+                shuffled = list(concepts)
+                random.shuffle(shuffled)
+                item["concepts"] = shuffled
+
+
+async def build_content(db: AsyncSession, ignore_override: bool = False) -> dict:
+    """Content for the whole test, potentially overridden by admin.
+
+    `ignore_override` is the fallback path the router takes when a saved
+    override doesn't resolve (admin's editor saved an item missing a
+    locale) — rather than 500ing for every real test-taker until someone
+    fixes the override, it re-renders straight from the bank."""
+    subtests_bank = None
+
+    if not ignore_override:
+        from app.services.admin_content_service import get_content_override
+        from app.i18n import get_locale
+
+        override = await get_content_override(db, "astur")
+        if override:
+            locale = get_locale()
+            override_bank = override.content_ru if locale == "ru" else override.content_kk
+            if not override_bank and locale == "kk":
+                override_bank = override.content_ru
+            if override_bank and override_bank.get("subtests"):
+                subtests_bank = override_bank["subtests"]
+
+    if subtests_bank is None:
+        subtests_bank = _bank_subtests()
+
+    content = {
+        "subtests": _resolve_subtests(subtests_bank),
         "lability_item_limit_ms": astur_timer_config.lability_item_limit_ms,
     }
+    _shuffle_logical_schemas(content)
+    return content
 
 
 def _subtest_meta(n: int) -> dict:
@@ -104,7 +167,7 @@ def _subtest_meta(n: int) -> dict:
     if meta is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No such АСТУР subtest: {n}",
+            detail=i18n_key("api_errors", "astur_subtest_not_found", locale="ru").format(n=n),
         )
     return meta
 
@@ -116,7 +179,7 @@ def _validate_item_keys(payload: dict, item_count: int, *, field_name: str) -> N
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={
-                "detail": f"{field_name} does not cover exactly this subtest's items",
+                "detail": i18n_key("api_errors", "astur_item_keys_mismatch", locale="ru").format(field_name=field_name),
                 "missing_items": sorted(expected - got),
                 "unexpected_items": sorted(got - expected),
             },
@@ -160,7 +223,8 @@ async def _get_or_create_active_run(
 ) -> AsturRun:
     run = await _latest_run(assessment_id, db)
     if run is None or is_complete(run):
-        run = AsturRun(assessment_id=assessment_id, user_id=user_id)
+        from app.i18n import get_locale
+        run = AsturRun(assessment_id=assessment_id, user_id=user_id, locale=get_locale())
         db.add(run)
         await db.flush()
     return run
@@ -200,13 +264,13 @@ async def submit_subtest(
         if elapsed_ms is None:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="elapsed_ms is required for the lability subtest",
+                detail=i18n_key("api_errors", "lability_elapsed_ms_required", locale="ru"),
             )
         _validate_item_keys(elapsed_ms, item_count, field_name="elapsed_ms")
     elif elapsed_ms is not None:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="elapsed_ms is only accepted for the lability subtest",
+            detail=i18n_key("api_errors", "elapsed_ms_lability_only", locale="ru"),
         )
 
     run = await _get_or_create_active_run(assessment_id, user_id=user_id, db=db)

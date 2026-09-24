@@ -159,7 +159,6 @@ QUESTIONS: list[dict] = [
     {
         "order": 470 + i,
         "text": {"ru": text, "kk": _KK_TEXT[text]},
-        "age_tier": "senior",
         "keyed": _KEY[i + 1],
     }
     for i, text in enumerate(_TEXTS)

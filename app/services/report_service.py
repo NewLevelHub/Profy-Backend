@@ -10,22 +10,21 @@ from sqlalchemy import case, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings, validity_thresholds
+from app.i18n.catalog import key as i18n_key
+from app.config import settings
 from app.errors import AppError
 from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES, MissingLocalizedText, pick_locale, pick_locale_list, use_locale
 from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment, AssessmentStatus
-from app.models.assessment_validity import AssessmentValidity
 from app.models.consent import CONSENT_SCOPE_PSYCH_BLOCK
 from app.models.direction import Direction
-from app.models.profile import AgeGroup, Profile
+from app.models.profile import Profile
 from app.models.psychoemotional_run import PsychoEmotionalRun
 from app.models.user import User, UserRole
 from app.schemas.report_narrative import ReportNarrativeOutput
 from app.schemas.result_v2 import (
-    MiResultResponse,
     PsychoEmotionalHistoryItem,
     PsychoEmotionalSection,
     ResultResponseV2,
@@ -33,7 +32,6 @@ from app.schemas.result_v2 import (
     RiasecResultResponse,
     StudentStrengthCard,
     StudentThinkingStyleNote,
-    ValiditySection,
 )
 from app.services import (
     assessment_shared,
@@ -44,15 +42,12 @@ from app.services import (
     elers_service,
     eysenck_service,
     kondash_anxiety_service,
-    mi_service,
-    motivation_pair_service,
     motivation_service,
     professional_types_service,
     report_narrative_context,
     report_v2_assembler,
     riasec_service,
     thinking_style_service,
-    validity_service,
 )
 from app.services.bigfive_content import strength_phrases
 from app.services.motivation_content import highlight_phrases as motivation_highlight_phrases
@@ -189,7 +184,6 @@ async def _build_narrative(
     *,
     assessment_id: uuid.UUID,
     db: AsyncSession,
-    age_group: AgeGroup,
     strengths: list[str],
     personality_profile: dict[str, float],
     personality_notes: dict[str, str],
@@ -213,7 +207,6 @@ async def _build_narrative(
     # fallback resolve to the artifact owner's language. The AI prompt still
     # gets `language=locale` explicitly.
     context = report_narrative_context.build_report_narrative_context(
-        age_group=age_group,
         strengths=strengths,
         personality_profile=personality_profile,
         personality_notes=personality_notes,
@@ -239,8 +232,8 @@ async def _build_narrative(
             target_locale=locale,
         )
         logger.info(
-            "report_narrative translated from=%s to=%s is_ai=%s age_group=%s",
-            primary.locale, locale, is_ai, age_group.value,
+            "report_narrative translated from=%s to=%s is_ai=%s",
+            primary.locale, locale, is_ai,
         )
         # Third value: whether the "translation" is an AI translation of the
         # primary row (True) or the deterministic fallback — fresh text (False).
@@ -248,8 +241,8 @@ async def _build_narrative(
 
     narrative, is_ai = await generate_report_narrative(context, language=locale)
     logger.info(
-        "report_narrative generated is_ai=%s age_group=%s locale=%s",
-        is_ai, age_group.value, locale,
+        "report_narrative generated is_ai=%s locale=%s",
+        is_ai, locale,
     )
     return context, narrative, None
 
@@ -351,14 +344,6 @@ async def _carry_over_review_edits(
     return list(reviewed.strengths), list(reviewed.weaknesses), careers, highlights, edited_fields
 
 
-def _stored_interest_instrument(profile: dict) -> str:
-    """riasec_service.HOLLAND_ORDER keys are single uppercase letters, MI
-    keys are lowercase words — unambiguous either way, so a stored row's
-    own `profile` dict is enough to tell the two apart without also having
-    to persist age_group on AnalysisResult."""
-    return "riasec" if any(key in riasec_service.HOLLAND_ORDER for key in profile) else "mi"
-
-
 async def _resolve_owner_locale(
     assessment_id: uuid.UUID, db: AsyncSession, redis: aioredis.Redis
 ) -> str:
@@ -395,20 +380,9 @@ async def _resolve_owner_locale(
 
 
 async def _interest_evidence(
-    assessment_id: uuid.UUID,
-    db: AsyncSession,
-    *,
-    age_group: AgeGroup | None = None,
-    profile: dict | None = None,
-    locale: str | None = None,
+    assessment_id: uuid.UUID, db: AsyncSession, *, locale: str | None = None
 ) -> dict[str, dict] | None:
-    """Per-type RIASEC answer breakdown for interest details (PRO-336).
-    Junior (MI) has no RIASEC answers — skip."""
-    if age_group is None and profile is not None:
-        instrument = _stored_interest_instrument(profile)
-        age_group = AgeGroup.junior if instrument == "mi" else AgeGroup.senior
-    if age_group == AgeGroup.junior:
-        return None
+    """Per-type RIASEC answer breakdown for interest details (PRO-336)."""
     return await riasec_service.answer_evidence(assessment_id, db, locale=locale)
 
 
@@ -434,10 +408,7 @@ def _shape_response(
 def _shape_response_inner(
     analysis: AnalysisResult, evidence: dict[str, dict] | None = None
 ) -> ResultResponseV2:
-    instrument = _stored_interest_instrument(analysis.profile)
-    effective_age_group = AgeGroup.junior if instrument == "mi" else AgeGroup.senior
     minimal_context = report_narrative_context.build_report_narrative_context(
-        age_group=effective_age_group,
         strengths=list(analysis.strengths),
         personality_profile={}, personality_notes={}, thinking_style={},
         motivation_top=[], motivation_highlights=[],
@@ -445,7 +416,7 @@ def _shape_response_inner(
     )
     differentiation = float((analysis.meta or {}).get("differentiation", 0.0))
     flat = report_v2_assembler.is_flat_profile(differentiation)
-    interest_map = report_v2_assembler.build_interest_map(effective_age_group, dict(analysis.profile), evidence)
+    interest_map = report_v2_assembler.build_interest_map(dict(analysis.profile), evidence)
 
     common = dict(
         assessment_id=analysis.assessment_id,
@@ -457,11 +428,9 @@ def _shape_response_inner(
         interest_map=interest_map,
         interest_map_note=report_v2_assembler.build_interest_map_note(interest_map),
         thinking_style_notes=[StudentThinkingStyleNote.model_validate(n) for n in analysis.thinking_style_notes],
-        # personality_profile is stored on every row regardless of
-        # interest_instrument (Big Five doesn't branch by age) — read back
-        # directly, no need to recompute or route through minimal_context.
+        # personality_profile is stored on every row — read back directly,
+        # no need to recompute or route through minimal_context.
         personality_notes=report_v2_assembler.build_personality_notes(
-            instrument == "mi",
             dict(analysis.personality_profile),
             dict(analysis.personality_notes_override),
         ),
@@ -472,12 +441,6 @@ def _shape_response_inner(
         created_at=analysis.created_at,
     )
 
-    if instrument == "mi":
-        return MiResultResponse(
-            **common,
-            exploration_activities=report_v2_assembler.build_exploration_activities(minimal_context),
-        )
-
     return RiasecResultResponse(
         **common,
         interest_combination=report_v2_assembler.build_interest_combination(interest_map),
@@ -485,36 +448,28 @@ def _shape_response_inner(
     )
 
 
-async def _assert_assessment_complete(
-    assessment_id: uuid.UUID, age_group: AgeGroup, db: AsyncSession
-) -> None:
+async def _assert_assessment_complete(assessment_id: uuid.UUID, db: AsyncSession) -> None:
     """Server-side re-check, independent of whatever `completed` flag a
     client last saw from /assessment/answers or /assessment/motivation —
     each of those only ever confirms its own phase, not the whole test.
-    Required counts are age-specific since the MI/Harter merge: junior's
-    Likert total is MI + Big Five with the retired RIASEC rows excluded
-    (assessment_shared.likert_total_questions already does this), middle
-    and senior are RIASEC + Big Five (question pairs land in the same
-    Question/UserResponse tables, so no separate count is needed for them).
-    Motivation is Harter pairs for junior/middle, MOST/LEAST triplets for
-    senior — different tables, so the right counter has to be picked here.
-    Belbin + АСТУР are also required (assessment_shared.
+    Question pairs land in the same Question/UserResponse tables as Likert
+    answers, so no separate count is needed for them. Belbin + АСТУР are also required (assessment_shared.
     belbin_and_astur_completed): they're not optional/psychologist-only —
     the continuous flow routes every student through both right after
     motivation — so a report must not be generatable (and `assessment.status`
     must not read as `completed`) before they're done too."""
     likert_answered = await assessment_shared.likert_answered_count(assessment_id, db)
-    likert_total = await assessment_shared.likert_total_questions(db, age_group)
+    likert_total = await assessment_shared.likert_total_questions(db)
     likert_done = likert_total > 0 and likert_answered >= likert_total
 
-    mot_done = await assessment_shared.motivation_completed(assessment_id, age_group, db)
+    mot_done = await assessment_shared.motivation_completed(assessment_id, db)
     battery_done = await assessment_shared.belbin_and_astur_completed(assessment_id, db)
 
     if not (likert_done and mot_done and battery_done):
         raise AppError(
             status_code=status.HTTP_409_CONFLICT,
             error_code="assessment_not_completed",
-            detail="Тест ещё не завершён — сначала ответь на все обязательные вопросы",
+            detail=i18n_key("api_errors", "assessment_not_completed", locale="ru"),
         )
 
 
@@ -536,43 +491,7 @@ def psych_sections_for(
     return viewer_role in (UserRole.psychologist, UserRole.admin)
 
 
-async def _build_validity_section(
-    assessment_id: uuid.UUID, db: AsyncSession, *, consent_ok: bool
-) -> ValiditySection | None:
-    """Фаза 1 «Достоверность протокола». Assembled from the
-    `assessment_validity` row written by validity_service (PRO-299) after a
-    completed battery. `None` (→ `/result` `validity: null`) until that row
-    exists — i.e. scoring failed, or an assessment reported before PRO-299
-    (retrospective compute is deliberately not done). PRO-300 maps the full
-    verdict here: traffic light, sd_raw + sd_level + applied bounds,
-    carelessness indices, failed traps, `thresholds_version`, `consent_ok`.
-    This is the ONLY seam Фаза 1 plugs into — not a new call site in
-    build_report()."""
-    row = (
-        await db.execute(
-            select(AssessmentValidity).where(
-                AssessmentValidity.assessment_id == assessment_id
-            )
-        )
-    ).scalar_one_or_none()
-    if row is None:
-        return None
-    # `details.sd_bounds` are the bounds that were actually applied when the
-    # verdict was computed; fall back to the current config if an older row
-    # predates that key.
-    bounds = (row.details or {}).get("sd_bounds") or list(validity_thresholds.sd_bounds)
-    return ValiditySection(
-        consent_ok=consent_ok,
-        traffic_light=row.traffic_light.value,
-        sd_raw=row.sd_raw,
-        sd_level=row.sd_level.value,
-        sd_bounds=(int(bounds[0]), int(bounds[1])),
-        longstring_max=row.longstring_max,
-        irv=round(row.irv, 2),
-        infrequency_failed=row.infrequency_failed,
-        careless_flag=row.careless_flag,
-        thresholds_version=row.thresholds_version,
-    )
+
 
 
 def _psychoemotional_run_number(metrics: dict | None, field: str) -> int | None:
@@ -684,7 +603,7 @@ async def _attach_psych_sections(
 
     Isolation contract (PRO-282 §4 / PRO-291): each section's calculation is
     wrapped so a raised exception is logged and leaves that section `None` —
-    the RIASEC/BigFive/MI report is already assembled and is returned
+    the RIASEC/BigFive report is already assembled and is returned
     untouched no matter what any block does. The base report is what gets
     cached (in _build_report/_get_report); these sections are re-attached on
     every request so the cache stays viewer-agnostic ahead of PRO-321."""
@@ -720,7 +639,6 @@ async def _attach_psych_sections(
     # a future phase can monkeypatch an individual builder and have it take
     # effect here.
     builders = {
-        "validity": _build_validity_section,
         "psychoemotional": _build_psychoemotional_section,
     }
 
@@ -731,7 +649,7 @@ async def _attach_psych_sections(
         except Exception:  # noqa: BLE001 — a block must never break the main report
             logger.exception(
                 "psych section %r failed for assessment=%s — section omitted, "
-                "main RIASEC/BigFive/MI report unaffected",
+                "main RIASEC/BigFive report unaffected",
                 field,
                 assessment_id,
             )
@@ -740,27 +658,7 @@ async def _attach_psych_sections(
     return response.model_copy(update=updates)
 
 
-async def _run_validity_scoring(
-    assessment_id: uuid.UUID,
-    age_group: AgeGroup,
-    analysis: AnalysisResult,
-    db: AsyncSession,
-) -> None:
-    """Fire the PRO-299 validity scoring after the main report is committed.
-    Isolated: the report already persists, so a raised exception here only
-    loses the validity verdict — it is logged, the partial writes are rolled
-    back, and report generation continues."""
-    try:
-        await validity_service.score_and_store(
-            assessment_id, db, age_group=age_group, analysis=analysis
-        )
-    except Exception:  # noqa: BLE001 — validity must never break the main report
-        logger.exception(
-            "validity scoring failed for assessment=%s — verdict omitted, "
-            "main RIASEC/BigFive/MI report unaffected",
-            assessment_id,
-        )
-        await db.rollback()
+
 
 
 async def _run_psychoemotional_scoring(
@@ -818,7 +716,7 @@ async def _build_report(
         response = _shape_response(
             existing,
             await _interest_evidence(
-                assessment_id, db, profile=dict(existing.profile or {}), locale=locale
+                assessment_id, db, locale=locale
             ),
             locale=locale,
         )
@@ -845,7 +743,7 @@ async def _build_report(
         response = _shape_response(
             existing,
             await _interest_evidence(
-                assessment_id, db, profile=dict(existing.profile or {}), locale=locale
+                assessment_id, db, locale=locale
             ),
             locale=locale,
         )
@@ -858,18 +756,17 @@ async def _build_report(
     assessment = assessment_result.scalar_one_or_none()
     if assessment is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru")
         )
 
     profile_result = await db.execute(
         select(Profile).where(Profile.id == assessment.profile_id)
     )
     profile = profile_result.scalar_one_or_none()
-    age_group = profile.age_group if profile is not None else AgeGroup.senior
 
     # Gate before any write: an incomplete assessment must not flip to
     # `completed` and must not get a partial AnalysisResult.
-    await _assert_assessment_complete(assessment_id, age_group, db)
+    await _assert_assessment_complete(assessment_id, db)
 
     artifacts_result = await db.execute(
         select(Artifact).where(Artifact.profile_id == assessment.profile_id)
@@ -883,65 +780,41 @@ async def _build_report(
     # SUPPORTED_LOCALES value pre-KZ-603 so use_locale (KNOWN_LOCALES-gated)
     # is what carries it, not set_locale. (KZ-401/KZ-403.)
     with use_locale(locale):
-        if age_group == AgeGroup.junior:
-            # Junior (6-9) is not career-oriented (TZ_Profi.md §4.1) — RIASEC and
-            # its career matching are replaced with an MI-style "what to try"
-            # instrument. Big Five stays unchanged below for personality/thinking_style.
-            raw = await mi_service.raw_scores(assessment_id, db, age_group)
-            counts = await mi_service.question_counts(db, age_group)
-            profile_scores = mi_service.normalize(raw, counts)
-            aversion_counts = await mi_service.aversion(assessment_id, db, age_group)
+        raw = await riasec_service.raw_scores(assessment_id, db)
+        counts = await riasec_service.question_counts(db)
+        profile_scores = riasec_service.normalize(raw, counts)
+        aversion_counts = await riasec_service.aversion(assessment_id, db)
 
-            code = mi_service.top_code(profile_scores)
-            meta = {
-                "differentiation": mi_service.differentiation(profile_scores),
-                "consistency": mi_service.consistency(profile_scores),
-                "aversion": aversion_counts,
-            }
-            strengths, weaknesses = mi_service.strengths_weaknesses(profile_scores, aversion_counts, counts)
-            plan = mi_service.development_plan(code, weaknesses, aversion_counts, counts)
-            careers: list[dict] = []
-        else:
-            raw = await riasec_service.raw_scores(assessment_id, db, age_group)
-            counts = await riasec_service.question_counts(db, age_group)
-            profile_scores = riasec_service.normalize(raw, counts)
-            aversion_counts = await riasec_service.aversion(assessment_id, db, age_group)
+        code = riasec_service.top_code(profile_scores)
+        meta = {
+            "differentiation": riasec_service.differentiation(profile_scores),
+            "consistency": riasec_service.consistency(code[:2]),
+            "aversion": aversion_counts,
+        }
+        strengths, weaknesses = riasec_service.strengths_weaknesses(profile_scores, aversion_counts, counts)
+        plan = riasec_service.development_plan(code, weaknesses, aversion_counts, counts)
 
-            code = riasec_service.top_code(profile_scores)
-            meta = {
-                "differentiation": riasec_service.differentiation(profile_scores),
-                "consistency": riasec_service.consistency(code[:2]),
-                "aversion": aversion_counts,
-            }
-            strengths, weaknesses = riasec_service.strengths_weaknesses(profile_scores, aversion_counts, counts)
-            plan = riasec_service.development_plan(code, weaknesses, aversion_counts, counts)
-
-            matched = await riasec_service.matched_careers(profile_scores, db)
-            careers = [_career_dict(d, score) for d, score in matched]
+        matched = await riasec_service.matched_careers(profile_scores, db)
+        careers = [_career_dict(d, score) for d, score in matched]
 
         # grand_mean is the same query for both raw_scores() and facet_raw() below
-        # (same assessment_id/age_group) — fetch it once here instead of each
+        # — fetch it once here instead of each
         # function independently re-running it.
-        bf_mean_answer = await bigfive_service.grand_mean(assessment_id, db, age_group)
+        bf_mean_answer = await bigfive_service.grand_mean(assessment_id, db)
 
-        bf_raw = await bigfive_service.raw_scores(assessment_id, db, age_group, mean_answer=bf_mean_answer)
-        bf_counts = await bigfive_service.question_counts(db, age_group)
+        bf_raw = await bigfive_service.raw_scores(assessment_id, db, mean_answer=bf_mean_answer)
+        bf_counts = await bigfive_service.question_counts(db)
         bigfive_scores = bigfive_service.normalize(bf_raw, bf_counts)
 
-        bf_facet_raw = await bigfive_service.facet_raw(assessment_id, db, age_group, mean_answer=bf_mean_answer)
-        bf_facet_counts = await bigfive_service.facet_counts(db, age_group)
+        bf_facet_raw = await bigfive_service.facet_raw(assessment_id, db, mean_answer=bf_mean_answer)
+        bf_facet_counts = await bigfive_service.facet_counts(db)
         bf_facet_norm = bigfive_service.facet_normalize(bf_facet_raw, bf_facet_counts)
         thinking_style = thinking_style_service.compute(bf_facet_norm)
 
         personality_profile, personality_notes = bigfive_content.build_personality_profile(bigfive_scores)
         personality_highlights = strength_phrases(personality_profile)
 
-        # Junior/middle answer the Harter-format pairs instead of the 3-way
-        # MOST/LEAST triplets (senior) — different tables/scoring, same shape.
-        if age_group in (AgeGroup.junior, AgeGroup.middle):
-            mot_scores = await motivation_pair_service.raw_scores(assessment_id, db)
-        else:
-            mot_scores = await motivation_service.raw_scores(assessment_id, db)
+        mot_scores = await motivation_service.raw_scores(assessment_id, db)
         mot_top = motivation_service.top_categories(mot_scores)
         mot_highlights = motivation_highlight_phrases(mot_top)
 
@@ -994,7 +867,6 @@ async def _build_report(
         context, narrative, narrative_translated_by_ai = await _build_narrative(
             assessment_id=assessment_id,
             db=db,
-            age_group=age_group,
             strengths=strengths,
             personality_profile=personality_profile,
             personality_notes=personality_notes,
@@ -1026,11 +898,9 @@ async def _build_report(
             if "thinking_style_notes" in carried_edits:
                 thinking_style_notes_stored = [dict(note) for note in sibling.thinking_style_notes]
 
-        # PRO-338 Ф1.2 — specialist-only, always attempted regardless of age
-        # group: junior/middle simply never answered these (senior-only
-        # content, Ф0.8), so both raw-score reads come back None and this
-        # collapses to `professional_types=None` on the row, same as if the
-        # test didn't exist for them.
+        # PRO-338 Ф1.2 — specialist-only; both raw-score reads come back None
+        # when the student never answered ДДО, collapsing to
+        # `professional_types=None` on the row.
         pt_interest_scores = await professional_types_service.interest_raw_scores(assessment_id, db)
         pt_abilities_scores = await professional_types_service.abilities_raw_scores(assessment_id, db)
         professional_types_data = (
@@ -1122,7 +992,7 @@ async def _build_report(
             response = _shape_response(
                 analysis,
                 await _interest_evidence(
-                    assessment_id, db, age_group=age_group, locale=locale
+                    assessment_id, db, locale=locale
                 ),
                 locale=locale,
             )
@@ -1137,17 +1007,16 @@ async def _build_report(
             response = _shape_response(
                 analysis,
                 await _interest_evidence(
-                    assessment_id, db, age_group=age_group, locale=locale
+                    assessment_id, db, locale=locale
                 ),
                 locale=locale,
             )
         else:
             evidence = await _interest_evidence(
-                assessment_id, db, age_group=age_group, locale=locale
+                assessment_id, db, locale=locale
             )
             response = report_v2_assembler.assemble_result_v2(
                 assessment_id=assessment_id,
-                age_group=age_group,
                 context=context,
                 narrative=narrative,
                 profile_scores=profile_scores,
@@ -1158,14 +1027,6 @@ async def _build_report(
                 evidence=evidence,
             )
     await _cache_if_published(redis, analysis, response)
-
-    # Protocol-validity verdict (PRO-299) — the main report row is already
-    # committed above, so this is fully isolated: any failure is logged and
-    # swallowed and the RIASEC/BigFive/MI report below is returned regardless
-    # (эпик §4 / psych-block-spec.md §A / ТестЛжи.md §3.7). Run after
-    # `response` is already built and cached (plain data by this point), so a
-    # rollback inside these calls expiring the `analysis` ORM object is safe.
-    await _run_validity_scoring(assessment_id, age_group, analysis, db)
 
     # Psychoemotional (МЦВ Собчик) metrics (PRO-307) — same isolation.
     await _run_psychoemotional_scoring(assessment_id, db)
@@ -1188,43 +1049,20 @@ async def _build_report(
 def student_personality_notes(
     analysis: AnalysisResult, *, include_overrides: bool = True
 ) -> dict[str, str]:
-    """Exactly the "Твой характер" text the student reads: the age-appropriate
-    computed phrase per trait, with the psychologist's corrections applied.
+    """Exactly the "Твой характер" text the student reads: the computed
+    phrase per trait, with the psychologist's corrections applied.
     The psychologist's own view edits this, not the adult-phrased stored
     `personality_notes` (which the student never sees)."""
-    is_junior = _stored_interest_instrument(dict(analysis.profile)) == "mi"
     # In the row's own language, never the reviewer's request locale — a kk
     # psychologist reviewing a ru report must see (and correct) the ru phrase.
     with use_locale(analysis.locale):
         return {
             note.trait: note.description
             for note in report_v2_assembler.build_personality_notes(
-                is_junior,
                 dict(analysis.personality_profile),
                 dict(analysis.personality_notes_override) if include_overrides else {},
             )
         }
-
-
-async def require_published_report(assessment_id: uuid.UUID, db: AsyncSession) -> None:
-    """Gate for every *other* student-facing endpoint that derives content
-    from a stored AnalysisResult (goal overlay, gap analysis, roadmaps).
-    /result itself answers with the pending envelope instead — here there is
-    no such envelope in the contract, so an unpublished report is a 409.
-
-    "No report at all" is left to the caller: each has its own 400/404 for
-    that. A caller that *generates* the report instead of failing (the goal
-    overlay does) must call this again after generation — otherwise the gate
-    would pass exactly when there was nothing to gate yet."""
-    if await get_review_status(assessment_id, db) == ReviewStatus.pending_review:
-        # AppError, not a bare HTTPException: the same endpoints already 409
-        # with `assessment_not_completed`, and the frontend branches on
-        # error_code, never on detail (app/errors.py).
-        raise AppError(
-            status_code=status.HTTP_409_CONFLICT,
-            error_code="report_pending_review",
-            detail="Отчёт ещё не опубликован психологом",
-        )
 
 
 async def get_review_status(assessment_id: uuid.UUID, db: AsyncSession) -> ReviewStatus | None:
@@ -1291,7 +1129,7 @@ async def resolve_report(
     response = _shape_response(
         analysis,
         await _interest_evidence(
-            assessment_id, db, profile=dict(analysis.profile or {}), locale=locale
+            assessment_id, db, locale=locale
         ),
         locale=locale,
     )
@@ -1335,7 +1173,6 @@ async def get_report_with_analysis(
             await _interest_evidence(
                 assessment_id,
                 db,
-                profile=dict(analysis.profile or {}),
                 locale=analysis.locale,
             ),
             locale=analysis.locale,

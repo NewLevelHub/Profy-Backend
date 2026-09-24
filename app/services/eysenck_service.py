@@ -43,8 +43,8 @@ async def raw_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, in
     """1 point per item whose answer matches its own keyed direction
     (extraversion/neuroticism items keyed "yes" score on Да=2, items keyed
     "no" score on Нет=1 — see eysenck_bank.py's per-item `keyed` field).
-    `None` when nothing has been answered yet (junior/middle never see this
-    senior-only content, or a senior assessment still in progress) — not a
+    `None` when nothing has been answered yet (an assessment
+    still in progress) — not a
     zero-filled dict, which would misreport "took it, scored nothing
     everywhere" as if it were real data."""
     result = await db.execute(

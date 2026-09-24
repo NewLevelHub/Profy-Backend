@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.database import get_db
 from app.dependencies import get_current_student_user
 from app.errors import AppError
@@ -13,7 +14,6 @@ from app.models.assessment import Assessment
 from app.models.profile import Profile
 from app.models.user import User
 from app.schemas.feedback import ProductFeedbackCreate, ProductFeedbackResponse
-from app.schemas.goal_overlay import GoalOverlayResponse
 from app.schemas.result_v2 import (
     ResultOrPendingSchema,
     ResultPendingReviewResponse,
@@ -41,12 +41,12 @@ async def _require_assessment_access(
     row_data = row.one_or_none()
     if row_data is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru")
         )
     _, owner_user_id = row_data
     if owner_user_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+            status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru")
         )
 
 
@@ -81,7 +81,7 @@ async def get_report(
     review_status = await report_service.get_review_status(assessment_id, db)
     if review_status is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Report not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "report_not_found", locale="ru")
         )
     if review_status != ReviewStatus.published:
         return ResultPendingReviewResponse(assessment_id=assessment_id)
@@ -94,10 +94,10 @@ async def get_report(
             raise AppError(
                 status_code=status.HTTP_404_NOT_FOUND,
                 error_code="report_locale_not_generated",
-                detail="Отчёт на выбранном языке ещё не создан",
+                detail=i18n_key("api_errors", "report_locale_not_generated", locale="ru"),
             )
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Report not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "report_not_found", locale="ru")
         )
     return result
 
@@ -110,22 +110,3 @@ async def submit_feedback(
 ) -> ProductFeedbackResponse:
     await _require_assessment_access(data.assessment_id, current_user, db)
     return await feedback_service.submit_feedback(current_user.id, data, db)
-
-
-@router.get("/{assessment_id}/goal-context", response_model=GoalOverlayResponse)
-async def get_goal_context(
-    assessment_id: uuid.UUID,
-    program_id: uuid.UUID | None = None,
-    current_user: User = Depends(get_current_student_user),
-    db: AsyncSession = Depends(get_db),
-) -> GoalOverlayResponse:
-    from app.services import goal_overlay_service
-    await _require_assessment_access(assessment_id, current_user, db)
-    # The review gate lives inside goal_overlay_service, right where it first
-    # reads (or generates) the report. Not here: the goal-choice interstitial
-    # (unsure goal) answers before that and needs no report, so gating the
-    # whole endpoint would block choosing a goal while a report is pending.
-    return await goal_overlay_service.get_or_create_goal_overlay(
-        assessment_id, db, program_id=program_id
-    )
-

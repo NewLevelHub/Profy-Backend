@@ -73,49 +73,6 @@ async def test_update_program_locks_only_patched_fields(db_session: AsyncSession
     assert is_locked(updated, "language") is False
 
 
-async def test_backfill_ranking_from_label_skips_locked_field(
-    db_session: AsyncSession, monkeypatch, capsys
-) -> None:
-    """backfill_ranking_from_label.py is NOT in cd.yml/cd-dev.yml (retired
-    as a completed one-time migration — see its module docstring) — this
-    covers its is_locked() guard for whenever someone runs it by hand again,
-    not an automated production guarantee."""
-    from scripts import backfill_ranking_from_label as script
-
-    university = University(
-        name=f"Uni {uuid.uuid4()}",
-        country="KZ",
-        city="Almaty",
-        ranking_label="#701 (QS World University Rankings)",
-        ranking=None,
-    )
-    db_session.add(university)
-    await db_session.commit()
-    await db_session.refresh(university)
-
-    await admin_university_service.update_university(
-        db_session, university.id, AdminUniversityUpdateRequest(ranking=5)
-    )
-
-    class _FakeSessionCtx:
-        async def __aenter__(self_inner):
-            return db_session
-
-        async def __aexit__(self_inner, *exc):
-            return False
-
-    monkeypatch.setattr(script, "async_session", lambda: _FakeSessionCtx())
-    monkeypatch.setattr(script.sys, "argv", ["backfill_ranking_from_label.py", "--apply"])
-
-    await script.main()
-
-    captured = capsys.readouterr()
-    assert "admin-locked" in captured.out
-
-    await db_session.refresh(university)
-    assert university.ranking == 5  # not reverted to the label-parsed 701
-
-
 async def test_build_universities_skips_locked_fields(db_session: AsyncSession) -> None:
     """build_universities.py is the sole University/Program resync path left
     in cd.yml/cd-dev.yml (replaced the ~30-script pipeline, see its module

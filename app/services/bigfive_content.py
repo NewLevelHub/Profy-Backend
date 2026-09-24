@@ -83,11 +83,11 @@ def strength_phrases(profile: dict[str, float]) -> list[str]:
     return [table[t] for t in ("openness", "conscientiousness", "emotional_stability") if bands.get(t) == "high"]
 
 
-def personality_notes_for_age(is_junior: bool, profile: dict[str, float]) -> dict[str, str]:
-    """Age-appropriate tiered note per trait in `profile` — computed fresh from
-    the numeric tier every time, not read from stored text. `profile` may be a
-    stored `AnalysisResult.personality_profile` row just as well."""
-    table = tr("bigfive")["notes_junior" if is_junior else "notes"]
+def personality_notes(profile: dict[str, float]) -> dict[str, str]:
+    """Tiered note per trait in `profile` — computed fresh from the numeric
+    tier every time, not read from stored text. `profile` may be a stored
+    `AnalysisResult.personality_profile` row just as well."""
+    table = tr("bigfive")["notes"]
     bands = relative_bands(profile)
     return {
         trait: table[trait][_note_tier(bands.get(trait, "medium"))]
@@ -108,4 +108,4 @@ def build_personality_profile(
         "agreeableness": bigfive_normalized.get("A", 0.0),
         "emotional_stability": round(100.0 - bigfive_normalized.get("N", 0.0), 1),
     }
-    return profile, personality_notes_for_age(is_junior=False, profile=profile)
+    return profile, personality_notes(profile)

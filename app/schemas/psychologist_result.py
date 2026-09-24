@@ -6,11 +6,13 @@ the stored raw/narrative fields (`big_five`, `thinking_style`, `careers`
 with scores) — the psychologist needs them to judge the report.
 """
 
+
 import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, Field, model_validator
 
+from app.i18n.catalog import key as i18n_key
 from app.models.analysis_result import ReviewStatus
 
 # Mirrors `result_v2._MAX_CAREERS` — the student schema rejects more.
@@ -22,7 +24,7 @@ class PsychologistReviewQueueItem(BaseModel):
     student_id: uuid.UUID
     student_name: str | None = None
     student_email: str
-    age_group: str | None = None
+    age: int | None = None
     goal: str
     generated_at: datetime
     reviewed_at: datetime | None = None
@@ -106,5 +108,5 @@ class PsychologistResultPatch(BaseModel):
         # Omitting a field means "leave as is"; null would wipe a NOT NULL column.
         nulls = sorted(name for name in self.model_fields_set if getattr(self, name) is None)
         if nulls:
-            raise ValueError(f"fields cannot be null: {', '.join(nulls)}")
+            raise ValueError(i18n_key("api_errors", "null_fields", locale="ru").format(fields=', '.join(nulls)))
         return self

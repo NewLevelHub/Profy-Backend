@@ -26,7 +26,7 @@ class ProfileCreateRequest(BaseModel):
     # over-limit name is rejected here with a clean 422 rather than
     # reaching the DB layer.
     name: str = Field(..., min_length=3, max_length=60, pattern=NAME_PATTERN)
-    age: int = Field(..., ge=6, le=18)
+    age: int = Field(..., ge=14, le=18)
     grade: int = Field(..., ge=1, le=12)
     city: str
     country: str
@@ -58,7 +58,7 @@ class ProfileCreateRequest(BaseModel):
 
 class ProfileUpdateRequest(BaseModel):
     name: str | None = Field(None, min_length=3, max_length=60, pattern=NAME_PATTERN)
-    age: int | None = Field(None, ge=6, le=18)
+    age: int | None = Field(None, ge=14, le=18)
     grade: int | None = Field(None, ge=1, le=12)
     city: str | None = None
     country: str | None = None

@@ -148,10 +148,10 @@ def test_lability_static_items_score_against_hand_verified_keys() -> None:
 
 
 def test_lability_day_of_week_dynamic_item_resolves_against_submission_date() -> None:
-    # 2026-01-05 is a Monday ("понедельник" starts with "п", a consonant) -> квадрат.
+    # 2026-01-05 is a Monday ("понедельник" starts with "п", a consonant) -> кружок.
     monday = datetime(2026, 1, 5, tzinfo=timezone.utc)
     lability_answers = {str(i): {"answer": ""} for i in range(1, 9)}
-    lability_answers["2"] = {"answer": "квадрат"}
+    lability_answers["2"] = {"answer": "кружок"}
 
     first_half, _ = astur_scoring.score_lability(lability_answers, submitted_at=monday, profile_name="Т")
     assert first_half == 1 / 4  # only item 2 correct among items 1-4

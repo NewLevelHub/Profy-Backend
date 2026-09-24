@@ -57,34 +57,20 @@ narrative — если `AnalysisResult` для этого `assessment_id` уже
 скрытого "regenerate" флага и нет способа с фронта форсировать пересчёт —
 единственный способ получить новый отчёт — invalidate retake (см. §8).
 
-## 2. Возрастные ветки assessment
+## 2. Одна батарея для всех
 
-- **junior (6–9)**: MI + Big Five + Harter-парные вопросы по мотивации.
-  RIASEC и career matching не используются — `interest_instrument = "mi"`.
-- **middle (10–13)**: RIASEC + Big Five + Harter-парные вопросы по
-  мотивации. `interest_instrument = "riasec"`.
-- **senior (14–18)**: RIASEC + Big Five + MOST/LEAST мотивационные триплеты.
-  `interest_instrument = "riasec"`.
+Аудитория — 14–18 лет, возрастных веток нет (PRO-425): все проходят RIASEC +
+Big Five + MOST/LEAST мотивационные триплеты + психологические тесты.
+`interest_instrument` всегда `"riasec"` — поле оставлено в ответе ради
+совместимости контракта. MI-ветка (junior) и Harter-пары удалены.
 
-Ветка определяется `Profile.age_group` в момент генерации
-(`report_service.build_report`); при чтении уже сохранённого результата
-(`GET`, повторный `POST`) `interest_instrument` вместо этого
-восстанавливается из формы сохранённого `AnalysisResult.profile` —
-`report_service._stored_interest_instrument` смотрит, есть ли в ключах
-RIASEC-буквы (`R/I/A/S/E/C`); если нет — считается MI. Так что после
-merge PR #52 фронту всё ещё правильно ветвиться по `interest_instrument`
-из ответа, а не по возрасту пользователя — на этот раз не как
-подстраховка "на будущее", а потому что backend сам определяет ветку не
-всегда напрямую по `age_group`.
-
-Motivation input-flow различается по возрасту (Harter-пары vs.
-MOST/LEAST-триплеты), но студенту он унифицирован — всегда только
-`motivation_highlights` (список коротких фраз, не сырые категории).
+Студенту мотивация отдаётся только как `motivation_highlights` (список
+коротких фраз, не сырые категории).
 
 ## 3. Общая форма ответа
 
 Все поля ниже — реальные поля `_ResultResponseBase`
-(`app/schemas/result_v2.py`), общие для обеих веток. Пример — санитайзнутый
+(`app/schemas/result_v2.py`), общие для всего ответа. Пример — санитайзнутый
 вариант senior-снапшота (`tests/snapshots/result_v2_example_senior.json`),
 с более реалистичными текстами вместо тестовых заглушек:
 
@@ -113,8 +99,8 @@ MOST/LEAST-триплеты), но студенту он унифицирова�
   "is_flat_profile": false,
   "exploration_note": "Не обязательно пробовать всё сразу — начни с того, что откликается больше всего...",
   "final_analysis": "Если сложить всё вместе: твои интересы показывают, куда тебя тянет...",
-  "careers": [ /* см. §5, [] для mi */ ],
-  "exploration_activities": [ /* см. §4, [] для riasec */ ],
+  "careers": [ /* см. §5 */ ],
+  "exploration_activities": [],  // всегда пустой, legacy
   "created_at": "2026-08-07T08:00:00Z"
 }
 ```
@@ -129,9 +115,7 @@ MOST/LEAST-триплеты), но студенту он унифицирова�
 - `personality_notes` (список из ровно 5 карточек, по одной на домен Big
   Five: `openness`, `conscientiousness`, `extraversion`, `agreeableness`,
   `emotional_stability`) и `personality_note` (1-2 предложения синтеза) —
-  реальная секция "Твой характер", присутствует на обеих ветках и не
-  зависит от `interest_instrument` (Big Five отвечают одинаково все три
-  возраста). **Важно:** это не то же самое, что admin-only
+  реальная секция "Твой характер". **Важно:** это не то же самое, что admin-only
   `AnalysisResult.personality_notes` — это другое, публичное поле с другой
   структурой (`{trait, label, description}` вместо `{trait: phrase}`).
   Черновик перечислял `personality_notes` в списке "никогда не отдавать
@@ -140,38 +124,16 @@ MOST/LEAST-триплеты), но студенту он унифицирова�
   с таким же именем, но другой формы и назначения. Backend не течёт сырыми
   Big Five баллами — экспозиции сырых данных нет, но имя поля совпадает,
   и фронту стоит об этом знать при чтении схем.
-- `exploration_note` — фиксированный закрывающий текст под
-  `exploration_activities` (junior), присутствует и на riasec-ветке (где
-  `exploration_activities` пуст), фронт просто не рендерит его в этом
-  случае.
+- `exploration_note` — фиксированный закрывающий текст бывшего junior-списка
+  `exploration_activities`; список теперь всегда пуст, фронт его не рендерит.
 - `final_analysis` — 3-5 предложений синтеза, LLM-generated либо
   deterministic fallback, показывается последним на странице.
 
-## 4. Discriminated interest contract
+## 4. Interest contract
 
-Контракт — реальный дискриминированный Pydantic-union по
-`interest_instrument` (`MiResultResponse` | `RiasecResultResponse`,
-`app/schemas/result_v2.py`), а не соглашение "по факту": конструктор с MI +
-непустым `careers` или RIASEC-веткой с 8 элементами `interest_map` реально
-не проходит валидацию Pydantic на backend (`ValidationError`), это
-enforced на уровне схемы, а не только "так собирает ассемблер".
+Схема — `RiasecResultResponse` (`app/schemas/result_v2.py`); ограничения ниже
+enforced на уровне Pydantic, а не только "так собирает ассемблер".
 
-### `interest_instrument = "mi"` (junior)
-
-- `interest_map` — ровно 8 элементов (`Field(min_length=8, max_length=8)`),
-  ключи `verbal`, `logical`, `musical`, `visual`, `bodily`,
-  `interpersonal`, `intrapersonal`, `naturalistic`, в этом порядке
-  (`mi_service.MI_ORDER`).
-- `careers` — всегда `[]`, зафиксировано на уровне схемы
-  (`max_length=0`) — backend не может отдать junior непустой `careers`,
-  даже по ошибке.
-- `exploration_activities` — непустой список строк, минимум 1 элемент
-  (`Field(min_length=1)`). Строится из `MI_ACTIVITIES` по топ-категориям
-  студента; если ни одна категория не набрала evidence, backend отдаёт по
-  одной активности на каждую MI-категорию как safe fallback — список
-  никогда не пуст.
-
-### `interest_instrument = "riasec"` (middle/senior)
 
 - `interest_map` — ровно 6 элементов (`R`, `I`, `A`, `S`, `E`, `C`, в этом
   порядке — `riasec_service.HOLLAND_ORDER`). `code` — буква Holland-кода,
@@ -231,7 +193,7 @@ enforced на уровне схемы, а не только "так собира
 Подтверждено чтением `ResultResponseV2`/`_shape_response`/
 `assemble_result_v2` — ни один из следующих admin-only ключей не попадает
 в student-ответ ни при каком пути (генерация, кэш-хит, повторный `GET`):
-`profile` (сырые баллы по буквам/MI-ключам), `code` (топ-код), `meta`
+`profile` (сырые баллы по RIASEC-буквам), `code` (топ-код), `meta`
 (differentiation/consistency/aversion), `match_score`, сырые
 `strengths`/`weaknesses`, `development_plan`, `big_five` (сырые баллы Big
 Five), сырой `personality_profile` (0-100 по трейту), сырой `thinking_style`
@@ -268,9 +230,6 @@ public-поля v2-контракта (см. §3), просто с тем же �
   RIASEC top-3 может дать шумные/нерелевантные career matches (известный,
   осознанный gap методологии — полноценное решение — это отдельная задача
   по переработке career matching, не в этом контракте).
-- MI: `careers` остаётся пустым (как и во всех junior-случаях),
-  `summary`/`exploration_activities` не утверждают о "слабом результате" —
-  тон подобран так же, как и для не-flat профиля.
 
 ## 8. Completion и ошибки
 
@@ -279,13 +238,11 @@ public-поля v2-контракта (см. §3), просто с тем же �
 полагаясь на клиентский флаг `completed` с `/assessment/answers` или
 `/assessment/motivation` — каждый из них подтверждает только свою фазу:
 
-- Likert-часть (RIASEC/MI + Big Five вместе) должна быть отвечена
-  полностью: `likert_answered_count >= likert_total_questions(age_group)`.
-- Мотивационная часть — по своей таблице в зависимости от возраста:
-  Harter-пары (`motivation_pair_service`) для junior/middle, MOST/LEAST
-  триплеты (`motivation_service`) для senior — обе должны быть отвечены
-  полностью.
-- Если хотя бы одно из двух не завершено — **`409 Conflict`**
+- Likert-часть (все вопросы `questions`) должна быть отвечена полностью:
+  `likert_answered_count >= likert_total_questions()`.
+- MOST/LEAST триплеты мотивации (`motivation_service`) — полностью.
+- Belbin и АСТУР — завершены (`assessment_shared.belbin_and_astur_completed`).
+- Если хоть что-то из этого не завершено — **`409 Conflict`**
   (`"Тест ещё не завершён — сначала ответь на все обязательные вопросы"`).
   Assessment при этом не переводится в `completed` и никакой (даже
   частичный) `AnalysisResult` не создаётся — это в одной транзакции с

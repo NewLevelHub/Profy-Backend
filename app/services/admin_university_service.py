@@ -4,6 +4,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.i18n.catalog import key as i18n_key
 from app.models.program import Program
 from app.models.university import University
 from app.schemas.admin_university import (
@@ -140,7 +141,7 @@ async def update_university(
     result = await db.execute(select(University).where(University.id == university_id))
     university = result.scalar_one_or_none()
     if university is None:
-        raise ValueError("University not found")
+        raise ValueError(i18n_key("api_errors", "university_not_found", locale="ru"))
 
     updates = data.model_dump(exclude_unset=True)
     for key, value in updates.items():
@@ -165,7 +166,7 @@ async def update_program(
     )
     program = result.scalar_one_or_none()
     if program is None:
-        raise ValueError("Program not found")
+        raise ValueError(i18n_key("api_errors", "program_not_found", locale="ru"))
 
     updates = data.model_dump(exclude_unset=True)
     for key, value in updates.items():
@@ -187,7 +188,7 @@ async def _unlock_row(db: AsyncSession, row, field: str | None):
     has ever had. Reported as such rather than pretending to be an undo."""
     removed = unlock_fields(row, None if field is None else [field])
     if field is not None and not removed:
-        raise AdminNothingToClearError(f"Field '{field}' is not locked on this row")
+        raise AdminNothingToClearError(i18n_key("api_errors", "field_not_locked", locale="ru").format(field=field))
 
     await db.commit()
     await db.refresh(row)
@@ -200,7 +201,7 @@ async def unlock_university_fields(
     result = await db.execute(select(University).where(University.id == university_id))
     university = result.scalar_one_or_none()
     if university is None:
-        raise ValueError("University not found")
+        raise ValueError(i18n_key("api_errors", "university_not_found", locale="ru"))
     return await _unlock_row(db, university, field)
 
 
@@ -212,7 +213,7 @@ async def unlock_program_fields(
     )
     program = result.scalar_one_or_none()
     if program is None:
-        raise ValueError("Program not found")
+        raise ValueError(i18n_key("api_errors", "program_not_found", locale="ru"))
     return await _unlock_row(db, program, field)
 
 

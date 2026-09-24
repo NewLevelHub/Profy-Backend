@@ -1,11 +1,5 @@
-"""Forced-choice-pair format — junior (6-9, TZ_Profi.md §13 bans Likert
-outright) gets its whole test this way, shown on its own screen. Middle
-(10-13) gets a subset of its own tier-exclusive questions woven into the
-ordinary Likert flow instead, to break up monotony (TZ_Profi.md §14) without
-abandoning Likert (still fine for that age). `QuestionPair.age_tier` is an
-exact match, unlike `Question.age_tier` (checked via visible_tiers(),
-cumulative) — a junior pair is never returned to a middle profile or vice
-versa.
+"""Forced-choice-pair format — the ДДО «интересы» pairs, woven into the
+ordinary Likert flow.
 
 A pair pick is written as two ordinary `UserResponse` rows (picked=5,
 other=1) — riasec_service/bigfive_service and the Likert-completion
@@ -13,6 +7,7 @@ counters in assessment_shared read `UserResponse` regardless of whether it
 came from a Likert answer or a pair pick, so neither of those needed any
 changes for this format to work.
 """
+
 import uuid
 
 from fastapi import HTTPException, status
@@ -21,10 +16,10 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
+from app.i18n.catalog import key as i18n_key
 from app.i18n import pick_locale
 from app.models.assessment import Assessment, AssessmentStatus
-from app.models.profile import AgeGroup
-from app.models.question import Question, QuestionInstrument
+from app.models.question import Question
 from app.models.question_pair import QuestionPair
 from app.models.user_response import UserResponse
 from app.schemas.question_pair import (
@@ -49,29 +44,18 @@ def _to_option(
         icon=override_icon or question.icon,
         riasec_type=question.riasec_type,
         bigfive_domain=question.bigfive_domain,
-        mi_category=question.mi_category,
     )
 
 
-async def get_pairs(db: AsyncSession, age_group: AgeGroup) -> list[QuestionPairItem]:
+async def get_pairs(db: AsyncSession) -> list[QuestionPairItem]:
     question_a = aliased(Question)
     question_b = aliased(Question)
     query = (
         select(QuestionPair, question_a, question_b)
         .join(question_a, QuestionPair.question_a_id == question_a.id)
         .join(question_b, QuestionPair.question_b_id == question_b.id)
-        .where(QuestionPair.age_tier == age_group)
         .order_by(QuestionPair.pair_index)
     )
-    if age_group == AgeGroup.junior:
-        # Junior's RIASEC content is retired in favor of the MI instrument
-        # (TZ_Profi.md §4.1 — no career orientation for 6-9-year-olds); old
-        # junior-tagged `riasec` QuestionPair rows are left in the DB but
-        # excluded here rather than migrated/deleted. MI itself is answered
-        # as plain Likert now (product override: ipsative pairing between
-        # unrelated MI categories made an already-weak construct worse — see
-        # question_service.get_all_questions), so only Big Five stays paired.
-        query = query.where(QuestionPair.instrument == QuestionInstrument.big_five)
     rows = (await db.execute(query)).all()
     return [
         QuestionPairItem(
@@ -95,12 +79,11 @@ async def submit_pair_answers(
     row_result = await db.execute(select(Assessment).where(Assessment.id == assessment_id))
     assessment = row_result.scalar_one_or_none()
     if assessment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
 
     if assessment.profile_id != current_profile_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
 
-    age_group = await assessment_shared.get_profile_age_group(assessment.profile_id, db)
 
     pair_indexes = [item.pair_index for item in answers]
     pairs_result = await db.execute(
@@ -114,12 +97,12 @@ async def submit_pair_answers(
         if pair is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Pair {item.pair_index} not found",
+                detail=i18n_key("api_errors", "pair_not_found", locale="ru").format(pair_index=item.pair_index),
             )
         if item.picked_question_id not in (pair.question_a_id, pair.question_b_id):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Question {item.picked_question_id} is not part of pair {item.pair_index}",
+                detail=i18n_key("api_errors", "question_not_in_pair", locale="ru").format(picked_question_id=item.picked_question_id, pair_index=item.pair_index),
             )
         other_id = pair.question_b_id if item.picked_question_id == pair.question_a_id else pair.question_a_id
         response_rows.append({
@@ -147,7 +130,7 @@ async def submit_pair_answers(
         await assessment_shared.invalidate_retake(assessment, db, redis)
 
     answered = await assessment_shared.likert_answered_count(assessment_id, db)
-    total = await assessment_shared.likert_total_questions(db, age_group)
+    total = await assessment_shared.likert_total_questions(db)
     # Same caveat as assessment_service.submit_answers: this phase being done
     # does not flip assessment.status — motivation_service does that once
     # both phases are confirmed answered.

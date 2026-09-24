@@ -54,18 +54,16 @@ jobs:
         run: alembic upgrade head
 
       # test_content_locale asserts against real bank-seeded rows (directions,
-      # questions, pairs, motivation) — seed only those, not the full ~25-script
+      # questions, ДДО pairs, motivation) — seed only those, not the full ~25-script
       # CD chain.
       - name: seed bank content
         run: |
           python scripts/seed_riasec_questions.py
           python scripts/seed_bigfive_questions.py
-          python scripts/seed_mi_questions.py
-          python scripts/seed_question_pairs.py
+          python scripts/seed_professional_types_questions.py
           python scripts/seed_riasec_directions.py
           python scripts/apply_direction_content.py
           python scripts/seed_motivation_statements.py
-          python scripts/seed_motivation_pairs.py
 
       - name: i18n guard tests
         run: >-

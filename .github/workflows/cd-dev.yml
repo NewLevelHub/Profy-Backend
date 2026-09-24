@@ -189,10 +189,7 @@ jobs:
             echo "Running seed scripts..."
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_riasec_questions.py
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_bigfive_questions.py
-            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_mi_questions.py
-            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_question_pairs.py
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_motivation_statements.py
-            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_motivation_pairs.py
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_riasec_directions.py
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/apply_direction_content.py
             # Universities/programs — single committed snapshot

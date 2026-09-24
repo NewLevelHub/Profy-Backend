@@ -1,9 +1,9 @@
 """Per-locale catalog for methodology reference strings (KZ-307).
 
 Every string that used to be a Russian literal in the deterministic content
-services — `app/services/{riasec,bigfive,mi,thinking_style}_content.py`,
-`gap_analysis_service.py`, `university_requirements.py`, `goal_overlay_service.py`
-and `app/data/resource_catalog.py` — now lives here as an area module with
+services — `app/services/{riasec,bigfive,thinking_style}_content.py`,
+`university_requirements.py` and `goal_overlay_service.py` — now lives here
+as an area module with
 identical-shape ``RU`` and ``KK`` trees. Callers get the request-locale tree
 via :func:`tr`.
 
@@ -21,14 +21,17 @@ from typing import Any
 from app.i18n import DEFAULT_LOCALE, get_locale, record_fallback
 
 from . import (
+    admin_export,
+    api_errors,
+    api_messages,
+    report_copy,
+    riasec_explanations,
+
     bigfive,
     email,
-    gap_analysis,
     goal_overlay,
-    mi,
     motivation,
     narrative_fallback,
-    resource_catalog,
     result_v2,
     riasec,
     subjects,
@@ -38,14 +41,17 @@ from . import (
 )
 
 _AREAS: dict[str, Any] = {
+    "admin_export": admin_export,
+    "api_errors": api_errors,
+    "api_messages": api_messages,
+    "report_copy": report_copy,
+    "riasec_explanations": riasec_explanations,
+
     "riasec": riasec,
     "bigfive": bigfive,
-    "mi": mi,
     "motivation": motivation,
     "thinking_style": thinking_style,
-    "gap_analysis": gap_analysis,
     "university_requirements": university_requirements,
-    "resource_catalog": resource_catalog,
     "goal_overlay": goal_overlay,
     "subjects": subjects,
     "email": email,
@@ -80,7 +86,11 @@ def tr(area: str, *, locale: str | None = None) -> dict[str, Any]:
 
 def key(area: str, *path: str, locale: str | None = None) -> Any:
     """Convenience: ``tr(area)[path[0]][path[1]]…``."""
-    node: Any = tr(area, locale=locale)
+    # ``key`` is used by runtime service copy. Treat a legacy explicit ``ru``
+    # argument as a compatibility marker and resolve from the active request
+    # locale; callers that truly need a fixed language use ``tr`` directly.
+    resolved_locale = None if locale == DEFAULT_LOCALE else locale
+    node: Any = tr(area, locale=resolved_locale)
     for step in path:
         node = node[step]
     return node

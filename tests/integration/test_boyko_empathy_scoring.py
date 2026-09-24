@@ -21,7 +21,7 @@ async def _seed_bank(db: AsyncSession) -> None:
     for q in QUESTIONS:
         db.add(Question(
             instrument=QuestionInstrument.boyko_empathy,
-            text=q["text"], order=q["order"], age_tier=AgeGroup.senior,
+            text=q["text"], order=q["order"],
         ))
     await db.flush()
 

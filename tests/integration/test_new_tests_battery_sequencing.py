@@ -51,43 +51,43 @@ async def _seed_full_battery(db: AsyncSession) -> Assessment:
     # drop them inside this test's rolled-back transaction so the count/
     # contiguity assertions below see exactly what this file seeds, same
     # precaution as test_validity_items_in_battery.py takes for `validity`.
-    await db.execute(delete(Question).where(Question.instrument.in_(_NEW_TESTS_INSTRUMENTS)))
+    await db.execute(delete(Question).where(Question.instrument.in_(_NEW_TESTS_INSTRUMENTS | {QuestionInstrument.riasec, QuestionInstrument.big_five})))
 
     for i in range(20):
         db.add(Question(
             instrument=QuestionInstrument.riasec, riasec_type=_HOLLAND[i % len(_HOLLAND)],
-            text={"ru": f"riasec {i}"}, order=1 + i, age_tier=AgeGroup.senior,
+            text={"ru": f"riasec {i}"}, order=1 + i,
         ))
     for i in range(10):
         db.add(Question(
             instrument=QuestionInstrument.big_five, bigfive_domain=_BIG_FIVE_DOMAINS[i % 5],
             keyed=Keyed.plus if i % 2 else Keyed.minus, facet=1,
-            text={"ru": f"bigfive {i}"}, order=100 + i, age_tier=AgeGroup.senior,
+            text={"ru": f"bigfive {i}"}, order=100 + i,
         ))
     for data in PROFESSIONAL_TYPES_ABILITIES_QUESTIONS:
         db.add(Question(
             instrument=QuestionInstrument.professional_types_abilities,
-            text=data["text"], order=data["order"], age_tier=AgeGroup(data["age_tier"]),
+            text=data["text"], order=data["order"],
         ))
     for data in EYSENCK_QUESTIONS:
         db.add(Question(
             instrument=QuestionInstrument.eysenck,
-            text=data["text"], order=data["order"], age_tier=AgeGroup(data["age_tier"]),
+            text=data["text"], order=data["order"],
         ))
     for data in ELERS_QUESTIONS:
         db.add(Question(
             instrument=QuestionInstrument.elers,
-            text=data["text"], order=data["order"], age_tier=AgeGroup(data["age_tier"]),
+            text=data["text"], order=data["order"],
         ))
     for data in BOYKO_EMPATHY_QUESTIONS:
         db.add(Question(
             instrument=QuestionInstrument.boyko_empathy,
-            text=data["text"], order=data["order"], age_tier=AgeGroup(data["age_tier"]),
+            text=data["text"], order=data["order"],
         ))
     for data in KONDASH_ANXIETY_QUESTIONS:
         db.add(Question(
             instrument=QuestionInstrument.kondash_anxiety,
-            text=data["text"], order=data["order"], age_tier=AgeGroup(data["age_tier"]),
+            text=data["text"], order=data["order"],
         ))
     await db.flush()
     return assessment
@@ -99,7 +99,7 @@ async def test_new_tests_form_one_contiguous_block_after_the_main_battery(
     assessment = await _seed_full_battery(db_session)
 
     battery = await question_service.get_all_questions(
-        db_session, AgeGroup.senior, assessment_id=assessment.id
+        db_session, assessment_id=assessment.id
     )
 
     new_test_positions = [i for i, q in enumerate(battery) if q.instrument in _NEW_TESTS_INSTRUMENTS]
@@ -143,7 +143,7 @@ async def test_new_tests_never_leak_into_riasec_scoring_via_the_battery(
     assessment = await _seed_full_battery(db_session)
 
     battery = await question_service.get_all_questions(
-        db_session, AgeGroup.senior, assessment_id=assessment.id
+        db_session, assessment_id=assessment.id
     )
 
     for q in battery:

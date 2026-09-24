@@ -1,12 +1,12 @@
 """OpenAPI-shape checks for /result — the generated schema must actually
-reflect the discriminated MI/RIASEC contract (frontend-result-api-contract.md
-§4), not just "the Python types happen to validate correctly". Pure schema
+reflect the contract (frontend-result-api-contract.md §4), not just "the
+Python types happen to validate correctly". Pure schema
 generation (`app.openapi()`), no DB/app startup/lifespan involved.
 """
 from app.main import app
 
 
-_STUDENT_RESPONSE_NAMES = {"MiResultResponse", "RiasecResultResponse"}
+_STUDENT_RESPONSE_NAMES = {"RiasecResultResponse"}
 
 
 def _result_generate_response_schema() -> dict:
@@ -31,14 +31,9 @@ def _response_branches() -> list[dict]:
     return branches
 
 
-def test_result_generate_response_is_a_discriminated_oneof():
-    # A $ref'd oneOf (pydantic wraps discriminated unions this way) or an
-    # inline oneOf — either is fine, but it must not have collapsed into a
-    # single flat object schema (that would mean the discriminator was lost).
-    discriminated = [b for b in _response_branches() if "discriminator" in b]
-    assert len(discriminated) == 1
-    assert "oneOf" in discriminated[0]
-    assert discriminated[0]["discriminator"]["propertyName"] == "interest_instrument"
+def test_result_generate_response_is_the_riasec_report():
+    refs = {b.get("__ref__", "") for b in _response_branches()}
+    assert any(ref.endswith("/RiasecResultResponse") for ref in refs)
 
 
 def test_result_generate_response_allows_pending_review_envelope():
@@ -46,13 +41,13 @@ def test_result_generate_response_allows_pending_review_envelope():
     assert any(ref.endswith("/ResultPendingReviewResponse") for ref in refs)
 
 
-def test_mi_and_riasec_schemas_are_both_registered_in_components():
+def test_student_schema_is_registered_in_components():
     schema = app.openapi()
     component_names = set(schema["components"]["schemas"])
     assert _STUDENT_RESPONSE_NAMES <= component_names
 
 
-def test_disclaimer_field_is_present_on_both_branches():
+def test_disclaimer_field_is_present():
     schema = app.openapi()
     component_names = [n for n in schema["components"]["schemas"] if n in _STUDENT_RESPONSE_NAMES]
     assert set(component_names) == _STUDENT_RESPONSE_NAMES
