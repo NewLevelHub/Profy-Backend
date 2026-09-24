@@ -298,8 +298,10 @@ def _own_name_expected_answer(profile_name: str, *, locale: str = "ru") -> str:
     the respondent to both derive AND correctly type a specific Cyrillic
     letter under a lability timer, which live in-office testing found to be
     the hardest item in the whole subtest). `Profile.name` (app/models/
-    profile.py) is one combined display-name field; first word is taken as
-    имя, matching the typical "Имя Фамилия" entry. Uses the ru+kk union
+    profile.py) is the onboarding «Как тебя зовут?» field — just a first
+    name (no surname is collected), so the item no longer says «(не
+    фамилии)»; if someone still types more than one word, the first is
+    taken as the name. Uses the ru+kk union
     vowel set (`_VOWELS`) — the answer doesn't depend on interface locale,
     only on the actual first letter of the respondent's real name, which
     may use either alphabet's extra letters regardless of which locale the
