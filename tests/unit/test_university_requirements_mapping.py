@@ -1,4 +1,4 @@
-"""Область 8: `_map_program_requirement` (app/services/roadmap_builder.py).
+"""Область 8: `map_program_requirement` (app/services/university_requirements.py).
 
 Pure mapping, no DB/session needed — Program/University are plain objects
 here, never flushed. Verifies the "null means no data, never 'not required'"

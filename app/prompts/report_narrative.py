@@ -9,8 +9,7 @@ aversion data (see that module's docstring for why). Structured Outputs
 (8 MI / 6 RIASEC interests, exactly one merged thinking_style_notes card
 covering every real signal, no career_narrative for junior) is asked for
 here in the prompt text and
-enforced by app.services.report_narrative_validator after the fact — same
-pattern as app/prompts/roadmap.py's "exactly 5 horizons".
+enforced by app.services.report_narrative_validator after the fact.
 """
 import json
 

@@ -117,8 +117,7 @@ Authorization: Bearer <psychologist-token>
       "total_questions": 42,
       "created_at": "...",
       "completed_at": "...",
-      "has_result": true,
-      "has_roadmap": true
+      "has_result": true
     }
   ]
 }
@@ -132,7 +131,7 @@ Authorization: Bearer <psychologist-token>
 `assessments` — краткие саммари (без полного `analysis_result`). Для
 глубокого просмотра результата админка ходит в
 `GET /admin/assessments/{id}`; **у психолога такого эндпоинта в M2 нет** —
-карточка даёт список тестов и флаги `has_result` / `has_roadmap`. Если
+карточка даёт список тестов и флаг `has_result`. Если
 продукту нужен полный отчёт психологу — отдельный тикет поверх M2.
 
 ## 7. Типовой happy-path (ручная проверка /docs)

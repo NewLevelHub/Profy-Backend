@@ -1,5 +1,5 @@
 """app/prompts/report_narrative.py — pure prompt-text/schema unit tests, no
-DB, no LLM. Same style as tests/unit/test_roadmap_prompt.py.
+DB, no LLM.
 
 Structured Outputs (strict mode) forbids minItems/maxItems, so exact
 cardinality (8 MI / 6 RIASEC interests, junior's empty career_narrative)

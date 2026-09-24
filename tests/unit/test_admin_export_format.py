@@ -194,7 +194,7 @@ def test_summary_localizes_values_and_avoids_python_literals() -> None:
     assert values["Цель"] == "Поступить в вуз"
     assert values["Статус"] == "Завершён"
     assert values["Начато (UTC)"] == "2026-09-03 09:29"
-    assert values["Есть роадмап"] == "нет"
+    assert "Есть роадмап" not in values  # roadmap removed in PRO-425
 
 
 # --- the downloaded filename ------------------------------------------------

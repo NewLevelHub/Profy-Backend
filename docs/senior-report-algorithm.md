@@ -383,11 +383,6 @@ _level(value):  ≥70 → "high"; ≥50 → "medium"; иначе → "low"
   под КОНКРЕТНУЮ выбранную профессию (не общий топ-10, а `Program.directions` JOIN по
   slug направления), сортировка: `University.ranking` (QS World) → `uniranks_world_rank`
   (KZ-рынок) → имя по алфавиту.
-- **`app/services/roadmap_builder.py`** — отдельная, более крупная ИИ-генерация (план на
-  1мес/3мес/полгода/год), с явно другим промптом под каждую цель — таблица дословных
-  формулировок уже есть в
-  [`kak-schitaetsya-rezultat.md`, раздел 5](./kak-schitaetsya-rezultat.md#а-вот-что-меняется-по-настоящему--персональный-план-roadmap).
-  За рамками этого документа (он про то, как формируется САМ результат теста).
 
 ---
 
@@ -407,7 +402,5 @@ _level(value):  ≥70 → "high"; ≥50 → "medium"; иначе → "low"
 | Сборка финального ответа | `app/services/report_v2_assembler.py` |
 | Пороги high/medium/low (общие) | `app/services/scoring_levels.py` |
 | Видимость вопросов по возрасту | `app/services/age_tiers.py` |
-| Gap-анализ под программу вуза | `app/services/gap_analysis_service.py` |
 | Подбор программ вуза под профессию | `app/services/university_service.py` |
 | Блок «Фокус под твою цель» | `app/services/goal_overlay_service.py` |
-| Личный план (roadmap) | `app/services/roadmap_builder.py` |

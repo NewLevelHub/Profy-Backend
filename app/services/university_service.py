@@ -227,8 +227,8 @@ async def get_program_detail(
     user_id: uuid.UUID | None = None,
 ) -> ProgramDetail:
     """`ProgramDetail`, ready for the client — `requirements_summary` is the
-    same clean, typed mapping the direction-roadmap prompt uses
-    (app/services/university_requirements.py), not a re-derivation. Separate
+    clean, typed mapping from app/services/university_requirements.py,
+    not a re-derivation. Separate
     from `get_program_by_id` because that one returns the raw ORM `Program`
     for callers that need it as-is (admin program editor).
 

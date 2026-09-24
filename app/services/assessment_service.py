@@ -198,10 +198,3 @@ async def _age_group_for_assessment(assessment_id: uuid.UUID, db: AsyncSession) 
 async def get_raw_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, int]:
     age_group = await _age_group_for_assessment(assessment_id, db)
     return await riasec_service.raw_scores(assessment_id, db, age_group)
-
-
-async def get_total_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, float]:
-    age_group = await _age_group_for_assessment(assessment_id, db)
-    raw = await riasec_service.raw_scores(assessment_id, db, age_group)
-    counts = await riasec_service.question_counts(db, age_group)
-    return riasec_service.normalize(raw, counts)

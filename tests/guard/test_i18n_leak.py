@@ -156,7 +156,7 @@ def test_ent_and_ubt_do_not_mix_within_a_locale() -> None:
     assert all(_ENT_KK not in v for v in ru.values()), "ҰБТ leaked into ru admission terms"
     assert all(_ENT_RU not in v for v in kk.values()), "ЕНТ leaked into kk admission terms"
 
-    for area in ("university_requirements", "gap_analysis"):
+    for area in ("university_requirements",):
         kk_tree = json.dumps(tr(area, locale="kk"), ensure_ascii=False)
         ru_tree = json.dumps(tr(area, locale="ru"), ensure_ascii=False)
         assert _ENT_RU not in kk_tree, f"ЕНТ in kk catalog area {area}"

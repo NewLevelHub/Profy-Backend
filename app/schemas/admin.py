@@ -8,7 +8,6 @@ from app.schemas.admin_result import AdminAnalysisResultResponse
 from app.schemas.artifact import ArtifactItem
 from app.schemas.auth import NormalizedEmail, _validate_password_complexity
 from app.schemas.profile import ProfileResponse
-from app.schemas.roadmap import RoadmapResponse
 
 
 class AdminUserListItem(BaseModel):
@@ -88,7 +87,6 @@ class AdminAssessmentSummary(BaseModel):
     has_result: bool = False
     # "pending_review" | "published", None when there is no result yet.
     review_status: str | None = None
-    has_roadmap: bool = False
 
 
 class AdminUserDetailResponse(BaseModel):
@@ -196,7 +194,6 @@ class AdminAssessmentDetailResponse(BaseModel):
     belbin_runs: list[AdminBelbinRunResponse] = []
     psychoemotional_runs: list[AdminPsychoemotionalRunResponse] = []
     analysis_result: AdminAnalysisResultResponse | None = None
-    roadmap: RoadmapResponse | None = None
 
 
 class AdminListParams(BaseModel):

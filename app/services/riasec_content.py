@@ -18,8 +18,7 @@ def riasec_labels() -> dict[str, str]:
 
 
 def likert_labels() -> list[str]:
-    """The fixed 1-5 liking scale every RIASEC question is answered on. Also
-    reused by the direction-fit inquiry feature."""
+    """The fixed 1-5 liking scale every RIASEC question is answered on."""
     return tr("riasec")["likert"]
 
 

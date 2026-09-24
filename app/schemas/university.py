@@ -5,7 +5,80 @@ from decimal import Decimal
 from pydantic import BaseModel, model_validator
 
 from app.i18n import DEFAULT_LOCALE
-from app.schemas.roadmap import UniversityRequirement
+
+
+class ProgramGrant(BaseModel):
+    name: str
+    amount: str | None = None
+    conditions: str | None = None
+
+
+class UniversityRequirement(BaseModel):
+    """Backend-populated, per-program facts from `Program`/`University`, shown
+    as `ProgramDetail.requirements_summary` on the program card.
+
+    `None` means "no data for this field" — it is never used to mean "not
+    required". `portfolio_needed=False` is a real, known fact and must stay
+    distinguishable from "we don't know" (`None`).
+
+    `min_ent_threshold`/`admission_scores_2026`/`notes` are disjoint by seed
+    source (the 2026 grant-competition PDF pass): a program gets EITHER
+    a `min_ent_threshold` (no 2026-2027 grant-competition data exists) OR
+    `admission_scores_2026` entries (this year's real grant-winning scores),
+    rarely both. Both represent the state grant-competition eligibility bar
+    (MES RK reference data), not a generic "minimum to enrol at all" —
+    labelled accordingly in the UI, not as a plain admission minimum.
+    `notes` (subject-pair hints per specialty) can appear either way. All
+    three were previously silently dropped by `_map_program_requirement`."""
+
+    program_name: str
+    university_name: str
+    city: str
+    country: str
+    website: str | None = None
+    # Actual language of instruction (Program.language, e.g. "Английский,
+    # немецкий") — always set. Distinct from `language_level` below (a
+    # required IELTS/TOEFL band), which is sparse/optional.
+    program_language: str
+    exams: list[str]
+    # Set only when `exams` came back empty AND a general university note
+    # keyword-matched this program's own name (see
+    # university_requirements._note_hint_for_program) — an inferred hint, not
+    # a confirmed per-program fact, and the frontend must label it as such.
+    exam_hint_from_notes: str | None = None
+    application_deadline: str | None = None
+    grants: list[ProgramGrant] = []
+    # Required IELTS/TOEFL band (requirements["min_ielts"]) — sparse/optional,
+    # NOT the language of instruction (see `program_language` above).
+    language_level: str | None = None
+    portfolio_needed: bool | None = None
+    required_documents: list[str] | None = None
+    min_ent_threshold: int | None = None
+    min_ent_paid: int | None = None
+    min_gpa: float | None = None
+    min_sat: int | None = None
+    extracurriculars: list[str] = []
+    admission_scores_2026: list[str] = []
+    grant_scores: dict[str, str] = {}
+    grants_allocated_count: int | None = None
+    duration_years: float | None = None
+    has_dual_degree: bool | None = None
+    has_dormitory: bool | None = None
+    dormitory_cost_label: str | None = None
+    has_military_department: bool | None = None
+    admissions_contacts: dict[str, str] = {}
+    notes: list[str] = []
+    # None (default) = "we haven't specifically researched this university's
+    # ENT policy" — same as every other field here, absence isn't a claim.
+    # False is a real, confirmed fact (e.g. Nazarbayev University, or a
+    # foreign-funded branch campus like Astana MSU) — the frontend must show
+    # "не требуется", never "не установлен", when this is False, since those
+    # mean genuinely different things to an applicant. True is set for
+    # confirmed ENT-requiring universities that also run their own
+    # additional test (most KZ private universities), purely so the
+    # frontend never has to guess from a missing value alone.
+    requires_ent: bool | None = None
+
 
 # Shared by ProgramBrief/ProgramDetail's convert_cost_to_usd — units of
 # foreign currency per 1 USD. Kept as one module-level constant instead of
@@ -139,8 +212,8 @@ class ProgramDetail(BaseModel):
     grants: list[dict]
     created_at: datetime
     university: UniversityBrief
-    # Same clean, typed facts the direction-roadmap prompt uses
-    # (app/services/university_requirements.py) — single source of truth for
+    # Clean, typed facts from app/services/university_requirements.py —
+    # single source of truth for
     # "what does this program actually require", rendered consistently
     # wherever a program's requirements are shown.
     requirements_summary: UniversityRequirement

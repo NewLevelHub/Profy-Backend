@@ -72,7 +72,7 @@ Backend API платформы профориентации Profi.
   ```
 - Бэкенд хранения — `STORAGE_BACKEND`: `fs` (дефолт, файлы на диске) или `s3` (S3-совместимое). Код — `app/integrations/storage/`.
 
-Основные группы эндпоинтов (все под `/api/v1`): `auth`, `admin`, `profile` (+ `profile/artifacts`), `assessment` (+ questions/question-pairs/motivation/motivation-pairs), `directions`, `inquiry`, `result`, `roadmap`, `universities`. Полный список — в Swagger UI.
+Основные группы эндпоинтов (все под `/api/v1`): `auth`, `admin`, `profile` (+ `profile/artifacts`), `assessment` (+ questions/question-pairs/motivation/motivation-pairs), `result`, `universities`, `psychologist`. Полный список — в Swagger UI.
 
 ## Переменные окружения
 
@@ -84,9 +84,8 @@ Backend API платформы профориентации Profi.
 | `REDIS_URL` | Redis URL |
 | `SECRET_KEY` | Секрет для JWT (сменить в production) |
 | `LLM_API_KEY` | Ключ LLM-провайдера (опционально) |
-| `LLM_ENABLED` | Включает генерацию roadmap через LLM; `false` по умолчанию — тогда используются статические шаблоны |
+| `LLM_ENABLED` | Включает LLM-нарратив отчёта и AI-анализ для психолога; `false` по умолчанию — тогда нарратив собирается из шаблонов |
 | `LLM_MODEL`, `LLM_BASE_URL`, `LLM_TIMEOUT`, `LLM_MAX_TOKENS`, `LLM_TEMPERATURE` | Настройки обычных (лёгких) LLM-вызовов |
-| `LLM_ROADMAP_TIMEOUT`, `LLM_ROADMAP_MAX_TOKENS`, `LLM_ROADMAP_MODEL` | Отдельные, более щедрые настройки для генерации roadmap — она заметно крупнее остальных LLM-вызовов |
 | `RESEND_API_KEY` | Ключ [Resend](https://resend.com) для отправки email (коды подтверждения, сброс пароля). Пусто — коды просто логируются в консоль, письма не отправляются |
 | `EMAIL_FROM` | Адрес отправителя писем |
 | `GOOGLE_CLIENT_ID` | Client ID из Google Cloud Console для входа через Google (веб) |

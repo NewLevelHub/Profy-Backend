@@ -212,7 +212,6 @@ def _summary_csv(detail: AdminAssessmentDetailResponse) -> str:
     writer.writerow(["Завершено" + _UTC_SUFFIX, _at(detail.completed_at)])
     writer.writerow(["Отвечено вопросов", detail.answered_count])
     writer.writerow(["Всего вопросов", detail.total_questions])
-    writer.writerow(["Есть роадмап", _yes_no(detail.roadmap is not None)])
     if detail.analysis_result is not None:
         for metric, value in _analysis_result_rows(detail.analysis_result.model_dump()):
             writer.writerow([metric, value])

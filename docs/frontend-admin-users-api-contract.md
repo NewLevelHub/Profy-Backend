@@ -196,8 +196,7 @@ GET /api/v1/admin/users/{user_id}
       "total_questions": 314,
       "created_at": "...",
       "completed_at": "...",
-      "has_result": true,     // есть ли AnalysisResult — если true, GET .../assessments/{id} вернёт analysis_result
-      "has_roadmap": true     // есть ли Roadmap
+      "has_result": true      // есть ли AnalysisResult — если true, GET .../assessments/{id} вернёт analysis_result
     }
   ]
 }
@@ -274,8 +273,7 @@ GET /api/v1/admin/assessments/{assessment_id}
     "motivation_top": ["interest", "creation"], "motivation_highlights": ["..."],
     "strength_cards": [], "thinking_style_notes": [],   // v2-поля, пусто пока не сгенерированы
     "report_version": 1, "summary": "...", "created_at": "..."
-  },
-  "roadmap": { /* RoadmapResponse — см. docs/frontend-roadmap-api-contract.md, или null */ }
+  }
 }
 ```
 
@@ -323,7 +321,6 @@ created_at,2026-08-28T09:20:13+00:00
 completed_at,2026-08-30T10:00:00+00:00
 answered_count,314
 total_questions,314
-has_roadmap,True
 report_version,1
 summary,...
 code,C, A, I
@@ -346,7 +343,7 @@ careers_count,8
 careers_top,Аналитик (87), Дизайнер (82), ...   # топ-5 карьер "имя (score)", не весь список
 ```
 Если `analysis_result` ещё `null` (тест не завершён/не посчитан) — этот
-"хвост" отсутствует, файл обрывается на `has_roadmap`. Не баг, ожидаемое
+"хвост" отсутствует, файл обрывается на `total_questions`. Не баг, ожидаемое
 поведение для незавершённых тестов.
 
 **`responses.csv`** — таблица ответов, 7 колонок:
@@ -408,7 +405,7 @@ already exists"}` на дубликат, **403** не-админу.
    применёнными фильтрами (так пользователь может сначала сузить список, а
    потом выгрузить именно то, что видит).
 3. **Страница юзера** — профиль + таблица его тестов (§4.assessments) с
-   бейджами `has_result`/`has_roadmap`, клик по тесту → страница результата.
+   бейджем `has_result`, клик по тесту → страница результата.
 4. **Страница результата теста** — рендерит §5 целиком: сырые
    riasec/big_five/motivation числа, careers как карточки, thinking_style,
    personality_profile/notes, плюс таблица всех сырых ответов (`responses`)

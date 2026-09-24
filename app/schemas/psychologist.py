@@ -54,7 +54,6 @@ class PsychologistAssessmentSummary(BaseModel):
     has_result: bool = False
     # "pending_review" | "published", None when there is no result yet.
     review_status: str | None = None
-    has_roadmap: bool = False
 
 
 class PsychologistStudentDetailResponse(BaseModel):
@@ -110,7 +109,7 @@ class PsychologistReportResponse(BaseModel):
 class PsychologistTestResultsResponse(BaseModel):
     """Pure test-results surface for one assessment: the 7 instruments
     (ДДО/способности, Белбин, Айзенк, АСТУР, Элерс, Бойко+Кондаш, МЦВ
-    Собчик) and nothing else — no narrative/RIASEC/roadmap content from the
+    Собчик) and nothing else — no narrative/RIASEC content from the
     student-facing report, unlike `PsychologistReportResponse.report`.
 
     Reuses `NewTestsSections`' 6 fields as-is (same builder,

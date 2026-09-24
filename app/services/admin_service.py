@@ -14,7 +14,6 @@ from app.models.psychoemotional_run import PsychoEmotionalRun
 from app.models.motivation import MotivationResponse
 from app.models.product_feedback import ProductFeedback
 from app.models.profile import AgeGroup, Profile
-from app.models.roadmap import Roadmap
 from app.models.question import Question, QuestionInstrument
 from app.models.user import User, UserRole
 from app.models.user_response import UserResponse
@@ -39,7 +38,6 @@ from app.schemas.admin import (
 from app.schemas.artifact import ArtifactItem
 from app.schemas.profile import ProfileResponse
 from app.schemas.admin_result import AdminAnalysisResultResponse
-from app.schemas.roadmap import RoadmapResponse
 from app.services import auth_service, bigfive_content, motivation_service
 from app.services.admin_listing import SortOrder, order_by_clause
 from app.services.age_tiers import visible_tiers
@@ -361,7 +359,6 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
         assessment_ids = [row.id for row in assessment_rows]
 
         review_status_by_assessment: dict[uuid.UUID, str] = {}
-        roadmap_ids: set[uuid.UUID] = set()
         answered_by_assessment: dict[uuid.UUID, int] = {}
         if assessment_ids:
             results_result = await db.execute(
@@ -370,11 +367,6 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
                 )
             )
             review_status_by_assessment = {row[0]: row[1].value for row in results_result.all()}
-
-            roadmaps_result = await db.execute(
-                select(Roadmap.assessment_id).where(Roadmap.assessment_id.in_(assessment_ids))
-            )
-            roadmap_ids = {row[0] for row in roadmaps_result.all()}
 
             answered_result = await db.execute(
                 select(UserResponse.assessment_id, func.count(UserResponse.id))
@@ -401,7 +393,6 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
                 completed_at=assessment.completed_at,
                 has_result=assessment.id in review_status_by_assessment,
                 review_status=review_status_by_assessment.get(assessment.id),
-                has_roadmap=assessment.id in roadmap_ids,
             )
             for assessment in assessment_rows
         ]
@@ -566,12 +557,6 @@ async def get_assessment_detail(
     if analysis:
         analysis_result = AdminAnalysisResultResponse.model_validate(analysis)
 
-    roadmap_result = None
-    roadmap_row = await db.execute(select(Roadmap).where(Roadmap.assessment_id == assessment.id))
-    roadmap = roadmap_row.scalar_one_or_none()
-    if roadmap:
-        roadmap_result = RoadmapResponse.model_validate(roadmap)
-
     total_questions_result = await db.execute(
         select(func.count(Question.id)).where(
             Question.age_tier.in_(visible_tiers(profile.age_group)),
@@ -641,7 +626,6 @@ async def get_assessment_detail(
         belbin_runs=belbin_runs,
         psychoemotional_runs=psycho_runs,
         analysis_result=analysis_result,
-        roadmap=roadmap_result,
     )
 
 

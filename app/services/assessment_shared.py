@@ -16,11 +16,8 @@ from app.config import settings
 from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
-from app.models.direction_inquiry import DirectionInquiry
-from app.models.direction_roadmap import DirectionRoadmap
 from app.models.profile import AgeGroup, Profile
 from app.models.question import Question, QuestionInstrument
-from app.models.roadmap import Roadmap
 from app.models.user_response import UserResponse
 from app.services.age_tiers import visible_tiers
 
@@ -40,20 +37,6 @@ _redis: aioredis.Redis | None = None
 # (`report:v4:{locale}:{assessment_id}`) so a `ru` and a `kk` report for the
 # same assessment don't clobber each other's cache entry.
 REPORT_CACHE_KEY_PREFIX = "report:v4"
-
-# Same versioning principle for the goal roadmap cache — bumped 2026-08-18
-# alongside the portrait/recommended_paths prompt rework, so no stale
-# pre-rollout cache entry (old wording) can be served after a deploy.
-# roadmap_builder._cache_key builds the full key from this prefix; this
-# module only needs the prefix to scan-invalidate on retake.
-ROADMAP_CACHE_KEY_PREFIX = "roadmap:v2"
-
-# Same principle for the direction roadmap cache — bumped alongside the
-# subject_focus-by-grade prompt rework. roadmap_builder.direction_cache_key
-# builds the full key from this prefix; this module needs it to delete the
-# exact key on invalidate_direction_flow.
-DIRECTION_ROADMAP_CACHE_KEY_PREFIX = "droadmap:v2"
-
 
 def report_cache_key(assessment_id: uuid.UUID, locale: str = DEFAULT_LOCALE) -> str:
     return f"{REPORT_CACHE_KEY_PREFIX}:{locale}:{assessment_id}"
@@ -96,68 +79,12 @@ async def safe_redis_delete(redis: aioredis.Redis, *keys: str) -> None:
         logger.warning("redis delete failed for keys=%s", keys, exc_info=True)
 
 
-async def safe_redis_scan(redis: aioredis.Redis, pattern: str) -> list[str]:
-    try:
-        return [key async for key in redis.scan_iter(match=pattern)]
-    except aioredis.RedisError:
-        logger.warning("redis scan failed for pattern=%s", pattern, exc_info=True)
-        return []
-
-
-async def invalidate_direction_flow(
-    assessment: Assessment, db: AsyncSession, redis: aioredis.Redis
-) -> None:
-    """Drop everything derived from the direction flow for this assessment."""
-    assessment_id = assessment.id
-    slugs_result = await db.execute(
-        select(DirectionInquiry.direction_slug).where(
-            DirectionInquiry.assessment_id == assessment_id
-        )
-    )
-    slugs = slugs_result.scalars().all()
-
-    await db.execute(
-        DirectionRoadmap.__table__.delete().where(DirectionRoadmap.assessment_id == assessment_id)
-    )
-    await db.execute(
-        DirectionInquiry.__table__.delete().where(DirectionInquiry.assessment_id == assessment_id)
-    )
-    assessment.selected_direction_slug = None
-
-    for slug in slugs:
-        await safe_redis_delete(
-            redis,
-            f"{DIRECTION_ROADMAP_CACHE_KEY_PREFIX}:{assessment_id}:{slug}",
-            f"dq:{assessment_id}:{slug}",
-        )
-
-
-async def invalidate_goal_roadmap(
-    assessment_id: uuid.UUID, db: AsyncSession, redis: aioredis.Redis
-) -> None:
-    """Drop the goal roadmap (roadmap_builder.generate_roadmap/get_roadmap):
-    the DB row plus every cached variant for this assessment, including the
-    program-specific ones from the university gap-analysis path. Cache keys
-    are a plain `roadmap:{assessment_id}:{program_id|"none"}` (see
-    roadmap_builder._cache_key — deliberately not hashed) so every variant
-    can be found via a scan, not just the one program_id this call happens
-    to know about. Takes the bare id (not the `Assessment` object, unlike
-    `invalidate_direction_flow`) — see tests/integration/
-    test_goal_roadmap_retake_invalidation.py for the contract this matches."""
-    pattern = f"{ROADMAP_CACHE_KEY_PREFIX}:{assessment_id}:*"
-    stale_keys = await safe_redis_scan(redis, pattern)
-    await safe_redis_delete(redis, *stale_keys)
-    await db.execute(Roadmap.__table__.delete().where(Roadmap.assessment_id == assessment_id))
-
-
 async def invalidate_retake(
     assessment: Assessment, db: AsyncSession, redis: aioredis.Redis
 ) -> None:
-    """Full retake reset, shared by every submit-answers entrypoint (ordinary
-    Likert, question pairs, senior motivation triplets, Harter motivation
-    pairs): drop the stale report, the direction flow and the goal roadmap so
-    a completed retake never leaves old-data artifacts behind for the next
-    GET. Caller is still responsible for flipping `assessment.status` back to
+    """Full retake reset, shared by every submit-answers entrypoint (Likert,
+    question pairs, motivation triplets): drop the stale report so a completed
+    retake never leaves old-data artifacts behind for the next GET. Caller is still responsible for flipping `assessment.status` back to
     `in_progress` — that's entrypoint-specific (some flip it unconditionally,
     the motivation ones only after checking the other phase)."""
     assessment_id = assessment.id
@@ -173,15 +100,7 @@ async def invalidate_retake(
     assessment.goal_changed_count = 0
     assessment.secondary_goals = []
 
-    # Clean up goal overlays and their caches
-    from app.models.goal_overlay import GoalOverlay
-    from app.services.goal_overlay_service import invalidate_goal_overlay_cache
-    await db.execute(GoalOverlay.__table__.delete().where(GoalOverlay.assessment_id == assessment_id))
-    await invalidate_goal_overlay_cache(assessment_id, db)
-
     await safe_redis_delete(redis, *report_cache_keys(assessment_id))
-    await invalidate_direction_flow(assessment, db, redis)
-    await invalidate_goal_roadmap(assessment_id, db, redis)
 
 
 async def get_profile_age_group(profile_id: uuid.UUID, db: AsyncSession) -> AgeGroup:
@@ -196,12 +115,11 @@ def get_effective_goal(age_group: AgeGroup, primary_goal: AssessmentGoal) -> Ass
     stored (defensive: the only enforced gate today is at goal-selection and
     goal-change time, not here).
 
-    This is the single source of truth for "which goal does report/roadmap
+    This is the single source of truth for "which goal does report
     generation actually run under" — `goal_overlay_service` uses it to derive
-    the displayed scenario (A/B/C) and banner text; `roadmap_builder` and
-    `student_context` must use it too so what gets generated always matches
-    what the student was told. Never branch on `assessment.goal` directly for
-    generation — always resolve it through this function first."""
+    the displayed scenario (A/B/C) and banner text. Never branch on
+    `assessment.goal` directly for generation — always resolve it through
+    this function first."""
     if age_group == AgeGroup.junior:
         return AssessmentGoal.explore
     if age_group == AgeGroup.middle and primary_goal == AssessmentGoal.university:

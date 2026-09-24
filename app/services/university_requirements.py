@@ -1,7 +1,6 @@
 """Single source of truth for turning a Program's raw `requirements`/`deadlines`/
-`grants` JSON into clean, typed facts — used both by the direction-roadmap prompt
-(`roadmap_builder.py`) and by the plain program-detail screen (`university_service.py`
--> `ProgramDetail.requirements_summary`). Previously each caller read the raw dicts
+`grants` JSON into clean, typed facts for the program-detail screen
+(`university_service.py` -> `ProgramDetail.requirements_summary`). Previously each caller read the raw dicts
 its own way; the plain program-detail page fell back to dumping unknown keys
 (`notes`, `admission_scores_2026`) as raw joined text because it never went through
 this mapping at all — see `ProgramDetailPage.tsx`'s `RequirementsTable`.
@@ -18,7 +17,7 @@ from app.i18n.catalog import tr
 from app.i18n.data_strings import translate_data_list, translate_data_string
 from app.models.program import Program
 from app.models.university import University
-from app.schemas.roadmap import ProgramGrant, UniversityRequirement
+from app.schemas.university import ProgramGrant, UniversityRequirement
 
 # The raw requirement flags this maps; labels resolve per locale (KZ-307).
 _DOCUMENT_FLAGS = ("needs_essay", "needs_recommendations", "needs_interview")

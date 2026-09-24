@@ -1138,27 +1138,6 @@ def student_personality_notes(
         }
 
 
-async def require_published_report(assessment_id: uuid.UUID, db: AsyncSession) -> None:
-    """Gate for every *other* student-facing endpoint that derives content
-    from a stored AnalysisResult (goal overlay, gap analysis, roadmaps).
-    /result itself answers with the pending envelope instead — here there is
-    no such envelope in the contract, so an unpublished report is a 409.
-
-    "No report at all" is left to the caller: each has its own 400/404 for
-    that. A caller that *generates* the report instead of failing (the goal
-    overlay does) must call this again after generation — otherwise the gate
-    would pass exactly when there was nothing to gate yet."""
-    if await get_review_status(assessment_id, db) == ReviewStatus.pending_review:
-        # AppError, not a bare HTTPException: the same endpoints already 409
-        # with `assessment_not_completed`, and the frontend branches on
-        # error_code, never on detail (app/errors.py).
-        raise AppError(
-            status_code=status.HTTP_409_CONFLICT,
-            error_code="report_pending_review",
-            detail="Отчёт ещё не опубликован психологом",
-        )
-
-
 async def get_review_status(assessment_id: uuid.UUID, db: AsyncSession) -> ReviewStatus | None:
     """Single source of truth for the student-facing review gate — always
     read from the DB, never from the report cache. None = no report yet."""

@@ -61,9 +61,9 @@ Any review/data file under `scripts/data/**` (or `scripts/*review*.json`) that p
 
 `app/services/age_tiers.py` defines the core visibility rule: a shorter test is a **prefix**, not a separate set — `junior ⊆ middle ⊆ senior` (`visible_tiers()`). Each `Question` row (`app/models/question.py`) carries an `age_tier` and an `instrument` (`riasec` / `big_five` / `mi`) in one shared table. Junior uses MI-style categories instead of RIASEC/Holland codes for its "interests" instrument. Forced-choice `QuestionPair` rows (junior's own screen) and Likert `Question` rows are scored through the same `UserResponse` path — a picked pair choice is written as two synthetic Likert-equivalent responses (see `app/services/question_pair_service.py`), so `riasec_service`/`bigfive_service` scoring doesn't need to know pairs exist.
 
-### Roadmap generation: LLM with template fallback
+### LLM: report narrative and psychologist AI analysis
 
-`app/services/llm_client.py::is_llm_enabled()` gates all LLM calls on `LLM_ENABLED and LLM_API_KEY` — off by default, and the direction/goal roadmap generators fall back to static templates when disabled. The direction roadmap is a much larger generation (4 stages × 2 tracks × 3 tasks) than other LLM calls (inquiry questions, verdicts, report summaries) and uses its own `LLM_ROADMAP_*` timeout/token/model settings — undersizing those truncates the JSON and discards the whole plan.
+`app/services/llm_client.py::is_enabled()` gates all LLM calls on `LLM_ENABLED and LLM_API_KEY` — off by default. The report narrative (`report_narrative_service`) falls back to deterministic templates when disabled; the psychologist's AI analysis (`psych_ai_analysis_service`) is simply absent. There is no roadmap — it was removed in PRO-425.
 
 ### Admin endpoints
 

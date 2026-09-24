@@ -28,7 +28,6 @@ from app.models.user import User
 from app.services import (
     assessment_shared,
     direction_service,
-    gap_analysis_service,
     llm_client,
     motivation_pair_service,
     motivation_service,
@@ -143,7 +142,7 @@ async def test_direction_detail_serves_real_kazakh_content(db_session: AsyncSess
 
     direction = await direction_service.get_direction_by_slug(slug, db_session)
     assert direction is not None
-    # Read the way live consumers (roadmap, inquiry) do: pick_locale on the row.
+    # Read the way live consumers do: pick_locale on the row.
     with use_locale("kk"):
         description = pick_locale(direction.description)
         skills_needed = pick_locale_list(direction.skills_needed)
@@ -261,27 +260,3 @@ async def test_untranslated_field_reports_ru_locale_for_the_badge(db_session: As
     assert detail.description  # not empty — ru text is still served
     assert detail.who_its_for
 
-
-# ── gap analysis ───────────────────────────────────────────────────────────
-
-async def test_gap_analysis_comments_are_kazakh(db_session: AsyncSession) -> None:
-    profile = Profile(user_id=None, name="Тест", age=17, grade=11, city="Астана",
-                      country="Қазақстан", language="қазақша", age_group=AgeGroup.senior)
-    program = Program(
-        university_id=(await _program_with(db_session, kk_desc=None, kk_who=None)).university_id,
-        name="Гэп бағдарламасы", language="қазақша",
-        requirements={"min_gpa": "3.0", "language_requirement": "IELTS 6.5"},
-        deadlines={}, grants=[],
-    )
-    db_session.add(program)
-    await db_session.flush()
-
-    with use_locale("kk"):
-        result = gap_analysis_service.analyze_gap(profile, [], {}, program)
-
-    items = [*result.met, *result.not_met, *result.in_progress, *result.unknown]
-    assert items, "gap analysis produced no items"
-    for item in items:
-        _assert_kk_prose(f"gap[{item.requirement}].comment", item.comment)
-    blob = " ".join(item.comment for item in items)
-    assert "ЕНТ" not in blob, "ru term ЕНТ leaked into a kk gap-analysis comment"

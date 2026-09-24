@@ -130,7 +130,7 @@ async def test_ai_analysis_is_none_when_llm_disabled(
     """LLM disabled must never break the rest of the report — ai_analysis is
     just None. Explicitly patched (not relying on ambient .env config,
     since some local/dev environments DO have a real LLM_ENABLED=true +
-    LLM_API_KEY for other features like the roadmap generator — this test
+    LLM_API_KEY for other features like the report narrative — this test
     must never depend on that or risk a real, billed API call)."""
     await assign(db_session, psychologist_user, test_user)
     assessment = await _make_assessment_for(db_session, test_user)

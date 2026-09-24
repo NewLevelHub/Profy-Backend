@@ -13,9 +13,7 @@ from app.models.user import User, UserRole
 from app.services import (
     assessment_shared,
     auth_service,
-    direction_inquiry_service,
     report_service,
-    roadmap_builder,
 )
 from app.routers import auth as auth_router
 
@@ -64,8 +62,6 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 _REDIS_SINGLETON_MODULES = (
     assessment_shared,
     report_service,
-    roadmap_builder,
-    direction_inquiry_service,
     auth_router,
 )
 
@@ -81,9 +77,8 @@ async def _dispose_engine_pool_per_loop() -> AsyncGenerator[None, None]:
     await engine.dispose()
 
     # Same issue, same fix, for every module-level Redis singleton (not just
-    # assessment_shared._redis — report_service, roadmap_builder,
-    # direction_inquiry_service and app.routers.auth each lazily build their
-    # own): it's bound to whichever event loop was running when
+    # assessment_shared._redis — report_service and app.routers.auth each
+    # lazily build their own): it's bound to whichever event loop was running when
     # get_redis()/_get_redis() first constructed it, so a later test's fresh
     # loop hits "Event loop is closed" the moment it tries to reuse that
     # connection. Close it and drop the reference so the next test that

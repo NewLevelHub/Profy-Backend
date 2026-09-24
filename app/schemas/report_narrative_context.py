@@ -1,10 +1,7 @@
 """ReportNarrativeContext: the safe evidence catalog for /result narrative
 generation (summary, strength cards, thinking-style notes, career "why").
 
-Deliberately NOT StudentContext (app/schemas/student_context.py) — that
-bundle still carries raw profile percentages, RIASEC/MI codes and
-match_score for the roadmap/direction-inquiry prompts (a different, more
-permissive consumer). Nothing here ever carries a number: every fact is a
+Nothing here ever carries a number: every fact is a
 pre-labeled, already-safe phrase with a stable source_id, so a narrative
 prompt, its output validator, and the deterministic fallback can all share
 exactly the same allow-list instead of each deciding independently what's

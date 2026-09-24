@@ -10,7 +10,6 @@ keyed by `error_code` (KZ-203). These tests assert the response shape and that
 import uuid
 
 import httpx
-import pytest
 from fastapi import FastAPI, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,7 +18,7 @@ from app.main import app_error_handler
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
-from app.services import auth_service, llm_client
+from app.services import auth_service
 
 
 async def test_app_error_handler_emits_detail_and_error_code() -> None:
@@ -54,13 +53,9 @@ def test_app_error_is_an_httpexception_subclass() -> None:
     assert err.error_code == "x"
 
 
-async def test_age_gate_error_carries_code_and_unchanged_detail(
-    client: httpx.AsyncClient, db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+async def test_unfinished_assessment_error_carries_code_and_unchanged_detail(
+    client: httpx.AsyncClient, db_session: AsyncSession
 ) -> None:
-    # The LLM check runs before the age gate — switch it on so the request
-    # reaches the gate without a real key (nothing is generated: it 403s first).
-    monkeypatch.setattr(llm_client, "is_enabled", lambda: True)
-
     user = User(
         email=f"kz309-{uuid.uuid4()}@example.com",
         hashed_password="x",
@@ -73,30 +68,30 @@ async def test_age_gate_error_carries_code_and_unchanged_detail(
     profile = Profile(
         user_id=user.id,
         name="Тест",
-        age=9,
-        grade=3,
+        age=16,
+        grade=10,
         city="Алматы",
         country="Казахстан",
         language="ru",
-        age_group=AgeGroup.junior,
+        age_group=AgeGroup.senior,
     )
     db_session.add(profile)
     await db_session.flush()
 
-    assessment = Assessment(profile_id=profile.id, goal=AssessmentGoal.explore)
+    assessment = Assessment(profile_id=profile.id, goal=AssessmentGoal.university)
     db_session.add(assessment)
     await db_session.flush()
     await db_session.commit()
 
     headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user.id)}"}
     resp = await client.post(
-        "/api/v1/roadmap/direction",
-        json={"assessment_id": str(assessment.id), "direction_slug": "developer"},
+        "/api/v1/result/generate",
+        json={"assessment_id": str(assessment.id)},
         headers=headers,
     )
 
-    assert resp.status_code == 403
+    assert resp.status_code == 409
     body = resp.json()
-    assert body["error_code"] == "feature_requires_age_10"
+    assert body["error_code"] == "assessment_not_completed"
     # detail stays the exact pre-KZ-309 Russian string
-    assert body["detail"] == "Эта возможность доступна с 10 лет"
+    assert body["detail"] == "Тест ещё не завершён — сначала ответь на все обязательные вопросы"

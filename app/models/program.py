@@ -147,7 +147,7 @@ class Program(Base):
     @property
     def profession_slugs(self) -> list[str]:
         """Read-only view of `directions` as slugs — kept so existing callers
-        (schemas, roadmap_builder, direction_service) that only need the
+        (schemas, direction_service) that only need the
         slug strings don't have to touch the relationship directly. Assign
         `.directions` (a list of `Direction` rows) to change the mapping,
         not this property."""

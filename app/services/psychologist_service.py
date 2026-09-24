@@ -289,7 +289,6 @@ def _to_psychologist_detail(
                 completed_at=a.completed_at,
                 has_result=a.has_result,
                 review_status=a.review_status,
-                has_roadmap=a.has_roadmap,
             )
             for a in detail.assessments
         ],
