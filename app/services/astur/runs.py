@@ -106,6 +106,7 @@ async def run_summary(db: AsyncSession, run: AsturRun) -> dict:
         "created_at": run.created_at,
         "completed_at": run.completed_at,
         "submitted_subtests": submitted_subtests(run),
+        "subtest_started_at": run.subtest_started_at,
     }
 
 

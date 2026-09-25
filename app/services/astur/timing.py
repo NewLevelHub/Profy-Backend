@@ -18,10 +18,13 @@ def now_utc() -> datetime:
 
 
 def start_subtest(subtest_started_at: dict, subtest_key: str, *, now: datetime | None = None) -> None:
-    """Mutates the run's `subtest_started_at` in place — caller persists.
-    Re-starting resets the clock (a retried /start must not keep a stale
-    earlier timestamp)."""
-    subtest_started_at[subtest_key] = (now or now_utc()).isoformat()
+    """Record the first server start and keep it on retries/reloads.
+
+    `/start` is idempotent: resetting this timestamp would let a respondent
+    obtain a fresh time limit by reloading the page.
+    """
+    if subtest_key not in subtest_started_at:
+        subtest_started_at[subtest_key] = (now or now_utc()).isoformat()
 
 
 def elapsed_ms_since_start(subtest_started_at: dict, subtest_key: str, *, now: datetime | None = None) -> int | None:

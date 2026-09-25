@@ -136,6 +136,9 @@ class AsturRunSummary(BaseModel):
     created_at: datetime
     completed_at: datetime | None = None
     submitted_subtests: list[str]
+    # First server start for every currently unfinished subtest. The client
+    # resumes its countdown from this anchor after a reload.
+    subtest_started_at: dict[str, str]
 
 
 class AsturStateResponse(BaseModel):

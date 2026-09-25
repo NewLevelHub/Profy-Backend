@@ -12,6 +12,15 @@ def test_subtest_elapsed_is_measured_from_the_server_start() -> None:
     assert timing.elapsed_ms_since_start(started, "awareness", now=NOW + timedelta(seconds=90)) == 90_000
 
 
+def test_subtest_start_is_idempotent() -> None:
+    started: dict = {}
+    timing.start_subtest(started, "awareness", now=NOW)
+    timing.start_subtest(started, "awareness", now=NOW + timedelta(seconds=90))
+
+    assert started["awareness"] == NOW.isoformat()
+    assert timing.elapsed_ms_since_start(started, "awareness", now=NOW + timedelta(seconds=90)) == 90_000
+
+
 def test_missing_start_means_no_verified_timing() -> None:
     assert timing.elapsed_ms_since_start({}, "awareness", now=NOW) is None
 

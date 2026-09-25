@@ -71,6 +71,22 @@ async def test_opening_pins_version_and_locale_and_returns_that_content(
     assert run.bank_version_id == await v1_version_id(db_session)
 
 
+async def test_started_subtest_is_resumed_without_resetting_its_clock(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await make_student(db_session)
+    body = await open_attempt(client, assessment.id, headers)
+    run_id = body["run"]["run_id"]
+
+    first = await start(client, assessment.id, 1, run_id, headers)
+    second = await start(client, assessment.id, 1, run_id, headers)
+    resumed = await open_attempt(client, assessment.id, headers)
+
+    assert first.status_code == second.status_code == 201
+    assert first.json()["started_at"] == second.json()["started_at"]
+    assert resumed["run"]["subtest_started_at"]["awareness"] == first.json()["started_at"]
+
+
 async def test_content_and_scoring_stay_in_the_attempts_locale(client: AsyncClient, db_session: AsyncSession) -> None:
     user, assessment, headers = await make_student(db_session)
     await open_attempt(client, assessment.id, headers)  # RU attempt
