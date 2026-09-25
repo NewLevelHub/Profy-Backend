@@ -64,6 +64,10 @@ Any review/data file under `scripts/data/**` (or `scripts/*review*.json`) that p
 
 The audience is 14-18 and everyone takes the same battery — there are no age tiers (removed in PRO-425; `Profile.age_group` survives only for the goal logic). Every `Question` row (`app/models/question.py`) carries an `instrument` (`riasec`, `big_five`, the psych tests, …) in one shared table, and every row is shown to everyone. Motivation is MOST/LEAST triplets (`motivation_service`). Forced-choice `QuestionPair` rows (today only the ДДО pairs, instrument `professional_types`) and Likert `Question` rows are scored through the same `UserResponse` path — a picked pair choice is written as two synthetic Likert-equivalent responses (see `app/services/question_pair_service.py`), so scoring services don't need to know pairs exist.
 
+### Agent localization rule
+
+Every user-facing API detail, validation error, notification, and response text must use the localization catalog. Never add Russian, Kazakh, or English UI copy as a literal in a router, service, schema, or handler. Add matching `ru` and `kk` keys under `app/i18n/catalog/`, preserve interpolation placeholders, and resolve text through the active request locale. Technical logs, identifiers, SQL, paths, and protocol values are excluded.
+
 ### LLM: report narrative and psychologist AI analysis
 
 `app/services/llm_client.py::is_enabled()` gates all LLM calls on `LLM_ENABLED and LLM_API_KEY` — off by default. The report narrative (`report_narrative_service`) falls back to deterministic templates when disabled; the psychologist's AI analysis (`psych_ai_analysis_service`) is simply absent. There is no roadmap — it was removed in PRO-425.

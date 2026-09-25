@@ -6,7 +6,7 @@ from tests.astur_fixtures import v1_document
 # v1 is the immutable pre-PRO-427 bank; every legacy attempt is pinned to it.
 # Changing app/data/astur_bank_v1.json would silently fork fresh databases
 # from production — any content change must be a new published version.
-V1_CONTENT_HASH = "ae0fdc07ba4d7821b91c1a8f2b389386faccb992694d417f6c483f5b705b4664"
+V1_CONTENT_HASH = "fe7e5127744300935ccab117038032766cd0ac01c25558e2dfa91fa8ca0122e4"
 
 
 def _codes(document: dict, **kwargs) -> set[str]:

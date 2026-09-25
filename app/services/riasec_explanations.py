@@ -8,7 +8,10 @@ shows up in everyday life) and `follows` (what it implies for choosing a
 field). Addressed to the student ("ты"), gender-neutral wording.
 """
 
+
 from typing import Literal
+
+from app.i18n.catalog import key as i18n_key
 
 Level = Literal["low", "medium", "high"]
 
@@ -16,120 +19,86 @@ Level = Literal["low", "medium", "high"]
 TYPE_EXPLANATIONS: dict[str, dict[Level, tuple[str, str]]] = {
     "R": {
         "high": (
-            "Тебе нравится, когда результат можно потрогать: собрать, починить, построить, вырастить. "
-            "Дело становится понятным, когда делаешь его руками, а не читаешь о нём.",
-            "Такой интерес держится долго. Он хорошо ложится на профессии, где работают с техникой, "
-            "материалами, животными или на свежем воздухе — в мастерской, на производстве, в поле.",
+            i18n_key("riasec_explanations", "r_high_means", locale="ru"),
+            i18n_key("riasec_explanations", "r_high_follows", locale="ru"),
         ),
         "medium": (
-            "Практические дела тебе в целом по душе: что-то починить или собрать бывает интересно, "
-            "но не всякая работа руками увлекает.",
-            "Это не главный интерес, но хорошая опора: практическая сторона пригодится в любой "
-            "профессии, где нужно довести дело до осязаемого результата.",
+            i18n_key("riasec_explanations", "r_medium_means", locale="ru"),
+            i18n_key("riasec_explanations", "r_medium_follows", locale="ru"),
         ),
         "low": (
-            "Работа руками, техника и механизмы сейчас мало откликаются — в ответах про это чаще "
-            "звучало «не нравится».",
-            "Профессии, где весь день нужно работать с оборудованием или физически, скорее будут "
-            "утомлять. Бытовые навыки при этом никуда не деваются — речь только о выборе основного дела.",
+            i18n_key("riasec_explanations", "r_low_means", locale="ru"),
+            i18n_key("riasec_explanations", "r_low_follows", locale="ru"),
         ),
     },
     "I": {
         "high": (
-            "Тебе интересно докапываться до сути: почему так устроено, откуда берётся, как это "
-            "проверить. Сложные вопросы не пугают, а затягивают.",
-            "Это основа для профессий, где нужно исследовать, анализировать и искать закономерности — "
-            "в науке, медицине, IT, инженерии, аналитике.",
+            i18n_key("riasec_explanations", "i_high_means", locale="ru"),
+            i18n_key("riasec_explanations", "i_high_follows", locale="ru"),
         ),
         "medium": (
-            "Разобраться, как всё устроено, тебе бывает интересно, но не всегда: одни вопросы "
-            "цепляют, другие — нет.",
-            "Не ведущий интерес, но полезное дополнение: умение разбираться в причинах пригодится там, "
-            "где нужно искать ошибку или принимать взвешенное решение.",
+            i18n_key("riasec_explanations", "i_medium_means", locale="ru"),
+            i18n_key("riasec_explanations", "i_medium_follows", locale="ru"),
         ),
         "low": (
-            "Долго разбираться в теории, ставить эксперименты и копаться в отвлечённых вопросах "
-            "сейчас не хочется.",
-            "Профессии, где главное — исследования и научная работа, скорее покажутся скучными. "
-            "Вероятно, тебе ближе дело, где результат виден сразу.",
+            i18n_key("riasec_explanations", "i_low_means", locale="ru"),
+            i18n_key("riasec_explanations", "i_low_follows", locale="ru"),
         ),
     },
     "A": {
         "high": (
-            "Тебе важно придумывать своё и выражать себя: рисовать, писать, фотографировать, "
-            "создавать образ. Нравится свобода и возможность сделать не по шаблону.",
-            "Подходят профессии, где ценятся вкус и оригинальность — дизайн, медиа, архитектура, "
-            "сцена, мода. Стоит развивать то, в чём уже есть опыт.",
+            i18n_key("riasec_explanations", "a_high_means", locale="ru"),
+            i18n_key("riasec_explanations", "a_high_follows", locale="ru"),
         ),
         "medium": (
-            "Творческие занятия тебе знакомы и бывают в радость, но не всегда: что-то откликается, "
-            "что-то оставляет равнодушным.",
-            "Творческая жилка — хорошее дополнение к основной профессии: помогает находить "
-            "нестандартные решения и красиво оформлять результат.",
+            i18n_key("riasec_explanations", "a_medium_means", locale="ru"),
+            i18n_key("riasec_explanations", "a_medium_follows", locale="ru"),
         ),
         "low": (
-            "Свободное творчество — сочинять, фантазировать, выражать себя через искусство — "
-            "сейчас мало откликается.",
-            "Творчество может остаться хобби. Выбирать профессию, где оно главное, пока нет "
-            "оснований — но интересы с возрастом меняются.",
+            i18n_key("riasec_explanations", "a_low_means", locale="ru"),
+            i18n_key("riasec_explanations", "a_low_follows", locale="ru"),
         ),
     },
     "S": {
         "high": (
-            "Тебе важно быть рядом с людьми: помогать, объяснять, поддерживать, работать в команде. "
-            "Польза для других сама по себе приносит удовольствие.",
-            "Подходят профессии, где главный результат — человеку стало лучше: обучение, медицина, "
-            "психология, социальная работа, сервис.",
+            i18n_key("riasec_explanations", "s_high_means", locale="ru"),
+            i18n_key("riasec_explanations", "s_high_follows", locale="ru"),
         ),
         "medium": (
-            "С людьми тебе в целом комфортно: помочь или поработать в команде — нормально, но это "
-            "не то, что зажигает больше всего.",
-            "Умение ладить с людьми пригодится почти везде. Но работа, где общение — весь день и "
-            "главное содержание, может утомлять.",
+            i18n_key("riasec_explanations", "s_medium_means", locale="ru"),
+            i18n_key("riasec_explanations", "s_medium_follows", locale="ru"),
         ),
         "low": (
-            "Постоянно общаться, опекать и помогать другим сейчас не очень хочется — ближе дела, "
-            "где можно сосредоточиться на своём.",
-            "Профессии, где человек — главный предмет работы (учитель, врач, психолог), скорее будут "
-            "утомлять. Лучше подойдёт дело с понятной задачей и меньшим числом контактов.",
+            i18n_key("riasec_explanations", "s_low_means", locale="ru"),
+            i18n_key("riasec_explanations", "s_low_follows", locale="ru"),
         ),
     },
     "E": {
         "high": (
-            "Тебе нравится вести за собой: принимать решения, убеждать, запускать проекты и "
-            "добиваться результата.",
-            "Подходят профессии, где нужно руководить, договариваться и отвечать за результат — "
-            "управление, предпринимательство, продажи, право.",
+            i18n_key("riasec_explanations", "e_high_means", locale="ru"),
+            i18n_key("riasec_explanations", "e_high_follows", locale="ru"),
         ),
         "medium": (
-            "Иногда тебе нравится брать инициативу и влиять на решения, но быть лидером всё время "
-            "не обязательно.",
-            "Предприимчивость — плюс в любой профессии: пригодится, чтобы продвигать свои идеи и "
-            "отвечать за небольшие проекты.",
+            i18n_key("riasec_explanations", "e_medium_means", locale="ru"),
+            i18n_key("riasec_explanations", "e_medium_follows", locale="ru"),
         ),
         "low": (
-            "Убеждать, продавать и быть в центре внимания сейчас не хочется.",
-            "Работа, где главное — продажи, переговоры и руководство людьми, скорее будет утомлять. "
-            "Вероятно, тебе ближе роль специалиста, которого ценят за дело.",
+            i18n_key("riasec_explanations", "e_low_means", locale="ru"),
+            i18n_key("riasec_explanations", "e_low_follows", locale="ru"),
         ),
     },
     "C": {
         "high": (
-            "Тебе спокойно, когда всё разложено по местам: порядок, точность, понятные правила. "
-            "Ты замечаешь ошибки в деталях и доводишь дело до аккуратного результата.",
-            "Это опора для профессий, где работают с документами, данными и процессами — финансы, "
-            "логистика, делопроизводство, контроль качества. И усилитель любого другого интереса.",
+            i18n_key("riasec_explanations", "c_high_means", locale="ru"),
+            i18n_key("riasec_explanations", "c_high_follows", locale="ru"),
         ),
         "medium": (
-            "Порядок и чёткие правила тебе в целом по душе, но строгий регламент во всём — "
-            "не обязательно.",
-            "Аккуратность пригодится в любой профессии, но работа, которая целиком состоит из "
-            "инструкций и отчётов, может показаться скучной.",
+            i18n_key("riasec_explanations", "c_medium_means", locale="ru"),
+            i18n_key("riasec_explanations", "c_medium_follows", locale="ru"),
         ),
         "low": (
-            "Строгие правила, однообразные процедуры и работа по инструкции сейчас не откликаются.",
-            "Профессии, где день состоит из документов, таблиц и регламентов, скорее будут утомлять. "
-            "Ближе дело, где есть свобода в том, как добиться результата.",
+            i18n_key("riasec_explanations", "c_low_means", locale="ru"),
+            i18n_key("riasec_explanations", "c_low_follows", locale="ru"),
         ),
     },
 }
@@ -139,20 +108,30 @@ TYPE_EXPLANATIONS: dict[str, dict[Level, tuple[str, str]]] = {
 COMBINATION_TEXTS: dict[str, tuple[Literal["adjacent", "alternate", "opposite"], str]] = {
     "high": (
         "adjacent",
-        "{a} и {b} — соседи на шестиугольнике: эти типы похожи, поэтому профиль цельный, "
-        "и подходящие направления найти проще.",
+        i18n_key("riasec_explanations", "combination_high", locale="ru"),
     ),
     "medium": (
         "alternate",
-        "{a} и {b} стоят через угол: у них есть общее, но есть и заметные различия. "
-        "Подойдут профессии, где нужны обе стороны.",
+        i18n_key("riasec_explanations", "combination_medium", locale="ru"),
     ),
     "low": (
         "opposite",
-        "{a} и {b} — на противоположных углах шестиугольника. Это редкое сочетание: интересы "
-        "тянут в разные стороны. Не противоречие, а подсказка — стоит искать профессии на стыке этих сфер.",
+        i18n_key("riasec_explanations", "combination_low", locale="ru"),
     ),
 }
+
+
+def localized_type_explanation(code: str, level: Level) -> tuple[str, str]:
+    """Resolve explanation copy at request time, after the locale context is set."""
+    return (
+        i18n_key("riasec_explanations", f"{code.lower()}_{level}_means"),
+        i18n_key("riasec_explanations", f"{code.lower()}_{level}_follows"),
+    )
+
+
+def localized_combination_text(kind: str) -> tuple[Literal["adjacent", "alternate", "opposite"], str]:
+    relation = {"high": "combination_high", "medium": "combination_medium", "low": "combination_low"}[kind]
+    return COMBINATION_TEXTS[kind][0], i18n_key("riasec_explanations", relation)
 
 # How many of the student's own answers to quote per level: (liked, disliked).
 # A leading type is mostly explained by what was liked, an absent one by what

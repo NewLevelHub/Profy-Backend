@@ -6,11 +6,13 @@ the stored raw/narrative fields (`big_five`, `thinking_style`, `careers`
 with scores) — the psychologist needs them to judge the report.
 """
 
+
 import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, Field, model_validator
 
+from app.i18n.catalog import key as i18n_key
 from app.models.analysis_result import ReviewStatus
 
 # Mirrors `result_v2._MAX_CAREERS` — the student schema rejects more.
@@ -65,7 +67,12 @@ class ReviewTextCardPatch(BaseModel):
 
 class ReviewCareerPatch(BaseModel):
     """Same shape `report_service._career_dict` stores — the student report
-    is rebuilt from these keys, so an edited career must keep all of them."""
+    is rebuilt from these keys, so an edited career must keep all of them.
+
+    `match_score` is a float in [0, 1] (Pearson / normalized code match after
+    PRO-385). It used to be an int 0–100; keeping `int` here 422'd every
+    careers PATCH once the scorer started writing fractional scores
+    (PRO-415 — reorder → save → publish)."""
 
     slug: str = Field(min_length=1)
     name: str = Field(min_length=1)
@@ -101,5 +108,5 @@ class PsychologistResultPatch(BaseModel):
         # Omitting a field means "leave as is"; null would wipe a NOT NULL column.
         nulls = sorted(name for name in self.model_fields_set if getattr(self, name) is None)
         if nulls:
-            raise ValueError(f"fields cannot be null: {', '.join(nulls)}")
+            raise ValueError(i18n_key("api_errors", "null_fields", locale="ru").format(fields=', '.join(nulls)))
         return self

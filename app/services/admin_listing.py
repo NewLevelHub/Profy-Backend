@@ -21,10 +21,13 @@ either wrong is invisible until an admin notices the list lying to them:
    that case.
 """
 
+
 from typing import Any, Literal, Sequence
 
 from sqlalchemy import nulls_last
 from sqlalchemy.sql.elements import ColumnElement
+
+from app.i18n.catalog import key as i18n_key
 
 # Postgres' default collation orders by byte value, which puts every
 # Latin-named row ahead of every Cyrillic one: sorting the 252 universities by
@@ -54,7 +57,7 @@ class AdminSortFieldError(Exception):
         self.field = field
         self.allowed = list(allowed)
         super().__init__(
-            f"Unknown sort field '{field}'. Sortable fields: {', '.join(self.allowed)}."
+            i18n_key("api_errors", "invalid_admin_sort_field", locale="ru").format(field=field, allowed_fields=', '.join(self.allowed))
         )
 
 

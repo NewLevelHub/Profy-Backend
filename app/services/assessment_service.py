@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+from app.i18n.catalog import key as i18n_key
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import Profile
 from app.models.question import Question
@@ -47,7 +48,7 @@ async def create_assessment(
     profile_result = await db.execute(select(Profile).where(Profile.id == profile_id))
     profile = profile_result.scalar_one_or_none()
     if profile is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "profile_not_found", locale="ru"))
 
     existing_result = await db.execute(
         select(Assessment).where(
@@ -119,10 +120,10 @@ async def submit_answers(
     row_result = await db.execute(select(Assessment).where(Assessment.id == assessment_id))
     assessment = row_result.scalar_one_or_none()
     if assessment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
 
     if assessment.profile_id != current_profile_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
 
 
     question_ids = [item.question_id for item in answers]
@@ -132,7 +133,7 @@ async def submit_answers(
         if item.question_id not in valid_ids:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Question {item.question_id} not found",
+                detail=i18n_key("api_errors", "question_id_not_found", locale="ru").format(question_id=item.question_id),
             )
 
     is_retake = assessment.status == AssessmentStatus.completed

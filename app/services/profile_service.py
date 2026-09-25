@@ -3,11 +3,17 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.models.artifact import Artifact
 from app.models.certificate import Certificate
 from app.models.profile import Profile, compute_age_group
 from app.schemas.profile import ProfileCreateRequest, ProfileUpdateRequest
 from app.services import artifact_service, certificate_service
+from app.services.age_grade import age_grade_mismatch_message, is_age_grade_compatible
+
+
+class AgeGradeMismatchError(ValueError):
+    """Raised when the resulting age/grade pair is impossible (PRO-420)."""
 
 
 async def create_profile(
@@ -27,7 +33,7 @@ async def create_profile(
     """
     existing = await db.execute(select(Profile).where(Profile.user_id == user_id))
     if existing.scalar_one_or_none() is not None:
-        raise ValueError("Profile already exists for this user")
+        raise ValueError(i18n_key("api_errors", "profile_already_exists_for_this_user", locale="ru"))
 
     # `artifacts`/`certificates` (if present) are handled by the caller via
     # artifact_service/certificate_service, not Profile columns — exclude
@@ -66,7 +72,7 @@ async def update_profile(
     result = await db.execute(select(Profile).where(Profile.user_id == user_id))
     profile = result.scalar_one_or_none()
     if profile is None:
-        raise ValueError("Profile not found")
+        raise ValueError(i18n_key("api_errors", "profile_not_found", locale="ru"))
 
     updates = data.model_dump(exclude={"artifacts", "certificates"}, exclude_none=True)
     for key, value in updates.items():
@@ -74,6 +80,13 @@ async def update_profile(
 
     if "age" in updates:
         profile.age_group = compute_age_group(updates["age"])
+
+    # Partial updates may change only age or only grade — re-check the pair
+    # that will actually be stored (PRO-420).
+    if not is_age_grade_compatible(profile.age, profile.grade):
+        raise AgeGradeMismatchError(
+            age_grade_mismatch_message(profile.age, profile.grade)
+        )
 
     if data.artifacts is not None:
         artifacts = await artifact_service.save_artifacts(profile.id, data.artifacts, db, commit=False)

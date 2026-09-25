@@ -3,6 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.i18n.catalog import key as i18n_key
 from app.models.user import UserRole
 from app.schemas.admin_result import AdminAnalysisResultResponse
 from app.schemas.artifact import ArtifactItem
@@ -115,7 +116,7 @@ class AdminUserCreate(BaseModel):
     @classmethod
     def role_not_student(cls, v: UserRole) -> UserRole:
         if v == UserRole.student:
-            raise ValueError("Use /auth/register to create student accounts")
+            raise ValueError(i18n_key("api_errors", "student_registration_required", locale="ru"))
         return v
 
 
