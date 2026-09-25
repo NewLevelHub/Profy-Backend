@@ -303,7 +303,6 @@ async def test_reorder_careers_with_float_match_score_saves_and_publishes(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
-    admin_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     test_user: User,
     psychologist_user: User,
@@ -316,7 +315,7 @@ async def test_reorder_careers_with_float_match_score_saves_and_publishes(
     force_complete_senior(monkeypatch)
     assessment = await make_student_assessment(db_session, test_user)
     await generate(client, auth_headers, assessment)
-    await assign(client, admin_headers, psychologist_user, test_user)
+    await assign(db_session, psychologist_user, test_user)
 
     url = _result_url(test_user, assessment.id)
     detail = (await client.get(url, headers=psychologist_headers)).json()
