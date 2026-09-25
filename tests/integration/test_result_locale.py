@@ -11,6 +11,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import tr
 from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.profile import AgeGroup, Profile
@@ -68,7 +69,7 @@ async def test_kk_owner_gets_a_kazakh_deterministic_report(
     assert _is_kk(response.summary), response.summary
     assert _is_kk(response.final_analysis), response.final_analysis
     assert _is_kk(response.interest_map_note), response.interest_map_note
-    assert _is_kk(response.personality_note), response.personality_note
+    assert response.personality_note == ""
     # every interest-map sphere label is Kazakh (riasec_labels() under kk)
     assert all(_is_kk(item.sphere) for item in response.interest_map)
     assert "Реалистичный" not in {item.sphere for item in response.interest_map}
@@ -89,7 +90,7 @@ async def test_kk_report_is_stable_on_cold_cache_reshape(
 
     assert reshaped is not None
     assert _is_kk(reshaped.interest_map_note), reshaped.interest_map_note
-    assert _is_kk(reshaped.personality_note), reshaped.personality_note
+    assert reshaped.personality_note == ""
     assert all(_is_kk(item.sphere) for item in reshaped.interest_map)
 
 
@@ -128,7 +129,7 @@ async def test_get_report_signals_locale_not_generated_vs_not_found(
     lazy regen' (error_code) from 'no report at all'."""
     from app.services import auth_service
 
-    # (a) never generated -> plain 404 "Report not found"
+    # (a) never generated -> plain 404, message in the user's own locale
     assessment_a = await _kk_assessment(db_session, AgeGroup.senior, 16)
     profile_a = (await db_session.execute(
         select(Profile).where(Profile.id == assessment_a.profile_id)
@@ -139,7 +140,7 @@ async def test_get_report_signals_locale_not_generated_vs_not_found(
     r = await client.get(f"/api/v1/result/{assessment_a.id}", headers=headers_a)
     assert r.status_code == 404
     body = r.json()
-    assert body["detail"] == "Report not found"
+    assert body["detail"] == tr("api_errors", locale="kk")["report_not_found"]
     assert body.get("error_code") is None
 
     # (b) a ru row exists, owner is now kk -> 404 with the KZ-406 code

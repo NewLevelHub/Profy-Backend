@@ -521,13 +521,6 @@ async def get_belbin_schema(
     return admin_content_service.get_belbin_schema()
 
 
-@router.get("/astur-schema")
-async def get_astur_schema(
-    _: User = Depends(get_current_admin_user),
-):
-    return admin_content_service.get_astur_schema()
-
-
 @router.get("/content-overrides/{instrument}", response_model=AdminContentOverrideResponse)
 async def get_content_override(
     instrument: str,
@@ -554,7 +547,13 @@ async def set_content_override(
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await admin_content_service.set_content_override(db, instrument, data)
+    try:
+        return await admin_content_service.set_content_override(db, instrument, data)
+    except admin_content_service.VersionedInstrumentError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"'{instrument}' content is edited through bank versions (/admin/astur/bank-versions)",
+        )
 
 
 @router.get("/directions", response_model=AdminDirectionListResponse)

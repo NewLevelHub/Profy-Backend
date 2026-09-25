@@ -15,7 +15,9 @@ from app.main import app
 from app.routers import auth
 from app.schemas.auth import RegisterRequest, UpdateMeRequest
 from app.schemas.certificate import CertificateItem
-from app.services import astur_service, auth_service, ipsative_battery
+from app.services import auth_service, ipsative_battery
+from app.services.astur.bank import load_v1_document, parse_bank
+from app.services.astur.runs import _subtest_or_404
 
 
 @pytest.mark.parametrize(
@@ -105,5 +107,5 @@ def test_dynamic_validation_values_keep_their_original_format():
         CertificateItem(type="ielts", score=10)
     assert "score for ielts must be between 0.0 and 9.0" in str(error.value)
     with pytest.raises(HTTPException) as error:
-        astur_service._subtest_meta(99)
+        _subtest_or_404(parse_bank(load_v1_document()), 99)
     assert error.value.detail == "No such АСТУР subtest: 99"

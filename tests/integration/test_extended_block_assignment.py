@@ -12,6 +12,7 @@ from app.models.profile import AgeGroup, Profile
 from app.models.user import User
 from app.services import auth_service
 
+from tests.integration.astur_helpers import v1_version_id
 from tests.integration.review_helpers import assign
 
 
@@ -125,9 +126,10 @@ async def test_astur_completed_requires_all_scored_subtests_not_just_any_row(
         json={"block": "astur"},
         headers=psychologist_headers,
     )
-    # Only 1 of 6 scored subtests answered — a row exists but it's not done.
+    # An open attempt with 1 subtest answered — a row exists but it's not done.
     db_session.add(AsturRun(
         assessment_id=assessment.id, user_id=test_user.id,
+        bank_version_id=await v1_version_id(db_session),
         answers={"awareness": {"1": "x"}},
     ))
     await db_session.flush()

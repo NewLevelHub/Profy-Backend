@@ -37,7 +37,11 @@ async def get_all_questions(
     locale: str | None = None,
 ) -> list[QuestionResponse]:
     """The Likert battery for one assessment."""
-    result = await db.execute(select(Question).order_by(Question.order))
+    result = await db.execute(
+        select(Question)
+        .where(Question.instrument != QuestionInstrument.big_five)
+        .order_by(Question.order)
+    )
     questions = list(result.scalars().all())
 
     return [to_response_schema(q, i + 1, locale) for i, q in enumerate(questions)]

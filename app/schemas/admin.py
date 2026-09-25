@@ -150,12 +150,15 @@ class AdminMotivationResponseItem(BaseModel):
 
 class AdminAsturRunResponse(BaseModel):
     id: uuid.UUID
-    raw_score: int | None = None
-    spn_group: int | None = None
+    status: str
+    bank_version_id: uuid.UUID
+    scoring_version: str | None = None
     answers: dict
     lability_answers: dict
-    subtest_scores: dict
+    # app.schemas.astur.AsturResultSnapshot — None until the attempt is completed.
+    result_snapshot: dict | None = None
     created_at: datetime
+    completed_at: datetime | None = None
 
 
 class AdminBelbinRunResponse(BaseModel):

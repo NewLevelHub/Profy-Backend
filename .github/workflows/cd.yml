@@ -179,6 +179,9 @@ jobs:
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_motivation_statements.py
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_riasec_directions.py
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/apply_direction_content.py
+            # PRO-427: freeze result snapshots of АСТУР attempts finished before
+            # snapshots existed (idempotent — a no-op once done).
+            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/backfill_astur_legacy_snapshots.py
             # Universities/programs — single committed snapshot
             # (scripts/data/university_snapshot.clean.json), one loader.
             # Replaces the ~30-script seed/apply/backfill pipeline this block

@@ -12,7 +12,19 @@ scoring engine ships, without a schema-breaking change. `extra="forbid"`
 throughout so a builder can never accidentally pass through a stray raw
 field from a JSONB container.
 """
-from pydantic import BaseModel
+import uuid
+from datetime import datetime
+
+from pydantic import BaseModel, Field
+
+from app.schemas.astur import (
+    AttemptHistory,
+    MathReasoningResult,
+    ProtocolQuality,
+    QuickInstructionsResult,
+    SubjectProfileResult,
+    SubtestResult,
+)
 
 _model_config = {"extra": "forbid"}
 
@@ -166,29 +178,27 @@ class TemperamentSection(BaseModel):
 
 
 class IntelligenceSection(BaseModel):
-    """АСТУР (Акимова/Борисова/Гуревич и др., ПИ РАО 1995) — 98 заданий,
-    7 из 8 субтестов, own table (astur_runs, Ф3.3), not Question-based.
+    """АСТУР — «Когнитивные навыки (учебные задания)» (PRO-427): the frozen
+    result snapshot of the latest COMPLETED attempt, never recomputed on
+    read. Percent of tasks done, not an IQ, a norm or a diagnosis. An open
+    retake never replaces it — `retake_in_progress` only tells the reader
+    one is running."""
 
-    Ф3.7 extends the Ф0.2 stub (which only had spn_group/subtest_scores/
-    learning_profile) with the fields astur_scoring.score_run() (Ф3.5)
-    actually produces: `raw_score` (Line Chart needs a total, not just the
-    per-subtest breakdown), `learning_profile_shares` (the ticket's own
-    "с долями" requirement — `learning_profile` alone is just the winning
-    subject key, not the 3-way split), and the 2 lability accuracy figures
-    + `lability_fatigue_signal` (the JSON-boolean form of
-    astur_scoring.is_fatigue_signal(), pre-computed here so the frontend
-    never re-implements the >25%-drop rule) — lability is deliberately
-    rendered as its own block, outside the Line Chart (Ф3.7's own
-    "Отдельно" instruction), same as it's excluded from `raw_score`."""
-
-    raw_score: int | None = None
-    subtest_scores: dict[str, float] | None = None
-    spn_group: int | None = None
-    learning_profile: str | None = None
-    learning_profile_shares: dict[str, float] | None = None
-    lability_first_half_accuracy: float | None = None
-    lability_second_half_accuracy: float | None = None
-    lability_fatigue_signal: bool | None = None
+    run_id: uuid.UUID
+    retake_in_progress: bool
+    scoring_version: str
+    bank_version: int
+    legacy: bool
+    completed_at: datetime
+    age_at_completion: int | None = None
+    grade_at_completion: int | None = None
+    history: AttemptHistory = Field(default_factory=AttemptHistory)
+    subtests: list[SubtestResult]
+    overall_percent: float | None
+    subject_profile: SubjectProfileResult
+    math_reasoning: MathReasoningResult | None = None
+    quick_instructions: QuickInstructionsResult | None = None
+    protocol_quality: ProtocolQuality
     model_config = _model_config
 
 

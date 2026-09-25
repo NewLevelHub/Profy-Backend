@@ -797,22 +797,38 @@ async def _build_report(
         matched = await riasec_service.matched_careers(profile_scores, db)
         careers = [_career_dict(d, score) for d, score in matched]
 
-        # grand_mean is the same query for both raw_scores() and facet_raw() below
-        # — fetch it once here instead of each
-        # function independently re-running it.
-        bf_mean_answer = await bigfive_service.grand_mean(assessment_id, db)
-
-        bf_raw = await bigfive_service.raw_scores(assessment_id, db, mean_answer=bf_mean_answer)
         bf_counts = await bigfive_service.question_counts(db)
-        bigfive_scores = bigfive_service.normalize(bf_raw, bf_counts)
+        bf_total = sum(bf_counts.values())
+        bf_answered = await bigfive_service.answered_count(assessment_id, db)
+        compute_bigfive = bf_total > 0 and bf_answered >= bf_total
 
-        bf_facet_raw = await bigfive_service.facet_raw(assessment_id, db, mean_answer=bf_mean_answer)
-        bf_facet_counts = await bigfive_service.facet_counts(db)
-        bf_facet_norm = bigfive_service.facet_normalize(bf_facet_raw, bf_facet_counts)
-        thinking_style = thinking_style_service.compute(bf_facet_norm)
+        if compute_bigfive:
+            # Historical, fully completed Big Five attempts remain readable.
+            bf_mean_answer = await bigfive_service.grand_mean(assessment_id, db)
+            bf_raw = await bigfive_service.raw_scores(
+                assessment_id, db, mean_answer=bf_mean_answer
+            )
+            bigfive_scores = bigfive_service.normalize(bf_raw, bf_counts)
 
-        personality_profile, personality_notes = bigfive_content.build_personality_profile(bigfive_scores)
-        personality_highlights = strength_phrases(personality_profile)
+            bf_facet_raw = await bigfive_service.facet_raw(
+                assessment_id, db, mean_answer=bf_mean_answer
+            )
+            bf_facet_counts = await bigfive_service.facet_counts(db)
+            bf_facet_norm = bigfive_service.facet_normalize(
+                bf_facet_raw, bf_facet_counts
+            )
+            thinking_style = thinking_style_service.compute(bf_facet_norm)
+
+            personality_profile, personality_notes = (
+                bigfive_content.build_personality_profile(bigfive_scores)
+            )
+            personality_highlights = strength_phrases(personality_profile)
+        else:
+            # New attempts never receive Big Five questions. Partial legacy
+            # attempts must not produce fabricated personality conclusions.
+            bigfive_scores, thinking_style = {}, {}
+            personality_profile, personality_notes = {}, {}
+            personality_highlights = []
 
         mot_scores = await motivation_service.raw_scores(assessment_id, db)
         mot_top = motivation_service.top_categories(mot_scores)

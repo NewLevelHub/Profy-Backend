@@ -44,10 +44,13 @@ class AdminDevelopmentPlan(BaseModel):
 
 
 class AdminThinkingStyle(BaseModel):
-    creative_think: float
-    systematic: float
-    strategic: float
-    practical: float
+    # Defaulted (not required): a new assessment that never computed a Big
+    # Five profile (see report_service.build_report's compute_bigfive gate)
+    # stores thinking_style={} — this must still validate for admin display.
+    creative_think: float = 0.0
+    systematic: float = 0.0
+    strategic: float = 0.0
+    practical: float = 0.0
 
 
 class AdminStrengthCard(BaseModel):

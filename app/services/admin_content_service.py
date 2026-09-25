@@ -713,33 +713,24 @@ def get_belbin_schema() -> dict:
     return {"sections": BELBIN_SECTIONS}
 
 
-def get_astur_schema() -> dict:
-    """Bilingual, unresolved bank content for the admin ASTUR editor — the
-    same per-subtest/per-item shape `astur_service._resolve_subtests`
-    merges an override into, restricted to the fields real test-takers
-    ever see (`_PUBLIC_ITEM_FIELDS`) — never the `answer`/scoring keys, so
-    the editor structurally cannot expose or edit them."""
-    from app.services.astur_service import _PUBLIC_ITEM_FIELDS, _bank_subtests
-
-    subtests = []
-    for subtest in _bank_subtests():
-        public_fields = _PUBLIC_ITEM_FIELDS[subtest["key"]]
-        subtests.append({
-            **{k: subtest[k] for k in ("number", "key", "name", "instruction", "item_count", "scored")},
-            "items": [
-                {field: item[field] for field in public_fields}
-                for item in subtest["items"]
-            ],
-        })
-    return {"subtests": subtests}
-
-
 async def get_content_override(db: AsyncSession, instrument: str):
     result = await db.execute(select(ContentOverride).where(ContentOverride.instrument == instrument))
     return result.scalar_one_or_none()
 
 
+# Instruments whose content is published as immutable bank versions instead
+# of a free-form override: an override could change a question without its
+# key (PRO-427). Their overrides are read-only history.
+VERSIONED_INSTRUMENTS = frozenset({"astur"})
+
+
+class VersionedInstrumentError(Exception):
+    pass
+
+
 async def set_content_override(db: AsyncSession, instrument: str, data: "AdminContentOverrideRequest"):
+    if instrument in VERSIONED_INSTRUMENTS:
+        raise VersionedInstrumentError(instrument)
     row = await get_content_override(db, instrument)
     if not row:
         row = ContentOverride(instrument=instrument)

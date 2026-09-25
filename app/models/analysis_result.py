@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Text, UniqueConstraint, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -105,6 +105,12 @@ class AnalysisResult(Base):
     # app.schemas.psych_ai_analysis.PsychAiAnalysisOutput, not this model —
     # same "container, not a typed column" precedent as every field above.
     psych_ai_analysis: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    # sha256 of the analysis input context the cache above was generated
+    # from (PRO-427). A different fingerprint — a new completed АСТУР
+    # attempt, a new scoring version, a changed age — means the cache is
+    # stale and is regenerated on the next view. NULL = pre-fingerprint
+    # cache, always treated as stale.
+    psych_ai_analysis_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True, default=None)
     # Review gate. Rows that existed before the gate were backfilled to
     # `published` by the migration — they had already been shown.
     review_status: Mapped[ReviewStatus] = mapped_column(

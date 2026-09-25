@@ -448,6 +448,11 @@ def test_build_personality_notes_covers_all_five_traits() -> None:
     assert all(n.label and n.description for n in notes)
 
 
+def test_empty_big_five_profile_has_no_personality_content() -> None:
+    assert report_v2_assembler.build_personality_notes({}) == []
+    assert report_v2_assembler.build_personality_note({}) == ""
+
+
 def test_build_personality_notes_ranks_traits_most_to_least_pronounced() -> None:
     # mean of the five is 53.2; level is the band relative to THAT, not an
     # absolute cutoff — agreeableness at 61 is only +7.8, inside the mid band.

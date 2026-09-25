@@ -15,7 +15,7 @@ import uuid
 from datetime import datetime
 from typing import Literal, Union
 
-from pydantic import BaseModel, Field, TypeAdapter
+from pydantic import BaseModel, Field, TypeAdapter, field_validator
 
 from app.i18n.catalog import key as i18n_key
 
@@ -303,9 +303,18 @@ class _ResultResponseBase(BaseModel):
     # already-computed levels, nothing to personalize beyond that.
     interest_map_note: str = INTEREST_MAP_NOTE_FALLBACK
     thinking_style_notes: list[StudentThinkingStyleNote]
-    personality_notes: list[StudentPersonalityNote] = Field(
-        min_length=_PERSONALITY_TRAIT_COUNT, max_length=_PERSONALITY_TRAIT_COUNT
-    )
+    personality_notes: list[StudentPersonalityNote] = Field(default_factory=list)
+
+    @field_validator("personality_notes")
+    @classmethod
+    def _personality_notes_all_or_nothing(
+        cls, value: list[StudentPersonalityNote]
+    ) -> list[StudentPersonalityNote]:
+        if len(value) not in (0, _PERSONALITY_TRAIT_COUNT):
+            raise ValueError(
+                f"personality_notes must have 0 or {_PERSONALITY_TRAIT_COUNT} items, got {len(value)}"
+            )
+        return value
     # 1-2 sentences of synthesis on top of the 5 static cards above — same
     # role as interest_map_note, closing the "just a lookup table, no
     # analysis" gap reported live for "Твой характер". Deterministic,

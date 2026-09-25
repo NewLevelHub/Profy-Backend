@@ -166,21 +166,14 @@ async def test_available_students_flags_completed_assessment(
 
 async def test_scope_available_excludes_already_claimed_student(
     client: httpx.AsyncClient,
-    admin_headers: dict[str, str],
+    db_session: AsyncSession,
     psychologist_headers: dict[str, str],
     psychologist_user: User,
     test_user: User,
 ) -> None:
     """PRO-422: ?scope=available must not return students already claimed."""
-    created = await client.post(
-        "/api/v1/admin/psychologist-assignments",
-        json={
-            "psychologist_id": str(psychologist_user.id),
-            "student_id": str(test_user.id),
-        },
-        headers=admin_headers,
-    )
-    assert created.status_code == 201
+    # Psychologists self-claim students; the link itself is what matters here.
+    await assign(db_session, psychologist_user, test_user)
 
     mine = await client.get(
         "/api/v1/psychologist/students?scope=mine", headers=psychologist_headers

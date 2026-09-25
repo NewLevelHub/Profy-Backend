@@ -17,7 +17,7 @@ from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup
-from app.models.question import Question
+from app.models.question import Question, QuestionInstrument
 from app.models.user_response import UserResponse
 
 logger = logging.getLogger(__name__)
@@ -124,7 +124,11 @@ def get_effective_goal(age_group: AgeGroup, primary_goal: AssessmentGoal) -> Ass
 
 
 async def likert_total_questions(db: AsyncSession) -> int:
-    result = await db.execute(select(func.count(Question.id)))
+    result = await db.execute(
+        select(func.count(Question.id)).where(
+            Question.instrument != QuestionInstrument.big_five
+        )
+    )
     return result.scalar_one()
 
 
@@ -158,16 +162,16 @@ async def belbin_and_astur_completed(assessment_id: uuid.UUID, db: AsyncSession)
     they haven't finished (observed live: an assessment marked completed
     with 0 belbin_runs and 0 astur_runs).
 
-    Local import: belbin_service/astur_service are import-free of this
+    Local import: belbin_service/astur runs are import-free of this
     module, so this direction is safe, but keeping it local (rather than at
     module level) keeps this file's own import graph simple regardless."""
-    from app.services import astur_service, belbin_service
+    from app.services import belbin_service
+    from app.services.astur import runs as astur_runs
 
     belbin_run = await belbin_service.get_latest_run(assessment_id, db)
     if belbin_run is None:
         return False
-    astur_run = await astur_service.get_latest_run(assessment_id, db)
-    return astur_run is not None and astur_service.is_complete(astur_run)
+    return await astur_runs.has_completed_run(db, assessment_id)
 
 
 async def try_complete_assessment(

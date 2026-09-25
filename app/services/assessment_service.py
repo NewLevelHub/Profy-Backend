@@ -12,7 +12,8 @@ from app.models.question import Question
 from app.models.user_response import UserResponse
 from app.schemas.assessment import AssessmentResponse
 from app.schemas.response import AnswerItem, SubmitAnswersResponse
-from app.services import assessment_shared, astur_service, belbin_service, motivation_service
+from app.services import assessment_shared, belbin_service, motivation_service
+from app.services.astur import runs as astur_runs
 
 
 async def _to_response(assessment: Assessment, db: AsyncSession) -> AssessmentResponse:
@@ -23,8 +24,7 @@ async def _to_response(assessment: Assessment, db: AsyncSession) -> AssessmentRe
 
     belbin_run = await belbin_service.get_latest_run(assessment.id, db)
     belbin_completed = belbin_run is not None
-    astur_run = await astur_service.get_latest_run(assessment.id, db)
-    astur_completed = astur_run is not None and astur_service.is_complete(astur_run)
+    astur_completed = await astur_runs.has_completed_run(db, assessment.id)
 
     return AssessmentResponse(
         id=assessment.id,
