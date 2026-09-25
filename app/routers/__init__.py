@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.routers.admin import router as admin_router
+from app.routers.admin_astur import router as admin_astur_router
 from app.routers.artifacts import router as artifacts_router
 from app.routers.assessment import router as assessment_router
 from app.routers.astur import router as astur_router
@@ -20,6 +21,7 @@ from app.routers.university import router as university_router
 api_router = APIRouter()
 api_router.include_router(auth_router, prefix="/api/v1/auth")
 api_router.include_router(admin_router, prefix="/api/v1/admin")
+api_router.include_router(admin_astur_router, prefix="/api/v1/admin/astur")
 api_router.include_router(psychologist_router, prefix="/api/v1/psychologist")
 api_router.include_router(profile_router, prefix="/api/v1/profile")
 api_router.include_router(artifacts_router, prefix="/api/v1/profile/artifacts")

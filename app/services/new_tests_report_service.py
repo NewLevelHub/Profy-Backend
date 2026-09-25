@@ -8,16 +8,14 @@ section` and neighbors. Consumed by Ф0.3's specialist report endpoint
 (GET /psychologist/students/{id}/assessments/{assessment_id}/report), never
 by the student-facing /result.
 """
+
 import logging
 import uuid
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.models.analysis_result import AnalysisResult
-from app.models.assessment import Assessment
-from app.models.profile import Profile
-from app.models.user import User
 from app.schemas.new_tests import (
     AspirationLevelSection,
     EmpathyConfidenceSection,
@@ -27,8 +25,8 @@ from app.schemas.new_tests import (
     TeamRoleSection,
     TemperamentSection,
 )
+from app.schemas.astur import AsturResultSnapshot
 from app.services import (
-    astur_service,
     belbin_service,
     boyko_empathy_service,
     elers_service,
@@ -36,7 +34,7 @@ from app.services import (
     kondash_anxiety_service,
     professional_types_service,
 )
-from app.services.astur_scoring import is_fatigue_signal, score_run
+from app.services.astur import runs as astur_runs
 
 logger = logging.getLogger(__name__)
 
@@ -45,10 +43,7 @@ logger = logging.getLogger(__name__)
 # platform's own age range, 14-18, is otherwise unaffected — see
 # 00-ЭПИК-PRO-338.md's "Возраст" row).
 _BELBIN_METHODOLOGICAL_NOTE = (
-    "Методика Белбина изначально разработана для взрослых сотрудников в "
-    "корпоративном контексте (18+). Результат школьника стоит трактовать с "
-    "поправкой на возраст — это не формальное ограничение платформы, а "
-    "методическая особенность источника."
+    i18n_key("report_copy", "belbin_methodological_note", locale="ru")
 )
 
 
@@ -134,60 +129,25 @@ async def _build_temperament_section(
 async def _build_intelligence_section(
     assessment_id: uuid.UUID, db: AsyncSession
 ) -> IntelligenceSection | None:
-    """АСТУР (Ф3.7). Same shape of exception as `_build_team_role_section`
-    above: source is `astur_runs` (Ф3.3), a separate append-only table, not
-    an `AnalysisResult` JSONB column — scoring (`astur_scoring.score_run`,
-    Ф3.5) is a pure function computed here at report-build time, not
-    persisted onto the run row (same "compute on read" choice Belbin's
-    `interpret_role_totals` already made). `None` if АСТУР was never
-    assigned/completed for this assessment.
-
-    `submitted_at`/`profile_name` feed the 2 lability items whose correct
-    answer depends on real-world context (день недели / respondent's own
-    name, see astur_scoring.py's own docstring) — `run.created_at` is used
-    as `submitted_at` (the row's own creation time; АСТУР has no separate
-    "finished at" timestamp, and a sitting normally completes in minutes,
-    so this is a reasonable proxy, not an exact value)."""
+    """АСТУР (PRO-427): the snapshot frozen when the latest completed
+    attempt was finalized — scoring never runs here, so a new bank version
+    or formula can't change a result someone already read. `None` when no
+    attempt has been completed (an open attempt alone has no result)."""
     try:
-        run = await astur_service.get_latest_run(assessment_id, db)
+        run = await astur_runs.latest_completed_run(db, assessment_id)
         if run is None:
             return None
-
-        profile_row = (
-            await db.execute(
-                select(Profile.name, User.locale)
-                .join(Assessment, Assessment.profile_id == Profile.id)
-                .join(User, Profile.user_id == User.id)
-                .where(Assessment.id == assessment_id)
+        if run.result_snapshot is None:
+            logger.warning(
+                "АСТУР run %s is completed but has no snapshot — run scripts/backfill_astur_legacy_snapshots.py",
+                run.id,
             )
-        ).one_or_none()
-        profile_name = profile_row.name if profile_row else None
-        # The locale recorded when the attempt was started, preventing
-        # scoring mismatches if the user later changes their profile language.
-        # Falls back to "ru" for older attempts.
-        run_locale = getattr(run, "locale", "ru") or "ru"
-
-        result = score_run(
-            run.answers, run.lability_answers,
-            submitted_at=run.created_at, profile_name=profile_name or "",
-            locale=run_locale,
-        )
-
-        fatigue_signal = None
-        if result.lability_first_half_accuracy is not None and result.lability_second_half_accuracy is not None:
-            fatigue_signal = is_fatigue_signal(
-                result.lability_first_half_accuracy, result.lability_second_half_accuracy
-            )
-
+            return None
+        snapshot = AsturResultSnapshot.model_validate(run.result_snapshot)
         return IntelligenceSection(
-            raw_score=result.raw_score if result.subtest_scores else None,
-            subtest_scores=result.subtest_scores or None,
-            spn_group=result.spn_group,
-            learning_profile=result.recommended_profile.get("recommended"),
-            learning_profile_shares=result.recommended_profile.get("shares"),
-            lability_first_half_accuracy=result.lability_first_half_accuracy,
-            lability_second_half_accuracy=result.lability_second_half_accuracy,
-            lability_fatigue_signal=fatigue_signal,
+            run_id=run.id,
+            retake_in_progress=await astur_runs.active_run(db, assessment_id) is not None,
+            **snapshot.model_dump(exclude={"item_scores", "item_status"}),
         )
     except Exception:
         logger.exception("Failed to build intelligence section for assessment %s", assessment_id)

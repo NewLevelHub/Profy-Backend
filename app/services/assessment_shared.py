@@ -162,16 +162,16 @@ async def belbin_and_astur_completed(assessment_id: uuid.UUID, db: AsyncSession)
     they haven't finished (observed live: an assessment marked completed
     with 0 belbin_runs and 0 astur_runs).
 
-    Local import: belbin_service/astur_service are import-free of this
+    Local import: belbin_service/astur runs are import-free of this
     module, so this direction is safe, but keeping it local (rather than at
     module level) keeps this file's own import graph simple regardless."""
-    from app.services import astur_service, belbin_service
+    from app.services import belbin_service
+    from app.services.astur import runs as astur_runs
 
     belbin_run = await belbin_service.get_latest_run(assessment_id, db)
     if belbin_run is None:
         return False
-    astur_run = await astur_service.get_latest_run(assessment_id, db)
-    return astur_run is not None and astur_service.is_complete(astur_run)
+    return await astur_runs.has_completed_run(db, assessment_id)
 
 
 async def try_complete_assessment(

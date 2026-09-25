@@ -56,9 +56,17 @@ Kazakh translations are edited in these files, never in the DB. Full contract: `
 
 Any review/data file under `scripts/data/**` (or `scripts/*review*.json`) that points at a `University`/`Program` row MUST carry a cross-DB-portable key — `slug` / `university_slug` (curated rows), `jinaq_external_id` (jinaq rows, resolved via `university_external_refs`), or `ror_id`; a `Program` also needs its *name* to resolve under that University. A bare `University.id` / `Program.id` is a per-database random `uuid4()` and resolves to nothing on any other DB (a fresh local copy, prod's first import run) — the apply script then silently no-ops on every entry. Resolve rows through `scripts/entity_resolver.py` (`resolve_university` / `resolve_program`), not a hand-rolled `where(University.id == ...)`. Enforced by `tests/unit/test_review_files_portable_keys.py`.
 
+#### Exception: АСТУР content lives in versioned DB rows, not a Python bank
+
+АСТУР (`app/services/astur/`, PRO-427) is not bank-file content. Its questions, options, answer keys, synonym tiers, scoring methods and timers are one document per **immutable published version** in `astur_bank_versions` (`draft → validate → publish`, admin API under `/api/v1/admin/astur/bank-versions`). Version 1 is `app/data/astur_bank_v1.json`, inserted by migration `a7c3e1f9b2d4`; its hash is pinned by `tests/unit/test_astur_bank.py` — never edit that file, publish a new version instead. Every attempt (`astur_runs.bank_version_id`) is pinned to the version it was started on and is scored once, at finalize, into a frozen `result_snapshot`; reports read the snapshot and never rescore. Scoring thresholds are versioned in `app/data/astur_scoring_rules.json` (add a version, don't edit one). `scripts/backfill_astur_legacy_snapshots.py` (idempotent, run on deploy) freezes attempts finished before snapshots existed.
+
 ### Assessment: one battery, multiple instruments
 
 The audience is 14-18 and everyone takes the same battery — there are no age tiers (removed in PRO-425; `Profile.age_group` survives only for the goal logic). Every `Question` row (`app/models/question.py`) carries an `instrument` (`riasec`, `big_five`, the psych tests, …) in one shared table, and every row is shown to everyone. Motivation is MOST/LEAST triplets (`motivation_service`). Forced-choice `QuestionPair` rows (today only the ДДО pairs, instrument `professional_types`) and Likert `Question` rows are scored through the same `UserResponse` path — a picked pair choice is written as two synthetic Likert-equivalent responses (see `app/services/question_pair_service.py`), so scoring services don't need to know pairs exist.
+
+### Agent localization rule
+
+Every user-facing API detail, validation error, notification, and response text must use the localization catalog. Never add Russian, Kazakh, or English UI copy as a literal in a router, service, schema, or handler. Add matching `ru` and `kk` keys under `app/i18n/catalog/`, preserve interpolation placeholders, and resolve text through the active request locale. Technical logs, identifiers, SQL, paths, and protocol values are excluded.
 
 ### LLM: report narrative and psychologist AI analysis
 

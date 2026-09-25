@@ -8,7 +8,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.extended_block_assignment import ExtendedBlock, ExtendedBlockAssignment
-from app.services import astur_service, belbin_service
+from app.services import belbin_service
+from app.services.astur import runs as astur_runs
 
 
 async def assign_block(
@@ -58,10 +59,9 @@ async def list_assignments(assessment_id: uuid.UUID, db: AsyncSession) -> list[d
             run = await belbin_service.get_latest_run(assessment_id, db)
             completed = run is not None
         else:
-            # АСТУР submits per-subtest (Ф3.4) — a row can exist mid-attempt,
-            # so completion needs the same check submit_subtest itself uses.
-            run = await astur_service.get_latest_run(assessment_id, db)
-            completed = run is not None and astur_service.is_complete(run)
+            # АСТУР attempts carry an explicit status (PRO-427) — an open
+            # attempt row is not a completed block.
+            completed = await astur_runs.has_completed_run(db, assessment_id)
         result.append({
             "block": row.block.value,
             "assigned_at": row.assigned_at,

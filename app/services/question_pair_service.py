@@ -7,6 +7,7 @@ counters in assessment_shared read `UserResponse` regardless of whether it
 came from a Likert answer or a pair pick, so neither of those needed any
 changes for this format to work.
 """
+
 import uuid
 
 from fastapi import HTTPException, status
@@ -15,6 +16,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
+from app.i18n.catalog import key as i18n_key
 from app.i18n import pick_locale
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.question import Question, QuestionInstrument
@@ -78,10 +80,10 @@ async def submit_pair_answers(
     row_result = await db.execute(select(Assessment).where(Assessment.id == assessment_id))
     assessment = row_result.scalar_one_or_none()
     if assessment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
 
     if assessment.profile_id != current_profile_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
 
 
     pair_indexes = [item.pair_index for item in answers]
@@ -99,12 +101,12 @@ async def submit_pair_answers(
         if pair is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Pair {item.pair_index} not found",
+                detail=i18n_key("api_errors", "pair_not_found", locale="ru").format(pair_index=item.pair_index),
             )
         if item.picked_question_id not in (pair.question_a_id, pair.question_b_id):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Question {item.picked_question_id} is not part of pair {item.pair_index}",
+                detail=i18n_key("api_errors", "question_not_in_pair", locale="ru").format(picked_question_id=item.picked_question_id, pair_index=item.pair_index),
             )
         other_id = pair.question_b_id if item.picked_question_id == pair.question_a_id else pair.question_a_id
         response_rows.append({

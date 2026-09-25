@@ -22,10 +22,23 @@ Two responsibilities, matching the ticket exactly:
     and stored, sums raw item-level points into the test's actual scoring
     keys (e.g. Belbin's 8 role letters) across every block.
 """
+
 from collections.abc import Collection, Mapping, Sequence
 from typing import TypeAlias
 
 from fastapi import HTTPException, status
+
+from app.i18n import DEFAULT_LOCALE
+from app.i18n.catalog import tr
+
+
+def _stable_error(name: str) -> str:
+    """A structured error body is a stable contract: its `detail` stays in
+    the base catalog whatever the request locale (`catalog.key()` would
+    resolve to the request's), so clients matching on it don't break per
+    language."""
+    return tr("api_errors", locale=DEFAULT_LOCALE)[name]
+
 
 # One block's raw input: item_id -> points assigned to that item. Values are
 # validated (>=0, block sums to the block's total) by validate_allocation()
@@ -62,7 +75,7 @@ def validate_allocation(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={
-                "detail": "Allocation does not cover exactly the expected items for this block",
+                "detail": _stable_error("allocation_items_mismatch"),
                 "missing_items": sorted(expected - got),
                 "unexpected_items": sorted(got - expected),
             },
@@ -72,7 +85,7 @@ def validate_allocation(
     if negative:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail={"detail": "Allocation values must be >= 0", "negative_items": negative},
+            detail={"detail": _stable_error("allocation_negative_values"), "negative_items": negative},
         )
 
     actual_total = sum(allocation.values())
@@ -80,7 +93,7 @@ def validate_allocation(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={
-                "detail": f"Allocation must sum to exactly {total} points, got {actual_total}",
+                "detail": _stable_error("allocation_total_mismatch").format(total=total, actual_total=actual_total),
                 "expected_total": total,
                 "actual_total": actual_total,
             },

@@ -10,6 +10,7 @@ from sqlalchemy import case, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.config import settings
 from app.errors import AppError
 from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES, MissingLocalizedText, pick_locale, pick_locale_list, use_locale
@@ -468,7 +469,7 @@ async def _assert_assessment_complete(assessment_id: uuid.UUID, db: AsyncSession
         raise AppError(
             status_code=status.HTTP_409_CONFLICT,
             error_code="assessment_not_completed",
-            detail="Тест ещё не завершён — сначала ответь на все обязательные вопросы",
+            detail=i18n_key("api_errors", "assessment_not_completed", locale="ru"),
         )
 
 
@@ -755,7 +756,7 @@ async def _build_report(
     assessment = assessment_result.scalar_one_or_none()
     if assessment is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru")
         )
 
     profile_result = await db.execute(

@@ -299,6 +299,46 @@ async def test_patch_rejects_invalid_payloads(
     assert response.status_code == 422
 
 
+async def test_reorder_careers_with_float_match_score_saves_and_publishes(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    test_user: User,
+    psychologist_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """PRO-415: after Pearson scoring, careers[].match_score is a float in
+    [0, 1]. Reordering in the review UI resends the list as-is; the patch
+    schema must accept floats or save (and then publish) 422s."""
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+    await generate(client, auth_headers, assessment)
+    await assign(db_session, psychologist_user, test_user)
+
+    url = _result_url(test_user, assessment.id)
+    detail = (await client.get(url, headers=psychologist_headers)).json()
+    careers = detail["careers"]
+    assert len(careers) >= 2
+    assert all(isinstance(c["match_score"], (int, float)) for c in careers)
+
+    reordered = [careers[1], careers[0], *careers[2:]]
+    patched = await client.patch(
+        url, json={"careers": reordered}, headers=psychologist_headers
+    )
+    assert patched.status_code == 200, patched.text
+    body = patched.json()
+    assert body["careers"][0]["slug"] == reordered[0]["slug"]
+    assert body["careers"][1]["slug"] == reordered[1]["slug"]
+    assert body["careers"][0]["match_score"] == reordered[0]["match_score"]
+
+    published = await client.post(f"{url}/publish", headers=psychologist_headers)
+    assert published.status_code == 200, published.text
+    assert published.json()["review_status"] == "published"
+    assert published.json()["careers"][0]["slug"] == reordered[0]["slug"]
+
+
 async def test_publish_is_irreversible_and_notifies_student(
     client: httpx.AsyncClient,
     db_session: AsyncSession,

@@ -4,6 +4,7 @@ from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, EmailStr, Field, field_validator
 
+from app.i18n.catalog import key as i18n_key
 from app.i18n import KNOWN_LOCALES
 from app.models.user import UserRole
 
@@ -15,9 +16,9 @@ NormalizedEmail = Annotated[EmailStr, AfterValidator(lambda v: v.strip().lower()
 
 def _validate_password_complexity(v: str) -> str:
     if not re.search(r"[A-Za-z]", v):
-        raise ValueError("Password must contain at least one letter")
+        raise ValueError(i18n_key("api_errors", "password_letter_required"))
     if not re.search(r"\d", v):
-        raise ValueError("Password must contain at least one digit")
+        raise ValueError(i18n_key("api_errors", "password_digit_required"))
     return v
 
 
@@ -94,7 +95,7 @@ class UpdateMeRequest(BaseModel):
     @classmethod
     def _known_locale(cls, v: str) -> str:
         if v not in KNOWN_LOCALES:
-            raise ValueError(f"locale must be one of {sorted(KNOWN_LOCALES)}")
+            raise ValueError(i18n_key("api_errors", "unsupported_locale").format(locales=sorted(KNOWN_LOCALES)))
         return v
 
 

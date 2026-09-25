@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.assessment import Assessment
@@ -32,11 +33,11 @@ async def _require_owned_assessment(
     ).one_or_none()
     if row is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru")
         )
     if row.user_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+            status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru")
         )
 
 
@@ -79,6 +80,6 @@ async def finish_psychoemotional(
     if run is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Run not found or already finished",
+            detail=i18n_key("api_errors", "run_not_found_or_already_finished", locale="ru"),
         )
     return FinishPsychoEmotionalResponse(run_id=run.id, tech_invalid=run.tech_invalid)

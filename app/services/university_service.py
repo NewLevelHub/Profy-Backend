@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import noload, selectinload
 
+from app.i18n.catalog import key as i18n_key
 from app.i18n import DEFAULT_LOCALE, resolve_column_i18n
 from app.i18n.data_strings import translate_data_list, translate_data_string
 from app.models.direction import Direction
@@ -88,7 +89,7 @@ def _catalogue_order_by(sort: str | None, order: str):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={
-                "detail": f"Unknown sort field: {sort}",
+                "detail": i18n_key("api_errors", "invalid_sort_field", locale="ru").format(sort=sort),
                 "allowed_sort_fields": sorted(UNIVERSITY_SORT_FIELDS),
             },
         )
@@ -216,7 +217,7 @@ async def get_program_by_id(db: AsyncSession, program_id: uuid.UUID) -> Program:
     )
     program = result.scalar_one_or_none()
     if program is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Program not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "program_not_found", locale="ru"))
     return program
 
 
@@ -415,7 +416,7 @@ async def get_university_for_user(
     )
     university = result.scalar_one_or_none()
     if university is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="University not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "university_not_found", locale="ru"))
 
     favorite_ids = await favorite_university_ids(db, user_id) if user_id else set()
     is_favorite = university.id in favorite_ids
@@ -442,7 +443,7 @@ async def _require_university(db: AsyncSession, university_id: uuid.UUID) -> Uni
     result = await db.execute(select(University).where(University.id == university_id))
     university = result.scalar_one_or_none()
     if university is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="University not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "university_not_found", locale="ru"))
     return university
 
 

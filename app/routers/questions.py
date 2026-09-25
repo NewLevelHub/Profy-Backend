@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.database import get_db
 from app.dependencies import get_current_student_user
 from app.models.assessment import Assessment
@@ -28,10 +29,10 @@ async def get_questions(
     )
     row = row_result.one_or_none()
     if row is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
 
     _, owner_user_id = row
     if owner_user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
 
     return await question_service.get_all_questions(db, assessment_id=assessment_id)

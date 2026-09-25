@@ -3,6 +3,8 @@ from. Unlike report_narrative_context.py (student-facing, hand-curated
 "safe evidence" with no raw numbers), this hands the model whatever's
 actually on the report/new_tests objects — the reader is a professional,
 not a child, so there's no need to pre-abstract facts into safe phrases."""
+import hashlib
+
 from pydantic import BaseModel
 
 from app.schemas.new_tests import NewTestsSections
@@ -22,7 +24,9 @@ BLOCK_LABELS: dict[str, str] = {
     "aspiration_level": "Мотивация к успеху (Элерс)",
     "empathy_confidence": "Эмпатия и соц. уверенность",
     "team_role": "Командная роль (Белбин)",
-    "intelligence": "Интеллект (АСТУР)",
+    # PRO-427: percent of study-type tasks, not intelligence — the label is
+    # what the model reads first, so it must not invite IQ-style claims.
+    "intelligence": "Когнитивные навыки (учебные задания)",
 }
 
 
@@ -40,6 +44,11 @@ class CareerOption(BaseModel):
 
 class PsychAiAnalysisContext(BaseModel):
     student_name: str
+    # TODAY's profile age/grade — context for the other blocks. The АСТУР
+    # block carries its own age/grade at completion inside its facts; the
+    # two are never mixed (the attempt was taken at its own age).
+    current_age: int | None = None
+    current_grade: int | None = None
     blocks: list[BlockData]
     # The student's own already-ranked top professions (report.careers) —
     # the ONLY professions the model is allowed to recommend from. When
@@ -49,8 +58,25 @@ class PsychAiAnalysisContext(BaseModel):
     careers: list[CareerOption]
 
 
+def _intelligence_facts(section) -> dict:
+    """The frozen АСТУР snapshot as the model should read it: scored
+    percents and observed quick-instruction counts, protocol quality and the
+    age/grade at the time of the attempt. No run/version ids (noise for the
+    model) — only whether the attempt is a legacy one."""
+    return section.model_dump(
+        mode="json",
+        exclude={"run_id", "retake_in_progress", "bank_version", "scoring_version", "completed_at"},
+        exclude_none=True,
+    )
+
+
 def build_context(
-    report: ResultResponseV2, new_tests: NewTestsSections, *, student_name: str
+    report: ResultResponseV2,
+    new_tests: NewTestsSections,
+    *,
+    student_name: str,
+    current_age: int | None = None,
+    current_grade: int | None = None,
 ) -> PsychAiAnalysisContext:
     blocks: list[BlockData] = []
 
@@ -80,11 +106,24 @@ def build_context(
     if new_tests.team_role:
         add("team_role", new_tests.team_role.model_dump(exclude_none=True))
     if new_tests.intelligence:
-        add("intelligence", new_tests.intelligence.model_dump(exclude_none=True))
+        add("intelligence", _intelligence_facts(new_tests.intelligence))
 
     careers = [CareerOption(slug=c.slug, name=c.name, why=c.why) for c in report.careers]
 
-    return PsychAiAnalysisContext(student_name=student_name, blocks=blocks, careers=careers)
+    return PsychAiAnalysisContext(
+        student_name=student_name,
+        current_age=current_age,
+        current_grade=current_grade,
+        blocks=blocks,
+        careers=careers,
+    )
+
+
+def fingerprint(context: PsychAiAnalysisContext) -> str:
+    """Identity of everything the analysis was generated from. A cached
+    analysis is valid only for the exact same inputs — a new completed
+    АСТУР attempt, a new scoring version or a changed age all change it."""
+    return hashlib.sha256(context.model_dump_json().encode("utf-8")).hexdigest()
 
 
 def has_any_data(context: PsychAiAnalysisContext) -> bool:

@@ -1,51 +1,31 @@
-import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.assessment import Assessment
 from app.models.profile import Profile
 from app.models.user import User
 from app.schemas.astur import (
-    AsturContentResponse,
+    AsturAttemptResponse,
+    AsturStateResponse,
+    OpenAsturAttemptRequest,
+    StartAsturSubtestRequest,
     StartAsturSubtestResponse,
     SubmitAsturSubtestRequest,
     SubmitAsturSubtestResponse,
 )
-from app.services import assessment_shared, astur_service
+from app.services import assessment_shared
+from app.services.astur import runs
 
 router = APIRouter(tags=["astur"])
-logger = logging.getLogger(__name__)
 
 
-@router.get("/astur/content", response_model=AsturContentResponse)
-async def get_astur_content(
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-) -> AsturContentResponse:
-    """PRO-338 Ф3.6 prerequisite — static content, same for every user, no
-    `assessment_id` in the path (unlike start/submit): the frontend fetches
-    this once to render all 7 subtests, independent of which assessment
-    the eventual submits target. Mirrors Ф2.6's own `GET .../belbin/content`
-    gap-fix for the same reason: nothing exposed item text before this."""
-    try:
-        return AsturContentResponse(**await astur_service.build_content(db))
-    except (ValidationError, TypeError, AttributeError):
-        # An admin content override with a bad shape must not take the
-        # whole test down for every real test-taker — fall back to the
-        # bank's own content until the override is fixed.
-        logger.exception("Malformed ASTUR content override, falling back to bank default")
-        return AsturContentResponse(**await astur_service.build_content(db, ignore_override=True))
-
-
-async def _require_owned_assessment(
-    assessment_id: uuid.UUID, current_user: User, db: AsyncSession
-) -> None:
+async def _require_owned_assessment(assessment_id: uuid.UUID, current_user: User, db: AsyncSession) -> None:
     row = (
         await db.execute(
             select(Assessment.id, Profile.user_id)
@@ -55,12 +35,44 @@ async def _require_owned_assessment(
     ).one_or_none()
     if row is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru")
         )
     if row.user_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+            status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru")
         )
+
+
+@router.get("/{assessment_id}/astur/state", response_model=AsturStateResponse)
+async def get_astur_state(
+    assessment_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> AsturStateResponse:
+    """Not started / in progress (with submitted subtests, to resume) /
+    completed. The open attempt and the last completed one are reported
+    separately — an open retake never hides a finished result."""
+    await _require_owned_assessment(assessment_id, current_user, db)
+    return AsturStateResponse(**await runs.get_state(db, assessment_id))
+
+
+@router.post(
+    "/{assessment_id}/astur/attempt", response_model=AsturAttemptResponse, status_code=status.HTTP_201_CREATED
+)
+async def open_astur_attempt(
+    assessment_id: uuid.UUID,
+    data: OpenAsturAttemptRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> AsturAttemptResponse:
+    """Opens (or resumes) the attempt and returns its content in one step:
+    bank version and locale are pinned before any item is shown, so the
+    items on screen are always scored with their own keys. After a completed
+    attempt only `retake: true` («Пройти заново») opens a new one."""
+    await _require_owned_assessment(assessment_id, current_user, db)
+    return AsturAttemptResponse(
+        **await runs.open_attempt(db, assessment_id, user_id=current_user.id, retake=data.retake)
+    )
 
 
 @router.post(
@@ -71,16 +83,12 @@ async def _require_owned_assessment(
 async def start_astur_subtest(
     assessment_id: uuid.UUID,
     n: int,
+    data: StartAsturSubtestRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> StartAsturSubtestResponse:
-    """Опциональный блок вне основного потока (04-Фаза3-АСТУР.md, запуск
-    из кабинета психолога) — субтесты 1-2, 4-7: сервер фиксирует
-    started_at, не доверяя клиентскому таймеру полностью (Ф3.4)."""
     await _require_owned_assessment(assessment_id, current_user, db)
-    run, key, started_at = await astur_service.start_subtest(
-        assessment_id, n, user_id=current_user.id, db=db
-    )
+    run, key, started_at = await runs.start_subtest(db, assessment_id, n, run_id=data.run_id)
     return StartAsturSubtestResponse(run_id=run.id, subtest=key, started_at=started_at)
 
 
@@ -96,36 +104,32 @@ async def submit_astur_subtest(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SubmitAsturSubtestResponse:
-    """Per-subtest submit — предпочтён единому сабмиту, чтобы длинный тест
-    не терял прогресс при обрыве связи (Ф3.4). Продолжает текущую попытку
-    (та же строка `astur_runs`), пока она не завершена полностью; после
-    завершения следующий сабмит начинает новую попытку (append-only,
-    Ф3.3)."""
+    """Per-subtest submit into the attempt named by `run_id` (a dropped
+    connection never loses earlier subtests). The submit that completes the
+    attempt freezes its result. A payload for another or a finished attempt
+    answers 409 (`astur_run_mismatch` / `astur_attempt_completed`); an
+    identical retry of an accepted block is answered as a success."""
     await _require_owned_assessment(assessment_id, current_user, db)
-    run, key, actual_ms, over_limit_items = await astur_service.submit_subtest(
-        assessment_id, n, data.answers, data.elapsed_ms, user_id=current_user.id, db=db
+    run, key, actual_ms, over_limit_items, completed = await runs.submit_subtest(
+        db, assessment_id, n, data.answers,
+        run_id=data.run_id, elapsed_ms=data.elapsed_ms, client_timezone=data.client_timezone,
     )
 
-    # АСТУР is the last phase in the continuous flow (motivation -> Belbin ->
-    # АСТУР) — this is where `assessment.status` actually gets to flip to
-    # `completed`, since Likert/motivation were already done earlier but
-    # Belbin/АСТУР weren't yet (see assessment_shared.try_complete_assessment).
-    if astur_service.is_complete(run):
-        assessment_row = (
-            await db.execute(select(Assessment).where(Assessment.id == assessment_id))
-        ).scalar_one()
+    # АСТУР is the last phase of the continuous flow — its completion is
+    # where the assessment itself can flip to `completed`.
+    if completed:
+        assessment_row = (await db.execute(select(Assessment).where(Assessment.id == assessment_id))).scalar_one()
         likert_answered = await assessment_shared.likert_answered_count(assessment_id, db)
         likert_total = await assessment_shared.likert_total_questions(db)
-        likert_completed = likert_total > 0 and likert_answered >= likert_total
-        motivation_completed = await assessment_shared.motivation_completed(assessment_id, db)
         if await assessment_shared.try_complete_assessment(
             assessment_row,
-            likert_completed=likert_completed,
-            motivation_completed=motivation_completed,
+            likert_completed=likert_total > 0 and likert_answered >= likert_total,
+            motivation_completed=await assessment_shared.motivation_completed(assessment_id, db),
             db=db,
         ):
             await db.commit()
 
     return SubmitAsturSubtestResponse(
-        run_id=run.id, subtest=key, actual_ms=actual_ms, over_limit_items=over_limit_items
+        run_id=run.id, subtest=key, actual_ms=actual_ms,
+        over_limit_items=over_limit_items, run_completed=completed,
     )
