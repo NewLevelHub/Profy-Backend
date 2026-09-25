@@ -1,31 +1,141 @@
-"""АСТУР per-subtest submit contract (PRO-338 Ф3.4). One request per
-subtest (1-7), not one big payload like Belbin/psychoemotional — a long,
-multi-subtest test must not lose progress on a dropped connection."""
+"""АСТУР contracts: attempt lifecycle API (PRO-338 Ф3.4 → PRO-427) and the
+result snapshot frozen once when an attempt is finalized."""
 import uuid
-from typing import Any
+from datetime import datetime
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
+
+RunStatus = Literal["in_progress", "completed", "invalidated"]
+
+
+# ── Result snapshot ─────────────────────────────────────────────────────────
+
+
+class SubtestResult(BaseModel):
+    key: str
+    score: float
+    max_score: int
+    percent: float
+    item_count: int
+    answered: int
+    # Counted in `overall_percent` under this snapshot's scoring version.
+    in_overall: bool
+
+
+class SubjectAreaResult(BaseModel):
+    key: str
+    earned: float
+    item_count: int
+    answered: int
+    percent: float
+
+
+class SubjectProfileResult(BaseModel):
+    """Knowledge of subject-area terms (Осведомлённость + Обобщение), not
+    ability — see `MathReasoningResult` for number problems."""
+
+    status: Literal["leading", "mixed", "insufficient_data"]
+    leading: str | None = None
+    runner_up: str | None = None
+    gap_pp: float | None = None
+    threshold_pp: float | None = None
+    areas: list[SubjectAreaResult]
+
+
+class MathReasoningResult(BaseModel):
+    numeric_series_percent: float
+    physics_math_knowledge_percent: float | None = None
+    # knowledge − reasoning, in percentage points.
+    gap_pp: float | None = None
+    divergence: Literal["none", "knowledge_higher", "reasoning_higher"] | None = None
+    threshold_pp: float
+
+
+class QuickInstructionsResult(BaseModel):
+    """Observed accuracy on the timed commands. A command counts as correct
+    only when it is both right and answered within its time limit."""
+
+    status: Literal["ok", "insufficient_on_time"]
+    total: int
+    on_time: int
+    first_half_correct: int
+    first_half_total: int
+    second_half_correct: int
+    second_half_total: int
+    first_half_percent: float | None = None
+    second_half_percent: float | None = None
+    accuracy_change_pp: float | None = None
+    mean_ms: int | None = None
+    median_ms: int | None = None
+
+
+class ProtocolFlag(BaseModel):
+    code: str
+    subtest: str | None = None
+    count: int | None = None
+
+
+class ProtocolQuality(BaseModel):
+    ok: bool
+    flags: list[ProtocolFlag] = Field(default_factory=list)
+
+
+class AsturResultSnapshot(BaseModel):
+    scoring_version: str
+    bank_version: int
+    legacy: bool = False
+    completed_at: datetime
+    age_at_completion: int | None = None
+    grade_at_completion: int | None = None
+    subtests: list[SubtestResult]
+    overall_percent: float | None
+    subject_profile: SubjectProfileResult
+    math_reasoning: MathReasoningResult | None = None
+    quick_instructions: QuickInstructionsResult | None = None
+    protocol_quality: ProtocolQuality
+    # item_id -> earned points; feeds per-item analytics, never the report.
+    item_scores: dict[str, float] = Field(default_factory=dict)
+
+
+# ── Attempt lifecycle API ───────────────────────────────────────────────────
+
+
+class AsturRunSummary(BaseModel):
+    run_id: uuid.UUID
+    status: RunStatus
+    bank_version: int
+    created_at: datetime
+    completed_at: datetime | None = None
+    submitted_subtests: list[str]
+
+
+class AsturStateResponse(BaseModel):
+    """What the test-taker's UI needs to pick a screen: `not_started` (no
+    attempt ever), `in_progress` (an attempt is open — resume it), or
+    `completed` (a finished attempt exists and none is open)."""
+
+    status: Literal["not_started", "in_progress", "completed"]
+    active_run: AsturRunSummary | None = None
+    latest_completed_run: AsturRunSummary | None = None
 
 
 class StartAsturSubtestResponse(BaseModel):
     run_id: uuid.UUID
-    subtest: str  # scripts/astur_bank.py's SUBTESTS[i]["key"]
+    subtest: str
     started_at: str  # ISO 8601, server clock — the timer engine's anchor
 
 
 class SubmitAsturSubtestRequest(BaseModel):
-    # item index (1-based, as string, matching the content bank's own
-    # 1..item_count numbering) -> answer. Shape of the VALUE varies by
-    # subtest (a chosen option string, 2 words, open text, an ordered
-    # concept list, 2 numbers...) — validated structurally (right key set)
-    # by the service, interpreted for correctness only by Ф3.5's scoring,
-    # not here.
+    # 1-based item position (as string) -> answer. The value's shape depends
+    # on the subtest's scoring method; checked structurally here (right key
+    # set) and interpreted only by scoring.
     answers: dict[str, Any]
-    # Lability (subtest 3) ONLY: per-item client-reported elapsed time —
-    # see app/services/subtest_timer.py's docstring for why this one
-    # subtest is client-timed instead of server-timed. Required when
-    # subtest == 3, rejected (must be absent) otherwise.
+    # Quick instructions only: client-measured time per command (ms).
     elapsed_ms: dict[str, int] | None = None
+    # Quick instructions only: the respondent's IANA timezone, so a
+    # day-of-week command is checked against their local calendar day.
+    client_timezone: str | None = Field(default=None, max_length=64)
 
     model_config = {"extra": "forbid"}
 
@@ -33,38 +143,28 @@ class SubmitAsturSubtestRequest(BaseModel):
 class SubmitAsturSubtestResponse(BaseModel):
     run_id: uuid.UUID
     subtest: str
-    # None if the client never called .../start for this subtest — the
-    # answer is still accepted (Ф3.4: never lose progress over a missing
-    # timer), just without a server-verified duration.
+    # None if .../start was never called for this subtest.
     actual_ms: int | None
-    # Lability only: item indices whose reported elapsed_ms exceeded the
-    # configured per-item limit (app/data/astur_timer_config.json).
     over_limit_items: list[str] = Field(default_factory=list)
+    # True when this submit completed the attempt (result is now frozen).
+    run_completed: bool = False
 
 
 class AsturContentSubtest(BaseModel):
-    """One subtest's renderable content — item shape varies by `key`
-    (`scripts/astur_bank.py`'s own per-subtest item schema), so `items`
-    stays loosely typed here the same way `SubmitAsturSubtestRequest.
-    answers` does; the frontend switches on `key` to interpret it. Never
-    carries a correct-answer field (`answer`/`score_2`/`dynamic`/...) —
-    same non-disclosure principle as every other scored instrument in this
-    epic. `logical_schemas`' `concepts` list is shuffled per request (it's
-    the correct order in the content bank — sending it as-is would hand
-    the respondent the answer)."""
+    """One subtest's renderable content. Item shape varies by `key`; never
+    carries an answer key or a reviewer field."""
 
     number: int
     key: str
     name: str
     instruction: str
     item_count: int
-    scored: bool
-    # None only for `lability` — it uses `lability_item_limit_ms` (below)
-    # per command instead of one whole-subtest budget.
     time_limit_sec: int | None
     items: list[dict[str, Any]]
 
 
 class AsturContentResponse(BaseModel):
+    run_id: uuid.UUID | None
+    bank_version: int
     subtests: list[AsturContentSubtest]
     lability_item_limit_ms: int

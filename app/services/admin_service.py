@@ -546,12 +546,14 @@ async def get_assessment_detail(
     astur_runs = [
         AdminAsturRunResponse(
             id=run.id,
-            raw_score=run.raw_score,
-            spn_group=run.spn_group,
+            status=run.status.value,
+            bank_version_id=run.bank_version_id,
+            scoring_version=run.scoring_version,
             answers=run.answers,
             lability_answers=run.lability_answers,
-            subtest_scores=run.subtest_scores,
+            result_snapshot=run.result_snapshot,
             created_at=run.created_at,
+            completed_at=run.completed_at,
         ) for run in astur_runs_result.scalars().all()
     ]
 

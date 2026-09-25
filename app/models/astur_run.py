@@ -1,95 +1,82 @@
+import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 
 
+class AsturRunStatus(str, enum.Enum):
+    in_progress = "in_progress"
+    completed = "completed"
+    # Superseded or unusable protocol; kept for history, never interpreted.
+    invalidated = "invalidated"
+
+
 class AsturRun(Base):
-    """Одно завершённое прохождение АСТУР («Характеристики интеллекта»,
-    PRO-338 Ф3.3, epic Тикеты-новые-тесты/04-Фаза3-АСТУР.md). Мирроит
-    `BelbinRun`/`PsychoEmotionalRun`: **append-only история** —
-    `assessment_id` НЕ unique, повторное прохождение = новая строка,
-    предыдущие не перезаписываются. Секция отчёта (`IntelligenceSection`,
-    Ф3.7) читает последнюю строку по `assessment_id`.
+    """One АСТУР attempt (PRO-338 Ф3.3, lifecycle PRO-427).
 
-    Per-subtest submit (Ф3.4: `POST /assessment/{id}/astur/subtest/{n}`,
-    предпочтён единому сабмиту, чтобы длинный тест не терял прогресс при
-    обрыве связи) заполняет `answers`/`subtest_timings_ms` инкрементально,
-    один ключ за раз — оба JSONB-словаря `nullable=False, default=dict`
-    (тот же принцип, что у `PsychoEmotionalRun.checkin`/`metrics`: всегда
-    словарь, пустой до заполнения, а не NULL). Ключи субтестов — латиницей
-    (`scripts/astur_bank.py`'s `SUBTESTS[i]["key"]`: awareness/analogies/
-    classification/generalization/logical_schemas/numeric_series/
-    geometric_figures — 7 сейчас, форму каждого субтеста владеет
-    контент-банк, не эта модель. `geometric_figures` (Ф3.1) хранится и
-    сдаётся как любой другой субтест, но ещё не входит в `raw_score` —
-    см. docstring `scripts/astur_bank.py`.
+    Append-only history per assessment. An attempt is filled in per subtest
+    (`answers[subtest_key]`, `lability_answers` for quick instructions) and
+    finalized atomically by the submit that delivers its last required
+    block: status flips to `completed`, and the scored result is frozen into
+    `result_snapshot` together with `scoring_version`. A completed attempt is
+    never rescored, never extended; a new attempt exists only after an
+    explicit retake. At most one attempt per assessment is `in_progress`.
 
-    Лабильность (субтест 3) хранится СОВСЕМ отдельно от `answers` — у неё
-    другая механика (per-item таймер вместо per-subtest, см. Ф3.4) и не
-    входит в общий балл (Ф3.5): `lability_answers` — свои сырые ответы,
-    `lability_first_half_accuracy`/`lability_second_half_accuracy` — доля
-    верных в первой/второй половине 8 команд, `NULL` пока лабильность не
-    посчитана (считает Ф3.5, не сабмит-эндпоинт).
-
-    `raw_score`/`subtest_scores`/`spn_group`/`recommended_profile` — все
-    `NULL`/пустые до Ф3.5 (сырое прохождение сохраняет submit-эндпоинт,
-    скоринг — отдельный шаг, тот же принцип, что у
-    `PsychoEmotionalRun.metrics`/`validity_flag`). `subtest_scores` —
-    произвольный JSONB `{subtest_key: балл}` (форму владеет Ф3.5, не эта
-    модель — тот же принцип, что у `BelbinRun.role_totals` не перечисляет
-    роли жёстко). `recommended_profile` — JSONB `{"recommended": "...",
-    "shares": {"humanities": ..., "physics_math": ..., "natural_science":
-    ...}}` (форма тоже за Ф3.5) — считается только по меткам предметной
-    области субтестов «Осведомлённость»/«Обобщение» (`scripts/astur_bank.py`'s
-    `SUBJECTS`), остальные субтесты в него не входят."""
+    `bank_version_id` pins the bank version the respondent actually saw —
+    scoring reads keys from that version, never from the latest one."""
 
     __tablename__ = "astur_runs"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    __table_args__ = (
+        Index(
+            "uq_astur_runs_single_active",
+            "assessment_id",
+            unique=True,
+            postgresql_where=text("status = 'in_progress'"),
+        ),
     )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     assessment_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("assessments.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,  # NOT unique — append-only история прохождений
+        UUID(as_uuid=True), ForeignKey("assessments.id", ondelete="CASCADE"), nullable=False, index=True
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     locale: Mapped[str] = mapped_column(String, nullable=False, default="ru")
+    status: Mapped[AsturRunStatus] = mapped_column(
+        Enum(AsturRunStatus, name="astur_run_status_enum"),
+        nullable=False,
+        default=AsturRunStatus.in_progress,
+        server_default=AsturRunStatus.in_progress.value,
+    )
+    bank_version_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("astur_bank_versions.id", ondelete="RESTRICT"), nullable=False
+    )
 
-    # --- Сырые данные прохождения (наполняет Ф3.4, per-subtest) ---
+    # --- Raw protocol (never deleted, never rewritten after completion) ---
     answers: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     subtest_timings_ms: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    # {subtest_key: ISO timestamp} — server-side "started_at" per subtest
-    # (Ф3.4's timer engine, `app/services/subtest_timer.py`), written by
-    # `POST .../subtest/{n}/start`, read+cleared by the submit endpoint to
-    # compute `subtest_timings_ms[key]` from real elapsed server time, never
-    # from a client-reported duration. Added alongside Ф3.4, not Ф3.3 —
-    # that ticket's own scope was the raw-data/scoring split, not timing.
+    # {subtest_key: ISO timestamp} — server clock anchor of each subtest timer.
     subtest_started_at: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-
-    # --- Лабильность — отдельная механика и отдельный расчёт (Ф3.4/Ф3.5) ---
+    # {"1".."N": {"answer", "elapsed_ms", "over_limit", "answered_at"}}
     lability_answers: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    lability_first_half_accuracy: Mapped[float | None] = mapped_column(Float, nullable=True)
-    lability_second_half_accuracy: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # IANA timezone reported with the quick-instructions block.
+    client_timezone: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
-    # --- Вычисленные результаты (наполняет скоринг-сервис, Ф3.5) ---
-    raw_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    subtest_scores: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    # 1-5 — СПН-группа (доля освоения социально-психологического норматива),
-    # NULL пока не посчитана.
-    spn_group: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    recommended_profile: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    # --- Frozen at finalize ---
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    scoring_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # Hash of the bank version document the attempt was scored against.
+    content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # app.schemas.astur.AsturResultSnapshot
+    result_snapshot: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    # Same value as result_snapshot["protocol_quality"], kept queryable.
+    protocol_quality: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

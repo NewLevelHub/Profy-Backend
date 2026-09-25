@@ -58,7 +58,7 @@ from app.services import (
     psych_ai_analysis_service,
     report_service,
 )
-from app.services.psych_ai_analysis_context import build_context, has_any_data
+from app.services.psych_ai_analysis_context import build_context, has_any_data, fingerprint as context_fingerprint
 
 logger = logging.getLogger(__name__)
 
@@ -467,11 +467,13 @@ async def get_assigned_student_report(
     return PsychologistReportResponse(report=report, new_tests=new_tests, ai_analysis=ai_analysis)
 
 
-async def _student_profile_name(student_id: uuid.UUID, db: AsyncSession) -> str:
-    name = (
-        await db.execute(select(Profile.name).where(Profile.user_id == student_id))
-    ).scalar_one_or_none()
-    return name or "Ученик"
+async def _student_profile_facts(student_id: uuid.UUID, db: AsyncSession) -> tuple[str, int | None, int | None]:
+    row = (
+        await db.execute(select(Profile.name, Profile.age, Profile.grade).where(Profile.user_id == student_id))
+    ).one_or_none()
+    if row is None:
+        return "Ученик", None, None
+    return row.name or "Ученик", row.age, row.grade
 
 
 async def _get_or_generate_psych_ai_analysis(
@@ -480,11 +482,27 @@ async def _get_or_generate_psych_ai_analysis(
     """Lazily generates + caches the AI analysis on first view (product
     decision: auto-generate rather than requiring an explicit action first)
     — `analysis.psych_ai_analysis` is the cache, `force=True` (the
-    regenerate endpoint) bypasses it and overwrites. Returns `None` without
+    regenerate endpoint) bypasses it and overwrites. The cache is valid only
+    for the inputs it was built from (`psych_ai_analysis_fingerprint`,
+    PRO-427): a new completed АСТУР attempt, a new scoring version or a
+    changed age regenerates it, and pre-fingerprint caches (which may still
+    talk about СПН/fatigue) are always regenerated. Returns `None` without
     ever raising: an unavailable AI analysis must never break the rest of
     the report, same isolation principle as new_tests_report_service's
     per-section try/except."""
-    if not force and analysis.psych_ai_analysis:
+    try:
+        student_name, student_age, student_grade = await _student_profile_facts(student_id, db)
+        context = build_context(
+            report, new_tests,
+            student_name=student_name, student_age=student_age, student_grade=student_grade,
+        )
+        inputs_fingerprint = context_fingerprint(context)
+    except Exception:
+        logger.exception("Failed to build psych_ai_analysis context for assessment %s", analysis.assessment_id)
+        return None
+
+    cache_is_current = analysis.psych_ai_analysis_fingerprint == inputs_fingerprint
+    if not force and analysis.psych_ai_analysis and cache_is_current:
         try:
             return PsychAiAnalysisOutput.model_validate(analysis.psych_ai_analysis)
         except Exception:
@@ -495,14 +513,13 @@ async def _get_or_generate_psych_ai_analysis(
             # from an older schema version) shouldn't wedge this forever.
 
     try:
-        student_name = await _student_profile_name(student_id, db)
-        context = build_context(report, new_tests, student_name=student_name)
         if not has_any_data(context):
             return None
         output, is_ai_generated = await psych_ai_analysis_service.generate_psych_ai_analysis(context)
         if not is_ai_generated or output is None:
             return None
         analysis.psych_ai_analysis = output.model_dump(mode="json")
+        analysis.psych_ai_analysis_fingerprint = inputs_fingerprint
         await db.commit()
         return output
     except Exception:

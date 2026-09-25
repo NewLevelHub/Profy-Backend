@@ -40,6 +40,9 @@ for i in $(seq 1 60); do
 done
 
 docker compose exec api alembic upgrade head
+# PRO-427: freeze result snapshots of АСТУР attempts finished before snapshots
+# existed (idempotent — a no-op once done).
+docker compose exec api python scripts/backfill_astur_legacy_snapshots.py
 
 echo "Backend is ready: http://localhost/docs"
 
