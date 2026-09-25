@@ -41,6 +41,8 @@ class ScoringRules(BaseModel):
     # Own-name quick command: also treat Latin vowels as vowels (a name
     # typed in Latin). False in versions released before this fix.
     own_name_latin_vowels: bool = False
+    # Text matching: Unicode NFC + ё→е before comparing (Kazakh letters kept).
+    fold_text: bool = False
 
 
 @lru_cache

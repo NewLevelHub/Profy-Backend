@@ -44,10 +44,11 @@ class CareerOption(BaseModel):
 
 class PsychAiAnalysisContext(BaseModel):
     student_name: str
-    # Current profile age/grade — context for interpretation, never a norm
-    # (there are no age norms). None when the profile doesn't say.
-    student_age: int | None = None
-    student_grade: int | None = None
+    # TODAY's profile age/grade — context for the other blocks. The АСТУР
+    # block carries its own age/grade at completion inside its facts; the
+    # two are never mixed (the attempt was taken at its own age).
+    current_age: int | None = None
+    current_grade: int | None = None
     blocks: list[BlockData]
     # The student's own already-ranked top professions (report.careers) —
     # the ONLY professions the model is allowed to recommend from. When
@@ -74,8 +75,8 @@ def build_context(
     new_tests: NewTestsSections,
     *,
     student_name: str,
-    student_age: int | None = None,
-    student_grade: int | None = None,
+    current_age: int | None = None,
+    current_grade: int | None = None,
 ) -> PsychAiAnalysisContext:
     blocks: list[BlockData] = []
 
@@ -111,8 +112,8 @@ def build_context(
 
     return PsychAiAnalysisContext(
         student_name=student_name,
-        student_age=student_age,
-        student_grade=student_grade,
+        current_age=current_age,
+        current_grade=current_grade,
         blocks=blocks,
         careers=careers,
     )

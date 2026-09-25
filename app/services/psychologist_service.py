@@ -511,10 +511,10 @@ async def _get_or_generate_psych_ai_analysis(
     the report, same isolation principle as new_tests_report_service's
     per-section try/except."""
     try:
-        student_name, student_age, student_grade = await _student_profile_facts(student_id, db)
+        student_name, current_age, current_grade = await _student_profile_facts(student_id, db)
         context = build_context(
             report, new_tests,
-            student_name=student_name, student_age=student_age, student_grade=student_grade,
+            student_name=student_name, current_age=current_age, current_grade=current_grade,
         )
         inputs_fingerprint = context_fingerprint(context)
     except Exception:

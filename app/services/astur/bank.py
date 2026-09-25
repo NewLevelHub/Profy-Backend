@@ -13,7 +13,7 @@ round-trips through JSONB and the editor without a lossy model in between.
 """
 import hashlib
 import json
-from functools import cached_property
+from functools import cached_property, lru_cache
 from pathlib import Path
 from typing import Literal
 
@@ -58,13 +58,17 @@ PUBLIC_ITEM_FIELDS: dict[str, tuple[str, ...]] = {
     "generalization": ("pair",),
     "logical_schemas": ("concepts",),
     "numeric_series": ("sequence",),
-    # Stimulus is a static frontend image addressed by item position.
+    # Stimulus images are resolved per item_id from the stimulus manifest
+    # (see `stimulus_for`), never addressed by position.
     "geometric_figures": (),
 }
+# Subtests whose items are shown as images from the stimulus manifest.
+STIMULUS_KEYS = frozenset({"geometric_figures"})
 LOCALIZED_SCALAR_FIELDS = frozenset({"text", "third", "instruction"})
 LOCALIZED_LIST_FIELDS = frozenset({"options", "pair", "words", "concepts", "answer", "score_2", "score_1"})
 
 V1_PATH = Path(__file__).resolve().parents[2] / "data" / "astur_bank_v1.json"
+STIMULI_PATH = Path(__file__).resolve().parents[2] / "data" / "astur_stimuli.json"
 
 
 class BankSubtest(BaseModel):
@@ -136,3 +140,17 @@ def parse_bank(document: dict) -> AsturBank:
 
 def load_v1_document() -> dict:
     return json.loads(V1_PATH.read_text(encoding="utf-8"))
+
+
+@lru_cache
+def stimulus_manifest() -> dict[str, dict]:
+    """item_id -> {"target": {path, sha256}, "options": {letter: {path, sha256}}}
+    for every image-based item. Frontend files are immutable per path."""
+    return json.loads(STIMULI_PATH.read_text(encoding="utf-8"))["items"]
+
+
+def stimulus_for(item: dict) -> dict | None:
+    """The item's pinned stimulus if the version carries one, else the
+    manifest entry for its item_id — either way addressed by item_id, so
+    reordering items can never pair a picture with another item's key."""
+    return item.get("stimulus") or stimulus_manifest().get(item.get("item_id"))

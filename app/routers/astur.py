@@ -11,9 +11,10 @@ from app.models.assessment import Assessment
 from app.models.profile import Profile
 from app.models.user import User
 from app.schemas.astur import (
-    AsturContentResponse,
-    AsturRunSummary,
+    AsturAttemptResponse,
     AsturStateResponse,
+    OpenAsturAttemptRequest,
+    StartAsturSubtestRequest,
     StartAsturSubtestResponse,
     SubmitAsturSubtestRequest,
     SubmitAsturSubtestResponse,
@@ -56,30 +57,22 @@ async def get_astur_state(
 
 
 @router.post(
-    "/{assessment_id}/astur/runs", response_model=AsturRunSummary, status_code=status.HTTP_201_CREATED
+    "/{assessment_id}/astur/attempt", response_model=AsturAttemptResponse, status_code=status.HTTP_201_CREATED
 )
-async def start_astur_retake(
+async def open_astur_attempt(
     assessment_id: uuid.UUID,
+    data: OpenAsturAttemptRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> AsturRunSummary:
-    """Explicit «Пройти заново»: opens a new attempt on the latest published
-    bank version. Idempotent while an attempt is open."""
+) -> AsturAttemptResponse:
+    """Opens (or resumes) the attempt and returns its content in one step:
+    bank version and locale are pinned before any item is shown, so the
+    items on screen are always scored with their own keys. After a completed
+    attempt only `retake: true` («Пройти заново») opens a new one."""
     await _require_owned_assessment(assessment_id, current_user, db)
-    run = await runs.start_retake(db, assessment_id, user_id=current_user.id)
-    return AsturRunSummary(**await runs.run_summary(db, run))
-
-
-@router.get("/{assessment_id}/astur/content", response_model=AsturContentResponse)
-async def get_astur_content(
-    assessment_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-) -> AsturContentResponse:
-    """Content of the bank version the open attempt is pinned to, so the
-    questions shown are always the ones scored with their own keys."""
-    await _require_owned_assessment(assessment_id, current_user, db)
-    return AsturContentResponse(**await runs.content_for(db, assessment_id))
+    return AsturAttemptResponse(
+        **await runs.open_attempt(db, assessment_id, user_id=current_user.id, retake=data.retake)
+    )
 
 
 @router.post(
@@ -90,11 +83,12 @@ async def get_astur_content(
 async def start_astur_subtest(
     assessment_id: uuid.UUID,
     n: int,
+    data: StartAsturSubtestRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> StartAsturSubtestResponse:
     await _require_owned_assessment(assessment_id, current_user, db)
-    run, key, started_at = await runs.start_subtest(db, assessment_id, n, user_id=current_user.id)
+    run, key, started_at = await runs.start_subtest(db, assessment_id, n, run_id=data.run_id)
     return StartAsturSubtestResponse(run_id=run.id, subtest=key, started_at=started_at)
 
 
@@ -110,13 +104,15 @@ async def submit_astur_subtest(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SubmitAsturSubtestResponse:
-    """Per-subtest submit into the open attempt (a dropped connection never
-    loses earlier subtests). The submit that completes the attempt freezes
-    its result; a completed attempt answers 409 `astur_attempt_completed`."""
+    """Per-subtest submit into the attempt named by `run_id` (a dropped
+    connection never loses earlier subtests). The submit that completes the
+    attempt freezes its result. A payload for another or a finished attempt
+    answers 409 (`astur_run_mismatch` / `astur_attempt_completed`); an
+    identical retry of an accepted block is answered as a success."""
     await _require_owned_assessment(assessment_id, current_user, db)
     run, key, actual_ms, over_limit_items, completed = await runs.submit_subtest(
         db, assessment_id, n, data.answers,
-        elapsed_ms=data.elapsed_ms, client_timezone=data.client_timezone, user_id=current_user.id,
+        run_id=data.run_id, elapsed_ms=data.elapsed_ms, client_timezone=data.client_timezone,
     )
 
     # АСТУР is the last phase of the continuous flow — its completion is

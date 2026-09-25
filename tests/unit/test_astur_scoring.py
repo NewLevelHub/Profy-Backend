@@ -301,3 +301,42 @@ def test_own_name_command_scoring_depends_on_the_rules_version() -> None:
     v2 = score_attempt(BANK, attempt, get_rules("2")).quick_instructions
     assert v3.first_half_correct + v3.second_half_correct == 8
     assert v2.first_half_correct + v2.second_half_correct == 7
+
+
+def test_text_folding_matches_yo_and_e_from_v3_on() -> None:
+    from app.services.astur.scoring import normalize
+
+    assert normalize("Ёлка", fold=True) == normalize("елка", fold=True)
+    assert normalize("Ёлка") != normalize("елка")
+    assert normalize("әліпби", fold=True) == "әліпби"  # Kazakh letters untouched
+
+
+def test_explicit_skips_are_counted_apart_from_wrong_answers() -> None:
+    answers = content_answers(BANK)
+    answers["numeric_series"]["1"] = {"status": "skipped", "value": None}
+    answers["numeric_series"]["2"] = {"status": "answered", "value": [0, 0]}
+    answers["numeric_series"]["3"] = ""
+    snap = score_attempt(BANK, _attempt(answers), get_rules("3"))
+    series = _subtest(snap, "numeric_series")
+    assert (series.answered, series.skipped, series.unanswered) == (13, 1, 1)
+    assert snap.item_status["numeric_series-01"] == "skipped"
+    assert snap.item_status["numeric_series-02"] == "wrong"
+    assert snap.item_status["numeric_series-03"] == "unanswered"
+    assert snap.item_status["numeric_series-04"] == "correct"
+
+
+def test_repeat_exposure_is_context_not_a_protocol_fault() -> None:
+    from app.schemas.astur import AttemptHistory
+
+    history = AttemptHistory(attempt_number=2, repeat_exposure=True, days_since_previous=3)
+    snap = score_attempt(BANK, _attempt(content_answers(BANK), history=history), get_rules("3"))
+    assert snap.history == history
+    assert "repeat_exposure" in {f.code for f in snap.protocol_quality.flags}
+    assert snap.protocol_quality.ok is True
+
+
+def test_client_time_beyond_the_servers_view_is_flagged() -> None:
+    timings = {**{s.key: 60_000 for s in BANK.subtests if s.key != "lability"}, "lability": 2_000}
+    snap = score_attempt(BANK, _attempt(content_answers(BANK), subtest_timings_ms=timings), get_rules("3"))
+    assert snap.quick_instructions.client_total_ms == 8 * 1500
+    assert "quick_timing_mismatch" in {f.code for f in snap.protocol_quality.flags}

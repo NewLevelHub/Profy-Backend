@@ -6,6 +6,7 @@ item's wording/key is only comparable within one version) and can be cut by
 age band / grade at completion. Legacy attempts carry no age, so they only
 show up under the "unknown" band.
 """
+import re
 import statistics
 import uuid
 from collections import Counter, defaultdict
@@ -16,10 +17,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.astur_run import AsturRun, AsturRunStatus
 from app.services.astur.bank import QUICK_INSTRUCTIONS_KEY, BankSubtest
 from app.services.astur.bank_versions import get_published
-from app.services.astur.scoring import normalize
+from app.services.astur.scoring import normalize, unwrap
 
 AGE_BANDS = ("under_14", "14_15", "16_17", "18_plus", "unknown")
 _TOP_UNRECOGNIZED = 10
+MIN_UNRECOGNIZED_COUNT = 3
+MAX_UNRECOGNIZED_LENGTH = 80
+_EMAIL_RE = re.compile(r"\S+@\S+")
+_DIGITS_RE = re.compile(r"\d{4,}")
 
 
 def age_band(age: int | None) -> str:
@@ -49,44 +54,55 @@ def _option_index(item: dict, answer: object, field: str = "options") -> int | N
     return None
 
 
+def _safe_text(text: str) -> str:
+    """Unrecognized answers are shown to admins: trimmed, with anything
+    that looks like contact data or an ID masked."""
+    text = _EMAIL_RE.sub("[скрыто]", text)
+    text = _DIGITS_RE.sub("[скрыто]", text)
+    return text[:MAX_UNRECOGNIZED_LENGTH]
+
+
 def _content_item_stats(subtest: BankSubtest, runs: list[AsturRun]) -> list[dict]:
     items = []
     for position, item in enumerate(subtest.items, start=1):
         key = str(position)
-        answered = skipped = 0
+        counts: Counter[str] = Counter()
         earned: list[float] = []
         options: Counter[int] = Counter()
-        unrecognized: Counter[str] = Counter()
+        unrecognized: Counter[tuple[str, str]] = Counter()
         max_points = subtest.item_max(item)
         for run in runs:
-            value = (run.answers.get(subtest.key) or {}).get(key)
+            status, value = unwrap((run.answers.get(subtest.key) or {}).get(key))
+            counts[status] += 1
             score = (run.result_snapshot or {}).get("item_scores", {}).get(item["item_id"])
-            blank = value is None or (isinstance(value, (str, list)) and not value)
-            if blank:
-                skipped += 1
-            else:
-                answered += 1
-            if score is not None:
+            if score is not None and status == "answered":
                 earned.append(score / max_points)
+            if status != "answered":
+                continue
             if subtest.scoring_method == "single_choice":
                 index = _option_index(item, value)
                 if index is not None:
                     options[index] += 1
-            elif subtest.scoring_method == "open_text_tiers" and not blank and score == 0:
-                unrecognized[normalize(value)] += 1
+            elif subtest.scoring_method == "open_text_tiers" and score == 0:
+                unrecognized[(run.locale or "ru", normalize(value))] += 1
         items.append({
             "item_id": item["item_id"],
             "position": position,
             "attempts": len(runs),
-            "answered": answered,
-            "skipped": skipped,
+            "answered": counts["answered"],
+            "skipped": counts["skipped"],
+            "unanswered": counts["unanswered"],
             "mean_score_share": round(statistics.fmean(earned), 3) if earned else None,
             "option_counts": [
                 {"index": i, "label": label, "count": options[i]}
                 for i, label in enumerate((item.get("options") or {}).get("ru", []))
             ],
+            # Only phrasings several respondents used: single answers are
+            # noise and may carry something personal.
             "unrecognized_answers": [
-                {"text": text, "count": count} for text, count in unrecognized.most_common(_TOP_UNRECOGNIZED)
+                {"text": _safe_text(text), "locale": locale, "count": count}
+                for (locale, text), count in unrecognized.most_common(_TOP_UNRECOGNIZED)
+                if count >= MIN_UNRECOGNIZED_COUNT
             ],
             "median_ms": None,
         })
@@ -97,7 +113,13 @@ def _quick_item_stats(subtest: BankSubtest, runs: list[AsturRun]) -> list[dict]:
     items = []
     for position, item in enumerate(subtest.items, start=1):
         key = str(position)
-        entries = [run.lability_answers.get(key) for run in runs if run.lability_answers.get(key)]
+        entries = [
+            run.lability_answers.get(key)
+            for run in runs
+            if run.lability_answers.get(key) and run.lability_answers[key].get("status") != "skipped"
+            and run.lability_answers[key].get("answer") not in (None, "")
+        ]
+        skipped = sum(1 for run in runs if (run.lability_answers.get(key) or {}).get("status") == "skipped")
         options: Counter[int] = Counter(
             i for i in (_option_index(item, e.get("answer")) for e in entries) if i is not None
         )
@@ -107,7 +129,8 @@ def _quick_item_stats(subtest: BankSubtest, runs: list[AsturRun]) -> list[dict]:
             "position": position,
             "attempts": len(runs),
             "answered": len(entries),
-            "skipped": len(runs) - len(entries),
+            "skipped": skipped,
+            "unanswered": len(runs) - len(entries) - skipped,
             "mean_score_share": None,
             "on_time_share": round(on_time / len(entries), 3) if entries else None,
             "option_counts": [

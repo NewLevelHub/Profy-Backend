@@ -7,6 +7,10 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 RunStatus = Literal["in_progress", "completed", "invalidated"]
+# Per-item outcome kept in the snapshot: `unanswered` = no explicit answer
+# or skip was recorded (legacy protocols, blank values), `skipped` = the
+# respondent explicitly skipped the item.
+ItemStatus = Literal["correct", "partial", "wrong", "skipped", "unanswered"]
 
 
 # ── Result snapshot ─────────────────────────────────────────────────────────
@@ -19,6 +23,8 @@ class SubtestResult(BaseModel):
     percent: float
     item_count: int
     answered: int
+    skipped: int = 0
+    unanswered: int = 0
     # Counted in `overall_percent` under this snapshot's scoring version.
     in_overall: bool
 
@@ -44,9 +50,11 @@ class SubjectProfileResult(BaseModel):
 
 
 class MathReasoningResult(BaseModel):
+    """Number-series pattern recognition next to physics/math knowledge."""
+
     numeric_series_percent: float
     physics_math_knowledge_percent: float | None = None
-    # knowledge − reasoning, in percentage points.
+    # knowledge − pattern recognition, in percentage points.
     gap_pp: float | None = None
     divergence: Literal["none", "knowledge_higher", "reasoning_higher"] | None = None
     threshold_pp: float
@@ -59,6 +67,7 @@ class QuickInstructionsResult(BaseModel):
     status: Literal["ok", "insufficient_on_time"]
     total: int
     on_time: int
+    skipped: int = 0
     first_half_correct: int
     first_half_total: int
     second_half_correct: int
@@ -68,6 +77,11 @@ class QuickInstructionsResult(BaseModel):
     accuracy_change_pp: float | None = None
     mean_ms: int | None = None
     median_ms: int | None = None
+    # Server-observed duration of the whole block vs the sum of the
+    # client-reported per-command times (client timing is an observation,
+    # not a protected measurement).
+    server_block_ms: int | None = None
+    client_total_ms: int | None = None
 
 
 class ProtocolFlag(BaseModel):
@@ -81,6 +95,16 @@ class ProtocolQuality(BaseModel):
     flags: list[ProtocolFlag] = Field(default_factory=list)
 
 
+class AttemptHistory(BaseModel):
+    """Where this attempt sits among the respondent's АСТУР attempts. A
+    repeat exposure to the same form means a changed score may come from
+    familiarity with the items, not from a changed skill."""
+
+    attempt_number: int = 1
+    repeat_exposure: bool = False
+    days_since_previous: int | None = None
+
+
 class AsturResultSnapshot(BaseModel):
     scoring_version: str
     bank_version: int
@@ -88,14 +112,16 @@ class AsturResultSnapshot(BaseModel):
     completed_at: datetime
     age_at_completion: int | None = None
     grade_at_completion: int | None = None
+    history: AttemptHistory = Field(default_factory=AttemptHistory)
     subtests: list[SubtestResult]
     overall_percent: float | None
     subject_profile: SubjectProfileResult
     math_reasoning: MathReasoningResult | None = None
     quick_instructions: QuickInstructionsResult | None = None
     protocol_quality: ProtocolQuality
-    # item_id -> earned points; feeds per-item analytics, never the report.
+    # item_id -> earned points / outcome; feed per-item analytics, never the report.
     item_scores: dict[str, float] = Field(default_factory=dict)
+    item_status: dict[str, ItemStatus] = Field(default_factory=dict)
 
 
 # ── Attempt lifecycle API ───────────────────────────────────────────────────
@@ -105,6 +131,8 @@ class AsturRunSummary(BaseModel):
     run_id: uuid.UUID
     status: RunStatus
     bank_version: int
+    # Language the attempt's content and keys are pinned to.
+    locale: str
     created_at: datetime
     completed_at: datetime | None = None
     submitted_subtests: list[str]
@@ -120,34 +148,12 @@ class AsturStateResponse(BaseModel):
     latest_completed_run: AsturRunSummary | None = None
 
 
-class StartAsturSubtestResponse(BaseModel):
-    run_id: uuid.UUID
-    subtest: str
-    started_at: str  # ISO 8601, server clock — the timer engine's anchor
-
-
-class SubmitAsturSubtestRequest(BaseModel):
-    # 1-based item position (as string) -> answer. The value's shape depends
-    # on the subtest's scoring method; checked structurally here (right key
-    # set) and interpreted only by scoring.
-    answers: dict[str, Any]
-    # Quick instructions only: client-measured time per command (ms).
-    elapsed_ms: dict[str, int] | None = None
-    # Quick instructions only: the respondent's IANA timezone, so a
-    # day-of-week command is checked against their local calendar day.
-    client_timezone: str | None = Field(default=None, max_length=64)
+class OpenAsturAttemptRequest(BaseModel):
+    # True = explicit «Пройти заново» after a completed attempt. Without it,
+    # a completed attempt is never silently followed by a new one.
+    retake: bool = False
 
     model_config = {"extra": "forbid"}
-
-
-class SubmitAsturSubtestResponse(BaseModel):
-    run_id: uuid.UUID
-    subtest: str
-    # None if .../start was never called for this subtest.
-    actual_ms: int | None
-    over_limit_items: list[str] = Field(default_factory=list)
-    # True when this submit completed the attempt (result is now frozen).
-    run_completed: bool = False
 
 
 class AsturContentSubtest(BaseModel):
@@ -164,7 +170,64 @@ class AsturContentSubtest(BaseModel):
 
 
 class AsturContentResponse(BaseModel):
-    run_id: uuid.UUID | None
+    run_id: uuid.UUID
     bank_version: int
+    locale: str
     subtests: list[AsturContentSubtest]
     lability_item_limit_ms: int
+
+
+class AsturAttemptResponse(BaseModel):
+    """The open attempt and its content — returned together so the items
+    shown are always the ones of the attempt's own bank version and locale."""
+
+    run: AsturRunSummary
+    content: AsturContentResponse
+
+
+class StartAsturSubtestRequest(BaseModel):
+    run_id: uuid.UUID
+
+    model_config = {"extra": "forbid"}
+
+
+class StartAsturSubtestResponse(BaseModel):
+    run_id: uuid.UUID
+    subtest: str
+    started_at: str  # ISO 8601, server clock — the timer engine's anchor
+
+
+class AsturItemAnswer(BaseModel):
+    """One item's outcome: an explicit answer or an explicit skip. A blank
+    value is never an answer — skipping is its own, visible choice."""
+
+    status: Literal["answered", "skipped"]
+    value: Any = None
+
+    model_config = {"extra": "forbid"}
+
+
+class SubmitAsturSubtestRequest(BaseModel):
+    # The attempt the respondent is actually answering — a submit meant for
+    # another (stale or finished) attempt is rejected, never re-targeted.
+    run_id: uuid.UUID
+    # 1-based item position (as string) -> answer or skip.
+    answers: dict[str, AsturItemAnswer]
+    # Quick instructions only: client-measured time per command (ms).
+    elapsed_ms: dict[str, int] | None = None
+    # Quick instructions only: the respondent's IANA timezone, so a
+    # day-of-week command is checked against their local calendar day.
+    client_timezone: str | None = Field(default=None, max_length=64)
+
+    model_config = {"extra": "forbid"}
+
+
+class SubmitAsturSubtestResponse(BaseModel):
+    run_id: uuid.UUID
+    subtest: str
+    # None if .../start was never called for this subtest.
+    actual_ms: int | None
+    over_limit_items: list[str] = Field(default_factory=list)
+    # True when the attempt is completed (this submit, or an identical
+    # earlier one, froze the result).
+    run_completed: bool = False

@@ -13,15 +13,28 @@ Rules:
 - the key exists among the options, and points at the same position in RU
   and KK;
 - open-answer synonym tiers are non-empty and never overlap;
-- item counts match the assets or halves a subtest depends on;
+- image-based items resolve their stimulus by item_id from the stimulus
+  manifest; a pinned stimulus must match it (paths and checksums), and the
+  answer options must be exactly the stimulus' option letters;
+- quick instructions have an even number of commands (two halves);
 - against the previous published version (`base`), any item whose options
-  or key changed needs an explicit key confirmation.
+  or key changed needs an explicit key confirmation;
+- `require_review` (every new version): each item has a difficulty, has
+  been reviewed by a second team member, and meaning-based items explain
+  their key. The pre-PRO-427 version 1 predates these fields.
 """
 from dataclasses import asdict, dataclass
 
 from pydantic import ValidationError
 
-from app.services.astur.bank import METHOD_BY_KEY, SUBJECT_TAGGED_KEYS, AsturBank, parse_bank
+from app.services.astur.bank import (
+    METHOD_BY_KEY,
+    STIMULUS_KEYS,
+    SUBJECT_TAGGED_KEYS,
+    AsturBank,
+    parse_bank,
+    stimulus_manifest,
+)
 
 LOCALES = ("ru", "kk")
 DIFFICULTIES = {"easy", "medium", "hard"}
@@ -29,9 +42,9 @@ REVIEW_STATUSES = {"unreviewed", "reviewed"}
 LABILITY_DYNAMIC_KINDS = {"day_of_week", "own_name"}
 LABILITY_ANSWER_FORMATS = {"digit", "shape", "symbol", "word"}
 
-# Stimuli that live as static frontend assets, addressed by item position —
-# a version cannot add items the frontend has no picture for.
-ASSET_BACKED_ITEM_COUNTS = {"geometric_figures": 5}
+# Items whose correct answer rests on meaning, so a reviewer needs the
+# reasoning behind the key to check it isn't ambiguous.
+KEY_EXPLANATION_REQUIRED_KEYS = frozenset({"analogies", "classification", "generalization"})
 
 # Fields that define what the correct answer is. Changing any of them on an
 # existing item means the key has to be re-confirmed by whoever publishes.
@@ -238,8 +251,39 @@ def _check_key_confirmations(
                       subtest=subtest.key, item_id=item["item_id"], field=changed[0])
 
 
+def _check_stimulus(c: _Collector, item: dict, *, subtest: str, item_id: str) -> None:
+    known = stimulus_manifest().get(item_id)
+    if known is None:
+        c.add("unknown_stimulus", "Для задания нет изображений в манифесте стимулов", subtest=subtest, item_id=item_id)
+        return
+    pinned = item.get("stimulus")
+    if pinned is not None and pinned != known:
+        c.add("stimulus_mismatch", "Изображения задания не совпадают с манифестом (путь или контрольная сумма)",
+              subtest=subtest, item_id=item_id, field="stimulus")
+    letters = sorted(known["options"])
+    options = item.get("options") or {}
+    if any(sorted(options.get(loc) or []) != letters for loc in LOCALES):
+        c.add("stimulus_mismatch", "Варианты ответа должны совпадать с буквами изображений",
+              subtest=subtest, item_id=item_id, field="options")
+
+
+def _check_review(c: _Collector, item: dict, *, subtest: str, item_id: str) -> None:
+    if item.get("difficulty") not in DIFFICULTIES:
+        c.add("review_required", "Укажите уровень сложности", subtest=subtest, item_id=item_id, field="difficulty")
+    if item.get("review_status") != "reviewed":
+        c.add("review_required", "Задание не проверено вторым участником команды",
+              subtest=subtest, item_id=item_id, field="review_status")
+    explanation = (item.get("key_explanation") or {}).get("ru") or ""
+    if subtest in KEY_EXPLANATION_REQUIRED_KEYS and not explanation.strip():
+        c.add("review_required", "Добавьте объяснение ключа", subtest=subtest, item_id=item_id, field="key_explanation")
+
+
 def validate_bank(
-    document: dict, *, base: AsturBank | None = None, confirmed_item_ids: set[str] | None = None
+    document: dict,
+    *,
+    base: AsturBank | None = None,
+    confirmed_item_ids: set[str] | None = None,
+    require_review: bool = True,
 ) -> list[BankIssue]:
     c = _Collector()
     try:
@@ -281,9 +325,6 @@ def validate_bank(
             c.add("invalid_timer", "У субтеста должен быть положительный таймер", subtest=subtest.key)
         if not subtest.items:
             c.add("wrong_item_count", "В субтесте нет заданий", subtest=subtest.key)
-        expected_count = ASSET_BACKED_ITEM_COUNTS.get(subtest.key)
-        if expected_count is not None and len(subtest.items) != expected_count:
-            c.add("wrong_item_count", f"Задания субтеста привязаны к {expected_count} изображениям", subtest=subtest.key)
 
         for position, item in enumerate(subtest.items, start=1):
             item_id = item.get("item_id")
@@ -300,6 +341,10 @@ def validate_bank(
                 else:
                     _localized_list(c, item, field, subtest=subtest.key, item_id=item_id, exact_len=2)
             _ITEM_CHECKS[subtest.scoring_method](c, item, subtest=subtest.key, item_id=item_id)
+            if subtest.key in STIMULUS_KEYS:
+                _check_stimulus(c, item, subtest=subtest.key, item_id=item_id)
+            if require_review:
+                _check_review(c, item, subtest=subtest.key, item_id=item_id)
 
     if base is not None:
         _check_key_confirmations(c, bank, base, confirmed_item_ids or set())

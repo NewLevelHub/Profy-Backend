@@ -15,9 +15,10 @@ field from a JSONB container.
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.schemas.astur import (
+    AttemptHistory,
     MathReasoningResult,
     ProtocolQuality,
     QuickInstructionsResult,
@@ -191,6 +192,7 @@ class IntelligenceSection(BaseModel):
     completed_at: datetime
     age_at_completion: int | None = None
     grade_at_completion: int | None = None
+    history: AttemptHistory = Field(default_factory=AttemptHistory)
     subtests: list[SubtestResult]
     overall_percent: float | None
     subject_profile: SubjectProfileResult

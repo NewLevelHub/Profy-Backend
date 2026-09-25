@@ -1,5 +1,7 @@
 """PRO-427 — the АСТУР bank document and its pre-publish validation."""
-from app.services.astur.bank import content_hash, load_v1_document, parse_bank
+import copy
+
+from app.services.astur.bank import content_hash, load_v1_document, parse_bank, stimulus_manifest
 from app.services.astur.bank_validation import validate_bank
 from tests.astur_fixtures import v1_document
 
@@ -9,7 +11,20 @@ from tests.astur_fixtures import v1_document
 V1_CONTENT_HASH = "fe7e5127744300935ccab117038032766cd0ac01c25558e2dfa91fa8ca0122e4"
 
 
+def reviewed(document: dict) -> dict:
+    """A copy of `document` that satisfies the review requirements every new
+    version must meet (difficulty, second-reviewer check, key explanation)."""
+    doc = copy.deepcopy(document)
+    for subtest in doc["subtests"]:
+        for item in subtest["items"]:
+            item["difficulty"] = item.get("difficulty") or "medium"
+            item["review_status"] = "reviewed"
+            item["key_explanation"] = item.get("key_explanation") or {"ru": "Проверено."}
+    return doc
+
+
 def _codes(document: dict, **kwargs) -> set[str]:
+    kwargs.setdefault("require_review", False)
     return {issue.code for issue in validate_bank(document, **kwargs)}
 
 
@@ -21,8 +36,24 @@ def test_v1_document_is_frozen() -> None:
     assert content_hash(load_v1_document()) == V1_CONTENT_HASH
 
 
-def test_v1_passes_validation() -> None:
-    assert validate_bank(load_v1_document()) == []
+def test_v1_passes_structural_validation() -> None:
+    assert validate_bank(load_v1_document(), require_review=False) == []
+
+
+def test_a_new_version_must_be_reviewed_before_publishing() -> None:
+    issues = validate_bank(load_v1_document())
+    assert {i.code for i in issues} == {"review_required"}
+    fields = {i.field for i in issues}
+    assert fields == {"difficulty", "review_status", "key_explanation"}
+    assert validate_bank(reviewed(load_v1_document())) == []
+
+
+def test_key_explanation_is_required_only_for_meaning_based_items() -> None:
+    doc = reviewed(load_v1_document())
+    _item(doc, "awareness")["key_explanation"] = None
+    assert validate_bank(doc) == []
+    _item(doc, "analogies")["key_explanation"] = {"ru": " "}
+    assert {i.field for i in validate_bank(doc)} == {"key_explanation"}
 
 
 def test_v1_shape_and_maximums_are_derived_from_the_bank() -> None:
@@ -79,7 +110,7 @@ def test_open_answer_synonym_tiers_must_not_be_empty_or_overlap() -> None:
 def test_synonym_tiers_may_differ_in_length_between_languages() -> None:
     doc = v1_document()
     _item(doc, "generalization")["score_1"]["kk"].append("тағы бір синоним")
-    assert validate_bank(doc) == []
+    assert validate_bank(doc, require_review=False) == []
 
 
 def test_duplicate_item_id_is_rejected() -> None:
@@ -88,16 +119,37 @@ def test_duplicate_item_id_is_rejected() -> None:
     assert "duplicate_item_id" in _codes(doc)
 
 
-def test_asset_backed_and_paired_subtests_keep_their_item_counts() -> None:
+def test_quick_instructions_keep_an_even_number_of_commands() -> None:
     doc = v1_document()
-    figures = next(s for s in doc["subtests"] if s["key"] == "geometric_figures")
-    figures["items"].pop()
+    next(s for s in doc["subtests"] if s["key"] == "lability")["items"].pop()
     assert "wrong_item_count" in _codes(doc)
 
+
+def test_figure_items_resolve_their_images_by_item_id() -> None:
     doc = v1_document()
-    quick = next(s for s in doc["subtests"] if s["key"] == "lability")
-    quick["items"].pop()
-    assert "wrong_item_count" in _codes(doc)
+    figures = next(s for s in doc["subtests"] if s["key"] == "geometric_figures")["items"]
+    figures.reverse()  # reordering is safe: pictures follow item_id
+    assert _codes(doc) == set()
+
+    figures[0]["item_id"] = "geometric_figures-99"
+    assert "unknown_stimulus" in _codes(doc)
+
+
+def test_pinned_stimulus_must_match_the_manifest() -> None:
+    doc = v1_document()
+    item = _item(doc, "geometric_figures")
+    item["stimulus"] = copy.deepcopy(stimulus_manifest()[item["item_id"]])
+    assert _codes(doc) == set()
+    item["stimulus"]["target"]["sha256"] = "0" * 64
+    assert "stimulus_mismatch" in _codes(doc)
+
+
+def test_figure_options_must_be_the_image_letters() -> None:
+    doc = v1_document()
+    item = _item(doc, "geometric_figures")
+    item["options"] = {"ru": ["А", "Б", "В", "Д"], "kk": ["А", "Б", "В", "Д"]}
+    item["answer"] = {"ru": "А", "kk": "А"}
+    assert "stimulus_mismatch" in _codes(doc)
 
 
 def test_subtest_cannot_change_its_scoring_method() -> None:
@@ -114,14 +166,14 @@ def test_changed_key_needs_confirmation_against_the_base_version() -> None:
     item["options"]["kk"][0] = "жаңа нұсқа"
 
     assert _codes(doc, base=base) == {"key_confirmation_required"}
-    assert validate_bank(doc, base=base, confirmed_item_ids={item["item_id"]}) == []
+    assert _codes(doc, base=base, confirmed_item_ids={item["item_id"]}) == set()
 
 
 def test_wording_only_change_needs_no_key_confirmation() -> None:
     base = parse_bank(load_v1_document())
     doc = v1_document()
     _item(doc, "awareness")["text"]["ru"] = "Новая формулировка вопроса …?"
-    assert validate_bank(doc, base=base) == []
+    assert _codes(doc, base=base) == set()
 
 
 def test_malformed_document_reports_instead_of_raising() -> None:

@@ -53,6 +53,13 @@ class PublishAsturDraftRequest(BaseModel):
     confirmed_item_ids: list[str] = Field(default_factory=list)
 
 
+class AddAsturSynonymRequest(BaseModel):
+    item_id: str
+    tier: Literal["score_2", "score_1"]
+    locale: Literal["ru", "kk"]
+    text: str = Field(min_length=1, max_length=200)
+
+
 class AsturBankDiffEntry(BaseModel):
     kind: Literal["added", "removed", "changed", "subtest_changed", "bank_changed"]
     subtest: str | None

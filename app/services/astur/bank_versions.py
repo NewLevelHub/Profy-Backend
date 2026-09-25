@@ -4,6 +4,7 @@ Published versions are immutable, so a parsed `AsturBank` is cached per
 version id for the life of the process — scoring and content never re-parse
 the same version twice and never see a half-edited document.
 """
+import copy
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -188,6 +189,35 @@ async def publish(
     await db.commit()
     await db.refresh(row)
     return row
+
+
+async def add_synonym(
+    db: AsyncSession, *, admin_id: uuid.UUID, item_id: str, tier: str, locale: str, text: str
+) -> AsturBankVersion:
+    """Adds an accepted phrasing of an open answer to the open draft
+    (branching one if needed). Only future versions change — a published
+    version and the snapshots scored with it stay as they are."""
+    phrase = " ".join(text.split())
+    if not phrase:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Empty phrasing")
+    draft = await create_draft(db, admin_id=admin_id)
+    draft = await get_version(db, draft.id, for_update=True)
+    document = copy.deepcopy(draft.document)
+    item = next(
+        (i for s in document["subtests"] if s["scoring_method"] == "open_text_tiers" for i in s["items"]
+         if i.get("item_id") == item_id),
+        None,
+    )
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No open-answer item with this item_id")
+    existing = {p.casefold() for t in ("score_2", "score_1") for p in item[t].get(locale, [])}
+    if phrase.casefold() in existing:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This phrasing is already in the dictionary")
+    item[tier] = {**item[tier], locale: [*item[tier].get(locale, []), phrase]}
+    draft.document = document
+    await db.commit()
+    await db.refresh(draft)
+    return draft
 
 
 # ── diff ────────────────────────────────────────────────────────────────────

@@ -10,27 +10,33 @@ Result model:
   instructions are never part of it;
 - knowledge profile over subject-tagged items → `leading | mixed |
   insufficient_data` with a leader threshold that scales with area size;
-- numeric series shown next to physics/math knowledge, with the gap;
+- number-series pattern recognition shown next to physics/math knowledge;
 - quick instructions → observed accuracy by halves, on-time only.
 
-Answer-value contract per scoring method (validated structurally at submit,
-interpreted only here; malformed/missing values score 0, never raise):
+Stored item answers are `{"status": "answered" | "skipped", "value": ...}`.
+Attempts from before PRO-427 §11 stored the bare value; a bare blank value
+is `unanswered` (no explicit choice was recorded), never a zero answer.
+
+Answer-value contract per scoring method (validated at submit, interpreted
+only here; malformed values score 0, never raise):
   single_choice    -> the chosen option text (str)
   pick_pair        -> exactly 2 words (list[str])
   open_text_tiers  -> free text (str)
   chain_links      -> the reordered concept list (list[str])
-  number_pair      -> exactly 2 numbers (list[int|str])
-  quick_instruction-> {"answer": str, "elapsed_ms": int, "over_limit": bool,
-                       "answered_at": ISO str | absent on legacy attempts}
+  number_pair      -> exactly 2 numbers (list[int])
+  quick_instruction-> stored per command as {"status", "answer", "elapsed_ms",
+                       "over_limit", "answered_at"}
 """
 import re
 import statistics
-from dataclasses import dataclass
+import unicodedata
+from dataclasses import dataclass, field
 from datetime import datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from app.schemas.astur import (
     AsturResultSnapshot,
+    AttemptHistory,
     MathReasoningResult,
     ProtocolFlag,
     ProtocolQuality,
@@ -50,6 +56,9 @@ from app.services.astur.scoring_rules import ScoringRules
 
 DEFAULT_TIMEZONE = "Asia/Almaty"
 PHYSICS_MATH_SUBJECT = "physics_math"
+# Tolerated excess of client-reported quick-command time over the server's
+# own view of the block (network jitter, clock granularity).
+QUICK_TIMING_TOLERANCE_MS = 3000
 
 
 @dataclass(frozen=True)
@@ -65,6 +74,29 @@ class AttemptInput:
     age: int | None = None
     grade: int | None = None
     legacy: bool = False
+    history: AttemptHistory = field(default_factory=AttemptHistory)
+
+
+# ── answers ─────────────────────────────────────────────────────────────────
+
+
+def _is_blank(value: object) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return not value.strip()
+    if isinstance(value, list):
+        return not value or all(_is_blank(v) for v in value)
+    return False
+
+
+def unwrap(raw: object) -> tuple[str, object]:
+    """-> (status, value) with status answered | skipped | unanswered."""
+    if isinstance(raw, dict) and raw.get("status") in ("answered", "skipped"):
+        if raw["status"] == "skipped":
+            return "skipped", None
+        return ("unanswered", None) if _is_blank(raw.get("value")) else ("answered", raw.get("value"))
+    return ("unanswered", None) if _is_blank(raw) else ("answered", raw)
 
 
 # ── text matching ───────────────────────────────────────────────────────────
@@ -74,8 +106,14 @@ class AttemptInput:
 _PUNCTUATION_RE = re.compile(r"[.,;:!?()\"'«»\-–—]")
 
 
-def normalize(value: object) -> str:
-    text = _PUNCTUATION_RE.sub(" ", str(value))
+def normalize(value: object, *, fold: bool = False) -> str:
+    """`fold` (scoring versions that enable it): Unicode NFC and ё→е, so
+    "ёлка"/"елка" and composed/decomposed letters compare equal. Kazakh
+    letters (ә, і, ң, ғ, ү, ұ, қ, ө, һ) are left as they are."""
+    text = str(value)
+    if fold:
+        text = unicodedata.normalize("NFC", text).replace("ё", "е").replace("Ё", "Е")
+    text = _PUNCTUATION_RE.sub(" ", text)
     return " ".join(text.strip().casefold().split())
 
 
@@ -115,27 +153,36 @@ def _loc(value: dict, locale: str):
     return value.get(locale) or value["ru"]
 
 
+@dataclass(frozen=True)
+class _Ctx:
+    locale: str
+    fold: bool
+
+    def norm(self, value: object) -> str:
+        return normalize(value, fold=self.fold)
+
+
 # ── per-method item scorers ─────────────────────────────────────────────────
 
 
-def _score_single_choice(item: dict, submitted: object, locale: str) -> int:
+def _score_single_choice(item: dict, submitted: object, ctx: _Ctx) -> int:
     if not isinstance(submitted, str):
         return 0
-    return int(normalize(submitted) == normalize(_loc(item["answer"], locale)))
+    return int(ctx.norm(submitted) == ctx.norm(_loc(item["answer"], ctx.locale)))
 
 
-def _score_pick_pair(item: dict, submitted: object, locale: str) -> int:
+def _score_pick_pair(item: dict, submitted: object, ctx: _Ctx) -> int:
     if not isinstance(submitted, list) or len(submitted) != 2:
         return 0
-    return int({normalize(w) for w in submitted} == {normalize(w) for w in _loc(item["answer"], locale)})
+    return int({ctx.norm(w) for w in submitted} == {ctx.norm(w) for w in _loc(item["answer"], ctx.locale)})
 
 
-def _score_open_text(item: dict, submitted: object, locale: str) -> int:
+def _score_open_text(item: dict, submitted: object, ctx: _Ctx) -> int:
     if not isinstance(submitted, str) or not submitted.strip():
         return 0
-    norm = normalize(submitted)
-    tier_2 = [normalize(s) for s in _loc(item["score_2"], locale)]
-    tier_1 = [normalize(s) for s in _loc(item["score_1"], locale)]
+    norm = ctx.norm(submitted)
+    tier_2 = [ctx.norm(s) for s in _loc(item["score_2"], ctx.locale)]
+    tier_1 = [ctx.norm(s) for s in _loc(item["score_1"], ctx.locale)]
     if norm in tier_2:
         return 2
     if norm in tier_1:
@@ -149,13 +196,13 @@ def _score_open_text(item: dict, submitted: object, locale: str) -> int:
     return 0
 
 
-def _score_chain(item: dict, submitted: object, locale: str) -> int:
+def _score_chain(item: dict, submitted: object, ctx: _Ctx) -> int:
     """1 point per correctly restored adjacent link, wherever it sits in the
     submitted order — scored by which connections survive, not position."""
     if not isinstance(submitted, list):
         return 0
-    correct = [normalize(c) for c in _loc(item["concepts"], locale)]
-    got = [normalize(c) for c in submitted]
+    correct = [ctx.norm(c) for c in _loc(item["concepts"], ctx.locale)]
+    got = [ctx.norm(c) for c in submitted]
     return sum(
         1
         for a, b in zip(correct, correct[1:])
@@ -163,7 +210,7 @@ def _score_chain(item: dict, submitted: object, locale: str) -> int:
     )
 
 
-def _score_number_pair(item: dict, submitted: object, locale: str) -> int:
+def _score_number_pair(item: dict, submitted: object, ctx: _Ctx) -> int:
     if not isinstance(submitted, list) or len(submitted) != 2:
         return 0
     try:
@@ -181,16 +228,6 @@ _ITEM_SCORERS = {
 }
 
 
-def _is_blank(value: object) -> bool:
-    if value is None:
-        return True
-    if isinstance(value, str):
-        return not value.strip()
-    if isinstance(value, list):
-        return not value or all(_is_blank(v) for v in value)
-    return False
-
-
 def _pct(earned: float, maximum: float) -> float:
     return round(earned / maximum * 100, 1) if maximum else 0.0
 
@@ -201,20 +238,28 @@ class _ScoredItem:
     subject: str | None
     earned: float
     max_points: int
-    answered: bool
+    status: str  # answered | skipped | unanswered
+
+    @property
+    def outcome(self) -> str:
+        if self.status != "answered":
+            return self.status
+        if self.earned >= self.max_points:
+            return "correct"
+        return "partial" if self.earned > 0 else "wrong"
 
 
-def _score_subtest(subtest: BankSubtest, submitted: dict, locale: str) -> list[_ScoredItem]:
+def _score_subtest(subtest: BankSubtest, submitted: dict, ctx: _Ctx) -> list[_ScoredItem]:
     scorer = _ITEM_SCORERS[subtest.scoring_method]
     scored = []
     for position, item in enumerate(subtest.items, start=1):
-        value = submitted.get(str(position))
+        status, value = unwrap(submitted.get(str(position)))
         scored.append(_ScoredItem(
             item_id=item["item_id"],
             subject=item.get("subject"),
-            earned=scorer(item, value, locale),
+            earned=scorer(item, value, ctx) if status == "answered" else 0,
             max_points=subtest.item_max(item),
-            answered=not _is_blank(value),
+            status=status,
         ))
     return scored
 
@@ -237,7 +282,7 @@ def _subject_profile(
                 continue
             earned[item.subject] += item.earned / item.max_points
             counts[item.subject] += 1
-            answered[item.subject] += int(item.answered)
+            answered[item.subject] += int(item.status == "answered")
 
     areas = [
         SubjectAreaResult(
@@ -334,7 +379,17 @@ def _own_name_expected(profile_name: str, options: list[str], *, latin_vowels: b
     return options[0] if parts[0][0].casefold() in vowels else options[1]
 
 
-def _quick_item_correct(item: dict, entry: dict, attempt: AttemptInput, rules: ScoringRules) -> bool:
+def _quick_status(entry: dict) -> str:
+    """Quick commands: new entries carry `status`; legacy ones only an
+    `answer` (blank = the command timed out with no choice)."""
+    if not entry:
+        return "unanswered"
+    if entry.get("status") == "skipped":
+        return "skipped"
+    return "unanswered" if _is_blank(entry.get("answer")) else "answered"
+
+
+def _quick_item_correct(item: dict, entry: dict, attempt: AttemptInput, rules: ScoringRules, ctx: _Ctx) -> bool:
     options = _loc(item["options"], attempt.locale)
     if "answer" in item:
         expected = _loc(item["answer"], attempt.locale)
@@ -346,22 +401,25 @@ def _quick_item_correct(item: dict, entry: dict, attempt: AttemptInput, rules: S
         expected = _own_name_expected(
             attempt.profile_name, options, latin_vowels=rules.own_name_latin_vowels
         )
-    return normalize(entry.get("answer")) == normalize(expected)
+    return ctx.norm(entry.get("answer")) == ctx.norm(expected)
 
 
 def _quick_instructions(
-    subtest: BankSubtest, lability_answers: dict, attempt: AttemptInput, rules: ScoringRules
+    subtest: BankSubtest, lability_answers: dict, attempt: AttemptInput, rules: ScoringRules, ctx: _Ctx
 ) -> QuickInstructionsResult:
     n = len(subtest.items)
     half = n // 2
     correct: list[bool] = []
     on_time_flags: list[bool] = []
+    skipped = 0
     times: list[int] = []
     for position, item in enumerate(subtest.items, start=1):
         entry = lability_answers.get(str(position)) or {}
-        on_time = bool(entry) and not entry.get("over_limit", False)
+        status = _quick_status(entry)
+        skipped += int(status == "skipped")
+        on_time = status == "answered" and not entry.get("over_limit", False)
         on_time_flags.append(on_time)
-        correct.append(on_time and _quick_item_correct(item, entry, attempt, rules))
+        correct.append(on_time and _quick_item_correct(item, entry, attempt, rules, ctx))
         if isinstance(entry.get("elapsed_ms"), int):
             times.append(entry["elapsed_ms"])
 
@@ -374,6 +432,7 @@ def _quick_instructions(
         status="ok" if enough else "insufficient_on_time",
         total=n,
         on_time=on_time,
+        skipped=skipped,
         first_half_correct=first,
         first_half_total=half,
         second_half_correct=second,
@@ -383,6 +442,8 @@ def _quick_instructions(
         accuracy_change_pp=round(second_pct - first_pct, 1) if enough else None,
         mean_ms=round(statistics.fmean(times)) if times else None,
         median_ms=round(statistics.median(times)) if times else None,
+        server_block_ms=attempt.subtest_timings_ms.get(QUICK_INSTRUCTIONS_KEY),
+        client_total_ms=sum(times) if times else None,
     )
 
 
@@ -401,7 +462,7 @@ def _protocol_quality(
         result = subtests.get(subtest.key)
         if result is None:
             continue
-        blank = result.item_count - result.answered
+        blank = result.skipped + result.unanswered
         if blank and blank / result.item_count >= rules.blank_share_flag:
             flags.append(ProtocolFlag(code="many_blank_answers", subtest=subtest.key, count=blank))
         actual_ms = attempt.subtest_timings_ms.get(subtest.key)
@@ -412,11 +473,20 @@ def _protocol_quality(
             flags.append(ProtocolFlag(code="subtest_over_time", subtest=subtest.key))
 
     if quick is not None:
-        late = quick.total - quick.on_time
+        late = quick.total - quick.on_time - quick.skipped
         if late:
             flags.append(ProtocolFlag(code="quick_over_limit", subtest=QUICK_INSTRUCTIONS_KEY, count=late))
         if quick.status == "insufficient_on_time":
             flags.append(ProtocolFlag(code="quick_insufficient_on_time", subtest=QUICK_INSTRUCTIONS_KEY))
+        if (
+            quick.server_block_ms is not None
+            and quick.client_total_ms is not None
+            and quick.client_total_ms > quick.server_block_ms + QUICK_TIMING_TOLERANCE_MS
+        ):
+            flags.append(ProtocolFlag(code="quick_timing_mismatch", subtest=QUICK_INSTRUCTIONS_KEY))
+
+    if attempt.history.repeat_exposure:
+        flags.append(ProtocolFlag(code="repeat_exposure", count=attempt.history.attempt_number))
 
     if attempt.legacy:
         flags.append(ProtocolFlag(code="legacy_protocol"))
@@ -424,7 +494,9 @@ def _protocol_quality(
         if quick_subtest and any(item.get("dynamic") == "day_of_week" for item in quick_subtest.items):
             flags.append(ProtocolFlag(code="legacy_day_of_week_estimated", subtest=QUICK_INSTRUCTIONS_KEY))
 
-    blocking = [f for f in flags if f.code != "legacy_protocol"]
+    # legacy / repeat exposure are context shown on their own, not faults
+    # of this protocol.
+    blocking = [f for f in flags if f.code not in ("legacy_protocol", "repeat_exposure")]
     return ProtocolQuality(ok=not blocking, flags=flags)
 
 
@@ -432,6 +504,7 @@ def _protocol_quality(
 
 
 def score_attempt(bank: AsturBank, attempt: AttemptInput, rules: ScoringRules) -> AsturResultSnapshot:
+    ctx = _Ctx(locale=attempt.locale, fold=rules.fold_text)
     scored: dict[str, list[_ScoredItem]] = {}
     subtests: dict[str, SubtestResult] = {}
     for subtest in bank.subtests:
@@ -440,7 +513,7 @@ def score_attempt(bank: AsturBank, attempt: AttemptInput, rules: ScoringRules) -
         submitted = attempt.answers.get(subtest.key)
         if not isinstance(submitted, dict):
             continue
-        items = _score_subtest(subtest, submitted, attempt.locale)
+        items = _score_subtest(subtest, submitted, ctx)
         scored[subtest.key] = items
         earned = sum(i.earned for i in items)
         subtests[subtest.key] = SubtestResult(
@@ -449,7 +522,9 @@ def score_attempt(bank: AsturBank, attempt: AttemptInput, rules: ScoringRules) -
             max_score=subtest.max_score,
             percent=_pct(earned, subtest.max_score),
             item_count=len(items),
-            answered=sum(i.answered for i in items),
+            answered=sum(i.status == "answered" for i in items),
+            skipped=sum(i.status == "skipped" for i in items),
+            unanswered=sum(i.status == "unanswered" for i in items),
             in_overall=subtest.key in rules.overall_subtests,
         )
 
@@ -459,7 +534,7 @@ def score_attempt(bank: AsturBank, attempt: AttemptInput, rules: ScoringRules) -
     profile = _subject_profile(bank, scored, rules)
     quick_subtest = bank.subtest(QUICK_INSTRUCTIONS_KEY)
     quick = (
-        _quick_instructions(quick_subtest, attempt.lability_answers, attempt, rules)
+        _quick_instructions(quick_subtest, attempt.lability_answers, attempt, rules, ctx)
         if quick_subtest is not None and attempt.lability_answers
         else None
     )
@@ -471,6 +546,7 @@ def score_attempt(bank: AsturBank, attempt: AttemptInput, rules: ScoringRules) -
         completed_at=attempt.completed_at,
         age_at_completion=attempt.age,
         grade_at_completion=attempt.grade,
+        history=attempt.history,
         subtests=list(subtests.values()),
         overall_percent=overall,
         subject_profile=profile,
@@ -478,4 +554,5 @@ def score_attempt(bank: AsturBank, attempt: AttemptInput, rules: ScoringRules) -
         quick_instructions=quick,
         protocol_quality=_protocol_quality(bank, subtests, quick, attempt, rules),
         item_scores={i.item_id: i.earned for items in scored.values() for i in items},
+        item_status={i.item_id: i.outcome for items in scored.values() for i in items},
     )

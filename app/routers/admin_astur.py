@@ -13,6 +13,7 @@ from app.models.astur_bank_version import AsturBankVersion, AsturBankVersionStat
 from app.models.astur_run import AsturRun
 from app.models.user import User
 from app.schemas.astur_admin import (
+    AddAsturSynonymRequest,
     AsturBankDiffResponse,
     AsturBankVersionDetail,
     AsturBankVersionList,
@@ -110,6 +111,21 @@ async def create_draft(
     """Branches a draft off the latest published version; returns the open
     draft if one already exists."""
     return await _detail(db, await bank_versions.create_draft(db, admin_id=admin.id))
+
+
+@router.post("/bank-versions/draft/synonyms", response_model=AsturBankVersionDetail)
+async def add_synonym_to_draft(
+    data: AddAsturSynonymRequest,
+    admin: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+) -> AsturBankVersionDetail:
+    """Accept a recurring unrecognized answer: adds it to the open draft's
+    1- or 2-point dictionary. Takes effect only in the next published
+    version; frozen results are never rescored."""
+    row = await bank_versions.add_synonym(
+        db, admin_id=admin.id, item_id=data.item_id, tier=data.tier, locale=data.locale, text=data.text
+    )
+    return await _detail(db, row)
 
 
 @router.put("/bank-versions/{version_id}", response_model=AsturBankVersionDetail)

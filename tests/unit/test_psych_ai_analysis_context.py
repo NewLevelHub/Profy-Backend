@@ -103,7 +103,7 @@ def test_has_any_data_true_with_at_least_one_block() -> None:
 def _intelligence_section(**overrides) -> IntelligenceSection:
     bank = v1_bank()
     snapshot = score_attempt(bank, attempt_input(bank, content_answers(bank)), get_rules("2"))
-    fields = dict(run_id=uuid.uuid4(), retake_in_progress=False, **snapshot.model_dump(exclude={"item_scores"}))
+    fields = dict(run_id=uuid.uuid4(), retake_in_progress=False, **snapshot.model_dump(exclude={"item_scores", "item_status"}))
     fields.update(overrides)
     return IntelligenceSection(**fields)
 
@@ -121,28 +121,29 @@ def test_intelligence_block_is_labelled_as_study_tasks_without_norm_fields() -> 
     assert "run_id" not in block.facts
 
 
-def test_student_age_and_grade_reach_the_context_and_the_prompt() -> None:
+def test_current_age_and_grade_are_kept_apart_from_the_attempts_age() -> None:
     context = build_context(
-        _bare_report(), NewTestsSections(), student_name="Аружан", student_age=14, student_grade=8
+        _bare_report(), NewTestsSections(), student_name="Аружан", current_age=14, current_grade=8
     )
     system = build_messages(context)[0]["content"]
-    assert "Возраст ученика: 14." in system
-    assert "Класс: 8." in system
+    assert "Текущий возраст ученика: 14." in system
+    assert "Текущий класс: 8." in system
+    assert "age_at_completion" in system  # the АСТУР block uses its own age
     assert "не IQ" in system
 
     unknown = build_messages(build_context(_bare_report(), NewTestsSections(), student_name="Аружан"))[0]["content"]
-    assert "Возраст ученика неизвестен." in unknown
+    assert "Текущий возраст ученика неизвестен." in unknown
 
 
 def test_fingerprint_changes_with_a_new_attempt_or_age_but_not_otherwise() -> None:
     report = _bare_report()
     section = _intelligence_section()
-    base = fingerprint(build_context(report, NewTestsSections(intelligence=section), student_name="А", student_age=15))
-    same = fingerprint(build_context(report, NewTestsSections(intelligence=section), student_name="А", student_age=15))
-    older = fingerprint(build_context(report, NewTestsSections(intelligence=section), student_name="А", student_age=16))
+    base = fingerprint(build_context(report, NewTestsSections(intelligence=section), student_name="А", current_age=15))
+    same = fingerprint(build_context(report, NewTestsSections(intelligence=section), student_name="А", current_age=15))
+    older = fingerprint(build_context(report, NewTestsSections(intelligence=section), student_name="А", current_age=16))
     new_attempt = fingerprint(build_context(
         report, NewTestsSections(intelligence=_intelligence_section(overall_percent=42.0)),
-        student_name="А", student_age=15,
+        student_name="А", current_age=15,
     ))
     assert base == same
     assert base != older

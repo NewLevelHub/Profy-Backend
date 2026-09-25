@@ -147,7 +147,7 @@ async def _build_intelligence_section(
         return IntelligenceSection(
             run_id=run.id,
             retake_in_progress=await astur_runs.active_run(db, assessment_id) is not None,
-            **snapshot.model_dump(exclude={"item_scores"}),
+            **snapshot.model_dump(exclude={"item_scores", "item_status"}),
         )
     except Exception:
         logger.exception("Failed to build intelligence section for assessment %s", assessment_id)

@@ -31,16 +31,33 @@ def correct_answer(subtest_key: str, item: dict, locale: str = "ru"):
     raise AssertionError(subtest_key)
 
 
+def wrong_answer(subtest_key: str, item: dict, locale: str = "ru"):
+    """A value in the right format (accepted at submit) that scores 0."""
+    if subtest_key in ("awareness", "analogies", "geometric_figures"):
+        return next(o for o in item["options"][locale] if o != item["answer"][locale])
+    if subtest_key == "classification":
+        return [w for w in item["words"][locale] if w not in item["answer"][locale]][:2]
+    if subtest_key == "generalization":
+        return "что-то совсем другое"
+    if subtest_key == "logical_schemas":
+        concepts = item["concepts"][locale]
+        # No forward-adjacent pair survives: reversed order.
+        return concepts[::-1]
+    if subtest_key == "numeric_series":
+        return [item["answer"][0] + 1, item["answer"][1] + 1]
+    raise AssertionError(subtest_key)
+
+
 def content_answers(bank: AsturBank, *, locale: str = "ru", wrong: set[str] | frozenset = frozenset()) -> dict:
     """Every content subtest fully and correctly answered, except subtests in
-    `wrong`, answered with a blank-free but always-wrong value."""
+    `wrong`, answered with valid-format but wrong values."""
     answers: dict[str, dict] = {}
     for subtest in bank.subtests:
         if subtest.key == "lability":
             continue
+        pick = wrong_answer if subtest.key in wrong else correct_answer
         answers[subtest.key] = {
-            str(i): ("zzz" if subtest.key in wrong else correct_answer(subtest.key, item, locale))
-            for i, item in enumerate(subtest.items, start=1)
+            str(i): pick(subtest.key, item, locale) for i, item in enumerate(subtest.items, start=1)
         }
     return answers
 

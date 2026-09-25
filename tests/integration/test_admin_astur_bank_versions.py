@@ -7,6 +7,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from tests.integration.astur_helpers import complete_attempt, make_student, v1_version_id
+from tests.unit.test_astur_bank import reviewed
 
 BASE = "/api/v1/admin/astur/bank-versions"
 
@@ -41,7 +42,9 @@ async def test_draft_is_branched_from_latest_published_and_is_single(
     second = await _draft(client, admin_headers)
     assert first["id"] == second["id"]
     assert first["status"] == "draft" and first["version"] is None
-    assert first["issues"] == [] and first["key_changed_item_ids"] == []
+    # v1 predates review metadata: every new version must add it first.
+    assert {i["code"] for i in first["issues"]} == {"review_required"}
+    assert first["key_changed_item_ids"] == []
     assert first["has_changes"] is False
 
 
@@ -55,7 +58,7 @@ async def test_changed_key_must_be_confirmed_then_publishes_an_immutable_version
     client: AsyncClient, admin_headers: dict
 ) -> None:
     draft = await _draft(client, admin_headers)
-    document = copy.deepcopy(draft["document"])
+    document = reviewed(draft["document"])
     item = _first_awareness(document)
     item["options"] = {"ru": ["один", "два"], "kk": ["бір", "екі"]}
     item["answer"] = {"ru": "два", "kk": "екі"}
@@ -145,3 +148,29 @@ async def test_astur_content_override_is_closed(client: AsyncClient, admin_heade
 
 async def test_non_admin_is_forbidden(client: AsyncClient, auth_headers: dict) -> None:
     assert (await client.get(BASE, headers=auth_headers)).status_code == 403
+
+
+async def test_unrecognized_answer_can_be_added_to_the_next_draft(client: AsyncClient, admin_headers: dict) -> None:
+    resp = await client.post(
+        f"{BASE}/draft/synonyms",
+        json={"item_id": "generalization-01", "tier": "score_1", "locale": "ru", "text": "  зелёные   растения "},
+        headers=admin_headers,
+    )
+    assert resp.status_code == 200, resp.text
+    draft = resp.json()
+    assert draft["status"] == "draft"
+    item = next(s for s in draft["document"]["subtests"] if s["key"] == "generalization")["items"][0]
+    assert item["score_1"]["ru"][-1] == "зелёные растения"
+
+    again = await client.post(
+        f"{BASE}/draft/synonyms",
+        json={"item_id": "generalization-01", "tier": "score_2", "locale": "ru", "text": "Зелёные растения"},
+        headers=admin_headers,
+    )
+    assert again.status_code == 409
+    wrong_item = await client.post(
+        f"{BASE}/draft/synonyms",
+        json={"item_id": "awareness-01", "tier": "score_1", "locale": "ru", "text": "x"},
+        headers=admin_headers,
+    )
+    assert wrong_item.status_code == 404
