@@ -5,9 +5,8 @@ next to this as templates (`app/templates/email/<name>.html` and the `.kk.html`
 sibling); only the subject and the plain-text alternative are here.
 
 `{code}` / `{student_name}` are the placeholders — formatted at the call site
-with `.format()`. The review-pending email goes to a psychologist and is
-sent in `ru` only (the psychologist cabinet is Russian, KZ-210); its `kk`
-entries exist for catalog parity.
+with `.format()`. The review-pending email goes to a psychologist, in that
+psychologist's own `users.locale` (PRO-430).
 
 Unlike the request-locale areas, the email locale is the *recipient's* stored
 choice (`users.locale`) or the registration `Accept-Language` — both already

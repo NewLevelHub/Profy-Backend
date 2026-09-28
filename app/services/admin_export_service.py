@@ -10,10 +10,18 @@ import re
 import zipfile
 from datetime import datetime
 
-from app.i18n.catalog import key as i18n_key
+from app.i18n import DEFAULT_LOCALE
+from app.i18n.catalog import tr
 from app.schemas.admin import AdminAssessmentDetailResponse, AdminUserListItem
-from app.services.bigfive_content import bigfive_labels
-from app.services.riasec_content import riasec_labels
+
+# The export is Russian-only by contract (see app/i18n/catalog/admin_export.py),
+# whatever the admin's UI locale. Every label is pinned to ru explicitly:
+# `catalog.key(..., locale="ru")` does NOT pin — it resolves to the request
+# locale — so a kk admin used to get Kazakh headers over Russian values
+# (PRO-430). The router builds the exported data under use_locale(ru) too.
+_T = tr("admin_export", locale=DEFAULT_LOCALE)
+_RIASEC_LABELS = tr("riasec", locale=DEFAULT_LOCALE)["labels"]
+_BIG_FIVE_LABELS = tr("bigfive", locale=DEFAULT_LOCALE)["labels"]
 
 # Excel does not sniff UTF-8 in a .csv: without a BOM it reads the file in the
 # system codepage and every Cyrillic name turns into mojibake ("Бекзат" ->
@@ -33,24 +41,24 @@ _DATETIME_FORMAT = "%Y-%m-%d %H:%M"
 _UTC_SUFFIX = " (UTC)"
 
 # Python's True/False are not booleans to Excel, just words.
-_YES, _NO = i18n_key("admin_export", "yes", locale="ru"), i18n_key("admin_export", "no", locale="ru")
+_YES, _NO = _T["yes"], _T["no"]
 
 # Localized exactly as the admin UI shows them
 # (Profy-Frontend/src/shared/lib/assessmentLabels.ts).
 _GOAL_LABELS = {
-    "explore": i18n_key("admin_export", "goal_explore", locale="ru"),
-    "profession": i18n_key("admin_export", "goal_profession", locale="ru"),
-    "university": i18n_key("admin_export", "goal_university", locale="ru"),
-    "unsure": i18n_key("admin_export", "goal_unsure", locale="ru"),
+    "explore": _T["goal_explore"],
+    "profession": _T["goal_profession"],
+    "university": _T["goal_university"],
+    "unsure": _T["goal_unsure"],
 }
 _STATUS_LABELS = {
-    "in_progress": i18n_key("admin_export", "status_in_progress", locale="ru"),
-    "completed": i18n_key("admin_export", "status_completed", locale="ru"),
+    "in_progress": _T["status_in_progress"],
+    "completed": _T["status_completed"],
 }
 _ROLE_LABELS = {
-    "student": i18n_key("admin_export", "role_student", locale="ru"),
-    "admin": i18n_key("admin_export", "role_admin", locale="ru"),
-    "psychologist": i18n_key("admin_export", "role_psychologist", locale="ru"),
+    "student": _T["role_student"],
+    "admin": _T["role_admin"],
+    "psychologist": _T["role_psychologist"],
 }
 _INSTRUMENT_LABELS = {
     "riasec": "RIASEC",
@@ -83,22 +91,22 @@ _BIG_FIVE_KEYS = ("N", "E", "O", "A", "C")
 _USER_COLUMNS = (
     "ID",
     "Email",
-    i18n_key("admin_export", "email_verified", locale="ru"),
-    i18n_key("admin_export", "account_active", locale="ru"),
-    i18n_key("admin_export", "role", locale="ru"),
-    i18n_key("admin_export", "role_admin", locale="ru"),
-    i18n_key("admin_export", "registered_at", locale="ru") + _UTC_SUFFIX,
-    i18n_key("admin_export", "last_active_at", locale="ru") + _UTC_SUFFIX,
-    i18n_key("admin_export", "has_profile", locale="ru"),
-    i18n_key("admin_export", "name", locale="ru"),
-    i18n_key("admin_export", "age", locale="ru"),
-    i18n_key("admin_export", "grade", locale="ru"),
-    i18n_key("admin_export", "city", locale="ru"),
-    i18n_key("admin_export", "assessment_count", locale="ru"),
-    i18n_key("admin_export", "latest_status", locale="ru"),
-    i18n_key("admin_export", "latest_goal", locale="ru"),
-    *(f"RIASEC: {riasec_labels()[k]}" for k in _RIASEC_KEYS),
-    *(f"Big Five: {bigfive_labels()[k]}" for k in _BIG_FIVE_KEYS),
+    _T["email_verified"],
+    _T["account_active"],
+    _T["role"],
+    _T["role_admin"],
+    _T["registered_at"] + _UTC_SUFFIX,
+    _T["last_active_at"] + _UTC_SUFFIX,
+    _T["has_profile"],
+    _T["name"],
+    _T["age"],
+    _T["grade"],
+    _T["city"],
+    _T["assessment_count"],
+    _T["latest_status"],
+    _T["latest_goal"],
+    *(f"RIASEC: {_RIASEC_LABELS[k]}" for k in _RIASEC_KEYS),
+    *(f"Big Five: {_BIG_FIVE_LABELS[k]}" for k in _BIG_FIVE_KEYS),
 )
 
 
@@ -177,15 +185,15 @@ def _summary_csv(detail: AdminAssessmentDetailResponse) -> str:
     buffer = io.StringIO()
     writer = csv.writer(buffer)
 
-    writer.writerow([i18n_key("admin_export", "metric", locale="ru"), i18n_key("admin_export", "value", locale="ru")])
+    writer.writerow([_T["metric"], _T["value"]])
     writer.writerow(["Email", detail.user_email])
-    writer.writerow([i18n_key("admin_export", "name", locale="ru"), detail.profile_name or ""])
-    writer.writerow([i18n_key("admin_export", "goal", locale="ru"), _label(_GOAL_LABELS, detail.goal)])
-    writer.writerow([i18n_key("admin_export", "status", locale="ru"), _label(_STATUS_LABELS, detail.status)])
-    writer.writerow([i18n_key("admin_export", "started_at", locale="ru") + _UTC_SUFFIX, _at(detail.created_at)])
-    writer.writerow([i18n_key("admin_export", "completed_at", locale="ru") + _UTC_SUFFIX, _at(detail.completed_at)])
-    writer.writerow([i18n_key("admin_export", "answered_questions", locale="ru"), detail.answered_count])
-    writer.writerow([i18n_key("admin_export", "total_questions", locale="ru"), detail.total_questions])
+    writer.writerow([_T["name"], detail.profile_name or ""])
+    writer.writerow([_T["goal"], _label(_GOAL_LABELS, detail.goal)])
+    writer.writerow([_T["status"], _label(_STATUS_LABELS, detail.status)])
+    writer.writerow([_T["started_at"] + _UTC_SUFFIX, _at(detail.created_at)])
+    writer.writerow([_T["completed_at"] + _UTC_SUFFIX, _at(detail.completed_at)])
+    writer.writerow([_T["answered_questions"], detail.answered_count])
+    writer.writerow([_T["total_questions"], detail.total_questions])
     if detail.analysis_result is not None:
         for metric, value in _analysis_result_rows(detail.analysis_result.model_dump()):
             writer.writerow([metric, value])
@@ -199,9 +207,9 @@ def _scale_name(instrument: str, category: str) -> str:
     column. The neighbouring instrument column separates them, but only if the
     reader knows to look — this states the scale outright."""
     if instrument == "riasec":
-        return riasec_labels().get(category, category)
+        return _RIASEC_LABELS.get(category, category)
     if instrument == "big_five":
-        return bigfive_labels().get(category, category)
+        return _BIG_FIVE_LABELS.get(category, category)
     return category
 
 
@@ -210,14 +218,14 @@ def _responses_csv(detail: AdminAssessmentDetailResponse) -> str:
     writer = csv.writer(buffer)
     writer.writerow(
         [
-            i18n_key("admin_export", "question_number", locale="ru"),
-            i18n_key("admin_export", "instrument", locale="ru"),
-            i18n_key("admin_export", "scale_code", locale="ru"),
-            i18n_key("admin_export", "scale", locale="ru"),
-            i18n_key("admin_export", "question", locale="ru"),
-            i18n_key("admin_export", "answer_score", locale="ru"),
-            i18n_key("admin_export", "answer_words", locale="ru"),
-            i18n_key("admin_export", "answered_at", locale="ru") + _UTC_SUFFIX,
+            _T["question_number"],
+            _T["instrument"],
+            _T["scale_code"],
+            _T["scale"],
+            _T["question"],
+            _T["answer_score"],
+            _T["answer_words"],
+            _T["answered_at"] + _UTC_SUFFIX,
         ]
     )
     for response in detail.responses:
@@ -246,13 +254,13 @@ def _motivation_csv(detail: AdminAssessmentDetailResponse) -> str:
     writer = csv.writer(buffer)
     writer.writerow(
         [
-            i18n_key("admin_export", "triplet_number", locale="ru"),
-            i18n_key("admin_export", "most_selected", locale="ru"),
-            i18n_key("admin_export", "most_category", locale="ru"),
-            i18n_key("admin_export", "least_selected", locale="ru"),
-            i18n_key("admin_export", "least_category", locale="ru"),
-            i18n_key("admin_export", "unselected", locale="ru"),
-            i18n_key("admin_export", "unselected_category", locale="ru"),
+            _T["triplet_number"],
+            _T["most_selected"],
+            _T["most_category"],
+            _T["least_selected"],
+            _T["least_category"],
+            _T["unselected"],
+            _T["unselected_category"],
         ]
     )
     for row in detail.motivation_responses:

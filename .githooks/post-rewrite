@@ -1,0 +1,7 @@
+#!/bin/sh
+# PRO-429: same as post-merge, for `git pull --rebase` / `git rebase origin/dev`.
+# Skipped for `git commit --amend` (first argument "amend").
+[ "$1" = "rebase" ] || exit 0
+. "$(git rev-parse --show-toplevel)/.githooks/lib.sh"
+run_migrations_fix fix --commit --no-fetch --hook post
+exit 0

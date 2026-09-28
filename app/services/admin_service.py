@@ -39,7 +39,7 @@ from app.schemas.admin import (
 from app.schemas.artifact import ArtifactItem
 from app.schemas.profile import ProfileResponse
 from app.schemas.admin_result import AdminAnalysisResultResponse
-from app.services import auth_service, bigfive_content, motivation_service
+from app.services import assessment_shared, auth_service, bigfive_content, motivation_service
 from app.services.admin_listing import SortOrder, order_by_clause
 from app.services.goal_overlay_service import _get_effective_goal_and_scenario
 from app.services.riasec_content import likert_labels as riasec_likert_labels
@@ -357,8 +357,7 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
             )
             answered_by_assessment = dict(answered_result.all())
 
-        total_questions_result = await db.execute(select(func.count(Question.id)))
-        total_questions = total_questions_result.scalar_one()
+        total_questions = await assessment_shared.likert_total_questions(db)
 
         assessments = [
             AdminAssessmentSummary(
@@ -535,8 +534,7 @@ async def get_assessment_detail(
     if analysis:
         analysis_result = AdminAnalysisResultResponse.model_validate(analysis)
 
-    total_questions_result = await db.execute(select(func.count(Question.id)))
-    total_questions = total_questions_result.scalar_one()
+    total_questions = await assessment_shared.likert_total_questions(db)
 
     astur_runs_result = await db.execute(
         select(AsturRun)
