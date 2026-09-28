@@ -177,6 +177,12 @@ jobs:
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_riasec_questions.py
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_bigfive_questions.py
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_motivation_statements.py
+            # PRO-338: psychological block (ДДО, Eysenck, Elers, Boyko, Kondash) — content lives in `questions`
+            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_professional_types_questions.py
+            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_eysenck_questions.py
+            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_elers_questions.py
+            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_boyko_empathy_questions.py
+            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_kondash_anxiety_questions.py
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_riasec_directions.py
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/apply_direction_content.py
             # PRO-427: freeze result snapshots of АСТУР attempts finished before

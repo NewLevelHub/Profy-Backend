@@ -16,6 +16,11 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
+    # Idempotent: this revision was orphaned from the main chain and re-linked
+    # by the `ed67258f005c` merge, so a database that got the table from a
+    # feature-branch deploy sees it "for the first time" here.
+    if sa.inspect(op.get_bind()).has_table("psychologist_student_assignments"):
+        return
     op.create_table(
         "psychologist_student_assignments",
         sa.Column("id", sa.UUID(), nullable=False),
