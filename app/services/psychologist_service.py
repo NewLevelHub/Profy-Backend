@@ -163,19 +163,25 @@ async def _require_own_note(
     return note
 
 
-async def list_assigned_students(
-    db: AsyncSession, psychologist_id: uuid.UUID
-) -> list[PsychologistStudentListItem]:
-    student = aliased(User)
-    latest_report_status = (
+def _latest_report_status(student_id: Any) -> Any:
+    """Review status of the student's latest report (row under review), as a
+    scalar subquery — `student_id` may be a correlated column or a value."""
+    return (
         select(AnalysisResult.review_status)
         .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
         .join(Profile, Profile.id == Assessment.profile_id)
-        .where(Profile.user_id == student.id, _is_original_row())
+        .where(Profile.user_id == student_id, _is_original_row())
         .order_by(AnalysisResult.created_at.desc())
         .limit(1)
         .scalar_subquery()
     )
+
+
+async def list_assigned_students(
+    db: AsyncSession, psychologist_id: uuid.UUID
+) -> list[PsychologistStudentListItem]:
+    student = aliased(User)
+    latest_report_status = _latest_report_status(student.id)
     query = (
         select(
             student.id,
@@ -313,6 +319,7 @@ async def claim_student(
     profile = (
         await db.execute(select(Profile).where(Profile.user_id == student_id))
     ).scalar_one_or_none()
+    report_status = (await db.execute(select(_latest_report_status(student_id)))).scalar_one_or_none()
     return PsychologistStudentListItem(
         id=student.id,
         email=student.email,
@@ -320,6 +327,7 @@ async def claim_student(
         age=profile.age if profile is not None else None,
         grade=profile.grade if profile is not None else None,
         assigned_at=assignment.created_at,
+        report_status=report_status.value if report_status else None,
     )
 
 
@@ -740,9 +748,11 @@ async def list_review_edits(
     student_id: uuid.UUID,
     assessment_id: uuid.UUID,
 ) -> list[PsychologistReviewEditItem]:
-    """Edit history of the row under review, oldest first — the psychologist's
-    "было → стало" log. Other-locale rows carry no history of their own:
-    update_result_content moves it onto this row before deleting them."""
+    """Edit history of the report, oldest first — the psychologist's
+    "было → стало" log. Read across every locale row of the assessment, not
+    only the row under review: history stays on the row it was written to
+    until the next edit re-parents it, and a later-generated `ru` row takes
+    over as the row under review without taking the history along."""
     await _require_assigned_student(
         db, psychologist_id=psychologist_id, student_id=student_id
     )
@@ -753,7 +763,8 @@ async def list_review_edits(
         await db.execute(
             select(AnalysisResultReviewEdit, User.email)
             .outerjoin(User, User.id == AnalysisResultReviewEdit.editor_id)
-            .where(AnalysisResultReviewEdit.analysis_result_id == analysis.id)
+            .join(AnalysisResult, AnalysisResult.id == AnalysisResultReviewEdit.analysis_result_id)
+            .where(AnalysisResult.assessment_id == analysis.assessment_id)
             .order_by(AnalysisResultReviewEdit.edited_at.asc(), AnalysisResultReviewEdit.id.asc())
         )
     ).all()

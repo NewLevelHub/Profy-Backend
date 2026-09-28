@@ -8,6 +8,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.analysis_result import AnalysisResult
 from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
 from app.models.user import User
 
@@ -475,3 +476,59 @@ async def test_student_list_reports_latest_review_status(
 
     detail = (await client.get(f"/api/v1/psychologist/students/{test_user.id}", headers=psychologist_headers)).json()
     assert detail["assigned_at"] is not None
+
+
+async def test_edit_history_survives_a_later_locale_row(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    test_user: User,
+    psychologist_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """kk report edited first, ru row generated after: the ru row becomes the
+    row under review, but the edit made on the kk row is still history."""
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+    # The report locale follows the student's own setting, not the header.
+    test_user.locale, test_user.locale_explicit = "kk", True
+    await db_session.flush()
+    await generate(client, auth_headers, assessment)
+    await assign(db_session, psychologist_user, test_user)
+
+    url = _result_url(test_user, assessment.id)
+    patched = await client.patch(url, json={"final_analysis": "Психолог түзеткен қорытынды"}, headers=psychologist_headers)
+    assert patched.status_code == 200
+
+    test_user.locale = "ru"
+    await db_session.flush()
+    await generate(client, auth_headers, assessment)
+    locales = (
+        await db_session.execute(
+            select(AnalysisResult.locale).where(AnalysisResult.assessment_id == assessment.id)
+        )
+    ).scalars().all()
+    assert sorted(locales) == ["kk", "ru"]
+
+    history = (await client.get(f"{url}/edits", headers=psychologist_headers)).json()
+    assert [set(entry["changed_fields"]) for entry in history] == [{"final_analysis"}]
+
+
+async def test_claim_reports_existing_review_status(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    test_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+    await generate(client, auth_headers, assessment)
+
+    claimed = await client.post(f"/api/v1/psychologist/students/{test_user.id}/claim", headers=psychologist_headers)
+    assert claimed.status_code == 201
+    assert claimed.json()["report_status"] == "pending_review"
