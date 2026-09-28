@@ -2,6 +2,7 @@
 docs/psychologist-review-gate-plan.md §3–§4)."""
 
 import uuid
+from datetime import datetime, timezone
 
 import httpx
 import pytest
@@ -554,7 +555,13 @@ async def test_student_list_status_follows_latest_assessment_not_newest_row(
     await assign(db_session, psychologist_user, test_user)
     await client.post(f"{_result_url(test_user, old.id)}/publish", headers=psychologist_headers)
 
-    new = Assessment(profile_id=old.profile_id, goal=AssessmentGoal.explore)
+    # Both rows would otherwise share now() — the test runs in one transaction.
+    old.created_at = datetime(2026, 1, 10, tzinfo=timezone.utc)
+    new = Assessment(
+        profile_id=old.profile_id,
+        goal=AssessmentGoal.explore,
+        created_at=datetime(2026, 2, 10, tzinfo=timezone.utc),
+    )
     db_session.add(new)
     await db_session.flush()
     await generate(client, auth_headers, new)

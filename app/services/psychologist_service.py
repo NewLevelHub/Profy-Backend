@@ -169,13 +169,20 @@ def _latest_report_status(student_id: Any) -> Any:
 
     "Latest" is by assessment, not by report row: a translation generated
     today for an old, published assessment is a fresh row, and ordering on
-    the row would let it hide a newer assessment still waiting for review."""
+    the row would let it hide a newer assessment still waiting for review.
+    `Assessment.created_at` is the transaction start, but each assessment is
+    created by its own request, so two of one student's never share it
+    outside a test that builds both in one transaction."""
     return (
         select(AnalysisResult.review_status)
         .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
         .join(Profile, Profile.id == Assessment.profile_id)
         .where(Profile.user_id == student_id, _is_original_row())
-        .order_by(Assessment.created_at.desc(), Assessment.id.desc())
+        .order_by(
+            Assessment.created_at.desc(),
+            Assessment.completed_at.desc().nulls_last(),
+            Assessment.id.desc(),
+        )
         .limit(1)
         .scalar_subquery()
     )
