@@ -33,6 +33,18 @@ def _public_stimulus(item: dict) -> dict | None:
     }
 
 
+def _shuffle_off_key(concepts: list[str]) -> None:
+    """The bank stores the correct order, so a plain shuffle hands the
+    solved chain back 1 time in n! — for bank v1 (items of 4–5 concepts)
+    about one attempt in four got a pre-solved item worth full marks
+    (PRO-430). Reshuffle until the served order differs from the key."""
+    if len(set(concepts)) < 2:
+        return
+    key = list(concepts)
+    while concepts == key:
+        random.shuffle(concepts)
+
+
 def build_content(bank: AsturBank, *, bank_version: int, run_id: uuid.UUID, locale: str) -> dict:
     """`locale` is the attempt's own (`AsturRun.locale`), never the current
     request's — switching the app language mid-attempt must not swap the
@@ -47,9 +59,8 @@ def build_content(bank: AsturBank, *, bank_version: int, run_id: uuid.UUID, loca
                 public["stimulus"] = _public_stimulus(item)
             items.append(public)
         if subtest.scoring_method == "chain_links":
-            # The bank stores the correct order — hand out a shuffled copy.
             for item in items:
-                random.shuffle(item["concepts"])
+                _shuffle_off_key(item["concepts"])
         subtests.append({
             "number": subtest.number,
             "key": subtest.key,
