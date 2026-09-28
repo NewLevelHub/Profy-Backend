@@ -165,13 +165,17 @@ async def _require_own_note(
 
 def _latest_report_status(student_id: Any) -> Any:
     """Review status of the student's latest report (row under review), as a
-    scalar subquery — `student_id` may be a correlated column or a value."""
+    scalar subquery — `student_id` may be a correlated column or a value.
+
+    "Latest" is by assessment, not by report row: a translation generated
+    today for an old, published assessment is a fresh row, and ordering on
+    the row would let it hide a newer assessment still waiting for review."""
     return (
         select(AnalysisResult.review_status)
         .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
         .join(Profile, Profile.id == Assessment.profile_id)
         .where(Profile.user_id == student_id, _is_original_row())
-        .order_by(AnalysisResult.created_at.desc())
+        .order_by(Assessment.created_at.desc(), Assessment.id.desc())
         .limit(1)
         .scalar_subquery()
     )
@@ -240,20 +244,24 @@ async def list_available_students(
         )
         .exists()
     )
-    # Aliased twice: the outer join must not be the `Assessment` that
-    # `pending`/`completed` above correlate on.
-    latest_completed = aliased(Assessment)
-    latest_assessment = aliased(Assessment)
-    latest_completed_id = (
-        select(latest_completed.id)
-        .join(Profile, Profile.id == latest_completed.profile_id)
-        .where(
-            Profile.user_id == User.id,
-            latest_completed.status == AssessmentStatus.completed,
+    # One pass over completed assessments, latest per profile — not a
+    # correlated lookup per student, this list covers the whole platform.
+    # Aliased: `pending`/`completed` above correlate on `Assessment`.
+    completed_assessment = aliased(Assessment)
+    latest_completed = (
+        select(
+            completed_assessment.profile_id,
+            completed_assessment.goal,
+            completed_assessment.completed_at,
         )
-        .order_by(latest_completed.completed_at.desc().nulls_last(), latest_completed.created_at.desc())
-        .limit(1)
-        .scalar_subquery()
+        .where(completed_assessment.status == AssessmentStatus.completed)
+        .distinct(completed_assessment.profile_id)
+        .order_by(
+            completed_assessment.profile_id,
+            completed_assessment.completed_at.desc().nulls_last(),
+            completed_assessment.created_at.desc(),
+        )
+        .subquery()
     )
     query = (
         select(
@@ -264,11 +272,11 @@ async def list_available_students(
             Profile.grade,
             pending.label("has_pending"),
             completed.label("has_completed"),
-            latest_assessment.goal,
-            latest_assessment.completed_at,
+            latest_completed.c.goal,
+            latest_completed.c.completed_at,
         )
         .outerjoin(Profile, Profile.user_id == User.id)
-        .outerjoin(latest_assessment, latest_assessment.id == latest_completed_id)
+        .outerjoin(latest_completed, latest_completed.c.profile_id == Profile.id)
         .where(User.role == UserRole.student, ~User.id.in_(already_mine))
         .order_by(User.created_at.desc())
     )

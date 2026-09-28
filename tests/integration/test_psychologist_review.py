@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult
 from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
+from app.models.assessment import Assessment, AssessmentGoal
 from app.models.user import User
 
 from tests.integration.review_helpers import (
@@ -532,3 +533,38 @@ async def test_claim_reports_existing_review_status(
     claimed = await client.post(f"/api/v1/psychologist/students/{test_user.id}/claim", headers=psychologist_headers)
     assert claimed.status_code == 201
     assert claimed.json()["report_status"] == "pending_review"
+
+
+async def test_student_list_status_follows_latest_assessment_not_newest_row(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    test_user: User,
+    psychologist_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A translation generated today for an old, published assessment must
+    not hide a newer assessment that still waits for review."""
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    test_user.locale, test_user.locale_explicit = "kk", True
+    old = await make_student_assessment(db_session, test_user)
+    await generate(client, auth_headers, old)
+    await assign(db_session, psychologist_user, test_user)
+    await client.post(f"{_result_url(test_user, old.id)}/publish", headers=psychologist_headers)
+
+    new = Assessment(profile_id=old.profile_id, goal=AssessmentGoal.explore)
+    db_session.add(new)
+    await db_session.flush()
+    await generate(client, auth_headers, new)
+
+    # Student switches to ru and reopens the old report: a fresh ru row for
+    # `old` becomes its row under review.
+    test_user.locale = "ru"
+    await db_session.flush()
+    await generate(client, auth_headers, old)
+
+    rows = (await client.get("/api/v1/psychologist/students", headers=psychologist_headers)).json()
+    row = next(item for item in rows if item["id"] == str(test_user.id))
+    assert row["report_status"] == "pending_review"
