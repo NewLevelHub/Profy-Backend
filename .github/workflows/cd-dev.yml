@@ -239,6 +239,15 @@ jobs:
               fi
               if [ -f "$DEV_CERT_DIR/fullchain.pem" ]; then
                 cd "$EDGE_DEPLOY_PATH"
+                # Renew Let's Encrypt certs if within 30 days of expiry — same block
+                # as cd.yml, see the comment there.
+                mkdir -p certbot/www
+                if ! flock /tmp/profi-edge-nginx.lock docker run --rm \
+                    -v /etc/letsencrypt:/etc/letsencrypt \
+                    -v "$PWD/certbot/www:/var/www/certbot" \
+                    certbot/certbot renew --non-interactive --webroot -w /var/www/certbot; then
+                  echo "WARN: certbot renew failed — certificates in /etc/letsencrypt may expire"
+                fi
                 # main's cd.yml writes to the same server-side nginx.conf and restarts
                 # the same shared profi_nginx_prod container — flock-guard to avoid the
                 # two pipelines interleaving when both land close together.
