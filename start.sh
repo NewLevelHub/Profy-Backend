@@ -3,6 +3,10 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
+# PRO-429: Alembic history hooks (relink migrations on pull/push). Repo-local
+# setting; see the Migrations section of README.md.
+git config core.hooksPath .githooks
+
 # University photos are served by nginx straight from a host folder (no MinIO).
 # docker-compose.yml bind-mounts ${MEDIA_DIR:-../profy-media} at /srv/media in
 # both api and nginx. The folder is NOT in git — get profy-media.tar.gz from

@@ -16,7 +16,8 @@ docker compose logs -f api
 
 # Migrations (inside the api container)
 docker compose exec api alembic upgrade head
-docker compose exec api alembic heads          # check before creating a new migration — see Migrations note below
+docker compose exec api alembic revision --autogenerate -m "..."   # the only way to create one — see Migrations below
+python scripts/migrations_fix.py fix           # on the host: relink this branch's migrations onto origin/dev's head (hooks do it for you)
 
 # Seed data (after migrations — see Content pipeline below)
 docker compose exec api python scripts/seed_riasec_questions.py
@@ -31,7 +32,7 @@ docker compose exec api pytest tests/unit/test_riasec_service.py::test_name -v
 docker compose exec api pytest tests/integration      # integration/ vs unit/
 ```
 
-There is no CI workflow that runs tests or lint on pull requests — `cd.yml`/`cd-dev.yml` only deploy on push to `main`/`dev`. Running `pytest` locally/in a container before opening a PR is the only automated check that happens.
+There is no CI workflow that runs tests or lint on pull requests — `cd.yml`/`cd-dev.yml` only deploy on push to `main`/`dev`; the PR checks are `i18n-guard.yml` and `migrations-guard.yml` (see Migrations below). Running `pytest` locally/in a container before opening a PR is the only full test run that happens.
 
 Before opening a PR, also run `git review-main` (optionally `git review-main high` for a deeper pass) — a local git alias for `scripts/review-before-main.sh`, which runs Claude Code's `/code-review` in headless mode. It picks the diff base to match the two-stage workflow (`feature -> dev`, then `dev -> main`): on `dev` it reviews against `main`; on any other branch it reviews against `dev` (not `main`, which would also include everything already unreleased on `dev`). It excludes `scripts/data/**` and `university-data/**` from the diff (static data dumps, not reviewable logic — they're normally ~97% of a `dev...main` diff's line count and just burn tokens for nothing). The alias itself isn't part of the repo (git aliases live in `.git/config`/`~/.gitconfig`, personal per machine) — set it up once per clone, scoped to this repo only (not `--global`, to avoid clashing with an unrelated `review-main` alias in other repos): `git config alias.review-main '!bash scripts/review-before-main.sh'`.
 
@@ -82,7 +83,13 @@ Three separate environments — local (`docker-compose.yml`), a persistent "dev"
 
 ### Migrations
 
-There are 60+ files in `alembic/versions/` with multiple parallel heads (this repo does not maintain a single linear history). Run `alembic heads` to find the real current head before writing a new migration's `down_revision` — don't infer it by reading filenames.
+The history is linear: exactly **one head**, enforced (PRO-429). Rules:
+
+- Create a migration only with `alembic revision [--autogenerate] -m ...` — never hand-type a revision id (earlier ids like `a1b2c3d4e5f6`/`a1b2c3d4e5f7` were invented by agents and nearly collided). Autogenerate against a DB at the current head, and read the generated diff: no unexpected `drop_*`.
+- **Never edit, delete, rename or re-parent a migration that is already in `dev` or `main`** — it has been applied on the dev server / prod, and doing exactly that is what left the dev DB's schema out of sync with its `alembic_version` (see `e7f4a2c1d9b8`). Fix forward with a new migration.
+- **Never create merge migrations** (`alembic merge heads`). Two heads are fixed by re-pointing your branch's own migration: `python scripts/migrations_fix.py fix` does it (stdlib + git only, no DB — safe on the host). It only ever rewrites migrations the base branch doesn't have yet.
+- Git hooks do that automatically (`git config core.hooksPath .githooks`, set by `start.sh`): after `git pull`/`git merge`/`git rebase` they relink and commit; `pre-push` relinks, commits and stops the push (run `git push` again), or blocks it if the branch lacks migrations that are already in `origin/dev` (`git pull origin dev` first). Base is `origin/dev`, `origin/main` when on `main`; override with `MIGRATIONS_BASE`. Skip once with `MIGRATIONS_HOOKS=0`.
+- CI (`.github/workflows/migrations-guard.yml`, every PR into `dev`/`main`): `migrations_fix.py check` (one head, no dangling parent, unique ids, no already-merged migration touched — a deliberate exception needs the PR label `migration-edit-approved`), then `alembic upgrade head` on a clean Postgres, then `scripts/check_schema_drift.py` — `alembic check` minus the pre-existing drift listed in `alembic/known_schema_drift.txt`. Never add a line there to silence a new difference; write the migration.
 
 ### Tests
 
