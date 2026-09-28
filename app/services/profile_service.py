@@ -82,8 +82,11 @@ async def update_profile(
         profile.age_group = compute_age_group(updates["age"])
 
     # Partial updates may change only age or only grade — re-check the pair
-    # that will actually be stored (PRO-420).
-    if not is_age_grade_compatible(profile.age, profile.grade):
+    # that will actually be stored (PRO-420). Only when this request touches
+    # the pair: a profile saved before the rule existed must still be able to
+    # save its artifacts/certificates without being forced to fix it (PRO-430).
+    touches_pair = "age" in updates or "grade" in updates
+    if touches_pair and not is_age_grade_compatible(profile.age, profile.grade):
         raise AgeGradeMismatchError(
             age_grade_mismatch_message(profile.age, profile.grade)
         )
