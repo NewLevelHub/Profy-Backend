@@ -48,8 +48,9 @@ services:
     image: ${API_IMAGE}
     container_name: profi_api_dev
     command: >
-      sh -c "alembic upgrade head &&
-             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+      sh -c "python scripts/heal_dev_db_drift.py &&
+               alembic upgrade head &&
+               uvicorn app.main:app --host 0.0.0.0 --port 8000"
     env_file:
       - .env.development
     environment:

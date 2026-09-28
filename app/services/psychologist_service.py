@@ -22,7 +22,7 @@ from sqlalchemy import Select, case, delete, select, tuple_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
-from app.i18n.catalog import key as i18n_key
+from app.i18n.catalog import key as i18n_key, tr
 from app.i18n import DEFAULT_LOCALE
 from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
@@ -563,7 +563,8 @@ async def get_assigned_student_report(
 
 
 async def _student_profile_facts(student_id: uuid.UUID, db: AsyncSession) -> tuple[str, int | None, int | None]:
-    fallback = i18n_key("report_copy", "student_fallback_name", locale="ru")
+    # Read by the psychologist, in their own (request) locale.
+    fallback = i18n_key("report_copy", "student_fallback_name")
     row = (
         await db.execute(select(Profile.name, Profile.age, Profile.grade).where(Profile.user_id == student_id))
     ).one_or_none()
@@ -1060,14 +1061,14 @@ async def notify_review_pending(
     waits for review. Best-effort: never raises into report generation."""
     try:
         result = await db.execute(
-            select(User.email)
+            select(User.email, User.locale)
             .join(
                 PsychologistStudentAssignment,
                 PsychologistStudentAssignment.psychologist_id == User.id,
             )
             .where(PsychologistStudentAssignment.student_id == student_id)
         )
-        emails = list(result.scalars().all())
+        recipients = list(result.all())
     except Exception:
         logger.exception("review-pending recipients lookup failed for student=%s", student_id)
         return
@@ -1077,9 +1078,15 @@ async def notify_review_pending(
     await _send_within_budget(
         [
             email_service.send_review_pending_email(
-                email, student_name or i18n_key("report_copy", "unnamed_student", locale="ru"), review_url=review_url
+                email,
+                # In the recipient's language, like the email itself. This
+                # runs in the *student's* request, so the request locale
+                # would be the wrong one here (PRO-430).
+                student_name or tr("report_copy", locale=locale or DEFAULT_LOCALE)["unnamed_student"],
+                locale=locale or DEFAULT_LOCALE,
+                review_url=review_url,
             )
-            for email in emails
+            for email, locale in recipients
         ]
     )
 

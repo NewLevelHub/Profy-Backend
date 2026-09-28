@@ -315,7 +315,7 @@ async def submit_subtest(
                 i18n_key("api_errors", "astur_item_keys_mismatch", locale="ru").format(field_name="elapsed_ms")
             )
         if any(ms < 0 or ms > limit * ELAPSED_MS_LIMIT_FACTOR for ms in elapsed_ms.values()):
-            raise _unprocessable("elapsed_ms values are out of the plausible range")
+            raise _unprocessable(i18n_key("api_errors", "elapsed_ms_out_of_range"))
     elif elapsed_ms is not None:
         raise _unprocessable(i18n_key("api_errors", "elapsed_ms_lability_only", locale="ru"))
 

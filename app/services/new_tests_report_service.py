@@ -42,9 +42,11 @@ logger = logging.getLogger(__name__)
 # a methodical note for the specialist, never a code-gated restriction (the
 # platform's own age range, 14-18, is otherwise unaffected — see
 # 00-ЭПИК-PRO-338.md's "Возраст" row).
-_BELBIN_METHODOLOGICAL_NOTE = (
-    i18n_key("report_copy", "belbin_methodological_note", locale="ru")
-)
+def _belbin_methodological_note() -> str:
+    """In the reader's (request) locale, resolved per call — a module-level
+    constant was evaluated once at import, with no request yet, and stayed
+    ru forever (PRO-430)."""
+    return i18n_key("report_copy", "belbin_methodological_note")
 
 
 async def _build_professional_types_section(
@@ -95,7 +97,7 @@ async def _build_team_role_section(
             dominant_role=interpretation.dominant_role,
             supporting_roles=interpretation.supporting_roles,
             avoidance_roles=interpretation.avoidance_roles,
-            methodological_note=_BELBIN_METHODOLOGICAL_NOTE,
+            methodological_note=_belbin_methodological_note(),
             role_evidence=await belbin_service.role_evidence(db, run),
         )
     except Exception:

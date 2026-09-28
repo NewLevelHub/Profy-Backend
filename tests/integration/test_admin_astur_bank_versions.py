@@ -6,6 +6,7 @@ import copy
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import tr
 from tests.integration.astur_helpers import complete_attempt, make_student, v1_version_id
 from tests.unit.test_astur_bank import reviewed
 
@@ -174,3 +175,18 @@ async def test_unrecognized_answer_can_be_added_to_the_next_draft(client: AsyncC
         headers=admin_headers,
     )
     assert wrong_item.status_code == 404
+
+
+async def test_errors_come_from_the_catalog_in_the_request_locale(
+    client: AsyncClient, admin_user, admin_headers: dict, db_session: AsyncSession
+) -> None:
+    """PRO-430: these details were English literals in the code."""
+    missing = f"{BASE}/00000000-0000-0000-0000-000000000000"
+    ru = await client.get(missing, headers=admin_headers)
+    admin_user.locale = "kk"
+    await db_session.flush()
+    kk = await client.get(missing, headers=admin_headers)
+
+    assert ru.status_code == kk.status_code == 404
+    assert ru.json()["detail"] == tr("api_errors", locale="ru")["astur_bank_version_not_found"]
+    assert kk.json()["detail"] == tr("api_errors", locale="kk")["astur_bank_version_not_found"]

@@ -88,10 +88,10 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          # Default is 10m — too short for build_universities.py's first-run
-          # destructive rebuild (prune + reinsert every University/Program row)
-          # against a real database; every later run is a near no-op, but the
-          # timeout has to cover the slow first run too.
+          # University/program loading (build_universities.py) no longer runs
+          # here — see the comment near the bottom of this script — so 40m is
+          # generous headroom rather than a hard requirement; left this size
+          # in case that step is ever reinstated or another one grows slow.
           command_timeout: 40m
           envs: DOCKER_REGISTRY,DOCKER_USERNAME,DOCKER_PASSWORD,DOCKER_REPOSITORY,DEPLOY_PATH,COMMIT_SHA
           script: |
@@ -188,27 +188,16 @@ jobs:
             # PRO-427: freeze result snapshots of АСТУР attempts finished before
             # snapshots existed (idempotent — a no-op once done).
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/backfill_astur_legacy_snapshots.py
-            # Universities/programs — single committed snapshot
-            # (scripts/data/university_snapshot.clean.json), one loader.
-            # Replaces the ~30-script seed/apply/backfill pipeline this block
-            # used to run (seed_kz_universities.py, seed_92_professions_universities.py,
-            # import_jinaq_universities.py, every apply_*/backfill_*/merge_* for
-            # universities). Deterministic uuid5 ids: on the FIRST run against a DB
-            # seeded the old way, this is a one-time destructive rebuild (every
-            # University/Program row gets pruned and reinserted under a new id —
-            # direction_roadmaps.program_id is nulled, ON DELETE SET NULL); every
-            # later run is a near no-op. See docs/content-pipeline-id-resolution-audit.md.
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/build_universities.py
-            # University photo files are named by the pre-canonicalization slugs;
-            # build_universities.py's dedup + canonical-slug pass renames ~220
-            # university slugs, so rename the matching <slug>.webp / <slug>.card.webp
-            # in the shared media folder to match (idempotent — already-renamed
-            # files are skipped). Run inside the api container (not on this host —
-            # $DEPLOY_PATH only has docker-compose.prod.yml/nginx.prod.conf, not the
-            # scripts/ tree) against /srv/media, the same path api mounts read-write.
-            if docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api test -d /srv/media/universities; then
-              docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/rename_university_photos.py --media-dir /srv/media --apply
-            fi
+            # Universities/programs (scripts/data/university_snapshot.clean.json)
+            # removed from every-deploy CD (2026-09-28): the snapshot changes
+            # rarely (twice total as of this date, last 2026-09-02) and
+            # build_universities.py is the slowest step in this whole script —
+            # up to ~40m on a full rebuild, and a real DB round-trip diffing
+            # ~12.4k programs even on a no-op run. Run manually after editing
+            # the snapshot (see its own docstring for the full explanation —
+            # deterministic uuid5 ids, prune-then-upsert, admin-lock-aware):
+            #   docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/build_universities.py
+            #   docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/rename_university_photos.py --media-dir /srv/media --apply
 
             echo "=== Production deploy complete ==="
             echo "Image: $API_IMAGE"

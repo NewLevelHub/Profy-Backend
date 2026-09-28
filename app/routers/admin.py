@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi import status as http_status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n import DEFAULT_LOCALE, use_locale
 from app.i18n.catalog import key as i18n_key
 from app.database import get_db
 from app.dependencies import get_current_admin_user
@@ -186,7 +187,10 @@ async def export_assessment(
     _: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    detail = await admin_service.get_assessment_detail(db, assessment_id)
+    # Russian-only export (PRO-430): question/answer texts and scale names in
+    # the detail are resolved in ru, not in the admin's UI locale.
+    with use_locale(DEFAULT_LOCALE):
+        detail = await admin_service.get_assessment_detail(db, assessment_id)
     if not detail:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
     zip_bytes = admin_export_service.assessment_detail_to_zip(detail)
@@ -552,7 +556,7 @@ async def set_content_override(
     except admin_content_service.VersionedInstrumentError:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"'{instrument}' content is edited through bank versions (/admin/astur/bank-versions)",
+            detail=i18n_key("api_errors", "astur_versioned_instrument").format(instrument=instrument),
         )
 
 

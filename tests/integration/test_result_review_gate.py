@@ -136,7 +136,9 @@ async def test_generation_emails_assigned_psychologist_once(
     await generate(client, auth_headers, assessment)
     await generate(client, auth_headers, assessment)
 
-    emails["pending"].assert_awaited_once_with(psychologist_user.email, STUDENT_NAME, review_url=ANY)
+    emails["pending"].assert_awaited_once_with(
+        psychologist_user.email, STUDENT_NAME, locale=psychologist_user.locale, review_url=ANY
+    )
 
 
 async def test_notification_failure_does_not_break_generation(
