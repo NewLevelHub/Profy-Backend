@@ -168,13 +168,19 @@ def _latest_report_status(student_id: Any) -> Any:
     `student_id` may be a correlated column or a value: `pending_review`
     while any of their reports waits for review (that's what the
     psychologist has to act on, even if a newer one is already published),
-    else `published` once they have a report, else NULL."""
+    else the status of the latest assessment's report, else NULL. Ordered
+    by assessment, not report row: a fresh translation row of an old
+    assessment must not count as the latest."""
     return (
         select(AnalysisResult.review_status)
         .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
         .join(Profile, Profile.id == Assessment.profile_id)
         .where(Profile.user_id == student_id, _is_original_row())
-        .order_by(case((AnalysisResult.review_status == ReviewStatus.pending_review, 0), else_=1))
+        .order_by(
+            case((AnalysisResult.review_status == ReviewStatus.pending_review, 0), else_=1),
+            Assessment.created_at.desc(),
+            Assessment.id.desc(),
+        )
         .limit(1)
         .scalar_subquery()
     )
