@@ -48,8 +48,9 @@ class PsychologistAvailableStudentItem(BaseModel):
     has_pending_review: bool = False
     # PRO-402: claim CTA is only meaningful after at least one completed test.
     has_completed_assessment: bool = False
-    # Goal and completion time of the latest completed assessment — how long
-    # the student has been waiting in the shared queue.
+    # Goal and completion time of the oldest completed assessment whose report
+    # still waits for review (else the latest completed) — how long the
+    # student has been waiting in the shared queue.
     goal: str | None = None
     completed_at: datetime | None = None
 
