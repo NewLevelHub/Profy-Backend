@@ -1,0 +1,3 @@
+# Git hooks run under sh — a CRLF checkout (core.autocrlf=true on Windows)
+# breaks them with "$'\r': command not found".
+.githooks/* text eol=lf
