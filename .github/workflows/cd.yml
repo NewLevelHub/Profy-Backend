@@ -148,6 +148,21 @@ jobs:
               sleep 1
             done
 
+            # Let's Encrypt certs for both vhosts on this edge nginx live 90 days and
+            # nothing else renews them. `certbot renew` is a no-op unless a cert is
+            # within 30 days of expiry, so running it on every deploy is cheap; the
+            # nginx recreate below picks up the renewed files. The HTTP-01 challenge
+            # is answered by the running nginx from ./certbot/www (the
+            # /.well-known/acme-challenge/ location in nginx.prod.conf). cd-dev.yml
+            # runs the same block. A failed renewal warns but does not block a deploy.
+            mkdir -p certbot/www
+            if ! flock /tmp/profi-edge-nginx.lock docker run --rm \
+                -v /etc/letsencrypt:/etc/letsencrypt \
+                -v "$PWD/certbot/www:/var/www/certbot" \
+                certbot/certbot renew --non-interactive --webroot -w /var/www/certbot; then
+              echo "WARN: certbot renew failed — certificates in /etc/letsencrypt may expire"
+            fi
+
             # nginx.conf is regenerated from the git-tracked nginx.prod.conf on every
             # deploy instead of relying on server-side hand-edits. The dev pipeline
             # (cd-dev.yml) restarts the same shared profi_nginx_prod container, so this
