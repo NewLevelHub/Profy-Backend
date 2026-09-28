@@ -32,8 +32,8 @@ class PsychologistStudentListItem(BaseModel):
     age: int | None = None
     grade: int | None = None
     assigned_at: datetime
-    # Review status of the student's latest report ("pending_review" |
-    # "published"), None while no report exists yet.
+    # "pending_review" while any of the student's reports waits for review,
+    # else "published" once one exists; None while there is no report yet.
     report_status: str | None = None
 
 

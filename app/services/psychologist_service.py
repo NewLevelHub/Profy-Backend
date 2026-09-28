@@ -165,27 +165,16 @@ async def _require_own_note(
 
 def _latest_report_status(student_id: Any) -> Any:
     """Review status to show for a student, as a scalar subquery —
-    `student_id` may be a correlated column or a value. Any report still
-    waiting for review wins (that's what the psychologist has to act on,
-    even when a newer one is already published); otherwise the latest.
-
-    "Latest" is by assessment, not by report row: a translation generated
-    today for an old, published assessment is a fresh row, and ordering on
-    the row would let it hide a newer assessment still waiting for review.
-    `Assessment.created_at` is the transaction start, but each assessment is
-    created by its own request, so two of one student's never share it
-    outside a test that builds both in one transaction."""
+    `student_id` may be a correlated column or a value: `pending_review`
+    while any of their reports waits for review (that's what the
+    psychologist has to act on, even if a newer one is already published),
+    else `published` once they have a report, else NULL."""
     return (
         select(AnalysisResult.review_status)
         .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
         .join(Profile, Profile.id == Assessment.profile_id)
         .where(Profile.user_id == student_id, _is_original_row())
-        .order_by(
-            case((AnalysisResult.review_status == ReviewStatus.pending_review, 0), else_=1),
-            Assessment.created_at.desc(),
-            Assessment.completed_at.desc().nulls_last(),
-            Assessment.id.desc(),
-        )
+        .order_by(case((AnalysisResult.review_status == ReviewStatus.pending_review, 0), else_=1))
         .limit(1)
         .scalar_subquery()
     )
@@ -254,10 +243,21 @@ async def list_available_students(
         )
         .exists()
     )
-    # One pass over completed assessments, latest per profile — not a
+    # One pass over completed assessments, one per profile — not a
     # correlated lookup per student, this list covers the whole platform.
+    # The assessment whose report waits for review is the one the pool's
+    # "waiting since" is about; without one, the latest completed.
     # Aliased: `pending`/`completed` above correlate on `Assessment`.
     completed_assessment = aliased(Assessment)
+    waiting_report = aliased(AnalysisResult)
+    has_waiting_report = (
+        select(waiting_report.id)
+        .where(
+            waiting_report.assessment_id == completed_assessment.id,
+            waiting_report.review_status == ReviewStatus.pending_review,
+        )
+        .exists()
+    )
     latest_completed = (
         select(
             completed_assessment.profile_id,
@@ -268,6 +268,7 @@ async def list_available_students(
         .distinct(completed_assessment.profile_id)
         .order_by(
             completed_assessment.profile_id,
+            has_waiting_report.desc(),
             completed_assessment.completed_at.desc().nulls_last(),
             completed_assessment.created_at.desc(),
         )
@@ -770,7 +771,8 @@ async def list_review_edits(
     student_id: uuid.UUID,
     assessment_id: uuid.UUID,
 ) -> list[PsychologistReviewEditItem]:
-    """Edit history of the report, oldest first — the psychologist's
+    """Edit history of the report, oldest first (by `edited_at`: one PATCH
+    per transaction, so its transaction-start time orders edits) — the psychologist's
     "было → стало" log. Read across every locale row of the assessment, not
     only the row under review: history stays on the row it was written to
     until the next edit re-parents it, and a later-generated `ru` row takes
