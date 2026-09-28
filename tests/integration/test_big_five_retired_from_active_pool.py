@@ -4,7 +4,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.question import Question, QuestionInstrument
-from app.services import assessment_shared, question_pair_service, question_service
+from app.services import admin_service, assessment_shared, question_pair_service, question_service
+from tests.integration.astur_helpers import make_student
 
 
 async def test_get_all_questions_never_serves_big_five(
@@ -44,3 +45,19 @@ async def test_likert_total_matches_the_served_question_pool(
     total = await assessment_shared.likert_total_questions(db_session)
 
     assert total == len(served)
+
+
+async def test_admin_total_questions_excludes_big_five(
+    db_session: AsyncSession,
+) -> None:
+    """The admin "answered N of M" counter must use the battery a student is
+    actually served — counting the retired Big Five rows too showed a
+    completed attempt as e.g. 365 of 485 (PRO-430 §3)."""
+    user, assessment, _ = await make_student(db_session)
+    served = len(await question_service.get_all_questions(db_session))
+
+    user_detail = await admin_service.get_user_detail(db_session, user.id)
+    assessment_detail = await admin_service.get_assessment_detail(db_session, assessment.id)
+
+    assert [a.total_questions for a in user_detail.assessments] == [served]
+    assert assessment_detail.total_questions == served

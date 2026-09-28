@@ -129,11 +129,13 @@ def frontend_url(path: str) -> str:
 
 
 async def send_review_pending_email(
-    to: str, student_name: str, *, review_url: str
+    to: str, student_name: str, *, locale: str = DEFAULT_LOCALE, review_url: str
 ) -> None:
-    """Психологу — новый отчёт ждёт проверки. Кабинет психолога только на
-    русском (KZ-210), поэтому и это письмо всегда ru. Best-effort, никогда не raises."""
-    strings = tr("email", locale=DEFAULT_LOCALE)
+    """Психологу — новый отчёт ждёт проверки, на языке психолога
+    (`users.locale`): кабинет психолога локализован так же, как остальной
+    продукт (PRO-430). Best-effort, никогда не raises."""
+    loc = _email_locale(locale)
+    strings = tr("email", locale=loc)
     await _send_best_effort(
         to,
         strings["review_pending_subject"],
@@ -141,6 +143,7 @@ async def send_review_pending_email(
             student_name=student_name, review_url=review_url
         ),
         "review_pending.html",
+        locale=loc,
         student_name=student_name,
         review_url=review_url,
     )

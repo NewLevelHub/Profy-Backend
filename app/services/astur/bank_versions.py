@@ -13,6 +13,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.models.astur_bank_version import AsturBankVersion, AsturBankVersionStatus
 from app.services.astur.bank import AsturBank, content_hash, parse_bank
 from app.services.astur.bank_validation import BankIssue, validate_bank
@@ -50,7 +51,7 @@ async def latest_published(db: AsyncSession) -> PublishedBank:
     ).scalar_one_or_none()
     if row is None:
         # Version 1 is inserted by migration; reaching this is a broken DB.
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="No published АСТУР bank")
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=i18n_key("api_errors", "astur_no_published_bank"))
     return _to_published(row)
 
 
@@ -85,7 +86,7 @@ async def get_version(db: AsyncSession, version_id: uuid.UUID, *, for_update: bo
         stmt = stmt.with_for_update()
     row = (await db.execute(stmt)).scalar_one_or_none()
     if row is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bank version not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "astur_bank_version_not_found"))
     return row
 
 
@@ -93,7 +94,7 @@ def _require_draft(row: AsturBankVersion) -> None:
     if row.status != AsturBankVersionStatus.draft:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="A published version is immutable — create a new draft instead",
+            detail=i18n_key("api_errors", "astur_published_version_immutable"),
         )
 
 
@@ -172,13 +173,13 @@ async def publish(
     if not await has_changes(db, row):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="The draft is identical to the version it is based on — nothing to publish",
+            detail=i18n_key("api_errors", "astur_draft_unchanged"),
         )
     issues = await validate_version(db, row, confirmed_item_ids=confirmed_item_ids)
     if issues:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail={"message": "Bank version has validation issues", "issues": [i.as_dict() for i in issues]},
+            detail={"message": i18n_key("api_errors", "astur_bank_validation_issues"), "issues": [i.as_dict() for i in issues]},
         )
     next_version = (await db.execute(select(func.coalesce(func.max(AsturBankVersion.version), 0)))).scalar_one() + 1
     row.version = next_version
@@ -199,7 +200,7 @@ async def add_synonym(
     version and the snapshots scored with it stay as they are."""
     phrase = " ".join(text.split())
     if not phrase:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Empty phrasing")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=i18n_key("api_errors", "astur_empty_phrasing"))
     draft = await create_draft(db, admin_id=admin_id)
     draft = await get_version(db, draft.id, for_update=True)
     document = copy.deepcopy(draft.document)
@@ -209,10 +210,10 @@ async def add_synonym(
         None,
     )
     if item is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No open-answer item with this item_id")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "astur_open_item_not_found"))
     existing = {p.casefold() for t in ("score_2", "score_1") for p in item[t].get(locale, [])}
     if phrase.casefold() in existing:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This phrasing is already in the dictionary")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=i18n_key("api_errors", "astur_phrasing_already_exists"))
     item[tier] = {**item[tier], locale: [*item[tier].get(locale, []), phrase]}
     draft.document = document
     await db.commit()

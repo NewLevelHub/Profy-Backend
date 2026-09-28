@@ -13,6 +13,7 @@ import uuid
 import zipfile
 from datetime import datetime, timezone
 
+from app.i18n import use_locale
 from app.schemas.admin import (
     AdminAssessmentDetailResponse,
     AdminResponseItem,
@@ -182,6 +183,25 @@ def test_summary_localizes_values_and_avoids_python_literals() -> None:
     assert values["Статус"] == "Завершён"
     assert values["Начато (UTC)"] == "2026-09-03 09:29"
     assert "Есть роадмап" not in values  # roadmap removed in PRO-425
+
+
+def test_exports_stay_russian_for_a_kazakh_admin() -> None:
+    """PRO-430: the export is Russian-only, but headers used to follow the
+    admin's UI locale while values did not — `Мақсат,Выбрать профессию`."""
+    with use_locale("kk"):
+        summary = _zip_member(_detail(), "summary.csv").lstrip("﻿")
+        responses = _zip_member(_detail(), "responses.csv").lstrip("﻿")
+        users = export.users_to_csv([_user_item()])
+
+    values = {row[0]: row[1] for row in _rows(summary) if len(row) == 2}
+    assert values["Цель"] == "Поступить в вуз"
+    assert values["Статус"] == "Завершён"
+    assert "Мақсат" not in summary
+
+    header, riasec_row = _rows(responses)[:2]
+    assert riasec_row[header.index("Шкала")] == "Артистичный"
+
+    assert _cell(users, "Цель последнего") == "Поступить в вуз"
 
 
 # --- the downloaded filename ------------------------------------------------
