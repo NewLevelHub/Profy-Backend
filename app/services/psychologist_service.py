@@ -245,30 +245,34 @@ async def list_available_students(
     )
     # One pass over completed assessments, one per profile — not a
     # correlated lookup per student, this list covers the whole platform.
-    # The assessment whose report waits for review is the one the pool's
-    # "waiting since" is about; without one, the latest completed.
-    # Aliased: `pending`/`completed` above correlate on `Assessment`.
+    # The pool's "waiting since" is about the oldest assessment whose report
+    # still waits for review (the review queue is oldest-first too); without
+    # one, the latest completed. Pending assessments are one set joined in,
+    # not a lookup per row. Aliased: `pending`/`completed` above correlate
+    # on `Assessment`.
     completed_assessment = aliased(Assessment)
-    waiting_report = aliased(AnalysisResult)
-    has_waiting_report = (
-        select(waiting_report.id)
-        .where(
-            waiting_report.assessment_id == completed_assessment.id,
-            waiting_report.review_status == ReviewStatus.pending_review,
-        )
-        .exists()
+    waiting = (
+        select(AnalysisResult.assessment_id)
+        .where(AnalysisResult.review_status == ReviewStatus.pending_review)
+        .distinct()
+        .subquery()
     )
+    is_waiting = waiting.c.assessment_id.is_not(None)
     latest_completed = (
         select(
             completed_assessment.profile_id,
             completed_assessment.goal,
             completed_assessment.completed_at,
         )
+        .outerjoin(waiting, waiting.c.assessment_id == completed_assessment.id)
         .where(completed_assessment.status == AssessmentStatus.completed)
         .distinct(completed_assessment.profile_id)
         .order_by(
             completed_assessment.profile_id,
-            has_waiting_report.desc(),
+            is_waiting.desc(),
+            # Oldest first among waiting ones (NULL — and so no effect —
+            # for the rest), then newest first as the fallback.
+            case((is_waiting, completed_assessment.completed_at)).asc().nulls_last(),
             completed_assessment.completed_at.desc().nulls_last(),
             completed_assessment.created_at.desc(),
         )
@@ -771,8 +775,8 @@ async def list_review_edits(
     student_id: uuid.UUID,
     assessment_id: uuid.UUID,
 ) -> list[PsychologistReviewEditItem]:
-    """Edit history of the report, oldest first (by `edited_at`: one PATCH
-    per transaction, so its transaction-start time orders edits) — the psychologist's
+    """Edit history of the report, oldest first (by `edited_at`, stamped
+    under the row lock in update_result_content) — the psychologist's
     "было → стало" log. Read across every locale row of the assessment, not
     only the row under review: history stays on the row it was written to
     until the next edit re-parents it, and a later-generated `ru` row takes
@@ -934,6 +938,10 @@ async def update_result_content(
             AnalysisResultReviewEdit(
                 analysis_result_id=analysis.id,
                 editor_id=psychologist_id,
+                # Stamped under the row lock, not the column's now() (the
+                # transaction start): the history is ordered by this, and two
+                # concurrent PATCHes must list in the order they applied.
+                edited_at=datetime.now(timezone.utc),
                 changed_fields=changed,
             )
         )

@@ -240,3 +240,10 @@ async def test_available_waiting_since_follows_the_pending_report(
     assert row["has_pending_review"] is True
     assert row["goal"] == "explore"
     assert datetime.fromisoformat(row["completed_at"]) == datetime(2026, 9, 1, tzinfo=timezone.utc)
+
+    # Both pending: the oldest one is how long the student has waited.
+    stored.review_status = ReviewStatus.pending_review
+    await db_session.flush()
+    rows = (await client.get("/api/v1/psychologist/students/available", headers=psychologist_headers)).json()
+    row = next(item for item in rows if item["id"] == str(test_user.id))
+    assert datetime.fromisoformat(row["completed_at"]) == datetime(2026, 9, 1, tzinfo=timezone.utc)

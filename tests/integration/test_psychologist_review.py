@@ -605,3 +605,30 @@ async def test_student_list_status_shows_a_pending_report_behind_a_published_one
     rows = (await client.get("/api/v1/psychologist/students", headers=psychologist_headers)).json()
     row = next(item for item in rows if item["id"] == str(test_user.id))
     assert row["report_status"] == "pending_review"
+
+
+async def test_edit_history_lists_edits_in_the_order_applied(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    test_user: User,
+    psychologist_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+    await generate(client, auth_headers, assessment)
+    await assign(db_session, psychologist_user, test_user)
+
+    url = _result_url(test_user, assessment.id)
+    for text in ("Первая правка", "Вторая правка", "Третья правка"):
+        assert (await client.patch(url, json={"summary": text}, headers=psychologist_headers)).status_code == 200
+
+    history = (await client.get(f"{url}/edits", headers=psychologist_headers)).json()
+    assert [entry["changed_fields"]["summary"]["new"] for entry in history] == [
+        "Первая правка",
+        "Вторая правка",
+        "Третья правка",
+    ]
