@@ -575,3 +575,33 @@ async def test_student_list_status_follows_latest_assessment_not_newest_row(
     rows = (await client.get("/api/v1/psychologist/students", headers=psychologist_headers)).json()
     row = next(item for item in rows if item["id"] == str(test_user.id))
     assert row["report_status"] == "pending_review"
+
+
+async def test_student_list_status_shows_a_pending_report_behind_a_published_one(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    test_user: User,
+    psychologist_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    older = await make_student_assessment(db_session, test_user)
+    older.created_at = datetime(2026, 1, 10, tzinfo=timezone.utc)
+    newer = Assessment(
+        profile_id=older.profile_id,
+        goal=AssessmentGoal.explore,
+        created_at=datetime(2026, 2, 10, tzinfo=timezone.utc),
+    )
+    db_session.add(newer)
+    await db_session.flush()
+    await generate(client, auth_headers, older)
+    await generate(client, auth_headers, newer)
+    await assign(db_session, psychologist_user, test_user)
+    await client.post(f"{_result_url(test_user, newer.id)}/publish", headers=psychologist_headers)
+
+    rows = (await client.get("/api/v1/psychologist/students", headers=psychologist_headers)).json()
+    row = next(item for item in rows if item["id"] == str(test_user.id))
+    assert row["report_status"] == "pending_review"

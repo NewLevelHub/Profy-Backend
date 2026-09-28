@@ -164,8 +164,10 @@ async def _require_own_note(
 
 
 def _latest_report_status(student_id: Any) -> Any:
-    """Review status of the student's latest report (row under review), as a
-    scalar subquery — `student_id` may be a correlated column or a value.
+    """Review status to show for a student, as a scalar subquery —
+    `student_id` may be a correlated column or a value. Any report still
+    waiting for review wins (that's what the psychologist has to act on,
+    even when a newer one is already published); otherwise the latest.
 
     "Latest" is by assessment, not by report row: a translation generated
     today for an old, published assessment is a fresh row, and ordering on
@@ -179,6 +181,7 @@ def _latest_report_status(student_id: Any) -> Any:
         .join(Profile, Profile.id == Assessment.profile_id)
         .where(Profile.user_id == student_id, _is_original_row())
         .order_by(
+            case((AnalysisResult.review_status == ReviewStatus.pending_review, 0), else_=1),
             Assessment.created_at.desc(),
             Assessment.completed_at.desc().nulls_last(),
             Assessment.id.desc(),
@@ -619,6 +622,10 @@ async def _get_or_generate_psych_ai_analysis(
 # off keeps one runaway response from carrying every pending report.
 REVIEW_QUEUE_LIMIT = 200
 
+# Newest edits kept in GET .../edits — each entry carries full before/after
+# values (a careers list is ~20 KB), and no report is reworked this often.
+REVIEW_EDITS_LIMIT = 100
+
 
 def _is_original_row() -> Any:
     """KZ-405 keeps one report row per locale; they share one review status,
@@ -780,7 +787,8 @@ async def list_review_edits(
             .outerjoin(User, User.id == AnalysisResultReviewEdit.editor_id)
             .join(AnalysisResult, AnalysisResult.id == AnalysisResultReviewEdit.analysis_result_id)
             .where(AnalysisResult.assessment_id == analysis.assessment_id)
-            .order_by(AnalysisResultReviewEdit.edited_at.asc(), AnalysisResultReviewEdit.id.asc())
+            .order_by(AnalysisResultReviewEdit.edited_at.desc(), AnalysisResultReviewEdit.id.desc())
+            .limit(REVIEW_EDITS_LIMIT)
         )
     ).all()
     return [
@@ -791,7 +799,7 @@ async def list_review_edits(
             editor_email=email,
             changed_fields=edit.changed_fields,
         )
-        for edit, email in rows
+        for edit, email in reversed(rows)
     ]
 
 

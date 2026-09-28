@@ -85,8 +85,8 @@ Auth тот же JWT Bearer + `require_role(psychologist)` на всём
     "student_id": "uuid",
     "student_name": "Айгерим",        // null, если имени в профиле нет
     "student_email": "student@example.com",
-    "age_group": "senior",            // junior | middle | senior | null
-    "grade": 10,                      // класс из профиля, null без профиля
+    "age": 16,                        // null без профиля
+    "grade": 10,                      // класс из профиля
     "goal": "explore",
     "generated_at": "2026-09-14T08:00:00Z",
     "reviewed_at": null               // не null — психолог уже сохранял правки
@@ -166,7 +166,7 @@ Auth тот же JWT Bearer + `require_role(psychologist)` на всём
 
 История сохранённых правок отчёта, старые сверху — по одной записи на PATCH,
 который что-то реально изменил. Собирается со всех языковых строк
-прохождения, не только с проверяемой. Те же `404`, что у §2.2.
+прохождения, не только с проверяемой. Отдаются 100 последних правок. Те же `404`, что у §2.2.
 `personality_notes` в `changed_fields` — целиком словарь «что видит ученик»
 до и после правки, не только изменённая черта.
 
@@ -198,8 +198,9 @@ Auth тот же JWT Bearer + `require_role(psychologist)` на всём
 `assigned_at`: когда этот психолог взял ученика.
 
 `GET /api/v1/psychologist/students` (свои ученики) дополнительно отдаёт
-`grade` и `report_status` — статус проверки последнего отчёта ученика
-(`"pending_review" | "published" | null`). `GET /students/available` —
+`grade` и `report_status` (`"pending_review" | "published" | null`) —
+`pending_review`, если хоть один отчёт ученика ждёт проверки, иначе статус
+последнего. `GET /students/available` —
 `grade`, а также `goal` и `completed_at` последней завершённой диагностики
 (`null`, пока ни одной нет) — по ним общая очередь показывает цель и сколько
 ученик ждёт.
