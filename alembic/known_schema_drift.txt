@@ -1,0 +1,22 @@
+# Known model <-> migration drift at dev head a7c3e1f9b2d4, tolerated by
+# scripts/check_schema_drift.py (PRO-429). Anything NOT listed here fails CI.
+# Fixing an item means a migration (or a model change) — then delete its line;
+# CI fails on a line that no longer matches, so this list only shrinks.
+# Do not add lines to silence a new difference: write the migration instead.
+
+# The Certificate model was removed with the GPA fields, the table never dropped.
+remove_table certificates
+remove_index certificates.ix_certificates_profile_id
+
+# Kept on purpose until `role` has lived in prod for a while (12cdf8d6ab06).
+remove_column users.is_admin
+
+# d896a3811d5b dropped the redundant index but kept the unique constraint;
+# the model still declares `unique=True, index=True`.
+add_index users.ix_users_google_id
+remove_constraint users.uq_users_google_id
+
+# Created only in migrations, never declared on the models.
+remove_index analysis_results.ix_analysis_results_pending_review
+remove_index university_images.uq_university_images_one_primary
+remove_constraint university_images.uq_university_images_university_checksum
