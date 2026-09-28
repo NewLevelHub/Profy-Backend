@@ -2,6 +2,7 @@
 Detail + full report also covered here."""
 
 import uuid
+from datetime import datetime, timezone
 
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -146,13 +147,17 @@ async def test_available_students_flags_completed_assessment(
     )
     db_session.add(profile)
     await db_session.flush()
+    completed_at = datetime(2026, 9, 20, 10, 30, tzinfo=timezone.utc)
     db_session.add(
         Assessment(
             profile_id=profile.id,
             goal=AssessmentGoal.explore,
             status=AssessmentStatus.completed,
+            completed_at=completed_at,
         )
     )
+    # A newer attempt still in progress must not replace the completed one.
+    db_session.add(Assessment(profile_id=profile.id, goal=AssessmentGoal.university))
     await db_session.commit()
 
     after = await client.get(
@@ -162,6 +167,9 @@ async def test_available_students_flags_completed_assessment(
     row = next(item for item in after.json() if item["id"] == str(test_user.id))
     assert row["has_completed_assessment"] is True
     assert row["has_pending_review"] is False
+    assert row["grade"] == 10
+    assert row["goal"] == "explore"
+    assert datetime.fromisoformat(row["completed_at"]) == completed_at
 
 
 async def test_scope_available_excludes_already_claimed_student(

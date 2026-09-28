@@ -61,6 +61,7 @@ async def test_queue_lists_only_assigned_pending_results(
     assert item["student_name"] == STUDENT_NAME
     assert item["student_email"] == test_user.email
     assert item["age"] == 16
+    assert item["grade"] == 10
     assert item["goal"] == "explore"
     assert item["reviewed_at"] is None
 
@@ -155,6 +156,14 @@ async def test_patch_edits_content_audits_and_publish_shows_it_to_student(
         )
     ).scalars().all()
     assert len(edits_after) == 1
+
+    history = await client.get(f"{_result_url(test_user, assessment.id)}/edits", headers=psychologist_headers)
+    assert history.status_code == 200
+    [entry] = history.json()
+    assert entry["editor_id"] == str(psychologist_user.id)
+    assert entry["editor_email"] == psychologist_user.email
+    assert set(entry["changed_fields"]) == {"summary", "final_analysis", "strength_cards"}
+    assert entry["changed_fields"]["summary"] == {"old": original_summary, "new": "Отредактировано психологом"}
 
     still_hidden = await client.get(f"/api/v1/result/{assessment.id}", headers=auth_headers)
     assert still_hidden.json()["status"] == "pending_review"
@@ -408,3 +417,61 @@ async def test_personality_notes_follow_the_report_language_not_the_reviewer(
     assert in_ru.status_code == in_kk.status_code == 200
     assert in_kk.json()["personality_notes"] == in_ru.json()["personality_notes"]
     assert not any(set("әғқңөұүһі") & set(text.lower()) for text in in_kk.json()["personality_notes"].values())
+
+
+async def test_edit_history_requires_assignment(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    test_user: User,
+    psychologist_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+    await generate(client, auth_headers, assessment)
+
+    url = f"{_result_url(test_user, assessment.id)}/edits"
+    assert (await client.get(url, headers=psychologist_headers)).status_code == 404
+
+    await assign(db_session, psychologist_user, test_user)
+    fresh = await client.get(url, headers=psychologist_headers)
+    assert fresh.status_code == 200
+    assert fresh.json() == []
+
+    unknown = await client.get(f"{_result_url(test_user, uuid.uuid4())}/edits", headers=psychologist_headers)
+    assert unknown.status_code == 404
+
+
+async def test_student_list_reports_latest_review_status(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    test_user: User,
+    psychologist_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+    await assign(db_session, psychologist_user, test_user)
+
+    async def listed() -> dict:
+        rows = (await client.get("/api/v1/psychologist/students", headers=psychologist_headers)).json()
+        return next(row for row in rows if row["id"] == str(test_user.id))
+
+    no_report = await listed()
+    assert no_report["report_status"] is None
+    assert no_report["grade"] == 10
+
+    await generate(client, auth_headers, assessment)
+    assert (await listed())["report_status"] == "pending_review"
+
+    await client.post(f"{_result_url(test_user, assessment.id)}/publish", headers=psychologist_headers)
+    assert (await listed())["report_status"] == "published"
+
+    detail = (await client.get(f"/api/v1/psychologist/students/{test_user.id}", headers=psychologist_headers)).json()
+    assert detail["assigned_at"] is not None

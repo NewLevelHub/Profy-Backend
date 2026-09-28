@@ -48,6 +48,7 @@ from app.schemas.psychologist import (
 from app.schemas.psychologist_result import (
     PsychologistResultDetailResponse,
     PsychologistResultPatch,
+    PsychologistReviewEditItem,
     PsychologistReviewQueueItem,
 )
 from app.services import (
@@ -166,13 +167,24 @@ async def list_assigned_students(
     db: AsyncSession, psychologist_id: uuid.UUID
 ) -> list[PsychologistStudentListItem]:
     student = aliased(User)
+    latest_report_status = (
+        select(AnalysisResult.review_status)
+        .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
+        .join(Profile, Profile.id == Assessment.profile_id)
+        .where(Profile.user_id == student.id, _is_original_row())
+        .order_by(AnalysisResult.created_at.desc())
+        .limit(1)
+        .scalar_subquery()
+    )
     query = (
         select(
             student.id,
             student.email,
             Profile.name,
             Profile.age,
+            Profile.grade,
             PsychologistStudentAssignment.created_at,
+            latest_report_status.label("report_status"),
         )
         .join(student, student.id == PsychologistStudentAssignment.student_id)
         .outerjoin(Profile, Profile.user_id == student.id)
@@ -186,7 +198,9 @@ async def list_assigned_students(
             email=row.email,
             profile_name=row.name,
             age=row.age,
+            grade=row.grade,
             assigned_at=row.created_at,
+            report_status=row.report_status.value if row.report_status else None,
         )
         for row in rows
     ]
@@ -220,16 +234,35 @@ async def list_available_students(
         )
         .exists()
     )
+    # Aliased twice: the outer join must not be the `Assessment` that
+    # `pending`/`completed` above correlate on.
+    latest_completed = aliased(Assessment)
+    latest_assessment = aliased(Assessment)
+    latest_completed_id = (
+        select(latest_completed.id)
+        .join(Profile, Profile.id == latest_completed.profile_id)
+        .where(
+            Profile.user_id == User.id,
+            latest_completed.status == AssessmentStatus.completed,
+        )
+        .order_by(latest_completed.completed_at.desc().nulls_last(), latest_completed.created_at.desc())
+        .limit(1)
+        .scalar_subquery()
+    )
     query = (
         select(
             User.id,
             User.email,
             Profile.name,
             Profile.age,
+            Profile.grade,
             pending.label("has_pending"),
             completed.label("has_completed"),
+            latest_assessment.goal,
+            latest_assessment.completed_at,
         )
         .outerjoin(Profile, Profile.user_id == User.id)
+        .outerjoin(latest_assessment, latest_assessment.id == latest_completed_id)
         .where(User.role == UserRole.student, ~User.id.in_(already_mine))
         .order_by(User.created_at.desc())
     )
@@ -240,8 +273,11 @@ async def list_available_students(
             email=row.email,
             profile_name=row.name,
             age=row.age,
+            grade=row.grade,
             has_pending_review=bool(row.has_pending),
             has_completed_assessment=bool(row.has_completed),
+            goal=row.goal.value if row.goal else None,
+            completed_at=row.completed_at,
         )
         for row in rows
     ]
@@ -282,14 +318,17 @@ async def claim_student(
         email=student.email,
         profile_name=profile.name if profile is not None else None,
         age=profile.age if profile is not None else None,
+        grade=profile.grade if profile is not None else None,
         assigned_at=assignment.created_at,
     )
 
 
 def _to_psychologist_detail(
     detail: AdminUserDetailResponse,
+    assigned_at: datetime | None = None,
 ) -> PsychologistStudentDetailResponse:
     return PsychologistStudentDetailResponse(
+        assigned_at=assigned_at,
         id=detail.id,
         email=detail.email,
         is_verified=detail.is_verified,
@@ -320,14 +359,14 @@ async def get_assigned_student_detail(
     psychologist_id: uuid.UUID,
     student_id: uuid.UUID,
 ) -> PsychologistStudentDetailResponse:
-    await _require_assigned_student(
+    assignment = await _require_assigned_student(
         db, psychologist_id=psychologist_id, student_id=student_id
     )
     detail = await admin_service.get_user_detail(db, student_id)
     if detail is None:
         # Assignment pointed at a deleted user mid-request — treat as missing.
         raise ValueError(i18n_key("api_errors", "student_not_found", locale="ru"))
-    return _to_psychologist_detail(detail)
+    return _to_psychologist_detail(detail, assigned_at=assignment.created_at)
 
 
 async def get_assigned_student_test_results(
@@ -600,6 +639,7 @@ def review_queue_select(limit: int = REVIEW_QUEUE_LIMIT) -> Select:
             student.email.label("student_email"),
             Profile.name.label("student_name"),
             Profile.age,
+            Profile.grade,
         )
         .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
         .join(Profile, Profile.id == Assessment.profile_id)
@@ -618,6 +658,7 @@ def to_review_queue_items(rows: Any) -> list[PsychologistReviewQueueItem]:
             student_name=row.student_name,
             student_email=row.student_email,
             age=row.age,
+            grade=row.grade,
             goal=row.goal.value,
             generated_at=row.generated_at,
             reviewed_at=row.reviewed_at,
@@ -690,6 +731,42 @@ async def get_result_for_review(
         db, student_id=student_id, assessment_id=assessment_id
     )
     return _to_detail(analysis)
+
+
+async def list_review_edits(
+    db: AsyncSession,
+    *,
+    psychologist_id: uuid.UUID,
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+) -> list[PsychologistReviewEditItem]:
+    """Edit history of the row under review, oldest first — the psychologist's
+    "было → стало" log. Other-locale rows carry no history of their own:
+    update_result_content moves it onto this row before deleting them."""
+    await _require_assigned_student(
+        db, psychologist_id=psychologist_id, student_id=student_id
+    )
+    analysis = await _require_result_for_student(
+        db, student_id=student_id, assessment_id=assessment_id
+    )
+    rows = (
+        await db.execute(
+            select(AnalysisResultReviewEdit, User.email)
+            .outerjoin(User, User.id == AnalysisResultReviewEdit.editor_id)
+            .where(AnalysisResultReviewEdit.analysis_result_id == analysis.id)
+            .order_by(AnalysisResultReviewEdit.edited_at.asc(), AnalysisResultReviewEdit.id.asc())
+        )
+    ).all()
+    return [
+        PsychologistReviewEditItem(
+            id=edit.id,
+            edited_at=edit.edited_at,
+            editor_id=edit.editor_id,
+            editor_email=email,
+            changed_fields=edit.changed_fields,
+        )
+        for edit, email in rows
+    ]
 
 
 async def regenerate_psych_ai_analysis(

@@ -32,6 +32,7 @@ from app.schemas.psychologist import (
 from app.schemas.psychologist_result import (
     PsychologistResultDetailResponse,
     PsychologistResultPatch,
+    PsychologistReviewEditItem,
     PsychologistReviewQueueItem,
 )
 from app.services import extended_block_service, psychologist_service
@@ -96,6 +97,24 @@ async def update_result_content(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ResultPatchInvalidError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.get(f"{_RESULT_PATH}/edits", response_model=list[PsychologistReviewEditItem])
+async def list_result_edits(
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+    current_user: User = Depends(_require_psychologist),
+    db: AsyncSession = Depends(get_db),
+) -> list[PsychologistReviewEditItem]:
+    try:
+        return await psychologist_service.list_review_edits(
+            db,
+            psychologist_id=current_user.id,
+            student_id=student_id,
+            assessment_id=assessment_id,
+        )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
