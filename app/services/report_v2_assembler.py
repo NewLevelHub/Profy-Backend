@@ -380,8 +380,22 @@ def build_riasec_careers(
     return result
 
 
-def _map_cards(cards: list) -> list[StudentStrengthCard]:
-    return [StudentStrengthCard(title=c.title, description=c.description) for c in cards]
+def build_strength_cards(stored: list[dict]) -> list[StudentStrengthCard]:
+    """Stored `AnalysisResult.strength_cards` → the student's cards, with the
+    grounding badge resolved in the current (owner's) locale. A card a
+    psychologist wrote from scratch has no basis and gets no badge."""
+    labels = tr("student_strengths")["basis_labels"]
+    cards = []
+    for card in stored:
+        basis = card.get("basis")
+        cards.append(StudentStrengthCard(
+            title=card["title"],
+            description=card["description"],
+            basis=basis,
+            source_label=labels.get(basis) if basis else None,
+            try_now=card.get("try_now") or None,
+        ))
+    return cards
 
 
 def _map_thinking_notes(cards: list) -> list[StudentThinkingStyleNote]:
@@ -399,6 +413,7 @@ def assemble_result_v2(
     careers: list[dict],
     created_at: datetime,
     evidence: dict[str, dict] | None = None,
+    strength_cards: list[dict] | None = None,
 ) -> ResultResponseV2:
     """Always succeeds, never raises, never leaves a required field empty —
     this is what makes /result return 200 with a complete v2 form
@@ -411,7 +426,7 @@ def assemble_result_v2(
         assessment_id=assessment_id,
         summary=narrative.summary,
         **build_fixed_framings(),
-        strength_cards=_map_cards(narrative.strength_cards),
+        strength_cards=build_strength_cards(strength_cards or []),
         interest_map_note=build_interest_map_note(interest_map),
         thinking_style_notes=_map_thinking_notes(narrative.thinking_style_notes),
         personality_notes=build_personality_notes(personality_profile),
@@ -422,7 +437,8 @@ def assemble_result_v2(
         created_at=created_at,
     )
 
-    if flat and any(e.source_type == "artifact" for e in context.evidence):
+    has_artifact = any(e.startswith("artifact:") for c in context.strength_candidates for e in c.evidence_ids)
+    if flat and has_artifact:
         common["summary"] = common["summary"] + tr("result_v2")["flat_profile_artifact_note"]
 
     return RiasecResultResponse(

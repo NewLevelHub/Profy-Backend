@@ -23,6 +23,18 @@ _CARD_SCHEMA = {
     "required": ["title", "description"],
     "properties": {"title": {"type": "string"}, "description": {"type": "string"}},
 }
+# Strength cards also carry a short practical "try now" line (PRO-432) — an
+# empty string when the card has none, kept empty in the translation.
+_STRENGTH_CARD_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["title", "description", "try_now"],
+    "properties": {
+        "title": {"type": "string"},
+        "description": {"type": "string"},
+        "try_now": {"type": "string"},
+    },
+}
 
 TRANSLATE_JSON_SCHEMA: dict = {
     "type": "object",
@@ -31,7 +43,7 @@ TRANSLATE_JSON_SCHEMA: dict = {
     "properties": {
         "summary": {"type": "string"},
         "final_analysis": {"type": "string"},
-        "strength_cards": {"type": "array", "items": _CARD_SCHEMA},
+        "strength_cards": {"type": "array", "items": _STRENGTH_CARD_SCHEMA},
         "thinking_style_notes": {"type": "array", "items": _CARD_SCHEMA},
     },
 }
@@ -45,7 +57,7 @@ def _payload(source: dict) -> dict:
         "summary": source["summary"],
         "final_analysis": source["final_analysis"],
         "strength_cards": [
-            {"title": c["title"], "description": c["description"]}
+            {"title": c["title"], "description": c["description"], "try_now": c.get("try_now") or ""}
             for c in source["strength_cards"]
         ],
         "thinking_style_notes": [
@@ -70,7 +82,8 @@ def build_messages(source: dict, *, source_locale: str, target_locale: str) -> l
         "Числа, названия и имена собственные оставляй как есть (только "
         "переводи склоняемую обвязку вокруг них).",
         "Верни JSON ровно той же схемы: summary, final_analysis, "
-        "strength_cards[{title, description}], thinking_style_notes[{title, description}]. "
+        "strength_cards[{title, description, try_now}], thinking_style_notes[{title, description}]. "
+        "Пустой try_now оставляй пустой строкой. "
         "Никакого текста вне JSON.",
         language_directive(target_locale),
     ]

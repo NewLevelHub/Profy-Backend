@@ -9,6 +9,7 @@ since app.services.report_narrative_validator is what enforces them for real.
 """
 from app.prompts import report_narrative as prompt
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
+from app.schemas.student_strengths import StrengthCandidate
 from app.services.riasec_content import riasec_labels
 
 
@@ -70,9 +71,22 @@ def test_system_prompt_requires_evidence_backed_claims_and_bans_numbers():
     assert "Никогда не цитируй числа" in system
 
 
-def test_system_prompt_forbids_thinking_style_evidence_in_strength_cards():
-    system = prompt._system_prompt(_senior_context())
-    assert 'НЕ используй здесь evidence с source_type "thinking_style"' in system
+def test_system_prompt_ties_strength_cards_to_the_candidate_catalog():
+    candidate = StrengthCandidate(
+        source_id="strength:elers", source_type="elers", domain="self_regulation", basis="self_report",
+        content_key="elers", evidence_ids=["elers"], quality_flags=["x"], priority=5,
+        title="Ты настойчиво идёшь к своей цели", description="Описание",
+    )
+    context = _senior_context().model_copy(update={"strength_candidates": [candidate]})
+
+    system = prompt._system_prompt(context)
+
+    assert "РОВНО по одной карточке на КАЖДОГО кандидата" in system
+    assert "interest — это ИНТЕРЕС, который стоит проверить" in system
+    assert '"source_id": "strength:elers"' in system
+    assert "Ты настойчиво идёшь к своей цели" in system
+    # Internal selection details never reach the model.
+    assert '"elers"' not in system and "self_regulation" not in system
 
 
 def test_system_prompt_embeds_the_evidence_catalog_as_json():

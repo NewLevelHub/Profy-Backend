@@ -19,7 +19,7 @@ from app.schemas.astur import (
     SubmitAsturSubtestRequest,
     SubmitAsturSubtestResponse,
 )
-from app.services import assessment_shared
+from app.services import assessment_shared, student_strengths_service
 from app.services.astur import runs
 
 router = APIRouter(tags=["astur"])
@@ -129,7 +129,11 @@ async def submit_astur_subtest(
         ):
             await db.commit()
 
-    return SubmitAsturSubtestResponse(
+    response = SubmitAsturSubtestResponse(
         run_id=run.id, subtest=key, actual_ms=actual_ms,
         over_limit_items=over_limit_items, run_completed=completed,
     )
+    if completed:
+        # A retake after the report: its strength cards now describe older results.
+        await student_strengths_service.flag_report_if_strengths_changed(assessment_id, db)
+    return response

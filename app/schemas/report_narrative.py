@@ -20,6 +20,10 @@ class NarrativeCard(BaseModel):
     title: str
     description: str
     evidence_ids: list[str] = []
+    # Only ever set on a *translated* strength card (the source's try-now
+    # line in the target language) — generation never asks the LLM for it,
+    # it comes from the vetted candidate (PRO-432).
+    try_now: str | None = None
 
 
 class InterestCard(BaseModel):

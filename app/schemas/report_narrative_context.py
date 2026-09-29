@@ -11,6 +11,8 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from app.schemas.student_strengths import StrengthCandidate
+
 
 class EvidenceItem(BaseModel):
     source_id: str
@@ -19,12 +21,12 @@ class EvidenceItem(BaseModel):
         "personality",
         "motivation",
         "thinking_style",
-        "subject_liked",
-        "subject_easy",
-        "artifact",
     ]
     text: str
 
 
 class ReportNarrativeContext(BaseModel):
     evidence: list[EvidenceItem] = []
+    # «Сильные стороны» (PRO-432): already chosen by the methodology — the
+    # narrative writes exactly one card per candidate and cites nothing else.
+    strength_candidates: list[StrengthCandidate] = []

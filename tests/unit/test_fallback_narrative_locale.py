@@ -17,12 +17,18 @@ from app.i18n import use_locale
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
 from app.services.report_narrative_fallback import build_fallback_narrative
 from app.services.report_narrative_validator import validate
+from app.services.student_strengths_service import select_strengths
+from tests.strength_fixtures import rich_inputs
 
 _KK_CHARS = set("әғқңөұүһі")
 
 
-def _context(evidence: list[EvidenceItem]) -> ReportNarrativeContext:
-    return ReportNarrativeContext(evidence=evidence)
+def _context(evidence: list[EvidenceItem], *, with_strengths: bool = False) -> ReportNarrativeContext:
+    candidates = []
+    if with_strengths:
+        with use_locale("kk"):
+            candidates = select_strengths(rich_inputs())
+    return ReportNarrativeContext(evidence=evidence, strength_candidates=candidates)
 
 
 def _all_texts(output) -> list[str]:
@@ -59,21 +65,19 @@ def _rich_evidence_kk() -> list[EvidenceItem]:
                      text="Шынымен қызық іспен айналысу"),
         EvidenceItem(source_id="motivation:creation", source_type="motivation",
                      text="Өзіндік бір нәрсе жасау"),
-        EvidenceItem(source_id="subject_liked:Физика", source_type="subject_liked", text="Физика"),
-        EvidenceItem(source_id="artifact:1", source_type="artifact", text="Робототехника"),
     ]
 
 
 @pytest.mark.parametrize("rich", [False, True])
 def test_kk_fallback_is_valid_by_construction(rich):
-    ctx = _context(_rich_evidence_kk() if rich else [])
+    ctx = _context(_rich_evidence_kk(), with_strengths=True) if rich else _context([])
     with use_locale("kk"):
         out = build_fallback_narrative(ctx, locale="kk")
         assert validate(out, ctx, language="kk") == []
 
 
 def test_kk_fallback_has_no_russian_dominant_field():
-    ctx = _context(_rich_evidence_kk())
+    ctx = _context(_rich_evidence_kk(), with_strengths=True)
     with use_locale("kk"):
         out = build_fallback_narrative(ctx, locale="kk")
     for text in _all_texts(out):
@@ -91,7 +95,7 @@ def test_kk_summary_keeps_the_5_to_6_sentence_shape():
 
 
 def test_kk_placeholders_are_all_filled():
-    ctx = _context(_rich_evidence_kk())
+    ctx = _context(_rich_evidence_kk(), with_strengths=True)
     with use_locale("kk"):
         out = build_fallback_narrative(ctx, locale="kk")
     for text in _all_texts(out):

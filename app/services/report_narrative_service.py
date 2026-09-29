@@ -82,24 +82,6 @@ _CORRECTION_HINTS: dict[str, str] = {
         "source_type \"riasec_category\" из каталога — или, если ни один не "
         "подходит по смыслу, убери эту карточку совсем."
     ),
-    "strength_card_excluded_source_leak": (
-        "Карточка strength_cards с title {detail!r} ссылается на evidence с "
-        "source_type \"thinking_style\" или \"motivation\" — так нельзя, эти "
-        "факты только в thinking_style_notes/motivation_narrative. Убери эту "
-        "карточку из strength_cards или замени на evidence другого типа."
-    ),
-    "strength_card_count": (
-        "Неверное число карточек strength_cards ({detail}). Посчитай evidence, "
-        "у которых source_type НЕ \"thinking_style\" и НЕ \"motivation\", и "
-        "сделай ровно столько карточек (в пределах 5-7)."
-    ),
-    "strength_card_duplicate_evidence": (
-        "Source_id {detail!r} процитирован больше чем в одной карточке "
-        "strength_cards — какой-то один факт пересказан 2-3 разными "
-        "карточками. Оставь этот source_id только в одной карточке, а "
-        "остальные карточки с ним убери (не увеличивай их число сверх "
-        "количества уникальных фактов)."
-    ),
     "thinking_style_count": (
         "Неверное число карточек thinking_style_notes ({detail}). Должна быть "
         "РОВНО ОДНА карточка на ВСЕ evidence с source_type \"thinking_style\" "
@@ -253,6 +235,7 @@ def _translated_texts(raw: dict) -> list[str]:
         [raw.get("summary") or "", raw.get("final_analysis") or ""]
         + [c.get("title") or "" for c in cards]
         + [c.get("description") or "" for c in cards]
+        + [c.get("try_now") or "" for c in cards]
     )
 
 
@@ -332,7 +315,8 @@ async def translate_report_narrative(
                 "summary": raw["summary"],
                 "final_analysis": raw["final_analysis"],
                 "strength_cards": [
-                    NarrativeCard(title=c["title"], description=c["description"]) for c in cards
+                    NarrativeCard(title=c["title"], description=c["description"], try_now=c.get("try_now") or None)
+                    for c in cards
                 ],
                 "thinking_style_notes": [
                     NarrativeCard(title=n["title"], description=n["description"]) for n in notes

@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field, model_validator
 
 from app.i18n.catalog import key as i18n_key
 from app.models.analysis_result import ReviewStatus
+from app.schemas.student_strengths import StrengthBasis
 
 # Mirrors `result_v2._MAX_CAREERS` — the student schema rejects more.
 _MAX_CAREERS = 10
@@ -35,6 +36,13 @@ class ReviewTextCard(BaseModel):
     description: str
 
 
+class ReviewStrengthCard(ReviewTextCard):
+    # PRO-432 — how the card is grounded and its practical experiment; both
+    # absent on a card the psychologist added by hand.
+    basis: StrengthBasis | None = None
+    try_now: str | None = None
+
+
 class PsychologistResultDetailResponse(BaseModel):
     assessment_id: uuid.UUID
     review_status: ReviewStatus
@@ -49,12 +57,16 @@ class PsychologistResultDetailResponse(BaseModel):
     development_plan: dict
     big_five: dict[str, float]
     thinking_style: dict[str, float]
-    strength_cards: list[ReviewTextCard]
+    strength_cards: list[ReviewStrengthCard]
     thinking_style_notes: list[ReviewTextCard]
     final_analysis: str
     personality_notes: dict[str, str]
     motivation_highlights: list[str]
     created_at: datetime
+    # The strength cards were built from earlier Belbin/АСТУР results than
+    # the student's current ones (a retake after the report) — rebuild them
+    # or publish as they are (PRO-432).
+    strengths_stale: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -63,6 +75,11 @@ class ReviewTextCardPatch(BaseModel):
     title: str = Field(min_length=1)
     description: str = Field(min_length=1)
     model_config = {"extra": "forbid"}
+
+
+class ReviewStrengthCardPatch(ReviewTextCardPatch):
+    basis: StrengthBasis | None = None
+    try_now: str | None = None
 
 
 class ReviewCareerPatch(BaseModel):
@@ -95,7 +112,7 @@ class PsychologistResultPatch(BaseModel):
     careers: list[ReviewCareerPatch] | None = Field(default=None, max_length=_MAX_CAREERS)
     strengths: list[str] | None = None
     weaknesses: list[str] | None = None
-    strength_cards: list[ReviewTextCardPatch] | None = None
+    strength_cards: list[ReviewStrengthCardPatch] | None = None
     thinking_style_notes: list[ReviewTextCardPatch] | None = None
     final_analysis: str | None = Field(default=None, min_length=1)
     personality_notes: dict[str, str] | None = None

@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 from app.schemas.report_narrative import ReportNarrativeOutput
 from app.schemas.report_narrative_context import ReportNarrativeContext
-from app.services.report_narrative_context import STRENGTH_CARD_EXCLUDED_SOURCE_TYPES, unknown_source_ids
+from app.services.report_narrative_context import unknown_source_ids
 from app.services.riasec_content import riasec_labels
 
 # Приложение C, В.1 — verbatim phrases, matched as lowercase substrings.
@@ -64,6 +64,23 @@ BANNED_PHRASES_KK: tuple[str, ...] = (
 )
 
 _MAX_CAREER_CARDS = 3
+# PRO-432: an `interest` strength card must stay an interest to check, never
+# a proven ability ("умеешь", "хорошо понимаешь людей" from a RIASEC score
+# alone). Lowercase substrings; kk is checked together with ru.
+INTEREST_ABILITY_CLAIMS: tuple[str, ...] = (
+    "умеешь", "хорошо понимаешь", "у тебя получается", "тебе хорошо даётся",
+    "легко даётся", "способност", "способен", "способна", "талант",
+)
+INTEREST_ABILITY_CLAIMS_KK: tuple[str, ...] = (
+    "білесің", "қолыңнан келеді", "қабілет", "дарын", "жақсы түсінесің", "оңай беріледі",
+)
+# Any strength card: no intelligence labels — an АСТУР result is an
+# observation about task types, not a measure of the student.
+IQ_LABELS: tuple[str, ...] = (
+    "интеллект", "умнее", "гениальн", "одарённ", "одаренн", "умственн", "ақылдырақ", "дарынды",
+)
+_IQ_RE = re.compile(r"\biq\b", re.IGNORECASE)
+
 
 # Not exact TZ numbers: a generous ceiling that catches a runaway/rambling
 # generation without rejecting normal evidence-derived sentences. Raised
@@ -299,28 +316,40 @@ def _check_thinking_style_count(output: ReportNarrativeOutput, context: ReportNa
 
 
 def _check_strength_card_count(output: ReportNarrativeOutput, context: ReportNarrativeContext) -> list[ValidationIssue]:
-    # thinking_style evidence doesn't count here — it's reserved for
-    # thinking_style_notes (see _check_strength_card_sources below), so it
-    # can't inflate the pool this cardinality is measured against.
-    available = sum(1 for e in context.evidence if e.source_type not in STRENGTH_CARD_EXCLUDED_SOURCE_TYPES)
-    lo, hi = min(5, available), min(7, available)
-    count = len(output.strength_cards)
-    if not (lo <= count <= hi):
-        return [ValidationIssue("strength_card_count", f"expected {lo}-{hi}, got {count}")]
+    """The candidates are already the methodologically vetted list (PRO-432)
+    — one card each, never padded past it, never silently dropping one."""
+    expected = len(context.strength_candidates)
+    if len(output.strength_cards) != expected:
+        return [ValidationIssue("strength_card_count", f"expected {expected}, got {len(output.strength_cards)}")]
     return []
 
 
 def _check_strength_card_sources(output: ReportNarrativeOutput, context: ReportNarrativeContext) -> list[ValidationIssue]:
-    """TZ_Profi.md §18.2 п.2 vs п.4: "Сильные стороны" and "Стиль мышления"
-    are two different sections — a strength_card citing thinking_style
-    evidence would duplicate thinking_style_notes verbatim, so this is
-    rejected structurally rather than left to prompt-following alone."""
-    excluded_ids = {e.source_id for e in context.evidence if e.source_type in STRENGTH_CARD_EXCLUDED_SOURCE_TYPES}
+    """Each strength card cites exactly one strength candidate and nothing
+    else — RIASEC / personality / thinking-style / motivation evidence has
+    its own section, and a card grounded in no candidate would be a strength
+    the methodology never approved."""
+    candidate_ids = {c.source_id for c in context.strength_candidates}
     issues: list[ValidationIssue] = []
     for card in output.strength_cards:
-        leaked = excluded_ids & set(card.evidence_ids)
-        if leaked:
-            issues.append(ValidationIssue("strength_card_excluded_source_leak", card.title))
+        if len(card.evidence_ids) != 1 or card.evidence_ids[0] not in candidate_ids:
+            issues.append(ValidationIssue("strength_card_not_candidate", card.title))
+    return issues
+
+
+def _check_strength_card_wording(
+    output: ReportNarrativeOutput, context: ReportNarrativeContext, language: str = "ru"
+) -> list[ValidationIssue]:
+    basis_by_id = {c.source_id: c.basis for c in context.strength_candidates}
+    ability_claims = INTEREST_ABILITY_CLAIMS + (INTEREST_ABILITY_CLAIMS_KK if language == "kk" else ())
+    issues: list[ValidationIssue] = []
+    for card in output.strength_cards:
+        text = f"{card.title} {card.description}".lower()
+        if any(label in text for label in IQ_LABELS) or _IQ_RE.search(text):
+            issues.append(ValidationIssue("strength_card_iq_label", card.title))
+        is_interest = any(basis_by_id.get(e) == "interest" for e in card.evidence_ids)
+        if is_interest and any(claim in text for claim in ability_claims):
+            issues.append(ValidationIssue("strength_card_interest_as_ability", card.title))
     return issues
 
 
@@ -362,10 +391,11 @@ def _check_no_source_id_leak(output: ReportNarrativeOutput, context: ReportNarra
     instructed. _check_language's Cyrillic-ratio check doesn't catch this
     (the leaked id is a tiny fraction of an otherwise-Russian sentence)."""
     texts = _all_texts(output)
+    source_ids = [e.source_id for e in context.evidence] + [c.source_id for c in context.strength_candidates]
     issues: list[ValidationIssue] = []
-    for evidence in context.evidence:
-        if any(evidence.source_id in t for t in texts):
-            issues.append(ValidationIssue("source_id_leak", evidence.source_id))
+    for source_id in source_ids:
+        if any(source_id in t for t in texts):
+            issues.append(ValidationIssue("source_id_leak", source_id))
     return issues
 
 
@@ -485,6 +515,7 @@ def validate(
     issues += _check_strength_card_count(output, context)
     issues += _check_strength_card_sources(output, context)
     issues += _check_strength_card_duplicate_evidence(output)
+    issues += _check_strength_card_wording(output, context, language)
     issues += _check_career_narrative(output, context)
     issues += _check_no_source_id_leak(output, context)
     issues += _check_motivation_grounding(output, context)

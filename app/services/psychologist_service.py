@@ -59,6 +59,7 @@ from app.services import (
     new_tests_report_service,
     psych_ai_analysis_service,
     report_service,
+    student_strengths_service,
 )
 from app.services.psych_ai_analysis_context import build_context, has_any_data, fingerprint as context_fingerprint
 
@@ -673,7 +674,10 @@ def _to_detail(analysis: AnalysisResult) -> PsychologistResultDetailResponse:
     edit) exactly what the student reads."""
     detail = PsychologistResultDetailResponse.model_validate(analysis)
     return detail.model_copy(
-        update={"personality_notes": report_service.student_personality_notes(analysis)}
+        update={
+            "personality_notes": report_service.student_personality_notes(analysis),
+            "strengths_stale": bool((analysis.meta or {}).get("strengths_stale")),
+        }
     )
 
 
@@ -764,6 +768,13 @@ async def update_result_content(
         raise ResultAlreadyPublishedError(i18n_key("api_errors", "result_is_already_published", locale="ru"))
 
     values = patch.model_dump(exclude_unset=True, mode="json")
+    if "strength_cards" in values:
+        # Optional card fields left empty are dropped, not stored as null —
+        # an unchanged card must compare equal to the stored one.
+        values["strength_cards"] = [
+            {key: value for key, value in card.items() if value not in (None, "")}
+            for card in values["strength_cards"]
+        ]
 
     # "Твой характер" is stored apart from the rest: the student reads a
     # computed phrase, so a correction is kept as an override of that phrase,
@@ -815,13 +826,26 @@ async def update_result_content(
             }
             analysis.personality_notes_override = new_override
 
-    analysis.reviewed_by = psychologist_id
+    return await _save_review_changes(db, analysis, editor_id=psychologist_id, changed=changed)
+
+
+async def _save_review_changes(
+    db: AsyncSession,
+    analysis: AnalysisResult,
+    *,
+    editor_id: uuid.UUID,
+    changed: dict[str, dict[str, Any]],
+) -> PsychologistResultDetailResponse:
+    """Commits a review edit of the row under review: marks it reviewed,
+    keeps the audit trail and drops translations of the pre-edit text."""
+    assessment_id = analysis.assessment_id
+    analysis.reviewed_by = editor_id
     analysis.reviewed_at = datetime.now(timezone.utc)
     if changed:
         db.add(
             AnalysisResultReviewEdit(
                 analysis_result_id=analysis.id,
-                editor_id=psychologist_id,
+                editor_id=editor_id,
                 changed_fields=changed,
             )
         )
@@ -856,6 +880,39 @@ async def update_result_content(
     return detail
 
 
+async def rebuild_strength_cards(
+    db: AsyncSession,
+    *,
+    psychologist_id: uuid.UUID,
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+) -> PsychologistResultDetailResponse:
+    """Explicit «Пересобрать сильные стороны» (PRO-432): replaces the cards
+    with ones built from the student's current results (e.g. after a Belbin
+    or АСТУР retake), in the deterministic wording — the psychologist's own
+    edits are overwritten only because they asked for it. Recorded like any
+    other review edit."""
+    await _require_assigned_student(db, psychologist_id=psychologist_id, student_id=student_id)
+    await report_service.lock_report_generation(assessment_id, db)
+    analysis = await _require_result_for_student(
+        db, student_id=student_id, assessment_id=assessment_id, for_update=True
+    )
+    if analysis.review_status != ReviewStatus.pending_review:
+        raise ResultAlreadyPublishedError(i18n_key("api_errors", "result_is_already_published", locale="ru"))
+
+    cards, strengths_fingerprint = await student_strengths_service.rebuild_cards(analysis, db)
+    changed: dict[str, dict[str, Any]] = {}
+    if cards != list(analysis.strength_cards):
+        changed["strength_cards"] = {"old": list(analysis.strength_cards), "new": cards}
+        analysis.strength_cards = cards
+    rows = (
+        await db.execute(select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id))
+    ).scalars().all()
+    for row in rows:
+        row.meta = student_strengths_service.mark_fresh(row.meta, strengths_fingerprint)
+    return await _save_review_changes(db, analysis, editor_id=psychologist_id, changed=changed)
+
+
 async def publish_result(
     db: AsyncSession,
     *,
@@ -883,6 +940,9 @@ async def _publish(
         raise ResultAlreadyPublishedError(i18n_key("api_errors", "result_is_already_published", locale="ru"))
     now = datetime.now(timezone.utc)
     analysis.review_status = ReviewStatus.published
+    # Publishing is the psychologist's decision that the cards are fine as
+    # they are, rebuilt or not.
+    analysis.meta = {k: v for k, v in (analysis.meta or {}).items() if k != "strengths_stale"}
     analysis.published_by = publisher_id
     analysis.published_at = now
     # Published without edits — publishing still counts as a review.

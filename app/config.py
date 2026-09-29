@@ -318,3 +318,41 @@ def load_belbin_thresholds(
 
 belbin_thresholds: BelbinThresholds = load_belbin_thresholds()
 
+
+# --- Student-facing strength cards (PRO-432) ----------------------------------
+# Same contract as the thresholds above: eligibility rules in a versioned JSON,
+# edited without code changes. See the JSON file's own comment for what each
+# rule means.
+_STUDENT_STRENGTHS_RULES_PATH = Path(__file__).parent / "data" / "student_strengths_rules.json"
+
+
+class StudentStrengthsRules(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="allow")
+
+    version: int
+    max_cards: int
+    max_per_domain: int
+    astur_min_percent: float
+    astur_max_cards: int
+    astur_quick_min_percent: float
+    ddo_interest_min_share: float
+    ddo_ability_min: int
+    ddo_ability_only_min: int
+    ddo_ability_only_interest_max_share: float
+    belbin_min_score: int
+    belbin_tie_margin: int
+    empathy_levels: tuple[str, ...]
+    empathy_channel_min: int
+    interest_max_letters: int
+    onboarding_max_items: int
+    suppress_self_report_on_lie_flag: bool
+
+
+def load_student_strengths_rules(
+    path: Path = _STUDENT_STRENGTHS_RULES_PATH,
+) -> StudentStrengthsRules:
+    return StudentStrengthsRules.model_validate(json.loads(path.read_text(encoding="utf-8")))
+
+
+student_strengths_rules: StudentStrengthsRules = load_student_strengths_rules()
+

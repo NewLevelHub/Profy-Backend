@@ -24,13 +24,13 @@ from app.models.profile import Profile
 from app.models.psychoemotional_run import PsychoEmotionalRun
 from app.models.user import User, UserRole
 from app.schemas.report_narrative import ReportNarrativeOutput
+from app.schemas.student_strengths import StrengthCandidate
 from app.schemas.result_v2 import (
     PsychoEmotionalHistoryItem,
     PsychoEmotionalSection,
     ResultResponseV2,
     ResultV2Adapter,
     RiasecResultResponse,
-    StudentStrengthCard,
     StudentThinkingStyleNote,
 )
 from app.services import (
@@ -47,6 +47,7 @@ from app.services import (
     report_narrative_context,
     report_v2_assembler,
     riasec_service,
+    student_strengths_service,
     thinking_style_service,
 )
 from app.services.bigfive_content import strength_phrases
@@ -190,8 +191,7 @@ async def _build_narrative(
     thinking_style: dict[str, float],
     motivation_top: list[str],
     motivation_highlights: list[str],
-    profile: Profile | None,
-    artifacts: list[Artifact],
+    strength_candidates: list[StrengthCandidate],
     locale: str = DEFAULT_LOCALE,
 ) -> tuple[report_narrative_context.ReportNarrativeContext, ReportNarrativeOutput, bool | None]:
     """Produces everything text-shaped (summary, strength_cards,
@@ -213,9 +213,7 @@ async def _build_narrative(
         thinking_style=thinking_style,
         motivation_top=motivation_top,
         motivation_highlights=motivation_highlights,
-        subjects_liked=list(profile.subjects_liked or []) if profile else [],
-        subjects_easy=list(profile.subjects_easy or []) if profile else [],
-        artifacts=artifacts,
+        strength_candidates=strength_candidates,
     )
 
     primary = await _find_primary_analysis(assessment_id, db, exclude_locale=locale)
@@ -412,7 +410,6 @@ def _shape_response_inner(
         strengths=list(analysis.strengths),
         personality_profile={}, personality_notes={}, thinking_style={},
         motivation_top=[], motivation_highlights=[],
-        subjects_liked=[], subjects_easy=[], artifacts=[],
     )
     differentiation = float((analysis.meta or {}).get("differentiation", 0.0))
     flat = report_v2_assembler.is_flat_profile(differentiation)
@@ -424,7 +421,7 @@ def _shape_response_inner(
         # Server-authored framing lines resolved for the owner's locale — the
         # schema default is ru-only (KZ-403). Runs inside use_locale() above.
         **report_v2_assembler.build_fixed_framings(),
-        strength_cards=[StudentStrengthCard.model_validate(c) for c in analysis.strength_cards],
+        strength_cards=report_v2_assembler.build_strength_cards(list(analysis.strength_cards)),
         interest_map=interest_map,
         interest_map_note=report_v2_assembler.build_interest_map_note(interest_map),
         thinking_style_notes=[StudentThinkingStyleNote.model_validate(n) for n in analysis.thinking_style_notes],
@@ -834,86 +831,6 @@ async def _build_report(
         mot_top = motivation_service.top_categories(mot_scores)
         mot_highlights = motivation_highlight_phrases(mot_top)
 
-        # KZ-405: a row in another locale means this one is a translation of an
-        # already-generated report. It carries that report's review status —
-        # a language switch must neither hide a published report behind "under
-        # review" again nor start a second review. Only a first-ever report
-        # starts as pending_review (and notifies the psychologist, below).
-        sibling = (
-            await db.execute(
-                select(AnalysisResult)
-                .where(AnalysisResult.assessment_id == assessment_id, AnalysisResult.locale != locale)
-                # The row under review: ru first, then the earliest — the same
-                # rule as psychologist_service._is_original_row.
-                .order_by(
-                    case((AnalysisResult.locale == DEFAULT_LOCALE, 0), else_=1),
-                    AnalysisResult.created_at.asc(),
-                    AnalysisResult.id.asc(),
-                )
-                .limit(1)
-            )
-        ).scalar_one_or_none()
-        carried_edits: set[str] = set()
-        if sibling is not None:
-            # Inheriting the status is only honest if the content matches what
-            # was reviewed. The narrative is translated from that row
-            # (_build_narrative); everything else a psychologist can edit is
-            # carried over instead of being recomputed from the scores.
-            strengths, weaknesses, careers, mot_highlights, carried_edits = await _carry_over_review_edits(
-                sibling, db, motivation_highlights=mot_highlights
-            )
-        inherited_review = (
-            dict(
-                review_status=sibling.review_status,
-                reviewed_by=sibling.reviewed_by,
-                reviewed_at=sibling.reviewed_at,
-                published_by=sibling.published_by,
-                published_at=sibling.published_at,
-                personality_notes_override=dict(sibling.personality_notes_override),
-            )
-            if sibling is not None
-            # Explicit, not just the column default: a new report is never
-            # visible to the student until a psychologist publishes it.
-            else dict(review_status=ReviewStatus.pending_review)
-        )
-        # One narrative call feeds summary + strength_cards + thinking_style_notes
-        # together (LLM when enabled and valid, deterministic fallback otherwise
-        # — report_narrative_service never raises and never leaves any of the
-        # three empty/inconsistent with each other).
-        context, narrative, narrative_translated_by_ai = await _build_narrative(
-            assessment_id=assessment_id,
-            db=db,
-            strengths=strengths,
-            personality_profile=personality_profile,
-            personality_notes=personality_notes,
-            thinking_style=thinking_style,
-            motivation_top=mot_top,
-            motivation_highlights=mot_highlights,
-            profile=profile,
-            artifacts=artifacts,
-            locale=locale,
-        )
-        strength_cards_stored = [card.model_dump(exclude={"evidence_ids"}) for card in narrative.strength_cards]
-        thinking_style_notes_stored = [
-            note.model_dump(exclude={"evidence_ids"}) for note in narrative.thinking_style_notes
-        ]
-        summary_stored = narrative.summary
-        final_analysis_stored = narrative.final_analysis
-        if sibling is not None and not narrative_translated_by_ai:
-            # The deterministic fallback (LLM off, or every attempt failed) is
-            # fresh text, not a translation of the reviewed row — it would
-            # silently drop what the psychologist wrote. Narrative fields they
-            # edited come over verbatim instead, like every other carried edit;
-            # untouched ones keep the target-locale fallback text.
-            if "summary" in carried_edits:
-                summary_stored = sibling.summary
-            if "final_analysis" in carried_edits:
-                final_analysis_stored = sibling.final_analysis
-            if "strength_cards" in carried_edits:
-                strength_cards_stored = [dict(card) for card in sibling.strength_cards]
-            if "thinking_style_notes" in carried_edits:
-                thinking_style_notes_stored = [dict(note) for note in sibling.thinking_style_notes]
-
         # PRO-338 Ф1.2 — specialist-only; both raw-score reads come back None
         # when the student never answered ДДО, collapsing to
         # `professional_types=None` on the row.
@@ -953,6 +870,126 @@ async def _build_report(
             if boyko_data is not None or kondash_data is not None
             else None
         )
+
+        # «Сильные стороны» (PRO-432): vetted from every finished instrument
+        # before any text is written — the narrative only words them. The
+        # scores above are reused; Belbin/АСТУР come from their own run tables.
+        belbin_run, astur_run = await student_strengths_service.latest_battery_runs(assessment_id, db)
+        strength_inputs = student_strengths_service.build_inputs(
+            riasec_confirmed=riasec_service.confirmed_interests(profile_scores, aversion_counts, counts),
+            ddo_interest=pt_interest_scores,
+            ddo_abilities=pt_abilities_scores,
+            belbin_run=belbin_run,
+            astur_run=astur_run,
+            empathy_data=boyko_data,
+            confidence_data=kondash_data,
+            elers_data=elers_data,
+            eysenck_data=eysenck_data,
+            subjects_liked=list(profile.subjects_liked or []) if profile is not None else [],
+            subjects_easy=list(profile.subjects_easy or []) if profile is not None else [],
+            artifacts=artifacts,
+        )
+        strength_candidates = student_strengths_service.select_strengths(strength_inputs)
+        meta = student_strengths_service.mark_fresh(meta, student_strengths_service.fingerprint(strength_candidates))
+
+        # KZ-405: a row in another locale means this one is a translation of an
+        # already-generated report. It carries that report's review status —
+        # a language switch must neither hide a published report behind "under
+        # review" again nor start a second review. Only a first-ever report
+        # starts as pending_review (and notifies the psychologist, below).
+        sibling = (
+            await db.execute(
+                select(AnalysisResult)
+                .where(AnalysisResult.assessment_id == assessment_id, AnalysisResult.locale != locale)
+                # The row under review: ru first, then the earliest — the same
+                # rule as psychologist_service._is_original_row.
+                .order_by(
+                    case((AnalysisResult.locale == DEFAULT_LOCALE, 0), else_=1),
+                    AnalysisResult.created_at.asc(),
+                    AnalysisResult.id.asc(),
+                )
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        carried_edits: set[str] = set()
+        if sibling is not None:
+            # Inheriting the status is only honest if the content matches what
+            # was reviewed. The narrative is translated from that row
+            # (_build_narrative); everything else a psychologist can edit is
+            # carried over instead of being recomputed from the scores.
+            strengths, weaknesses, careers, mot_highlights, carried_edits = await _carry_over_review_edits(
+                sibling, db, motivation_highlights=mot_highlights
+            )
+            # The strength cards come from the reviewed row (translated or
+            # carried over), and so does whether they are up to date.
+            meta = {k: v for k, v in meta.items() if not k.startswith("strengths_")} | {
+                k: v for k, v in (sibling.meta or {}).items() if k.startswith("strengths_")
+            }
+        inherited_review = (
+            dict(
+                review_status=sibling.review_status,
+                reviewed_by=sibling.reviewed_by,
+                reviewed_at=sibling.reviewed_at,
+                published_by=sibling.published_by,
+                published_at=sibling.published_at,
+                personality_notes_override=dict(sibling.personality_notes_override),
+            )
+            if sibling is not None
+            # Explicit, not just the column default: a new report is never
+            # visible to the student until a psychologist publishes it.
+            else dict(review_status=ReviewStatus.pending_review)
+        )
+        # One narrative call feeds summary + strength_cards + thinking_style_notes
+        # together (LLM when enabled and valid, deterministic fallback otherwise
+        # — report_narrative_service never raises and never leaves any of the
+        # three empty/inconsistent with each other).
+        context, narrative, narrative_translated_by_ai = await _build_narrative(
+            assessment_id=assessment_id,
+            db=db,
+            strengths=strengths,
+            personality_profile=personality_profile,
+            personality_notes=personality_notes,
+            thinking_style=thinking_style,
+            motivation_top=mot_top,
+            motivation_highlights=mot_highlights,
+            strength_candidates=strength_candidates,
+            locale=locale,
+        )
+        if narrative_translated_by_ai:
+            # A translation keeps the reviewed row's cards one-to-one: basis
+            # carries over, the text (try-now included) is the translation.
+            strength_cards_stored = [
+                {
+                    **{k: v for k, v in source.items() if k == "basis"},
+                    "title": card.title,
+                    "description": card.description,
+                    **({"try_now": card.try_now} if card.try_now else {}),
+                }
+                for source, card in zip(sibling.strength_cards, narrative.strength_cards)
+            ]
+        else:
+            strength_cards_stored = student_strengths_service.stored_cards(
+                narrative.strength_cards, strength_candidates
+            )
+        thinking_style_notes_stored = [
+            note.model_dump(include={"title", "description"}) for note in narrative.thinking_style_notes
+        ]
+        summary_stored = narrative.summary
+        final_analysis_stored = narrative.final_analysis
+        if sibling is not None and not narrative_translated_by_ai:
+            # The deterministic fallback (LLM off, or every attempt failed) is
+            # fresh text, not a translation of the reviewed row — it would
+            # silently drop what the psychologist wrote. Narrative fields they
+            # edited come over verbatim instead, like every other carried edit;
+            # untouched ones keep the target-locale fallback text.
+            if "summary" in carried_edits:
+                summary_stored = sibling.summary
+            if "final_analysis" in carried_edits:
+                final_analysis_stored = sibling.final_analysis
+            if "strength_cards" in carried_edits:
+                strength_cards_stored = [dict(card) for card in sibling.strength_cards]
+            if "thinking_style_notes" in carried_edits:
+                thinking_style_notes_stored = [dict(note) for note in sibling.thinking_style_notes]
 
         analysis = AnalysisResult(
             assessment_id=assessment_id,
@@ -1041,6 +1078,7 @@ async def _build_report(
                 careers=careers,
                 created_at=analysis.created_at,
                 evidence=evidence,
+                strength_cards=strength_cards_stored,
             )
     await _cache_if_published(redis, analysis, response)
 

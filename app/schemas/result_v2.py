@@ -18,6 +18,7 @@ from typing import Literal, Union
 from pydantic import BaseModel, Field, TypeAdapter, field_validator
 
 from app.i18n.catalog import key as i18n_key
+from app.schemas.student_strengths import StrengthBasis
 
 # TZ_Profi.md §17.5 point 7 / Приложение C В.2: every report must carry this
 # framing, verbatim and unconditionally — server-authored, not LLM text, so
@@ -205,6 +206,12 @@ class PsychoEmotionalSection(BaseModel):
 class StudentStrengthCard(BaseModel):
     title: str
     description: str
+    # PRO-432 — how the card is grounded, plus its localized badge text and
+    # a short practical experiment. All optional: a card a psychologist
+    # wrote by hand, and reports generated before this, carry none of them.
+    basis: StrengthBasis | None = None
+    source_label: str | None = None
+    try_now: str | None = None
     model_config = _model_config
 
 
