@@ -877,6 +877,7 @@ async def _build_report(
         belbin_run, astur_run = await student_strengths_service.latest_battery_runs(assessment_id, db)
         strength_inputs = student_strengths_service.build_inputs(
             riasec_confirmed=riasec_service.confirmed_interests(profile_scores, aversion_counts, counts),
+            riasec_ranked=riasec_service.ranked_interests(profile_scores),
             ddo_interest=pt_interest_scores,
             ddo_abilities=pt_abilities_scores,
             belbin_run=belbin_run,
@@ -957,13 +958,12 @@ async def _build_report(
         )
         if narrative_translated_by_ai:
             # A translation keeps the reviewed row's cards one-to-one: basis
-            # carries over, the text (try-now included) is the translation.
+            # carries over and the visible text is the translation.
             strength_cards_stored = [
                 {
                     **{k: v for k, v in source.items() if k == "basis"},
                     "title": card.title,
                     "description": card.description,
-                    **({"try_now": card.try_now} if card.try_now else {}),
                 }
                 for source, card in zip(sibling.strength_cards, narrative.strength_cards)
             ]

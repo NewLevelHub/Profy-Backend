@@ -381,21 +381,9 @@ def build_riasec_careers(
 
 
 def build_strength_cards(stored: list[dict]) -> list[StudentStrengthCard]:
-    """Stored `AnalysisResult.strength_cards` → the student's cards, with the
-    grounding badge resolved in the current (owner's) locale. A card a
-    psychologist wrote from scratch has no basis and gets no badge."""
-    labels = tr("student_strengths")["basis_labels"]
-    cards = []
-    for card in stored:
-        basis = card.get("basis")
-        cards.append(StudentStrengthCard(
-            title=card["title"],
-            description=card["description"],
-            basis=basis,
-            source_label=labels.get(basis) if basis else None,
-            try_now=card.get("try_now") or None,
-        ))
-    return cards
+    """Stored cards → clean student copy. Grounding metadata remains in the
+    reviewed report for specialists but is not shown as a badge to a child."""
+    return [StudentStrengthCard(title=card["title"], description=card["description"]) for card in stored]
 
 
 def _map_thinking_notes(cards: list) -> list[StudentThinkingStyleNote]:

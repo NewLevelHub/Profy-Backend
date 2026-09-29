@@ -165,10 +165,9 @@ async def test_patch_edits_content_audits_and_publish_shows_it_to_student(
     student_body = student_view.json()
     assert student_body["summary"] == "Отредактировано психологом"
     assert student_body["final_analysis"] == "Итог от психолога"
-    # A hand-written card carries no grounding badge (PRO-432).
+    # Grounding metadata is for the psychologist and never reaches the child.
     assert student_body["strength_cards"] == [{
         "title": "Упорство", "description": "Доводишь дело до конца",
-        "basis": None, "source_label": None, "try_now": None,
     }]
 
     from app.services import assessment_shared

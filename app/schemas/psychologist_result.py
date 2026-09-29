@@ -37,10 +37,9 @@ class ReviewTextCard(BaseModel):
 
 
 class ReviewStrengthCard(ReviewTextCard):
-    # PRO-432 — how the card is grounded and its practical experiment; both
-    # absent on a card the psychologist added by hand.
+    # PRO-432 — how the card is grounded; absent on a card the psychologist
+    # added by hand.
     basis: StrengthBasis | None = None
-    try_now: str | None = None
 
 
 class PsychologistResultDetailResponse(BaseModel):
@@ -79,7 +78,6 @@ class ReviewTextCardPatch(BaseModel):
 
 class ReviewStrengthCardPatch(ReviewTextCardPatch):
     basis: StrengthBasis | None = None
-    try_now: str | None = None
 
 
 class ReviewCareerPatch(BaseModel):

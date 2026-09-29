@@ -83,7 +83,7 @@ async def test_report_strength_cards_come_from_the_new_tests(
     by_basis = {card["basis"]: card for card in stored.strength_cards}
     assert by_basis["task_result"]["title"] == "Ты хорошо замечаешь закономерности в числах"
     assert "доводишь работу до результата" in by_basis["self_report"]["title"]
-    assert all(card.get("try_now") for card in stored.strength_cards)
+    assert all("try_now" not in card for card in stored.strength_cards)
     assert stored.meta["strengths_fingerprint"]
     # Internal ids never reach stored (student-facing) text.
     assert not any(marker in json.dumps(stored.strength_cards) for marker in ("strength:", "belbin:", "astur:"))
@@ -241,7 +241,7 @@ async def test_kk_translation_keeps_the_same_cards_and_their_grounding(
             "summary": "Қысқаша қорытынды.",
             "final_analysis": "Барлығын бірге қарастыр.",
             "strength_cards": [
-                {"title": f"Күшті жақ {i}", "description": "Сипаттама мәтіні.", "try_now": "Байқап көр."}
+                {"title": f"Күшті жақ {i}", "description": "Сипаттама мәтіні."}
                 for i in range(len(ru_cards))
             ],
             "thinking_style_notes": [],
@@ -264,5 +264,5 @@ async def test_kk_translation_keeps_the_same_cards_and_their_grounding(
     ).scalar_one()
     assert [c["basis"] for c in kk_row.strength_cards] == [c["basis"] for c in ru_cards]
     assert kk_row.strength_cards[0]["title"] == "Күшті жақ 0"
-    assert kk_row.strength_cards[0]["try_now"] == "Байқап көр."
+    assert "try_now" not in kk_row.strength_cards[0]
     assert kk_row.meta["strengths_fingerprint"] == ru_fingerprint

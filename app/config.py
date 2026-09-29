@@ -343,8 +343,6 @@ class StudentStrengthsRules(BaseModel):
     belbin_tie_margin: int
     empathy_levels: tuple[str, ...]
     empathy_channel_min: int
-    interest_max_letters: int
-    onboarding_max_items: int
     suppress_self_report_on_lie_flag: bool
 
 

@@ -362,6 +362,19 @@ def test_interest_candidate_worded_as_ability_is_rejected():
     assert any(i.code == "strength_card_interest_as_ability" for i in issues)
 
 
+def test_templated_strength_cards_are_rejected():
+    context = _context([], _candidates(StrengthInputs(riasec_ranked=["R", "I", "A", "S", "E"])))
+    output = build_fallback_narrative(context)
+    for index, card in enumerate(output.strength_cards):
+        card.title = f"Тебе может быть интересно направление {index}"
+        card.description = "Один и тот же шаблон объяснения для каждой карточки."
+
+    issues = validate(output, context)
+
+    assert any(i.code == "strength_card_repeated_title_opening" for i in issues)
+    assert any(i.code == "strength_card_repeated_description" for i in issues)
+
+
 def test_same_ability_wording_is_fine_for_a_task_result():
     context = _senior_context()
     output = build_fallback_narrative(context)

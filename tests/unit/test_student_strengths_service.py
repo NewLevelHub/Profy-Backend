@@ -1,6 +1,6 @@
 """«Сильные стороны» selection (PRO-432): which instrument results may become a
-student-facing strength card, how they are grounded, and that the list is
-never padded or duplicated. Pure — no DB."""
+student-facing strength card, how they are grounded, and how a completed
+RIASEC profile fills the section with five non-duplicated observations. Pure — no DB."""
 import pytest
 
 from app.i18n import use_locale
@@ -71,8 +71,8 @@ def test_ddo_want_and_can_in_one_sphere_is_a_strength():
     )
     cards = _select(inputs)
     assert [c.source_id for c in cards] == ["strength:ddo:technical"]
-    assert "человек — техника" in cards[0].title
-    assert cards[0].try_now
+    assert "разбираться в технике" in cards[0].title
+    assert "человек — техника" not in cards[0].title
 
 
 def test_ddo_scales_are_normalized_separately_not_compared_raw():
@@ -93,12 +93,15 @@ def test_ddo_two_leading_spheres_make_one_hybrid_card():
     assert _ids(inputs) == ["strength:ddo_hybrid:technical+sign"]
 
 
-def test_ddo_want_more_than_can_is_not_a_strength():
+def test_ddo_want_more_than_can_is_an_interest_to_try_not_an_ability():
     inputs = StrengthInputs(
         ddo_interest={"practical": 0, "technical": 8, "social": 0, "sign": 0, "artistic": 0},
         ddo_abilities={"practical": 0, "technical": 1, "social": 0, "sign": 0, "artistic": 0},
     )
-    assert _ids(inputs) == []
+    cards = _select(inputs)
+    assert [c.source_id for c in cards] == ["strength:ddo_interest:technical"]
+    assert cards[0].basis == "interest"
+    assert "интерес" in cards[0].description
 
 
 def test_ddo_can_more_than_want_is_a_skill_not_a_calling():
@@ -108,7 +111,8 @@ def test_ddo_can_more_than_want_is_a_skill_not_a_calling():
     )
     cards = _select(inputs)
     assert [c.source_id for c in cards] == ["strength:ddo_ability:technical"]
-    assert "не выберешь её профессией" in cards[0].description
+    assert "такие занятия привлекают тебя меньше" in cards[0].description
+    assert "человек — техника" not in f"{cards[0].title} {cards[0].description}"
 
 
 # ── Белбин ───────────────────────────────────────────────────────────────────
@@ -186,12 +190,19 @@ def test_only_moderately_high_elers_is_a_strength(level, expected):
 
 def test_riasec_alone_is_an_interest_to_check_not_an_ability():
     cards = _select(StrengthInputs(riasec_confirmed=["S", "E"]))
-    assert len(cards) == 1
-    card = cards[0]
-    assert card.basis == "interest"
-    assert card.evidence_ids == ["riasec:S", "riasec:E"]
-    text = f"{card.title} {card.description}".lower()
+    assert [card.evidence_ids for card in cards] == [["riasec:S"], ["riasec:E"]]
+    assert {card.basis for card in cards} == {"interest"}
+    text = " ".join(f"{card.title} {card.description}" for card in cards).lower()
     assert "хорошо понимаешь людей" not in text and "умеешь" not in text
+
+
+def test_riasec_interest_cards_have_distinct_child_friendly_wording():
+    cards = _select(StrengthInputs(riasec_ranked=["R", "I", "A", "S", "E", "C"]))
+
+    assert len(cards) == 5
+    assert len({card.title for card in cards}) == 5
+    assert len({card.description for card in cards}) == 5
+    assert all("Тебе может быть интересно:" not in card.title for card in cards)
 
 
 def test_riasec_confirmed_by_a_second_instrument_is_a_cross_signal():
@@ -213,7 +224,7 @@ def test_cross_signal_uses_a_supporting_belbin_role_too():
 # ── selection ────────────────────────────────────────────────────────────────
 
 
-def test_rich_profile_uses_every_new_test_family_and_caps_at_six():
+def test_rich_profile_caps_at_five():
     cards = _select(rich_inputs())
 
     assert [c.source_id for c in cards] == [
@@ -222,8 +233,8 @@ def test_rich_profile_uses_every_new_test_family_and_caps_at_six():
         "strength:astur:numeric",
         "strength:belbin:plant",
         "strength:elers",
-        "strength:onboarding:subject_easy",
     ]
+    assert len(cards) == 5
 
 
 def test_no_fact_backs_two_cards():
@@ -254,39 +265,81 @@ def test_ru_and_kk_show_the_same_cards():
 def test_lie_scale_flag_keeps_only_task_results_and_interests():
     cards = _select(rich_inputs(lie_flagged=True))
     assert {c.basis for c in cards} <= {"task_result", "interest", "self_report"}
-    assert {c.source_type for c in cards} <= {"astur", "riasec", "onboarding"}
+    assert {c.source_type for c in cards} <= {"astur", "professional_types", "riasec"}
+    assert all(c.basis in {"task_result", "interest"} for c in cards)
     assert "strength:astur:numeric" in [c.source_id for c in cards]
 
 
-# ── onboarding ───────────────────────────────────────────────────────────────
+def test_weak_overall_profile_keeps_local_task_result_and_exploratory_interest():
+    """A real profile may have no broad self-report strength but still contain
+    one well-performed task and one activity the student repeatedly chose."""
+    inputs = StrengthInputs(
+        astur=astur_snapshot(
+            {"classification": 67, "generalization": 0},
+            repeat_exposure=True,
+        ),
+        ddo_interest={"practical": 3, "technical": 6, "social": 3, "sign": 3, "artistic": 5},
+        ddo_abilities={"practical": 0, "technical": 0, "social": 1, "sign": 2, "artistic": 0},
+        riasec_ranked=["A", "R", "S", "I", "E", "C"],
+        lie_flagged=True,
+        subjects_easy=["Информатика", "История", "Английский язык"],
+    )
+
+    cards = _select(inputs)
+
+    assert [c.source_id for c in cards] == [
+        "strength:astur:categorization",
+        "strength:ddo_interest:technical",
+        "strength:interest:A",
+        "strength:interest:S",
+        "strength:interest:I",
+    ]
+    assert len(cards) == 5
+    assert all(card.source_type != "onboarding" for card in cards)
+    assert cards[0].basis == "task_result"
+    assert "повторная попытка" in cards[0].description
+    assert cards[1].basis == "interest"
 
 
-def test_onboarding_is_one_card_marked_as_not_from_the_test():
+def test_ddo_and_riasec_do_not_repeat_the_same_activity_area():
+    inputs = StrengthInputs(
+        riasec_ranked=["R", "A", "S", "I", "E", "C"],
+        ddo_interest={"practical": 0, "technical": 8, "social": 0, "sign": 0, "artistic": 0},
+        ddo_abilities={"practical": 0, "technical": 0, "social": 0, "sign": 0, "artistic": 0},
+    )
+
+    cards = _select(inputs)
+
+    assert len(cards) == 5
+    assert "strength:ddo_interest:technical" in [card.source_id for card in cards]
+    assert "strength:interest:R" not in [card.source_id for card in cards]
+
+
+# ── onboarding data is excluded ─────────────────────────────────────────────
+
+
+def test_onboarding_data_does_not_become_a_strength_card():
     inputs = StrengthInputs(
         subjects_easy=["Математика", "Физика"],
         subjects_liked=["История"],
         artifacts=[OnboardingArtifact(id="1", value="Шахматы")],
     )
-    cards = _select(inputs)
-    assert [c.source_id for c in cards] == ["strength:onboarding:subject_easy"]
-    assert "не из теста" in cards[0].description
+    assert _select(inputs) == []
 
 
-def test_near_duplicate_hobbies_count_once():
+def test_hobbies_do_not_become_strength_cards():
     inputs = StrengthInputs(artifacts=[
         OnboardingArtifact(id="1", value="Программирование"),
         OnboardingArtifact(id="2", value="Робототехника"),
         OnboardingArtifact(id="3", value="IT/программирование"),
     ])
-    card = _select(inputs)[0]
-    assert card.evidence_ids == ["artifact:1", "artifact:2"]
-    assert card.title.endswith("Программирование, Робототехника")
+    assert _select(inputs) == []
 
 
-def test_onboarding_subject_is_localized_but_evidence_stays_canonical():
-    card = _select(StrengthInputs(subjects_liked=["История"]), "kk")[0]
-    assert "Тарих" in card.title
-    assert card.evidence_ids == ["subject_liked:История"]
+def test_onboarding_subjects_are_excluded_in_every_locale():
+    inputs = StrengthInputs(subjects_liked=["История"])
+    assert _select(inputs, "ru") == []
+    assert _select(inputs, "kk") == []
 
 
 # ── wording passes the narrative validator ───────────────────────────────────
@@ -312,7 +365,7 @@ def test_every_card_wording_passes_the_validator(inputs, locale):
 # ── storage / fingerprint ────────────────────────────────────────────────────
 
 
-def test_stored_cards_carry_basis_and_try_now_matched_by_cited_id():
+def test_stored_cards_carry_basis_matched_by_cited_id():
     candidates = _select(rich_inputs())
     reworded = [
         NarrativeCard(title=f"T{i}", description=f"D{i}", evidence_ids=[c.source_id])
@@ -323,7 +376,7 @@ def test_stored_cards_carry_basis_and_try_now_matched_by_cited_id():
 
     assert stored[0]["title"] == "T0"
     assert stored[0]["basis"] == candidates[-1].basis
-    assert all("try_now" not in card or card["try_now"] for card in stored)
+    assert all("try_now" not in card for card in stored)
     assert "source_id" not in stored[0] and "evidence_ids" not in stored[0]
 
 

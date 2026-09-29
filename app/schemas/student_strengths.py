@@ -43,6 +43,9 @@ class StrengthInputs(BaseModel):
     # RIASEC types that clear the "high" bar and aren't contradicted by the
     # student's own aversion answers — interest only, never ability.
     riasec_confirmed: list[str] = []
+    # All six RIASEC types in relative score order. Used only to fill the
+    # five-card student section with cautiously worded interests.
+    riasec_ranked: list[str] = []
     ddo_interest: dict[str, int] | None = None
     ddo_abilities: dict[str, int] | None = None
     belbin_role_totals: dict[str, int] | None = None
@@ -73,4 +76,3 @@ class StrengthCandidate(BaseModel):
     priority: int
     title: str
     description: str
-    try_now: str | None = None

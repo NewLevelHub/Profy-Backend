@@ -5,24 +5,24 @@ Every card is a `StrengthCandidate` built from an already-scored instrument
 and grounded in one of four ways (`basis`):
 - task_result  — АСТУР task groups the student did best on;
 - self_report  — ДДО «Хочу + Могу», the leading Belbin role(s), empathy /
-  social confidence (Бойко + Кондаш), Elers' positive band, onboarding facts;
+  social confidence (Бойко + Кондаш), Elers' positive band;
 - cross_signal — a RIASEC interest confirmed by a second instrument;
-- interest     — a RIASEC interest on its own, worded as something to try,
-  never as a proven ability.
+- interest     — a RIASEC or ДДО interest on its own, worded as something
+  to try, never as a proven ability.
 
 What never becomes a strength: the lie scale / validity flags, the
 psychoemotional test, anxiety as a trait, Belbin's avoidance zone, Eysenck's
 temperament, low bands, Elers' `too_high`, a protocol АСТУР itself marks as
 not ok. Rules and cut-offs live in `app/data/student_strengths_rules.json`.
 
-Selection: one fact (`evidence_ids`) backs at most one card, different
-meaning domains are preferred, at most `max_cards`; fewer valid candidates
-means fewer cards — the list is never padded.
+Selection: one fact (`evidence_ids`) backs at most one card and different
+meaning domains are preferred. A completed RIASEC profile supplies the
+remaining cautiously worded interest observations so the student sees exactly
+`max_cards`; onboarding subjects and hobbies never become strength cards.
 """
 import hashlib
 import json
 import logging
-import re
 import uuid
 from collections import Counter
 
@@ -56,8 +56,13 @@ logger = logging.getLogger(__name__)
 # Task groups a card can speak about. Awareness (subject-term knowledge) is
 # deliberately absent: it measures what was taught, not a way of thinking.
 _ASTUR_GROUPS: dict[str, tuple[str, ...]] = {
-    "verbal_logic": ("analogies", "logical_schemas"),
-    "categorization": ("classification", "generalization"),
+    # Keep the skills as narrow as the task that demonstrated them. Combining
+    # two unlike subtests used to hide a clear local result when the paired
+    # subtest was weak (for example classification 8/12 + generalization 0/38).
+    "verbal_connections": ("analogies",),
+    "logical_reasoning": ("logical_schemas",),
+    "categorization": ("classification",),
+    "generalization": ("generalization",),
     "numeric": ("numeric_series",),
     "spatial": ("geometric_figures",),
 }
@@ -76,7 +81,10 @@ _CROSS_SIGNALS: tuple[tuple[str, str, str, tuple[str, ...]], ...] = (
     ("order", "C", "activity", ("belbin:finisher", "belbin:implementer")),
     (
         "research", "I", "cognitive",
-        ("ddo:sign", "ddo:technical", "astur:verbal_logic", "astur:categorization", "astur:numeric"),
+        (
+            "ddo:sign", "ddo:technical", "astur:verbal_connections", "astur:logical_reasoning",
+            "astur:categorization", "astur:generalization", "astur:numeric",
+        ),
     ),
     ("creative", "A", "activity", ("ddo:artistic",)),
     ("practical", "R", "activity", ("ddo:technical", "ddo:practical")),
@@ -88,9 +96,16 @@ _SELF_REPORT_TEST_SOURCES = frozenset(
     {"professional_types", "belbin", "empathy", "social_confidence", "elers", "cross"}
 )
 
-# Fixed onboarding order: what comes easily is closest to a resource.
-_ONBOARDING_KINDS: tuple[str, ...] = ("subject_easy", "artifact", "subject_liked")
-
+# DDO and RIASEC describe some of the same activity areas. Once a selected
+# DDO card already tells the student about that area, do not spend another
+# one of the five slots repeating it under a different test's terminology.
+_DDO_RIASEC_OVERLAP: dict[str, tuple[str, ...]] = {
+    "practical": ("R",),
+    "technical": ("R",),
+    "social": ("S",),
+    "sign": ("C",),
+    "artistic": ("A",),
+}
 
 # ── inputs ───────────────────────────────────────────────────────────────────
 
@@ -98,6 +113,7 @@ _ONBOARDING_KINDS: tuple[str, ...] = ("subject_easy", "artifact", "subject_liked
 def build_inputs(
     *,
     riasec_confirmed: list[str],
+    riasec_ranked: list[str],
     ddo_interest: dict[str, int] | None,
     ddo_abilities: dict[str, int] | None,
     belbin_run: object | None,
@@ -120,6 +136,7 @@ def build_inputs(
             logger.exception("АСТУР snapshot of run %s is unreadable — skipped for strengths", astur_run.id)
     return StrengthInputs(
         riasec_confirmed=list(riasec_confirmed),
+        riasec_ranked=list(riasec_ranked),
         ddo_interest=ddo_interest,
         ddo_abilities=ddo_abilities,
         belbin_role_totals=dict(belbin_run.role_totals) if belbin_run is not None else None,
@@ -166,6 +183,7 @@ async def collect_inputs(assessment_id: uuid.UUID, db: AsyncSession) -> Strength
     kondash_raw = await kondash_anxiety_service.interpersonal_raw_score(assessment_id, db)
     return build_inputs(
         riasec_confirmed=riasec_service.confirmed_interests(normalized, aversion, counts),
+        riasec_ranked=riasec_service.ranked_interests(normalized),
         ddo_interest=await professional_types_service.interest_raw_scores(assessment_id, db),
         ddo_abilities=await professional_types_service.abilities_raw_scores(assessment_id, db),
         belbin_run=belbin_run,
@@ -189,7 +207,10 @@ def fingerprint(candidates: list[StrengthCandidate]) -> str:
     facts — locale-free. A retake that leaves them the same (e.g. Belbin
     resubmitted with the same leading role) doesn't make the report stale;
     any change to what the cards would say does."""
-    payload = [[c.source_id, c.basis, c.evidence_ids] for c in candidates]
+    payload = {
+        "rules_version": student_strengths_rules.version,
+        "candidates": [[c.source_id, c.basis, c.evidence_ids] for c in candidates],
+    }
     return hashlib.sha256(json.dumps(payload, ensure_ascii=False).encode()).hexdigest()
 
 
@@ -202,12 +223,11 @@ def _join(t: dict, items: list[str]) -> str:
     return ", ".join(items[:-1]) + t["list_conjunction"] + items[-1]
 
 
-def _card(t: dict, content_key: str, **params: str) -> dict[str, str | None]:
+def _card(t: dict, content_key: str, **params: str) -> dict[str, str]:
     content = t["cards"][content_key]
     return {
         "title": content["title"].format(**params),
         "description": content["description"].format(**params),
-        "try_now": content.get("try_now"),
     }
 
 
@@ -235,8 +255,12 @@ def _astur_candidates(snapshot: AsturResultSnapshot | None, t: dict, rules: Stud
     group_order = [*_ASTUR_GROUPS, _ASTUR_INSTRUCTIONS_GROUP]
     best = sorted(scored, key=lambda item: (-item[1], group_order.index(item[0])))[: rules.astur_max_cards]
     flags = ["astur_repeat_exposure"] if snapshot.history.repeat_exposure else []
-    return [
-        StrengthCandidate(
+    candidates: list[StrengthCandidate] = []
+    for group, _ in best:
+        content = _card(t, f"astur.{group}")
+        if flags:
+            content["description"] += t["astur_repeat_note"]
+        candidates.append(StrengthCandidate(
             source_id=f"strength:astur:{group}",
             source_type="astur",
             domain="cognitive",
@@ -245,10 +269,9 @@ def _astur_candidates(snapshot: AsturResultSnapshot | None, t: dict, rules: Stud
             evidence_ids=[f"astur:{group}"],
             quality_flags=flags,
             priority=1,
-            **_card(t, f"astur.{group}"),
-        )
-        for group, _ in best
-    ]
+            **content,
+        ))
+    return candidates
 
 
 def _ddo_matches(inputs: StrengthInputs, rules: StudentStrengthsRules) -> tuple[list[str], list[str]]:
@@ -273,6 +296,7 @@ def _ddo_matches(inputs: StrengthInputs, rules: StudentStrengthsRules) -> tuple[
 def _ddo_candidates(inputs: StrengthInputs, t: dict, rules: StudentStrengthsRules) -> list[StrengthCandidate]:
     matched, ability_only = _ddo_matches(inputs, rules)
     spheres = t["ddo_spheres"]
+    values = t["ddo_value"]
     candidates: list[StrengthCandidate] = []
     if len(matched) >= 2:
         # Two leading spheres: one hybrid card, not a winner by key order.
@@ -298,7 +322,7 @@ def _ddo_candidates(inputs: StrengthInputs, t: dict, rules: StudentStrengthsRule
             content_key="ddo.match",
             evidence_ids=[f"ddo:{scale}"],
             priority=2,
-            **{**_card(t, "ddo.match", sphere=spheres[scale]), "try_now": t["ddo_try_now"][scale]},
+            **_card(t, "ddo.match", sphere=spheres[scale], value=values[scale]),
         ))
     if ability_only:
         scales = ability_only[:2]
@@ -310,8 +334,39 @@ def _ddo_candidates(inputs: StrengthInputs, t: dict, rules: StudentStrengthsRule
             content_key="ddo.ability_only",
             evidence_ids=[f"ddo_ability:{s}" for s in scales],
             priority=4,
-            **_card(t, "ddo.ability_only", spheres="», «".join(spheres[s] for s in scales)),
+            **_card(
+                t,
+                "ddo.ability_only",
+                spheres=t["list_conjunction"].join(spheres[s] for s in scales),
+                value=t["list_conjunction"].join(values[s] for s in scales),
+            ),
         ))
+    matched_set = set(matched)
+    if inputs.ddo_interest:
+        interest_only = sorted(
+            (
+                scale for scale in professional_types_service.SCALE_ORDER
+                if scale not in matched_set
+                and inputs.ddo_interest.get(scale, 0) / professional_types_service.INTEREST_MAX_BY_SCALE[scale]
+                >= rules.ddo_interest_min_share
+            ),
+            key=lambda scale: (
+                -inputs.ddo_interest.get(scale, 0) / professional_types_service.INTEREST_MAX_BY_SCALE[scale],
+                professional_types_service.SCALE_ORDER.index(scale),
+            ),
+        )
+        if interest_only:
+            scale = interest_only[0]
+            candidates.append(StrengthCandidate(
+                source_id=f"strength:ddo_interest:{scale}",
+                source_type="professional_types",
+                domain="interest",
+                basis="interest",
+                content_key="ddo.interest",
+                evidence_ids=[f"ddo_interest:{scale}"],
+                priority=6,
+                **_card(t, "ddo.interest", sphere=spheres[scale], value=values[scale]),
+            ))
     return candidates
 
 
@@ -386,7 +441,6 @@ def _empathy_candidates(inputs: StrengthInputs, t: dict, rules: StudentStrengths
         if inputs.empathy_level == "very_high":
             # Very high empathy stays a resource only with the boundary caveat.
             card["description"] += t["empathy_boundary_note"]
-        card["try_now"] = t["cards"]["empathy.try_now"]["try_now"]
         candidates.append(StrengthCandidate(
             source_id=f"strength:empathy:{key}",
             source_type="empathy",
@@ -428,55 +482,6 @@ def _elers_candidates(inputs: StrengthInputs, t: dict) -> list[StrengthCandidate
     )]
 
 
-_TOKEN_RE = re.compile(r"[а-яёәғқңөұүһіa-z0-9]+", re.IGNORECASE)
-
-
-def _tokens(text: str) -> set[str]:
-    return {token.lower() for token in _TOKEN_RE.findall(text) if len(token) >= 3}
-
-
-def _group_similar_artifacts(artifacts: list[OnboardingArtifact]) -> list[list[OnboardingArtifact]]:
-    """Free-text hobbies overlap ("Программирование", "IT/программирование")
-    — a shared significant word is enough to treat them as one fact."""
-    groups: list[list[OnboardingArtifact]] = []
-    for artifact in artifacts:
-        tokens = _tokens(artifact.value)
-        match = next((g for g in groups if tokens & _tokens(" ".join(a.value for a in g))), None)
-        if match is not None:
-            match.append(artifact)
-        else:
-            groups.append([artifact])
-    return groups
-
-
-def _onboarding_candidates(inputs: StrengthInputs, t: dict, rules: StudentStrengthsRules) -> list[StrengthCandidate]:
-    """At most one card: what the student said about themselves is a side
-    fact next to the tests, never their equal."""
-    school_subjects = tr("subjects")["school_subjects"]
-    limit = rules.onboarding_max_items
-    for kind in _ONBOARDING_KINDS:
-        if kind == "artifact":
-            groups = _group_similar_artifacts(inputs.artifacts)[:limit]
-            items = [g[0].value for g in groups]
-            evidence = [f"artifact:{g[0].id}" for g in groups]
-        else:
-            names = (inputs.subjects_easy if kind == "subject_easy" else inputs.subjects_liked)[:limit]
-            items = [school_subjects.get(name, name) for name in names]
-            evidence = [f"{kind}:{name}" for name in names]
-        if items:
-            return [StrengthCandidate(
-                source_id=f"strength:onboarding:{kind}",
-                source_type="onboarding",
-                domain="experience",
-                basis="self_report",
-                content_key=f"onboarding.{kind}",
-                evidence_ids=evidence,
-                priority=6,
-                **_card(t, f"onboarding.{kind}", items=", ".join(items)),
-            )]
-    return []
-
-
 def _cross_candidates(
     inputs: StrengthInputs, others: list[StrengthCandidate], t: dict, rules: StudentStrengthsRules
 ) -> list[StrengthCandidate]:
@@ -503,23 +508,33 @@ def _cross_candidates(
     return candidates
 
 
-def _interest_candidate(
+def _interest_candidates(
     inputs: StrengthInputs, used: set[str], t: dict, rules: StudentStrengthsRules
-) -> StrengthCandidate | None:
-    """Built last, from the RIASEC interests no other card has used."""
-    letters = [L for L in inputs.riasec_confirmed if f"riasec:{L}" not in used][: rules.interest_max_letters]
-    if not letters:
-        return None
-    return StrengthCandidate(
-        source_id="strength:interest:" + "".join(letters),
-        source_type="riasec",
-        domain="interest",
-        basis="interest",
-        content_key="interest",
-        evidence_ids=[f"riasec:{L}" for L in letters],
-        priority=7,
-        **_card(t, "interest", items=_join(t, [t["riasec_interests"][L] for L in letters])),
-    )
+) -> list[StrengthCandidate]:
+    """Built last from relative RIASEC preferences no stronger card used.
+
+    One letter per card makes every observation understandable and lets the
+    section reach five without merging several unrelated interests into one
+    vague sentence. Wording stays exploratory: rank is not ability.
+    """
+    result: list[StrengthCandidate] = []
+    # `riasec_confirmed` is a compatibility fallback for direct/unit callers;
+    # production report paths always provide the complete relative ranking.
+    for letter in inputs.riasec_ranked or inputs.riasec_confirmed:
+        evidence_id = f"riasec:{letter}"
+        if evidence_id in used:
+            continue
+        result.append(StrengthCandidate(
+            source_id=f"strength:interest:{letter}",
+            source_type="riasec",
+            domain="interest",
+            basis="interest",
+            content_key=f"interest.{letter}",
+            evidence_ids=[evidence_id],
+            priority=7,
+            **_card(t, f"interest.{letter}"),
+        ))
+    return result
 
 
 def _select(candidates: list[StrengthCandidate], rules: StudentStrengthsRules) -> list[StrengthCandidate]:
@@ -555,16 +570,24 @@ def select_strengths(
         + _empathy_candidates(inputs, t, rules)
         + _elers_candidates(inputs, t)
     )
-    candidates = _cross_candidates(inputs, others, t, rules) + others + _onboarding_candidates(inputs, t, rules)
+    candidates = _cross_candidates(inputs, others, t, rules) + others
     if inputs.lie_flagged and rules.suppress_self_report_on_lie_flag:
-        candidates = [c for c in candidates if c.source_type not in _SELF_REPORT_TEST_SOURCES]
+        candidates = [
+            c for c in candidates
+            if c.source_type not in _SELF_REPORT_TEST_SOURCES or c.basis == "interest"
+        ]
 
     selected = _select(candidates, rules)
     if len(selected) < rules.max_cards:
         used = {e for c in selected for e in c.evidence_ids}
-        interest = _interest_candidate(inputs, used, t, rules)
-        if interest is not None:
+        for evidence_id in tuple(used):
+            prefix, separator, scale = evidence_id.partition(":")
+            if separator and prefix in {"ddo", "ddo_interest"}:
+                used.update(f"riasec:{letter}" for letter in _DDO_RIASEC_OVERLAP.get(scale, ()))
+        for interest in _interest_candidates(inputs, used, t, rules):
             selected.append(interest)
+            if len(selected) >= rules.max_cards:
+                break
     return selected
 
 
@@ -573,7 +596,7 @@ def select_strengths(
 
 def stored_cards(cards: list[NarrativeCard], candidates: list[StrengthCandidate]) -> list[dict]:
     """What `AnalysisResult.strength_cards` keeps: the (possibly LLM-worded)
-    text plus the candidate's basis and try-now, matched by the cited id."""
+    text plus the candidate's basis, matched by the cited id."""
     by_id = {c.source_id: c for c in candidates}
     result: list[dict] = []
     for card in cards:
@@ -581,8 +604,6 @@ def stored_cards(cards: list[NarrativeCard], candidates: list[StrengthCandidate]
         stored: dict = {"title": card.title, "description": card.description}
         if candidate is not None:
             stored["basis"] = candidate.basis
-            if candidate.try_now:
-                stored["try_now"] = candidate.try_now
         result.append(stored)
     return result
 

@@ -70,6 +70,7 @@ def rich_inputs(**overrides) -> StrengthInputs:
     """A student with a signal in every instrument."""
     data = dict(
         riasec_confirmed=["I", "S"],
+        riasec_ranked=["I", "S", "R", "A", "E", "C"],
         ddo_interest={"practical": 1, "technical": 6, "social": 3, "sign": 2, "artistic": 1},
         ddo_abilities={"practical": 1, "technical": 3, "social": 2, "sign": 1, "artistic": 0},
         belbin_role_totals=belbin_totals(plant=16, evaluator=9, team_worker=5, finisher=4),

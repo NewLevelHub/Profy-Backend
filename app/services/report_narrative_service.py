@@ -235,7 +235,6 @@ def _translated_texts(raw: dict) -> list[str]:
         [raw.get("summary") or "", raw.get("final_analysis") or ""]
         + [c.get("title") or "" for c in cards]
         + [c.get("description") or "" for c in cards]
-        + [c.get("try_now") or "" for c in cards]
     )
 
 
@@ -315,7 +314,7 @@ async def translate_report_narrative(
                 "summary": raw["summary"],
                 "final_analysis": raw["final_analysis"],
                 "strength_cards": [
-                    NarrativeCard(title=c["title"], description=c["description"], try_now=c.get("try_now") or None)
+                    NarrativeCard(title=c["title"], description=c["description"])
                     for c in cards
                 ],
                 "thinking_style_notes": [

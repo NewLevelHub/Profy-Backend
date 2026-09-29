@@ -249,6 +249,16 @@ def confirmed_interests(
     ]
 
 
+def ranked_interests(normalized: dict[str, float]) -> list[str]:
+    """All RIASEC types strongest-first, including medium/quiet results.
+
+    This is a relative ordering, not a list of abilities. Student strengths
+    uses it only for explicitly exploratory cards when fewer than five more
+    strongly grounded observations are available.
+    """
+    return sorted(HOLLAND_ORDER, key=lambda t: (-normalized.get(t, 0.0), HOLLAND_ORDER.index(t)))
+
+
 def strengths_weaknesses(
     normalized: dict[str, float],
     aversion_counts: dict[str, int],

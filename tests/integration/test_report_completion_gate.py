@@ -275,9 +275,9 @@ async def test_successful_generation_populates_v2_narrative_fields(
     assert analysis.report_version == 2
     assert analysis.strength_cards
     for card in analysis.strength_cards:
-        # PRO-432: the stored card keeps how it is grounded (and, when the
-        # candidate has one, its try-now line) — never internal source ids.
-        assert {"title", "description", "basis"} <= set(card.keys()) <= {"title", "description", "basis", "try_now"}
+        # PRO-432: the stored card keeps how it is grounded, never internal
+        # source ids or action prompts.
+        assert set(card.keys()) == {"title", "description", "basis"}
     for note in analysis.thinking_style_notes:
         assert set(note.keys()) == {"title", "description"}
 

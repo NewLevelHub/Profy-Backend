@@ -1,8 +1,8 @@
 {
   "_meta": {
     "note": "program name (normalised) -> [direction_slug]. Merged from specialty_profession_map.py + jinaq/specialty_direction_review.json, plus hand-added keys. Applied by apply_program_direction_map.py --into <snapshot>.",
-    "keys": 1093,
-    "distinct_slugs": 144
+    "keys": 1094,
+    "distinct_slugs": 143
   },
   "map": {
     "3d animation and visual effects": [
@@ -390,6 +390,9 @@
       "upravlyayuschiy-otelem-restoranom"
     ],
     "hr-менеджер": [
+      "hr-menedzher"
+    ],
+    "human resource management (personnel administration)": [
       "hr-menedzher"
     ],
     "humanities": [
@@ -1105,9 +1108,9 @@
       "proektnyy-menedzher"
     ],
     "бизнес администрирование": [
+      "hr-menedzher",
       "predprinimatel",
-      "sekretar-deloproizvoditel",
-      "spetsialist-po-kadrovomu-deloproizvodstvu"
+      "sekretar-deloproizvoditel"
     ],
     "бизнес аналитика и искусственный интеллект": [
       "analitik-dannyh",
@@ -1135,10 +1138,10 @@
       "proektnyy-menedzher"
     ],
     "бизнес-администрирование": [
+      "hr-menedzher",
       "predprinimatel",
       "proektnyy-menedzher",
-      "sekretar-deloproizvoditel",
-      "spetsialist-po-kadrovomu-deloproizvodstvu"
+      "sekretar-deloproizvoditel"
     ],
     "бизнес-информатика": [
       "analitik-dannyh",
@@ -2961,7 +2964,7 @@
       "spetsialist-po-iskusstvennomu-intellektu"
     ],
     "специалист по кадровому делопроизводству": [
-      "spetsialist-po-kadrovomu-deloproizvodstvu"
+      "hr-menedzher"
     ],
     "специалист по медиакоммуникациям": [
       "spetsialist-po-mediakommunikatsiyam"

@@ -164,7 +164,7 @@ _MIN_LETTERS_TO_JUDGE = 15
 # ratio on its non-allowlisted Latin, and steps 2-3 catch Russian vocabulary.
 _ALLOWED_LATIN_TOKENS: frozenset[str] = frozenset({
     "data", "engineer", "devops", "mobile", "ux", "ui", "qa", "hr", "pr",
-    "event", "nazarbayev", "university", "science", "excel", "kimep", "sdu",
+    "event", "digital", "nazarbayev", "university", "science", "excel", "kimep", "sdu",
     "kbtu", "aitu", "narxoz", "it", "ai", "ml",
 })
 _ALLOWED_LATIN_RE = re.compile(
@@ -370,6 +370,35 @@ def _check_strength_card_duplicate_evidence(output: ReportNarrativeOutput) -> li
     return issues
 
 
+def _check_strength_card_repetition(output: ReportNarrativeOutput) -> list[ValidationIssue]:
+    """Reject a templated wall of cards even when every source is valid.
+
+    Repeating an identical explanation or the same three-word title opening
+    three or more times makes distinct observations read like copy-paste.
+    The deterministic fallback intentionally uses separate wording per RIASEC
+    direction, so an AI result that fails this check can safely fall back.
+    """
+    normalized_descriptions: dict[str, int] = {}
+    title_openings: dict[str, int] = {}
+    for card in output.strength_cards:
+        description = " ".join(card.description.lower().split())
+        normalized_descriptions[description] = normalized_descriptions.get(description, 0) + 1
+
+        words = re.findall(r"[а-яёәғқңөұүһіa-z]+", card.title.lower())
+        opening = " ".join(words[:3])
+        if len(words) >= 3:
+            title_openings[opening] = title_openings.get(opening, 0) + 1
+
+    issues: list[ValidationIssue] = []
+    for description, count in normalized_descriptions.items():
+        if description and count >= 2:
+            issues.append(ValidationIssue("strength_card_repeated_description", description[:120]))
+    for opening, count in title_openings.items():
+        if count >= 3:
+            issues.append(ValidationIssue("strength_card_repeated_title_opening", opening))
+    return issues
+
+
 def _check_career_narrative(output: ReportNarrativeOutput, context: ReportNarrativeContext) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     if len(output.career_narrative) > _MAX_CAREER_CARDS:
@@ -515,6 +544,7 @@ def validate(
     issues += _check_strength_card_count(output, context)
     issues += _check_strength_card_sources(output, context)
     issues += _check_strength_card_duplicate_evidence(output)
+    issues += _check_strength_card_repetition(output)
     issues += _check_strength_card_wording(output, context, language)
     issues += _check_career_narrative(output, context)
     issues += _check_no_source_id_leak(output, context)

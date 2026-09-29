@@ -233,7 +233,10 @@ SPECIALTY_TO_PROFESSIONS: dict[str, list[str]] = {
     "Менеджмент предприятий": ["predprinimatel"],
     "Глобальный менеджмент": ["predprinimatel"],
     "Инновационный менеджмент": ["predprinimatel"],
-    "Бизнес администрирование": ["predprinimatel", "sekretar-deloproizvoditel", "spetsialist-po-kadrovomu-deloproizvodstvu"],
+    "Бизнес администрирование": ["predprinimatel", "sekretar-deloproizvoditel", "hr-menedzher"],
+    # Was tagged "Специалист по кадровому делопроизводству" until that
+    # profession merged into HR-менеджер (PRO-432).
+    "Human Resource Management (Personnel Administration)": ["hr-menedzher"],
     "Бизнес и управление": ["predprinimatel"],
     "Бизнес-предпринимательство и инновации": ["predprinimatel"],
     "Международный бизнес": ["predprinimatel"],
@@ -577,7 +580,7 @@ SPECIALTY_TO_PROFESSIONS: dict[str, list[str]] = {
     "Аквакультура": ["veterinar"],
     "Английский язык": ["shkolnyy-uchitel"],
     "Банковское дело и финансы": ["finansovyy-konsultant"],
-    "Бизнес-администрирование": ["predprinimatel", "sekretar-deloproizvoditel", "spetsialist-po-kadrovomu-deloproizvodstvu"],
+    "Бизнес-администрирование": ["predprinimatel", "sekretar-deloproizvoditel", "hr-menedzher"],
     "Бурение скважин": ["burovoy-inzhener-neftegazovoe-delo"],
     "Бухгалтерия": ["buhgalter"],
     "Бухгалтерия и аудит": ["buhgalter", "auditor"],

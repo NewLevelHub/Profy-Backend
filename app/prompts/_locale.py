@@ -38,6 +38,7 @@ _LATIN_PROFESSION_TERMS: list[tuple[str, str]] = [
     ("HR-менеджер", "HR-менеджер"),
     ("Event-менеджер", "Event-менеджер"),
     ("PR-менеджер", "PR-менеджер"),
+    ("Digital-маркетолог", "Digital-маркетолог"),
     ("Аниматор (2D/3D)", "Аниматор (2D/3D)"),
 ]
 
@@ -71,7 +72,7 @@ def load_direction_glossary() -> dict[str, dict[str, Any]]:
         result: dict[str, dict[str, Any]] = {}
         for p in PROFESSIONS:
             title_ru = p["title"]
-            slug = slugify(title_ru)
+            slug = p.get("slug") or slugify(title_ru)
             if slug not in result:
                 result[slug] = {
                     "slug": slug,

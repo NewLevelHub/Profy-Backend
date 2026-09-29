@@ -579,19 +579,13 @@ def test_assemble_result_v2_includes_personality_notes() -> None:
     assert "Открытость новому" in response.personality_note
 
 
-def test_strength_cards_get_a_localized_basis_badge_and_try_now() -> None:
+def test_strength_cards_hide_internal_grounding_metadata() -> None:
     stored = [
         {"title": "Числа", "description": "Ряды", "basis": "task_result", "try_now": "Реши судоку."},
         {"title": "От психолога", "description": "Написано вручную"},
     ]
 
-    with use_locale("ru"):
-        ru = report_v2_assembler.build_strength_cards(stored)
-    with use_locale("kk"):
-        kk = report_v2_assembler.build_strength_cards(stored)
+    cards = report_v2_assembler.build_strength_cards(stored)
 
-    assert ru[0].basis == "task_result" and ru[0].source_label == "Подтверждено заданиями"
-    assert ru[0].try_now == "Реши судоку."
-    assert kk[0].source_label == "Тапсырмалармен расталды"
-    # A hand-written card carries no grounding claim.
-    assert ru[1].basis is None and ru[1].source_label is None and ru[1].try_now is None
+    assert cards[0].model_dump() == {"title": "Числа", "description": "Ряды"}
+    assert cards[1].model_dump() == {"title": "От психолога", "description": "Написано вручную"}

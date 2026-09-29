@@ -50,7 +50,7 @@
  {
   "slug": "arhivarius",
   "holland_code": "CSE",
-  "name_ru": "Архивариус",
+  "name_ru": "Архивист",
   "name_kk": "Мұрағатшы"
  },
  {
@@ -74,8 +74,8 @@
  {
   "slug": "bibliotekar",
   "holland_code": "SAI",
-  "name_ru": "Библиотекарь",
-  "name_kk": "Кітапханашы"
+  "name_ru": "Специалист по информационным ресурсам",
+  "name_kk": "Ақпараттық ресурстар маманы"
  },
  {
   "slug": "biolog",
@@ -86,8 +86,8 @@
  {
   "slug": "birzhevoy-broker",
   "holland_code": "ESI",
-  "name_ru": "Биржевой брокер",
-  "name_kk": "Биржа брокері"
+  "name_ru": "Трейдер / брокер",
+  "name_kk": "Трейдер / брокер"
  },
  {
   "slug": "biznes-perevodchik",
@@ -134,14 +134,14 @@
  {
   "slug": "direktor-po-logistike",
   "holland_code": "ECR",
-  "name_ru": "Директор по логистике",
-  "name_kk": "Логистика директоры"
+  "name_ru": "Менеджер по цепям поставок",
+  "name_kk": "Жеткізу тізбегі менеджері"
  },
  {
   "slug": "direktor-po-marketingu",
   "holland_code": "EAS",
-  "name_ru": "Директор по маркетингу",
-  "name_kk": "Маркетинг директоры"
+  "name_ru": "Digital-маркетолог",
+  "name_kk": "Digital-маркетолог"
  },
  {
   "slug": "dizayner-interera",
@@ -242,8 +242,8 @@
  {
   "slug": "gid-ekskursovod",
   "holland_code": "SEA",
-  "name_ru": "Гид-экскурсовод",
-  "name_kk": "Гид-экскурсовод"
+  "name_ru": "Гид / менеджер по туризму",
+  "name_kk": "Гид / туризм менеджері"
  },
  {
   "slug": "gornyy-inzhener",
@@ -482,14 +482,14 @@
  {
   "slug": "modeler",
   "holland_code": "ASR",
-  "name_ru": "Модельер",
-  "name_kk": "Модельер"
+  "name_ru": "Дизайнер одежды",
+  "name_kk": "Киім дизайнері"
  },
  {
   "slug": "modnyy-stilist",
   "holland_code": "ASE",
-  "name_ru": "Модный стилист",
-  "name_kk": "Сән стилисі"
+  "name_ru": "Стилист-имиджмейкер",
+  "name_kk": "Стилист-имиджмейкер"
  },
  {
   "slug": "muzykant-ispolnitel",
@@ -656,8 +656,8 @@
  {
   "slug": "sekretar-deloproizvoditel",
   "holland_code": "CES",
-  "name_ru": "Секретарь-делопроизводитель",
-  "name_kk": "Хатшы-іс жүргізуші"
+  "name_ru": "Офис-менеджер",
+  "name_kk": "Офис-менеджер"
  },
  {
   "slug": "shkolnyy-uchitel",
@@ -694,12 +694,6 @@
   "holland_code": "IRA",
   "name_ru": "Специалист по искусственному интеллекту",
   "name_kk": "Жасанды интеллект маманы"
- },
- {
-  "slug": "spetsialist-po-kadrovomu-deloproizvodstvu",
-  "holland_code": "CES",
-  "name_ru": "Специалист по кадровому делопроизводству",
-  "name_kk": "Кадрлық іс жүргізу маманы"
  },
  {
   "slug": "spetsialist-po-mediakommunikatsiyam",
@@ -800,8 +794,8 @@
  {
   "slug": "upravlyayuschiy-fermerskim-hozyaystvom",
   "holland_code": "ESR",
-  "name_ru": "Управляющий фермерским хозяйством",
-  "name_kk": "Фермер шаруашылығының басқарушысы"
+  "name_ru": "Агроменеджер",
+  "name_kk": "Агроменеджер"
  },
  {
   "slug": "upravlyayuschiy-otelem-restoranom",
@@ -836,8 +830,8 @@
  {
   "slug": "vospitatel-detskogo-sada",
   "holland_code": "SAE",
-  "name_ru": "Воспитатель детского сада",
-  "name_kk": "Балабақша тәрбиешісі"
+  "name_ru": "Педагог дошкольного образования",
+  "name_kk": "Мектепке дейінгі білім беру педагогы"
  },
  {
   "slug": "vrach-obschey-praktiki",
