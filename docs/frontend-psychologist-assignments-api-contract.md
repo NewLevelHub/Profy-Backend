@@ -77,8 +77,12 @@ Authorization: Bearer <psychologist-token>
     "id": "11111111-2222-3333-4444-555555555555",
     "email": "student@example.com",
     "profile_name": "Arman",          // null, если анкеты ещё нет
-    "age_group": "senior",            // null без профиля; иначе junior|middle|senior
-    "assigned_at": "2026-09-09T10:00:00Z"
+    "age": 16,                        // null без профиля
+    "grade": 10,                      // класс, null без профиля
+    "assigned_at": "2026-09-09T10:00:00Z",
+    "report_status": "pending_review" // хоть один отчёт ждёт проверки;
+                                      // "published" — отчёты есть, все опубликованы;
+                                      // null — отчётов ещё нет
   }
 ]
 ```
@@ -106,6 +110,7 @@ Authorization: Bearer <psychologist-token>
   "is_verified": true,
   "is_active": true,
   "created_at": "2026-08-28T09:20:13Z",
+  "assigned_at": "2026-09-09T10:00:00Z", // когда этот психолог взял ученика
   "profile": { /* ProfileResponse или null */ },
   "artifacts": [ /* ArtifactItem[] */ ],
   "assessments": [
@@ -117,7 +122,8 @@ Authorization: Bearer <psychologist-token>
       "total_questions": 42,
       "created_at": "...",
       "completed_at": "...",
-      "has_result": true
+      "has_result": true,
+      "review_status": "pending_review" // | "published" | null — отчёта нет
     }
   ]
 }

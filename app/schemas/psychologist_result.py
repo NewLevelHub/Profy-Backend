@@ -9,6 +9,7 @@ with scores) — the psychologist needs them to judge the report.
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -25,9 +26,21 @@ class PsychologistReviewQueueItem(BaseModel):
     student_name: str | None = None
     student_email: str
     age: int | None = None
+    grade: int | None = None
     goal: str
     generated_at: datetime
     reviewed_at: datetime | None = None
+
+
+class PsychologistReviewEditItem(BaseModel):
+    """One saved edit of a report under review — `changed_fields` is
+    `{"field": {"old": ..., "new": ...}}` for the fields that edit changed."""
+
+    id: uuid.UUID
+    edited_at: datetime
+    editor_id: uuid.UUID | None = None
+    editor_email: str | None = None
+    changed_fields: dict[str, dict[str, Any]]
 
 
 class ReviewTextCard(BaseModel):
