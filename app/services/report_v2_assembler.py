@@ -383,7 +383,14 @@ def build_riasec_careers(
 def build_strength_cards(stored: list[dict]) -> list[StudentStrengthCard]:
     """Stored cards → clean student copy. Grounding metadata remains in the
     reviewed report for specialists but is not shown as a badge to a child."""
-    return [StudentStrengthCard(title=card["title"], description=card["description"]) for card in stored]
+    return [
+        StudentStrengthCard(
+            title=card["title"],
+            description=card["description"],
+            is_test_grounded=card.get("basis") is not None,
+        )
+        for card in stored
+    ]
 
 
 def _map_thinking_notes(cards: list) -> list[StudentThinkingStyleNote]:

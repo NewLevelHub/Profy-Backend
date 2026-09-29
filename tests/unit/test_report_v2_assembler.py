@@ -587,5 +587,9 @@ def test_strength_cards_hide_internal_grounding_metadata() -> None:
 
     cards = report_v2_assembler.build_strength_cards(stored)
 
-    assert cards[0].model_dump() == {"title": "Числа", "description": "Ряды"}
-    assert cards[1].model_dump() == {"title": "От психолога", "description": "Написано вручную"}
+    assert cards[0].model_dump() == {
+        "title": "Числа", "description": "Ряды", "is_test_grounded": True,
+    }
+    assert cards[1].model_dump() == {
+        "title": "От психолога", "description": "Написано вручную", "is_test_grounded": False,
+    }

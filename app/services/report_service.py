@@ -958,14 +958,27 @@ async def _build_report(
         )
         if narrative_translated_by_ai:
             # A translation keeps the reviewed row's cards one-to-one: basis
-            # carries over and the visible text is the translation.
+            # carries over. Untouched system cards use the target locale's
+            # deterministic explanations; psychologist edits remain a direct
+            # translation of what the specialist wrote.
+            use_vetted_explanations = (
+                "strength_cards" not in carried_edits
+                and len(sibling.strength_cards) == len(strength_candidates)
+                and all(card.get("basis") for card in sibling.strength_cards)
+            )
             strength_cards_stored = [
                 {
                     **{k: v for k, v in source.items() if k == "basis"},
                     "title": card.title,
-                    "description": card.description,
+                    "description": (
+                        strength_candidates[index].description
+                        if use_vetted_explanations
+                        else card.description
+                    ),
                 }
-                for source, card in zip(sibling.strength_cards, narrative.strength_cards)
+                for index, (source, card) in enumerate(
+                    zip(sibling.strength_cards, narrative.strength_cards)
+                )
             ]
         else:
             strength_cards_stored = student_strengths_service.stored_cards(
@@ -1125,7 +1138,7 @@ async def get_review_status(assessment_id: uuid.UUID, db: AsyncSession) -> Revie
     # KZ-405: one row per locale, all sharing the report's review status
     # (build_report inherits it onto every new locale row) — any one answers.
     result = await db.execute(
-        select(AnalysisResult.review_status)
+        select(AnalysisResult.review_status, AnalysisResult.meta)
         .where(AnalysisResult.assessment_id == assessment_id)
         .order_by(
             case((AnalysisResult.locale == DEFAULT_LOCALE, 0), else_=1),
@@ -1134,7 +1147,13 @@ async def get_review_status(assessment_id: uuid.UUID, db: AsyncSession) -> Revie
         )
         .limit(1)
     )
-    return result.scalars().first()
+    row = result.first()
+    if row is None:
+        return None
+    review_status, meta = row
+    if student_strengths_service.rules_version_is_outdated(meta):
+        return ReviewStatus.pending_review
+    return review_status
 
 
 class ReportLookup(str, Enum):

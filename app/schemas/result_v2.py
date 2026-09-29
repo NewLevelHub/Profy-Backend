@@ -205,6 +205,9 @@ class PsychoEmotionalSection(BaseModel):
 class StudentStrengthCard(BaseModel):
     title: str
     description: str
+    # The UI labels the description as an explanation only for cards derived
+    # from test evidence. A specialist's manual card has no such implication.
+    is_test_grounded: bool = False
     model_config = _model_config
 
 

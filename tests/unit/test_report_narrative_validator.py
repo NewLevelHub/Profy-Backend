@@ -362,6 +362,16 @@ def test_interest_candidate_worded_as_ability_is_rejected():
     assert any(i.code == "strength_card_interest_as_ability" for i in issues)
 
 
+def test_strength_explanation_must_match_the_vetted_candidate():
+    context = _context([], _candidates(StrengthInputs(riasec_ranked=["R"])))
+    output = build_fallback_narrative(context)
+    output.strength_cards[0].description = "Звучит убедительно, но не объясняет источник вывода."
+
+    issues = validate(output, context)
+
+    assert any(i.code == "strength_card_explanation_changed" for i in issues)
+
+
 def test_templated_strength_cards_are_rejected():
     context = _context([], _candidates(StrengthInputs(riasec_ranked=["R", "I", "A", "S", "E"])))
     output = build_fallback_narrative(context)

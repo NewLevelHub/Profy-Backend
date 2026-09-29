@@ -18,7 +18,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import Select, case, delete, select, tuple_, update
+from sqlalchemy import Select, case, delete, or_, select, tuple_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
@@ -208,7 +208,10 @@ async def list_available_students(
         .join(Profile, Profile.id == Assessment.profile_id)
         .where(
             Profile.user_id == User.id,
-            AnalysisResult.review_status == ReviewStatus.pending_review,
+            or_(
+                AnalysisResult.review_status == ReviewStatus.pending_review,
+                student_strengths_service.rules_version_is_outdated_clause(),
+            ),
         )
         .exists()
     )
@@ -606,7 +609,13 @@ def review_queue_select(limit: int = REVIEW_QUEUE_LIMIT) -> Select:
         .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
         .join(Profile, Profile.id == Assessment.profile_id)
         .join(student, student.id == Profile.user_id)
-        .where(AnalysisResult.review_status == ReviewStatus.pending_review, _is_original_row())
+        .where(
+            or_(
+                AnalysisResult.review_status == ReviewStatus.pending_review,
+                student_strengths_service.rules_version_is_outdated_clause(),
+            ),
+            _is_original_row(),
+        )
         .order_by(AnalysisResult.created_at.asc())
         .limit(limit)
     )
@@ -676,7 +685,7 @@ def _to_detail(analysis: AnalysisResult) -> PsychologistResultDetailResponse:
     return detail.model_copy(
         update={
             "personality_notes": report_service.student_personality_notes(analysis),
-            "strengths_stale": bool((analysis.meta or {}).get("strengths_stale")),
+            "strengths_stale": student_strengths_service.strengths_are_stale(analysis.meta),
         }
     )
 
@@ -897,19 +906,22 @@ async def rebuild_strength_cards(
     analysis = await _require_result_for_student(
         db, student_id=student_id, assessment_id=assessment_id, for_update=True
     )
-    if analysis.review_status != ReviewStatus.pending_review:
+    rules_outdated = student_strengths_service.rules_version_is_outdated(analysis.meta)
+    if analysis.review_status != ReviewStatus.pending_review and not rules_outdated:
         raise ResultAlreadyPublishedError(i18n_key("api_errors", "result_is_already_published", locale="ru"))
 
-    cards, strengths_fingerprint = await student_strengths_service.rebuild_cards(analysis, db)
     changed: dict[str, dict[str, Any]] = {}
-    if cards != list(analysis.strength_cards):
-        changed["strength_cards"] = {"old": list(analysis.strength_cards), "new": cards}
-        analysis.strength_cards = cards
     rows = (
         await db.execute(select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id))
     ).scalars().all()
     for row in rows:
+        cards, strengths_fingerprint = await student_strengths_service.rebuild_cards(row, db)
+        if row.id == analysis.id and cards != list(row.strength_cards):
+            changed["strength_cards"] = {"old": list(row.strength_cards), "new": cards}
+        row.strength_cards = cards
         row.meta = student_strengths_service.mark_fresh(row.meta, strengths_fingerprint)
+        if rules_outdated:
+            row.review_status = ReviewStatus.pending_review
     return await _save_review_changes(db, analysis, editor_id=psychologist_id, changed=changed)
 
 

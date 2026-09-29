@@ -220,6 +220,55 @@ async def test_retake_with_the_same_outcome_changes_nothing(
     assert not stored.meta.get("strengths_stale")
 
 
+async def test_published_report_from_an_older_rules_version_requires_rebuild(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    test_user: User,
+    psychologist_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+    await _seed_battery(db_session, assessment, test_user, leading_role="finisher")
+    await generate(client, auth_headers, assessment)
+    await assign(db_session, psychologist_user, test_user)
+    review_url = _result_url(test_user, assessment.id)
+    assert (await client.post(f"{review_url}/publish", headers=psychologist_headers)).status_code == 200
+
+    stored = await stored_result(db_session, assessment.id)
+    stored.meta = {
+        key: value for key, value in stored.meta.items()
+        if key != "strengths_rules_version"
+    }
+    await db_session.flush()
+
+    student_view = await client.get(f"/api/v1/result/{assessment.id}", headers=auth_headers)
+    assert student_view.json() == {
+        "status": "pending_review",
+        "assessment_id": str(assessment.id),
+    }
+    queue = await client.get("/api/v1/psychologist/reviews", headers=psychologist_headers)
+    assert queue.status_code == 200
+    assert str(assessment.id) in {item["assessment_id"] for item in queue.json()}
+
+    detail = await client.get(review_url, headers=psychologist_headers)
+    assert detail.status_code == 200
+    assert detail.json()["review_status"] == "published"
+    assert detail.json()["strengths_stale"] is True
+
+    rebuilt = await client.post(f"{review_url}/strengths/rebuild", headers=psychologist_headers)
+    assert rebuilt.status_code == 200
+    assert rebuilt.json()["review_status"] == "pending_review"
+    assert rebuilt.json()["strengths_stale"] is False
+
+    refreshed = await stored_result(db_session, assessment.id)
+    assert refreshed.meta["strengths_rules_version"] == strengths.student_strengths_rules.version
+    assert (await client.post(f"{review_url}/publish", headers=psychologist_headers)).status_code == 200
+
+
 async def test_kk_translation_keeps_the_same_cards_and_their_grounding(
     client: httpx.AsyncClient,
     db_session: AsyncSession,

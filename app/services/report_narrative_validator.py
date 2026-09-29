@@ -337,6 +337,21 @@ def _check_strength_card_sources(output: ReportNarrativeOutput, context: ReportN
     return issues
 
 
+def _check_strength_card_explanations(
+    output: ReportNarrativeOutput, context: ReportNarrativeContext
+) -> list[ValidationIssue]:
+    """Require the exact methodology-owned explanation for every card."""
+    candidates = {candidate.source_id: candidate for candidate in context.strength_candidates}
+    issues: list[ValidationIssue] = []
+    for card in output.strength_cards:
+        if len(card.evidence_ids) != 1:
+            continue
+        candidate = candidates.get(card.evidence_ids[0])
+        if candidate is not None and card.description != candidate.description:
+            issues.append(ValidationIssue("strength_card_explanation_changed", card.title))
+    return issues
+
+
 def _check_strength_card_wording(
     output: ReportNarrativeOutput, context: ReportNarrativeContext, language: str = "ru"
 ) -> list[ValidationIssue]:
@@ -543,6 +558,7 @@ def validate(
     issues += _check_thinking_style_count(output, context)
     issues += _check_strength_card_count(output, context)
     issues += _check_strength_card_sources(output, context)
+    issues += _check_strength_card_explanations(output, context)
     issues += _check_strength_card_duplicate_evidence(output)
     issues += _check_strength_card_repetition(output)
     issues += _check_strength_card_wording(output, context, language)

@@ -26,7 +26,7 @@ import logging
 import uuid
 from collections import Counter
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import StudentStrengthsRules, student_strengths_rules
@@ -212,6 +212,21 @@ def fingerprint(candidates: list[StrengthCandidate]) -> str:
         "candidates": [[c.source_id, c.basis, c.evidence_ids] for c in candidates],
     }
     return hashlib.sha256(json.dumps(payload, ensure_ascii=False).encode()).hexdigest()
+
+
+def rules_version_is_outdated(meta: dict | None) -> bool:
+    """Whether stored cards predate the currently configured methodology."""
+    return (meta or {}).get("strengths_rules_version") != student_strengths_rules.version
+
+
+def rules_version_is_outdated_clause():
+    """SQL equivalent of :func:`rules_version_is_outdated` for queues."""
+    stored = AnalysisResult.meta.op("->>")("strengths_rules_version")
+    return func.coalesce(stored, "") != str(student_strengths_rules.version)
+
+
+def strengths_are_stale(meta: dict | None) -> bool:
+    return bool((meta or {}).get("strengths_stale")) or rules_version_is_outdated(meta)
 
 
 # ── candidates ───────────────────────────────────────────────────────────────
@@ -595,13 +610,19 @@ def select_strengths(
 
 
 def stored_cards(cards: list[NarrativeCard], candidates: list[StrengthCandidate]) -> list[dict]:
-    """What `AnalysisResult.strength_cards` keeps: the (possibly LLM-worded)
-    text plus the candidate's basis, matched by the cited id."""
+    """Persist titles plus server-authored, evidence-grounded explanations.
+
+    The model may make a title friendlier, but the visible ``Why?`` text is
+    always the candidate description selected by the methodology.
+    """
     by_id = {c.source_id: c for c in candidates}
     result: list[dict] = []
     for card in cards:
         candidate = next((by_id[e] for e in card.evidence_ids if e in by_id), None)
-        stored: dict = {"title": card.title, "description": card.description}
+        stored: dict = {
+            "title": card.title,
+            "description": candidate.description if candidate is not None else card.description,
+        }
         if candidate is not None:
             stored["basis"] = candidate.basis
         result.append(stored)
@@ -686,4 +707,5 @@ def mark_fresh(meta: dict | None, strengths_fingerprint: str) -> dict:
     """Meta of a row whose strength cards match `strengths_fingerprint`."""
     fresh = {k: v for k, v in (meta or {}).items() if k != "strengths_stale"}
     fresh["strengths_fingerprint"] = strengths_fingerprint
+    fresh["strengths_rules_version"] = student_strengths_rules.version
     return fresh

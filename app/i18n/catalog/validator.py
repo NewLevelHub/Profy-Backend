@@ -38,6 +38,10 @@ RU: dict[str, str] = {
         "который стоит проверить на практике: без «умеешь», «у тебя получается», "
         "«способности», «талант»."
     ),
+    "strength_card_explanation_changed": (
+        "В карточке strength_cards {detail!r} изменён description. Скопируй "
+        "description соответствующего strength_candidate дословно; менять можно только title."
+    ),
     "strength_card_duplicate_evidence": (
         "Source_id {detail!r} процитирован больше чем в одной карточке "
         "strength_cards — какой-то один факт пересказан 2-3 разными "
@@ -134,6 +138,10 @@ KK: dict[str, str] = {
         "сүйенеді, бірақ оны дәлелденген дағды ретінде сипаттайды. Оны іс жүзінде тексеруге "
         "тұрарлық қызығушылық ретінде қайта жаз: «білесің», «қолыңнан келеді», «қабілет», "
         "«дарын» сөздерінсіз."
+    ),
+    "strength_card_explanation_changed": (
+        "strength_cards ішіндегі {detail!r} карточкасының description мәтіні өзгертілген. "
+        "Тиісті strength_candidate description мәтінін сөзбе-сөз көшір; тек title өзгертуге болады."
     ),
     "strength_card_duplicate_evidence": (
         "Source_id {detail!r} strength_cards ішінде бірнеше карточкада қолданылған — "
