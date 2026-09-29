@@ -65,6 +65,7 @@ Auth тот же JWT Bearer + `require_role(psychologist)` на всём
 | GET | `/api/v1/psychologist/reviews` | очередь неопубликованных отчётов своих учеников |
 | GET | `/api/v1/psychologist/students/{student_id}/results/{assessment_id}` | полный отчёт для проверки |
 | PATCH | `/api/v1/psychologist/students/{student_id}/results/{assessment_id}` | правка содержимого |
+| GET | `/api/v1/psychologist/students/{student_id}/results/{assessment_id}/edits` | история правок |
 | POST | `/api/v1/psychologist/students/{student_id}/results/{assessment_id}/publish` | публикация |
 
 Все — только `role=psychologist` (student / admin → `403`). Нет назначения на
@@ -84,7 +85,8 @@ Auth тот же JWT Bearer + `require_role(psychologist)` на всём
     "student_id": "uuid",
     "student_name": "Айгерим",        // null, если имени в профиле нет
     "student_email": "student@example.com",
-    "age_group": "senior",            // junior | middle | senior | null
+    "age": 16,                        // null без профиля
+    "grade": 10,                      // класс из профиля
     "goal": "explore",
     "generated_at": "2026-09-14T08:00:00Z",
     "reviewed_at": null               // не null — психолог уже сохранял правки
@@ -160,6 +162,28 @@ Auth тот же JWT Bearer + `require_role(psychologist)` на всём
 `{field: {old, new}}`). Уже опубликованный отчёт → `409`
 `"Result is already published"`.
 
+### 2.3.1 `GET /students/{student_id}/results/{assessment_id}/edits`
+
+История сохранённых правок отчёта, старые сверху — по одной записи на PATCH,
+который что-то реально изменил. Собирается со всех языковых строк
+прохождения, не только с проверяемой. Отдаются 100 последних правок. Те же `404`, что у §2.2.
+`personality_notes` в `changed_fields` — целиком словарь «что видит ученик»
+до и после правки, не только изменённая черта.
+
+```jsonc
+[
+  {
+    "id": "uuid",
+    "edited_at": "2026-09-21T15:02:00Z",
+    "editor_id": "uuid",               // null, если аккаунт редактора удалён
+    "editor_email": "psy@example.com",
+    "changed_fields": {
+      "summary": { "old": "...", "new": "..." }
+    }
+  }
+]
+```
+
 ### 2.4 `POST /students/{student_id}/results/{assessment_id}/publish`
 
 Тело — `{}`. Ответ — форма §2.2 с `review_status: "published"`,
@@ -170,7 +194,17 @@ Auth тот же JWT Bearer + `require_role(psychologist)` на всём
 
 `GET /api/v1/psychologist/students/{id}` — у каждого элемента `assessments[]`
 новое поле `review_status: "pending_review" | "published" | null` (`null` —
-отчёта ещё нет). `has_result` оставлен как был.
+отчёта ещё нет). `has_result` оставлен как был. На верхнем уровне —
+`assigned_at`: когда этот психолог взял ученика.
+
+`GET /api/v1/psychologist/students` (свои ученики) дополнительно отдаёт
+`grade` и `report_status` (`"pending_review" | "published" | null`) —
+`pending_review`, если хоть один отчёт ученика ждёт проверки, иначе статус
+последнего. `GET /students/available` —
+`grade`, а также `goal` и `completed_at` завершённой диагностики, чей отчёт
+ждёт проверки (если такой нет — последней завершённой; `null`, пока ни
+одной нет) — по ним общая очередь показывает цель и сколько
+ученик ждёт.
 
 ## 3. Админ
 

@@ -48,6 +48,7 @@ from app.schemas.psychologist import (
 from app.schemas.psychologist_result import (
     PsychologistResultDetailResponse,
     PsychologistResultPatch,
+    PsychologistReviewEditItem,
     PsychologistReviewQueueItem,
 )
 from app.services import (
@@ -163,17 +164,43 @@ async def _require_own_note(
     return note
 
 
+def _latest_report_status(student_id: Any) -> Any:
+    """Review status to show for a student, as a scalar subquery —
+    `student_id` may be a correlated column or a value: `pending_review`
+    while any of their reports waits for review (that's what the
+    psychologist has to act on, even if a newer one is already published),
+    else the status of the latest assessment's report, else NULL. Ordered
+    by assessment, not report row: a fresh translation row of an old
+    assessment must not count as the latest."""
+    return (
+        select(AnalysisResult.review_status)
+        .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
+        .join(Profile, Profile.id == Assessment.profile_id)
+        .where(Profile.user_id == student_id, _is_original_row())
+        .order_by(
+            case((AnalysisResult.review_status == ReviewStatus.pending_review, 0), else_=1),
+            Assessment.created_at.desc(),
+            Assessment.id.desc(),
+        )
+        .limit(1)
+        .scalar_subquery()
+    )
+
+
 async def list_assigned_students(
     db: AsyncSession, psychologist_id: uuid.UUID
 ) -> list[PsychologistStudentListItem]:
     student = aliased(User)
+    latest_report_status = _latest_report_status(student.id)
     query = (
         select(
             student.id,
             student.email,
             Profile.name,
             Profile.age,
+            Profile.grade,
             PsychologistStudentAssignment.created_at,
+            latest_report_status.label("report_status"),
         )
         .join(student, student.id == PsychologistStudentAssignment.student_id)
         .outerjoin(Profile, Profile.user_id == student.id)
@@ -187,7 +214,9 @@ async def list_assigned_students(
             email=row.email,
             profile_name=row.name,
             age=row.age,
+            grade=row.grade,
             assigned_at=row.created_at,
+            report_status=row.report_status.value if row.report_status else None,
         )
         for row in rows
     ]
@@ -224,16 +253,55 @@ async def list_available_students(
         )
         .exists()
     )
+    # One pass over completed assessments, one per profile — not a
+    # correlated lookup per student, this list covers the whole platform.
+    # The pool's "waiting since" is about the oldest assessment whose report
+    # still waits for review (the review queue is oldest-first too); without
+    # one, the latest completed. Pending assessments are one set joined in,
+    # not a lookup per row. Aliased: `pending`/`completed` above correlate
+    # on `Assessment`.
+    completed_assessment = aliased(Assessment)
+    waiting = (
+        select(AnalysisResult.assessment_id)
+        .where(AnalysisResult.review_status == ReviewStatus.pending_review)
+        .distinct()
+        .subquery()
+    )
+    is_waiting = waiting.c.assessment_id.is_not(None)
+    latest_completed = (
+        select(
+            completed_assessment.profile_id,
+            completed_assessment.goal,
+            completed_assessment.completed_at,
+        )
+        .outerjoin(waiting, waiting.c.assessment_id == completed_assessment.id)
+        .where(completed_assessment.status == AssessmentStatus.completed)
+        .distinct(completed_assessment.profile_id)
+        .order_by(
+            completed_assessment.profile_id,
+            is_waiting.desc(),
+            # Oldest first among waiting ones (NULL — and so no effect —
+            # for the rest), then newest first as the fallback.
+            case((is_waiting, completed_assessment.completed_at)).asc().nulls_last(),
+            completed_assessment.completed_at.desc().nulls_last(),
+            completed_assessment.created_at.desc(),
+        )
+        .subquery()
+    )
     query = (
         select(
             User.id,
             User.email,
             Profile.name,
             Profile.age,
+            Profile.grade,
             pending.label("has_pending"),
             completed.label("has_completed"),
+            latest_completed.c.goal,
+            latest_completed.c.completed_at,
         )
         .outerjoin(Profile, Profile.user_id == User.id)
+        .outerjoin(latest_completed, latest_completed.c.profile_id == Profile.id)
         .where(User.role == UserRole.student, ~User.id.in_(already_mine))
         .order_by(User.created_at.desc())
     )
@@ -244,8 +312,11 @@ async def list_available_students(
             email=row.email,
             profile_name=row.name,
             age=row.age,
+            grade=row.grade,
             has_pending_review=bool(row.has_pending),
             has_completed_assessment=bool(row.has_completed),
+            goal=row.goal.value if row.goal else None,
+            completed_at=row.completed_at,
         )
         for row in rows
     ]
@@ -281,19 +352,24 @@ async def claim_student(
     profile = (
         await db.execute(select(Profile).where(Profile.user_id == student_id))
     ).scalar_one_or_none()
+    report_status = (await db.execute(select(_latest_report_status(student_id)))).scalar_one_or_none()
     return PsychologistStudentListItem(
         id=student.id,
         email=student.email,
         profile_name=profile.name if profile is not None else None,
         age=profile.age if profile is not None else None,
+        grade=profile.grade if profile is not None else None,
         assigned_at=assignment.created_at,
+        report_status=report_status.value if report_status else None,
     )
 
 
 def _to_psychologist_detail(
     detail: AdminUserDetailResponse,
+    assigned_at: datetime | None = None,
 ) -> PsychologistStudentDetailResponse:
     return PsychologistStudentDetailResponse(
+        assigned_at=assigned_at,
         id=detail.id,
         email=detail.email,
         is_verified=detail.is_verified,
@@ -324,14 +400,14 @@ async def get_assigned_student_detail(
     psychologist_id: uuid.UUID,
     student_id: uuid.UUID,
 ) -> PsychologistStudentDetailResponse:
-    await _require_assigned_student(
+    assignment = await _require_assigned_student(
         db, psychologist_id=psychologist_id, student_id=student_id
     )
     detail = await admin_service.get_user_detail(db, student_id)
     if detail is None:
         # Assignment pointed at a deleted user mid-request — treat as missing.
         raise ValueError(i18n_key("api_errors", "student_not_found", locale="ru"))
-    return _to_psychologist_detail(detail)
+    return _to_psychologist_detail(detail, assigned_at=assignment.created_at)
 
 
 async def get_assigned_student_test_results(
@@ -562,6 +638,10 @@ async def _get_or_generate_psych_ai_analysis(
 # off keeps one runaway response from carrying every pending report.
 REVIEW_QUEUE_LIMIT = 200
 
+# Newest edits kept in GET .../edits — each entry carries full before/after
+# values (a careers list is ~20 KB), and no report is reworked this often.
+REVIEW_EDITS_LIMIT = 100
+
 
 def _is_original_row() -> Any:
     """KZ-405 keeps one report row per locale; they share one review status,
@@ -605,6 +685,7 @@ def review_queue_select(limit: int = REVIEW_QUEUE_LIMIT) -> Select:
             student.email.label("student_email"),
             Profile.name.label("student_name"),
             Profile.age,
+            Profile.grade,
         )
         .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
         .join(Profile, Profile.id == Assessment.profile_id)
@@ -629,6 +710,7 @@ def to_review_queue_items(rows: Any) -> list[PsychologistReviewQueueItem]:
             student_name=row.student_name,
             student_email=row.student_email,
             age=row.age,
+            grade=row.grade,
             goal=row.goal.value,
             generated_at=row.generated_at,
             reviewed_at=row.reviewed_at,
@@ -704,6 +786,47 @@ async def get_result_for_review(
         db, student_id=student_id, assessment_id=assessment_id
     )
     return _to_detail(analysis)
+
+
+async def list_review_edits(
+    db: AsyncSession,
+    *,
+    psychologist_id: uuid.UUID,
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+) -> list[PsychologistReviewEditItem]:
+    """Edit history of the report, oldest first (by `edited_at`, stamped
+    under the row lock in _save_review_changes) — the psychologist's
+    "было → стало" log. Read across every locale row of the assessment, not
+    only the row under review: history stays on the row it was written to
+    until the next edit re-parents it, and a later-generated `ru` row takes
+    over as the row under review without taking the history along."""
+    await _require_assigned_student(
+        db, psychologist_id=psychologist_id, student_id=student_id
+    )
+    analysis = await _require_result_for_student(
+        db, student_id=student_id, assessment_id=assessment_id
+    )
+    rows = (
+        await db.execute(
+            select(AnalysisResultReviewEdit, User.email)
+            .outerjoin(User, User.id == AnalysisResultReviewEdit.editor_id)
+            .join(AnalysisResult, AnalysisResult.id == AnalysisResultReviewEdit.analysis_result_id)
+            .where(AnalysisResult.assessment_id == analysis.assessment_id)
+            .order_by(AnalysisResultReviewEdit.edited_at.desc(), AnalysisResultReviewEdit.id.desc())
+            .limit(REVIEW_EDITS_LIMIT)
+        )
+    ).all()
+    return [
+        PsychologistReviewEditItem(
+            id=edit.id,
+            edited_at=edit.edited_at,
+            editor_id=edit.editor_id,
+            editor_email=email,
+            changed_fields=edit.changed_fields,
+        )
+        for edit, email in reversed(rows)
+    ]
 
 
 async def regenerate_psych_ai_analysis(
@@ -855,6 +978,10 @@ async def _save_review_changes(
             AnalysisResultReviewEdit(
                 analysis_result_id=analysis.id,
                 editor_id=editor_id,
+                # Stamped under the row lock, not the column's now() (the
+                # transaction start): the history is ordered by this, and two
+                # concurrent PATCHes must list in the order they applied.
+                edited_at=datetime.now(timezone.utc),
                 changed_fields=changed,
             )
         )

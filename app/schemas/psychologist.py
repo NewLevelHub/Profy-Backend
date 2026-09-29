@@ -30,7 +30,11 @@ class PsychologistStudentListItem(BaseModel):
     email: str
     profile_name: str | None = None
     age: int | None = None
+    grade: int | None = None
     assigned_at: datetime
+    # "pending_review" while any of the student's reports waits for review,
+    # else "published" once one exists; None while there is no report yet.
+    report_status: str | None = None
 
 
 class PsychologistAvailableStudentItem(BaseModel):
@@ -40,9 +44,15 @@ class PsychologistAvailableStudentItem(BaseModel):
     email: str
     profile_name: str | None = None
     age: int | None = None
+    grade: int | None = None
     has_pending_review: bool = False
     # PRO-402: claim CTA is only meaningful after at least one completed test.
     has_completed_assessment: bool = False
+    # Goal and completion time of the oldest completed assessment whose report
+    # still waits for review (else the latest completed) — how long the
+    # student has been waiting in the shared queue.
+    goal: str | None = None
+    completed_at: datetime | None = None
 
 
 class PsychologistAssessmentSummary(BaseModel):
@@ -67,6 +77,8 @@ class PsychologistStudentDetailResponse(BaseModel):
     profile: ProfileResponse | None = None
     artifacts: list[ArtifactItem] = []
     assessments: list[PsychologistAssessmentSummary] = []
+    # When this psychologist claimed the student.
+    assigned_at: datetime | None = None
 
 
 class PsychologistNoteCreate(BaseModel):
