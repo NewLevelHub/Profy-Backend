@@ -6,6 +6,7 @@ not a child, so there's no need to pre-abstract facts into safe phrases."""
 import hashlib
 
 from pydantic import BaseModel
+from pydantic_core import to_jsonable_python
 
 from app.schemas.new_tests import NewTestsSections
 from app.schemas.result_v2 import ResultResponseV2
@@ -81,7 +82,13 @@ def build_context(
     blocks: list[BlockData] = []
 
     def add(key: str, facts: dict) -> None:
-        blocks.append(BlockData(key=key, label=BLOCK_LABELS[key], facts=facts))
+        # Facts go into the prompt through plain json.dumps, so they must be
+        # JSON-native here — e.g. the psychoemotional block's completed_at
+        # (and each history item's) is a datetime; tuples become lists.
+        # Converting in this one place keeps a new datetime/UUID field on any
+        # section from silently killing the whole AI analysis again. The
+        # fingerprint is unaffected: model_dump_json renders these the same.
+        blocks.append(BlockData(key=key, label=BLOCK_LABELS[key], facts=to_jsonable_python(facts)))
 
     if report.interest_map:
         add("interests", {"interest_map": [i.model_dump() for i in report.interest_map]})
