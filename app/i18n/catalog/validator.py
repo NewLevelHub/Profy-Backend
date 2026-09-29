@@ -16,16 +16,31 @@ RU: dict[str, str] = {
         "source_type \"riasec_category\" из каталога — или, если ни один не "
         "подходит по смыслу, убери эту карточку совсем."
     ),
-    "strength_card_excluded_source_leak": (
-        "Карточка strength_cards с title {detail!r} ссылается на evidence с "
-        "source_type \"thinking_style\" или \"motivation\" — так нельзя, эти "
-        "факты только в thinking_style_notes/motivation_narrative. Убери эту "
-        "карточку из strength_cards или замени на evidence другого типа."
+    "strength_card_not_candidate": (
+        "Карточка strength_cards с title {detail!r} ссылается не ровно на одного "
+        "кандидата из каталога strength_candidates. У каждой карточки "
+        "evidence_ids = [source_id одного кандидата] — никаких riasec/personality/"
+        "motivation/thinking_style и никаких других id."
     ),
     "strength_card_count": (
-        "Неверное число карточек strength_cards ({detail}). Посчитай evidence, "
-        "у которых source_type НЕ \"thinking_style\" и НЕ \"motivation\", и "
-        "сделай ровно столько карточек (в пределах 5-7)."
+        "Неверное число карточек strength_cards ({detail}). Нужно ровно по одной "
+        "карточке на каждого кандидата из каталога strength_candidates — "
+        "не добавляй новых и не пропускай ни одного."
+    ),
+    "strength_card_iq_label": (
+        "В карточке strength_cards {detail!r} есть ярлык про интеллект/IQ или "
+        "одарённость. Опиши наблюдение по типу заданий («в таких заданиях у тебя "
+        "получалось лучше всего»), без оценки ума и сравнения с другими."
+    ),
+    "strength_card_interest_as_ability": (
+        "Карточка strength_cards {detail!r} опирается на кандидата с basis "
+        "\"interest\", но описывает его как доказанное умение. Перепиши как интерес, "
+        "который стоит проверить на практике: без «умеешь», «у тебя получается», "
+        "«способности», «талант»."
+    ),
+    "strength_card_explanation_changed": (
+        "В карточке strength_cards {detail!r} изменён description. Скопируй "
+        "description соответствующего strength_candidate дословно; менять можно только title."
     ),
     "strength_card_duplicate_evidence": (
         "Source_id {detail!r} процитирован больше чем в одной карточке "
@@ -103,15 +118,30 @@ KK: dict[str, str] = {
         "Оған каталогтан source_type \"riasec_category\" бар кемінде бір нақты source_id қос "
         "— немесе ешқайсысы сәйкес келмесе, бұл карточканы мүлде алып таста."
     ),
-    "strength_card_excluded_source_leak": (
-        "strength_cards ішіндегі title={detail!r} карточкасы source_type \"thinking_style\" "
-        "немесе \"motivation\" бар деректерге сілтеме жасайды — бұл рұқсат етілмейді, бұл "
-        "фактілер тек thinking_style_notes/motivation_narrative бөлімдеріне арналған. Бұл "
-        "карточканы strength_cards тізімінен алып таста немесе басқа типті дерекпен алмастыр."
+    "strength_card_not_candidate": (
+        "strength_cards ішіндегі title={detail!r} карточкасы strength_candidates "
+        "каталогындағы дәл бір үміткерге сілтеме жасамайды. Әр карточканың evidence_ids "
+        "мәні = [бір үміткердің source_id] — riasec/personality/motivation/thinking_style "
+        "және басқа id қолданба."
     ),
     "strength_card_count": (
-        "strength_cards карточкаларының саны қате ({detail}). source_type мәні \"thinking_style\" "
-        "және \"motivation\" ЕМЕС evidence санын санап, дәл сондай мөлшерде карточка жаса (5 пен 7 аралығында)."
+        "strength_cards карточкаларының саны қате ({detail}). strength_candidates "
+        "каталогындағы әр үміткерге дәл бір карточка жаса — жаңасын қоспа, ешқайсысын түсірме."
+    ),
+    "strength_card_iq_label": (
+        "strength_cards ішіндегі {detail!r} карточкасында интеллект/IQ не дарындылық туралы "
+        "белгі бар. Бақылауды тапсырма түрі бойынша сипатта («мұндай тапсырмаларда нәтижең "
+        "ең жақсы болды»), ақылды бағаламай және басқалармен салыстырмай."
+    ),
+    "strength_card_interest_as_ability": (
+        "strength_cards ішіндегі {detail!r} карточкасы basis=\"interest\" үміткеріне "
+        "сүйенеді, бірақ оны дәлелденген дағды ретінде сипаттайды. Оны іс жүзінде тексеруге "
+        "тұрарлық қызығушылық ретінде қайта жаз: «білесің», «қолыңнан келеді», «қабілет», "
+        "«дарын» сөздерінсіз."
+    ),
+    "strength_card_explanation_changed": (
+        "strength_cards ішіндегі {detail!r} карточкасының description мәтіні өзгертілген. "
+        "Тиісті strength_candidate description мәтінін сөзбе-сөз көшір; тек title өзгертуге болады."
     ),
     "strength_card_duplicate_evidence": (
         "Source_id {detail!r} strength_cards ішінде бірнеше карточкада қолданылған — "

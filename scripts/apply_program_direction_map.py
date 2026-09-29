@@ -32,7 +32,8 @@ from scripts.canonicalize_university_slugs import slugify  # pure-stdlib
 from scripts.riasec_professions import PROFESSIONS
 
 _DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-VALID_SLUGS = {slugify(p["title"]) for p in PROFESSIONS}
+# A renamed profession pins its original slug (see riasec_professions.py).
+VALID_SLUGS = {p.get("slug") or slugify(p["title"]) for p in PROFESSIONS}
 DEFAULT_MAP = os.path.join(_DIR, "program_direction_map.json")
 DEFAULT_SNAPSHOT = os.path.join(_DIR, "university_snapshot.clean.json")
 DEFAULT_REPORT = os.path.join(_DIR, "program_direction_map_apply_report.md")

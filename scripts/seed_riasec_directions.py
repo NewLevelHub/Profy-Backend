@@ -67,7 +67,9 @@ def slugify(title: str) -> str:
 
 
 def dedupe_by_title(professions: list[dict]) -> list[dict]:
-    """[{title, slug, holland_code}] — first occurrence of a title wins."""
+    """[{title, slug, holland_code}] — first occurrence of a title wins. A
+    renamed profession pins its original slug (`"slug"` on the entry), so the
+    rename updates the existing row instead of replacing it."""
     seen: dict[str, dict] = {}
     for entry in professions:
         title = entry["title"]
@@ -75,7 +77,7 @@ def dedupe_by_title(professions: list[dict]) -> list[dict]:
             continue
         seen[title] = {
             "title": title,
-            "slug": slugify(title),
+            "slug": entry.get("slug") or slugify(title),
             "holland_code": entry["holland_code"],
         }
     return list(seen.values())

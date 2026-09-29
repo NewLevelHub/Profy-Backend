@@ -34,6 +34,7 @@ from . import (
     narrative_fallback,
     result_v2,
     riasec,
+    student_strengths,
     subjects,
     thinking_style,
     university_requirements,
@@ -58,6 +59,7 @@ _AREAS: dict[str, Any] = {
     "validator": validator,
     "narrative_fallback": narrative_fallback,
     "result_v2": result_v2,
+    "student_strengths": student_strengths,
 }
 
 

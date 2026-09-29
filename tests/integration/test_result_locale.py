@@ -196,7 +196,7 @@ async def test_second_locale_translates_the_first_narrative_not_regenerates(
                           "Мотивацияң да сол бағытты нығайтады. Есепті бөлімдер осыны "
                           "біртұтас көрсетеді.",
         "strength_cards": [
-            {"title": c["title"], "description": "Қазақша аударма: " + c["description"][:40]}
+            {"title": "Күшті жақ: " + c["title"][:20], "description": "Қазақша аударма: " + c["description"][:40]}
             for c in ru_row.strength_cards
         ],
         "thinking_style_notes": [

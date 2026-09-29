@@ -36,6 +36,16 @@ _INTEREST_ORDER_TO_SCALE: dict[int, str] = {
 }
 _ABILITIES_ORDER_TO_SCALE: dict[int, str] = {q["order"]: q["scale"] for q in QUESTIONS}
 
+# How many А/Б options belong to each interest scale across the 20 pairs —
+# the maximum a scale can score. Interest (0..this) and self-rated ability
+# (0-3) are different scales and only ever compared after normalizing each
+# by its own maximum (PRO-432).
+INTEREST_MAX_BY_SCALE: dict[str, int] = {
+    scale: sum(1 for option_scale in _INTEREST_ORDER_TO_SCALE.values() if option_scale == scale)
+    for scale in SCALE_ORDER
+}
+ABILITY_MAX = 3
+
 
 async def interest_raw_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, int] | None:
     """1 point per picked option, summed into its scale. `None` when the

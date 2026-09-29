@@ -101,6 +101,28 @@ async def update_result_content(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
+@router.post(f"{_RESULT_PATH}/strengths/rebuild", response_model=PsychologistResultDetailResponse)
+async def rebuild_strength_cards(
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+    current_user: User = Depends(_require_psychologist),
+    db: AsyncSession = Depends(get_db),
+) -> PsychologistResultDetailResponse:
+    """Rebuilds «Сильные стороны» from the student's current results — the
+    way out of `strengths_stale` after a Belbin/АСТУР retake (PRO-432)."""
+    try:
+        return await psychologist_service.rebuild_strength_cards(
+            db,
+            psychologist_id=current_user.id,
+            student_id=student_id,
+            assessment_id=assessment_id,
+        )
+    except ResultAlreadyPublishedError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
 @router.get(f"{_RESULT_PATH}/edits", response_model=list[PsychologistReviewEditItem])
 async def list_result_edits(
     student_id: uuid.UUID,

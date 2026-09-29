@@ -23,7 +23,6 @@ _CARD_SCHEMA = {
     "required": ["title", "description"],
     "properties": {"title": {"type": "string"}, "description": {"type": "string"}},
 }
-
 TRANSLATE_JSON_SCHEMA: dict = {
     "type": "object",
     "additionalProperties": False,

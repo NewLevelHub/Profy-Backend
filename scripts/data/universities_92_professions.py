@@ -1401,7 +1401,7 @@ CLUSTERS = [
     },
     {
         "name": "Управление человеческими ресурсами, маркетинг и PR",
-        "directions": ["hr-menedzher", "pr-menedzher", "event-menedzher", "direktor-po-marketingu", "spetsialist-po-kadrovomu-deloproizvodstvu"],
+        "directions": ["hr-menedzher", "pr-menedzher", "event-menedzher", "direktor-po-marketingu"],
         "universities": [
             {
                 "slug": "toraigyrov-university", "name": "Торайгыров Университет (ToU)",

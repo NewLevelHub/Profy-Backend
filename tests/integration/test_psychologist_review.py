@@ -177,7 +177,10 @@ async def test_patch_edits_content_audits_and_publish_shows_it_to_student(
     student_body = student_view.json()
     assert student_body["summary"] == "Отредактировано психологом"
     assert student_body["final_analysis"] == "Итог от психолога"
-    assert student_body["strength_cards"] == [{"title": "Упорство", "description": "Доводишь дело до конца"}]
+    # Grounding metadata is for the psychologist and never reaches the child.
+    assert student_body["strength_cards"] == [{
+        "title": "Упорство", "description": "Доводишь дело до конца", "is_test_grounded": False,
+    }]
 
     from app.services import assessment_shared
 

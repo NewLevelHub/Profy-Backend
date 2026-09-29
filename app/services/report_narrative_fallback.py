@@ -31,7 +31,6 @@ from app.schemas.report_narrative import (
 )
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
 from app.services.bigfive_content import personality_labels
-from app.services.report_narrative_context import STRENGTH_CARD_EXCLUDED_SOURCE_TYPES
 from app.services.riasec_content import riasec_labels
 from app.services.thinking_style_content import thinking_style_adj, thinking_style_impact
 
@@ -40,22 +39,6 @@ from app.services.thinking_style_content import thinking_style_adj, thinking_sty
 # trait's own note text (that's already shown verbatim in "Твой характер" —
 # report_v2_assembler.build_personality_notes). New wording, not a repeat.
 # Text now in catalog: narrative_fallback["personality_synthesis_hint"].
-
-# TZ_Profi.md §18.2 п.2: each strength card is "короткая формулировка +
-# одно предложение объяснения со ссылкой на ответы ребёнка" — the
-# formulation (item.text) is specific enough to BE the title on its own;
-# narrative_fallback["strength_explanation_variants"] supplies the second
-# sentence, grounding it in how it was observed. Several variants per
-# source_type, cycled deterministically (same input -> same output) so 2-3
-# cards of the same source_type don't all get the identical explanation.
-
-
-def _strength_card_explanation(t: dict[str, Any], source_type: str, index_within_type: int) -> str:
-    variants = t["strength_explanation_variants"].get(source_type)
-    if not variants:
-        return t["default_strength_explanation"]
-    return variants[index_within_type % len(variants)]
-
 
 def _join(t: dict[str, Any], items: list[str]) -> str:
     if not items:
@@ -74,22 +57,14 @@ def _summary(t: dict[str, Any]) -> str:
     return t["summary"]
 
 
-def _strength_cards(t: dict[str, Any], context: ReportNarrativeContext) -> list[NarrativeCard]:
-    # thinking_style/motivation/personality evidence are reserved for their
-    # own sections — excluded here so the same fact never appears twice.
-    pool = [e for e in context.evidence if e.source_type not in STRENGTH_CARD_EXCLUDED_SOURCE_TYPES]
-    count = min(7, len(pool))
-    type_counters: dict[str, int] = {}
-    cards = []
-    for item in pool[:count]:
-        index_within_type = type_counters.get(item.source_type, 0)
-        type_counters[item.source_type] = index_within_type + 1
-        cards.append(NarrativeCard(
-            title=item.text,
-            description=_strength_card_explanation(t, item.source_type, index_within_type),
-            evidence_ids=[item.source_id],
-        ))
-    return cards
+def _strength_cards(context: ReportNarrativeContext) -> list[NarrativeCard]:
+    # Exactly the vetted candidates (PRO-432), in their own deterministic
+    # wording — the methodology already decided what is a strength and how
+    # it is grounded; nothing here may add or drop one.
+    return [
+        NarrativeCard(title=c.title, description=c.description, evidence_ids=[c.source_id])
+        for c in context.strength_candidates
+    ]
 
 
 def _interests(t: dict[str, Any], context: ReportNarrativeContext) -> list[InterestCard]:
@@ -195,7 +170,7 @@ def build_fallback_narrative(
     t = tr("narrative_fallback", locale=locale)
     return ReportNarrativeOutput(
         summary=_summary(t),
-        strength_cards=_strength_cards(t, context),
+        strength_cards=_strength_cards(context),
         interests=_interests(t, context),
         thinking_style_notes=_thinking_style_notes(t, context),
         motivation_narrative=_motivation_narrative(t, context),

@@ -12,7 +12,9 @@ from app.schemas.report_narrative import (
     NarrativeCard,
     ReportNarrativeOutput,
 )
+from app.i18n import use_locale
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
+from app.schemas.student_strengths import StrengthCandidate
 from app.services import report_v2_assembler
 from app.services.riasec_content import neutral_career_why_variants
 from app.services.riasec_service import HOLLAND_ORDER
@@ -24,8 +26,16 @@ _DEFAULT_PERSONALITY_PROFILE = {
 }
 
 
-def _context(*, evidence: list[EvidenceItem]) -> ReportNarrativeContext:
-    return ReportNarrativeContext(evidence=evidence)
+def _context(*, evidence: list[EvidenceItem], candidates: list[StrengthCandidate] | None = None) -> ReportNarrativeContext:
+    return ReportNarrativeContext(evidence=evidence, strength_candidates=candidates or [])
+
+
+def _hobby_candidate() -> StrengthCandidate:
+    return StrengthCandidate(
+        source_id="strength:onboarding:artifact", source_type="onboarding", domain="experience",
+        basis="self_report", content_key="onboarding.artifact", evidence_ids=["artifact:1"], priority=6,
+        title="Ты увлекаешься: Программирование", description="Это не из теста.",
+    )
 
 
 def _narrative(strength_cards: int = 2, thinking_style_notes: int = 1) -> ReportNarrativeOutput:
@@ -220,9 +230,7 @@ def test_flat_profile_with_artifact_evidence_gets_an_honest_summary_note() -> No
     self-reported programming/robotics interest got three clerical
     directions with zero connection to it. The scoped mitigation is telling
     the reader honestly, not silently presenting a noisy top as fact."""
-    context = _context(evidence=[
-        EvidenceItem(source_id="artifact:1", source_type="artifact", text="Программирование"),
-    ])
+    context = _context(evidence=[], candidates=[_hobby_candidate()])
     careers = [_direction(f"d{i}", "RIA", 5 - i) for i in range(5)]
     response = report_v2_assembler.assemble_result_v2(
         assessment_id=uuid.uuid4(),
@@ -257,9 +265,7 @@ def test_flat_profile_without_artifact_evidence_gets_no_note() -> None:
 
 
 def test_non_flat_profile_with_artifact_evidence_gets_no_note() -> None:
-    context = _context(evidence=[
-        EvidenceItem(source_id="artifact:1", source_type="artifact", text="Программирование"),
-    ])
+    context = _context(evidence=[], candidates=[_hobby_candidate()])
     careers = [_direction(f"d{i}", "RIA", 5 - i) for i in range(5)]
     response = report_v2_assembler.assemble_result_v2(
         assessment_id=uuid.uuid4(),
@@ -571,3 +577,19 @@ def test_assemble_result_v2_includes_personality_notes() -> None:
     # — personality_note has a schema default, so a dropped kwarg in
     # assemble_result_v2() would silently fall back instead of failing loudly.
     assert "Открытость новому" in response.personality_note
+
+
+def test_strength_cards_hide_internal_grounding_metadata() -> None:
+    stored = [
+        {"title": "Числа", "description": "Ряды", "basis": "task_result", "try_now": "Реши судоку."},
+        {"title": "От психолога", "description": "Написано вручную"},
+    ]
+
+    cards = report_v2_assembler.build_strength_cards(stored)
+
+    assert cards[0].model_dump() == {
+        "title": "Числа", "description": "Ряды", "is_test_grounded": True,
+    }
+    assert cards[1].model_dump() == {
+        "title": "От психолога", "description": "Написано вручную", "is_test_grounded": False,
+    }

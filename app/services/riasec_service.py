@@ -231,6 +231,34 @@ def _aversion_ratio(letter: str, aversion_counts: dict[str, int], counts: dict[s
     return (aversion_counts.get(letter, 0) / total) if total else 0.0
 
 
+def confirmed_interests(
+    normalized: dict[str, float],
+    aversion_counts: dict[str, int],
+    counts: dict[str, int],
+) -> list[str]:
+    """Types that clear LEVEL_HIGH_MIN and aren't contradicted by the
+    student's own aversion answers, strongest first — tier 1 of
+    `strengths_weaknesses`. The student-facing strength cards (PRO-432) use
+    only this tier: a medium score padded in regardless of aversion is fine
+    for career matching, not for telling a student what draws them."""
+    ranked = sorted(HOLLAND_ORDER, key=lambda t: (-normalized.get(t, 0.0), HOLLAND_ORDER.index(t)))
+    return [
+        t for t in ranked
+        if normalized.get(t, 0.0) >= LEVEL_HIGH_MIN
+        and _aversion_ratio(t, aversion_counts, counts) < _AVERSION_DISQUALIFY_RATIO
+    ]
+
+
+def ranked_interests(normalized: dict[str, float]) -> list[str]:
+    """All RIASEC types strongest-first, including medium/quiet results.
+
+    This is a relative ordering, not a list of abilities. Student strengths
+    uses it only for explicitly exploratory cards when fewer than five more
+    strongly grounded observations are available.
+    """
+    return sorted(HOLLAND_ORDER, key=lambda t: (-normalized.get(t, 0.0), HOLLAND_ORDER.index(t)))
+
+
 def strengths_weaknesses(
     normalized: dict[str, float],
     aversion_counts: dict[str, int],
@@ -261,11 +289,7 @@ def strengths_weaknesses(
     score isn't a confirmed weakness either."""
     ranked = sorted(HOLLAND_ORDER, key=lambda t: (-normalized.get(t, 0.0), HOLLAND_ORDER.index(t)))
 
-    strengths = [
-        t for t in ranked
-        if normalized.get(t, 0.0) >= LEVEL_HIGH_MIN
-        and _aversion_ratio(t, aversion_counts, counts) < _AVERSION_DISQUALIFY_RATIO
-    ][:limit]
+    strengths = confirmed_interests(normalized, aversion_counts, counts)[:limit]
     if len(strengths) < limit:
         for t in ranked:
             if len(strengths) >= limit:

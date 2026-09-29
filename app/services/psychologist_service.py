@@ -18,7 +18,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import Select, case, delete, select, tuple_, update
+from sqlalchemy import Select, case, delete, or_, select, tuple_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
@@ -60,6 +60,7 @@ from app.services import (
     new_tests_report_service,
     psych_ai_analysis_service,
     report_service,
+    student_strengths_service,
 )
 from app.services.psych_ai_analysis_context import build_context, has_any_data, fingerprint as context_fingerprint
 
@@ -236,7 +237,10 @@ async def list_available_students(
         .join(Profile, Profile.id == Assessment.profile_id)
         .where(
             Profile.user_id == User.id,
-            AnalysisResult.review_status == ReviewStatus.pending_review,
+            or_(
+                AnalysisResult.review_status == ReviewStatus.pending_review,
+                student_strengths_service.rules_version_is_outdated_clause(),
+            ),
         )
         .exists()
     )
@@ -686,7 +690,13 @@ def review_queue_select(limit: int = REVIEW_QUEUE_LIMIT) -> Select:
         .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
         .join(Profile, Profile.id == Assessment.profile_id)
         .join(student, student.id == Profile.user_id)
-        .where(AnalysisResult.review_status == ReviewStatus.pending_review, _is_original_row())
+        .where(
+            or_(
+                AnalysisResult.review_status == ReviewStatus.pending_review,
+                student_strengths_service.rules_version_is_outdated_clause(),
+            ),
+            _is_original_row(),
+        )
         .order_by(AnalysisResult.created_at.asc())
         .limit(limit)
     )
@@ -755,7 +765,10 @@ def _to_detail(analysis: AnalysisResult) -> PsychologistResultDetailResponse:
     edit) exactly what the student reads."""
     detail = PsychologistResultDetailResponse.model_validate(analysis)
     return detail.model_copy(
-        update={"personality_notes": report_service.student_personality_notes(analysis)}
+        update={
+            "personality_notes": report_service.student_personality_notes(analysis),
+            "strengths_stale": student_strengths_service.strengths_are_stale(analysis.meta),
+        }
     )
 
 
@@ -783,7 +796,7 @@ async def list_review_edits(
     assessment_id: uuid.UUID,
 ) -> list[PsychologistReviewEditItem]:
     """Edit history of the report, oldest first (by `edited_at`, stamped
-    under the row lock in update_result_content) — the psychologist's
+    under the row lock in _save_review_changes) — the psychologist's
     "было → стало" log. Read across every locale row of the assessment, not
     only the row under review: history stays on the row it was written to
     until the next edit re-parents it, and a later-generated `ru` row takes
@@ -887,6 +900,13 @@ async def update_result_content(
         raise ResultAlreadyPublishedError(i18n_key("api_errors", "result_is_already_published", locale="ru"))
 
     values = patch.model_dump(exclude_unset=True, mode="json")
+    if "strength_cards" in values:
+        # Optional card fields left empty are dropped, not stored as null —
+        # an unchanged card must compare equal to the stored one.
+        values["strength_cards"] = [
+            {key: value for key, value in card.items() if value not in (None, "")}
+            for card in values["strength_cards"]
+        ]
 
     # "Твой характер" is stored apart from the rest: the student reads a
     # computed phrase, so a correction is kept as an override of that phrase,
@@ -938,13 +958,26 @@ async def update_result_content(
             }
             analysis.personality_notes_override = new_override
 
-    analysis.reviewed_by = psychologist_id
+    return await _save_review_changes(db, analysis, editor_id=psychologist_id, changed=changed)
+
+
+async def _save_review_changes(
+    db: AsyncSession,
+    analysis: AnalysisResult,
+    *,
+    editor_id: uuid.UUID,
+    changed: dict[str, dict[str, Any]],
+) -> PsychologistResultDetailResponse:
+    """Commits a review edit of the row under review: marks it reviewed,
+    keeps the audit trail and drops translations of the pre-edit text."""
+    assessment_id = analysis.assessment_id
+    analysis.reviewed_by = editor_id
     analysis.reviewed_at = datetime.now(timezone.utc)
     if changed:
         db.add(
             AnalysisResultReviewEdit(
                 analysis_result_id=analysis.id,
-                editor_id=psychologist_id,
+                editor_id=editor_id,
                 # Stamped under the row lock, not the column's now() (the
                 # transaction start): the history is ordered by this, and two
                 # concurrent PATCHes must list in the order they applied.
@@ -983,6 +1016,42 @@ async def update_result_content(
     return detail
 
 
+async def rebuild_strength_cards(
+    db: AsyncSession,
+    *,
+    psychologist_id: uuid.UUID,
+    student_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+) -> PsychologistResultDetailResponse:
+    """Explicit «Пересобрать сильные стороны» (PRO-432): replaces the cards
+    with ones built from the student's current results (e.g. after a Belbin
+    or АСТУР retake), in the deterministic wording — the psychologist's own
+    edits are overwritten only because they asked for it. Recorded like any
+    other review edit."""
+    await _require_assigned_student(db, psychologist_id=psychologist_id, student_id=student_id)
+    await report_service.lock_report_generation(assessment_id, db)
+    analysis = await _require_result_for_student(
+        db, student_id=student_id, assessment_id=assessment_id, for_update=True
+    )
+    rules_outdated = student_strengths_service.rules_version_is_outdated(analysis.meta)
+    if analysis.review_status != ReviewStatus.pending_review and not rules_outdated:
+        raise ResultAlreadyPublishedError(i18n_key("api_errors", "result_is_already_published", locale="ru"))
+
+    changed: dict[str, dict[str, Any]] = {}
+    rows = (
+        await db.execute(select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id))
+    ).scalars().all()
+    for row in rows:
+        cards, strengths_fingerprint = await student_strengths_service.rebuild_cards(row, db)
+        if row.id == analysis.id and cards != list(row.strength_cards):
+            changed["strength_cards"] = {"old": list(row.strength_cards), "new": cards}
+        row.strength_cards = cards
+        row.meta = student_strengths_service.mark_fresh(row.meta, strengths_fingerprint)
+        if rules_outdated:
+            row.review_status = ReviewStatus.pending_review
+    return await _save_review_changes(db, analysis, editor_id=psychologist_id, changed=changed)
+
+
 async def publish_result(
     db: AsyncSession,
     *,
@@ -1010,6 +1079,9 @@ async def _publish(
         raise ResultAlreadyPublishedError(i18n_key("api_errors", "result_is_already_published", locale="ru"))
     now = datetime.now(timezone.utc)
     analysis.review_status = ReviewStatus.published
+    # Publishing is the psychologist's decision that the cards are fine as
+    # they are, rebuilt or not.
+    analysis.meta = {k: v for k, v in (analysis.meta or {}).items() if k != "strengths_stale"}
     analysis.published_by = publisher_id
     analysis.published_at = now
     # Published without edits — publishing still counts as a review.

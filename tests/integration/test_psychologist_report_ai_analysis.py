@@ -4,6 +4,7 @@ than requiring an explicit action first), plus an explicit regenerate
 endpoint that bypasses the cache. llm_client is mocked throughout — no real
 network calls."""
 import uuid
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, patch
 
 import httpx
@@ -13,8 +14,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.profile import AgeGroup, Profile
+from app.models.psychoemotional_run import PsychoEmotionalRun
 from app.models.user import User
 from app.services import llm_client
+from app.services.psychoemotional import engine as psychoemotional_engine
 
 from tests.integration.review_helpers import assign
 
@@ -118,6 +121,50 @@ async def test_ai_analysis_is_generated_and_cached_on_first_view(
         select(AnalysisResult).where(AnalysisResult.assessment_id == assessment.id)
     )).scalar_one()
     assert analysis.psych_ai_analysis is not None
+
+
+async def test_ai_analysis_is_generated_with_a_psychoemotional_block_and_history(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    psychologist_headers: dict[str, str],
+    psychologist_user: User,
+    test_user: User,
+) -> None:
+    """Regression: the МЦВ section carries datetimes (completed_at, and one per
+    history item) — the prompt's json.dumps used to crash on them, so every
+    student with this test got ai_analysis=None. Two scored runs, so the
+    history path is covered too, not only the top-level field."""
+    await assign(db_session, psychologist_user, test_user)
+    assessment = await _make_assessment_for(db_session, test_user)
+    db_session.add(AnalysisResult(**_minimal_report_kwargs(assessment.id)))
+    for days_ago, (list1, list2) in (
+        (30, ([3, 4, 2, 1, 5, 6, 0, 7], [3, 2, 4, 1, 5, 0, 6, 7])),
+        (1, ([1, 2, 3, 4, 5, 6, 7, 0], [2, 1, 3, 4, 5, 6, 0, 7])),
+    ):
+        db_session.add(PsychoEmotionalRun(
+            assessment_id=assessment.id, user_id=test_user.id, list1=list1, list2=list2,
+            metrics=psychoemotional_engine.compute(list1, list2).as_dict(),
+            created_at=datetime.now(timezone.utc) - timedelta(days=days_ago),
+        ))
+    await db_session.flush()
+
+    raw = _valid_raw()
+    raw["block_analyses"].append({"block": "psychoemotional", "text": "Комментарий по МЦВ."})
+    with (
+        patch.object(llm_client, "is_enabled", return_value=True),
+        patch.object(llm_client, "complete_json", new=AsyncMock(return_value=raw)) as mock_complete,
+    ):
+        response = await client.get(
+            f"/api/v1/psychologist/students/{test_user.id}/assessments/{assessment.id}/report",
+            headers=psychologist_headers,
+        )
+
+    assert response.status_code == 200
+    assert response.json()["ai_analysis"] is not None
+    assert mock_complete.call_count == 1
+    system_prompt = mock_complete.call_args.args[0][0]["content"]
+    assert '"block": "psychoemotional"' in system_prompt
+    assert '"history"' in system_prompt
 
 
 async def test_ai_analysis_is_none_when_llm_disabled(

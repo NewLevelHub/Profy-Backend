@@ -256,7 +256,7 @@
   "letters_overlap": 3
  },
  {
-  "title": "Управляющий фермерским хозяйством",
+  "title": "Агроменеджер",
   "our_code": "ESR",
   "onet_soc": "11-9013.00",
   "onet_title": "Farmers, Ranchers, and Other Agricultural Managers",
@@ -960,7 +960,7 @@
   "letters_overlap": 2
  },
  {
-  "title": "Модельер",
+  "title": "Дизайнер одежды",
   "our_code": "ASR",
   "onet_soc": "27-1022.00",
   "onet_title": "Fashion Designers",
@@ -1264,7 +1264,7 @@
   "letters_overlap": 2
  },
  {
-  "title": "Модный стилист",
+  "title": "Стилист-имиджмейкер",
   "our_code": "ASE",
   "onet_soc": "27-1022.00",
   "onet_title": "Fashion Designers",
@@ -1408,7 +1408,7 @@
   "letters_overlap": 1
  },
  {
-  "title": "Воспитатель детского сада",
+  "title": "Педагог дошкольного образования",
   "our_code": "SAE",
   "onet_soc": "25-2011.00",
   "onet_title": "Preschool Teachers, Except Special Education",
@@ -1456,7 +1456,7 @@
   "letters_overlap": 3
  },
  {
-  "title": "Гид-экскурсовод",
+  "title": "Гид / менеджер по туризму",
   "our_code": "SEA",
   "onet_soc": "39-7011.00",
   "onet_title": "Tour Guides and Escorts",
@@ -1472,7 +1472,7 @@
   "letters_overlap": 3
  },
  {
-  "title": "Библиотекарь",
+  "title": "Специалист по информационным ресурсам",
   "our_code": "SAI",
   "onet_soc": "25-4022.00",
   "onet_title": "Librarians and Media Collections Specialists",
@@ -1680,7 +1680,7 @@
   "letters_overlap": 2
  },
  {
-  "title": "Директор по маркетингу",
+  "title": "Digital-маркетолог",
   "our_code": "EAS",
   "onet_soc": "11-2021.00",
   "onet_title": "Marketing Managers",
@@ -1808,7 +1808,7 @@
   "letters_overlap": 2
  },
  {
-  "title": "Биржевой брокер",
+  "title": "Трейдер / брокер",
   "our_code": "ESI",
   "onet_soc": "41-3031.00",
   "onet_title": "Securities, Commodities, and Financial Services Sales Agents",
@@ -1824,7 +1824,7 @@
   "letters_overlap": 2
  },
  {
-  "title": "Директор по логистике",
+  "title": "Менеджер по цепям поставок",
   "our_code": "ECR",
   "onet_soc": "11-3071.00",
   "onet_title": "Transportation, Storage, and Distribution Managers",
@@ -2064,7 +2064,7 @@
   "letters_overlap": 2
  },
  {
-  "title": "Секретарь-делопроизводитель",
+  "title": "Офис-менеджер",
   "our_code": "CES",
   "onet_soc": "43-6014.00",
   "onet_title": "Secretaries and Administrative Assistants, Except Legal, Medical, and Executive",
@@ -2112,23 +2112,7 @@
   "letters_overlap": 3
  },
  {
-  "title": "Специалист по кадровому делопроизводству",
-  "our_code": "CES",
-  "onet_soc": "13-1071.00",
-  "onet_title": "Human Resources Specialists",
-  "vec": {
-   "R": 1.03,
-   "I": 2.52,
-   "A": 1.35,
-   "S": 3.78,
-   "E": 5.67,
-   "C": 5.52
-  },
-  "onet_top3": "ECS",
-  "letters_overlap": 3
- },
- {
-  "title": "Архивариус",
+  "title": "Архивист",
   "our_code": "CSE",
   "onet_soc": "25-4011.00",
   "onet_title": "Archivists",

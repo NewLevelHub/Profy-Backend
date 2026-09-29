@@ -18,7 +18,7 @@ from app.schemas.belbin import (
     SubmitBelbinRequest,
     SubmitBelbinResponse,
 )
-from app.services import belbin_service
+from app.services import belbin_service, student_strengths_service
 from scripts.belbin_bank import BLOCK_TOTAL, INSTRUCTION, SECTIONS
 
 router = APIRouter(tags=["belbin"])
@@ -82,4 +82,7 @@ async def submit_belbin(
     run = await belbin_service.submit_run(
         assessment_id, data.allocations, user_id=current_user.id, db=db
     )
-    return SubmitBelbinResponse(run_id=run.id, role_totals=run.role_totals)
+    response = SubmitBelbinResponse(run_id=run.id, role_totals=run.role_totals)
+    # A retake after the report: its strength cards now describe older results.
+    await student_strengths_service.flag_report_if_strengths_changed(assessment_id, db)
+    return response

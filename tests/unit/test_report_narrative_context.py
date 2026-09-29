@@ -5,21 +5,14 @@ the actual point of
 the whole catalog — nothing here ever carries a raw score or a percentage."""
 
 import re
-import uuid
 
-from app.i18n import use_locale
-from app.models.artifact import Artifact, ArtifactType
+from app.schemas.student_strengths import StrengthCandidate
 from app.services.report_narrative_context import (
     build_report_narrative_context,
     unknown_source_ids,
 )
-from app.services.report_narrative_context import _artifact_evidence, ONBOARDING_SOURCE_TYPES
 
 _HAS_DIGIT = re.compile(r"\d")
-
-
-def _artifact(value: str) -> Artifact:
-    return Artifact(id=uuid.uuid4(), profile_id=uuid.uuid4(), type=ArtifactType.club, value=value)
 
 
 def test_every_evidence_item_has_source_id_type_and_text() -> None:
@@ -33,9 +26,6 @@ def test_every_evidence_item_has_source_id_type_and_text() -> None:
             "Тебя больше всего драйвит — заниматься тем, что по-настоящему интересно",
             "Тебя больше всего драйвит — создавать что-то своё",
         ],
-        subjects_liked=["Физика"],
-        subjects_easy=["Литература"],
-        artifacts=[_artifact("Робототехника")],
     )
 
     assert context.evidence, "should not be empty for this input"
@@ -43,30 +33,6 @@ def test_every_evidence_item_has_source_id_type_and_text() -> None:
         assert item.source_id
         assert item.source_type
         assert item.text
-
-
-def test_subject_evidence_is_localized_but_source_id_stays_canonical() -> None:
-    """KZ-503: a `kk` report shows the Kazakh subject name in the strength
-    card, while the source_id keeps the canonical Russian string for
-    stability/dedup. Custom off-list subjects pass through untouched."""
-    kwargs = dict(
-        strengths=["R"],
-        personality_profile={}, personality_notes={}, thinking_style={},
-        motivation_top=[], motivation_highlights=[], artifacts=[],
-    )
-    with use_locale("kk"):
-        ctx = build_report_narrative_context(
-            subjects_liked=["История", "Подводное плавание"], subjects_easy=[], **kwargs
-        )
-    by_id = {e.source_id: e for e in ctx.evidence}
-    assert by_id["subject_liked:История"].text == "Тарих"
-    assert by_id["subject_liked:Подводное плавание"].text == "Подводное плавание"
-
-    with use_locale("ru"):
-        ctx_ru = build_report_narrative_context(
-            subjects_liked=["История"], subjects_easy=[], **kwargs
-        )
-    assert {e.source_id: e for e in ctx_ru.evidence}["subject_liked:История"].text == "История"
 
 
 def test_context_has_riasec_evidence() -> None:
@@ -77,9 +43,6 @@ def test_context_has_riasec_evidence() -> None:
         thinking_style={},
         motivation_top=[],
         motivation_highlights=[],
-        subjects_liked=[],
-        subjects_easy=[],
-        artifacts=[],
     )
 
     riasec_items = [e for e in context.evidence if e.source_type == "riasec_category"]
@@ -97,7 +60,6 @@ def test_personality_evidence_only_includes_high_tier_traits() -> None:
         },
         thinking_style={},
         motivation_top=[], motivation_highlights=[],
-        subjects_liked=[], subjects_easy=[], artifacts=[],
     )
 
     personality_items = [e for e in context.evidence if e.source_type == "personality"]
@@ -111,7 +73,6 @@ def test_thinking_style_evidence_picks_top_two_deterministically_on_ties() -> No
         # creative_think and systematic tie at 50 — fixed order must break the tie.
         thinking_style={"creative_think": 50.0, "systematic": 50.0, "strategic": 10.0, "practical": 10.0},
         motivation_top=[], motivation_highlights=[],
-        subjects_liked=[], subjects_easy=[], artifacts=[],
     )
 
     thinking_items = [e for e in context.evidence if e.source_type == "thinking_style"]
@@ -127,14 +88,12 @@ def test_thinking_style_evidence_omitted_when_there_is_no_real_signal() -> None:
         personality_profile={}, personality_notes={},
         thinking_style={},
         motivation_top=[], motivation_highlights=[],
-        subjects_liked=[], subjects_easy=[], artifacts=[],
     )
     all_zero = build_report_narrative_context(
         strengths=[],
         personality_profile={}, personality_notes={},
         thinking_style={"creative_think": 0.0, "systematic": 0.0, "strategic": 0.0, "practical": 0.0},
         motivation_top=[], motivation_highlights=[],
-        subjects_liked=[], subjects_easy=[], artifacts=[],
     )
 
     assert not any(e.source_type == "thinking_style" for e in empty.evidence)
@@ -149,7 +108,6 @@ def test_thinking_style_evidence_includes_only_the_one_real_signal() -> None:
         personality_profile={}, personality_notes={},
         thinking_style={"creative_think": 40.0, "systematic": 0.0, "strategic": 0.0, "practical": 0.0},
         motivation_top=[], motivation_highlights=[],
-        subjects_liked=[], subjects_easy=[], artifacts=[],
     )
 
     thinking_items = [e for e in context.evidence if e.source_type == "thinking_style"]
@@ -161,7 +119,6 @@ def test_unknown_source_ids_are_rejected() -> None:
         strengths=["R"],
         personality_profile={}, personality_notes={}, thinking_style={},
         motivation_top=[], motivation_highlights=[],
-        subjects_liked=[], subjects_easy=[], artifacts=[],
     )
 
     rejected = unknown_source_ids(context, ["riasec:R", "riasec:Z", "made_up:thing"])
@@ -172,10 +129,7 @@ def test_unknown_source_ids_are_rejected() -> None:
 def test_evidence_contains_no_raw_numbers_or_percent_signs() -> None:
     """The actual point of the catalog: none of the *derived/categorical*
     evidence (interests, personality, motivation, thinking style — the
-    labels this module itself writes) is a score. Free-text sources
-    (subjects, artifacts — the student's own words, e.g. "3 года плавания")
-    are exempt from this check on purpose: a digit there is real content,
-    not a leaked score, and banning it would make honest input fragile."""
+    labels this module itself writes) is a score."""
     context = build_report_narrative_context(
         strengths=["R", "I", "A"],
         personality_profile={
@@ -186,9 +140,6 @@ def test_evidence_contains_no_raw_numbers_or_percent_signs() -> None:
         thinking_style={"creative_think": 90.0, "systematic": 85.0, "strategic": 10.0, "practical": 5.0},
         motivation_top=["interest"],
         motivation_highlights=["Тебя больше всего драйвит — заниматься тем, что по-настоящему интересно"],
-        subjects_liked=["Физика"],
-        subjects_easy=["Литература"],
-        artifacts=[_artifact("Робототехника, 2 года")],
     )
 
     derived_types = {"riasec_category", "personality", "motivation", "thinking_style"}
@@ -199,66 +150,25 @@ def test_evidence_contains_no_raw_numbers_or_percent_signs() -> None:
         assert not _HAS_DIGIT.search(item.text), f"evidence text looks numeric: {item.text!r}"
 
 
-def test_near_duplicate_artifacts_merge_into_one_evidence_item() -> None:
-    """Found live: a student entered "Программирование" (hobby),
-    "IT/программирование" (club) and "Робототехника" (hobby) as three
-    separate artifacts — left ungrouped, each became its own strength card,
-    reading as the same fact repeated three times. The first two share the
-    word "программирование" and must merge; "Робототехника" shares no
-    significant word with either and must stay separate."""
-    artifacts = [
-        _artifact("Программирование"),
-        _artifact("Робототехника"),
-        _artifact("IT/программирование"),
-    ]
-
-    evidence = _artifact_evidence(artifacts)
-
-    assert len(evidence) == 2
-    combined = next(e for e in evidence if ";" in e.text)
-    assert "Программирование" in combined.text and "IT/программирование" in combined.text
-    solo = next(e for e in evidence if e is not combined)
-    assert solo.text == "Робототехника"
-
-
-def test_unrelated_artifacts_are_never_merged() -> None:
-    artifacts = [_artifact("Робототехника"), _artifact("Рисование"), _artifact("Волейбол")]
-
-    evidence = _artifact_evidence(artifacts)
-
-    assert len(evidence) == 3
-    assert {e.text for e in evidence} == {"Робототехника", "Рисование", "Волейбол"}
-
-
-def test_single_artifact_is_unaffected_by_grouping() -> None:
-    evidence = _artifact_evidence([_artifact("Шахматы")])
-    assert len(evidence) == 1
-    assert evidence[0].text == "Шахматы"
-
-
-def test_onboarding_evidence_is_capped_but_test_derived_evidence_is_not() -> None:
-    """Found live: a student with 3 onboarding artifacts (all about
-    programming/robotics) and only 1 RIASEC + 2 personality facts ended up
-    with HALF their strength_cards about onboarding hobbies — and the
-    careers shown (driven only by the RIASEC test) had nothing to do with
-    those hobbies. Onboarding evidence (self-reported, not measured by the
-    test) must never outnumber/crowd out what the test actually found."""
-    context = build_report_narrative_context(
-        strengths=["R", "I", "C"],  # 3 riasec_category items, never capped
-        personality_profile={
-            "openness": 90.0, "conscientiousness": 85.0,
-            "extraversion": 40.0, "agreeableness": 40.0, "emotional_stability": 40.0,
-        },
-        personality_notes={"openness": "Тебе интересно новое", "conscientiousness": "Ты организован"},
-        thinking_style={},
-        motivation_top=[], motivation_highlights=[],
-        subjects_liked=["Физика", "Химия"],
-        subjects_easy=["Информатика"],
-        artifacts=[_artifact("Программирование"), _artifact("Робототехника"), _artifact("Шахматы")],
+def _candidate(source_id: str) -> StrengthCandidate:
+    return StrengthCandidate(
+        source_id=source_id, source_type="elers", domain="self_regulation", basis="self_report",
+        content_key="elers", evidence_ids=["elers"], priority=5, title="t", description="d",
     )
 
-    onboarding_items = [e for e in context.evidence if e.source_type in ONBOARDING_SOURCE_TYPES]
-    test_items = [e for e in context.evidence if e.source_type in ("riasec_category", "personality")]
 
-    assert len(onboarding_items) == 2, "capped even though 5 onboarding facts were provided"
-    assert len(test_items) == 5, "test-derived evidence (3 riasec + 2 personality) must never be capped"
+def test_strength_candidates_are_carried_and_citable() -> None:
+    """PRO-432: strength cards cite the vetted candidates, which therefore
+    count as known ids next to the evidence catalog."""
+    context = build_report_narrative_context(
+        strengths=["R"],
+        personality_profile={}, personality_notes={}, thinking_style={},
+        motivation_top=[], motivation_highlights=[],
+        strength_candidates=[_candidate("strength:elers")],
+    )
+
+    assert [c.source_id for c in context.strength_candidates] == ["strength:elers"]
+    assert unknown_source_ids(context, ["strength:elers", "riasec:R", "strength:made_up"]) == {"strength:made_up"}
+    # Onboarding facts no longer enter the evidence catalog at all — they
+    # reach the report only as a strength candidate.
+    assert {e.source_type for e in context.evidence} == {"riasec_category"}
