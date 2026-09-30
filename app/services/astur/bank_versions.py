@@ -254,7 +254,7 @@ def diff_documents(before: dict, after: dict) -> list[dict]:
             )
             if fields:
                 changes.append({"kind": "changed", "subtest": key, "item_id": item_id, "fields": fields})
-    for field in ("lability_item_limit_ms", "subjects"):
+    for field in ("lability_item_limit_ms", "subjects", "presentation_order"):
         if before.get(field) != after.get(field):
             changes.append({"kind": "bank_changed", "subtest": None, "item_id": None, "fields": [field]})
     return changes

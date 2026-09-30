@@ -102,6 +102,9 @@ class AsturBank(BaseModel):
     subjects: dict[str, dict[str, str]]
     lability_item_limit_ms: int
     subtests: list[BankSubtest]
+    # Stable numbers remain part of the scoring/API contract. A bank version
+    # may change only the order in which subtests are presented.
+    presentation_order: list[str] | None = None
 
     @cached_property
     def _by_key(self) -> dict[str, BankSubtest]:
@@ -116,6 +119,11 @@ class AsturBank(BaseModel):
 
     def subtest_by_number(self, number: int) -> BankSubtest | None:
         return self._by_number.get(number)
+
+    def ordered_subtests(self) -> list[BankSubtest]:
+        if self.presentation_order is None:
+            return sorted(self.subtests, key=lambda subtest: subtest.number)
+        return [self._by_key[key] for key in self.presentation_order]
 
     @property
     def required_keys(self) -> set[str]:

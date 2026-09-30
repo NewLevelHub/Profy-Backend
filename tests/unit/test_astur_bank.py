@@ -71,6 +71,27 @@ def test_v1_shape_and_maximums_are_derived_from_the_bank() -> None:
     assert len(item_ids) == len(set(item_ids)) == 103
 
 
+def test_presentation_order_moves_geometry_without_changing_subtest_numbers() -> None:
+    doc = v1_document()
+    doc["presentation_order"] = [
+        "awareness", "analogies", "lability", "geometric_figures",
+        "classification", "generalization", "logical_schemas", "numeric_series",
+    ]
+
+    assert validate_bank(doc, require_review=False) == []
+    bank = parse_bank(doc)
+    assert [subtest.key for subtest in bank.ordered_subtests()] == doc["presentation_order"]
+    assert bank.subtest("geometric_figures").number == 8
+
+
+def test_presentation_order_must_be_an_exact_subtest_permutation() -> None:
+    doc = v1_document()
+    doc["presentation_order"] = ["awareness", "analogies"]
+
+    issues = validate_bank(doc, require_review=False)
+    assert any(issue.field == "presentation_order" for issue in issues)
+
+
 def test_key_missing_from_options_is_rejected() -> None:
     doc = v1_document()
     _item(doc, "awareness")["answer"]["ru"] = "нет такого варианта"

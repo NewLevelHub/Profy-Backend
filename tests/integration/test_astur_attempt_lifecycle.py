@@ -62,13 +62,14 @@ async def test_opening_pins_version_and_locale_and_returns_that_content(
     _, assessment, headers = await make_student(db_session)
     body = await open_attempt(client, assessment.id, headers)
     again = await open_attempt(client, assessment.id, headers)
+    latest = await bank_versions.latest_published(db_session)
 
     assert body["run"]["run_id"] == again["run"]["run_id"] == body["content"]["run_id"]
     assert body["run"]["status"] == "in_progress"
     assert body["run"]["locale"] == body["content"]["locale"] == "ru"
-    assert body["content"]["bank_version"] == body["run"]["bank_version"] == 1
+    assert body["content"]["bank_version"] == body["run"]["bank_version"] == latest.version
     [run] = await _runs(db_session, assessment.id)
-    assert run.bank_version_id == await v1_version_id(db_session)
+    assert run.bank_version_id == latest.id
 
 
 async def test_started_subtest_is_resumed_without_resetting_its_clock(
@@ -121,13 +122,13 @@ async def test_publish_between_opening_and_answering_never_rescores_with_new_key
     client: AsyncClient, db_session: AsyncSession
 ) -> None:
     user, assessment, headers = await make_student(db_session)
-    body = await open_attempt(client, assessment.id, headers)  # content v1 on screen
+    body = await open_attempt(client, assessment.id, headers)  # current content is pinned on screen
     await _publish_v2_with_new_awareness_key(db_session, user.id)
 
     await complete_attempt(client, assessment.id, headers)
     [run] = await _runs(db_session, assessment.id)
     assert run.id == uuid.UUID(body["run"]["run_id"])
-    assert run.result_snapshot["bank_version"] == 1
+    assert run.result_snapshot["bank_version"] == body["content"]["bank_version"]
     assert run.result_snapshot["item_scores"]["awareness-01"] == 1
 
 
@@ -251,7 +252,8 @@ async def test_last_submit_finalizes_and_freezes_the_result(client: AsyncClient,
     assert run.status == AsturRunStatus.completed
     assert run.scoring_version == "3"
     snapshot = run.result_snapshot
-    assert snapshot["bank_version"] == 1
+    pinned = await bank_versions.get_published(db_session, run.bank_version_id)
+    assert snapshot["bank_version"] == pinned.version
     assert snapshot["overall_percent"] == 100.0
     assert (snapshot["age_at_completion"], snapshot["grade_at_completion"]) == (15, 9)
     assert snapshot["history"] == {"attempt_number": 1, "repeat_exposure": False, "days_since_previous": None}

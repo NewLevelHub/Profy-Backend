@@ -305,6 +305,16 @@ def validate_bank(
         c.add("invalid_structure", f"Банк должен содержать ровно субтесты: {', '.join(sorted(METHOD_BY_KEY))}")
     if len(set(numbers)) != len(numbers):
         c.add("invalid_structure", "Номера субтестов повторяются")
+    if bank.presentation_order is not None and (
+        len(bank.presentation_order) != len(keys)
+        or len(set(bank.presentation_order)) != len(bank.presentation_order)
+        or set(bank.presentation_order) != set(keys)
+    ):
+        c.add(
+            "invalid_structure",
+            "presentation_order должен содержать каждый субтест ровно один раз",
+            field="presentation_order",
+        )
 
     seen_ids: set[str] = set()
     for subtest in bank.subtests:
