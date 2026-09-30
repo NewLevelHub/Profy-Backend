@@ -3,6 +3,9 @@
 Subtest numbers are stable identifiers used by the API and scoring. The new
 version changes only ``presentation_order`` and clones the latest published
 document, so any content edits already made by methodologists are preserved.
+An existing draft receives the same presentation order without otherwise
+changing its content, so publishing that draft later cannot restore the old
+numeric order.
 
 Revision ID: 75992b0ec5d3
 Revises: 624c5e6208ee
@@ -43,6 +46,10 @@ def _hash(document: dict) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
+def _with_presentation_order(document: dict) -> dict:
+    return {**document, "presentation_order": list(_PRESENTATION_ORDER)}
+
+
 def _versions() -> sa.TableClause:
     status = postgresql.ENUM("draft", "published", name="astur_bank_version_status_enum", create_type=False)
     return sa.table(
@@ -70,8 +77,21 @@ def upgrade() -> None:
         .order_by(versions.c.version.desc())
         .limit(1)
     ).one()
-    document = json.loads(json.dumps(latest.document, ensure_ascii=False))
-    document["presentation_order"] = _PRESENTATION_ORDER
+    document = _with_presentation_order(json.loads(json.dumps(latest.document, ensure_ascii=False)))
+
+    # A draft is a full document copied from the version that was current when
+    # it was created. Preserve all methodologist edits, but carry this
+    # presentation-only change forward so a later draft publication cannot
+    # make geometry eighth again.
+    drafts = connection.execute(
+        sa.select(versions.c.id, versions.c.document).where(versions.c.status == "draft")
+    ).all()
+    for draft_id, draft_document in drafts:
+        op.execute(
+            versions.update()
+            .where(versions.c.id == draft_id)
+            .values(document=_with_presentation_order(draft_document))
+        )
 
     op.execute(
         versions.insert().values(
