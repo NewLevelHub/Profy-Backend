@@ -88,14 +88,17 @@ def test_single_choice_answer_moves_between_positions() -> None:
 
 def test_unshuffled_subtests_keep_bank_order() -> None:
     bank = v1_bank()
-    served = _build(bank, uuid.uuid4())
-    for key, field in (("lability", "options"), ("numeric_series", "sequence"), ("generalization", "pair")):
-        bank_values = [item[field] for item in _bank_subtest(bank, key).items]
-        served_values = [item[field] for item in _served_subtest(served, key)["items"]]
-        for bank_value, served_value in zip(bank_values, served_values):
-            expected = bank_value["ru"] if isinstance(bank_value, dict) else bank_value
-            assert served_value == expected
-    # Options А–Г are bound to their images: every attempt sees them alike.
-    figures = _served_subtest(served, "geometric_figures")
-    for _ in range(20):
-        assert _served_subtest(_build(bank, uuid.uuid4()), "geometric_figures") == figures
+    kept = (("lability", "options"), ("numeric_series", "sequence"), ("generalization", "pair"))
+    expected = {
+        key: [item[field]["ru"] if isinstance(item[field], dict) else item[field] for item in _bank_subtest(bank, key).items]
+        for key, field in kept
+    }
+    # Many attempts: lability items have 2 options, so a single build would
+    # miss a regression that shuffled them one time in 256.
+    figures = _served_subtest(_build(bank, uuid.uuid4()), "geometric_figures")
+    for _ in range(RUNS):
+        served = _build(bank, uuid.uuid4())
+        for key, field in kept:
+            assert [item[field] for item in _served_subtest(served, key)["items"]] == expected[key]
+        # Options А–Г are bound to their images: every attempt sees them alike.
+        assert _served_subtest(served, "geometric_figures") == figures
