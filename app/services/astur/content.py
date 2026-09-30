@@ -53,9 +53,13 @@ def _shuffle_public_item(item: dict, subtest: BankSubtest, rng: random.Random) -
     in bank order the position gives the answer away. Scoring matches by
     text, never by position, so any order scores the same.
 
-    Left in bank order: geometric figures (options А–Г are bound to their
-    images and letters, see STIMULUS_KEYS), lability, numeric series and
-    generalization (nothing to pick from)."""
+    Left in bank order:
+    - geometric figures — options А–Г are bound to their images and
+      letters (see STIMULUS_KEYS);
+    - lability — option order is meaningful: the dynamic commands'
+      scoring reads options by position ([circle, square], [yes, no] — see
+      `scoring._day_of_week_expected` / `_own_name_expected`);
+    - numeric series and generalization — nothing to pick from."""
     if subtest.key in STIMULUS_KEYS:
         return
     if subtest.scoring_method == "chain_links":
