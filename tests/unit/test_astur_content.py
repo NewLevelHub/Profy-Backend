@@ -57,30 +57,33 @@ def test_same_attempt_is_served_the_same_order() -> None:
 
 def test_classification_pair_is_not_always_first_two_words() -> None:
     bank = v1_bank()
-    for bank_item in _bank_subtest(bank, "classification").items:
-        answer = set(bank_item["answer"]["ru"])
-        seen_positions: set[frozenset[int]] = set()
-        for _ in range(RUNS):
-            served = _served_subtest(_build(bank, uuid.uuid4()), "classification")
-            words = next(i for i in served["items"] if i["item_id"] == bank_item["item_id"])["words"]
-            assert sorted(words) == sorted(bank_item["words"]["ru"])
-            seen_positions.add(frozenset(i for i, w in enumerate(words) if w in answer))
-        assert seen_positions != {frozenset({0, 1})}
-        assert len(seen_positions) > 1
+    bank_items = _bank_subtest(bank, "classification").items
+    seen: dict[str, set[frozenset[int]]] = {item["item_id"]: set() for item in bank_items}
+    for _ in range(RUNS):
+        served = _served_subtest(_build(bank, uuid.uuid4()), "classification")
+        for bank_item, item in zip(bank_items, served["items"]):
+            answer = set(bank_item["answer"]["ru"])
+            assert sorted(item["words"]) == sorted(bank_item["words"]["ru"])
+            seen[item["item_id"]].add(frozenset(i for i, w in enumerate(item["words"]) if w in answer))
+    for item_id, positions in seen.items():
+        assert positions != {frozenset({0, 1})}, item_id
+        assert len(positions) > 1, item_id
 
 
 def test_single_choice_answer_moves_between_positions() -> None:
     bank = v1_bank()
-    for key in ("awareness", "analogies"):
-        for bank_item in _bank_subtest(bank, key).items:
-            answer = bank_item["answer"]["ru"]
-            positions: set[int] = set()
-            for _ in range(RUNS):
-                served = _served_subtest(_build(bank, uuid.uuid4()), key)
-                options = next(i for i in served["items"] if i["item_id"] == bank_item["item_id"])["options"]
-                assert sorted(options) == sorted(bank_item["options"]["ru"])
-                positions.add(options.index(answer))
-            assert len(positions) > 1, f"{key} {bank_item['item_id']}: answer always at {positions}"
+    keys = ("awareness", "analogies")
+    seen: dict[str, set[int]] = {
+        item["item_id"]: set() for key in keys for item in _bank_subtest(bank, key).items
+    }
+    for _ in range(RUNS):
+        content = _build(bank, uuid.uuid4())
+        for key in keys:
+            for bank_item, item in zip(_bank_subtest(bank, key).items, _served_subtest(content, key)["items"]):
+                assert sorted(item["options"]) == sorted(bank_item["options"]["ru"])
+                seen[item["item_id"]].add(item["options"].index(bank_item["answer"]["ru"]))
+    for item_id, positions in seen.items():
+        assert len(positions) > 1, f"{item_id}: answer always at {positions}"
 
 
 def test_unshuffled_subtests_keep_bank_order() -> None:
