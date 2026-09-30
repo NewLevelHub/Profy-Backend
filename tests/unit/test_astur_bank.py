@@ -5,10 +5,11 @@ from app.services.astur.bank import content_hash, load_v1_document, parse_bank, 
 from app.services.astur.bank_validation import validate_bank
 from tests.astur_fixtures import v1_document
 
-# v1 is the immutable pre-PRO-427 bank; every legacy attempt is pinned to it.
-# Changing app/data/astur_bank_v1.json would silently fork fresh databases
-# from production — any content change must be a new published version.
-V1_CONTENT_HASH = "fe7e5127744300935ccab117038032766cd0ac01c25558e2dfa91fa8ca0122e4"
+# v1 is the bank every attempt is pinned to. app/data/astur_bank_v1.json is
+# its source: a content edit changes this hash and must ship with a data
+# migration that syncs the v1 row from the file (like 624c5e6208ee, PRO-442) —
+# otherwise fresh databases silently fork from the ones already migrated.
+V1_CONTENT_HASH = "b2bffbe93c0dcf2bd8e05af148a438c9c92a21ea54c50fadae2ea189432c197b"
 
 
 def reviewed(document: dict) -> dict:
