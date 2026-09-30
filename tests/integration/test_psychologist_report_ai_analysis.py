@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.analysis_result import AnalysisResult
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.profile import AgeGroup, Profile
-from app.models.psychoemotional_run import PsychoEmotionalRun
+from app.models.psychoemotional_run import PsychoEmotionalRun, PsychoEmotionalValidityFlag
 from app.models.user import User
 from app.services import llm_client
 from app.services.psychoemotional import engine as psychoemotional_engine
@@ -144,6 +144,7 @@ async def test_ai_analysis_is_generated_with_a_psychoemotional_block_and_history
         db_session.add(PsychoEmotionalRun(
             assessment_id=assessment.id, user_id=test_user.id, list1=list1, list2=list2,
             metrics=psychoemotional_engine.compute(list1, list2).as_dict(),
+            validity_flag=PsychoEmotionalValidityFlag.ok,
             created_at=datetime.now(timezone.utc) - timedelta(days=days_ago),
         ))
     await db_session.flush()
@@ -165,6 +166,14 @@ async def test_ai_analysis_is_generated_with_a_psychoemotional_block_and_history
     system_prompt = mock_complete.call_args.args[0][0]["content"]
     assert '"block": "psychoemotional"' in system_prompt
     assert '"history"' in system_prompt
+
+    # PRO-448: the specialist gets the text interpretation of the latest run
+    # (green first, black last → root conflict "27"); the AI prompt does not.
+    interpretation = response.json()["report"]["psychoemotional"]["interpretation"]
+    assert [p["sign"] for p in interpretation["positions"]] == ["plus", "cross", "equal", "minus", "plus_minus"]
+    assert interpretation["positions"][-1]["colors"] == [2, 7]
+    assert len(interpretation["indices"]) == 3
+    assert '"interpretation"' not in system_prompt
 
 
 async def test_ai_analysis_is_none_when_llm_disabled(
