@@ -1,5 +1,5 @@
 {
-  "_readme": "Each entry proposes a Wikidata match + its P18 image for a foreign university jinaq doesn't cover. Check `wikidata_label`/`wikidata_description` against `university_name` — if it's really the same institution and the image looks right, set `confirmed: true`. confidence='low' or 'no_match'/'no_image' entries need a closer look or a manual wikidata_id/image_filename fix before confirming. Nothing is downloaded until scripts/apply_foreign_university_photos_from_wikidata.py runs against confirmed entries.",
+  "_readme": "Each entry proposes a Wikidata match + its P18 image for a foreign university jinaq doesn't cover. Check `wikidata_label`/`wikidata_description` against `university_name` — if it's really the same institution and the image looks right, set `confirmed: true`. confidence='low' or 'no_match'/'no_image' entries need a closer look or a manual wikidata_id/image_filename fix before confirming. The script that downloaded confirmed entries was removed in PRO-425; this file is kept as the reference-quality portable-key review (tests/unit/test_review_files_portable_keys.py).",
   "entries": [
     {
       "university_slug": "aalto-university",

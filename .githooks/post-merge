@@ -1,0 +1,7 @@
+#!/bin/sh
+# PRO-429: right after `git pull` / `git merge origin/dev`, re-point this
+# branch's new Alembic migrations onto the head that just came in and commit
+# that, so the next push is already clean. Never blocks — the merge is done.
+. "$(git rev-parse --show-toplevel)/.githooks/lib.sh"
+run_migrations_fix fix --commit --no-fetch --hook post
+exit 0

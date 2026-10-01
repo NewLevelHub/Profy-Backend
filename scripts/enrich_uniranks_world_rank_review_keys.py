@@ -1,6 +1,6 @@
 """One-time: backfills cross-DB-portable keys (`slug`, `ror_id`,
 `jinaq_external_id`) into the *existing* scripts/data/uniranks_world_rank_review.json
-so apply_uniranks_world_rank.py can resolve rows on a database other than
+so its consumer (now build_world_rank_map.py) can resolve rows on a database other than
 the one the file was generated against (PRO-245 — see
 docs/content-pipeline-id-resolution-audit.md).
 

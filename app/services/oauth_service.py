@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.config import settings
 from app.models.user import User
 from app.services.auth_service import create_jwt_token
@@ -38,13 +39,13 @@ async def verify_google_id_token(token: str) -> dict:
             settings.GOOGLE_CLIENT_ID,
         )
     except (ValueError, google_auth_exceptions.GoogleAuthError) as exc:
-        raise ValueError("Invalid Google token") from exc
+        raise ValueError(i18n_key("api_errors", "invalid_google_token", locale="ru")) from exc
 
     if not claims.get("email_verified"):
-        raise ValueError("Google email not verified")
+        raise ValueError(i18n_key("api_errors", "google_email_not_verified", locale="ru"))
 
     if "email" not in claims:
-        raise ValueError("Google token missing email claim")
+        raise ValueError(i18n_key("api_errors", "google_token_missing_email_claim", locale="ru"))
 
     return claims
 

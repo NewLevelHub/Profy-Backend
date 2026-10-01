@@ -32,8 +32,8 @@ async def test_two_step_flow_create_profile_then_save_artifacts(
 ) -> None:
     profile_payload = {
         "name": "Данияр",
-        "age": 12,
-        "grade": 6,
+        "age": 15,
+        "grade": 9,
         "city": "Астана",
         "country": "Казахстан",
         "language": "ru",
@@ -60,8 +60,8 @@ async def test_save_artifacts_replaces_previous_selection(
 ) -> None:
     profile_payload = {
         "name": "Данияр",
-        "age": 12,
-        "grade": 6,
+        "age": 15,
+        "grade": 9,
         "city": "Астана",
         "country": "Казахстан",
         "language": "ru",

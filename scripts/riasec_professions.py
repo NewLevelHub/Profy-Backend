@@ -11,6 +11,12 @@ catalog — a profession only needs its name and Holland code here.
 
 Kept as raw section-ordered data; scripts/seed_riasec_directions.py dedupes
 by title (first occurrence wins) and upserts into the `directions` table.
+
+A direction's slug is derived from its `ru` title — except for an entry that
+carries its own `"slug"`: renaming a profession must keep the slug it was
+created with (PRO-432), since program links, direction content and stored
+reports all point at the slug, not the title. So on rename: change `title`
+(and its KK_NAMES key), add `"slug": "<the old slug>"`.
 """
 
 PROFESSIONS: list[dict] = [
@@ -31,7 +37,7 @@ PROFESSIONS: list[dict] = [
     {"section": "Realistic", "title": "Полицейский", "holland_code": "SER"},
     {"section": "Realistic", "title": "Спасатель МЧС", "holland_code": "SRE"},
     {"section": "Realistic", "title": "Системный администратор", "holland_code": "RIC"},
-    {"section": "Realistic", "title": "Управляющий фермерским хозяйством", "holland_code": "ESR"},
+    {"section": "Realistic", "title": "Агроменеджер", "holland_code": "ESR", "slug": "upravlyayuschiy-fermerskim-hozyaystvom"},
     {"section": "Realistic", "title": "Инженер-конструктор", "holland_code": "RIC"},
     {"section": "Realistic", "title": "Инженер по автоматизации и робототехнике", "holland_code": "RIA"},
     {"section": "Realistic", "title": "Инженер-энергетик", "holland_code": "RCE"},
@@ -80,7 +86,7 @@ PROFESSIONS: list[dict] = [
     # Artistic
     {"section": "Artistic", "title": "Архитектор", "holland_code": "AIR"},
     {"section": "Artistic", "title": "Графический дизайнер", "holland_code": "AIE"},
-    {"section": "Artistic", "title": "Модельер", "holland_code": "ASR"},
+    {"section": "Artistic", "title": "Дизайнер одежды", "holland_code": "ASR", "slug": "modeler"},
     {"section": "Artistic", "title": "Художник", "holland_code": "ASI"},
     {"section": "Artistic", "title": "Писатель / Копирайтер", "holland_code": "ASI"},
     {"section": "Artistic", "title": "Журналист", "holland_code": "ASE"},
@@ -99,7 +105,7 @@ PROFESSIONS: list[dict] = [
     {"section": "Artistic", "title": "Композитор", "holland_code": "AIC"},
     {"section": "Artistic", "title": "Звукорежиссёр", "holland_code": "ARI"},
     {"section": "Artistic", "title": "Сценарист", "holland_code": "AIS"},
-    {"section": "Artistic", "title": "Модный стилист", "holland_code": "ASE"},
+    {"section": "Artistic", "title": "Стилист-имиджмейкер", "holland_code": "ASE", "slug": "modnyy-stilist"},
     {"section": "Artistic", "title": "Иллюстратор", "holland_code": "AIS"},
     # "Блогер" isn't a degree anywhere in the jinaq dataset — named for the
     # field that actually is: 30+ real programs like "Медиакоммуникации",
@@ -114,11 +120,11 @@ PROFESSIONS: list[dict] = [
     {"section": "Social", "title": "Медицинская сестра / медбрат", "holland_code": "SIA"},
     {"section": "Social", "title": "Логопед", "holland_code": "SAI"},
     {"section": "Social", "title": "Социальный работник", "holland_code": "SEA"},
-    {"section": "Social", "title": "Воспитатель детского сада", "holland_code": "SAE"},
+    {"section": "Social", "title": "Педагог дошкольного образования", "holland_code": "SAE", "slug": "vospitatel-detskogo-sada"},
     {"section": "Social", "title": "HR-менеджер", "holland_code": "SEC"},
     {"section": "Social", "title": "Тренер по спорту", "holland_code": "SRE"},
-    {"section": "Social", "title": "Гид-экскурсовод", "holland_code": "SEA"},
-    {"section": "Social", "title": "Библиотекарь", "holland_code": "SAI"},
+    {"section": "Social", "title": "Гид / менеджер по туризму", "holland_code": "SEA", "slug": "gid-ekskursovod"},
+    {"section": "Social", "title": "Специалист по информационным ресурсам", "holland_code": "SAI", "slug": "bibliotekar"},
     {"section": "Social", "title": "Преподаватель вуза", "holland_code": "SEI"},
     {"section": "Social", "title": "Специалист по работе с молодёжью", "holland_code": "SEA"},
     {"section": "Social", "title": "Реабилитолог / Эрготерапевт", "holland_code": "SIE"},
@@ -133,7 +139,7 @@ PROFESSIONS: list[dict] = [
     # Enterprising
     {"section": "Enterprising", "title": "Предприниматель", "holland_code": "EAI"},
     {"section": "Enterprising", "title": "Менеджер по продажам", "holland_code": "ESR"},
-    {"section": "Enterprising", "title": "Директор по маркетингу", "holland_code": "EAS"},
+    {"section": "Enterprising", "title": "Digital-маркетолог", "holland_code": "EAS", "slug": "direktor-po-marketingu"},
     {"section": "Enterprising", "title": "Юрист / Адвокат", "holland_code": "ECS"},
     {"section": "Enterprising", "title": "Дипломат", "holland_code": "ESA"},
     {"section": "Enterprising", "title": "Финансовый консультант", "holland_code": "ESR"},
@@ -143,8 +149,8 @@ PROFESSIONS: list[dict] = [
     {"section": "Enterprising", "title": "Страховой агент", "holland_code": "ESC"},
     {"section": "Enterprising", "title": "PR-менеджер", "holland_code": "EAS"},
     {"section": "Enterprising", "title": "Управляющий отелем / рестораном", "holland_code": "ESR"},
-    {"section": "Enterprising", "title": "Биржевой брокер", "holland_code": "ESI"},
-    {"section": "Enterprising", "title": "Директор по логистике", "holland_code": "ECR"},
+    {"section": "Enterprising", "title": "Трейдер / брокер", "holland_code": "ESI", "slug": "birzhevoy-broker"},
+    {"section": "Enterprising", "title": "Менеджер по цепям поставок", "holland_code": "ECR", "slug": "direktor-po-logistike"},
     {"section": "Enterprising", "title": "Бизнес-переводчик", "holland_code": "SEA"},
     {"section": "Enterprising", "title": "Продакт-менеджер", "holland_code": "EIA"},
     {"section": "Enterprising", "title": "Проектный менеджер", "holland_code": "ECI"},
@@ -161,11 +167,10 @@ PROFESSIONS: list[dict] = [
     {"section": "Conventional", "title": "Финансовый аналитик", "holland_code": "CSI"},
     {"section": "Conventional", "title": "Аудитор", "holland_code": "CSE"},
     {"section": "Conventional", "title": "Специалист по таможенному делу", "holland_code": "CEI"},
-    {"section": "Conventional", "title": "Секретарь-делопроизводитель", "holland_code": "CES"},
+    {"section": "Conventional", "title": "Офис-менеджер", "holland_code": "CES", "slug": "sekretar-deloproizvoditel"},
     {"section": "Conventional", "title": "Специалист технической поддержки", "holland_code": "CSR"},
     {"section": "Conventional", "title": "Кредитный аналитик", "holland_code": "CIE"},
-    {"section": "Conventional", "title": "Специалист по кадровому делопроизводству", "holland_code": "CES"},
-    {"section": "Conventional", "title": "Архивариус", "holland_code": "CSE"},
+    {"section": "Conventional", "title": "Архивист", "holland_code": "CSE", "slug": "arhivarius"},
     {"section": "Conventional", "title": "Специалист по стандартизации и сертификации", "holland_code": "CRI"},
     {"section": "Conventional", "title": "Страховой андеррайтер", "holland_code": "CSE"},
     {"section": "Conventional", "title": "Специалист по закупкам", "holland_code": "CEI"},
@@ -176,3 +181,172 @@ PROFESSIONS: list[dict] = [
 ]
 
 assert len(PROFESSIONS) == len({p["title"] for p in PROFESSIONS}), "duplicate profession titles in PROFESSIONS"
+
+
+# ── Kazakh (kk) names — KZ-306 ────────────────────────────────────────────────
+#
+# LLM-primary translation against docs/i18n.md's glossary; native review pending
+# (checklist: ProfOr/Тикеты-локализация-KZ/KZ-306-вычитка-kk.md). Keyed by the
+# exact `ru` title. `slug` and `holland_code` are NOT per-locale — the slug is
+# always derived from the `ru` title (stable anchor), so career matching and the
+# profession↔program map are unchanged. `description` / `skills_needed` /
+# `subjects_to_develop` / `first_steps` are localized separately, via
+# `direction_content_review_kk.json` + `apply_direction_content.py`.
+KK_NAMES: dict[str, str] = {
+    # Realistic
+    "Инженер-механик": "Механика инженері",
+    "Пилот гражданской авиации": "Азаматтық авиация ұшқышы",
+    "Авиадиспетчер": "Авиадиспетчер",
+    "Геодезист": "Геодезист",
+    "Инженер-строитель": "Құрылыс инженері",
+    "Инженер-электрик": "Электр инженері",
+    "Агроном": "Агроном",
+    "Ветеринар": "Ветеринар",
+    "Лесничий": "Орманшы",
+    "Буровой инженер (нефтегазовое дело)": "Бұрғылау инженері (мұнай-газ ісі)",
+    "Машинист локомотива": "Локомотив машинисі",
+    "Технолог пищевого производства": "Тамақ өндірісінің технологы",
+    "Ландшафтный дизайнер": "Ландшафт дизайнері",
+    "Полицейский": "Полиция қызметкері",
+    "Спасатель МЧС": "ТЖМ құтқарушысы",
+    "Системный администратор": "Жүйелік әкімші",
+    "Агроменеджер": "Агроменеджер",
+    "Инженер-конструктор": "Конструктор инженері",
+    "Инженер по автоматизации и робототехнике": "Автоматтандыру және робототехника инженері",
+    "Инженер-энергетик": "Энергетик инженері",
+    "Инженер-технолог (машиностроение)": "Технолог инженері (машина жасау)",
+    "Горный инженер": "Тау-кен инженері",
+    "Металлург": "Металлург",
+    "Военный (офицер)": "Әскери қызметкер (офицер)",
+    "Инженер-химик": "Химик инженері",
+    # Investigative
+    "Разработчик программного обеспечения": "Бағдарламалық қамтамасыз ету әзірлеушісі",
+    "Аналитик данных": "Деректер талдаушысы",
+    "Специалист по искусственному интеллекту": "Жасанды интеллект маманы",
+    "Геолог": "Геолог",
+    "Биолог": "Биолог",
+    "Химик": "Химик",
+    "Врач общей практики": "Жалпы практика дәрігері",
+    "Стоматолог": "Стоматолог",
+    "Фармацевт": "Фармацевт",
+    "Психолог-исследователь": "Психолог-зерттеуші",
+    "Экономист-аналитик": "Экономист-талдаушы",
+    "Актуарий": "Актуарий",
+    "Математик": "Математик",
+    "Археолог": "Археолог",
+    "Метеоролог": "Метеоролог",
+    "Системный аналитик": "Жүйелік талдаушы",
+    "Исследователь в области биотехнологий": "Биотехнология саласындағы зерттеуші",
+    "Инженер-эколог": "Эколог инженері",
+    "DevOps-инженер": "DevOps-инженер",
+    "Инженер по кибербезопасности": "Киберқауіпсіздік инженері",
+    "Data Engineer": "Data Engineer",
+    "Mobile-разработчик": "Mobile-әзірлеуші",
+    "Физик": "Физик",
+    "Астроном": "Астроном",
+    "Хирург": "Хирург",
+    "Педиатр": "Педиатр",
+    "Психиатр": "Психиатр",
+    "Генетик": "Генетик",
+    "Эпидемиолог": "Эпидемиолог",
+    "Нейробиолог": "Нейробиолог",
+    "Судмедэксперт / Криминалист": "Сот-медициналық сарапшы / Криминалист",
+    "Океанолог / Гидролог": "Океанолог / Гидролог",
+    "Историк": "Тарихшы",
+    "Медицинский лабораторный технолог": "Медициналық зертханалық технолог",
+    # Artistic
+    "Архитектор": "Сәулетші",
+    "Графический дизайнер": "График дизайнер",
+    "Дизайнер одежды": "Киім дизайнері",
+    "Художник": "Суретші",
+    "Писатель / Копирайтер": "Жазушы / Копирайтер",
+    "Журналист": "Журналист",
+    "Режиссёр": "Режиссёр",
+    "Актёр": "Актёр",
+    "Хореограф": "Хореограф",
+    "Музыкант-исполнитель": "Орындаушы музыкант",
+    "Фотограф": "Фотограф",
+    "Дизайнер интерьера": "Интерьер дизайнері",
+    "Аниматор (2D/3D)": "Аниматор (2D/3D)",
+    "Преподаватель искусства": "Өнер оқытушысы",
+    "Искусствовед": "Өнертанушы",
+    "UX/UI-дизайнер": "UX/UI-дизайнер",
+    "Геймдизайнер": "Гейм-дизайнер",
+    "Урбанист / Градостроитель": "Урбанист / Қала құрылысшысы",
+    "Композитор": "Композитор",
+    "Звукорежиссёр": "Дыбыс режиссёрі",
+    "Сценарист": "Сценарист",
+    "Стилист-имиджмейкер": "Стилист-имиджмейкер",
+    "Иллюстратор": "Иллюстратор",
+    "Специалист по медиакоммуникациям": "Медиакоммуникация маманы",
+    "Филолог-лингвист": "Филолог-лингвист",
+    # Social
+    "Школьный учитель": "Мектеп мұғалімі",
+    "Психолог-консультант": "Психолог-кеңесші",
+    "Медицинская сестра / медбрат": "Мейіргер",
+    "Логопед": "Логопед",
+    "Социальный работник": "Әлеуметтік қызметкер",
+    "Педагог дошкольного образования": "Мектепке дейінгі білім беру педагогы",
+    "HR-менеджер": "HR-менеджер",
+    "Тренер по спорту": "Спорт жаттықтырушысы",
+    "Гид / менеджер по туризму": "Гид / туризм менеджері",
+    "Специалист по информационным ресурсам": "Ақпараттық ресурстар маманы",
+    "Преподаватель вуза": "ЖОО оқытушысы",
+    "Специалист по работе с молодёжью": "Жастармен жұмыс жөніндегі маман",
+    "Реабилитолог / Эрготерапевт": "Реабилитолог / Эрготерапевт",
+    "Нутрициолог / Диетолог": "Нутрициолог / Диетолог",
+    "Дефектолог": "Дефектолог",
+    "Физиотерапевт / Массажист": "Физиотерапевт / Массажист",
+    "Медиатор / Конфликтолог": "Медиатор / Конфликтолог",
+    "Профориентолог / Карьерный консультант": "Кәсіптік бағдар маманы / Мансап кеңесшісі",
+    "Педагог-психолог": "Педагог-психолог",
+    "Теолог / Религиовед": "Теолог / Дінтанушы",
+    # Enterprising
+    "Предприниматель": "Кәсіпкер",
+    "Менеджер по продажам": "Сату менеджері",
+    "Digital-маркетолог": "Digital-маркетолог",
+    "Юрист / Адвокат": "Заңгер / Адвокат",
+    "Дипломат": "Дипломат",
+    "Финансовый консультант": "Қаржы кеңесшісі",
+    "Государственный служащий": "Мемлекеттік қызметші",
+    "Риелтор": "Риелтор",
+    "Event-менеджер": "Event-менеджер",
+    "Страховой агент": "Сақтандыру агенті",
+    "PR-менеджер": "PR-менеджер",
+    "Управляющий отелем / рестораном": "Қонақүй / мейрамхана басқарушысы",
+    "Трейдер / брокер": "Трейдер / брокер",
+    "Менеджер по цепям поставок": "Жеткізу тізбегі менеджері",
+    "Бизнес-переводчик": "Бизнес-аудармашы",
+    "Продакт-менеджер": "Өнім менеджері",
+    "Проектный менеджер": "Жоба менеджері",
+    "Инвестиционный банкир": "Инвестициялық банкир",
+    "Маркетолог": "Маркетолог",
+    "Судья": "Судья",
+    "Прокурор": "Прокурор",
+    "Нотариус": "Нотариус",
+    "Спортивный менеджер / агент": "Спорт менеджері / агенті",
+    # Conventional
+    "Бухгалтер": "Бухгалтер",
+    "Налоговый консультант": "Салық кеңесшісі",
+    "Финансовый аналитик": "Қаржы талдаушысы",
+    "Аудитор": "Аудитор",
+    "Специалист по таможенному делу": "Кеден ісі жөніндегі маман",
+    "Офис-менеджер": "Офис-менеджер",
+    "Специалист технической поддержки": "Техникалық қолдау маманы",
+    "Кредитный аналитик": "Несие талдаушысы",
+    "Архивист": "Мұрағатшы",
+    "Специалист по стандартизации и сертификации": "Стандарттау және сертификаттау маманы",
+    "Страховой андеррайтер": "Сақтандыру андеррайтері",
+    "Специалист по закупкам": "Сатып алу маманы",
+    "Администратор баз данных": "Дерекқор әкімшісі",
+    "QA-инженер (тестировщик)": "QA-инженер (тестілеуші)",
+    "Логист": "Логист",
+    "Финансовый контролёр": "Қаржы бақылаушысы",
+}
+
+assert set(KK_NAMES) == {p["title"] for p in PROFESSIONS}, (
+    "KK_NAMES drift: missing="
+    f"{sorted({p['title'] for p in PROFESSIONS} - set(KK_NAMES))}, "
+    f"stray={sorted(set(KK_NAMES) - {p['title'] for p in PROFESSIONS})}"
+)
+

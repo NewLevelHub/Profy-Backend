@@ -5,23 +5,17 @@ this exists instead of reusing StudentContext.
 
 Pure function, no DB access: called from report_service.build_report with
 values it has already computed in memory (scores aren't re-fetched from a
-stored AnalysisResult, since this runs before that row exists). This is
-also why it never touches a response table regardless of which motivation
-input-flow produced its inputs — junior/middle answer Harter pairs
-(motivation_pair_service), senior answers MOST/LEAST triplets
-(motivation_service), but both are already collapsed into the same
-motivation_top/motivation_highlights shape before this function ever runs,
-so it has nothing flow-specific to know about.
+stored AnalysisResult, since this runs before that row exists), including the
+vetted strength candidates (app/services/student_strengths_service.py). This is
+also why it never touches a response table: the motivation triplets are
+already collapsed into motivation_top/motivation_highlights before this
+function runs.
 """
-import re
-
-from app.models.artifact import Artifact
-from app.models.profile import AgeGroup
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
+from app.schemas.student_strengths import StrengthCandidate
 from app.services.bigfive_content import relative_bands
-from app.services.mi_content import MI_STRENGTH_PHRASES
-from app.services.riasec_content import RIASEC_STRENGTH_PHRASES
-from app.services.thinking_style_content import THINKING_STYLE_NOTES
+from app.services.riasec_content import riasec_strength_phrases
+from app.services.thinking_style_content import thinking_style_notes
 
 # Fixed order for deterministic top-N selection — same tie-break convention
 # as riasec_service.HOLLAND_ORDER (equal scores must not depend on dict
@@ -29,39 +23,18 @@ from app.services.thinking_style_content import THINKING_STYLE_NOTES
 _THINKING_STYLE_ORDER: list[str] = ["creative_think", "systematic", "strategic", "practical"]
 _TOP_THINKING_STYLES = 2
 
-# TZ_Profi.md §18.2: "Сильные стороны" (п.2), "Стиль мышления" (п.4) and
-# "Мотивация" (п.5) are three separate report sections. thinking_style and
-# motivation evidence are each reserved for their own dedicated section —
-# never eligible for strength_cards — so the same fact can't surface twice
-# with identical text (report_narrative_fallback.py,
-# report_narrative_validator.py, and the LLM prompt all consult this).
-# personality joined the set once "Твой характер" became its own dedicated,
-# fully deterministic block (report_v2_assembler.build_personality_notes) —
-# built straight from personality_profile, entirely outside this narrative
-# pipeline, so nothing downstream of `context.evidence` reads
-# source_type=="personality" anymore either; it's excluded here purely to
-# stop it from also leaking into strength_cards.
-STRENGTH_CARD_EXCLUDED_SOURCE_TYPES: frozenset[str] = frozenset({"thinking_style", "motivation", "personality"})
 
-
-def _interest_evidence(age_group: AgeGroup, strengths: list[str]) -> tuple[str, list[EvidenceItem]]:
-    """Junior's top interests are MI categories; middle/senior's are RIASEC
-    letters — never both, and never the other age group's instrument. Text
-    is the fuller *_STRENGTH_PHRASES sentence (fallback strength-card
-    material), not the bare *_LABELS type name — interest_map (all 6/8
-    spheres, not just these vetted top ones) uses the bare name instead,
-    built separately in report_fallback.py from the full profile."""
-    if age_group == AgeGroup.junior:
-        phrases, source_type, instrument = MI_STRENGTH_PHRASES, "mi_category", "mi"
-    else:
-        phrases, source_type, instrument = RIASEC_STRENGTH_PHRASES, "riasec_category", "riasec"
-
-    items = [
-        EvidenceItem(source_id=f"{instrument}:{key}", source_type=source_type, text=phrases[key])
+def _interest_evidence(strengths: list[str]) -> list[EvidenceItem]:
+    """Top RIASEC letters. Text is the fuller RIASEC_STRENGTH_PHRASES
+    sentence (fallback strength-card material), not the bare label —
+    interest_map (all 6 spheres, not just these vetted top ones) uses the
+    bare name instead, built separately from the full profile."""
+    phrases = riasec_strength_phrases()
+    return [
+        EvidenceItem(source_id=f"riasec:{key}", source_type="riasec_category", text=phrases[key])
         for key in strengths
         if key in phrases
     ]
-    return instrument, items
 
 
 def _personality_evidence(
@@ -100,90 +73,20 @@ def _thinking_style_evidence(thinking_style: dict[str, float]) -> list[EvidenceI
         key=lambda key: (-thinking_style[key], _THINKING_STYLE_ORDER.index(key)),
     )
     return [
-        EvidenceItem(source_id=f"thinking_style:{key}", source_type="thinking_style", text=THINKING_STYLE_NOTES[key])
+        EvidenceItem(source_id=f"thinking_style:{key}", source_type="thinking_style", text=thinking_style_notes()[key])
         for key in ranked[:_TOP_THINKING_STYLES]
     ]
 
 
-def _subject_evidence(subjects: list[str], source_type: str) -> list[EvidenceItem]:
-    return [
-        EvidenceItem(source_id=f"{source_type}:{name}", source_type=source_type, text=name)
-        for name in subjects
-    ]
-
-
-_TOKEN_RE = re.compile(r"[а-яёa-z0-9]+", re.IGNORECASE)
-_MIN_TOKEN_LEN = 3
-
-
-def _significant_tokens(text: str) -> set[str]:
-    return {t.lower() for t in _TOKEN_RE.findall(text) if len(t) >= _MIN_TOKEN_LEN}
-
-
-def _group_similar_artifacts(artifacts: list[Artifact]) -> list[list[Artifact]]:
-    """Artifacts are free-text hobby/club entries with no controlled
-    vocabulary — a student can genuinely enter "Программирование",
-    "IT/программирование" and "Робототехника" as three separate artifacts
-    describing overlapping interest. Left ungrouped, each becomes its own
-    strength card and reads as the same fact repeated three times (found
-    live: exactly this case). A shared-significant-word heuristic is
-    enough here — this is about catching an obvious near-duplicate, not
-    full semantic clustering, so it deliberately stays simple rather than
-    reaching for anything ML-based."""
-    groups: list[list[Artifact]] = []
-    for artifact in artifacts:
-        tokens = _significant_tokens(artifact.value)
-        match = next(
-            (g for g in groups if tokens & _significant_tokens(" ".join(a.value for a in g))),
-            None,
-        )
-        if match is not None:
-            match.append(artifact)
-        else:
-            groups.append([artifact])
-    return groups
-
-
-def _artifact_evidence(artifacts: list[Artifact]) -> list[EvidenceItem]:
-    groups = _group_similar_artifacts(artifacts)
-    return [
-        EvidenceItem(
-            source_id=f"artifact:{group[0].id}",
-            source_type="artifact",
-            text="; ".join(a.value for a in group),
-        )
-        for group in groups
-    ]
-
-
-# subject_liked/subject_easy/artifact are self-reported at onboarding, not
-# measured by the test — capped so they can't crowd out test-derived
-# evidence (riasec_category/mi_category/personality) in strength_cards.
-# Found live: a student with 3 onboarding artifacts about programming and
-# only 1 RIASEC + 2 personality facts ended up with HALF their strength
-# cards about onboarding hobbies, and the shown careers (driven only by the
-# RIASEC test) had nothing to do with those hobbies — the report read as
-# incoherent, "which one of these is even about me". Test-derived evidence
-# is what the shown careers are actually grounded in (report_v2_assembler.
-# _matched_strengths_for reads riasec_category evidence specifically), so
-# letting it dominate strength_cards is what makes the two sections agree
-# with each other instead of talking past one another.
-ONBOARDING_SOURCE_TYPES: frozenset[str] = frozenset({"subject_liked", "subject_easy", "artifact"})
-_MAX_ONBOARDING_STRENGTH_EVIDENCE = 2
-
-
 def build_report_narrative_context(
     *,
-    age_group: AgeGroup,
     strengths: list[str],
     personality_profile: dict[str, float],
     personality_notes: dict[str, str],
     thinking_style: dict[str, float],
     motivation_top: list[str],
     motivation_highlights: list[str],
-    subjects_liked: list[str],
-    subjects_easy: list[str],
-    artifacts: list[Artifact],
+    strength_candidates: list[StrengthCandidate] | None = None,
 ) -> ReportNarrativeContext:
     """Everything a narrative-generation prompt, its validator, and the
     deterministic fallback are allowed to know about this student.
@@ -192,28 +95,19 @@ def build_report_narrative_context(
     scores, careers[].match_score, or meta.aversion — they simply aren't
     accepted here, so there's nothing for a future caller to accidentally
     forward into the LLM context."""
-    instrument, evidence = _interest_evidence(age_group, strengths)
+    evidence = _interest_evidence(strengths)
     evidence += _personality_evidence(personality_profile, personality_notes)
     evidence += _motivation_evidence(motivation_top, motivation_highlights)
     evidence += _thinking_style_evidence(thinking_style)
 
-    onboarding_evidence = (
-        _subject_evidence(subjects_liked, "subject_liked")
-        + _subject_evidence(subjects_easy, "subject_easy")
-        + _artifact_evidence(artifacts)
-    )
-    evidence += onboarding_evidence[:_MAX_ONBOARDING_STRENGTH_EVIDENCE]
-
-    return ReportNarrativeContext(
-        age_group=age_group.value,
-        interest_instrument=instrument,
-        evidence=evidence,
-    )
+    # "Сильные стороны" cite only these vetted candidates — never the
+    # evidence above, each of which has its own section (PRO-432).
+    return ReportNarrativeContext(evidence=evidence, strength_candidates=list(strength_candidates or []))
 
 
 def unknown_source_ids(context: ReportNarrativeContext, claimed_ids: list[str]) -> set[str]:
     """What a narrative-generation validator calls to reject an LLM output
     that cites a source_id not present in the catalog it was actually given
     — the LLM claiming a fact that doesn't exist in `context`."""
-    known = {item.source_id for item in context.evidence}
+    known = {item.source_id for item in context.evidence} | {c.source_id for c in context.strength_candidates}
     return {ref for ref in claimed_ids if ref not in known}

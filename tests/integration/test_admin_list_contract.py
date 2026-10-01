@@ -231,13 +231,12 @@ async def _user_with_profile(
     return user
 
 
-async def test_users_sort_by_joined_column_together_with_an_assessment_filter(
+async def test_users_sort_together_with_an_assessment_filter(
     db_session: AsyncSession,
 ) -> None:
-    """The one combination that Postgres rejects outright if built naively:
-    filtering by assessment status forces SELECT DISTINCT, and DISTINCT
-    requires every ORDER BY expression to be in the select list — which
-    Profile.age_group is not, since the query selects User."""
+    """Filtering by assessment status forces SELECT DISTINCT, and DISTINCT
+    requires every ORDER BY expression to be in the select list — sorting
+    must still work, and a user with two matching assessments is one row."""
     marker = _marker()
     senior = await _user_with_profile(
         db_session, marker, AgeGroup.senior, [AssessmentStatus.completed]
@@ -250,12 +249,13 @@ async def test_users_sort_by_joined_column_together_with_an_assessment_filter(
         db_session,
         search=marker,
         status=AssessmentStatus.completed,
-        sort="age_group",
+        sort="email",
         order="asc",
         limit=100,
     )
 
-    assert [i.id for i in result.items] == [junior.id, senior.id]
+    expected = sorted([junior, senior], key=lambda u: u.email)
+    assert [i.id for i in result.items] == [u.id for u in expected]
     # two matching assessments on one user must still count as one user
     assert result.total == 2
 
@@ -343,12 +343,10 @@ async def test_feedback_score_range_and_comment_filters(db_session: AsyncSession
     assert result.total == 1
 
 
-async def test_feedback_comment_search_and_age_group_filter(db_session: AsyncSession) -> None:
-    """age_group lives on the profile behind the assessment, so filtering by it
-    joins through both — and feedback whose assessment was deleted has no
-    knowable age group and must not be counted as a match."""
+async def test_feedback_comment_search(db_session: AsyncSession) -> None:
+    """Comment search matches feedback with and without an assessment."""
     marker = _marker()
-    senior = await _feedback(
+    await _feedback(
         db_session, marker, score=3, comment="откуда выводы", age_group=AgeGroup.senior
     )
     await _feedback(db_session, marker, score=3, comment="откуда выводы", age_group=AgeGroup.junior)
@@ -357,12 +355,8 @@ async def test_feedback_comment_search_and_age_group_filter(db_session: AsyncSes
     by_comment = await admin_service.list_feedback(
         db_session, section=marker, search="откуда", limit=100
     )
-    by_age = await admin_service.list_feedback(
-        db_session, section=marker, age_group=AgeGroup.senior, limit=100
-    )
 
     assert by_comment.total == 3
-    assert [i.id for i in by_age.items] == [senior.id]
 
 
 async def test_feedback_stats_describe_the_filtered_rows(db_session: AsyncSession) -> None:
@@ -394,11 +388,11 @@ async def test_has_overrides_filter_splits_edited_from_untouched(
     before a deploy, since a resync composes overrides back over the bank."""
     marker = _marker()
     edited = Direction(
-        name=f"{marker} edited", slug=f"{marker}-edited", holland_code="RIS",
-        overrides={"name": f"{marker} edited"},
+        name={"ru": f"{marker} edited"}, slug=f"{marker}-edited", holland_code="RIS",
+        overrides={"name": {"ru": f"{marker} edited"}},
     )
     untouched = Direction(
-        name=f"{marker} plain", slug=f"{marker}-plain", holland_code="RIS"
+        name={"ru": f"{marker} plain"}, slug=f"{marker}-plain", holland_code="RIS"
     )
     db_session.add_all([edited, untouched])
     await db_session.flush()
@@ -421,14 +415,14 @@ async def test_direction_catalog_filled_filter_matches_the_row_flag(
     different places; if they ever disagree the list contradicts itself."""
     marker = _marker()
     full = Direction(
-        name=f"{marker} full", slug=f"{marker}-full", holland_code="RIS",
-        description="описание", professions=["p"], skills_needed=["s"],
-        subjects_to_develop=["s"], first_steps=["f"],
+        name={"ru": f"{marker} full"}, slug=f"{marker}-full", holland_code="RIS",
+        description={"ru": "описание"}, professions={"ru": ["p"]}, skills_needed={"ru": ["s"]},
+        subjects_to_develop={"ru": ["s"]}, first_steps={"ru": ["f"]},
     )
     partial = Direction(
-        name=f"{marker} partial", slug=f"{marker}-partial", holland_code="RIS",
-        description="описание", professions=[], skills_needed=["s"],
-        subjects_to_develop=["s"], first_steps=["f"],
+        name={"ru": f"{marker} partial"}, slug=f"{marker}-partial", holland_code="RIS",
+        description={"ru": "описание"}, professions={"ru": []}, skills_needed={"ru": ["s"]},
+        subjects_to_develop={"ru": ["s"]}, first_steps={"ru": ["f"]},
     )
     db_session.add_all([full, partial])
     await db_session.flush()
@@ -454,25 +448,23 @@ async def test_question_pair_search_matches_the_text_a_student_sees(
     marker = _marker()
     question_a = Question(
         instrument=QuestionInstrument.big_five,
-        text=f"{marker} чинить самокат",
-        order=0,
-        age_tier=AgeGroup.junior,
+        text={"ru": f"{marker} чинить самокат"},
+        order=900_101,
     )
     question_b = Question(
-        instrument=QuestionInstrument.big_five, text="играть в салки", order=0,
-        age_tier=AgeGroup.junior,
+        instrument=QuestionInstrument.big_five, text={"ru": "играть в салки"}, order=900_102,
     )
     db_session.add_all([question_a, question_b])
     await db_session.flush()
 
     fallback_pair = QuestionPair(
-        instrument=QuestionInstrument.big_five, age_tier=AgeGroup.junior,
+        instrument=QuestionInstrument.big_five,
         pair_index=900_001, question_a_id=question_a.id, question_b_id=question_b.id,
     )
     overridden_pair = QuestionPair(
-        instrument=QuestionInstrument.big_five, age_tier=AgeGroup.junior,
+        instrument=QuestionInstrument.big_five,
         pair_index=900_002, question_a_id=question_b.id, question_b_id=question_b.id,
-        option_a_text=f"{marker} рисовать комикс",
+        option_a_text={"ru": f"{marker} рисовать комикс"},
     )
     db_session.add_all([fallback_pair, overridden_pair])
     await db_session.flush()
@@ -494,17 +486,16 @@ async def test_question_pair_search_does_not_match_a_shadowed_fallback(
     marker = _marker()
     question = Question(
         instrument=QuestionInstrument.big_five,
-        text=f"{marker} скрытый текст",
-        order=0,
-        age_tier=AgeGroup.junior,
+        text={"ru": f"{marker} скрытый текст"},
+        order=900_103,
     )
     db_session.add(question)
     await db_session.flush()
 
     pair = QuestionPair(
-        instrument=QuestionInstrument.big_five, age_tier=AgeGroup.junior,
+        instrument=QuestionInstrument.big_five,
         pair_index=900_003, question_a_id=question.id, question_b_id=question.id,
-        option_a_text="видимый текст", option_b_text="видимый текст",
+        option_a_text={"ru": "видимый текст"}, option_b_text={"ru": "видимый текст"},
     )
     db_session.add(pair)
     await db_session.flush()
@@ -531,7 +522,7 @@ async def test_motivation_statements_can_be_fetched_one_triplet_at_a_time(
                 triplet_index=triplet_index,
                 order=order,
                 category=category,
-                text=f"Утверждение {order}",
+                text={"ru": f"Утверждение {order}"},
             )
         )
     await db_session.flush()

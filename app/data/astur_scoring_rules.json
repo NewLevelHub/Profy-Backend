@@ -1,0 +1,61 @@
+{
+  "comment": "АСТУР scoring formulas (PRO-427). Every result snapshot stores the version it was computed with; a published version is never edited — changing any number means adding a new version and pointing `current` at it. Thresholds are transparent product rules, not norms. `legacy-1` is only used once, to freeze attempts finished before PRO-427 (spatial subtest shown but not counted, as the formula had no spatial scale then). v3 = v2 + Latin vowels in the own-name quick command (a name typed in Latin, e.g. \"Arman\", was judged as consonant-initial in v2) + text folding (Unicode NFC, ё→е) when matching answers; also the first version with explicit answered/skipped item states.",
+  "current": "3",
+  "versions": {
+    "3": {
+      "overall_subtests": [
+        "awareness",
+        "analogies",
+        "classification",
+        "generalization",
+        "logical_schemas",
+        "numeric_series",
+        "geometric_figures"
+      ],
+      "profile_leading_min_pp": 15,
+      "profile_leading_min_items": 2,
+      "profile_min_answered_share": 0.8,
+      "math_gap_min_pp": 20,
+      "quick_min_on_time": 6,
+      "subtest_overtime_grace_sec": 30,
+      "blank_share_flag": 0.25,
+      "own_name_latin_vowels": true,
+      "fold_text": true
+    },
+    "2": {
+      "overall_subtests": [
+        "awareness",
+        "analogies",
+        "classification",
+        "generalization",
+        "logical_schemas",
+        "numeric_series",
+        "geometric_figures"
+      ],
+      "profile_leading_min_pp": 15,
+      "profile_leading_min_items": 2,
+      "profile_min_answered_share": 0.8,
+      "math_gap_min_pp": 20,
+      "quick_min_on_time": 6,
+      "subtest_overtime_grace_sec": 30,
+      "blank_share_flag": 0.25
+    },
+    "legacy-1": {
+      "overall_subtests": [
+        "awareness",
+        "analogies",
+        "classification",
+        "generalization",
+        "logical_schemas",
+        "numeric_series"
+      ],
+      "profile_leading_min_pp": 15,
+      "profile_leading_min_items": 2,
+      "profile_min_answered_share": 0.8,
+      "math_gap_min_pp": 20,
+      "quick_min_on_time": 6,
+      "subtest_overtime_grace_sec": 30,
+      "blank_share_flag": 0.25
+    }
+  }
+}

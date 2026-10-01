@@ -1,0 +1,18 @@
+{
+  "version": 5,
+  "comment": "Eligibility rules for the student-facing «Сильные стороны и интересы» cards (PRO-432). Loaded by app.config.load_student_strengths_rules. Changing a rule = edit here + bump `version`, NO code change (same contract as the other *_thresholds.json files). These are transparent product rules on top of each instrument's own bands, not norms. max_cards/max_per_domain: exactly 5 cards for a completed RIASEC assessment, at most 2 stronger cards per meaning domain; if fewer than 5 well-grounded strengths are available, the remaining places are filled by the student's relatively strongest RIASEC directions, explicitly worded as interests rather than abilities. Profile/onboarding subjects and hobbies are excluded. astur_*: an individual task skill (e.g. classification or numeric series) becomes a card only when the attempt's protocol_quality is ok, its accuracy is at least astur_min_percent, and it is among the student's astur_max_cards best skills; the timed commands need astur_quick_min_percent on-time accuracy. ddo_*: interest (0..max picks of a scale) and self-rated ability (0-3) are normalized separately and never compared raw; «Хочу + Могу» needs interest share >= ddo_interest_min_share AND ability >= ddo_ability_min; «Могу > Хочу» needs ability >= ddo_ability_only_min with interest share < ddo_ability_only_interest_max_share; a high «Хочу» without confidence is kept only as an interest, never as an ability. belbin_*: the leading role(s) must score >= belbin_min_score (8 roles share 70 points, 8.75 on average) and stay out of the avoidance zone; roles within belbin_tie_margin of the top are merged into one card (never a key-order winner), three or more such roles = no clear signal, no card. empathy_*: Boyko total in one of empathy_levels, a named channel needs >= empathy_channel_min of its 6 items. suppress_self_report_on_lie_flag: an Eysenck lie-scale-flagged protocol keeps only task results and interests — self-reports can't be read as confident strengths then.",
+  "max_cards": 5,
+  "max_per_domain": 2,
+  "astur_min_percent": 60,
+  "astur_max_cards": 2,
+  "astur_quick_min_percent": 70,
+  "ddo_interest_min_share": 0.6,
+  "ddo_ability_min": 2,
+  "ddo_ability_only_min": 3,
+  "ddo_ability_only_interest_max_share": 0.5,
+  "belbin_min_score": 12,
+  "belbin_tie_margin": 1,
+  "empathy_levels": ["average", "very_high"],
+  "empathy_channel_min": 5,
+  "suppress_self_report_on_lie_flag": true
+}

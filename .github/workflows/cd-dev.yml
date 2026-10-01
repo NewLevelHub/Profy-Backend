@@ -101,10 +101,10 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          # Default is 10m — too short for build_universities.py's first-run
-          # destructive rebuild (prune + reinsert every University/Program row)
-          # against a real database; every later run is a near no-op, but the
-          # timeout has to cover the slow first run too.
+          # University/program loading (build_universities.py) no longer runs
+          # here — see the comment near the bottom of this script — so 40m is
+          # generous headroom rather than a hard requirement; left this size
+          # in case that step is ever reinstated or another one grows slow.
           command_timeout: 40m
           envs: DOCKER_REGISTRY,DOCKER_USERNAME,DOCKER_PASSWORD,DOCKER_REPOSITORY,DEPLOY_PATH,EDGE_DEPLOY_PATH,COMMIT_SHA,PROFI_EDGE_NETWORK_NAME
           script: |
@@ -189,68 +189,84 @@ jobs:
             echo "Running seed scripts..."
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_riasec_questions.py
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_bigfive_questions.py
-            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_mi_questions.py
-            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_question_pairs.py
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_motivation_statements.py
-            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_motivation_pairs.py
+            # PRO-338: psychological block (ДДО, Eysenck, Elers, Boyko, Kondash) — content lives in `questions`
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_professional_types_questions.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_eysenck_questions.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_elers_questions.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_boyko_empathy_questions.py
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_kondash_anxiety_questions.py
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/seed_riasec_directions.py
             docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/apply_direction_content.py
-            # Universities/programs — single committed snapshot
-            # (scripts/data/university_snapshot.clean.json), one loader.
-            # Replaces the ~30-script seed/apply/backfill pipeline this block
-            # used to run (seed_kz_universities.py, seed_92_professions_universities.py,
-            # import_jinaq_universities.py, every apply_*/backfill_*/merge_* for
-            # universities). Deterministic uuid5 ids: on the FIRST run against a DB
-            # seeded the old way, this is a one-time destructive rebuild (every
-            # University/Program row gets pruned and reinserted under a new id —
-            # direction_roadmaps.program_id is nulled, ON DELETE SET NULL); every
-            # later run is a near no-op. See docs/content-pipeline-id-resolution-audit.md.
-            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/build_universities.py
-            # University photo files are named by the pre-canonicalization slugs;
-            # build_universities.py's dedup + canonical-slug pass renames ~220
-            # university slugs, so rename the matching <slug>.webp / <slug>.card.webp
-            # in the shared media folder to match (idempotent — already-renamed
-            # files are skipped). Run inside the api_dev container against /srv/media,
-            # the same shared media path the prod pipeline mounts read-write.
-            if docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev test -d /srv/media/universities; then
-              docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/rename_university_photos.py --media-dir /srv/media --apply
-            fi
+            # PRO-427: freeze result snapshots of АСТУР attempts finished before
+            # snapshots existed (idempotent — a no-op once done).
+            docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/backfill_astur_legacy_snapshots.py
+            # Universities/programs (scripts/data/university_snapshot.clean.json)
+            # removed from every-deploy CD (2026-09-28): the snapshot changes
+            # rarely (twice total as of this date, last 2026-09-02) and
+            # build_universities.py is the slowest step in this whole script —
+            # up to ~40m on a full rebuild, and a real DB round-trip diffing
+            # ~12.4k programs even on a no-op run. Run manually after editing
+            # the snapshot (see its own docstring for the full explanation —
+            # deterministic uuid5 ids, prune-then-upsert, admin-lock-aware):
+            #   docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/build_universities.py
+            #   docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/rename_university_photos.py --media-dir /srv/media --apply
 
-            # Reload edge nginx (prod path) so Host:dev.profy.newlevelhub.kz is routed.
+            # Reload edge nginx (prod path) so Host:dev.profile.newlevelhub.kz is routed.
             # Certs under /etc/letsencrypt need root - write via docker volume mount.
             # Do not fail the whole deploy if edge nginx reload cannot run.
             if [ -n "$EDGE_DEPLOY_PATH" ] && [ -f "$EDGE_DEPLOY_PATH/docker-compose.prod.yml" ]; then
               echo "Reloading edge nginx from $EDGE_DEPLOY_PATH ..."
-              DEV_CERT_DIR="/etc/letsencrypt/live/dev.profy.newlevelhub.kz"
+              DEV_CERT_DIR="/etc/letsencrypt/live/dev.profile.newlevelhub.kz"
               if [ ! -f "$DEV_CERT_DIR/fullchain.pem" ]; then
                 echo "Creating temporary self-signed cert via docker..."
                 if docker run --rm -v /etc/letsencrypt:/etc/letsencrypt alpine:3.20 sh -c '
                   apk add --no-cache openssl >/dev/null
-                  mkdir -p /etc/letsencrypt/live/dev.profy.newlevelhub.kz
+                  mkdir -p /etc/letsencrypt/live/dev.profile.newlevelhub.kz
                   openssl req -x509 -nodes -newkey rsa:2048 -days 30 \
-                    -keyout /etc/letsencrypt/live/dev.profy.newlevelhub.kz/privkey.pem \
-                    -out /etc/letsencrypt/live/dev.profy.newlevelhub.kz/fullchain.pem \
-                    -subj /CN=dev.profy.newlevelhub.kz
-                  chmod 755 /etc/letsencrypt /etc/letsencrypt/live /etc/letsencrypt/live/dev.profy.newlevelhub.kz || true
-                  chmod 644 /etc/letsencrypt/live/dev.profy.newlevelhub.kz/fullchain.pem || true
-                  chmod 600 /etc/letsencrypt/live/dev.profy.newlevelhub.kz/privkey.pem || true
+                    -keyout /etc/letsencrypt/live/dev.profile.newlevelhub.kz/privkey.pem \
+                    -out /etc/letsencrypt/live/dev.profile.newlevelhub.kz/fullchain.pem \
+                    -subj /CN=dev.profile.newlevelhub.kz
+                  chmod 755 /etc/letsencrypt /etc/letsencrypt/live /etc/letsencrypt/live/dev.profile.newlevelhub.kz || true
+                  chmod 644 /etc/letsencrypt/live/dev.profile.newlevelhub.kz/fullchain.pem || true
+                  chmod 600 /etc/letsencrypt/live/dev.profile.newlevelhub.kz/privkey.pem || true
                 '; then
                   echo "Self-signed cert created. Replace later with:"
-                  echo "  certbot certonly --webroot -w $EDGE_DEPLOY_PATH/certbot/www -d dev.profy.newlevelhub.kz"
+                  echo "  certbot certonly --webroot -w $EDGE_DEPLOY_PATH/certbot/www -d dev.profile.newlevelhub.kz"
                 else
                   echo "WARN: could not create cert - skipping nginx reload"
                 fi
               fi
               if [ -f "$DEV_CERT_DIR/fullchain.pem" ]; then
                 cd "$EDGE_DEPLOY_PATH"
+                # Renew Let's Encrypt certs if within 30 days of expiry — same block
+                # as cd.yml, see the comment there.
+                mkdir -p certbot/www
+                if ! flock /tmp/profi-edge-nginx.lock docker run --rm \
+                    -v /etc/letsencrypt:/etc/letsencrypt \
+                    -v "$PWD/certbot/www:/var/www/certbot" \
+                    certbot/certbot renew --non-interactive --webroot -w /var/www/certbot; then
+                  echo "WARN: certbot renew failed — certificates in /etc/letsencrypt may expire"
+                fi
                 # main's cd.yml writes to the same server-side nginx.conf and restarts
                 # the same shared profi_nginx_prod container — flock-guard to avoid the
                 # two pipelines interleaving when both land close together.
+                #
+                # Recreate ONLY nginx, never the prod api it depends_on:
+                # - `--no-deps`: without it `up nginx` also recreates `api`
+                #   (nginx `depends_on: api` in docker-compose.prod.yml).
+                # - `env -u API_IMAGE`: this script exported API_IMAGE as the
+                #   DEV image for api_dev above, and a shell variable beats
+                #   `--env-file` — so compose would resolve prod's
+                #   `${API_IMAGE}` to the dev build. Together these made every
+                #   dev deploy replace profi_api_prod with the dev image
+                #   (found 2026-10-01: prod was running dev-sha-c59c86e and its
+                #   DB had been migrated by dev migrations).
                 flock /tmp/profi-edge-nginx.lock -c '
                   if [ -f nginx.prod.conf ]; then
                     cp nginx.prod.conf nginx.conf
                   fi
-                  docker compose --env-file .env.production -f docker-compose.prod.yml up -d --force-recreate nginx
+                  env -u API_IMAGE docker compose --env-file .env.production -f docker-compose.prod.yml up -d --force-recreate --no-deps nginx
                 '
               else
                 echo "WARN: no cert at $DEV_CERT_DIR - edge nginx not reloaded"

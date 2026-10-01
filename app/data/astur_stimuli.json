@@ -1,0 +1,125 @@
+{
+  "comment": "АСТУР stimulus images (PRO-427 §12). Files live in Profy-Frontend/public/<path> and are immutable: a changed picture is a new file under a new folder (v2/...), never an overwrite. A bank item may pin its stimulus by copying its entry here into item[\"stimulus\"]; publish then checks it against this manifest, and the checksum becomes part of the version content hash.",
+  "items": {
+    "geometric_figures-01": {
+      "target": {
+        "path": "astur-figures/v1/geometric_figures-01-target.png",
+        "sha256": "d51e9fe003b68a7139b59db5baf06f78e7d3f91168c76b85ab65df997a646c67"
+      },
+      "options": {
+        "А": {
+          "path": "astur-figures/v1/geometric_figures-01-a.png",
+          "sha256": "9dd4b36d1e10f17975689412385d1fafcc6ea94746edb9ea8d5fa0e9f7e8bb3c"
+        },
+        "Б": {
+          "path": "astur-figures/v1/geometric_figures-01-b.png",
+          "sha256": "ae648ace0b90b01f1c32ac2020446158e234f29e111e199eeadc0da765e257d1"
+        },
+        "В": {
+          "path": "astur-figures/v1/geometric_figures-01-v.png",
+          "sha256": "80ba1c38a1661472eb4893fa85909556adbab1f11e0f608df93864604210e853"
+        },
+        "Г": {
+          "path": "astur-figures/v1/geometric_figures-01-g.png",
+          "sha256": "49809031658216f1f25ff2df1a4ed5a561c24679ace8b0ebe3a2ade40fa26863"
+        }
+      }
+    },
+    "geometric_figures-02": {
+      "target": {
+        "path": "astur-figures/v1/geometric_figures-02-target.png",
+        "sha256": "f5fd1ca4ba64129cca9cc890a445272a329e0b0729b05079c1f587e2995b850c"
+      },
+      "options": {
+        "А": {
+          "path": "astur-figures/v1/geometric_figures-02-a.png",
+          "sha256": "495b687960c7be2352cc662b2fb2c4d7f02f39d596bbf3bebba9402e8d2ba399"
+        },
+        "Б": {
+          "path": "astur-figures/v1/geometric_figures-02-b.png",
+          "sha256": "4e82d0605b4b84e2cd355b1f5d7308253472796499a328ea9e86b1139808affe"
+        },
+        "В": {
+          "path": "astur-figures/v1/geometric_figures-02-v.png",
+          "sha256": "e2aee6684b0b36358eea3059a80cfaa3552ab16ba3142140069f91a5c8aef966"
+        },
+        "Г": {
+          "path": "astur-figures/v1/geometric_figures-02-g.png",
+          "sha256": "62a096d3e46001fa2b9c86d87ebfa6dd2ef9363f79d0d4e2d6a734b9ce43ddef"
+        }
+      }
+    },
+    "geometric_figures-03": {
+      "target": {
+        "path": "astur-figures/v1/geometric_figures-03-target.png",
+        "sha256": "f25bbb18fdfd04588edcfe6f26ba320ed8405ce7828be2fd18b2b356832a83c2"
+      },
+      "options": {
+        "А": {
+          "path": "astur-figures/v1/geometric_figures-03-a.png",
+          "sha256": "c0ba86b0db2dfaa61e0199b042388ff5ac03b7809620a49c686ace03bd55c6e3"
+        },
+        "Б": {
+          "path": "astur-figures/v1/geometric_figures-03-b.png",
+          "sha256": "72a7f22a88907971b22308731bc02cb2b8aeac863bbe76a8a6e3b9af6a850634"
+        },
+        "В": {
+          "path": "astur-figures/v1/geometric_figures-03-v.png",
+          "sha256": "a356583067ff9756b824f8bd27c227bf03a7b7baf840012dc8d1252a51156669"
+        },
+        "Г": {
+          "path": "astur-figures/v1/geometric_figures-03-g.png",
+          "sha256": "310f77591a6d81c72f06b79ef09a41280aa9bc125461c474103fd7b0e6eb58a9"
+        }
+      }
+    },
+    "geometric_figures-04": {
+      "target": {
+        "path": "astur-figures/v1/geometric_figures-04-target.png",
+        "sha256": "7fc1aa36d25d88c37e6886677046e0e9f3510126db8e16e2262f69d33ec20964"
+      },
+      "options": {
+        "А": {
+          "path": "astur-figures/v1/geometric_figures-04-a.png",
+          "sha256": "0d54b8d08c1632e90f7d707dd95b8dd44c57064d17cf749571d3e9b873d681fd"
+        },
+        "Б": {
+          "path": "astur-figures/v1/geometric_figures-04-b.png",
+          "sha256": "a15d8a19f5742f4d72d468294722c34be6110232ed11e195166d0c0a21227fa4"
+        },
+        "В": {
+          "path": "astur-figures/v1/geometric_figures-04-v.png",
+          "sha256": "75c22cfa2a5908eb4e8408a8ede882157bffffc1fd89883e7be0006df342b562"
+        },
+        "Г": {
+          "path": "astur-figures/v1/geometric_figures-04-g.png",
+          "sha256": "11adf0831f22084b44ed9a79e782ea8f158802abdf8e00871ea090827ec7cc1c"
+        }
+      }
+    },
+    "geometric_figures-05": {
+      "target": {
+        "path": "astur-figures/v1/geometric_figures-05-target.png",
+        "sha256": "2274d6ffce3bad503c53e3d7c4cccd209b7082fea93e95204dc5542993d0c236"
+      },
+      "options": {
+        "А": {
+          "path": "astur-figures/v1/geometric_figures-05-a.png",
+          "sha256": "f6731188a6539fe1f13b8a1b5d1ea142dd096a344c1d42d095d0927b6933849b"
+        },
+        "Б": {
+          "path": "astur-figures/v1/geometric_figures-05-b.png",
+          "sha256": "77b9683203a4744452c2b1543dc14d40867c4854baf23432d14b277b3d855465"
+        },
+        "В": {
+          "path": "astur-figures/v1/geometric_figures-05-v.png",
+          "sha256": "c281e70a709f11ebae7916e9680f905dbccdb1e945ada61323036c69e00b6f85"
+        },
+        "Г": {
+          "path": "astur-figures/v1/geometric_figures-05-g.png",
+          "sha256": "8c9eba9d540a94fb5deb3c9dee267355502d06bd4f2f67cef578806f20d6c0a4"
+        }
+      }
+    }
+  }
+}

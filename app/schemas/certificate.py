@@ -1,5 +1,6 @@
 from pydantic import BaseModel, model_validator
 
+from app.i18n.catalog import key as i18n_key
 from app.models.certificate import CertificateType
 
 # Valid score ranges per exam. Mirrors the frontend's CERTIFICATE_CONFIG
@@ -21,7 +22,7 @@ class CertificateItem(BaseModel):
     def _validate_score_range(self) -> "CertificateItem":
         low, high = SCORE_RANGES[self.type]
         if not (low <= self.score <= high):
-            raise ValueError(f"score for {self.type.value} must be between {low} and {high}")
+            raise ValueError(i18n_key("api_errors", "certificate_score_out_of_range").format(type=self.type.value, low=low, high=high))
         return self
 
 

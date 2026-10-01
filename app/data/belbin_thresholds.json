@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "comment": "Belbin BTRSPI role-interpretation cut-off (epic PRO-338, Ф2.5). Loaded by app.config.load_belbin_thresholds. Changing the threshold = edit here + bump `version`, NO code change (same contract as validity_thresholds.json / eysenck_thresholds.json). avoidance_max_score=3: source spec says roles scoring '<4-5' are an avoidance zone (delegate to others) — >3 (i.e. 4+) taken as the clear boundary, same 'take the stricter bound from a fuzzy range' resolution already used for Eysenck's lie scale (Тикеты-новые-тесты/03-Фаза2-Белбин.md Ф2.5).",
+  "avoidance_max_score": 3
+}

@@ -60,7 +60,7 @@ services:
       # in .env.production, STORAGE_FS_ROOT=/srv/media). Read-write so the
       # scripts/import_*_photos.py jobs can add files; nginx mounts the same
       # folder read-only. MEDIA_DIR is the host path (see docs) — the same
-      # folder also backs dev.profy.newlevelhub.kz, which has no nginx of its own.
+      # folder also backs dev.profile.newlevelhub.kz, which has no nginx of its own.
       - ${MEDIA_DIR:-/srv/profy-media}:/srv/media
     depends_on:
       db:

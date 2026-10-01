@@ -43,7 +43,7 @@
     },
     {
       "slug": "arhivarius",
-      "name": "Архивариус",
+      "name": "Архивист",
       "holland_code": "CSE"
     },
     {
@@ -63,7 +63,7 @@
     },
     {
       "slug": "bibliotekar",
-      "name": "Библиотекарь",
+      "name": "Специалист по информационным ресурсам",
       "holland_code": "SAI"
     },
     {
@@ -73,7 +73,7 @@
     },
     {
       "slug": "birzhevoy-broker",
-      "name": "Биржевой брокер",
+      "name": "Трейдер / брокер",
       "holland_code": "ESI"
     },
     {
@@ -113,12 +113,12 @@
     },
     {
       "slug": "direktor-po-logistike",
-      "name": "Директор по логистике",
+      "name": "Менеджер по цепям поставок",
       "holland_code": "ESC"
     },
     {
       "slug": "direktor-po-marketingu",
-      "name": "Директор по маркетингу",
+      "name": "Digital-маркетолог",
       "holland_code": "ESA"
     },
     {
@@ -203,7 +203,7 @@
     },
     {
       "slug": "gid-ekskursovod",
-      "name": "Гид-экскурсовод",
+      "name": "Гид / менеджер по туризму",
       "holland_code": "SEA"
     },
     {
@@ -403,12 +403,12 @@
     },
     {
       "slug": "modeler",
-      "name": "Модельер",
+      "name": "Дизайнер одежды",
       "holland_code": "ASR"
     },
     {
       "slug": "modnyy-stilist",
-      "name": "Модный стилист",
+      "name": "Стилист-имиджмейкер",
       "holland_code": "ASE"
     },
     {
@@ -548,7 +548,7 @@
     },
     {
       "slug": "sekretar-deloproizvoditel",
-      "name": "Секретарь-делопроизводитель",
+      "name": "Офис-менеджер",
       "holland_code": "ESC"
     },
     {
@@ -580,11 +580,6 @@
       "slug": "spetsialist-po-iskusstvennomu-intellektu",
       "name": "Специалист по искусственному интеллекту",
       "holland_code": "IRA"
-    },
-    {
-      "slug": "spetsialist-po-kadrovomu-deloproizvodstvu",
-      "name": "Специалист по кадровому делопроизводству",
-      "holland_code": "ESC"
     },
     {
       "slug": "spetsialist-po-mediakommunikatsiyam",
@@ -668,7 +663,7 @@
     },
     {
       "slug": "upravlyayuschiy-fermerskim-hozyaystvom",
-      "name": "Управляющий фермерским хозяйством",
+      "name": "Агроменеджер",
       "holland_code": "ESR"
     },
     {
@@ -698,7 +693,7 @@
     },
     {
       "slug": "vospitatel-detskogo-sada",
-      "name": "Воспитатель детского сада",
+      "name": "Педагог дошкольного образования",
       "holland_code": "SAE"
     },
     {

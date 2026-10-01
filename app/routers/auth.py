@@ -2,9 +2,11 @@ import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_user
+from app.i18n import KNOWN_LOCALES, normalize_locale
 from app.models.user import User
 from app.schemas.auth import (
     ForgotPasswordRequest,
@@ -15,6 +17,7 @@ from app.schemas.auth import (
     ResendVerificationRequest,
     ResetPasswordRequest,
     TokenResponse,
+    UpdateMeRequest,
     UserResponse,
     VerifyEmailRequest,
     VerifyResetCodeRequest,
@@ -56,7 +59,7 @@ async def _check_rate_limit(key: str, limit: int, window: int) -> None:
     if count > limit:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many requests. Please try again later.",
+            detail=i18n_key("api_errors", "rate_limit_exceeded", locale="ru"),
         )
 
 
@@ -64,8 +67,12 @@ async def _check_rate_limit(key: str, limit: int, window: int) -> None:
 async def register(body: RegisterRequest, request: Request, db: AsyncSession = Depends(get_db)):
     client_ip = _client_ip(request)
     await _check_rate_limit(f"register_ip:{client_ip}", _REGISTER_IP_LIMIT, _REGISTER_IP_WINDOW)
+    # Seed the new user's UI locale from Accept-Language. KNOWN_LOCALES (not the
+    # runtime gate) so a "kk" browser preference is preserved for KZ-603; the
+    # user can still change it via PATCH /auth/me.
+    locale = normalize_locale(request.headers.get("accept-language"), allowed=KNOWN_LOCALES)
     try:
-        return await auth_service.register(body.email, body.password, db)
+        return await auth_service.register(body.email, body.password, db, locale=locale)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
@@ -116,7 +123,7 @@ async def resend_verification(body: ResendVerificationRequest, db: AsyncSession 
     if await redis.exists(rate_key):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Please wait 60 seconds before requesting a new code",
+            detail=i18n_key("api_errors", "verification_resend_too_soon", locale="ru"),
         )
 
     await redis.set(rate_key, "1", ex=60)
@@ -129,6 +136,26 @@ async def resend_verification(body: ResendVerificationRequest, db: AsyncSession 
 
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+@router.patch("/me", response_model=UserResponse)
+async def update_me(
+    body: UpdateMeRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    locale_changed = current_user.locale != body.locale
+    current_user.locale = body.locale
+    current_user.locale_explicit = True
+    await db.commit()
+    await db.refresh(current_user)
+    if locale_changed:
+        # The report is generated in the owner's language (KZ-403/405); drop
+        # the cached owner-locale pointer + per-locale report cache so the
+        # next /result read resolves the new language (KZ-406).
+        from app.services import report_service
+        await report_service.invalidate_owner_locale_cache(current_user.id, db)
     return current_user
 
 
@@ -145,7 +172,7 @@ async def forgot_password(body: ForgotPasswordRequest, request: Request, db: Asy
         # случаях, иначе форма становится оракулом для перебора почт. Тот же
         # приём, что и в /resend-verification выше.
         pass
-    return {"message": "If an account exists, a reset code has been sent."}
+    return {"message": i18n_key("api_messages", "password_reset_requested")}
 
 
 @router.post("/verify-reset-code", status_code=status.HTTP_200_OK)
@@ -156,7 +183,7 @@ async def verify_reset_code(body: VerifyResetCodeRequest, db: AsyncSession = Dep
     try:
         await password_reset_service.verify_code(body.email, body.code, db)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired code")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=i18n_key("api_errors", "invalid_or_expired_code", locale="ru"))
     return {"valid": True}
 
 
@@ -168,5 +195,5 @@ async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(
     try:
         await password_reset_service.reset_password(body.email, body.code, body.new_password, db)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired code")
-    return {"message": "Password has been reset successfully."}
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=i18n_key("api_errors", "invalid_or_expired_code", locale="ru"))
+    return {"message": i18n_key("api_messages", "password_reset_completed")}

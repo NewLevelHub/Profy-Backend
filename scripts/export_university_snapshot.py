@@ -18,7 +18,7 @@ What is deliberately left out:
   - `id` / `university_id` — a per-database `uuid4()` (see PRO-244). Rows are
     identified in the file by portable keys instead: jinaq external id, slug,
     ror_id, ovpo_code, plus name/city/country.
-  - users, assessments, roadmaps, `university_images` (photos live in a
+  - users, assessments, `university_images` (photos live in a
     slug-keyed folder, not the DB) — not part of "what makes the catalogue".
 
 Output is sorted (universities by country+name+slug, programs by name,

@@ -8,7 +8,6 @@ llm_client`), so patching `llm_client.complete_json` here is exactly what
 """
 import logging
 
-from app.models.profile import AgeGroup
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
 from app.services import llm_client, report_narrative_service as service
 from app.services.report_narrative_fallback import build_fallback_narrative
@@ -17,8 +16,6 @@ from app.services.report_narrative_validator import validate
 
 def _senior_context() -> ReportNarrativeContext:
     return ReportNarrativeContext(
-        age_group=AgeGroup.senior.value,
-        interest_instrument="riasec",
         evidence=[
             EvidenceItem(source_id="riasec:R", source_type="riasec_category", text="Реалистичный"),
             EvidenceItem(source_id="riasec:I", source_type="riasec_category", text="Исследовательский"),
@@ -182,3 +179,34 @@ async def test_generation_exception_logging_only_names_the_exception_class(monke
 
     assert raw_leak not in caplog.text
     assert "LLMError" in caplog.text
+
+
+async def test_llm_disabled_does_not_record_a_validation_fallback_metric(monkeypatch):
+    """Review finding: with the LLM off, the deterministic narrative is the
+    intended path — it must not bump llm.fallback:reason=validation or log a
+    fallback warning, or the fallback-rate alert fires just because a config
+    flag is off."""
+    monkeypatch.setattr(llm_client, "is_enabled", lambda: False)
+    service._metric_counts.clear()
+
+    context = _senior_context()
+    _, is_ai = await service.generate_report_narrative(context, language="kk")
+
+    assert is_ai is False
+    assert service.metric_counts() == {}
+
+
+async def test_llm_enabled_but_all_attempts_invalid_still_records_validation_fallback(monkeypatch):
+    """The metric must still fire for a real validation failure (LLM on)."""
+    monkeypatch.setattr(llm_client, "is_enabled", lambda: True)
+    service._metric_counts.clear()
+    context = _senior_context()
+    # valid shape, but summary is one sentence -> fails _check_summary_sentence_count
+    bad = build_fallback_narrative(context).model_dump()
+    bad["summary"] = "Слишком коротко."
+    monkeypatch.setattr(llm_client, "complete_json", _payload_queue(bad, bad, bad))
+
+    _, is_ai = await service.generate_report_narrative(context)
+
+    assert is_ai is False
+    assert service.metric_counts().get("llm.fallback:reason=validation", 0) >= 1

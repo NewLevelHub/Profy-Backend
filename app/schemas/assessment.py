@@ -21,5 +21,7 @@ class AssessmentResponse(BaseModel):
     created_at: datetime
     secondary_goals: list[AssessmentGoal] = []
     goal_changed_count: int = 0
+    belbin_completed: bool = False
+    astur_completed: bool = False
 
     model_config = {"from_attributes": True}

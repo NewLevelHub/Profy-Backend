@@ -2,20 +2,36 @@ import uuid
 from collections.abc import AsyncGenerator
 
 import httpx
+import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app import i18n
 from app.database import engine, get_db
 from app.main import app as fastapi_app
 from app.models.user import User, UserRole
 from app.services import (
     assessment_shared,
     auth_service,
-    direction_inquiry_service,
     report_service,
-    roadmap_builder,
 )
 from app.routers import auth as auth_router
+
+
+@pytest.fixture(autouse=True)
+def _reset_request_locale() -> AsyncGenerator[None, None]:
+    """`get_current_user` (and the HTTP middleware) call `i18n.set_locale`,
+    which sets a `ContextVar` without holding a reset token. In the HTTP path
+    the middleware resets its own token; called directly from a test (or, later,
+    a WebSocket / worker path) it would leak the value into the next test and
+    make the already order-sensitive suite worse. Snapshot and restore the
+    request-locale ContextVar around every test.
+    """
+    token = i18n._current_locale.set(i18n.DEFAULT_LOCALE)
+    try:
+        yield
+    finally:
+        i18n._current_locale.reset(token)
 
 
 @pytest_asyncio.fixture
@@ -46,8 +62,6 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 _REDIS_SINGLETON_MODULES = (
     assessment_shared,
     report_service,
-    roadmap_builder,
-    direction_inquiry_service,
     auth_router,
 )
 
@@ -63,9 +77,8 @@ async def _dispose_engine_pool_per_loop() -> AsyncGenerator[None, None]:
     await engine.dispose()
 
     # Same issue, same fix, for every module-level Redis singleton (not just
-    # assessment_shared._redis — report_service, roadmap_builder,
-    # direction_inquiry_service and app.routers.auth each lazily build their
-    # own): it's bound to whichever event loop was running when
+    # assessment_shared._redis — report_service and app.routers.auth each
+    # lazily build their own): it's bound to whichever event loop was running when
     # get_redis()/_get_redis() first constructed it, so a later test's fresh
     # loop hits "Event loop is closed" the moment it tries to reuse that
     # connection. Close it and drop the reference so the next test that
@@ -74,6 +87,21 @@ async def _dispose_engine_pool_per_loop() -> AsyncGenerator[None, None]:
         if module._redis is not None:
             await module._redis.aclose()
             module._redis = None
+
+    # Redis data (unlike the DB, which each test rolls back) otherwise persists
+    # across tests — notably the auth router's `_check_rate_limit` counters
+    # (`register_ip:*`, `forgot_pwd_*`, `verify_*`), which accumulate over a
+    # run and make a later test's first `/register` or `/forgot-password` 429.
+    # Flush between tests so every test starts from clean Redis state.
+    import redis.asyncio as _aioredis
+
+    from app.config import settings as _settings
+
+    _flush_client = _aioredis.from_url(_settings.REDIS_URL)
+    try:
+        await _flush_client.flushdb()
+    finally:
+        await _flush_client.aclose()
 
 
 @pytest_asyncio.fixture
