@@ -251,11 +251,22 @@ jobs:
                 # main's cd.yml writes to the same server-side nginx.conf and restarts
                 # the same shared profi_nginx_prod container — flock-guard to avoid the
                 # two pipelines interleaving when both land close together.
+                #
+                # Recreate ONLY nginx, never the prod api it depends_on:
+                # - `--no-deps`: without it `up nginx` also recreates `api`
+                #   (nginx `depends_on: api` in docker-compose.prod.yml).
+                # - `env -u API_IMAGE`: this script exported API_IMAGE as the
+                #   DEV image for api_dev above, and a shell variable beats
+                #   `--env-file` — so compose would resolve prod's
+                #   `${API_IMAGE}` to the dev build. Together these made every
+                #   dev deploy replace profi_api_prod with the dev image
+                #   (found 2026-10-01: prod was running dev-sha-c59c86e and its
+                #   DB had been migrated by dev migrations).
                 flock /tmp/profi-edge-nginx.lock -c '
                   if [ -f nginx.prod.conf ]; then
                     cp nginx.prod.conf nginx.conf
                   fi
-                  docker compose --env-file .env.production -f docker-compose.prod.yml up -d --force-recreate nginx
+                  env -u API_IMAGE docker compose --env-file .env.production -f docker-compose.prod.yml up -d --force-recreate --no-deps nginx
                 '
               else
                 echo "WARN: no cert at $DEV_CERT_DIR - edge nginx not reloaded"
