@@ -36,7 +36,7 @@ services:
 
   # No storage service here — university photos are plain files on disk
   # (STORAGE_BACKEND=fs). dev has no nginx of its own: the prod-stack edge
-  # nginx serves /media/ for dev.profy.newlevelhub.kz from the same host
+  # nginx serves /media/ for dev.profile.newlevelhub.kz from the same host
   # folder, so api_dev bind-mounts that folder too (read-write, for the
   # scripts/import_*_photos.py jobs). Set STORAGE_BACKEND=fs and
   # STORAGE_FS_ROOT=/srv/media in .env.development; MEDIA_DIR must match the

@@ -173,7 +173,7 @@ profi-backend/
 
 ## Деплой
 
-Push в `dev` или `main` триггерит `.github/workflows/cd-dev.yml` / `cd.yml`: сборка образа → деплой на соответствующий сервер → миграции → полный прогон seed-скриптов и `build_universities.py`. `dev.profy.newlevelhub.kz` и `profy.newlevelhub.kz` обслуживаются одним общим edge-nginx контейнером на проде — при правках `nginx.prod.conf` см. `docs/nginx-prod-points-to-dev-incident.md`. Фото на сервер кладутся один раз вручную (`/srv/profy-media`, монтируется в контейнеры как `/srv/media`) — CI их не трогает.
+Push в `dev` или `main` триггерит `.github/workflows/cd-dev.yml` / `cd.yml`: сборка образа → деплой на соответствующий сервер → миграции → полный прогон seed-скриптов и `build_universities.py`. `dev.profile.newlevelhub.kz` и `profy.newlevelhub.kz` обслуживаются одним общим edge-nginx контейнером на проде — при правках `nginx.prod.conf` см. `docs/nginx-prod-points-to-dev-incident.md`. Фото на сервер кладутся один раз вручную (`/srv/profy-media`, монтируется в контейнеры как `/srv/media`) — CI их не трогает.
 
 ## Дополнительная документация
 
