@@ -176,7 +176,7 @@ async def item_analytics(
             timings[key].append(ms)
 
     subtests = []
-    for subtest in sorted(published.bank.subtests, key=lambda s: s.number):
+    for subtest in published.bank.ordered_subtests():
         stats = (
             _quick_item_stats(subtest, runs)
             if subtest.key == QUICK_INSTRUCTIONS_KEY

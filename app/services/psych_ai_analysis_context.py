@@ -100,7 +100,10 @@ def build_context(
         add("motivation", {"highlights": report.motivation_highlights})
 
     if report.psychoemotional:
-        add("psychoemotional", report.psychoemotional.model_dump())
+        # The specialist-facing interpretation texts (PRO-448) stay out: the
+        # model reads the metrics, and leaving them out keeps the context
+        # fingerprint of already cached analyses unchanged.
+        add("psychoemotional", report.psychoemotional.model_dump(exclude={"interpretation"}))
 
     if new_tests.professional_types:
         add("professional_types", new_tests.professional_types.model_dump(exclude_none=True))
