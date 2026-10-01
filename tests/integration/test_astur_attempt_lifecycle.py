@@ -356,7 +356,8 @@ async def test_retake_after_a_publish_uses_the_new_version(client: AsyncClient, 
 
     body = await open_attempt(client, assessment.id, headers, retake=True)
     assert body["run"]["bank_version"] == v2.version
-    assert body["content"]["subtests"][0]["items"][0]["options"] == ["вариант А", "вариант Б"]
+    # Served shuffled (PRO-441) — the new version is in the set, not the order.
+    assert sorted(body["content"]["subtests"][0]["items"][0]["options"]) == ["вариант А", "вариант Б"]
 
 
 # ── protocol ────────────────────────────────────────────────────────────────
