@@ -52,6 +52,7 @@ from app.services import (
 )
 from app.services.bigfive_content import strength_phrases
 from app.services.motivation_content import highlight_phrases as motivation_highlight_phrases
+from app.services.psychoemotional import interpretation as psychoemotional_interpretation
 from app.services.psychoemotional import scoring as psychoemotional_scoring
 from app.services.report_narrative_service import (
     generate_report_narrative,
@@ -586,6 +587,7 @@ async def _build_psychoemotional_section(
         vk_value=m["vk"]["value"],
         vk_level=m["vk"]["level"],
         black_first=list(latest.list2)[0] == 7,
+        interpretation=psychoemotional_interpretation.interpret(m, list(latest.list2)),
     )
 
 

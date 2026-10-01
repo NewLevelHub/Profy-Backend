@@ -126,6 +126,51 @@ class PsychoEmotionalCompensation(BaseModel):
     model_config = _model_config
 
 
+class PsychoEmotionalHighlight(BaseModel):
+    """Тема для уточнения: связка / тревога / компенсация.
+
+    ``position_depth`` — только удалённость цвета от нейтральной зоны по
+    правилам метода. Это не вероятность, не тяжесть состояния и не оценка
+    клинического риска; поле нужно лишь для устойчивого порядка тем.
+    """
+
+    key: str
+    text: str
+    position_depth: Literal[1, 2, 3]
+    model_config = _model_config
+
+
+class PsychoEmotionalIndexNote(BaseModel):
+    """Абзац к уровню индекса тревоги / СО / ВК."""
+
+    metric: Literal["anxiety", "so", "vk"]
+    level: str
+    text: str
+    model_config = _model_config
+
+
+class PsychoEmotionalPositionNote(BaseModel):
+    """Толкование пары цветов функциональной группы в порядке списка 2;
+    `plus_minus` — контраст [первый, последний] цвет без диагностического веса."""
+
+    sign: Literal["plus", "cross", "equal", "minus", "plus_minus"]
+    colors: list[int]
+    text: str
+    model_config = _model_config
+
+
+class PsychoEmotionalInterpretation(BaseModel):
+    """Текстовое толкование для специалиста (PRO-448), собранное
+    `app/services/psychoemotional/interpretation.py` из статического каталога
+    на языке зрителя. Порядок блоков = порядок чтения."""
+
+    reading: list[str] = Field(default_factory=list)  # насколько доверять прохождению
+    highlights: list[PsychoEmotionalHighlight] = Field(default_factory=list)
+    indices: list[PsychoEmotionalIndexNote] = Field(default_factory=list)
+    positions: list[PsychoEmotionalPositionNote] = Field(default_factory=list)
+    model_config = _model_config
+
+
 class PsychoEmotionalHistoryItem(BaseModel):
     """Компактная строка предыдущего прохождения для динамики (§B8)."""
 
@@ -152,10 +197,11 @@ class PsychoEmotionalSection(BaseModel):
     взрослая…» и тексты направлений структурных индексов — на фронте
     (psychEmotional namespace, PRO-293).
 
-    Текстовые подсказки-гипотезы (был `hints: list[str]`, PRO-304/307) убраны
-    по решению владельца: адресат — дипломированный психолог, готовые
-    формулировки по ресёрчу ему не нужны и могут сбивать с толку. Трактовка
-    метрик/раскладок — целиком за специалистом."""
+    Текстовое толкование (`interpretation`) вернулось по запросу специалистов
+    (PRO-448, 2026-09-30): раньше (`hints`, PRO-304/307) его убирали, считая,
+    что психологу готовые формулировки не нужны, но специалисты попросили
+    развёрнутую трактовку по позициям. Тексты — гипотезы для беседы, не вывод;
+    сырые метрики остаются рядом."""
 
     consent_ok: bool = False
     thresholds_version: int | None = None
@@ -198,6 +244,9 @@ class PsychoEmotionalSection(BaseModel):
     # Отдельный красный флаг (§B6): чёрный (ID 7) на позиции 1 — подростковый
     # маркер риска, подсветка для беседы, не автоматический вывод.
     black_first: bool
+
+    # Текстовое толкование на языке зрителя (PRO-448)
+    interpretation: PsychoEmotionalInterpretation = Field(default_factory=PsychoEmotionalInterpretation)
 
     model_config = _model_config
 

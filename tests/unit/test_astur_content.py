@@ -1,6 +1,7 @@
 """Public АСТУР content served to the test-taker (PRO-430, PRO-441)."""
 import uuid
 
+from app.services.astur.bank import parse_bank
 from app.services.astur.content import build_content
 from tests.astur_fixtures import v1_bank
 
@@ -19,6 +20,19 @@ def _served_subtest(content: dict, key: str) -> dict:
 
 def _build(bank, run_id: uuid.UUID) -> dict:
     return build_content(bank, bank_version=1, run_id=run_id, locale="ru")
+
+
+def test_content_uses_versioned_presentation_order() -> None:
+    document = v1_bank().model_dump()
+    document["presentation_order"] = [
+        "awareness", "analogies", "lability", "geometric_figures",
+        "classification", "generalization", "logical_schemas", "numeric_series",
+    ]
+
+    content = build_content(parse_bank(document), bank_version=2, run_id=uuid.uuid4(), locale="ru")
+
+    assert [subtest["key"] for subtest in content["subtests"]] == document["presentation_order"]
+    assert content["subtests"][3]["number"] == 8
 
 
 def test_logical_schemas_are_never_served_in_key_order() -> None:

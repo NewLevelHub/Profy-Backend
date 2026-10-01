@@ -212,27 +212,27 @@ jobs:
             #   docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/build_universities.py
             #   docker compose --env-file .env.development -f docker-compose.dev.yml -p profy-dev exec -T api_dev python scripts/rename_university_photos.py --media-dir /srv/media --apply
 
-            # Reload edge nginx (prod path) so Host:dev.profy.newlevelhub.kz is routed.
+            # Reload edge nginx (prod path) so Host:dev.profile.newlevelhub.kz is routed.
             # Certs under /etc/letsencrypt need root - write via docker volume mount.
             # Do not fail the whole deploy if edge nginx reload cannot run.
             if [ -n "$EDGE_DEPLOY_PATH" ] && [ -f "$EDGE_DEPLOY_PATH/docker-compose.prod.yml" ]; then
               echo "Reloading edge nginx from $EDGE_DEPLOY_PATH ..."
-              DEV_CERT_DIR="/etc/letsencrypt/live/dev.profy.newlevelhub.kz"
+              DEV_CERT_DIR="/etc/letsencrypt/live/dev.profile.newlevelhub.kz"
               if [ ! -f "$DEV_CERT_DIR/fullchain.pem" ]; then
                 echo "Creating temporary self-signed cert via docker..."
                 if docker run --rm -v /etc/letsencrypt:/etc/letsencrypt alpine:3.20 sh -c '
                   apk add --no-cache openssl >/dev/null
-                  mkdir -p /etc/letsencrypt/live/dev.profy.newlevelhub.kz
+                  mkdir -p /etc/letsencrypt/live/dev.profile.newlevelhub.kz
                   openssl req -x509 -nodes -newkey rsa:2048 -days 30 \
-                    -keyout /etc/letsencrypt/live/dev.profy.newlevelhub.kz/privkey.pem \
-                    -out /etc/letsencrypt/live/dev.profy.newlevelhub.kz/fullchain.pem \
-                    -subj /CN=dev.profy.newlevelhub.kz
-                  chmod 755 /etc/letsencrypt /etc/letsencrypt/live /etc/letsencrypt/live/dev.profy.newlevelhub.kz || true
-                  chmod 644 /etc/letsencrypt/live/dev.profy.newlevelhub.kz/fullchain.pem || true
-                  chmod 600 /etc/letsencrypt/live/dev.profy.newlevelhub.kz/privkey.pem || true
+                    -keyout /etc/letsencrypt/live/dev.profile.newlevelhub.kz/privkey.pem \
+                    -out /etc/letsencrypt/live/dev.profile.newlevelhub.kz/fullchain.pem \
+                    -subj /CN=dev.profile.newlevelhub.kz
+                  chmod 755 /etc/letsencrypt /etc/letsencrypt/live /etc/letsencrypt/live/dev.profile.newlevelhub.kz || true
+                  chmod 644 /etc/letsencrypt/live/dev.profile.newlevelhub.kz/fullchain.pem || true
+                  chmod 600 /etc/letsencrypt/live/dev.profile.newlevelhub.kz/privkey.pem || true
                 '; then
                   echo "Self-signed cert created. Replace later with:"
-                  echo "  certbot certonly --webroot -w $EDGE_DEPLOY_PATH/certbot/www -d dev.profy.newlevelhub.kz"
+                  echo "  certbot certonly --webroot -w $EDGE_DEPLOY_PATH/certbot/www -d dev.profile.newlevelhub.kz"
                 else
                   echo "WARN: could not create cert - skipping nginx reload"
                 fi
@@ -251,11 +251,22 @@ jobs:
                 # main's cd.yml writes to the same server-side nginx.conf and restarts
                 # the same shared profi_nginx_prod container — flock-guard to avoid the
                 # two pipelines interleaving when both land close together.
+                #
+                # Recreate ONLY nginx, never the prod api it depends_on:
+                # - `--no-deps`: without it `up nginx` also recreates `api`
+                #   (nginx `depends_on: api` in docker-compose.prod.yml).
+                # - `env -u API_IMAGE`: this script exported API_IMAGE as the
+                #   DEV image for api_dev above, and a shell variable beats
+                #   `--env-file` — so compose would resolve prod's
+                #   `${API_IMAGE}` to the dev build. Together these made every
+                #   dev deploy replace profi_api_prod with the dev image
+                #   (found 2026-10-01: prod was running dev-sha-c59c86e and its
+                #   DB had been migrated by dev migrations).
                 flock /tmp/profi-edge-nginx.lock -c '
                   if [ -f nginx.prod.conf ]; then
                     cp nginx.prod.conf nginx.conf
                   fi
-                  docker compose --env-file .env.production -f docker-compose.prod.yml up -d --force-recreate nginx
+                  env -u API_IMAGE docker compose --env-file .env.production -f docker-compose.prod.yml up -d --force-recreate --no-deps nginx
                 '
               else
                 echo "WARN: no cert at $DEV_CERT_DIR - edge nginx not reloaded"

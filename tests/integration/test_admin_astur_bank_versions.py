@@ -4,10 +4,12 @@ free-form content override being closed for АСТУР."""
 import copy
 
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.i18n.catalog import tr
-from tests.integration.astur_helpers import complete_attempt, make_student, v1_version_id
+from app.models.astur_run import AsturRun
+from tests.integration.astur_helpers import complete_attempt, make_student
 from tests.unit.test_astur_bank import reviewed
 
 BASE = "/api/v1/admin/astur/bank-versions"
@@ -122,10 +124,13 @@ async def test_item_analytics_by_version_and_age_band(
 ) -> None:
     _, assessment, headers = await make_student(db_session, age=14, grade=8)
     await complete_attempt(client, assessment.id, headers, wrong={"awareness"})
-    version_id = await v1_version_id(db_session)
+    run = (
+        await db_session.execute(select(AsturRun).where(AsturRun.assessment_id == assessment.id))
+    ).scalar_one()
+    version_id = run.bank_version_id
 
     body = (await client.get(f"{BASE}/{version_id}/analytics?age_band=14_15", headers=admin_headers)).json()
-    assert body["bank_version"] == 1
+    assert body["bank_version"] >= 2
     assert body["attempts"] >= 1
     assert body["age_bands"]["14_15"] >= 1
     awareness = next(s for s in body["subtests"] if s["key"] == "awareness")
