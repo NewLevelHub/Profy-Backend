@@ -649,7 +649,7 @@ async def _report_rows(assessment_id: uuid.UUID, db: AsyncSession) -> list[Analy
 
 
 async def flag_report_if_strengths_changed(assessment_id: uuid.UUID, db: AsyncSession) -> bool:
-    """Called after a Belbin / АСТУР attempt finishes. If a report already
+    """Called after a Belbin attempt finishes. If a report already
     exists and was built from other results, its strength cards are now
     stale: the report goes back to review (never silently rewritten — the
     psychologist decides whether to rebuild the cards), and the psychologist

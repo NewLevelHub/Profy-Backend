@@ -66,7 +66,7 @@ def _intelligence_facts(section) -> dict:
     model) — only whether the attempt is a legacy one."""
     return section.model_dump(
         mode="json",
-        exclude={"run_id", "retake_in_progress", "bank_version", "scoring_version", "completed_at"},
+        exclude={"run_id", "bank_version", "scoring_version", "completed_at"},
         exclude_none=True,
     )
 

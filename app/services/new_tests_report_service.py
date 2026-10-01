@@ -148,7 +148,6 @@ async def _build_intelligence_section(
         snapshot = AsturResultSnapshot.model_validate(run.result_snapshot)
         return IntelligenceSection(
             run_id=run.id,
-            retake_in_progress=await astur_runs.active_run(db, assessment_id) is not None,
             **snapshot.model_dump(exclude={"item_scores", "item_status"}),
         )
     except Exception:

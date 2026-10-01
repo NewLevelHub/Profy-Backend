@@ -1025,7 +1025,7 @@ async def rebuild_strength_cards(
 ) -> PsychologistResultDetailResponse:
     """Explicit «Пересобрать сильные стороны» (PRO-432): replaces the cards
     with ones built from the student's current results (e.g. after a Belbin
-    or АСТУР retake), in the deterministic wording — the psychologist's own
+    retake), in the deterministic wording — the psychologist's own
     edits are overwritten only because they asked for it. Recorded like any
     other review edit."""
     await _require_assigned_student(db, psychologist_id=psychologist_id, student_id=student_id)

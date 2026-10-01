@@ -61,10 +61,8 @@ def quick_payload(
     }
 
 
-async def open_attempt(client: AsyncClient, assessment_id: uuid.UUID, headers: dict, *, retake: bool = False):
-    resp = await client.post(
-        f"/api/v1/assessment/{assessment_id}/astur/attempt", json={"retake": retake}, headers=headers
-    )
+async def open_attempt(client: AsyncClient, assessment_id: uuid.UUID, headers: dict):
+    resp = await client.post(f"/api/v1/assessment/{assessment_id}/astur/attempt", headers=headers)
     assert resp.status_code == 201, resp.text
     return resp.json()
 
@@ -88,13 +86,12 @@ async def complete_attempt(
     bank: AsturBank | None = None,
     wrong: set[str] = frozenset(),
     skip: set[str] = frozenset(),
-    retake: bool = False,
 ) -> list:
     """Opens (or resumes) the attempt, then starts and submits every subtest
     in order (except `skip`); returns the submit responses. Subtests in
     `wrong` get valid-format but wrong answers."""
     bank = bank or v1_bank()
-    run_id = (await open_attempt(client, assessment_id, headers, retake=retake))["run"]["run_id"]
+    run_id = (await open_attempt(client, assessment_id, headers))["run"]["run_id"]
     responses = []
     for subtest in sorted(bank.subtests, key=lambda s: s.number):
         if subtest.key in skip:

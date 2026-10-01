@@ -144,19 +144,11 @@ class AsturRunSummary(BaseModel):
 class AsturStateResponse(BaseModel):
     """What the test-taker's UI needs to pick a screen: `not_started` (no
     attempt ever), `in_progress` (an attempt is open — resume it), or
-    `completed` (a finished attempt exists and none is open)."""
+    `completed` (the attempt is finished and can't be reopened)."""
 
     status: Literal["not_started", "in_progress", "completed"]
     active_run: AsturRunSummary | None = None
     latest_completed_run: AsturRunSummary | None = None
-
-
-class OpenAsturAttemptRequest(BaseModel):
-    # True = explicit «Пройти заново» after a completed attempt. Without it,
-    # a completed attempt is never silently followed by a new one.
-    retake: bool = False
-
-    model_config = {"extra": "forbid"}
 
 
 class AsturContentSubtest(BaseModel):

@@ -103,7 +103,7 @@ def test_has_any_data_true_with_at_least_one_block() -> None:
 def _intelligence_section(**overrides) -> IntelligenceSection:
     bank = v1_bank()
     snapshot = score_attempt(bank, attempt_input(bank, content_answers(bank)), get_rules("2"))
-    fields = dict(run_id=uuid.uuid4(), retake_in_progress=False, **snapshot.model_dump(exclude={"item_scores", "item_status"}))
+    fields = dict(run_id=uuid.uuid4(), **snapshot.model_dump(exclude={"item_scores", "item_status"}))
     fields.update(overrides)
     return IntelligenceSection(**fields)
 

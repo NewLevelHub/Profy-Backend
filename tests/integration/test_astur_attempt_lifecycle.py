@@ -2,8 +2,8 @@
 explicitly with content pinned to their bank version and locale, every
 payload names its attempt, answers are explicit (answered / skipped),
 partial attempts have no result, the last submit finalizes atomically,
-completed attempts are frozen, retakes are explicit, marked as repeat
-exposure and never shadow a finished result."""
+completed attempts are frozen and never reopened, a repeat attempt in a
+later assessment is marked as repeat exposure."""
 import uuid
 
 from httpx import AsyncClient
@@ -263,7 +263,6 @@ async def test_last_submit_finalizes_and_freezes_the_result(client: AsyncClient,
 
     section = await _build_intelligence_section(assessment.id, db_session)
     assert section.run_id == run.id
-    assert section.retake_in_progress is False
     assert (await _state(client, assessment.id, headers))["status"] == "completed"
 
 
@@ -278,47 +277,21 @@ async def test_result_does_not_follow_later_profile_changes(client: AsyncClient,
     assert (section.age_at_completion, section.grade_at_completion) == (14, 8)
 
 
-# ── retake ──────────────────────────────────────────────────────────────────
+# ── no reopening ────────────────────────────────────────────────────────────
 
 
-async def test_retake_is_explicit_idempotent_and_never_shadows_the_result(
-    client: AsyncClient, db_session: AsyncSession
-) -> None:
+async def test_completed_attempt_is_never_reopened(client: AsyncClient, db_session: AsyncSession) -> None:
     _, assessment, headers = await make_student(db_session)
     await complete_attempt(client, assessment.id, headers)
-    [first] = await _runs(db_session, assessment.id)
 
-    retake = await open_attempt(client, assessment.id, headers, retake=True)
-    again = await open_attempt(client, assessment.id, headers, retake=True)
-    assert retake["run"]["run_id"] == again["run"]["run_id"] != str(first.id)
-
-    await complete_attempt(client, assessment.id, headers, wrong={"awareness"}, skip={"lability", "geometric_figures"})
-    state = await _state(client, assessment.id, headers)
-    assert state["status"] == "in_progress"
-    assert state["latest_completed_run"]["run_id"] == str(first.id)
-    section = await _build_intelligence_section(assessment.id, db_session)
-    assert section.run_id == first.id
-    assert section.retake_in_progress is True
-    assert section.overall_percent == 100.0
-
-
-async def test_finished_retake_is_shown_and_marked_as_repeat_exposure(
-    client: AsyncClient, db_session: AsyncSession
-) -> None:
-    _, assessment, headers = await make_student(db_session)
-    await complete_attempt(client, assessment.id, headers)
-    await complete_attempt(client, assessment.id, headers, wrong={"awareness"}, retake=True)
-
-    runs = await _runs(db_session, assessment.id)
-    assert [r.status for r in runs] == [AsturRunStatus.completed, AsturRunStatus.completed]
-    section = await _build_intelligence_section(assessment.id, db_session)
-    assert section.run_id == runs[1].id
-    assert section.history.attempt_number == 2
-    assert section.history.repeat_exposure is True
-    assert section.history.days_since_previous == 0
-    assert "repeat_exposure" in {f.code for f in section.protocol_quality.flags}
-    assert next(s for s in section.subtests if s.key == "awareness").percent == 0.0
-    assert runs[0].result_snapshot["overall_percent"] == 100.0
+    # The removed «Пройти заново» flag no longer opens a new attempt either.
+    resp = await client.post(
+        f"/api/v1/assessment/{assessment.id}/astur/attempt", json={"retake": True}, headers=headers
+    )
+    assert resp.status_code == 409
+    assert resp.json()["detail"]["code"] == "astur_attempt_completed"
+    assert len(await _runs(db_session, assessment.id)) == 1
+    assert (await _state(client, assessment.id, headers))["status"] == "completed"
 
 
 async def test_repeat_exposure_counts_attempts_of_other_assessments(
@@ -327,11 +300,16 @@ async def test_repeat_exposure_counts_attempts_of_other_assessments(
     user, first_assessment, headers = await make_student(db_session)
     await complete_attempt(client, first_assessment.id, headers)
     _, second_assessment, headers = await make_student(db_session, user=user)
-    await complete_attempt(client, second_assessment.id, headers)
+    await complete_attempt(client, second_assessment.id, headers, wrong={"awareness"})
 
     section = await _build_intelligence_section(second_assessment.id, db_session)
     assert section.history.repeat_exposure is True
     assert section.history.attempt_number == 2
+    assert section.history.days_since_previous == 0
+    assert "repeat_exposure" in {f.code for f in section.protocol_quality.flags}
+    assert next(s for s in section.subtests if s.key == "awareness").percent == 0.0
+    first = await _build_intelligence_section(first_assessment.id, db_session)
+    assert first.overall_percent == 100.0
 
 
 # ── bank versions ───────────────────────────────────────────────────────────
@@ -349,12 +327,13 @@ async def _publish_v2_with_new_awareness_key(db: AsyncSession, admin_id: uuid.UU
     return await bank_versions.publish(db, draft.id, admin_id=admin_id, confirmed_item_ids={first["item_id"]})
 
 
-async def test_retake_after_a_publish_uses_the_new_version(client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_attempt_after_a_publish_uses_the_new_version(client: AsyncClient, db_session: AsyncSession) -> None:
     user, assessment, headers = await make_student(db_session)
     await complete_attempt(client, assessment.id, headers)
     v2 = await _publish_v2_with_new_awareness_key(db_session, user.id)
 
-    body = await open_attempt(client, assessment.id, headers, retake=True)
+    _, next_assessment, headers = await make_student(db_session, user=user)
+    body = await open_attempt(client, next_assessment.id, headers)
     assert body["run"]["bank_version"] == v2.version
     # Served shuffled (PRO-441) — the new version is in the set, not the order.
     assert sorted(body["content"]["subtests"][0]["items"][0]["options"]) == ["вариант А", "вариант Б"]

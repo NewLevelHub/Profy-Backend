@@ -4,8 +4,8 @@ Rules:
 - at most one `in_progress` attempt per assessment (partial unique index);
 - an attempt is opened explicitly (`open_attempt`), which pins its bank
   version AND locale and returns its content in the same response — items
-  are never shown before the attempt that will score them exists; a new
-  attempt after a completed one needs `retake=True` («Пройти заново»);
+  are never shown before the attempt that will score them exists; a
+  completed attempt is never reopened and never followed by a new one;
 - every start/submit names its `run_id`; a payload for another attempt is
   rejected, never re-targeted onto the open one;
 - item answers are explicit: answered (value validated against the
@@ -150,16 +150,14 @@ async def _open_run(db: AsyncSession, assessment_id: uuid.UUID, user_id: uuid.UU
     return run
 
 
-async def open_attempt(
-    db: AsyncSession, assessment_id: uuid.UUID, *, user_id: uuid.UUID, retake: bool
-) -> dict:
+async def open_attempt(db: AsyncSession, assessment_id: uuid.UUID, *, user_id: uuid.UUID) -> dict:
     """Opens (or resumes) the attempt and returns it together with its
     content — bank version and locale are pinned before any item is shown.
     Idempotent while an attempt is open (a double click resumes it)."""
     run = await active_run(db, assessment_id, for_update=True)
     if run is None:
-        if await has_completed_run(db, assessment_id) and not retake:
-            raise _conflict(ATTEMPT_COMPLETED, "АСТУР attempt is already completed; open a retake explicitly")
+        if await has_completed_run(db, assessment_id):
+            raise _conflict(ATTEMPT_COMPLETED, "АСТУР attempt is already completed")
         run = await _open_run(db, assessment_id, user_id)
     await db.commit()
     await db.refresh(run)
