@@ -2,8 +2,22 @@
 import random
 import uuid
 
+from app.services.astur.bank import parse_bank
 from app.services.astur.content import build_content
 from tests.astur_fixtures import v1_bank
+
+
+def test_content_uses_versioned_presentation_order() -> None:
+    document = v1_bank().model_dump()
+    document["presentation_order"] = [
+        "awareness", "analogies", "lability", "geometric_figures",
+        "classification", "generalization", "logical_schemas", "numeric_series",
+    ]
+
+    content = build_content(parse_bank(document), bank_version=2, run_id=uuid.uuid4(), locale="ru")
+
+    assert [subtest["key"] for subtest in content["subtests"]] == document["presentation_order"]
+    assert content["subtests"][3]["number"] == 8
 
 
 def _chain_subtest(content: dict) -> dict:

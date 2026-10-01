@@ -26,6 +26,10 @@ async def test_content_shape_matches_the_bank_version(client: AsyncClient, db_se
     assert body["bank_version"] >= 1
     assert body["locale"] == "ru"
     assert body["lability_item_limit_ms"] == BANK.lability_item_limit_ms
+    assert [subtest["key"] for subtest in body["subtests"]] == [
+        "awareness", "analogies", "lability", "geometric_figures",
+        "classification", "generalization", "logical_schemas", "numeric_series",
+    ]
 
     by_key = {s["key"]: s for s in body["subtests"]}
     for subtest in BANK.subtests:

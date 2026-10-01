@@ -32,6 +32,7 @@ from . import (
     goal_overlay,
     motivation,
     narrative_fallback,
+    psychoemotional_interpretation,
     result_v2,
     riasec,
     student_strengths,
@@ -60,6 +61,7 @@ _AREAS: dict[str, Any] = {
     "narrative_fallback": narrative_fallback,
     "result_v2": result_v2,
     "student_strengths": student_strengths,
+    "psychoemotional_interpretation": psychoemotional_interpretation,
 }
 
 

@@ -5,10 +5,11 @@ from app.services.astur.bank import content_hash, load_v1_document, parse_bank, 
 from app.services.astur.bank_validation import validate_bank
 from tests.astur_fixtures import v1_document
 
-# v1 is the immutable pre-PRO-427 bank; every legacy attempt is pinned to it.
-# Changing app/data/astur_bank_v1.json would silently fork fresh databases
-# from production — any content change must be a new published version.
-V1_CONTENT_HASH = "fe7e5127744300935ccab117038032766cd0ac01c25558e2dfa91fa8ca0122e4"
+# v1 is the bank every attempt is pinned to. app/data/astur_bank_v1.json is
+# its source: a content edit changes this hash and must ship with a data
+# migration that syncs the v1 row from the file (like 624c5e6208ee, PRO-442) —
+# otherwise fresh databases silently fork from the ones already migrated.
+V1_CONTENT_HASH = "b2bffbe93c0dcf2bd8e05af148a438c9c92a21ea54c50fadae2ea189432c197b"
 
 
 def reviewed(document: dict) -> dict:
@@ -68,6 +69,27 @@ def test_v1_shape_and_maximums_are_derived_from_the_bank() -> None:
     }
     item_ids = [item["item_id"] for s in bank.subtests for item in s.items]
     assert len(item_ids) == len(set(item_ids)) == 103
+
+
+def test_presentation_order_moves_geometry_without_changing_subtest_numbers() -> None:
+    doc = v1_document()
+    doc["presentation_order"] = [
+        "awareness", "analogies", "lability", "geometric_figures",
+        "classification", "generalization", "logical_schemas", "numeric_series",
+    ]
+
+    assert validate_bank(doc, require_review=False) == []
+    bank = parse_bank(doc)
+    assert [subtest.key for subtest in bank.ordered_subtests()] == doc["presentation_order"]
+    assert bank.subtest("geometric_figures").number == 8
+
+
+def test_presentation_order_must_be_an_exact_subtest_permutation() -> None:
+    doc = v1_document()
+    doc["presentation_order"] = ["awareness", "analogies"]
+
+    issues = validate_bank(doc, require_review=False)
+    assert any(issue.field == "presentation_order" for issue in issues)
 
 
 def test_key_missing_from_options_is_rejected() -> None:

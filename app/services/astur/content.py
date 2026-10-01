@@ -50,7 +50,7 @@ def build_content(bank: AsturBank, *, bank_version: int, run_id: uuid.UUID, loca
     request's — switching the app language mid-attempt must not swap the
     language of items the attempt is scored in."""
     subtests = []
-    for subtest in sorted(bank.subtests, key=lambda s: s.number):
+    for subtest in bank.ordered_subtests():
         fields = PUBLIC_ITEM_FIELDS[subtest.key]
         items = []
         for item in subtest.items:
