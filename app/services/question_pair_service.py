@@ -71,17 +71,19 @@ async def get_pairs(db: AsyncSession) -> list[QuestionPairItem]:
     ]
 
 
-async def saved_picks(question_values: dict[uuid.UUID, int], db: AsyncSession) -> dict[int, uuid.UUID]:
-    """pair_index → picked question id, read back from the two synthetic
-    rows submit_pair_answers writes per pair (_PICKED_VALUE / _OTHER_VALUE).
-    A pair counts only when both rows are there with that exact encoding.
+async def split_saved_values(
+    question_values: dict[uuid.UUID, int], db: AsyncSession
+) -> tuple[dict[uuid.UUID, int], dict[int, uuid.UUID]]:
+    """Stored UserResponse values -> (plain scale answers, pair picks).
 
-    The rows carry no "written by the pair path" mark, so this is the same
-    reading professional_types_service scores with (value 5 = picked) — it
-    adds no ambiguity scoring doesn't already have. Clients send pair
-    options only through pair-answers (the frontend drops pair-claimed
-    questions from its Likert list, see buildDisplaySequence.ts).
+    Pair options' rows are the pair path's synthetic _PICKED_VALUE /
+    _OTHER_VALUE, not scale answers, so they're kept out of the first map: a
+    client restoring them as Likert values would pre-fill ДДО options at 5/1
+    and a single nudge would break the encoding. A pair counts as picked
+    only when both rows are there with that exact encoding.
 
+    The rows carry no "written by the pair path" mark, so the pick is the
+    same reading professional_types_service scores with (value 5 = picked).
     Keyed by pair_index alone, like the rest of the pair API:
     submit_pair_answers resolves pairs by pair_index with no instrument
     filter, so the banks keep it unique across the whole table (see the
@@ -89,6 +91,7 @@ async def saved_picks(question_values: dict[uuid.UUID, int], db: AsyncSession) -
     pairs = (
         await db.execute(select(QuestionPair).where(QuestionPair.instrument != QuestionInstrument.big_five))
     ).scalars().all()
+    option_ids = {option_id for pair in pairs for option_id in (pair.question_a_id, pair.question_b_id)}
     picks: dict[int, uuid.UUID] = {}
     for pair in pairs:
         values = (question_values.get(pair.question_a_id), question_values.get(pair.question_b_id))
@@ -96,7 +99,8 @@ async def saved_picks(question_values: dict[uuid.UUID, int], db: AsyncSession) -
             picks[pair.pair_index] = pair.question_a_id
         elif values == (_OTHER_VALUE, _PICKED_VALUE):
             picks[pair.pair_index] = pair.question_b_id
-    return picks
+    scale_values = {question_id: value for question_id, value in question_values.items() if question_id not in option_ids}
+    return scale_values, picks
 
 
 async def submit_pair_answers(

@@ -39,9 +39,9 @@ class SavedAnswersResponse(BaseModel):
     device) showed earlier pages blank on "Назад", and re-sent defaults over
     real answers."""
 
-    # Every stored UserResponse value by question id. Pair options are in
-    # here too, as their synthetic picked/other values — clients read only
-    # the ids they render as scale items.
+    # Stored scale answers by question id. Pair options are left out — their
+    # rows are the pair path's synthetic picked/other values, read back as
+    # pair_picks instead.
     question_values: dict[uuid.UUID, int]
     # pair_index → the picked option's question id.
     pair_picks: dict[int, uuid.UUID]

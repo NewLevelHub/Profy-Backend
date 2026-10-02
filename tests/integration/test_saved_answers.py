@@ -85,6 +85,9 @@ async def test_saved_answers_echo_scale_pair_and_motivation(db_session: AsyncSes
 
     assert saved.question_values[seeded["likert"].id] == 4
     assert saved.pair_picks == {PAIR_INDEX: seeded["b"].id}
+    # The pair's synthetic 5/1 rows aren't scale answers — never echoed as such.
+    assert seeded["a"].id not in saved.question_values
+    assert seeded["b"].id not in saved.question_values
     assert saved.motivation[TRIPLET_INDEX].most_statement_id == most.id
     assert saved.motivation[TRIPLET_INDEX].least_statement_id == least.id
 

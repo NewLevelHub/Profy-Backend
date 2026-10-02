@@ -124,11 +124,13 @@ async def get_saved_answers(
     rows = await db.execute(
         select(UserResponse.question_id, UserResponse.answer_value).where(UserResponse.assessment_id == assessment_id)
     )
-    question_values = {question_id: value for question_id, value in rows.all()}
+    scale_values, pair_picks = await question_pair_service.split_saved_values(
+        {question_id: value for question_id, value in rows.all()}, db
+    )
     motivation = await motivation_service.saved_answers(assessment_id, db)
     return SavedAnswersResponse(
-        question_values=question_values,
-        pair_picks=await question_pair_service.saved_picks(question_values, db),
+        question_values=scale_values,
+        pair_picks=pair_picks,
         motivation={
             triplet_index: SavedMotivationAnswer(most_statement_id=most, least_statement_id=least)
             for triplet_index, (most, least) in motivation.items()
