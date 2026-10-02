@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.astur_run import AsturRun, AsturRunStatus
 from app.models.profile import Profile
 from app.services.astur import bank_versions
-from app.services.astur.runs import freeze_legacy_snapshot
+from app.services.astur.runs import MAX_OPEN_TEXT_LENGTH, freeze_legacy_snapshot
 from app.services.new_tests_report_service import _build_intelligence_section
 from tests.astur_fixtures import content_answers, v1_bank
 from tests.integration.astur_helpers import (
@@ -208,6 +208,24 @@ async def test_answered_values_are_validated_and_blank_is_never_an_answer(
     awareness["2"] = {"status": "answered", "value": "нет такого варианта"}
     resp = await submit(client, assessment.id, 1, {"run_id": run_id, "answers": awareness}, headers)
     assert resp.status_code == 422
+
+
+async def test_generalization_answer_is_capped_at_max_open_text_length(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await make_student(db_session)
+    run_id = (await open_attempt(client, assessment.id, headers))["run"]["run_id"]
+    answers = answered(content_answers(BANK)["generalization"])
+    answers["1"] = {"status": "answered", "value": "а" * (MAX_OPEN_TEXT_LENGTH + 1)}
+    resp = await submit(client, assessment.id, 5, {"run_id": run_id, "answers": answers}, headers)
+    assert resp.status_code == 422
+    assert resp.json()["detail"]["invalid_items"] == ["1"]
+    [run] = await _runs(db_session, assessment.id)
+    assert "generalization" not in (run.answers or {})
+
+    answers["1"] = {"status": "answered", "value": "а" * MAX_OPEN_TEXT_LENGTH}
+    resp = await submit(client, assessment.id, 5, {"run_id": run_id, "answers": answers}, headers)
+    assert resp.status_code == 201, resp.text
 
 
 async def test_skips_are_kept_apart_from_wrong_answers(client: AsyncClient, db_session: AsyncSession) -> None:
