@@ -82,3 +82,31 @@ async def test_save_artifacts_replaces_previous_selection(
 
     get_response = await client.get("/api/v1/profile/artifacts", headers=auth_headers)
     assert get_response.json()["items"] == [{"type": "sport", "value": "Плавание"}]
+
+
+async def test_save_artifacts_rejects_overlong_custom_value(
+    client: httpx.AsyncClient, auth_headers: dict[str, str], test_user: User
+) -> None:
+    profile_payload = {
+        "name": "Данияр",
+        "age": 15,
+        "grade": 9,
+        "city": "Астана",
+        "country": "Казахстан",
+        "language": "ru",
+    }
+    await client.post("/api/v1/profile", json=profile_payload, headers=auth_headers)
+
+    response = await client.post(
+        "/api/v1/profile/artifacts",
+        json={"items": [{"type": "profession", "value": "а" * 61}]},
+        headers=auth_headers,
+    )
+    assert response.status_code == 422
+
+    update_response = await client.put(
+        "/api/v1/profile",
+        json={"artifacts": [{"type": "profession", "value": "а" * 61}]},
+        headers=auth_headers,
+    )
+    assert update_response.status_code == 422

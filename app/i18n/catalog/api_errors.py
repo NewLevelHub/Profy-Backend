@@ -29,6 +29,7 @@ RU = {
     "astur_subtest_not_found": "No such АСТУР subtest: {n}",
     "certificate_score_out_of_range": "score for {type} must be between {low} and {high}",
     "credentials_not_validated": "Could not validate credentials",
+    "custom_value_too_long": "Слишком длинный вариант — не больше {max_length} символов",
     "direction_not_found": "Direction not found",
     "duplicate_triplet_category": (
         "Category '{new_category}' is already used by statement #{order} in triplet "
@@ -128,6 +129,7 @@ KK = {
     "astur_subtest_not_found": "Мұндай АСТУР субтесті жоқ: {n}",
     "certificate_score_out_of_range": "{type} балы {low} мен {high} аралығында болуы керек",
     "credentials_not_validated": "Тіркелгі деректерін тексеру мүмкін болмады",
+    "custom_value_too_long": "Нұсқа тым ұзын — {max_length} таңбадан аспауы керек",
     "direction_not_found": "Бағыт табылмады",
     "duplicate_triplet_category": "'{new_category}' санаты {triplet_index}-триплеттегі №{order} тұжырымда бұрын қолданылған — үш тұжырымның санаттары әртүрлі болуы керек",
     "elapsed_ms_lability_only": "elapsed_ms тек лабильділік субтесті үшін қабылданады",
