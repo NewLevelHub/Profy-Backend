@@ -71,6 +71,23 @@ async def get_pairs(db: AsyncSession) -> list[QuestionPairItem]:
     ]
 
 
+async def saved_picks(question_values: dict[uuid.UUID, int], db: AsyncSession) -> dict[int, uuid.UUID]:
+    """pair_index → picked question id, read back from the two synthetic
+    rows submit_pair_answers writes per pair (_PICKED_VALUE / _OTHER_VALUE).
+    A pair counts only when both rows are there with that exact encoding."""
+    pairs = (
+        await db.execute(select(QuestionPair).where(QuestionPair.instrument != QuestionInstrument.big_five))
+    ).scalars().all()
+    picks: dict[int, uuid.UUID] = {}
+    for pair in pairs:
+        values = (question_values.get(pair.question_a_id), question_values.get(pair.question_b_id))
+        if values == (_PICKED_VALUE, _OTHER_VALUE):
+            picks[pair.pair_index] = pair.question_a_id
+        elif values == (_OTHER_VALUE, _PICKED_VALUE):
+            picks[pair.pair_index] = pair.question_b_id
+    return picks
+
+
 async def submit_pair_answers(
     assessment_id: uuid.UUID,
     answers: list[PairAnswerItem],
