@@ -74,7 +74,18 @@ async def get_pairs(db: AsyncSession) -> list[QuestionPairItem]:
 async def saved_picks(question_values: dict[uuid.UUID, int], db: AsyncSession) -> dict[int, uuid.UUID]:
     """pair_index → picked question id, read back from the two synthetic
     rows submit_pair_answers writes per pair (_PICKED_VALUE / _OTHER_VALUE).
-    A pair counts only when both rows are there with that exact encoding."""
+    A pair counts only when both rows are there with that exact encoding.
+
+    The rows carry no "written by the pair path" mark, so this is the same
+    reading professional_types_service scores with (value 5 = picked) — it
+    adds no ambiguity scoring doesn't already have. Clients send pair
+    options only through pair-answers (the frontend drops pair-claimed
+    questions from its Likert list, see buildDisplaySequence.ts).
+
+    Keyed by pair_index alone, like the rest of the pair API:
+    submit_pair_answers resolves pairs by pair_index with no instrument
+    filter, so the banks keep it unique across the whole table (see the
+    note at professional_types_bank.PAIRS)."""
     pairs = (
         await db.execute(select(QuestionPair).where(QuestionPair.instrument != QuestionInstrument.big_five))
     ).scalars().all()
