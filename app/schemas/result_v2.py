@@ -360,6 +360,10 @@ class StudentCareer(BaseModel):
     # Locale-free keys of what the fit rests on ("riasec:I", a strength
     # source id, "subject:…") — for comparing careers, never shown.
     fit_keys: list[str] = []
+    # `why` is the AI analysis's text for the best match
+    # (AnalysisResult.top_career_why) — it already covers the reasons, so it
+    # is shown alone; `fit_reasons` stay for the views that list facts.
+    why_by_ai: bool = False
     model_config = _model_config
 
 

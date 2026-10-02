@@ -51,6 +51,10 @@
     "why": {
       "minLength": 1,
       "type": "string"
+    },
+    "why_by_ai": {
+      "default": false,
+      "type": "boolean"
     }
   },
   "required": [

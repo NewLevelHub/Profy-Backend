@@ -21,7 +21,10 @@ def _valid_raw(*, profession_slug: str = "swe") -> dict:
     return {
         "block_analyses": [{"block": "riasec", "text": "Комментарий по интересам."}],
         "final_summary": "Раз. Два. Три. Четыре.",
-        "recommended_profession": {"slug": profession_slug, "name": "Разработчик", "reasoning": "Обоснование."},
+        "recommended_profession": {
+            "slug": profession_slug, "name": "Разработчик", "reasoning": "Обоснование.",
+            "reasoning_kk": "Негіздеме.",
+        },
     }
 
 

@@ -12,11 +12,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult, ReviewStatus
+from app.models.analysis_result_review_edit import AnalysisResultReviewEdit, ReviewEditSource
 from app.models.assessment import Assessment, AssessmentGoal
 from app.models.profile import AgeGroup, Profile
 from app.models.psychoemotional_run import PsychoEmotionalRun, PsychoEmotionalValidityFlag
 from app.models.user import User
-from app.services import llm_client, psychologist_service
+from app.services import llm_client, psychologist_service, report_service, student_strengths_service
 from app.services.psychoemotional import engine as psychoemotional_engine
 
 from tests.integration.review_helpers import assign
@@ -79,7 +80,10 @@ def _valid_raw() -> dict:
             {"block": "motivation", "text": "Комментарий по мотивации."},
         ],
         "final_summary": "Раз. Два. Три. Четыре.",
-        "recommended_profession": {"slug": "swe", "name": "Разработчик", "reasoning": "Обоснование."},
+        "recommended_profession": {
+            "slug": "swe", "name": "Разработчик", "reasoning": "Обоснование.",
+            "reasoning_kk": "Негіздеме.",
+        },
     }
 
 
@@ -270,7 +274,9 @@ _THREE_CAREERS = [_career("swe", "Разработчик", 0.9), _career("dsg", 
 def _raw_picking(slug: str) -> dict:
     raw = _valid_raw()
     name = next(c["name"] for c in _THREE_CAREERS if c["slug"] == slug)
-    raw["recommended_profession"] = {"slug": slug, "name": name, "reasoning": "Обоснование."}
+    raw["recommended_profession"] = {
+        "slug": slug, "name": name, "reasoning": f"Обоснование: {name}.", "reasoning_kk": f"Негіздеме: {name}.",
+    }
     return raw
 
 
@@ -405,36 +411,270 @@ async def test_published_report_careers_are_not_reordered(
     assert edits == []
 
 
-async def test_ai_pick_reorders_every_locale_row(
+async def test_promotion_follows_the_stored_analysis(
     db_session: AsyncSession,
+    psychologist_user: User,
+    test_user: User,
+) -> None:
+    """With two generations in flight, the analysis stored last decides —
+    the promotion reads the pick from the row, not from its caller."""
+    await assign(db_session, psychologist_user, test_user)
+    assessment = await _report_with_three_careers(db_session, test_user, psych_ai_analysis=_raw_picking("dsg"))
+    row = (
+        await db_session.execute(select(AnalysisResult).where(AnalysisResult.assessment_id == assessment.id))
+    ).scalar_one()
+
+    await psychologist_service._apply_ai_recommendation(db_session, row, student_id=test_user.id)
+
+    assert await _career_slugs(db_session, assessment.id) == ["dsg", "swe", "doc"]
+
+
+async def test_failed_promotion_never_breaks_the_report(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    psychologist_headers: dict[str, str],
     psychologist_user: User,
     test_user: User,
 ) -> None:
     await assign(db_session, psychologist_user, test_user)
     assessment = await _report_with_three_careers(db_session, test_user)
-    kk_careers = [{**c, "name": f"{c['name']} (kk)"} for c in _THREE_CAREERS]
-    db_session.add(AnalysisResult(**{**_minimal_report_kwargs(assessment.id), "careers": kk_careers, "locale": "kk"}))
-    await db_session.flush()
-    ru_row = (
-        await db_session.execute(
-            select(AnalysisResult).where(AnalysisResult.assessment_id == assessment.id, AnalysisResult.locale == "ru")
-        )
-    ).scalar_one()
+    # The app's rollback expires every object of the shared test session.
+    assessment_id, url = assessment.id, _report_url(test_user, assessment.id)
 
-    await psychologist_service._promote_ai_recommended_career(
-        db_session, ru_row, slug="doc", student_id=test_user.id
+    with (
+        patch.object(llm_client, "is_enabled", return_value=True),
+        patch.object(llm_client, "complete_json", new=AsyncMock(return_value=_raw_picking("doc"))),
+        patch.object(
+            psychologist_service.report_service, "lock_report_generation",
+            new=AsyncMock(side_effect=RuntimeError("boom")),
+        ),
+    ):
+        response = await client.get(url, headers=psychologist_headers)
+
+    assert response.status_code == 200
+    assert response.json()["ai_analysis"]["recommended_profession"]["slug"] == "doc"
+    assert await _career_slugs(db_session, assessment_id) == ["swe", "dsg", "doc"]
+
+
+async def test_regeneration_shows_the_model_the_riasec_order(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    psychologist_headers: dict[str, str],
+    psychologist_user: User,
+    test_user: User,
+) -> None:
+    """After a promotion the stored order starts with the previous pick; the
+    model must still read the careers in the system's order."""
+    await assign(db_session, psychologist_user, test_user)
+    assessment = await _report_with_three_careers(db_session, test_user)
+
+    with patch.object(llm_client, "is_enabled", return_value=True):
+        with patch.object(llm_client, "complete_json", new=AsyncMock(return_value=_raw_picking("doc"))):
+            await client.get(_report_url(test_user, assessment.id), headers=psychologist_headers)
+        assert await _career_slugs(db_session, assessment.id) == ["doc", "swe", "dsg"]
+
+        with patch.object(llm_client, "complete_json", new=AsyncMock(return_value=_raw_picking("doc"))) as mock_complete:
+            await client.post(
+                f"{_report_url(test_user, assessment.id)}/ai-analysis/regenerate", headers=psychologist_headers
+            )
+
+    system_prompt = mock_complete.call_args.args[0][0]["content"]
+    positions = [system_prompt.index(f'"slug": "{slug}"') for slug in ("swe", "dsg", "doc")]
+    assert positions == sorted(positions)
+
+
+async def test_report_with_two_locale_rows_reads_the_row_under_review(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    psychologist_headers: dict[str, str],
+    psychologist_user: User,
+    test_user: User,
+) -> None:
+    """A kk-first report later translated to ru has two rows. The specialist
+    report used to expect exactly one and 500'd; it reads the row under
+    review (ru) — the same one the editor and publishing work on — and the
+    AI pick reorders both rows, logged on the ru one."""
+    await assign(db_session, psychologist_user, test_user)
+    assessment = await _make_assessment_for(db_session, test_user)
+    kk_careers = [{**c, "name": f"{c['name']} (kk)"} for c in _THREE_CAREERS]
+    db_session.add(AnalysisResult(**{
+        **_minimal_report_kwargs(assessment.id), "locale": "kk", "summary": "kk summary", "careers": kk_careers,
+    }))
+    await db_session.flush()
+    db_session.add(AnalysisResult(**{
+        **_minimal_report_kwargs(assessment.id), "summary": "ru summary", "careers": _THREE_CAREERS,
+    }))
+    await db_session.flush()
+
+    with (
+        patch.object(llm_client, "is_enabled", return_value=True),
+        patch.object(llm_client, "complete_json", new=AsyncMock(return_value=_raw_picking("doc"))),
+    ):
+        report = await client.get(_report_url(test_user, assessment.id), headers=psychologist_headers)
+        regenerate = await client.post(
+            f"{_report_url(test_user, assessment.id)}/ai-analysis/regenerate", headers=psychologist_headers
+        )
+    test_results = await client.get(
+        f"/api/v1/psychologist/students/{test_user.id}/assessments/{assessment.id}/test-results",
+        headers=psychologist_headers,
     )
 
-    rows = (
+    assert report.status_code == 200
+    assert report.json()["report"]["summary"] == "ru summary"
+    assert regenerate.status_code == 200
+    assert test_results.status_code == 200
+    rows = {
+        row.locale: row
+        for row in (
+            await db_session.execute(
+                select(AnalysisResult)
+                .where(AnalysisResult.assessment_id == assessment.id)
+                .execution_options(populate_existing=True)
+            )
+        ).scalars().all()
+    }
+    assert rows["ru"].psych_ai_analysis is not None and rows["kk"].psych_ai_analysis is None
+    assert [c["slug"] for c in rows["ru"].careers] == ["doc", "swe", "dsg"]
+    assert [c["slug"] for c in rows["kk"].careers] == ["doc", "swe", "dsg"]
+    assert rows["kk"].careers[0]["name"] == "Врач (kk)"
+    # Each locale row gets the student text in its own language.
+    assert rows["ru"].top_career_why == {"slug": "doc", "text": "Обоснование: Врач."}
+    assert rows["kk"].top_career_why == {"slug": "doc", "text": "Негіздеме: Врач."}
+    edits = (
         await db_session.execute(
-            select(AnalysisResult)
-            .where(AnalysisResult.assessment_id == assessment.id)
-            .execution_options(populate_existing=True)
+            select(AnalysisResultReviewEdit).join(
+                AnalysisResult, AnalysisResult.id == AnalysisResultReviewEdit.analysis_result_id
+            ).where(AnalysisResult.assessment_id == assessment.id)
         )
     ).scalars().all()
-    assert {row.locale: [c["slug"] for c in row.careers] for row in rows} == {
-        "ru": ["doc", "swe", "dsg"],
-        "kk": ["doc", "swe", "dsg"],
+    assert [(edit.analysis_result_id, edit.source) for edit in edits] == [
+        (rows["ru"].id, ReviewEditSource.ai_recommendation)
+    ]
+
+
+# --- «Почему тебе подходит» of the best match from the AI analysis -----------
+
+
+async def test_student_reads_the_ai_text_under_the_best_match(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    psychologist_user: User,
+    test_user: User,
+) -> None:
+    await assign(db_session, psychologist_user, test_user)
+    # A fresh strengths marker: the student gate treats an outdated one as under review.
+    meta = student_strengths_service.mark_fresh({"differentiation": 40.0, "consistency": "high", "aversion": {}})
+    assessment = await _report_with_three_careers(db_session, test_user, meta=meta)
+
+    with (
+        patch.object(llm_client, "is_enabled", return_value=True),
+        patch.object(llm_client, "complete_json", new=AsyncMock(return_value=_raw_picking("doc"))) as mock_complete,
+    ):
+        psych_report = await client.get(_report_url(test_user, assessment.id), headers=psychologist_headers)
+        # The AI's own input keeps the career-fit text: no regeneration loop.
+        await client.get(_report_url(test_user, assessment.id), headers=psychologist_headers)
+        assert mock_complete.call_count == 1
+    assert psych_report.json()["report"]["careers"][0]["why_by_ai"] is False
+
+    detail = (await client.get(_result_url(test_user, assessment.id), headers=psychologist_headers)).json()
+    assert (detail["top_career_why"], detail["top_career_why_slug"]) == ("Обоснование: Врач.", "doc")
+
+    published = await client.post(f"{_result_url(test_user, assessment.id)}/publish", headers=psychologist_headers)
+    assert published.status_code == 200
+    student_view = await client.get(f"/api/v1/result/{assessment.id}", headers=auth_headers)
+    assert student_view.status_code == 200, student_view.text
+    careers = student_view.json()["careers"]
+    assert (careers[0]["slug"], careers[0]["why"], careers[0]["why_by_ai"]) == ("doc", "Обоснование: Врач.", True)
+    assert [career["why_by_ai"] for career in careers[1:]] == [False, False]
+
+
+async def test_ai_text_shows_only_while_its_career_is_first(
+    db_session: AsyncSession,
+    test_user: User,
+) -> None:
+    """The psychologist moved another career to the top — the AI text is
+    about "doc", so the best match keeps its career-fit text."""
+    assessment = await _report_with_three_careers(
+        db_session, test_user, top_career_why={"slug": "doc", "text": "Обоснование: Врач."}
+    )
+    row = (
+        await db_session.execute(select(AnalysisResult).where(AnalysisResult.assessment_id == assessment.id))
+    ).scalar_one()
+
+    careers = report_service._shape_response(row, locale="ru").careers
+
+    assert careers[0].slug == "swe"
+    assert [career.why_by_ai for career in careers] == [False, False, False]
+    assert "Обоснование" not in careers[0].why
+
+
+async def test_psychologist_text_is_kept_until_the_pick_changes(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    psychologist_headers: dict[str, str],
+    psychologist_user: User,
+    test_user: User,
+) -> None:
+    await assign(db_session, psychologist_user, test_user)
+    assessment = await _report_with_three_careers(db_session, test_user)
+    regenerate_url = f"{_report_url(test_user, assessment.id)}/ai-analysis/regenerate"
+
+    with patch.object(llm_client, "is_enabled", return_value=True):
+        with patch.object(llm_client, "complete_json", new=AsyncMock(return_value=_raw_picking("doc"))):
+            await client.get(_report_url(test_user, assessment.id), headers=psychologist_headers)
+            patched = await client.patch(
+                _result_url(test_user, assessment.id), json={"top_career_why": "Текст психолога."},
+                headers=psychologist_headers,
+            )
+            assert patched.status_code == 200
+            assert patched.json()["top_career_why"] == "Текст психолога."
+            await client.post(regenerate_url, headers=psychologist_headers)
+        detail = (await client.get(_result_url(test_user, assessment.id), headers=psychologist_headers)).json()
+        assert detail["top_career_why"] == "Текст психолога."
+
+        with patch.object(llm_client, "complete_json", new=AsyncMock(return_value=_raw_picking("dsg"))):
+            await client.post(regenerate_url, headers=psychologist_headers)
+        detail = (await client.get(_result_url(test_user, assessment.id), headers=psychologist_headers)).json()
+        assert (detail["top_career_why"], detail["top_career_why_slug"]) == ("Обоснование: Дизайнер.", "dsg")
+
+    edits = (await client.get(f"{_result_url(test_user, assessment.id)}/edits", headers=psychologist_headers)).json()
+    text_edits = [edit for edit in edits if "top_career_why" in edit["changed_fields"]]
+    assert [(edit["source"], edit["changed_fields"]["top_career_why"]) for edit in text_edits] == [
+        ("psychologist", {"old": "Обоснование: Врач.", "new": "Текст психолога."})
+    ]
+
+
+async def test_patching_the_text_before_the_analysis_exists_is_rejected(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    psychologist_headers: dict[str, str],
+    psychologist_user: User,
+    test_user: User,
+) -> None:
+    await assign(db_session, psychologist_user, test_user)
+    assessment = await _report_with_three_careers(db_session, test_user)
+
+    patched = await client.patch(
+        _result_url(test_user, assessment.id), json={"top_career_why": "Текст."}, headers=psychologist_headers
+    )
+
+    assert patched.status_code == 422
+
+
+def test_a_new_locale_row_takes_the_text_in_its_language() -> None:
+    sibling = AnalysisResult(
+        locale="ru",
+        top_career_why={"slug": "doc", "text": "Обоснование: Врач."},
+        psych_ai_analysis=_raw_picking("doc"),
+    )
+
+    assert report_service._carried_top_career_why(sibling, "kk", edited=False) == {
+        "slug": "doc", "text": "Негіздеме: Врач.",
     }
-    kk_row = next(row for row in rows if row.locale == "kk")
-    assert kk_row.careers[0]["name"] == "Врач (kk)"
+    # The psychologist's wording has nothing to be translated with.
+    assert report_service._carried_top_career_why(sibling, "kk", edited=True) == {
+        "slug": "doc", "text": "Обоснование: Врач.",
+    }
+    assert report_service._carried_top_career_why(AnalysisResult(locale="ru"), "kk", edited=False) is None

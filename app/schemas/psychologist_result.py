@@ -11,7 +11,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.i18n.catalog import key as i18n_key
 from app.models.analysis_result import ReviewStatus
@@ -83,8 +83,18 @@ class PsychologistResultDetailResponse(BaseModel):
     # The AI analysis's recommended profession (psych_ai_analysis), put first
     # in `careers` by default — None when there is no analysis yet.
     ai_recommended_slug: str | None = None
+    # «Почему тебе подходит» the student reads under their best match while
+    # `top_career_why_slug` is first in `careers` (AnalysisResult.top_career_why).
+    top_career_why: str | None = None
+    top_career_why_slug: str | None = None
 
     model_config = {"from_attributes": True}
+
+    @field_validator("top_career_why", mode="before")
+    @classmethod
+    def _top_career_why_text(cls, value: Any) -> Any:
+        # Stored as {"slug", "text"}; the slug goes to top_career_why_slug.
+        return value.get("text") if isinstance(value, dict) else value
 
 
 class ReviewTextCardPatch(BaseModel):
@@ -132,6 +142,8 @@ class PsychologistResultPatch(BaseModel):
     final_analysis: str | None = Field(default=None, min_length=1)
     personality_notes: dict[str, str] | None = None
     motivation_highlights: list[str] | None = None
+    # Text only — which career it belongs to is the AI analysis's pick.
+    top_career_why: str | None = Field(default=None, min_length=1)
 
     model_config = {"extra": "forbid"}
 

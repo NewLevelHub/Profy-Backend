@@ -137,7 +137,7 @@ def fingerprint(context: PsychAiAnalysisContext) -> str:
     АСТУР attempt, a new scoring version or a changed age all change it.
 
     The careers' *order* is left out: the analysis's own pick is moved to the
-    top of that list (psychologist_service._promote_ai_recommended_career),
+    top of that list (psychologist_service._apply_ai_recommendation),
     and the psychologist may reorder it — neither is new input, and counting
     it would regenerate the analysis (and possibly its pick) on every view."""
     identity = context.model_copy(update={"careers": sorted(context.careers, key=lambda career: career.slug)})

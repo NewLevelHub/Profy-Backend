@@ -41,17 +41,29 @@ JSON_SCHEMA: dict = {
         "recommended_profession": {
             "type": "object",
             "additionalProperties": False,
-            "required": ["slug", "name", "reasoning"],
+            "required": ["slug", "name", "reasoning", "reasoning_kk"],
             "properties": {
                 "slug": {"type": "string"},
                 "name": {"type": "string"},
                 "reasoning": {"type": "string"},
+                "reasoning_kk": {"type": "string"},
             },
         },
     },
 }
 
 NO_RECOMMENDATION_SLUG = "__none__"
+NO_RECOMMENDATION_JSON = (
+    f'{{"slug": "{NO_RECOMMENDATION_SLUG}", "name": "", "reasoning": "", "reasoning_kk": ""}}'
+)
+
+# `reasoning` itself is what the student reads (AnalysisResult.top_career_why);
+# kk students read this translation of it.
+_REASONING_KK_RULE = (
+    "reasoning_kk — точный перевод reasoning на казахский язык: тот же текст "
+    "с теми же доводами, в том же порядке, ничего не добавляй, не убирай и не "
+    "пересказывай своими словами."
+)
 
 # PRO-427 — the АСТУР block ("intelligence") is a percent of study-type tasks
 # done under a product formula, with no norms behind it.
@@ -79,12 +91,13 @@ def _system_prompt(context: PsychAiAnalysisContext) -> str:
         f"(поле slug должен буквально совпадать с одним из slug ниже — "
         f"никогда не придумывай свою профессию и не меняй название). "
         f"why — то, что ученик уже прочитал о каждой профессии; "
-        f"reasoning опирай на него и на блоки данных:\n{careers_json}"
+        f"reasoning опирай на него и на блоки данных. "
+        f"{_REASONING_KK_RULE} Профессии:\n{careers_json}"
         if context.careers
         else (
             "Список профессий пуст (у этого ученика профориентационный блок "
             f"не строится). В recommended_profession верни ровно "
-            f'{{"slug": "{NO_RECOMMENDATION_SLUG}", "name": "", "reasoning": ""}} '
+            f"{NO_RECOMMENDATION_JSON} "
             "— не предлагай никакую профессию."
         )
     )

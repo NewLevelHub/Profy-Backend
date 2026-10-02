@@ -12,7 +12,7 @@ from app.database import Base
 class ReviewEditSource(str, enum.Enum):
     """Who made an edit. `ai_recommendation` is the system moving the AI
     analysis's recommended profession to the top of the careers list
-    (psychologist_service._promote_ai_recommended_career) — it has no editor
+    (psychologist_service._apply_ai_recommendation) — it has no editor
     and is not a psychologist's correction."""
 
     psychologist = "psychologist"

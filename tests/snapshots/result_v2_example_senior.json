@@ -110,7 +110,8 @@
       "skills_needed": [],
       "subjects_to_develop": [],
       "fit_reasons": [],
-      "fit_keys": []
+      "fit_keys": [],
+      "why_by_ai": false
     },
     {
       "slug": "d1",
@@ -123,7 +124,8 @@
       "skills_needed": [],
       "subjects_to_develop": [],
       "fit_reasons": [],
-      "fit_keys": []
+      "fit_keys": [],
+      "why_by_ai": false
     },
     {
       "slug": "d2",
@@ -136,7 +138,8 @@
       "skills_needed": [],
       "subjects_to_develop": [],
       "fit_reasons": [],
-      "fit_keys": []
+      "fit_keys": [],
+      "why_by_ai": false
     }
   ],
   "exploration_activities": []
