@@ -116,6 +116,21 @@ async def test_a_changed_pick_reads_back_as_the_new_one(db_session: AsyncSession
     assert saved.pair_picks == {PAIR_INDEX: seeded["b"].id}
 
 
+async def test_a_scale_value_on_a_pair_option_is_not_lost(db_session: AsyncSession) -> None:
+    """A value posted to a pair option through the plain answers endpoint
+    isn't a pick — it must stay a scale answer, not vanish from both maps."""
+    seeded = await _seed(db_session)
+    assessment = await _make_assessment(db_session)
+    await assessment_service.submit_answers(
+        assessment.id, [AnswerItem(question_id=seeded["a"].id, value=5)], assessment.profile_id, db_session,
+    )
+
+    saved = await assessment_service.get_saved_answers(assessment.id, assessment.profile_id, db_session)
+
+    assert saved.pair_picks == {}
+    assert saved.question_values[seeded["a"].id] == 5
+
+
 async def test_fresh_assessment_has_nothing_saved(db_session: AsyncSession) -> None:
     assessment = await _make_assessment(db_session)
 

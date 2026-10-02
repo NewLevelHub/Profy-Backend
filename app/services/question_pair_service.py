@@ -74,13 +74,16 @@ async def get_pairs(db: AsyncSession) -> list[QuestionPairItem]:
 async def split_saved_values(
     question_values: dict[uuid.UUID, int], db: AsyncSession
 ) -> tuple[dict[uuid.UUID, int], dict[int, uuid.UUID]]:
-    """Stored UserResponse values -> (plain scale answers, pair picks).
+    """Stored UserResponse values -> (scale answers, pair picks), losslessly:
+    every stored value lands in exactly one of the two.
 
-    Pair options' rows are the pair path's synthetic _PICKED_VALUE /
-    _OTHER_VALUE, not scale answers, so they're kept out of the first map: a
-    client restoring them as Likert values would pre-fill ДДО options at 5/1
-    and a single nudge would break the encoding. A pair counts as picked
-    only when both rows are there with that exact encoding.
+    A pair reads as picked only when both its rows carry the synthetic
+    encoding submit_pair_answers writes (_PICKED_VALUE / _OTHER_VALUE); those
+    two rows are then left out of the scale answers — they aren't scale
+    answers, and echoing them as such would let a client pre-fill ДДО
+    options at 5/1. Anything else on a pair option (a value posted through
+    the plain answers endpoint, a lone row) stays a scale answer, so it
+    never disappears from both maps while scoring still counts it.
 
     The rows carry no "written by the pair path" mark, so the pick is the
     same reading professional_types_service scores with (value 5 = picked).
@@ -91,15 +94,18 @@ async def split_saved_values(
     pairs = (
         await db.execute(select(QuestionPair).where(QuestionPair.instrument != QuestionInstrument.big_five))
     ).scalars().all()
-    option_ids = {option_id for pair in pairs for option_id in (pair.question_a_id, pair.question_b_id)}
     picks: dict[int, uuid.UUID] = {}
+    pick_rows: set[uuid.UUID] = set()
     for pair in pairs:
         values = (question_values.get(pair.question_a_id), question_values.get(pair.question_b_id))
         if values == (_PICKED_VALUE, _OTHER_VALUE):
             picks[pair.pair_index] = pair.question_a_id
         elif values == (_OTHER_VALUE, _PICKED_VALUE):
             picks[pair.pair_index] = pair.question_b_id
-    scale_values = {question_id: value for question_id, value in question_values.items() if question_id not in option_ids}
+        else:
+            continue
+        pick_rows.update((pair.question_a_id, pair.question_b_id))
+    scale_values = {question_id: value for question_id, value in question_values.items() if question_id not in pick_rows}
     return scale_values, picks
 
 
