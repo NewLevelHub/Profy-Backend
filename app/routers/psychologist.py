@@ -108,8 +108,8 @@ async def rebuild_strength_cards(
     current_user: User = Depends(_require_psychologist),
     db: AsyncSession = Depends(get_db),
 ) -> PsychologistResultDetailResponse:
-    """Rebuilds «Сильные стороны» from the student's current results — the
-    way out of `strengths_stale` after a Belbin retake (PRO-432)."""
+    """Rebuilds «Сильные стороны» under the current strength rules — the way
+    out of `strengths_stale` (a report built under older rules, PRO-432)."""
     try:
         return await psychologist_service.rebuild_strength_cards(
             db,

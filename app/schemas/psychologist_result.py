@@ -75,9 +75,8 @@ class PsychologistResultDetailResponse(BaseModel):
     personality_notes: dict[str, str]
     motivation_highlights: list[str]
     created_at: datetime
-    # The strength cards were built from earlier Belbin/АСТУР results than
-    # the student's current ones (a retake after the report) — rebuild them
-    # or publish as they are (PRO-432).
+    # The strength cards were built under an older strength rules version
+    # (app/data/student_strengths_rules.json) — rebuild them (PRO-432).
     strengths_stale: bool = False
 
     model_config = {"from_attributes": True}

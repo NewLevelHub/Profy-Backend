@@ -43,8 +43,9 @@ def _minimal_report_kwargs(assessment_id: uuid.UUID) -> dict:
         code=["R", "I", "A"],
         meta={"differentiation": 40.0, "consistency": "high", "aversion": {}},
         careers=[{
-            "slug": "swe", "name": "Разработчик", "rank": 1, "tier": "strong",
-            "why": "Совпало с интересами", "matched_strengths": [], "try_now": "Попробуй",
+            "slug": "swe", "name": "Разработчик", "holland_code": "RI", "match_score": 0.9,
+            "description": "", "professions": [], "skills_needed": [], "subjects_to_develop": [],
+            "first_steps": ["Попробуй"],
         }],
         strengths=["R"],
         weaknesses=["C"],

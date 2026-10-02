@@ -7,9 +7,14 @@
         "string"
       ]
     },
-    "matched_strengths": {
+    "fit_keys": {
       "default": [],
       "items": "string",
+      "type": "array"
+    },
+    "fit_reasons": {
+      "default": [],
+      "items": "StudentFitReason",
       "type": "array"
     },
     "name": {

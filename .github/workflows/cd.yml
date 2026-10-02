@@ -204,6 +204,9 @@ jobs:
             # PRO-427: freeze result snapshots of АСТУР attempts finished before
             # snapshots existed (idempotent — a no-op once done).
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/backfill_astur_legacy_snapshots.py
+            # «Почему тебе подходит» for reports built before it or under an older
+            # career_fit_rules.json version (idempotent — a no-op once current).
+            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/backfill_career_fit.py
             # Universities/programs (scripts/data/university_snapshot.clean.json)
             # removed from every-deploy CD (2026-09-28): the snapshot changes
             # rarely (twice total as of this date, last 2026-09-02) and

@@ -1,10 +1,10 @@
-"""PRO-338 Ф2.3 — belbin_runs is append-only: `assessment_id` must NOT be
-unique (a repeat run inserts a new row, never overwrites). No scoring/submit
-endpoint exists yet (Ф2.4) — this only proves the table/model shape itself,
-same scope as the ticket ("Модель данных: belbin_runs")."""
+"""PRO-338 Ф2.3 — the belbin_runs table/model shape: one run per assessment
+(`assessment_id` unique — Belbin is never retaken alone), cascade on delete."""
 import uuid
 
+import pytest
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.assessment import Assessment, AssessmentGoal
@@ -58,7 +58,9 @@ async def test_a_belbin_run_can_be_inserted_and_read_back(db_session: AsyncSessi
     assert fetched.created_at is not None
 
 
-async def test_assessment_id_is_not_unique_repeat_runs_append(db_session: AsyncSession) -> None:
+async def test_one_run_per_assessment_is_enforced_by_the_database(db_session: AsyncSession) -> None:
+    # The submit endpoint answers 409 first; the unique index also stops a
+    # concurrent second submit from slipping through.
     assessment, user = await _make_assessment(db_session)
     allocations = _sample_allocations()
 
@@ -67,16 +69,12 @@ async def test_assessment_id_is_not_unique_repeat_runs_append(db_session: AsyncS
         allocations=allocations, role_totals={"implementer": 70},
     ))
     await db_session.flush()
-    db_session.add(BelbinRun(
-        assessment_id=assessment.id, user_id=user.id,
-        allocations=allocations, role_totals={"implementer": 20, "coordinator": 50},
-    ))
-    await db_session.flush()
-
-    rows = (await db_session.execute(
-        select(BelbinRun).where(BelbinRun.assessment_id == assessment.id)
-    )).scalars().all()
-    assert len(rows) == 2  # both kept — no unique constraint collapsed them
+    with pytest.raises(IntegrityError):
+        async with db_session.begin_nested():
+            db_session.add(BelbinRun(
+                assessment_id=assessment.id, user_id=user.id,
+                allocations=allocations, role_totals={"implementer": 20, "coordinator": 50},
+            ))
 
 
 async def test_deleting_the_assessment_cascades_to_its_belbin_runs(db_session: AsyncSession) -> None:

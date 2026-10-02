@@ -38,6 +38,7 @@ from app.services import (
     bigfive_content,
     bigfive_service,
     boyko_empathy_service,
+    career_fit_service,
     consent_service,
     elers_service,
     eysenck_service,
@@ -407,11 +408,6 @@ def _shape_response(
 def _shape_response_inner(
     analysis: AnalysisResult, evidence: dict[str, dict] | None = None
 ) -> ResultResponseV2:
-    minimal_context = report_narrative_context.build_report_narrative_context(
-        strengths=list(analysis.strengths),
-        personality_profile={}, personality_notes={}, thinking_style={},
-        motivation_top=[], motivation_highlights=[],
-    )
     differentiation = float((analysis.meta or {}).get("differentiation", 0.0))
     flat = report_v2_assembler.is_flat_profile(differentiation)
     interest_map = report_v2_assembler.build_interest_map(dict(analysis.profile), evidence)
@@ -426,8 +422,7 @@ def _shape_response_inner(
         interest_map=interest_map,
         interest_map_note=report_v2_assembler.build_interest_map_note(interest_map),
         thinking_style_notes=[StudentThinkingStyleNote.model_validate(n) for n in analysis.thinking_style_notes],
-        # personality_profile is stored on every row — read back directly,
-        # no need to recompute or route through minimal_context.
+        # personality_profile is stored on every row — read back directly.
         personality_notes=report_v2_assembler.build_personality_notes(
             dict(analysis.personality_profile),
             dict(analysis.personality_notes_override),
@@ -442,7 +437,7 @@ def _shape_response_inner(
     return RiasecResultResponse(
         **common,
         interest_combination=report_v2_assembler.build_interest_combination(interest_map),
-        careers=report_v2_assembler.build_riasec_careers(minimal_context, list(analysis.careers)),
+        careers=report_v2_assembler.build_riasec_careers(list(analysis.careers), analysis.career_fit),
     )
 
 
@@ -893,7 +888,17 @@ async def _build_report(
             artifacts=artifacts,
         )
         strength_candidates = student_strengths_service.select_strengths(strength_inputs)
-        meta = student_strengths_service.mark_fresh(meta, student_strengths_service.fingerprint(strength_candidates))
+        meta = student_strengths_service.mark_fresh(meta)
+        # «Почему тебе подходит» — locale-free, from the same vetted facts.
+        # Isolated: a failure here leaves the careers with the general line
+        # (the backfill retries it), it never fails the report.
+        try:
+            career_fit = career_fit_service.build_career_fit(
+                strength_inputs, profile_scores, [direction for direction, _ in matched]
+            )
+        except Exception:  # noqa: BLE001
+            logger.exception("career fit failed for assessment=%s", assessment_id)
+            career_fit = None
 
         # KZ-405: a row in another locale means this one is a translation of an
         # already-generated report. It carries that report's review status —
@@ -923,6 +928,9 @@ async def _build_report(
             strengths, weaknesses, careers, mot_highlights, carried_edits = await _carry_over_review_edits(
                 sibling, db, motivation_highlights=mot_highlights
             )
+            # Locale-free: every row of an assessment shows the same reasons.
+            if career_fit_service.is_current(sibling.career_fit):
+                career_fit = sibling.career_fit
             # The strength cards come from the reviewed row (translated or
             # carried over), and so does whether they are up to date.
             meta = {k: v for k, v in meta.items() if not k.startswith("strengths_")} | {
@@ -1014,6 +1022,7 @@ async def _build_report(
             code=code,
             meta=meta,
             careers=careers,
+            career_fit=career_fit,
             strengths=strengths,
             weaknesses=weaknesses,
             development_plan=plan,
@@ -1094,6 +1103,7 @@ async def _build_report(
                 created_at=analysis.created_at,
                 evidence=evidence,
                 strength_cards=strength_cards_stored,
+                career_fit=career_fit,
             )
     await _cache_if_published(redis, analysis, response)
 

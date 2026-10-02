@@ -13,10 +13,10 @@ from app.schemas.report_narrative import (
     ReportNarrativeOutput,
 )
 from app.i18n import use_locale
+from app.i18n.catalog import tr
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
 from app.schemas.student_strengths import StrengthCandidate
 from app.services import report_v2_assembler
-from app.services.riasec_content import neutral_career_why_variants
 from app.services.riasec_service import HOLLAND_ORDER
 
 _NOW = datetime.now(timezone.utc)
@@ -68,137 +68,38 @@ def _direction(slug: str, holland_code: str, match_score: float, first_steps: li
     }
 
 
-def test_six_riasec_items_and_valid_career_explanations() -> None:
-    context = _context(evidence=[
-        EvidenceItem(source_id="riasec:R", source_type="riasec_category", text="Любишь работать руками"),
-    ])
+def test_six_riasec_items_and_career_why_from_career_fit() -> None:
     careers = [_direction("swe", "RI", 5, first_steps=["Собери первый проект"]), _direction("other", "SEC", 2)]
-    response = report_v2_assembler.assemble_result_v2(
-        assessment_id=uuid.uuid4(),
-        context=context,
-        narrative=_narrative(),
-        profile_scores={k: 40.0 for k in HOLLAND_ORDER},
-        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
-        differentiation=30.0,
-        careers=careers,
-        created_at=_NOW,
-    )
+    career_fit = {"version": 1, "careers": {"swe": {"letters": ["R", "I"], "reasons": []}}}
+    with use_locale("ru"):
+        response = report_v2_assembler.assemble_result_v2(
+            assessment_id=uuid.uuid4(),
+            context=_context(evidence=[]),
+            narrative=_narrative(),
+            profile_scores={k: 40.0 for k in HOLLAND_ORDER},
+            personality_profile=_DEFAULT_PERSONALITY_PROFILE,
+            differentiation=30.0,
+            careers=careers,
+            created_at=_NOW,
+            career_fit=career_fit,
+        )
 
     assert response.interest_instrument == "riasec"
     assert len(response.interest_map) == 6
     assert {item.code for item in response.interest_map} == set(HOLLAND_ORDER)
     assert response.exploration_activities == []
-    assert len(response.careers) == 2
-    for career in response.careers:
-        assert career.why  # never empty
-    # The direction whose Holland code overlaps evidence gets a grounded why + try_now.
     swe = next(c for c in response.careers if c.slug == "swe")
-    assert "Любишь работать руками" in swe.why
+    assert swe.why == (
+        "Совпадает с тем, что тебе ближе всего: практическая работа и исследование. "
+        "В этой профессии особенно важно: навык."
+    )
+    assert swe.fit_keys == ["riasec:R", "riasec:I"]
     assert swe.try_now == "Собери первый проект"
-    # The one with no overlapping evidence still gets a neutral fallback, never blank.
+    # No stored entry (a career added by hand): an honest skill-specific
+    # exploration fallback, never a fabricated personal match and never blank.
     other = next(c for c in response.careers if c.slug == "other")
-    assert other.why == neutral_career_why_variants()[0]
-
-
-def test_careers_sharing_the_same_letters_in_a_different_order_get_different_why_text() -> None:
-    """Found live: Архивариус/Аудитор/Бухгалтер/Директор по логистике/
-    HR-менеджер all showed the exact same `why` sentence — their Holland
-    codes were the same 3 letters ("CSE"/"ESC"/"SEC"/...), and the old
-    _matched_strengths_for listed every matching letter in the same fixed
-    (user-rank) order regardless of which direction it was for. Now the
-    order is direction-specific (riasec_service.direction_letter_weight),
-    so two directions built from an identical evidence set but a different
-    code must not produce byte-identical why text."""
-    context = _context(evidence=[
-        EvidenceItem(source_id="riasec:C", source_type="riasec_category", text="Умеешь наводить порядок"),
-        EvidenceItem(source_id="riasec:S", source_type="riasec_category", text="Умеешь работать с людьми"),
-        EvidenceItem(source_id="riasec:E", source_type="riasec_category", text="Умеешь вести за собой"),
-    ])
-    careers = [_direction("buhgalter", "CSE", 6), _direction("hr", "SEC", 6)]
-    response = report_v2_assembler.assemble_result_v2(
-        assessment_id=uuid.uuid4(),
-        context=context,
-        narrative=_narrative(),
-        profile_scores={k: 40.0 for k in HOLLAND_ORDER},
-        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
-        differentiation=30.0,
-        careers=careers,
-        created_at=_NOW,
-    )
-
-    buhgalter = next(c for c in response.careers if c.slug == "buhgalter")
-    hr = next(c for c in response.careers if c.slug == "hr")
-    assert buhgalter.why != hr.why
-    # Same underlying facts, matches all 3 evidence items — nothing dropped.
-    assert set(buhgalter.matched_strengths) == set(hr.matched_strengths)
-    assert len(buhgalter.matched_strengths) == 3
-
-
-def test_careers_with_identical_evidence_after_reordering_get_a_skills_needed_differentiator() -> None:
-    """Found live (residual case, after the reordering fix above): two
-    directions can differ ONLY in a letter that isn't part of the student's
-    confirmed top-3 evidence at all — e.g. "CSI" vs "CSR" both only match
-    on C/S, in the same order, since I/R aren't vetted strengths. Reordering
-    can't help here (there's nothing left to reorder), so the second such
-    card gets an extra clause naming its own skills_needed — a fact about
-    the job, not an unvetted claim about the student."""
-    context = _context(evidence=[
-        EvidenceItem(source_id="riasec:C", source_type="riasec_category", text="Умеешь наводить порядок"),
-        EvidenceItem(source_id="riasec:S", source_type="riasec_category", text="Умеешь работать с людьми"),
-    ])
-    careers = [
-        _direction("first", "CSI", 6),
-        _direction("second", "CSR", 5),
-    ]
-    careers[0]["skills_needed"] = ["Внимательность"]
-    careers[1]["skills_needed"] = ["Техническая грамотность"]
-    response = report_v2_assembler.assemble_result_v2(
-        assessment_id=uuid.uuid4(),
-        context=context,
-        narrative=_narrative(),
-        profile_scores={k: 40.0 for k in HOLLAND_ORDER},
-        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
-        differentiation=30.0,
-        careers=careers,
-        created_at=_NOW,
-    )
-
-    first = next(c for c in response.careers if c.slug == "first")
-    second = next(c for c in response.careers if c.slug == "second")
-    assert set(first.matched_strengths) == set(second.matched_strengths)  # same confirmed evidence
-    assert first.why != second.why
-    assert "Техническая грамотность" in second.why
-    assert "Техническая грамотность" not in first.why
-
-
-def test_ten_careers_with_no_overlapping_evidence_get_varied_why_text() -> None:
-    """Found live 2026-08-19: a flat profile put all 10 shown careers into
-    the no-overlap fallback branch, and every single one showed the exact
-    same byte-identical `why` sentence. NEUTRAL_CAREER_WHY_VARIANTS must be
-    cycled through (and, once exhausted, differentiated by skills_needed)
-    so 10 unrelated careers never read as copy-pasted."""
-    context = _context(evidence=[])
-    careers = []
-    for i in range(10):
-        d = _direction(f"d{i}", "RIA", 10 - i)
-        d["skills_needed"] = [f"Навык {i}"]
-        careers.append(d)
-    response = report_v2_assembler.assemble_result_v2(
-        assessment_id=uuid.uuid4(),
-        context=context,
-        narrative=_narrative(),
-        profile_scores={k: 50.0 for k in HOLLAND_ORDER},
-        personality_profile=_DEFAULT_PERSONALITY_PROFILE,
-        differentiation=5.0,
-        careers=careers,
-        created_at=_NOW,
-    )
-
-    whys = [c.why for c in response.careers]
-    assert len(whys) == 10
-    assert len(set(whys)) == 10  # no two of the ten cards read identical
-    for why in whys:
-        assert why  # never empty
+    assert other.why == tr("career_fit", locale="ru")["reason_skill_fallback"].format(skill="навык")
+    assert other.fit_reasons == [] and other.fit_keys == []
 
 
 def test_flat_profile_still_gets_the_full_ranked_career_list() -> None:

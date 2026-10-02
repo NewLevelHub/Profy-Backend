@@ -41,7 +41,7 @@ async def assign_block(
 
 async def list_assignments(assessment_id: uuid.UUID, db: AsyncSession) -> list[dict]:
     """Every assigned block for this assessment, each with a `completed`
-    flag derived from the corresponding append-only run table (never a
+    flag derived from the corresponding run table (never a
     stored flag — see the model's own docstring)."""
     rows = (
         await db.execute(
@@ -56,7 +56,7 @@ async def list_assignments(assessment_id: uuid.UUID, db: AsyncSession) -> list[d
         if row.block == ExtendedBlock.belbin:
             # Belbin's submit is one-shot (Ф2.4: all 7 blocks validated in a
             # single request) — a row existing at all means it's complete.
-            run = await belbin_service.get_latest_run(assessment_id, db)
+            run = await belbin_service.get_run(assessment_id, db)
             completed = run is not None
         else:
             # АСТУР attempts carry an explicit status (PRO-427) — an open

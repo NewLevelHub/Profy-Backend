@@ -5,7 +5,13 @@ from datetime import datetime, timezone
 
 from app.prompts.psych_ai_analysis import build_messages
 from app.schemas.new_tests import IntelligenceSection, NewTestsSections, TeamRoleSection, TemperamentSection
-from app.schemas.result_v2 import RiasecResultResponse, StudentCareer, StudentInterestMapItem, StudentPersonalityNote
+from app.schemas.result_v2 import (
+    RiasecResultResponse,
+    StudentCareer,
+    StudentFitReason,
+    StudentInterestMapItem,
+    StudentPersonalityNote,
+)
 from app.services.bigfive_content import personality_labels
 from app.services.astur.scoring import score_attempt
 from app.services.astur.scoring_rules import get_rules
@@ -79,16 +85,24 @@ def test_temperament_block_facts_exclude_none_fields() -> None:
     assert temperament_block.label == "Темперамент (Айзенк)"
 
 
-def test_careers_are_carried_through_as_slug_name_why() -> None:
+def test_careers_carry_what_the_student_reads_about_each_one() -> None:
+    reason = StudentFitReason(
+        kind="fact", fact="Ты хорошо замечаешь закономерности в числах",
+        text="Ты хорошо замечаешь закономерности в числах. Здесь это пригодится: писать код.",
+    )
     report = _bare_report(careers=[
-        StudentCareer(slug="swe", name="Разработчик", rank=1, tier="strong", why="Совпало с интересами", try_now="Попробуй"),
+        StudentCareer(
+            slug="swe", name="Разработчик", rank=1, tier="strong",
+            why="Совпадает с тем, что тебе ближе всего: исследование.", try_now="Попробуй",
+            fit_reasons=[reason],
+        ),
     ])
     context = build_context(report, NewTestsSections(), student_name="Аружан")
 
-    assert len(context.careers) == 1
-    assert context.careers[0].slug == "swe"
-    assert context.careers[0].name == "Разработчик"
-    assert context.careers[0].why == "Совпало с интересами"
+    [career] = context.careers
+    assert (career.slug, career.name) == ("swe", "Разработчик")
+    assert career.why == "Совпадает с тем, что тебе ближе всего: исследование."
+    assert set(career.model_dump()) == {"slug", "name", "why"}
 
 
 def test_has_any_data_true_with_at_least_one_block() -> None:

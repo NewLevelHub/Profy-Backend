@@ -767,7 +767,7 @@ def _to_detail(analysis: AnalysisResult) -> PsychologistResultDetailResponse:
     return detail.model_copy(
         update={
             "personality_notes": report_service.student_personality_notes(analysis),
-            "strengths_stale": student_strengths_service.strengths_are_stale(analysis.meta),
+            "strengths_stale": student_strengths_service.rules_version_is_outdated(analysis.meta),
         }
     )
 
@@ -1024,8 +1024,8 @@ async def rebuild_strength_cards(
     assessment_id: uuid.UUID,
 ) -> PsychologistResultDetailResponse:
     """Explicit «Пересобрать сильные стороны» (PRO-432): replaces the cards
-    with ones built from the student's current results (e.g. after a Belbin
-    retake), in the deterministic wording — the psychologist's own
+    with ones built under the current strength rules (a report built under
+    an older rules version), in the deterministic wording — the psychologist's own
     edits are overwritten only because they asked for it. Recorded like any
     other review edit."""
     await _require_assigned_student(db, psychologist_id=psychologist_id, student_id=student_id)
@@ -1042,11 +1042,11 @@ async def rebuild_strength_cards(
         await db.execute(select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id))
     ).scalars().all()
     for row in rows:
-        cards, strengths_fingerprint = await student_strengths_service.rebuild_cards(row, db)
+        cards = await student_strengths_service.rebuild_cards(row, db)
         if row.id == analysis.id and cards != list(row.strength_cards):
             changed["strength_cards"] = {"old": list(row.strength_cards), "new": cards}
         row.strength_cards = cards
-        row.meta = student_strengths_service.mark_fresh(row.meta, strengths_fingerprint)
+        row.meta = student_strengths_service.mark_fresh(row.meta)
         if rules_outdated:
             row.review_status = ReviewStatus.pending_review
     return await _save_review_changes(db, analysis, editor_id=psychologist_id, changed=changed)
@@ -1079,9 +1079,6 @@ async def _publish(
         raise ResultAlreadyPublishedError(i18n_key("api_errors", "result_is_already_published", locale="ru"))
     now = datetime.now(timezone.utc)
     analysis.review_status = ReviewStatus.published
-    # Publishing is the psychologist's decision that the cards are fine as
-    # they are, rebuilt or not.
-    analysis.meta = {k: v for k, v in (analysis.meta or {}).items() if k != "strengths_stale"}
     analysis.published_by = publisher_id
     analysis.published_at = now
     # Published without edits — publishing still counts as a review.
