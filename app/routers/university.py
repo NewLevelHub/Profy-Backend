@@ -57,6 +57,7 @@ async def list_all_universities(
         only_favorites=only_favorites,
         sort=sort,
         order=order,
+        locale=get_locale(),
     )
 
 
@@ -107,7 +108,10 @@ async def get_university(
     db: AsyncSession = Depends(get_db),
 ) -> UniversityDetail:
     return await get_university_for_user(
-        db, university_id, user_id=current_user.id if current_user else None
+        db,
+        university_id,
+        user_id=current_user.id if current_user else None,
+        locale=get_locale(),
     )
 
 
