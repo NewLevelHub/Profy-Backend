@@ -1,10 +1,11 @@
 """Per-locale strings for the deterministic result_v2 assembler
 (`app/services/report_v2_assembler.py`) — the synthesis sentences it composes
-without the LLM: interest-map note, personality note, career "why", and the
-flat-profile artifact addendum (KZ-403). Same catalog shape as KZ-307.
+without the LLM: interest-map note, personality note and the flat-profile
+artifact addendum (KZ-403). The careers' «Почему тебе подходит» lives in
+`career_fit`. Same catalog shape as KZ-307.
 
 `RU` reproduces the pre-KZ-403 literals byte-for-byte. Templates carry
-`{spheres}` / `{traits}` / `{strengths}` / `{skill}` placeholders filled at
+`{spheres}` / `{traits}` placeholders filled at
 the call site; the sphere/trait/strength names interpolated in come from the
 KZ-307 label accessors, which the caller runs under `i18n.use_locale(locale)`.
 """
@@ -49,9 +50,6 @@ RU = {
         "Черты характера выражены сбалансированно, без одной резко доминирующей — "
         "и это нормально, у характера не обязательно должна быть одна главная черта."
     ),
-    "career_why_match": "Совпадает с тем, что у тебя выражено: {strengths}.",
-    "career_why_skill_matched": " Именно здесь особенно пригодится: {skill}.",
-    "career_why_skill_neutral": " В этой сфере особенно ценится: {skill}.",
 }
 
 KK = {
@@ -92,7 +90,4 @@ KK = {
         "Мінез қасиеттерің біркелкі байқалады, біреуі күрт басым емес — бұл қалыпты, "
         "мінезде бір басты белгі болуы міндетті емес."
     ),
-    "career_why_match": "Сенде айқын байқалатынмен сәйкес келеді: {strengths}.",
-    "career_why_skill_matched": " Дәл осы жерде әсіресе қажет болады: {skill}.",
-    "career_why_skill_neutral": " Бұл салада ерекше бағаланады: {skill}.",
 }

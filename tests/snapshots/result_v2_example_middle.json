@@ -105,11 +105,12 @@
       "rank": 1,
       "tier": "strong",
       "why": "Совпадает с твоими ответами",
-      "matched_strengths": [],
       "try_now": "Попробуй маленький проект",
       "description": null,
       "skills_needed": [],
-      "subjects_to_develop": []
+      "subjects_to_develop": [],
+      "fit_reasons": [],
+      "fit_keys": []
     },
     {
       "slug": "designer",
@@ -117,11 +118,12 @@
       "rank": 1,
       "tier": "good",
       "why": "Совпадает с твоими ответами",
-      "matched_strengths": [],
       "try_now": "Попробуй маленький проект",
       "description": null,
       "skills_needed": [],
-      "subjects_to_develop": []
+      "subjects_to_develop": [],
+      "fit_reasons": [],
+      "fit_keys": []
     }
   ],
   "exploration_activities": []

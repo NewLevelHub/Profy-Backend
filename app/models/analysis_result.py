@@ -47,6 +47,9 @@ class AnalysisResult(Base):
     code: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)  # ["R", "I", "A"]
     meta: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # differentiation/consistency/aversion
     careers: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)  # was `directions`
+    # «Почему тебе подходит» per career slug, locale-free (career_fit_service).
+    # NULL = built before career fit existed; scripts/backfill_career_fit.py.
+    career_fit: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
     strengths: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)  # ["R", "I"]
     weaknesses: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)  # ["C"]
     development_plan: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)  # {reinforce, compensate}

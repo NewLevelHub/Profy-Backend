@@ -40,6 +40,8 @@ class BlockData(BaseModel):
 class CareerOption(BaseModel):
     slug: str
     name: str
+    # «Почему тебе подходит» exactly as the student reads it — already one
+    # text over every concrete fact ↔ profession reason.
     why: str
 
 
