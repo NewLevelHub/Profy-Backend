@@ -25,7 +25,7 @@ from sqlalchemy.orm import aliased
 from app.i18n.catalog import key as i18n_key, tr
 from app.i18n import DEFAULT_LOCALE
 from app.models.analysis_result import AnalysisResult, ReviewStatus
-from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
+from app.models.analysis_result_review_edit import AnalysisResultReviewEdit, ReviewEditSource
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.extended_block_assignment import ExtendedBlock, ExtendedBlockAssignment
 from app.models.profile import Profile
@@ -580,6 +580,27 @@ async def _student_profile_facts(student_id: uuid.UUID, db: AsyncSession) -> tup
 async def _get_or_generate_psych_ai_analysis(
     analysis, *, report, new_tests, student_id: uuid.UUID, db: AsyncSession, force: bool = False
 ) -> PsychAiAnalysisOutput | None:
+    """The AI analysis (see _cached_or_new_psych_ai_analysis), with its
+    recommended profession put at the top of the student's careers."""
+    output = await _cached_or_new_psych_ai_analysis(
+        analysis, report=report, new_tests=new_tests, student_id=student_id, db=db, force=force
+    )
+    if output is None or output.recommended_profession is None:
+        return output
+    try:
+        await _promote_ai_recommended_career(
+            db, analysis, slug=output.recommended_profession.slug, student_id=student_id
+        )
+    except Exception:
+        # Same isolation as the analysis itself: the report must still open.
+        await db.rollback()
+        logger.exception("Failed to promote the AI-recommended career for assessment %s", analysis.assessment_id)
+    return output
+
+
+async def _cached_or_new_psych_ai_analysis(
+    analysis, *, report, new_tests, student_id: uuid.UUID, db: AsyncSession, force: bool = False
+) -> PsychAiAnalysisOutput | None:
     """Lazily generates + caches the AI analysis on first view (product
     decision: auto-generate rather than requiring an explicit action first)
     — `analysis.psych_ai_analysis` is the cache, `force=True` (the
@@ -628,6 +649,86 @@ async def _get_or_generate_psych_ai_analysis(
             "Failed to generate psych_ai_analysis for assessment %s", analysis.assessment_id
         )
         return None
+
+
+def _careers_with_pick_first(careers: list[dict], *, slug: str, system_order: list[str]) -> list[dict]:
+    """`careers` in the system's (RIASEC) order, `slug` moved to the top.
+    Careers missing from `system_order` keep their relative order at the end."""
+    rank = {career_slug: index for index, career_slug in enumerate(system_order)}
+    ordered = sorted(careers, key=lambda career: rank.get(career.get("slug"), len(rank)))
+    return [c for c in ordered if c.get("slug") == slug] + [c for c in ordered if c.get("slug") != slug]
+
+
+def _ordered_by_slugs(careers: list[dict], slugs: list[str]) -> list[dict]:
+    rank = {slug: index for index, slug in enumerate(slugs)}
+    return sorted(careers, key=lambda career: rank.get(career.get("slug"), len(rank)))
+
+
+async def _promote_ai_recommended_career(
+    db: AsyncSession, analysis: AnalysisResult, *, slug: str, student_id: uuid.UUID
+) -> None:
+    """Product default: the AI analysis's recommended profession is the
+    student's #1 career, even when RIASEC ranks it lower — in practice it
+    fits best. Applied while the report is pending review and only as long as
+    the psychologist has not edited the careers themselves: their order
+    always wins. A later analysis that picks another career restores the
+    RIASEC order (the `old` of the first AI reorder) and puts the new pick on
+    top. Every locale row is reordered in place — careers are the same slugs
+    in each — and the change is logged as an `ai_recommendation` edit, which
+    is not a review: `reviewed_by`/`reviewed_at` stay untouched."""
+    current_slugs = [career.get("slug") for career in analysis.careers or []]
+    if (
+        analysis.review_status != ReviewStatus.pending_review
+        or slug not in current_slugs
+        or current_slugs[0] == slug
+    ):
+        return
+
+    await report_service.lock_report_generation(analysis.assessment_id, db)
+    reviewed = await _require_result_for_student(
+        db, student_id=student_id, assessment_id=analysis.assessment_id, for_update=True
+    )
+    if reviewed.review_status != ReviewStatus.pending_review:
+        return
+    careers_edits = (
+        await db.execute(
+            select(AnalysisResultReviewEdit.source, AnalysisResultReviewEdit.changed_fields)
+            .join(AnalysisResult, AnalysisResult.id == AnalysisResultReviewEdit.analysis_result_id)
+            .where(
+                AnalysisResult.assessment_id == reviewed.assessment_id,
+                AnalysisResultReviewEdit.changed_fields.has_key("careers"),
+            )
+            .order_by(AnalysisResultReviewEdit.edited_at.asc(), AnalysisResultReviewEdit.id.asc())
+        )
+    ).all()
+    if any(edit.source != ReviewEditSource.ai_recommendation for edit in careers_edits):
+        return
+
+    old_careers = list(reviewed.careers or [])
+    system_careers = careers_edits[0].changed_fields["careers"]["old"] if careers_edits else old_careers
+    new_careers = _careers_with_pick_first(
+        old_careers, slug=slug, system_order=[career.get("slug") for career in system_careers]
+    )
+    if new_careers == old_careers:
+        return
+
+    new_slugs = [career.get("slug") for career in new_careers]
+    locale_rows = (
+        await db.execute(select(AnalysisResult).where(AnalysisResult.assessment_id == reviewed.assessment_id))
+    ).scalars().all()
+    for row in locale_rows:
+        row.careers = _ordered_by_slugs(list(row.careers or []), new_slugs)
+    db.add(
+        AnalysisResultReviewEdit(
+            analysis_result_id=reviewed.id,
+            editor_id=None,
+            source=ReviewEditSource.ai_recommendation,
+            edited_at=datetime.now(timezone.utc),
+            changed_fields={"careers": {"old": old_careers, "new": new_careers}},
+        )
+    )
+    await db.commit()
+    await _drop_report_cache(reviewed.assessment_id)
 
 
 # --- Report review (PRO-337) -------------------------------------------------
@@ -764,10 +865,12 @@ def _to_detail(analysis: AnalysisResult) -> PsychologistResultDetailResponse:
     reads a computed, age-appropriate phrase instead. Show (and let them
     edit) exactly what the student reads."""
     detail = PsychologistResultDetailResponse.model_validate(analysis)
+    recommended = (analysis.psych_ai_analysis or {}).get("recommended_profession") or {}
     return detail.model_copy(
         update={
             "personality_notes": report_service.student_personality_notes(analysis),
             "strengths_stale": student_strengths_service.rules_version_is_outdated(analysis.meta),
+            "ai_recommended_slug": recommended.get("slug"),
         }
     )
 
@@ -823,6 +926,7 @@ async def list_review_edits(
             edited_at=edit.edited_at,
             editor_id=edit.editor_id,
             editor_email=email,
+            source=edit.source,
             changed_fields=edit.changed_fields,
         )
         for edit, email in reversed(rows)

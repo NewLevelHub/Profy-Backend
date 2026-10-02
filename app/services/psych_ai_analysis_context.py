@@ -134,8 +134,14 @@ def build_context(
 def fingerprint(context: PsychAiAnalysisContext) -> str:
     """Identity of everything the analysis was generated from. A cached
     analysis is valid only for the exact same inputs — a new completed
-    АСТУР attempt, a new scoring version or a changed age all change it."""
-    return hashlib.sha256(context.model_dump_json().encode("utf-8")).hexdigest()
+    АСТУР attempt, a new scoring version or a changed age all change it.
+
+    The careers' *order* is left out: the analysis's own pick is moved to the
+    top of that list (psychologist_service._promote_ai_recommended_career),
+    and the psychologist may reorder it — neither is new input, and counting
+    it would regenerate the analysis (and possibly its pick) on every view."""
+    identity = context.model_copy(update={"careers": sorted(context.careers, key=lambda career: career.slug)})
+    return hashlib.sha256(identity.model_dump_json().encode("utf-8")).hexdigest()
 
 
 def has_any_data(context: PsychAiAnalysisContext) -> bool:

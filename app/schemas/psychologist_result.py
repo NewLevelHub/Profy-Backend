@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field, model_validator
 
 from app.i18n.catalog import key as i18n_key
 from app.models.analysis_result import ReviewStatus
+from app.models.analysis_result_review_edit import ReviewEditSource
 from app.schemas.student_strengths import StrengthBasis
 
 # Mirrors `result_v2._MAX_CAREERS` — the student schema rejects more.
@@ -41,6 +42,7 @@ class PsychologistReviewEditItem(BaseModel):
     edited_at: datetime
     editor_id: uuid.UUID | None = None
     editor_email: str | None = None
+    source: ReviewEditSource = ReviewEditSource.psychologist
     changed_fields: dict[str, dict[str, Any]]
 
 
@@ -78,6 +80,9 @@ class PsychologistResultDetailResponse(BaseModel):
     # The strength cards were built under an older strength rules version
     # (app/data/student_strengths_rules.json) — rebuild them (PRO-432).
     strengths_stale: bool = False
+    # The AI analysis's recommended profession (psych_ai_analysis), put first
+    # in `careers` by default — None when there is no analysis yet.
+    ai_recommended_slug: str | None = None
 
     model_config = {"from_attributes": True}
 
