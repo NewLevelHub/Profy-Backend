@@ -22,7 +22,7 @@ async def _to_response(assessment: Assessment, db: AsyncSession) -> AssessmentRe
     mot_answered = await motivation_service.answered_count(assessment.id, db)
     mot_total = await motivation_service.total_triplets(db)
 
-    belbin_run = await belbin_service.get_latest_run(assessment.id, db)
+    belbin_run = await belbin_service.get_run(assessment.id, db)
     belbin_completed = belbin_run is not None
     astur_completed = await astur_runs.has_completed_run(db, assessment.id)
 

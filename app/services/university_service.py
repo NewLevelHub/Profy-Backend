@@ -9,6 +9,7 @@ from sqlalchemy.orm import noload, selectinload
 from app.i18n.catalog import key as i18n_key
 from app.i18n import DEFAULT_LOCALE, resolve_column_i18n
 from app.i18n.data_strings import translate_data_list, translate_data_string
+from app.i18n.geo import source_cities_matching
 from app.models.direction import Direction
 from app.models.program import Program
 from app.models.university import University
@@ -51,23 +52,33 @@ def _favorite_first_clause(user_id: uuid.UUID | None):
 
 
 def _search_clause(search: str):
-    """Matches name, short name, city and any alias.
+    """Matches name, short name, city, any alias and any translated name.
 
     Name-only search is why a university can't be found by the abbreviation
     everyone actually calls it, or by its city. `aliases` is a JSONB array of
     strings, so each element is unnested and matched on its own rather than
     pattern-matching the array's JSON text (which would also match
-    punctuation and escapes).
+    punctuation and escapes). `name_i18n` ({"kk": ...}) is matched the same
+    way, and so are translated city names («Өскемен» → «Усть-Каменогорск»),
+    whatever the request locale: the kk UI shows those, so they are what a
+    student types there (PRO-450).
     """
     like = f"%{search.strip()}%"
     alias = func.jsonb_array_elements_text(University.aliases).table_valued("value")
     alias_match = select(1).select_from(alias).where(alias.c.value.ilike(like)).exists()
-    return or_(
+    translated = func.jsonb_each_text(University.name_i18n).table_valued("key", "value")
+    translated_name_match = select(1).select_from(translated).where(translated.c.value.ilike(like)).exists()
+    clauses = [
         University.name.ilike(like),
         University.short_name.ilike(like),
         University.city.ilike(like),
         alias_match,
-    )
+        translated_name_match,
+    ]
+    translated_cities = source_cities_matching(search)
+    if translated_cities:
+        clauses.append(University.city.in_(translated_cities))
+    return or_(*clauses)
 
 
 def _catalogue_order_by(sort: str | None, order: str):
@@ -97,24 +108,30 @@ def _catalogue_order_by(sort: str | None, order: str):
     return [ordered]
 
 
-def _university_brief(university: University, locale: str) -> UniversityBrief:
-    """`UniversityBrief` with `description` (KZ-501) and `name` (KZ-206
-    follow-up, Kazakhstan universities) resolved for `locale`: the `kk`
-    override when present, else the `ru` base column, with
-    `description_locale` / `name_locale` reporting which was served."""
+def _localized_university_fields(university: University, locale: str) -> dict:
+    """`description` (KZ-501) and `name` (KZ-206 follow-up, Kazakhstan
+    universities) resolved for `locale`: the `kk` override when present, else
+    the `ru` base column, with `description_locale` / `name_locale` reporting
+    which was served. Every response shape built from a University row applies
+    this — the catalogue and the university page once skipped it and showed
+    Russian text in the kk UI although the kk overlay was there (PRO-450)."""
     description, description_locale = resolve_column_i18n(
         university.description_i18n, university.description, locale
     )
     name, name_locale = resolve_column_i18n(
         university.name_i18n, university.name, locale
     )
+    return {
+        "name": name,
+        "name_locale": name_locale,
+        "description": description,
+        "description_locale": description_locale,
+    }
+
+
+def _university_brief(university: University, locale: str) -> UniversityBrief:
     return UniversityBrief.model_validate(university).model_copy(
-        update={
-            "name": name,
-            "name_locale": name_locale,
-            "description": description,
-            "description_locale": description_locale,
-        }
+        update=_localized_university_fields(university, locale)
     )
 
 
@@ -281,12 +298,6 @@ async def favorite_university_ids(db: AsyncSession, user_id: uuid.UUID) -> set[u
     return set(result.scalars().all())
 
 
-def _brief_with_favorite(university: University, favorite_ids: set[uuid.UUID]) -> UniversityBrief:
-    brief = UniversityBrief.model_validate(university)
-    brief.is_favorite = university.id in favorite_ids
-    return brief
-
-
 async def search_programs_for_user(
     db: AsyncSession,
     profession_slug: str,
@@ -329,6 +340,7 @@ async def list_universities(
     only_favorites: bool = False,
     sort: str | None = None,
     order: str = "asc",
+    locale: str = DEFAULT_LOCALE,
 ) -> UniversityListResponse:
     """The standalone catalogue (PRO-265).
 
@@ -381,7 +393,9 @@ async def list_universities(
     favorite_ids = await favorite_university_ids(db, user_id) if user_id else set()
     items = []
     for university, count in rows:
-        item = UniversityListItem.model_validate(university)
+        item = UniversityListItem.model_validate(university).model_copy(
+            update=_localized_university_fields(university, locale)
+        )
         item.is_favorite = university.id in favorite_ids
         item.programs_count = count
         items.append(item)
@@ -404,6 +418,7 @@ async def get_university_for_user(
     db: AsyncSession,
     university_id: uuid.UUID,
     user_id: uuid.UUID | None = None,
+    locale: str = DEFAULT_LOCALE,
 ) -> UniversityDetail:
     # `Program.university` has to be eager-loaded explicitly: University.programs
     # is lazy="selectin", but the back-reference on each loaded Program is not,
@@ -423,15 +438,17 @@ async def get_university_for_user(
 
     programs = []
     for program in university.programs:
-        brief = ProgramBrief.model_validate(program)
+        brief = _program_brief(program, locale)
         brief.university.is_favorite = is_favorite
         programs.append(brief)
 
+    brief = _university_brief(university, locale)
+    brief.is_favorite = is_favorite
     # Built field-by-field rather than model_validate(university): UniversityDetail
     # declares `programs`, and from_attributes would re-derive them from the ORM
     # relationship without the `is_favorite` stamping above.
     return UniversityDetail(
-        **_brief_with_favorite(university, favorite_ids).model_dump(),
+        **brief.model_dump(),
         contacts=university.contacts,
         facilities=university.facilities,
         source_url=university.source_url,

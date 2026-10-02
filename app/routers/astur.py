@@ -13,13 +13,12 @@ from app.models.user import User
 from app.schemas.astur import (
     AsturAttemptResponse,
     AsturStateResponse,
-    OpenAsturAttemptRequest,
     StartAsturSubtestRequest,
     StartAsturSubtestResponse,
     SubmitAsturSubtestRequest,
     SubmitAsturSubtestResponse,
 )
-from app.services import assessment_shared, student_strengths_service
+from app.services import assessment_shared
 from app.services.astur import runs
 
 router = APIRouter(tags=["astur"])
@@ -50,8 +49,7 @@ async def get_astur_state(
     db: AsyncSession = Depends(get_db),
 ) -> AsturStateResponse:
     """Not started / in progress (with submitted subtests, to resume) /
-    completed. The open attempt and the last completed one are reported
-    separately — an open retake never hides a finished result."""
+    completed."""
     await _require_owned_assessment(assessment_id, current_user, db)
     return AsturStateResponse(**await runs.get_state(db, assessment_id))
 
@@ -61,18 +59,15 @@ async def get_astur_state(
 )
 async def open_astur_attempt(
     assessment_id: uuid.UUID,
-    data: OpenAsturAttemptRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> AsturAttemptResponse:
     """Opens (or resumes) the attempt and returns its content in one step:
     bank version and locale are pinned before any item is shown, so the
-    items on screen are always scored with their own keys. After a completed
-    attempt only `retake: true` («Пройти заново») opens a new one."""
+    items on screen are always scored with their own keys. A completed
+    attempt is never reopened (409 `astur_attempt_completed`)."""
     await _require_owned_assessment(assessment_id, current_user, db)
-    return AsturAttemptResponse(
-        **await runs.open_attempt(db, assessment_id, user_id=current_user.id, retake=data.retake)
-    )
+    return AsturAttemptResponse(**await runs.open_attempt(db, assessment_id, user_id=current_user.id))
 
 
 @router.post(
@@ -129,11 +124,7 @@ async def submit_astur_subtest(
         ):
             await db.commit()
 
-    response = SubmitAsturSubtestResponse(
+    return SubmitAsturSubtestResponse(
         run_id=run.id, subtest=key, actual_ms=actual_ms,
         over_limit_items=over_limit_items, run_completed=completed,
     )
-    if completed:
-        # A retake after the report: its strength cards now describe older results.
-        await student_strengths_service.flag_report_if_strengths_changed(assessment_id, db)
-    return response

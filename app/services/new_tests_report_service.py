@@ -82,12 +82,11 @@ async def _build_team_role_section(
 ) -> TeamRoleSection | None:
     """Belbin (Ф2.7). Unlike every other section here, its source is NOT an
     `AnalysisResult` JSONB column — `belbin_runs` (Ф2.3) is a separate
-    append-only table (optional psychologist-assigned block, not part of
-    the main battery/build_report() flow), so this builder is the one
-    exception that takes `assessment_id`/`db` instead of `analysis_result`.
-    `None` if Belbin was never assigned/completed for this assessment."""
+    table (one run per assessment), so this builder is the one exception
+    that takes `assessment_id`/`db` instead of `analysis_result`.
+    `None` if Belbin isn't completed for this assessment."""
     try:
-        run = await belbin_service.get_latest_run(assessment_id, db)
+        run = await belbin_service.get_run(assessment_id, db)
         if run is None:
             return None
         interpretation = belbin_service.interpret_role_totals(run.role_totals)
@@ -148,7 +147,6 @@ async def _build_intelligence_section(
         snapshot = AsturResultSnapshot.model_validate(run.result_snapshot)
         return IntelligenceSection(
             run_id=run.id,
-            retake_in_progress=await astur_runs.active_run(db, assessment_id) is not None,
             **snapshot.model_dump(exclude={"item_scores", "item_status"}),
         )
     except Exception:

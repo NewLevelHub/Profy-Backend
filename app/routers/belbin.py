@@ -18,7 +18,7 @@ from app.schemas.belbin import (
     SubmitBelbinRequest,
     SubmitBelbinResponse,
 )
-from app.services import belbin_service, student_strengths_service
+from app.services import belbin_service
 from scripts.belbin_bank import BLOCK_TOTAL, INSTRUCTION, SECTIONS
 
 router = APIRouter(tags=["belbin"])
@@ -75,14 +75,12 @@ async def submit_belbin(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SubmitBelbinResponse:
-    """Опциональный блок вне основного потока (03-Фаза2-Белбин.md,
-    запускается из кабинета психолога) — один вызов, 7 блоков × 8 значений,
-    сумма строго 10 на блок (422 иначе), Σ по 8 ролям сразу при сабмите."""
+    """Belbin в основной батарее — один вызов, 7 блоков × 8 значений, сумма
+    строго 10 на блок (422 иначе), Σ по 8 ролям сразу при сабмите. Одно
+    прохождение на диагностику: повторная отправка — 409
+    (`belbin_already_completed`), заново проходится только вся диагностика."""
     await _require_owned_assessment(assessment_id, current_user, db)
     run = await belbin_service.submit_run(
         assessment_id, data.allocations, user_id=current_user.id, db=db
     )
-    response = SubmitBelbinResponse(run_id=run.id, role_totals=run.role_totals)
-    # A retake after the report: its strength cards now describe older results.
-    await student_strengths_service.flag_report_if_strengths_changed(assessment_id, db)
-    return response
+    return SubmitBelbinResponse(run_id=run.id, role_totals=run.role_totals)

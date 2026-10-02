@@ -28,6 +28,7 @@ from . import (
     riasec_explanations,
 
     bigfive,
+    career_fit,
     email,
     goal_overlay,
     motivation,
@@ -61,6 +62,7 @@ _AREAS: dict[str, Any] = {
     "narrative_fallback": narrative_fallback,
     "result_v2": result_v2,
     "student_strengths": student_strengths,
+    "career_fit": career_fit,
     "psychoemotional_interpretation": psychoemotional_interpretation,
 }
 

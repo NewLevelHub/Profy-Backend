@@ -354,3 +354,45 @@ def load_student_strengths_rules(
 
 student_strengths_rules: StudentStrengthsRules = load_student_strengths_rules()
 
+
+# --- «Почему тебе подходит» for careers ---------------------------------------
+# Same versioned-JSON contract: the rules + the per-profession skill axes,
+# edited without code changes. See the rules file's own comment.
+_CAREER_FIT_RULES_PATH = Path(__file__).parent / "data" / "career_fit_rules.json"
+_CAREER_FIT_SKILL_AXES_PATH = Path(__file__).parent / "data" / "career_fit_skill_axes.json"
+
+
+class CareerFitSkill(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    # The ru catalog text the axes were assigned to — a skill whose current
+    # catalog text differs is never paired (the tag would describe another skill).
+    ru: str
+    axes: tuple[str, ...]
+
+
+class CareerFitRules(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="allow")
+
+    version: int
+    axes: tuple[str, ...]
+    evidence_axes: dict[str, tuple[str, ...]]
+    subject_axes: dict[str, tuple[str, ...]]
+    subject_aliases: dict[str, str]
+    max_reasons: int
+    max_fact_reasons: int
+    max_letters: int
+    skill_axes: dict[str, tuple[CareerFitSkill, ...]]
+
+
+def load_career_fit_rules(
+    path: Path = _CAREER_FIT_RULES_PATH,
+    skill_axes_path: Path = _CAREER_FIT_SKILL_AXES_PATH,
+) -> CareerFitRules:
+    rules = json.loads(path.read_text(encoding="utf-8"))
+    rules["skill_axes"] = json.loads(skill_axes_path.read_text(encoding="utf-8"))
+    return CareerFitRules.model_validate(rules)
+
+
+career_fit_rules: CareerFitRules = load_career_fit_rules()
+

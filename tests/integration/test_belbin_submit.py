@@ -124,9 +124,9 @@ async def test_wrong_number_of_blocks_is_422(
     assert resp.status_code == 422, resp.text
 
 
-async def test_resubmit_appends_a_new_row_not_overwrite(
-    client: AsyncClient, db_session: AsyncSession
-) -> None:
+async def test_belbin_cannot_be_retaken_alone(client: AsyncClient, db_session: AsyncSession) -> None:
+    """One Belbin per assessment — a retake is the whole diagnostic (a new
+    assessment), never Belbin alone."""
     _, assessment, headers = await _auth(db_session)
 
     first = await client.post(
@@ -139,13 +139,13 @@ async def test_resubmit_appends_a_new_row_not_overwrite(
     )
 
     assert first.status_code == 201, first.text
-    assert second.status_code == 201, second.text
-    assert first.json()["run_id"] != second.json()["run_id"]
+    assert second.status_code == 409, second.text
+    assert "Белбин" in second.json()["detail"]
 
     rows = (await db_session.execute(
         select(BelbinRun).where(BelbinRun.assessment_id == assessment.id)
     )).scalars().all()
-    assert len(rows) == 2
+    assert [r.id for r in rows] == [uuid.UUID(first.json()["run_id"])]
 
 
 async def test_belongs_to_another_user_is_403(

@@ -56,7 +56,17 @@ _CORRECTION_HINTS: dict[str, str] = {
     "recommended_profession_when_none_available": (
         "Список профессий пуст, но recommended_profession.slug={detail!r} "
         f"не равен \"{prompt.NO_RECOMMENDATION_SLUG}\". Верни ровно "
-        f'{{"slug": "{prompt.NO_RECOMMENDATION_SLUG}", "name": "", "reasoning": ""}}.'
+        # Literal braces — the hint goes through str.format.
+        + prompt.NO_RECOMMENDATION_JSON.replace("{", "{{").replace("}", "}}")
+        + "."
+    ),
+    "reasoning_kk_empty": (
+        "recommended_profession.reasoning_kk пустой. Переведи reasoning на "
+        "казахский язык дословно."
+    ),
+    "reasoning_kk_not_kazakh": (
+        "recommended_profession.reasoning_kk написан не на казахском. "
+        "Переведи reasoning на казахский язык дословно."
     ),
     "recommended_profession_missing": "Поле recommended_profession обязательно, даже если список профессий пуст.",
 }
@@ -88,6 +98,13 @@ def _correction_message(issues: list[ValidationIssue]) -> str:
         + "\n\nПришли новый полный JSON-ответ по той же схеме, который "
         "исправляет именно эти проблемы — не меняй остальное без необходимости."
     )
+
+
+def reasoning_in(recommended: dict, locale: str) -> str | None:
+    """The stored recommendation's reasoning in `locale` — the exact text the
+    psychologist reads (`ru`) or its translation (`kk`)."""
+    text = (recommended.get("reasoning_kk") if locale == "kk" else recommended.get("reasoning")) or ""
+    return text.strip() or None
 
 
 def _drop_no_recommendation_sentinel(output: PsychAiAnalysisOutput) -> PsychAiAnalysisOutput:

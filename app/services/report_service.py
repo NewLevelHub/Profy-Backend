@@ -38,12 +38,14 @@ from app.services import (
     bigfive_content,
     bigfive_service,
     boyko_empathy_service,
+    career_fit_service,
     consent_service,
     elers_service,
     eysenck_service,
     kondash_anxiety_service,
     motivation_service,
     professional_types_service,
+    psych_ai_analysis_service,
     report_narrative_context,
     report_v2_assembler,
     riasec_service,
@@ -246,6 +248,17 @@ async def _build_narrative(
     return context, narrative, None
 
 
+def _under_review_first() -> tuple:
+    """ORDER BY that puts an assessment's row under review first — KZ-405
+    keeps one row per locale, and review works on one of them: ru first,
+    then the earliest. The same rule as psychologist_service._is_original_row."""
+    return (
+        case((AnalysisResult.locale == DEFAULT_LOCALE, 0), else_=1),
+        AnalysisResult.created_at.asc(),
+        AnalysisResult.id.asc(),
+    )
+
+
 async def _acquire_generation_lock(assessment_id: uuid.UUID, db: AsyncSession) -> None:
     """Transaction-scoped Postgres advisory lock keyed on assessment_id —
     serializes the "check DB, then generate" section of build_report()
@@ -343,6 +356,20 @@ async def _carry_over_review_edits(
     return list(reviewed.strengths), list(reviewed.weaknesses), careers, highlights, edited_fields
 
 
+def _carried_top_career_why(sibling: AnalysisResult, locale: str, *, edited: bool) -> dict | None:
+    """The best match's AI text for a new locale row of a reviewed report:
+    the psychologist's wording verbatim when they edited it (nothing to
+    translate it with), else the analysis's own text in this locale."""
+    stored = sibling.top_career_why
+    if stored is None or edited:
+        return dict(stored) if stored else None
+    recommended = (sibling.psych_ai_analysis or {}).get("recommended_profession") or {}
+    text = psych_ai_analysis_service.reasoning_in(recommended, locale)
+    if recommended.get("slug") != stored.get("slug") or not text:
+        return dict(stored)
+    return {"slug": stored["slug"], "text": text}
+
+
 async def _resolve_owner_locale(
     assessment_id: uuid.UUID, db: AsyncSession, redis: aioredis.Redis
 ) -> str:
@@ -390,6 +417,7 @@ def _shape_response(
     evidence: dict[str, dict] | None = None,
     *,
     locale: str = DEFAULT_LOCALE,
+    with_top_career_why: bool = True,
 ) -> ResultResponseV2:
     """Rebuilds the v2 shape from an already-generated, already-stored row —
     no LLM call, no re-generation. `strength_cards`/`thinking_style_notes`
@@ -399,19 +427,16 @@ def _shape_response(
     fields via report_v2_assembler — the same functions generation uses,
     just fed from storage instead of a fresh context. Those recompute
     label/synthesis text, so the whole rebuild runs under the owner's
-    locale (KZ-403)."""
+    locale (KZ-403). `with_top_career_why=False` keeps the best match's
+    career-fit text in place of the AI analysis's one — for the AI's own
+    input, which must not read back what it wrote."""
     with use_locale(locale):
-        return _shape_response_inner(analysis, evidence)
+        return _shape_response_inner(analysis, evidence, with_top_career_why=with_top_career_why)
 
 
 def _shape_response_inner(
-    analysis: AnalysisResult, evidence: dict[str, dict] | None = None
+    analysis: AnalysisResult, evidence: dict[str, dict] | None = None, *, with_top_career_why: bool = True
 ) -> ResultResponseV2:
-    minimal_context = report_narrative_context.build_report_narrative_context(
-        strengths=list(analysis.strengths),
-        personality_profile={}, personality_notes={}, thinking_style={},
-        motivation_top=[], motivation_highlights=[],
-    )
     differentiation = float((analysis.meta or {}).get("differentiation", 0.0))
     flat = report_v2_assembler.is_flat_profile(differentiation)
     interest_map = report_v2_assembler.build_interest_map(dict(analysis.profile), evidence)
@@ -426,8 +451,7 @@ def _shape_response_inner(
         interest_map=interest_map,
         interest_map_note=report_v2_assembler.build_interest_map_note(interest_map),
         thinking_style_notes=[StudentThinkingStyleNote.model_validate(n) for n in analysis.thinking_style_notes],
-        # personality_profile is stored on every row — read back directly,
-        # no need to recompute or route through minimal_context.
+        # personality_profile is stored on every row — read back directly.
         personality_notes=report_v2_assembler.build_personality_notes(
             dict(analysis.personality_profile),
             dict(analysis.personality_notes_override),
@@ -442,7 +466,11 @@ def _shape_response_inner(
     return RiasecResultResponse(
         **common,
         interest_combination=report_v2_assembler.build_interest_combination(interest_map),
-        careers=report_v2_assembler.build_riasec_careers(minimal_context, list(analysis.careers)),
+        careers=report_v2_assembler.build_riasec_careers(
+            list(analysis.careers),
+            analysis.career_fit,
+            analysis.top_career_why if with_top_career_why else None,
+        ),
     )
 
 
@@ -893,7 +921,17 @@ async def _build_report(
             artifacts=artifacts,
         )
         strength_candidates = student_strengths_service.select_strengths(strength_inputs)
-        meta = student_strengths_service.mark_fresh(meta, student_strengths_service.fingerprint(strength_candidates))
+        meta = student_strengths_service.mark_fresh(meta)
+        # «Почему тебе подходит» — locale-free, from the same vetted facts.
+        # Isolated: a failure here leaves the careers with the general line
+        # (the backfill retries it), it never fails the report.
+        try:
+            career_fit = career_fit_service.build_career_fit(
+                strength_inputs, profile_scores, [direction for direction, _ in matched]
+            )
+        except Exception:  # noqa: BLE001
+            logger.exception("career fit failed for assessment=%s", assessment_id)
+            career_fit = None
 
         # KZ-405: a row in another locale means this one is a translation of an
         # already-generated report. It carries that report's review status —
@@ -904,17 +942,12 @@ async def _build_report(
             await db.execute(
                 select(AnalysisResult)
                 .where(AnalysisResult.assessment_id == assessment_id, AnalysisResult.locale != locale)
-                # The row under review: ru first, then the earliest — the same
-                # rule as psychologist_service._is_original_row.
-                .order_by(
-                    case((AnalysisResult.locale == DEFAULT_LOCALE, 0), else_=1),
-                    AnalysisResult.created_at.asc(),
-                    AnalysisResult.id.asc(),
-                )
+                .order_by(*_under_review_first())
                 .limit(1)
             )
         ).scalar_one_or_none()
         carried_edits: set[str] = set()
+        top_career_why = None
         if sibling is not None:
             # Inheriting the status is only honest if the content matches what
             # was reviewed. The narrative is translated from that row
@@ -923,6 +956,12 @@ async def _build_report(
             strengths, weaknesses, careers, mot_highlights, carried_edits = await _carry_over_review_edits(
                 sibling, db, motivation_highlights=mot_highlights
             )
+            top_career_why = _carried_top_career_why(
+                sibling, locale, edited="top_career_why" in carried_edits
+            )
+            # Locale-free: every row of an assessment shows the same reasons.
+            if career_fit_service.is_current(sibling.career_fit):
+                career_fit = sibling.career_fit
             # The strength cards come from the reviewed row (translated or
             # carried over), and so does whether they are up to date.
             meta = {k: v for k, v in meta.items() if not k.startswith("strengths_")} | {
@@ -1014,6 +1053,7 @@ async def _build_report(
             code=code,
             meta=meta,
             careers=careers,
+            career_fit=career_fit,
             strengths=strengths,
             weaknesses=weaknesses,
             development_plan=plan,
@@ -1032,6 +1072,7 @@ async def _build_report(
             eysenck=eysenck_data,
             elers=elers_data,
             empathy_confidence=empathy_confidence_data,
+            top_career_why=top_career_why,
             report_version=2,
             **inherited_review,
         )
@@ -1094,6 +1135,7 @@ async def _build_report(
                 created_at=analysis.created_at,
                 evidence=evidence,
                 strength_cards=strength_cards_stored,
+                career_fit=career_fit,
             )
     await _cache_if_published(redis, analysis, response)
 
@@ -1142,11 +1184,7 @@ async def get_review_status(assessment_id: uuid.UUID, db: AsyncSession) -> Revie
     result = await db.execute(
         select(AnalysisResult.review_status, AnalysisResult.meta)
         .where(AnalysisResult.assessment_id == assessment_id)
-        .order_by(
-            case((AnalysisResult.locale == DEFAULT_LOCALE, 0), else_=1),
-            AnalysisResult.created_at.asc(),
-            AnalysisResult.id.asc(),
-        )
+        .order_by(*_under_review_first())
         .limit(1)
     )
     row = result.first()
@@ -1235,9 +1273,16 @@ async def get_report_with_analysis(
     being merged into this backend branch (see this function's own Ф0.3
     history / 01-Фаза0-Фундамент.md's note on the gap). `viewer_role=None`
     (the default) preserves every other caller's existing behavior — only
-    `psychologist_service.get_assigned_student_report` (Ф4.1) passes a role."""
+    `psychologist_service.get_assigned_student_report` (Ф4.1) passes a role.
+
+    An assessment can have one row per locale (KZ-405); this reads the row
+    under review — the one the psychologist edits and publishes, and that
+    caches the AI analysis."""
     result = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
+        select(AnalysisResult)
+        .where(AnalysisResult.assessment_id == assessment_id)
+        .order_by(*_under_review_first())
+        .limit(1)
     )
     analysis = result.scalar_one_or_none()
     if analysis is None:
@@ -1251,6 +1296,8 @@ async def get_report_with_analysis(
                 locale=analysis.locale,
             ),
             locale=analysis.locale,
+            # This report is the AI analysis's input — not its own output.
+            with_top_career_why=False,
         ),
         viewer_role=viewer_role,
         assessment_id=assessment_id,

@@ -24,8 +24,8 @@ class AsturRun(Base):
     finalized atomically by the submit that delivers its last required
     block: status flips to `completed`, and the scored result is frozen into
     `result_snapshot` together with `scoring_version`. A completed attempt is
-    never rescored, never extended; a new attempt exists only after an
-    explicit retake. At most one attempt per assessment is `in_progress`.
+    never rescored, never extended, never followed by another attempt of
+    the same assessment. At most one attempt per assessment is `in_progress`.
 
     `bank_version_id` pins the bank version the respondent actually saw —
     scoring reads keys from that version, never from the latest one."""

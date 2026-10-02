@@ -33,9 +33,12 @@ _redis: aioredis.Redis | None = None
 # correction rework — the response shape is unchanged but the personality
 # levels a cached v2 payload carries are the old absolute-cutoff ones.
 # Bumped to v4 for KZ-405: the key now carries the artifact locale
-# (`report:v4:{locale}:{assessment_id}`) so a `ru` and a `kk` report for the
+# (`report:v4:{locale}:{assessment_id}`, now v5) so a `ru` and a `kk` report for the
 # same assessment don't clobber each other's cache entry.
-REPORT_CACHE_KEY_PREFIX = "report:v4"
+# Bumped to v5 with the careers' «Почему тебе подходит» (`why` rebuilt from
+# career fit, `fit_reasons` / `fit_keys` added): a v4 payload would serve
+# the old career text for up to the 24h TTL.
+REPORT_CACHE_KEY_PREFIX = "report:v5"
 
 def report_cache_key(assessment_id: uuid.UUID, locale: str = DEFAULT_LOCALE) -> str:
     return f"{REPORT_CACHE_KEY_PREFIX}:{locale}:{assessment_id}"
@@ -168,7 +171,7 @@ async def belbin_and_astur_completed(assessment_id: uuid.UUID, db: AsyncSession)
     from app.services import belbin_service
     from app.services.astur import runs as astur_runs
 
-    belbin_run = await belbin_service.get_latest_run(assessment_id, db)
+    belbin_run = await belbin_service.get_run(assessment_id, db)
     if belbin_run is None:
         return False
     return await astur_runs.has_completed_run(db, assessment_id)
