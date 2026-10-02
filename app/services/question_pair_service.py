@@ -88,9 +88,10 @@ async def split_saved_values(
     The rows carry no "written by the pair path" mark, so the pick is the
     same reading professional_types_service scores with (value 5 = picked).
     Keyed by pair_index alone, like the rest of the pair API:
-    submit_pair_answers resolves pairs by pair_index with no instrument
-    filter, so the banks keep it unique across the whole table (see the
-    note at professional_types_bank.PAIRS)."""
+    submit_pair_answers resolves pairs by pair_index without telling the
+    remaining instruments apart (it only drops big_five), so the banks keep
+    it unique across the whole table (see the note at
+    professional_types_bank.PAIRS)."""
     pairs = (
         await db.execute(select(QuestionPair).where(QuestionPair.instrument != QuestionInstrument.big_five))
     ).scalars().all()
