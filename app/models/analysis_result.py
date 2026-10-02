@@ -114,6 +114,11 @@ class AnalysisResult(Base):
     # stale and is regenerated on the next view. NULL = pre-fingerprint
     # cache, always treated as stale.
     psych_ai_analysis_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True, default=None)
+    # «Почему тебе подходит» of the best match — the AI analysis's reasoning,
+    # the psychologist's exact text, in this row's locale: {"slug": ..., "text": ...}. Shown in
+    # place of the career-fit text while `slug` is the #1 career; editable by
+    # the psychologist. NULL until the analysis exists.
+    top_career_why: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
     # Review gate. Rows that existed before the gate were backfilled to
     # `published` by the migration — they had already been shown.
     review_status: Mapped[ReviewStatus] = mapped_column(

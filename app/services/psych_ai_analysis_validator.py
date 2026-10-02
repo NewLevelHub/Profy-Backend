@@ -18,6 +18,8 @@ from app.services.psych_ai_analysis_context import PsychAiAnalysisContext
 _SENTENCE_END_RE = re.compile(r"[.!?]+(?=\s|$)")
 _MIN_FINAL_SUMMARY_SENTENCES = 3
 _MAX_FINAL_SUMMARY_SENTENCES = 7
+# Letters only Kazakh has — a `kk` text without any of them is Russian.
+_KAZAKH_LETTERS = set("әғқңөұүһі")
 
 
 @dataclass(frozen=True)
@@ -79,6 +81,11 @@ def _check_recommended_profession(
         return [ValidationIssue("recommended_profession_not_in_careers", rec.slug)]
     if not rec.reasoning.strip():
         return [ValidationIssue("recommended_profession_no_reasoning")]
+    kk_text = rec.reasoning_kk.strip()
+    if not kk_text:
+        return [ValidationIssue("reasoning_kk_empty")]
+    if not _KAZAKH_LETTERS & set(kk_text.lower()):
+        return [ValidationIssue("reasoning_kk_not_kazakh")]
     return []
 
 

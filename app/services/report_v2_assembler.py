@@ -293,7 +293,9 @@ def _tier_for_rank(rank: int) -> Literal["strong", "good", "worth_trying"]:
     return "worth_trying"
 
 
-def build_riasec_careers(careers: list[dict], career_fit: dict | None = None) -> list[StudentCareer]:
+def build_riasec_careers(
+    careers: list[dict], career_fit: dict | None = None, top_career_why: dict | None = None
+) -> list[StudentCareer]:
     """`careers` is the raw list report_service already builds
     (riasec_service.matched_careers + report_service._career_dict, or the
     same shape read back from AnalysisResult.careers) — already sorted by
@@ -305,10 +307,13 @@ def build_riasec_careers(careers: list[dict], career_fit: dict | None = None) ->
 
     «Почему тебе подходит» — `why`, `fit_reasons`, `fit_keys` — comes from
     `career_fit` (AnalysisResult.career_fit), rendered in the current locale
-    by career_fit_service; `why` is never empty."""
+    by career_fit_service; `why` is never empty. The best match's `why` is
+    the AI analysis's text instead (`top_career_why`, AnalysisResult) while
+    that text belongs to the career ranked first."""
     top = careers[:10]
     result: list[StudentCareer] = []
     fit_by_slug = (career_fit or {}).get("careers") or {}
+    ai_why = (top_career_why or {}).get("text") or ""
     for rank, career in enumerate(top, start=1):
         # Direction.first_steps may hold several catalog entries, but the
         # student only ever sees one, as `try_now` — a separate "3 first
@@ -318,12 +323,14 @@ def build_riasec_careers(careers: list[dict], career_fit: dict | None = None) ->
         why, fit_reasons, fit_keys = career_fit_service.render_career(
             fit_by_slug.get(career.get("slug", "")), career
         )
+        why_by_ai = rank == 1 and bool(ai_why.strip()) and top_career_why.get("slug") == career.get("slug")
         result.append(StudentCareer(
             slug=career.get("slug", ""),
             name=career.get("name", ""),
             rank=rank,
             tier=_tier_for_rank(rank),
-            why=why,
+            why=ai_why if why_by_ai else why,
+            why_by_ai=why_by_ai,
             try_now=first_steps[0] if first_steps else neutral_try_now(),
             description=career.get("description") or None,
             skills_needed=list(career.get("skills_needed") or []),
