@@ -13,6 +13,7 @@ RU = {
     "allocation_items_mismatch": "Allocation does not cover exactly the expected items for this block",
     "allocation_negative_values": "Allocation values must be >= 0",
     "allocation_total_mismatch": "Allocation must sum to exactly {total} points, got {actual_total}",
+    "answer_value_invalid_for_instrument": "Значение {value} недопустимо для методики {instrument}. Допустимые значения: {allowed}",
     "assessment_already_completed": "Эта диагностика уже завершена — для повторного прохождения начните новую диагностику",
     "assessment_not_completed": "Тест ещё не завершён — сначала ответь на все обязательные вопросы",
     "assessment_not_found": "Assessment not found",
@@ -79,6 +80,7 @@ RU = {
     "question_not_found": "Question not found",
     "question_not_in_pair": "Question {picked_question_id} is not part of pair {pair_index}",
     "question_pair_not_found": "Question pair not found",
+    "question_requires_pair_answer": "Этот вопрос требует выбора одного варианта в паре и не принимает ответ по шкале",
     "question_type_required": (
         "{type_field} cannot be null on a {instrument} question — scoring groups responses by "
         "this field for every student."
@@ -115,6 +117,7 @@ KK = {
     "allocation_items_mismatch": "Бөлу осы блоктағы күтілетін элементтердің барлығын қамтымайды",
     "allocation_negative_values": "Бөлу мәндері 0-ден кем болмауы керек",
     "allocation_total_mismatch": "Бөлу сомасы дәл {total} балл болуы керек, ал қазір {actual_total}",
+    "answer_value_invalid_for_instrument": "{instrument} әдістемесі үшін {value} мәніне рұқсат етілмейді. Рұқсат етілген мәндер: {allowed}",
     "assessment_already_completed": "Бұл диагностика аяқталған — қайта өту үшін жаңа диагностиканы бастаңыз",
     "assessment_not_completed": "Тест әлі аяқталған жоқ — алдымен барлық міндетті сұрақтарға жауап беріңіз",
     "assessment_not_found": "Тест табылмады",
@@ -174,6 +177,7 @@ KK = {
     "question_not_found": "Сұрақ табылмады",
     "question_not_in_pair": "{picked_question_id} сұрағы {pair_index}-жұпқа кірмейді",
     "question_pair_not_found": "Сұрақтар жұбы табылмады",
+    "question_requires_pair_answer": "Бұл сұрақ жұптағы бір нұсқаны таңдауды талап етеді және шкала бойынша жауапты қабылдамайды",
     "question_type_required": "{instrument} сұрағында {type_field} бос болмауы керек — скоринг әр оқушының жауаптарын осы өріс бойынша топтайды.",
     "rate_limit_exceeded": "Сұраулар тым көп. Кейінірек қайталап көріңіз.",
     "report_locale_not_generated": "Таңдалған тілдегі есеп әлі жасалмаған",

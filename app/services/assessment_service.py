@@ -12,7 +12,13 @@ from app.models.question import Question, active_question_clause
 from app.models.user_response import UserResponse
 from app.schemas.assessment import AssessmentResponse, SavedAnswersResponse, SavedMotivationAnswer
 from app.schemas.response import AnswerItem, SubmitAnswersResponse
-from app.services import assessment_shared, belbin_service, motivation_service, question_pair_service
+from app.services import (
+    answer_validation,
+    assessment_shared,
+    belbin_service,
+    motivation_service,
+    question_pair_service,
+)
 from app.services.astur import runs as astur_runs
 
 
@@ -161,18 +167,20 @@ async def submit_answers(
 
     question_ids = [item.question_id for item in answers]
     questions_result = await db.execute(
-        select(Question.id).where(
+        select(Question.id, Question.instrument).where(
             Question.id.in_(question_ids),
             active_question_clause(),
         )
     )
-    valid_ids = set(questions_result.scalars().all())
+    instruments_by_id = dict(questions_result.all())
     for item in answers:
-        if item.question_id not in valid_ids:
+        instrument = instruments_by_id.get(item.question_id)
+        if instrument is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=i18n_key("api_errors", "question_id_not_found", locale="ru").format(question_id=item.question_id),
             )
+        answer_validation.validate_answer_value(instrument, item.value)
 
     if answers:
         stmt = pg_insert(UserResponse).values([
