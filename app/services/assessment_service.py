@@ -10,9 +10,9 @@ from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import Profile
 from app.models.question import Question
 from app.models.user_response import UserResponse
-from app.schemas.assessment import AssessmentResponse
+from app.schemas.assessment import AssessmentResponse, SavedAnswersResponse, SavedMotivationAnswer
 from app.schemas.response import AnswerItem, SubmitAnswersResponse
-from app.services import assessment_shared, belbin_service, motivation_service
+from app.services import assessment_shared, belbin_service, motivation_service, question_pair_service
 from app.services.astur import runs as astur_runs
 
 
@@ -109,6 +109,33 @@ async def get_current_assessment(profile_id: uuid.UUID, db: AsyncSession) -> Ass
     if assessment is None:
         return None
     return await _to_response(assessment, db)
+
+
+async def get_saved_answers(
+    assessment_id: uuid.UUID, current_profile_id: uuid.UUID, db: AsyncSession
+) -> SavedAnswersResponse:
+    row_result = await db.execute(select(Assessment).where(Assessment.id == assessment_id))
+    assessment = row_result.scalar_one_or_none()
+    if assessment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
+    if assessment.profile_id != current_profile_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
+
+    rows = await db.execute(
+        select(UserResponse.question_id, UserResponse.answer_value).where(UserResponse.assessment_id == assessment_id)
+    )
+    scale_values, pair_picks = await question_pair_service.split_saved_values(
+        {question_id: value for question_id, value in rows.all()}, db
+    )
+    motivation = await motivation_service.saved_answers(assessment_id, db)
+    return SavedAnswersResponse(
+        question_values=scale_values,
+        pair_picks=pair_picks,
+        motivation={
+            triplet_index: SavedMotivationAnswer(most_statement_id=most, least_statement_id=least)
+            for triplet_index, (most, least) in motivation.items()
+        },
+    )
 
 
 async def submit_answers(
