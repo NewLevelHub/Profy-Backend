@@ -159,7 +159,7 @@ async def test_completed_assessment_answer_apis_return_stable_conflict(
         db_session
     )
     headers = {
-        "Authorization": f"Bearer {auth_service.create_jwt_token(user.id)}"
+        "Authorization": f"Bearer {auth_service.create_jwt_token(user)}"
     }
 
     response = await client.post(

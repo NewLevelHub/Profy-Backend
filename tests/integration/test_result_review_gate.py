@@ -113,7 +113,7 @@ async def test_foreign_assessment_is_still_403_not_pending(
     assessment = await make_student_assessment(db_session, other)
     from app.services import auth_service
 
-    other_headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(other.id)}"}
+    other_headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(other)}"}
     await generate(client, other_headers, assessment)
 
     response = await client.get(f"/api/v1/result/{assessment.id}", headers=auth_headers)

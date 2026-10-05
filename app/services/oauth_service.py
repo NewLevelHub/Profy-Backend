@@ -82,7 +82,7 @@ async def login_or_register_google(token: str, db: AsyncSession) -> tuple[User, 
         _adopt_as_google_verified(user, google_id)
         await db.commit()
         await db.refresh(user)
-        return user, create_jwt_token(user.id)
+        return user, create_jwt_token(user)
 
     user = User(email=email, hashed_password=None, google_id=google_id, is_verified=True)
     db.add(user)
@@ -106,7 +106,7 @@ async def login_or_register_google(token: str, db: AsyncSession) -> tuple[User, 
         _adopt_as_google_verified(user, google_id)
         await db.commit()
         await db.refresh(user)
-        return user, create_jwt_token(user.id)
+        return user, create_jwt_token(user)
 
     await db.refresh(user)
-    return user, create_jwt_token(user.id)
+    return user, create_jwt_token(user)

@@ -81,7 +81,12 @@ async def verify_code(email: str, code: str, db: AsyncSession) -> None:
 
 
 async def reset_password(email: str, code: str, new_password: str, db: AsyncSession) -> None:
-    result = await db.execute(select(User).where(User.email == email))
+    # Serialize resets for one account. Besides protecting token_version from
+    # a lost update, this makes the reset code truly one-time when two copies
+    # of the same request arrive concurrently.
+    result = await db.execute(
+        select(User).where(User.email == email).with_for_update()
+    )
     user = result.scalar_one_or_none()
     if not user:
         raise ValueError("Invalid code")
@@ -99,5 +104,6 @@ async def reset_password(email: str, code: str, new_password: str, db: AsyncSess
         raise ValueError("Invalid code")
 
     user.hashed_password = hash_password(new_password)
+    user.token_version += 1
     await _invalidate_reset_tokens(user.id, db)
     await db.commit()

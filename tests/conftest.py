@@ -139,7 +139,7 @@ async def test_user(db_session: AsyncSession) -> User:
 
 @pytest_asyncio.fixture
 async def auth_headers(test_user: User) -> dict[str, str]:
-    token = auth_service.create_jwt_token(test_user.id)
+    token = auth_service.create_jwt_token(test_user)
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -159,7 +159,7 @@ async def admin_user(db_session: AsyncSession) -> User:
 
 @pytest_asyncio.fixture
 async def admin_headers(admin_user: User) -> dict[str, str]:
-    token = auth_service.create_jwt_token(admin_user.id)
+    token = auth_service.create_jwt_token(admin_user)
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -179,5 +179,5 @@ async def psychologist_user(db_session: AsyncSession) -> User:
 
 @pytest_asyncio.fixture
 async def psychologist_headers(psychologist_user: User) -> dict[str, str]:
-    token = auth_service.create_jwt_token(psychologist_user.id)
+    token = auth_service.create_jwt_token(psychologist_user)
     return {"Authorization": f"Bearer {token}"}

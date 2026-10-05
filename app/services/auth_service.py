@@ -28,9 +28,13 @@ def verify_password(plain: str, hashed: str) -> bool:
     return _pwd_context.verify(plain, hashed)
 
 
-def create_jwt_token(user_id: uuid.UUID) -> str:
+def create_jwt_token(user: User) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {"sub": str(user_id), "exp": expire}
+    payload = {
+        "sub": str(user.id),
+        "ver": user.token_version,
+        "exp": expire,
+    }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
@@ -101,7 +105,7 @@ async def login(email: str, password: str, db: AsyncSession) -> tuple[User, str]
     if not user.is_verified:
         raise LookupError(f"email_not_verified:{user.email}")
 
-    return user, create_jwt_token(user.id)
+    return user, create_jwt_token(user)
 
 
 async def verify_email(email: str, code: str, db: AsyncSession) -> tuple[User, str]:
@@ -140,7 +144,7 @@ async def verify_email(email: str, code: str, db: AsyncSession) -> tuple[User, s
     await db.commit()
     await db.refresh(user)
 
-    return user, create_jwt_token(user.id)
+    return user, create_jwt_token(user)
 
 
 async def resend_verification(email: str, db: AsyncSession) -> None:

@@ -48,7 +48,7 @@ async def _auth(db: AsyncSession) -> tuple[User, Assessment, dict]:
     assessment = Assessment(profile_id=profile.id, goal=AssessmentGoal.explore)
     db.add(assessment)
     await db.flush()
-    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user.id)}"}
+    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user)}"}
     return user, assessment, headers
 
 

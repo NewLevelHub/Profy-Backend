@@ -27,6 +27,27 @@ _bearer_optional = HTTPBearer(auto_error=False)
 ACTIVITY_REFRESH_INTERVAL = timedelta(minutes=5)
 
 
+def _decode_access_token(token: str) -> tuple[uuid.UUID, int]:
+    payload = jwt.decode(
+        token,
+        settings.SECRET_KEY,
+        algorithms=[settings.ALGORITHM],
+    )
+    user_id = payload.get("sub")
+    # Tokens issued before PROFY-010 had no version. Treat them as v0 so the
+    # deployment itself preserves existing sessions; the first password reset
+    # increments the database value and invalidates those legacy tokens too.
+    token_version = payload.get("ver", 0)
+    if (
+        not isinstance(user_id, str)
+        or isinstance(token_version, bool)
+        or not isinstance(token_version, int)
+        or token_version < 0
+    ):
+        raise JWTError("Invalid access token claims")
+    return uuid.UUID(user_id), token_version
+
+
 async def _touch_last_active(db: AsyncSession, user: User) -> None:
     now = datetime.now(timezone.utc)
     last_active = user.last_active_at
@@ -48,21 +69,18 @@ async def get_current_user(
     )
 
     try:
-        payload = jwt.decode(
-            credentials.credentials,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM],
-        )
-        user_id: str | None = payload.get("sub")
-        if user_id is None:
-            raise credentials_exception
-    except JWTError:
+        user_id, token_version = _decode_access_token(credentials.credentials)
+    except (JWTError, ValueError):
         raise credentials_exception
 
-    result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)))
+    result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
 
-    if user is None or not user.is_active:
+    if (
+        user is None
+        or not user.is_active
+        or user.token_version != token_version
+    ):
         raise credentials_exception
 
     # users.locale wins over the Accept-Language header the middleware already
@@ -92,21 +110,17 @@ async def get_current_user_optional(
     if credentials is None:
         return None
     try:
-        payload = jwt.decode(
-            credentials.credentials,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM],
-        )
-        user_id: str | None = payload.get("sub")
-        if user_id is None:
-            return None
-        parsed_id = uuid.UUID(user_id)
+        user_id, token_version = _decode_access_token(credentials.credentials)
     except (JWTError, ValueError):
         return None
 
-    result = await db.execute(select(User).where(User.id == parsed_id))
+    result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
-    if user is None or not user.is_active:
+    if (
+        user is None
+        or not user.is_active
+        or user.token_version != token_version
+    ):
         return None
     return user
 

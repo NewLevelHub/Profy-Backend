@@ -34,7 +34,7 @@ async def make_student(
     assessment = Assessment(profile_id=profile.id, goal=AssessmentGoal.explore)
     db.add(assessment)
     await db.flush()
-    return user, assessment, {"Authorization": f"Bearer {auth_service.create_jwt_token(user.id)}"}
+    return user, assessment, {"Authorization": f"Bearer {auth_service.create_jwt_token(user)}"}
 
 
 async def v1_version_id(db: AsyncSession) -> uuid.UUID:

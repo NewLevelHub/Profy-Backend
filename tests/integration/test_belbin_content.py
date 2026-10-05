@@ -25,7 +25,7 @@ async def _auth(db: AsyncSession) -> dict:
         country="Казахстан", language="ru", age_group=AgeGroup.senior,
     ))
     await db.flush()
-    return {"Authorization": f"Bearer {auth_service.create_jwt_token(user.id)}"}
+    return {"Authorization": f"Bearer {auth_service.create_jwt_token(user)}"}
 
 
 async def test_content_shape_matches_the_bank(client: AsyncClient, db_session: AsyncSession) -> None:
