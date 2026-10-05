@@ -192,6 +192,17 @@ class StartAsturSubtestResponse(BaseModel):
     started_at: str  # ISO 8601, server clock — the timer engine's anchor
 
 
+class ResetAsturSubtestRequest(BaseModel):
+    run_id: uuid.UUID
+
+    model_config = {"extra": "forbid"}
+
+
+class ResetAsturSubtestResponse(BaseModel):
+    run_id: uuid.UUID
+    subtest: str
+
+
 class AsturItemAnswer(BaseModel):
     """One item's outcome: an explicit answer or an explicit skip. A blank
     value is never an answer — skipping is its own, visible choice."""
@@ -206,6 +217,11 @@ class SubmitAsturSubtestRequest(BaseModel):
     # The attempt the respondent is actually answering — a submit meant for
     # another (stale or finished) attempt is rejected, never re-targeted.
     run_id: uuid.UUID
+    # Server anchor returned by /start. New clients send it as a lightweight
+    # generation token: after an explicit reset, a late submit from the old
+    # screen cannot restore the discarded answers. Optional for backwards
+    # compatibility with clients that predate subtest reset.
+    started_at: str | None = Field(default=None, max_length=64)
     # 1-based item position (as string) -> answer or skip.
     answers: dict[str, AsturItemAnswer]
     # Quick instructions only: client-measured time per command (ms).

@@ -13,6 +13,8 @@ from app.models.user import User
 from app.schemas.astur import (
     AsturAttemptResponse,
     AsturStateResponse,
+    ResetAsturSubtestRequest,
+    ResetAsturSubtestResponse,
     StartAsturSubtestRequest,
     StartAsturSubtestResponse,
     SubmitAsturSubtestRequest,
@@ -88,6 +90,28 @@ async def start_astur_subtest(
 
 
 @router.post(
+    "/{assessment_id}/astur/subtest/{n}/reset",
+    response_model=ResetAsturSubtestResponse,
+)
+async def reset_astur_subtest(
+    assessment_id: uuid.UUID,
+    n: int,
+    data: ResetAsturSubtestRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ResetAsturSubtestResponse:
+    """Discard only this subtest in an open attempt.
+
+    Used after a confirmed exit from a timed subtest: earlier submitted
+    subtests remain intact, while this subtest starts later from its first
+    item with a fresh server timer.
+    """
+    await _require_owned_assessment(assessment_id, current_user, db)
+    run, key = await runs.reset_subtest(db, assessment_id, n, run_id=data.run_id)
+    return ResetAsturSubtestResponse(run_id=run.id, subtest=key)
+
+
+@router.post(
     "/{assessment_id}/astur/subtest/{n}",
     response_model=SubmitAsturSubtestResponse,
     status_code=status.HTTP_201_CREATED,
@@ -107,7 +131,8 @@ async def submit_astur_subtest(
     await _require_owned_assessment(assessment_id, current_user, db)
     run, key, actual_ms, over_limit_items, completed = await runs.submit_subtest(
         db, assessment_id, n, data.answers,
-        run_id=data.run_id, elapsed_ms=data.elapsed_ms, client_timezone=data.client_timezone,
+        run_id=data.run_id, started_at=data.started_at,
+        elapsed_ms=data.elapsed_ms, client_timezone=data.client_timezone,
     )
 
     # АСТУР is the last phase of the continuous flow — its completion is

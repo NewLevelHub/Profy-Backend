@@ -40,6 +40,7 @@ from app.services.astur.scoring_rules import LEGACY_SCORING_VERSION, ScoringRule
 ATTEMPT_COMPLETED = "astur_attempt_completed"
 RUN_MISMATCH = "astur_run_mismatch"
 ALREADY_SUBMITTED = "astur_subtest_already_submitted"
+STALE_SUBTEST_START = "astur_subtest_start_stale"
 MAX_OPEN_TEXT_LENGTH = 200
 # Client-reported time per quick command beyond this multiple of the limit is
 # not plausible (a backgrounded tab still reports its real stall).
@@ -256,6 +257,41 @@ async def start_subtest(
     return run, subtest.key, run.subtest_started_at[subtest.key]
 
 
+async def reset_subtest(
+    db: AsyncSession, assessment_id: uuid.UUID, number: int, *, run_id: uuid.UUID
+) -> tuple[AsturRun, str]:
+    """Discard one subtest from an open attempt after a confirmed exit.
+
+    The run and every other submitted subtest stay intact. Removing the
+    server start anchor makes the next `/start` create a fresh timer. The row
+    lock serializes this with submit; clients also echo the old start anchor
+    on submit so a request that arrives after this reset is rejected.
+    """
+    run = await _run_for_write(db, assessment_id, run_id)
+    subtest = _subtest_or_404((await get_published(db, run.bank_version_id)).bank, number)
+    key = subtest.key
+
+    if key == QUICK_INSTRUCTIONS_KEY:
+        run.lability_answers = {}
+        run.client_timezone = None
+    else:
+        answers = dict(run.answers)
+        answers.pop(key, None)
+        run.answers = answers
+
+    timings = dict(run.subtest_timings_ms)
+    timings.pop(key, None)
+    run.subtest_timings_ms = timings
+
+    started_at = dict(run.subtest_started_at)
+    started_at.pop(key, None)
+    run.subtest_started_at = started_at
+
+    await db.commit()
+    await db.refresh(run)
+    return run, key
+
+
 def _stored_payload(run: AsturRun, key: str) -> dict | None:
     if key == QUICK_INSTRUCTIONS_KEY:
         if not run.lability_answers:
@@ -286,6 +322,7 @@ async def submit_subtest(
     answers: dict,
     *,
     run_id: uuid.UUID,
+    started_at: str | None,
     elapsed_ms: dict | None,
     client_timezone: str | None,
 ) -> tuple[AsturRun, str, int | None, list[str], bool]:
@@ -303,6 +340,13 @@ async def submit_subtest(
         if stored == payload:
             return run, subtest.key, run.subtest_timings_ms.get(subtest.key), [], False
         raise _conflict(ALREADY_SUBMITTED, "This subtest was already submitted in the open attempt")
+
+    # Treat the server start anchor as this subtest run's generation token.
+    # A reset deletes it; a restart creates another one. Consequently, a
+    # delayed request from the screen the student exited cannot put its old
+    # answers back after the reset transaction committed.
+    if started_at is not None and run.subtest_started_at.get(subtest.key) != started_at:
+        raise _conflict(STALE_SUBTEST_START, i18n_key("api_errors", "astur_subtest_start_stale"))
 
     limit = published.bank.lability_item_limit_ms
     if is_quick:

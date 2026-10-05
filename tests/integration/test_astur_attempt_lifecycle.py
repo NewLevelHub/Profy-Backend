@@ -22,6 +22,7 @@ from tests.integration.astur_helpers import (
     make_student,
     open_attempt,
     quick_payload,
+    reset,
     start,
     submit,
     v1_version_id,
@@ -86,6 +87,68 @@ async def test_started_subtest_is_resumed_without_resetting_its_clock(
     assert first.status_code == second.status_code == 201
     assert first.json()["started_at"] == second.json()["started_at"]
     assert resumed["run"]["subtest_started_at"]["awareness"] == first.json()["started_at"]
+
+
+async def test_confirmed_exit_resets_only_the_current_subtest_and_its_timer(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await make_student(db_session)
+    run_id = (await open_attempt(client, assessment.id, headers))["run"]["run_id"]
+
+    awareness_start = await start(client, assessment.id, 1, run_id, headers)
+    awareness = _awareness(run_id)
+    awareness["started_at"] = awareness_start.json()["started_at"]
+    assert (await submit(client, assessment.id, 1, awareness, headers)).status_code == 201
+
+    analogies_start = await start(client, assessment.id, 2, run_id, headers)
+    old_payload = {
+        "run_id": run_id,
+        "started_at": analogies_start.json()["started_at"],
+        "answers": answered(content_answers(BANK)["analogies"]),
+    }
+    assert (await submit(client, assessment.id, 2, old_payload, headers)).status_code == 201
+
+    exited = await reset(client, assessment.id, 2, run_id, headers)
+    assert exited.status_code == 200
+    assert exited.json()["subtest"] == "analogies"
+
+    state = await _state(client, assessment.id, headers)
+    assert state["active_run"]["submitted_subtests"] == ["awareness"]
+    assert "analogies" not in state["active_run"]["subtest_started_at"]
+
+    # A delayed request from the screen that was exited must not restore its
+    # discarded answers after the reset committed.
+    stale = await submit(client, assessment.id, 2, old_payload, headers)
+    assert stale.status_code == 409
+    assert stale.json()["detail"]["code"] == "astur_subtest_start_stale"
+
+    restarted = await start(client, assessment.id, 2, run_id, headers)
+    new_payload = {
+        "run_id": run_id,
+        "started_at": restarted.json()["started_at"],
+        "answers": answered(content_answers(BANK, wrong={"analogies"})["analogies"]),
+    }
+    assert (await submit(client, assessment.id, 2, new_payload, headers)).status_code == 201
+    resumed = await _state(client, assessment.id, headers)
+    assert set(resumed["active_run"]["submitted_subtests"]) == {"awareness", "analogies"}
+
+
+async def test_confirmed_exit_clears_quick_subtest_protocol(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await make_student(db_session)
+    run_id = (await open_attempt(client, assessment.id, headers))["run"]["run_id"]
+    started = await start(client, assessment.id, 3, run_id, headers)
+    payload = quick_payload(BANK, run_id)
+    payload["started_at"] = started.json()["started_at"]
+    assert (await submit(client, assessment.id, 3, payload, headers)).status_code == 201
+
+    assert (await reset(client, assessment.id, 3, run_id, headers)).status_code == 200
+    [run] = await _runs(db_session, assessment.id)
+    assert run.lability_answers == {}
+    assert run.client_timezone is None
+    assert "lability" not in run.subtest_timings_ms
+    assert "lability" not in run.subtest_started_at
 
 
 async def test_content_and_scoring_stay_in_the_attempts_locale(client: AsyncClient, db_session: AsyncSession) -> None:

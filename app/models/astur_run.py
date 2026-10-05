@@ -58,7 +58,8 @@ class AsturRun(Base):
         UUID(as_uuid=True), ForeignKey("astur_bank_versions.id", ondelete="RESTRICT"), nullable=False
     )
 
-    # --- Raw protocol (never deleted, never rewritten after completion) ---
+    # --- Raw protocol (a confirmed exit may reset one block while open;
+    #     never deleted or rewritten after completion) ---
     answers: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     subtest_timings_ms: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     # {subtest_key: ISO timestamp} — server clock anchor of each subtest timer.
