@@ -136,6 +136,82 @@ async def test_default_locale_is_ru(db_session: AsyncSession):
     assert detail.description_locale == "ru"
 
 
+# ── catalogue and university page (PRO-450) ─────────────────────────────────
+#
+# Both used to build their response straight from the row, so the kk UI showed
+# the Russian name/description even though the kk overlay was filled in.
+
+_KK_UNIVERSITY = {
+    "name_i18n": {"kk": "Тест университеті KZ501"},
+    "description_i18n": {"kk": "Университеттің қазақша сипаттамасы"},
+}
+
+
+async def test_catalogue_serves_kk_name_and_description(db_session: AsyncSession):
+    await _seed_program(db_session, university_overrides=_KK_UNIVERSITY)
+
+    page = await university_service.list_universities(db_session, search="KZ501", locale="kk")
+    [item] = page.items
+    assert (item.name, item.name_locale) == ("Тест университеті KZ501", "kk")
+    assert (item.description, item.description_locale) == ("Университеттің қазақша сипаттамасы", "kk")
+    assert item.programs_count == 1
+
+    page = await university_service.list_universities(db_session, search="KZ501", locale="ru")
+    [item] = page.items
+    assert (item.name, item.name_locale) == ("Test University KZ501", "ru")
+    assert (item.description, item.description_locale) == ("Русское описание вуза", "ru")
+
+
+@pytest.mark.parametrize("locale", ["kk", "ru"])
+async def test_catalogue_search_matches_the_kk_name(db_session: AsyncSession, locale: str):
+    await _seed_program(db_session, university_overrides=_KK_UNIVERSITY)
+
+    page = await university_service.list_universities(db_session, search="тест университеті", locale=locale)
+    assert [item.name_locale for item in page.items] == [locale]
+    assert page.total == 1
+
+
+@pytest.mark.parametrize("search", ["Өскемен", "өске"])
+async def test_catalogue_search_matches_the_kk_city_name(db_session: AsyncSession, search: str):
+    db_session.add(University(name="Тестовый вуз ВКО KZ501", country="Казахстан", city="Усть-Каменогорск"))
+    db_session.add(University(name="Тестовый вуз Алматы KZ501", country="Казахстан", city="Алматы"))
+    await db_session.flush()
+
+    page = await university_service.list_universities(db_session, search=search, locale="kk")
+    cities = {item.city for item in page.items}
+    assert "Усть-Каменогорск" in cities
+    assert "Алматы" not in cities
+
+
+async def test_catalogue_search_tolerates_rows_without_translated_name(db_session: AsyncSession):
+    await _seed_program(db_session)
+
+    page = await university_service.list_universities(db_session, search="KZ501", locale="kk")
+    assert page.total == 1
+    assert page.items[0].name_locale == "ru"
+
+
+async def test_university_page_serves_kk_for_itself_and_its_programs(db_session: AsyncSession):
+    program = await _seed_program(
+        db_session,
+        description_i18n={"kk": "Бағдарламаның қазақша сипаттамасы"},
+        university_overrides=_KK_UNIVERSITY,
+    )
+
+    detail = await university_service.get_university_for_user(
+        db_session, program.university_id, locale="kk"
+    )
+    assert (detail.name, detail.name_locale) == ("Тест университеті KZ501", "kk")
+    assert detail.description == "Университеттің қазақша сипаттамасы"
+    [brief] = detail.programs
+    assert (brief.description, brief.description_locale) == ("Бағдарламаның қазақша сипаттамасы", "kk")
+    assert brief.university.name == "Тест университеті KZ501"
+
+    detail = await university_service.get_university_for_user(db_session, program.university_id)
+    assert (detail.name, detail.description_locale) == ("Test University KZ501", "ru")
+    assert detail.programs[0].description_locale == "ru"
+
+
 # ── free text inside the catalog (contract §14) ──────────────────────────────
 #
 # `language`, `career_options` and `grants` are free text with no column of

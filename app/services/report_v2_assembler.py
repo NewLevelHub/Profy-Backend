@@ -38,8 +38,8 @@ from app.schemas.result_v2 import (
     StudentStrengthCard,
     StudentThinkingStyleNote,
 )
-from app.services import bigfive_content
-from app.services.riasec_content import neutral_career_why_variants, neutral_try_now, riasec_labels
+from app.services import bigfive_content, career_fit_service
+from app.services.riasec_content import neutral_try_now, riasec_labels
 from app.services.riasec_explanations import (
     COMBINATION_TEXTS,
     QUOTE_MIX,
@@ -47,7 +47,7 @@ from app.services.riasec_explanations import (
     localized_combination_text,
     localized_type_explanation,
 )
-from app.services.riasec_service import HOLLAND_ORDER, consistency, direction_letter_weight
+from app.services.riasec_service import HOLLAND_ORDER, consistency
 from app.services.scoring_levels import LEVEL_HIGH_MIN, LEVEL_MEDIUM_MIN
 
 # TZ_Profi.md §16.6: "разброс между максимальной и минимальной категорией
@@ -285,20 +285,6 @@ def _join(items: list[str]) -> str:
     return ", ".join(items[:-1]) + tr("result_v2")["list_conjunction"] + items[-1]
 
 
-def _matched_strengths_for(direction_code: str, context: ReportNarrativeContext) -> list[str]:
-    """Ordered by how central each matched letter is to THIS direction's own
-    code (primary letter first), not by the user's own top-3 rank — two
-    directions sharing the same 3 letters in a different order (e.g. "ESC"
-    vs "SEC") then read as differently-emphasized `why` text instead of a
-    byte-identical sentence (riasec_service.direction_letter_weight)."""
-    matches = [
-        e for e in context.evidence
-        if e.source_type == "riasec_category" and e.source_id.split(":", 1)[1] in direction_code
-    ]
-    matches.sort(key=lambda e: -direction_letter_weight(e.source_id.split(":", 1)[1], direction_code))
-    return [e.text for e in matches]
-
-
 def _tier_for_rank(rank: int) -> Literal["strong", "good", "worth_trying"]:
     if rank == 1:
         return "strong"
@@ -308,8 +294,7 @@ def _tier_for_rank(rank: int) -> Literal["strong", "good", "worth_trying"]:
 
 
 def build_riasec_careers(
-    context: ReportNarrativeContext,
-    careers: list[dict],
+    careers: list[dict], career_fit: dict | None = None, top_career_why: dict | None = None
 ) -> list[StudentCareer]:
     """`careers` is the raw list report_service already builds
     (riasec_service.matched_careers + report_service._career_dict, or the
@@ -318,64 +303,40 @@ def build_riasec_careers(
 
     Same top-10, ranked strong/good/worth_trying by rank for every profile,
     flat or not (product decision, 2026-08-17 — see the module-level comment
-    above `_GOOD_TIER_MAX_RANK`). `why` is always non-empty: the direction's
-    own Holland-code overlap with vetted RIASEC evidence when there is one,
-    otherwise the neutral product-approved fallback — never blank, never
-    invented beyond what's in `context`.
+    above `_GOOD_TIER_MAX_RANK`).
 
-    Two shown directions can still be equally well-supported by the exact
-    same confirmed evidence — e.g. codes "CSI" and "CSR" differ only in a
-    letter that isn't one of the student's top-3 (so, correctly, it's not
-    part of `why` at all): both get the identical matched_strengths in the
-    identical order. Rather than repeat the sentence, the second (and any
-    later) such card gets one extra clause naming something specific to
-    THAT direction — its own catalog `skills_needed[0]`, a fact about the
-    job, not a claim about the student, so this never overclaims beyond
-    vetted evidence the way citing an unconfirmed RIASEC letter would.
-
-    A flat profile can push most/all of the 10 cards into the no-overlap
-    fallback branch — cycling through neutral_career_why_variants() (rather
-    than repeating one sentence) keeps those cards from reading as
-    copy-pasted; once every variant has been used once, later cards also
-    get the same skills_needed[0] clause as the matched-evidence dedup
-    above, so a 6th+ fallback card still reads distinct from the 1st."""
-    t = tr("result_v2")
+    «Почему тебе подходит» — `why`, `fit_reasons`, `fit_keys` — comes from
+    `career_fit` (AnalysisResult.career_fit), rendered in the current locale
+    by career_fit_service; `why` is never empty. The best match's `why` is
+    the AI analysis's text instead (`top_career_why`, AnalysisResult) while
+    that text belongs to the career ranked first."""
     top = careers[:10]
     result: list[StudentCareer] = []
-    seen_evidence: set[tuple[str, ...]] = set()
-    fallback_uses = 0
+    fit_by_slug = (career_fit or {}).get("careers") or {}
+    ai_why = (top_career_why or {}).get("text") or ""
     for rank, career in enumerate(top, start=1):
-        holland_code = career.get("holland_code", "")
-        matched_strengths = _matched_strengths_for(holland_code, context)
-        skills_needed = list(career.get("skills_needed") or [])
-        if matched_strengths:
-            why = t["career_why_match"].format(strengths=_join(matched_strengths))
-            evidence_key = tuple(matched_strengths)
-            if evidence_key in seen_evidence and skills_needed:
-                why += t["career_why_skill_matched"].format(skill=skills_needed[0])
-            seen_evidence.add(evidence_key)
-        else:
-            _why_variants = neutral_career_why_variants()
-            why = _why_variants[fallback_uses % len(_why_variants)]
-            if fallback_uses >= len(_why_variants) and skills_needed:
-                why += t["career_why_skill_neutral"].format(skill=skills_needed[0])
-            fallback_uses += 1
         # Direction.first_steps may hold several catalog entries, but the
         # student only ever sees one, as `try_now` — a separate "3 first
         # steps" list read as pointless filler on top of it (product
         # decision, result-quality-fixes.md §4).
         first_steps = list(career.get("first_steps") or [])
+        why, fit_reasons, fit_keys = career_fit_service.render_career(
+            fit_by_slug.get(career.get("slug", "")), career
+        )
+        why_by_ai = rank == 1 and bool(ai_why.strip()) and top_career_why.get("slug") == career.get("slug")
         result.append(StudentCareer(
             slug=career.get("slug", ""),
             name=career.get("name", ""),
             rank=rank,
             tier=_tier_for_rank(rank),
-            why=why,
-            matched_strengths=matched_strengths,
+            why=ai_why if why_by_ai else why,
+            why_by_ai=why_by_ai,
             try_now=first_steps[0] if first_steps else neutral_try_now(),
             description=career.get("description") or None,
-            skills_needed=skills_needed,
+            skills_needed=list(career.get("skills_needed") or []),
             subjects_to_develop=list(career.get("subjects_to_develop") or []),
+            fit_reasons=fit_reasons,
+            fit_keys=fit_keys,
         ))
     return result
 
@@ -409,6 +370,7 @@ def assemble_result_v2(
     created_at: datetime,
     evidence: dict[str, dict] | None = None,
     strength_cards: list[dict] | None = None,
+    career_fit: dict | None = None,
 ) -> ResultResponseV2:
     """Always succeeds, never raises, never leaves a required field empty —
     this is what makes /result return 200 with a complete v2 form
@@ -440,5 +402,5 @@ def assemble_result_v2(
         **common,
         interest_map=interest_map,
         interest_combination=build_interest_combination(interest_map),
-        careers=build_riasec_careers(context, careers),
+        careers=build_riasec_careers(careers, career_fit),
     )

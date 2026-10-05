@@ -180,12 +180,9 @@ class TemperamentSection(BaseModel):
 class IntelligenceSection(BaseModel):
     """АСТУР — «Когнитивные навыки (учебные задания)» (PRO-427): the frozen
     result snapshot of the latest COMPLETED attempt, never recomputed on
-    read. Percent of tasks done, not an IQ, a norm or a diagnosis. An open
-    retake never replaces it — `retake_in_progress` only tells the reader
-    one is running."""
+    read. Percent of tasks done, not an IQ, a norm or a diagnosis."""
 
     run_id: uuid.UUID
-    retake_in_progress: bool
     scoring_version: str
     bank_version: int
     legacy: bool

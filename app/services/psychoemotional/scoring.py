@@ -13,7 +13,7 @@ hints.json`, PRO-304/307) убраны по решению владельца: �
 """
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult
@@ -71,15 +71,13 @@ async def score_and_store(
     run.validity_flag = run_validity.flag
     run.validity_reasons = run_validity.reasons
 
-    analysis = (
-        await db.execute(
-            select(AnalysisResult).where(
-                AnalysisResult.assessment_id == assessment_id
-            )
-        )
-    ).scalar_one_or_none()
-    if analysis is not None:
-        analysis.psychoemotional = metrics.container()
+    # Свод не зависит от языка — в каждую языковую строку отчёта (KZ-405:
+    # у одной диагностики их может быть несколько).
+    await db.execute(
+        update(AnalysisResult)
+        .where(AnalysisResult.assessment_id == assessment_id)
+        .values(psychoemotional=metrics.container())
+    )
 
     await db.commit()
     return metrics

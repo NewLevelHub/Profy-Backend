@@ -7,6 +7,6 @@
 - `scoring_rules`   — versioned product thresholds the scoring reads
 - `timing`          — server-side subtest timer + lability per-item timing
 - `content`         — public (key-free, localized) content for the test-taker
-- `runs`            — attempt lifecycle: start, submit, atomic finalize, retake
+- `runs`            — attempt lifecycle: start, submit, atomic finalize
 - `analytics`       — per-item product analytics over completed attempts
 """

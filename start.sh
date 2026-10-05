@@ -103,6 +103,12 @@ docker-compose exec api python scripts/seed_riasec_directions.py
 # slugs to already exist, so it must run after seed_riasec_directions.py.
 docker-compose exec api python scripts/apply_direction_content.py
 
+# «Почему тебе подходит» for reports built before career_fit existed or under
+# an older career_fit_rules.json version. Idempotent: current reports are
+# skipped. Must run after directions and their reviewed skills are up to date,
+# because the backfill ties student evidence to those concrete skills.
+docker compose exec api python scripts/backfill_career_fit.py
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Universities / programs — ONE committed file, ONE loader.
 #

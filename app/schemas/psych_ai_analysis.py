@@ -29,6 +29,10 @@ class ProfessionRecommendation(BaseModel):
     # the raw data across blocks, not just restating the algorithm's own
     # `why` for that career.
     reasoning: str
+    # `reasoning` translated to Kazakh word for word. The student reads the
+    # psychologist's exact text as «Почему тебе подходит» of their best match
+    # (AnalysisResult.top_career_why) — `kk` rows get this translation.
+    reasoning_kk: str
 
 
 class PsychAiAnalysisOutput(BaseModel):

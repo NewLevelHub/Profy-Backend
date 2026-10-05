@@ -48,7 +48,7 @@ def _interest_items(codes: list[str]) -> list[StudentInterestMapItem]:
 def _career(slug: str = "swe", *, tier: str = "strong", why: str = "Совпадает с твоими ответами") -> StudentCareer:
     return StudentCareer(
         slug=slug, name="Направление", rank=1, tier=tier, why=why,
-        matched_strengths=[], try_now="Попробуй маленький проект",
+        try_now="Попробуй маленький проект",
     )
 
 

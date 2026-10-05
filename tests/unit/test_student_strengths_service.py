@@ -381,21 +381,10 @@ def test_stored_cards_carry_basis_matched_by_cited_id():
     assert "source_id" not in stored[0] and "evidence_ids" not in stored[0]
 
 
-def test_fingerprint_follows_what_the_cards_would_say():
-    base = svc.fingerprint(_select(rich_inputs()))
-    # Same result in another language, or a retake with the same outcome.
-    assert base == svc.fingerprint(_select(rich_inputs(), "kk"))
-    assert base == svc.fingerprint(_select(rich_inputs(belbin_role_totals=belbin_totals(plant=17, evaluator=9))))
-    # A retake that changes the leading Belbin role changes the strengths.
-    changed = rich_inputs(belbin_role_totals=belbin_totals(shaper=16, team_worker=5, finisher=4))
-    assert base != svc.fingerprint(_select(changed))
-
-
 def test_mark_fresh_records_rules_version_and_outdated_reports_are_detected():
-    fresh = svc.mark_fresh({"strengths_stale": True}, "fingerprint")
+    fresh = svc.mark_fresh({"differentiation": 12.5})
 
-    assert fresh["strengths_rules_version"] == svc.student_strengths_rules.version
+    assert fresh == {"differentiation": 12.5, "strengths_rules_version": svc.student_strengths_rules.version}
     assert svc.rules_version_is_outdated(fresh) is False
-    assert svc.strengths_are_stale(fresh) is False
-    assert svc.rules_version_is_outdated({"strengths_fingerprint": "legacy"}) is True
-    assert svc.strengths_are_stale({"strengths_fingerprint": "legacy"}) is True
+    assert svc.rules_version_is_outdated({}) is True
+    assert svc.rules_version_is_outdated({"strengths_rules_version": -1}) is True

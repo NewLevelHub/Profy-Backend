@@ -11,10 +11,11 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.i18n.catalog import key as i18n_key
 from app.models.analysis_result import ReviewStatus
+from app.models.analysis_result_review_edit import ReviewEditSource
 from app.schemas.student_strengths import StrengthBasis
 
 # Mirrors `result_v2._MAX_CAREERS` — the student schema rejects more.
@@ -41,6 +42,7 @@ class PsychologistReviewEditItem(BaseModel):
     edited_at: datetime
     editor_id: uuid.UUID | None = None
     editor_email: str | None = None
+    source: ReviewEditSource = ReviewEditSource.psychologist
     changed_fields: dict[str, dict[str, Any]]
 
 
@@ -75,12 +77,24 @@ class PsychologistResultDetailResponse(BaseModel):
     personality_notes: dict[str, str]
     motivation_highlights: list[str]
     created_at: datetime
-    # The strength cards were built from earlier Belbin/АСТУР results than
-    # the student's current ones (a retake after the report) — rebuild them
-    # or publish as they are (PRO-432).
+    # The strength cards were built under an older strength rules version
+    # (app/data/student_strengths_rules.json) — rebuild them (PRO-432).
     strengths_stale: bool = False
+    # The AI analysis's recommended profession (psych_ai_analysis), put first
+    # in `careers` by default — None when there is no analysis yet.
+    ai_recommended_slug: str | None = None
+    # «Почему тебе подходит» the student reads under their best match while
+    # `top_career_why_slug` is first in `careers` (AnalysisResult.top_career_why).
+    top_career_why: str | None = None
+    top_career_why_slug: str | None = None
 
     model_config = {"from_attributes": True}
+
+    @field_validator("top_career_why", mode="before")
+    @classmethod
+    def _top_career_why_text(cls, value: Any) -> Any:
+        # Stored as {"slug", "text"}; the slug goes to top_career_why_slug.
+        return value.get("text") if isinstance(value, dict) else value
 
 
 class ReviewTextCardPatch(BaseModel):
@@ -128,6 +142,8 @@ class PsychologistResultPatch(BaseModel):
     final_analysis: str | None = Field(default=None, min_length=1)
     personality_notes: dict[str, str] | None = None
     motivation_highlights: list[str] | None = None
+    # Text only — which career it belongs to is the AI analysis's pick.
+    top_career_why: str | None = Field(default=None, min_length=1)
 
     model_config = {"extra": "forbid"}
 

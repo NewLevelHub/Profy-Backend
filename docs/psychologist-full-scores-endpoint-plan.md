@@ -109,7 +109,7 @@ PsychologistFullScoresResponse
 | `elers` | `score` | `elers_service.raw_score` |
 | `boyko_empathy` | `channels: dict[str,int]` (6 каналов), `total: int` | `boyko_empathy_service.raw_scores` |
 | `kondash_anxiety` | `interpersonal_raw: int` — **только эта подшкала**; `school/self_esteem/magical: null` | `kondash_anxiety_service.interpersonal_raw_score` — см. §5, известный пробел: остальные 3 подшкалы физически нечем посчитать (функций нет) |
-| `belbin` | `role_totals: dict[str,int]` (8 ролей, сырые), `ranked_roles`, `dominant_role` | `belbin_service.get_latest_run` → `.role_totals`, `belbin_service.interpret_role_totals` |
+| `belbin` | `role_totals: dict[str,int]` (8 ролей, сырые), `ranked_roles`, `dominant_role` | `belbin_service.get_run` → `.role_totals`, `belbin_service.interpret_role_totals` |
 | `astur` | `subtest_scores: dict[str,int]`, `raw_score: int`, `spn_group`, `recommended_profile`, `lability_first_half_accuracy`, `lability_second_half_accuracy` | `astur_service.get_latest_run` → `astur_scoring.score_run(run.answers, run.lability_answers, ...)` — уже вызывается именно так внутри `new_tests_report_service._build_intelligence_section`, тот же вызов переиспользуется |
 
 ### `extended_blocks: list[ExtendedBlockStatus]`

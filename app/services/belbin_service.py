@@ -17,11 +17,14 @@ new function, not an extension of this one."""
 import uuid
 from dataclasses import dataclass
 
+from fastapi import HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import BelbinThresholds, belbin_thresholds
 from app.i18n import pick_locale, get_locale
+from app.i18n.catalog import key as i18n_key
 from app.models.belbin_run import BelbinRun
 from app.services import ipsative_battery
 from scripts.belbin_bank import BLOCK_TOTAL, ITEM_ROLE, ROLES, SECTIONS, INSTRUCTION
@@ -78,12 +81,9 @@ async def build_content(db: AsyncSession, ignore_override: bool = False) -> dict
     }
 
 
-async def get_latest_run(assessment_id: uuid.UUID, db: AsyncSession) -> BelbinRun | None:
-    """Append-only history (Ф2.3) — the specialist report (Ф2.7) always
-    reads the most recent attempt, same "latest by created_at" convention
-    as psychoemotional's `_latest_run`. `None` if Belbin was never
-    assigned/completed for this assessment — a normal, common case (it's an
-    optional psychologist-assigned block, not part of the main battery)."""
+async def get_run(assessment_id: uuid.UUID, db: AsyncSession) -> BelbinRun | None:
+    """The assessment's Belbin run — at most one (unique per assessment, no
+    separate retake). `None` while Belbin isn't completed yet."""
     return (
         await db.execute(
             select(BelbinRun)
@@ -113,6 +113,10 @@ async def submit_run(
 
     role_totals = ipsative_battery.aggregate_by_key(allocations, config["item_role"])
 
+    # One Belbin per assessment: a student retakes the whole diagnostic
+    # (a new assessment), never Belbin alone.
+    if await get_run(assessment_id, db) is not None:
+        raise _already_completed()
     run = BelbinRun(
         assessment_id=assessment_id,
         user_id=user_id,
@@ -120,9 +124,20 @@ async def submit_run(
         role_totals=role_totals,
     )
     db.add(run)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        # A concurrent submit won the race — the unique index holds.
+        await db.rollback()
+        raise _already_completed() from None
     await db.refresh(run)
     return run
+
+
+def _already_completed() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_409_CONFLICT, detail=i18n_key("api_errors", "belbin_already_completed")
+    )
 
 
 async def role_evidence(db: AsyncSession, run: BelbinRun) -> dict[str, dict]:
