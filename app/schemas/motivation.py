@@ -1,6 +1,8 @@
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+from app.schemas.validation import ensure_unique
 
 
 class MotivationStatementResponse(BaseModel):
@@ -28,6 +30,17 @@ class MotivationAnswerItem(BaseModel):
 
 class SubmitMotivationRequest(BaseModel):
     answers: list[MotivationAnswerItem]
+
+    @field_validator("answers")
+    @classmethod
+    def triplet_indexes_are_unique(
+        cls, answers: list[MotivationAnswerItem]
+    ) -> list[MotivationAnswerItem]:
+        ensure_unique(
+            (item.triplet_index for item in answers),
+            error_code="duplicate_triplet_indexes",
+        )
+        return answers
 
 
 class SubmitMotivationResponse(BaseModel):

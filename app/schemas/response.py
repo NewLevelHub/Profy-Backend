@@ -1,6 +1,8 @@
 import uuid
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from app.schemas.validation import ensure_unique
 
 
 class AnswerItem(BaseModel):
@@ -14,6 +16,17 @@ class AnswerItem(BaseModel):
 
 class SubmitAnswersRequest(BaseModel):
     answers: list[AnswerItem]
+
+    @field_validator("answers")
+    @classmethod
+    def question_ids_are_unique(
+        cls, answers: list[AnswerItem]
+    ) -> list[AnswerItem]:
+        ensure_unique(
+            (item.question_id for item in answers),
+            error_code="duplicate_question_ids",
+        )
+        return answers
 
 
 class SubmitAnswersResponse(BaseModel):

@@ -34,11 +34,14 @@ RU = {
     "credentials_not_validated": "Could not validate credentials",
     "custom_value_too_long": "Слишком длинный вариант — не больше {max_length} символов",
     "direction_not_found": "Direction not found",
+    "duplicate_pair_indexes": "pair_index должен быть уникальным в пределах одного пакета. Повторы: {values}",
+    "duplicate_question_ids": "question_id должен быть уникальным в пределах одного пакета. Повторы: {values}",
     "duplicate_triplet_category": (
         "Category '{new_category}' is already used by statement #{order} in triplet "
         "{triplet_index} — the three statements of a triplet must carry three different "
         "categories, or scoring cannot tell the picked motives apart."
     ),
+    "duplicate_triplet_indexes": "triplet_index должен быть уникальным в пределах одного пакета. Повторы: {values}",
     "elapsed_ms_lability_only": "elapsed_ms is only accepted for the lability subtest",
     "elapsed_ms_out_of_range": "elapsed_ms values are out of the plausible range",
     "email_already_exists": "Email already exists",
@@ -138,7 +141,10 @@ KK = {
     "credentials_not_validated": "Тіркелгі деректерін тексеру мүмкін болмады",
     "custom_value_too_long": "Нұсқа тым ұзын — {max_length} таңбадан аспауы керек",
     "direction_not_found": "Бағыт табылмады",
+    "duplicate_pair_indexes": "Бір пакет ішінде pair_index қайталанбауы керек. Қайталанған мәндер: {values}",
+    "duplicate_question_ids": "Бір пакет ішінде question_id қайталанбауы керек. Қайталанған мәндер: {values}",
     "duplicate_triplet_category": "'{new_category}' санаты {triplet_index}-триплеттегі №{order} тұжырымда бұрын қолданылған — үш тұжырымның санаттары әртүрлі болуы керек",
+    "duplicate_triplet_indexes": "Бір пакет ішінде triplet_index қайталанбауы керек. Қайталанған мәндер: {values}",
     "elapsed_ms_lability_only": "elapsed_ms тек лабильділік субтесті үшін қабылданады",
     "elapsed_ms_out_of_range": "elapsed_ms мәндері ықтимал ауқымнан тыс",
     "email_already_exists": "Бұл электрондық пошта бұрыннан тіркелген",
