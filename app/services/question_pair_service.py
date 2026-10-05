@@ -71,6 +71,45 @@ async def get_pairs(db: AsyncSession) -> list[QuestionPairItem]:
     ]
 
 
+async def split_saved_values(
+    question_values: dict[uuid.UUID, int], db: AsyncSession
+) -> tuple[dict[uuid.UUID, int], dict[int, uuid.UUID]]:
+    """Stored UserResponse values -> (scale answers, pair picks), losslessly:
+    every stored value lands in exactly one of the two.
+
+    A pair reads as picked only when both its rows carry the synthetic
+    encoding submit_pair_answers writes (_PICKED_VALUE / _OTHER_VALUE); those
+    two rows are then left out of the scale answers — they aren't scale
+    answers, and echoing them as such would let a client pre-fill ДДО
+    options at 5/1. Anything else on a pair option (a value posted through
+    the plain answers endpoint, a lone row) stays a scale answer, so it
+    never disappears from both maps while scoring still counts it.
+
+    The rows carry no "written by the pair path" mark, so the pick is the
+    same reading professional_types_service scores with (value 5 = picked).
+    Keyed by pair_index alone, like the rest of the pair API:
+    submit_pair_answers resolves pairs by pair_index without telling the
+    remaining instruments apart (it only drops big_five), so the banks keep
+    it unique across the whole table (see the note at
+    professional_types_bank.PAIRS)."""
+    pairs = (
+        await db.execute(select(QuestionPair).where(QuestionPair.instrument != QuestionInstrument.big_five))
+    ).scalars().all()
+    picks: dict[int, uuid.UUID] = {}
+    pick_rows: set[uuid.UUID] = set()
+    for pair in pairs:
+        values = (question_values.get(pair.question_a_id), question_values.get(pair.question_b_id))
+        if values == (_PICKED_VALUE, _OTHER_VALUE):
+            picks[pair.pair_index] = pair.question_a_id
+        elif values == (_OTHER_VALUE, _PICKED_VALUE):
+            picks[pair.pair_index] = pair.question_b_id
+        else:
+            continue
+        pick_rows.update((pair.question_a_id, pair.question_b_id))
+    scale_values = {question_id: value for question_id, value in question_values.items() if question_id not in pick_rows}
+    return scale_values, picks
+
+
 async def submit_pair_answers(
     assessment_id: uuid.UUID,
     answers: list[PairAnswerItem],

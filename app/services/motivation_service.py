@@ -52,6 +52,18 @@ async def answered_count(assessment_id: uuid.UUID, db: AsyncSession) -> int:
     return result.scalar_one()
 
 
+async def saved_answers(assessment_id: uuid.UUID, db: AsyncSession) -> dict[int, tuple[uuid.UUID, uuid.UUID]]:
+    """triplet_index → (most_statement_id, least_statement_id)."""
+    result = await db.execute(
+        select(
+            MotivationResponse.triplet_index,
+            MotivationResponse.most_statement_id,
+            MotivationResponse.least_statement_id,
+        ).where(MotivationResponse.assessment_id == assessment_id)
+    )
+    return {triplet_index: (most, least) for triplet_index, most, least in result.all()}
+
+
 async def raw_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, int]:
     """MOST=2, NEUTRAL(untouched)=1, LEAST=0 per category. Sum over all
     answered triplets always totals 3 points/triplet (methodology-guaranteed,
