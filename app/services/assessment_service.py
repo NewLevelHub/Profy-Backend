@@ -8,7 +8,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from app.i18n.catalog import key as i18n_key
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import Profile
-from app.models.question import Question
+from app.models.question import Question, active_question_clause
 from app.models.user_response import UserResponse
 from app.schemas.assessment import AssessmentResponse, SavedAnswersResponse, SavedMotivationAnswer
 from app.schemas.response import AnswerItem, SubmitAnswersResponse
@@ -122,7 +122,12 @@ async def get_saved_answers(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
 
     rows = await db.execute(
-        select(UserResponse.question_id, UserResponse.answer_value).where(UserResponse.assessment_id == assessment_id)
+        select(UserResponse.question_id, UserResponse.answer_value)
+        .join(Question, Question.id == UserResponse.question_id)
+        .where(
+            UserResponse.assessment_id == assessment_id,
+            active_question_clause(),
+        )
     )
     scale_values, pair_picks = await question_pair_service.split_saved_values(
         {question_id: value for question_id, value in rows.all()}, db
@@ -155,7 +160,12 @@ async def submit_answers(
     assessment_shared.ensure_assessment_accepts_answers(assessment)
 
     question_ids = [item.question_id for item in answers]
-    questions_result = await db.execute(select(Question.id).where(Question.id.in_(question_ids)))
+    questions_result = await db.execute(
+        select(Question.id).where(
+            Question.id.in_(question_ids),
+            active_question_clause(),
+        )
+    )
     valid_ids = set(questions_result.scalars().all())
     for item in answers:
         if item.question_id not in valid_ids:

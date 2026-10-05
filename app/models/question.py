@@ -103,3 +103,14 @@ class Question(Base):
     __table_args__ = (
         UniqueConstraint("instrument", "order", name="uq_questions_instrument_order"),
     )
+
+
+def active_question_clause():
+    """SQL predicate for the question pool served by the current battery.
+
+    Big Five rows stay in the database so historical reports can still be
+    scored, but they must not be served, accepted, or counted as progress for
+    a current assessment. Keep every current-battery query on this predicate
+    so its numerator and denominator cannot drift apart again.
+    """
+    return Question.instrument != QuestionInstrument.big_five

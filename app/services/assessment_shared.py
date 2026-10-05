@@ -19,7 +19,7 @@ from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
 from app.i18n.catalog import key as i18n_key
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup
-from app.models.question import Question, QuestionInstrument
+from app.models.question import Question, active_question_clause
 from app.models.user_response import UserResponse
 
 logger = logging.getLogger(__name__)
@@ -122,16 +122,19 @@ def get_effective_goal(age_group: AgeGroup, primary_goal: AssessmentGoal) -> Ass
 
 async def likert_total_questions(db: AsyncSession) -> int:
     result = await db.execute(
-        select(func.count(Question.id)).where(
-            Question.instrument != QuestionInstrument.big_five
-        )
+        select(func.count(Question.id)).where(active_question_clause())
     )
     return result.scalar_one()
 
 
 async def likert_answered_count(assessment_id: uuid.UUID, db: AsyncSession) -> int:
     result = await db.execute(
-        select(func.count(UserResponse.id)).where(UserResponse.assessment_id == assessment_id)
+        select(func.count(UserResponse.id))
+        .join(Question, Question.id == UserResponse.question_id)
+        .where(
+            UserResponse.assessment_id == assessment_id,
+            active_question_clause(),
+        )
     )
     return result.scalar_one()
 
