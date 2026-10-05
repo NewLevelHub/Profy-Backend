@@ -173,7 +173,7 @@ profi-backend/
 
 ## Деплой
 
-Push в `dev` или `main` триггерит `.github/workflows/cd-dev.yml` / `cd.yml`: сборка образа → деплой на соответствующий сервер → миграции → полный прогон seed-скриптов и `build_universities.py`. `dev.profile.newlevelhub.kz` и `profy.newlevelhub.kz` обслуживаются одним общим edge-nginx контейнером на проде — при правках `nginx.prod.conf` см. `docs/nginx-prod-points-to-dev-incident.md`. Фото на сервер кладутся один раз вручную (`/srv/profy-media`, монтируется в контейнеры как `/srv/media`) — CI их не трогает.
+Push в `dev` или `main` запускает `.github/workflows/cd-dev.yml` / `cd.yml`: сборку образа, деплой своего окружения, миграции и seed-скрипты. Общий edge-nginx обслуживает `dev.profile.newlevelhub.kz` и `profile.newlevelhub.kz`, но его конфигурацию и сертификаты обновляет только деплой `main`. Dev не пересоздаёт prod-контейнеры и не записывает файлы в prod-путь. Переменные образов разделены: `DEV_API_IMAGE` / `PROD_API_IMAGE`; CD записывает их в соответствующий env-файл автоматически. При ручном запуске Compose нужно задать соответствующую переменную — старый `API_IMAGE` больше не используется. Общие фото `/srv/profy-media` доступны dev только для чтения. Импорт фото и `build_universities.py` выполняются отдельно при необходимости.
 
 ## Дополнительная документация
 
