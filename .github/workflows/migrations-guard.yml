@@ -8,7 +8,8 @@ on:
   pull_request:
     branches: [dev, main]
     # labeled/unlabeled: re-run when `migration-edit-approved` is added/removed.
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+    # edited: changing the PR base must check the new target branch.
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
   merge_group:
 
 jobs:
