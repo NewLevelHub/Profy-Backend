@@ -593,6 +593,7 @@ async def test_student_list_status_shows_a_pending_report_behind_a_published_one
     force_complete_senior(monkeypatch)
     older = await make_student_assessment(db_session, test_user)
     older.created_at = datetime(2026, 1, 10, tzinfo=timezone.utc)
+    await generate(client, auth_headers, older)
     newer = Assessment(
         profile_id=older.profile_id,
         goal=AssessmentGoal.explore,
@@ -600,7 +601,6 @@ async def test_student_list_status_shows_a_pending_report_behind_a_published_one
     )
     db_session.add(newer)
     await db_session.flush()
-    await generate(client, auth_headers, older)
     await generate(client, auth_headers, newer)
     await assign(db_session, psychologist_user, test_user)
     await client.post(f"{_result_url(test_user, newer.id)}/publish", headers=psychologist_headers)

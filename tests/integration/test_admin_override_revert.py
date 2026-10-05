@@ -37,9 +37,10 @@ from app.services.admin_lock import (
 async def _question(db: AsyncSession, text: str) -> Question:
     question = Question(
         instrument=QuestionInstrument.riasec, text={"ru": text},
-        # uq_questions_instrument_order needs a distinct order per (instrument,
-        # order) pair — a test creating two riasec questions can't both use 0.
-        order=abs(hash(uuid.uuid4())) % 100_000,
+        # Keep synthetic orders outside every seeded bank. The previous
+        # 0..99_999 range occasionally generated an existing RIASEC order and
+        # made this otherwise isolated test fail at random.
+        order=1_000_000 + abs(hash(uuid.uuid4())) % 1_000_000,
     )
     db.add(question)
     await db.commit()

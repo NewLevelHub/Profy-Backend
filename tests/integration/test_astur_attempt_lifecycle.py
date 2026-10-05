@@ -10,6 +10,7 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.assessment import AssessmentStatus
 from app.models.astur_run import AsturRun, AsturRunStatus
 from app.models.profile import Profile
 from app.services.astur import bank_versions
@@ -380,6 +381,8 @@ async def test_repeat_exposure_counts_attempts_of_other_assessments(
 ) -> None:
     user, first_assessment, headers = await make_student(db_session)
     await complete_attempt(client, first_assessment.id, headers)
+    first_assessment.status = AssessmentStatus.completed
+    await db_session.flush()
     _, second_assessment, headers = await make_student(db_session, user=user)
     await complete_attempt(client, second_assessment.id, headers, wrong={"awareness"})
 
@@ -413,6 +416,8 @@ async def test_attempt_after_a_publish_uses_the_new_version(client: AsyncClient,
     await complete_attempt(client, assessment.id, headers)
     v2 = await _publish_v2_with_new_awareness_key(db_session, user.id)
 
+    assessment.status = AssessmentStatus.completed
+    await db_session.flush()
     _, next_assessment, headers = await make_student(db_session, user=user)
     body = await open_attempt(client, next_assessment.id, headers)
     assert body["run"]["bank_version"] == v2.version

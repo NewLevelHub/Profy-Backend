@@ -1,7 +1,8 @@
 import uuid
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
@@ -20,6 +21,31 @@ from app.services import (
     question_pair_service,
 )
 from app.services.astur import runs as astur_runs
+
+
+_SINGLE_ACTIVE_INDEX = "uq_assessments_profile_single_active"
+
+
+async def _get_in_progress_assessment(
+    profile_id: uuid.UUID, db: AsyncSession
+) -> Assessment | None:
+    result = await db.execute(
+        select(Assessment).where(
+            Assessment.profile_id == profile_id,
+            Assessment.status == AssessmentStatus.in_progress,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+def _is_single_active_violation(exc: IntegrityError) -> bool:
+    """Recognize the partial unique index through asyncpg's wrappers."""
+    current: BaseException | None = exc.orig
+    while current is not None:
+        if getattr(current, "constraint_name", None) == _SINGLE_ACTIVE_INDEX:
+            return True
+        current = current.__cause__
+    return _SINGLE_ACTIVE_INDEX in str(exc.orig)
 
 
 async def _to_response(assessment: Assessment, db: AsyncSession) -> AssessmentResponse:
@@ -56,13 +82,7 @@ async def create_assessment(
     if profile is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "profile_not_found", locale="ru"))
 
-    existing_result = await db.execute(
-        select(Assessment).where(
-            Assessment.profile_id == profile_id,
-            Assessment.status == AssessmentStatus.in_progress,
-        )
-    )
-    existing = existing_result.scalar_one_or_none()
+    existing = await _get_in_progress_assessment(profile_id, db)
     if existing is not None:
         # Discard, don't relabel: stamping an abandoned, possibly-incomplete
         # attempt as `completed` made that status lie — everything else in
@@ -76,8 +96,11 @@ async def create_assessment(
         # rows (all FK ondelete="CASCADE") — same
         # A full retake starts from a new row; completed assessments and their
         # reviewed reports remain immutable.
-        await db.delete(existing)
-        await db.commit()
+        # Execute now so the old row leaves the partial unique index before
+        # the replacement INSERT, but do not commit: replacement remains one
+        # atomic transaction. A Core DELETE also tolerates the other racer
+        # having removed the same row while this request waited on its lock.
+        await db.execute(delete(Assessment).where(Assessment.id == existing.id))
 
     assessment = Assessment(
         profile_id=profile_id,
@@ -85,7 +108,24 @@ async def create_assessment(
         status=AssessmentStatus.in_progress,
     )
     db.add(assessment)
-    await db.commit()
+    try:
+        # Deleting an abandoned attempt and inserting its replacement is one
+        # atomic state transition. The partial unique index is the final
+        # arbiter when two /start requests race: exactly one insert wins.
+        await db.commit()
+    except IntegrityError as exc:
+        await db.rollback()
+        if not _is_single_active_violation(exc):
+            raise
+
+        # A concurrent request created the active attempt first. Return that
+        # winner so both callers receive a usable, identical assessment ID
+        # instead of leaking the database conflict as HTTP 500.
+        winner = await _get_in_progress_assessment(profile_id, db)
+        if winner is None:
+            raise
+        return await _to_response(winner, db)
+
     await db.refresh(assessment)
     return await _to_response(assessment, db)
 
@@ -93,13 +133,7 @@ async def create_assessment(
 async def get_current_assessment(profile_id: uuid.UUID, db: AsyncSession) -> AssessmentResponse | None:
     # Prefer in-progress; fall back to most recent completed so the frontend
     # can restore state after logout without losing the completed assessment.
-    result = await db.execute(
-        select(Assessment).where(
-            Assessment.profile_id == profile_id,
-            Assessment.status == AssessmentStatus.in_progress,
-        )
-    )
-    assessment = result.scalar_one_or_none()
+    assessment = await _get_in_progress_assessment(profile_id, db)
     if assessment is None:
         result = await db.execute(
             select(Assessment)
