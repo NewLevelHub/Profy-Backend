@@ -1,20 +1,22 @@
 """Low-level helpers shared between assessment_service.py and
 motivation_service.py — split out to avoid a circular import (assessment
 needs motivation's totals for AssessmentResponse; motivation needs
-assessment's Likert totals + retake-invalidation to decide when the whole
-test — not just its own phase — is complete)."""
+assessment's Likert totals and completion guard to decide when the whole test
+— not just its own phase — is complete)."""
 
 import logging
 import uuid
 from datetime import datetime, timezone
 
 import redis.asyncio as aioredis
+from fastapi import status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.errors import AppError
 from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
-from app.models.analysis_result import AnalysisResult
+from app.i18n.catalog import key as i18n_key
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup
 from app.models.question import Question, QuestionInstrument
@@ -24,8 +26,8 @@ logger = logging.getLogger(__name__)
 
 _redis: aioredis.Redis | None = None
 
-# Single source of truth for the report cache key — report_service.py reads/
-# writes this, invalidate_retake() below must delete the exact same key.
+# Single source of truth for the report cache key used by report generation,
+# publication, locale changes, and other explicit cache invalidation paths.
 # Versioned (was bare "report:{id}", then "report:v2") so a pre-rollout
 # payload can never be read back under new semantics: the old prefix is
 # simply never addressed again by any code path, not filtered out at read
@@ -81,28 +83,20 @@ async def safe_redis_delete(redis: aioredis.Redis, *keys: str) -> None:
         logger.warning("redis delete failed for keys=%s", keys, exc_info=True)
 
 
-async def invalidate_retake(
-    assessment: Assessment, db: AsyncSession, redis: aioredis.Redis
-) -> None:
-    """Full retake reset, shared by every submit-answers entrypoint (Likert,
-    question pairs, motivation triplets): drop the stale report so a completed
-    retake never leaves old-data artifacts behind for the next GET. Caller is still responsible for flipping `assessment.status` back to
-    `in_progress` — that's entrypoint-specific (some flip it unconditionally,
-    the motivation ones only after checking the other phase)."""
-    assessment_id = assessment.id
+def ensure_assessment_accepts_answers(assessment: Assessment) -> None:
+    """Keep completed diagnostics and their reviewed reports immutable.
 
-    # KZ-405: there can be one row per locale — drop them all on retake.
-    old_result = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
-    )
-    for old_analysis in old_result.scalars().all():
-        await db.delete(old_analysis)
-
-    # Reset goal changed count and secondary goals
-    assessment.goal_changed_count = 0
-    assessment.secondary_goals = []
-
-    await safe_redis_delete(redis, *report_cache_keys(assessment_id))
+    A retake is a new ``Assessment`` created through ``create_assessment``;
+    answer endpoints must never reopen an old row.  This guard is shared by
+    Likert, forced-choice pairs, and motivation so a stale tab cannot erase a
+    generated report through any of the three write paths.
+    """
+    if assessment.status == AssessmentStatus.completed:
+        raise AppError(
+            status_code=status.HTTP_409_CONFLICT,
+            error_code="assessment_already_completed",
+            detail=i18n_key("api_errors", "assessment_already_completed"),
+        )
 
 
 def get_effective_goal(age_group: AgeGroup, primary_goal: AssessmentGoal) -> AssessmentGoal:

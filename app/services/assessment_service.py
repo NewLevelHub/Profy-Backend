@@ -68,8 +68,8 @@ async def create_assessment(
         # status said completed, but no AnalysisResult could ever be built.
         # Deleting cascades to its UserResponse/MotivationResponse
         # rows (all FK ondelete="CASCADE") — same
-        # "discard stale artifacts on a fresh start" pattern retake
-        # invalidation already uses elsewhere in this codebase.
+        # A full retake starts from a new row; completed assessments and their
+        # reviewed reports remain immutable.
         await db.delete(existing)
         await db.commit()
 
@@ -152,6 +152,7 @@ async def submit_answers(
     if assessment.profile_id != current_profile_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
 
+    assessment_shared.ensure_assessment_accepts_answers(assessment)
 
     question_ids = [item.question_id for item in answers]
     questions_result = await db.execute(select(Question.id).where(Question.id.in_(question_ids)))
@@ -163,7 +164,6 @@ async def submit_answers(
                 detail=i18n_key("api_errors", "question_id_not_found", locale="ru").format(question_id=item.question_id),
             )
 
-    is_retake = assessment.status == AssessmentStatus.completed
     if answers:
         stmt = pg_insert(UserResponse).values([
             {
@@ -179,12 +179,6 @@ async def submit_answers(
             set_={"answer_value": stmt.excluded.answer_value},
         )
         await db.execute(stmt)
-
-    if is_retake:
-        assessment.status = AssessmentStatus.in_progress
-        assessment.completed_at = None
-        redis = assessment_shared.get_redis()
-        await assessment_shared.invalidate_retake(assessment, db, redis)
 
     answered = await assessment_shared.likert_answered_count(assessment_id, db)
     total = await assessment_shared.likert_total_questions(db)
