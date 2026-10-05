@@ -37,15 +37,15 @@ services:
   # No storage service here — university photos are plain files on disk
   # (STORAGE_BACKEND=fs). dev has no nginx of its own: the prod-stack edge
   # nginx serves /media/ for dev.profile.newlevelhub.kz from the same host
-  # folder, so api_dev bind-mounts that folder too (read-write, for the
-  # scripts/import_*_photos.py jobs). Set STORAGE_BACKEND=fs and
+  # folder, so api_dev mounts it read-only. Media imports must run in prod;
+  # dev must not overwrite production files. Set STORAGE_BACKEND=fs and
   # STORAGE_FS_ROOT=/srv/media in .env.development; MEDIA_DIR must match the
   # prod stack's MEDIA_DIR (default /srv/profy-media).
 
   # Service name api_dev (not "api") so joining the prod edge network
   # does not steal DNS name "api" / "db" from production.
   api_dev:
-    image: ${API_IMAGE}
+    image: ${DEV_API_IMAGE:?DEV_API_IMAGE must be set by the deployment workflow}
     container_name: profi_api_dev
     command: >
       sh -c "python scripts/heal_dev_db_drift.py &&
@@ -54,12 +54,14 @@ services:
     env_file:
       - .env.development
     environment:
+      # Ignore any copied DATABASE_URL; build it from the dev credentials below.
+      DATABASE_URL: ""
       # Unique container DNS names — NEVER "db"/"redis" (those resolve to PROD on edge net)
       POSTGRES_HOST: profi_db_dev
       POSTGRES_PORT: "5432"
       REDIS_URL: redis://profi_redis_dev:6379/0
     volumes:
-      - ${MEDIA_DIR:-/srv/profy-media}:/srv/media
+      - ${MEDIA_DIR:-/srv/profy-media}:/srv/media:ro
     depends_on:
       db:
         condition: service_healthy
