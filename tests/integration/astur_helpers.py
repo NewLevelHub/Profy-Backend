@@ -78,6 +78,13 @@ async def start(client: AsyncClient, assessment_id: uuid.UUID, number: int, run_
     )
 
 
+async def reset(client: AsyncClient, assessment_id: uuid.UUID, number: int, run_id, headers: dict):
+    return await client.post(
+        f"/api/v1/assessment/{assessment_id}/astur/subtest/{number}/reset",
+        json={"run_id": str(run_id)}, headers=headers,
+    )
+
+
 async def complete_attempt(
     client: AsyncClient,
     assessment_id: uuid.UUID,
@@ -96,11 +103,13 @@ async def complete_attempt(
     for subtest in sorted(bank.subtests, key=lambda s: s.number):
         if subtest.key in skip:
             continue
-        await start(client, assessment_id, subtest.number, run_id, headers)
+        started = await start(client, assessment_id, subtest.number, run_id, headers)
+        assert started.status_code == 201, started.text
         if subtest.key == "lability":
             payload = quick_payload(bank, run_id)
         else:
             payload = {"run_id": run_id, "answers": answered(content_answers(bank, wrong=wrong)[subtest.key])}
+        payload["started_at"] = started.json()["started_at"]
         resp = await submit(client, assessment_id, subtest.number, payload, headers)
         assert resp.status_code == 201, resp.text
         responses.append(resp)
