@@ -13,6 +13,7 @@ from app.models.user import User
 from app.schemas.psychoemotional import (
     FinishPsychoEmotionalRequest,
     FinishPsychoEmotionalResponse,
+    PsychoEmotionalStateResponse,
     StartPsychoEmotionalRequest,
     StartPsychoEmotionalResponse,
 )
@@ -33,11 +34,11 @@ async def _require_owned_assessment(
     ).one_or_none()
     if row is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru")
+            status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found")
         )
     if row.user_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru")
+            status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied")
         )
 
 
@@ -61,6 +62,28 @@ async def start_psychoemotional(
     return StartPsychoEmotionalResponse(run_id=run.id)
 
 
+@router.get(
+    "/{assessment_id}/psychoemotional/current",
+    response_model=PsychoEmotionalStateResponse,
+)
+async def current_psychoemotional(
+    assessment_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> PsychoEmotionalStateResponse:
+    """Server-authoritative state used to recover after a lost response."""
+    await _require_owned_assessment(assessment_id, current_user, db)
+    run = await run_service.get_current_run(
+        assessment_id, user_id=current_user.id, db=db
+    )
+    if run is None:
+        return PsychoEmotionalStateResponse(status="not_started")
+    return PsychoEmotionalStateResponse(
+        run_id=run.id,
+        status="pending" if run.list2 is None else "completed",
+    )
+
+
 @router.post(
     "/{assessment_id}/psychoemotional/{run_id}/finish",
     response_model=FinishPsychoEmotionalResponse,
@@ -74,12 +97,18 @@ async def finish_psychoemotional(
 ) -> FinishPsychoEmotionalResponse:
     """circle2 — в конце всего прохождения."""
     await _require_owned_assessment(assessment_id, current_user, db)
-    run = await run_service.finish_run(
-        assessment_id, run_id, data, user_id=current_user.id, db=db
-    )
+    try:
+        run = await run_service.finish_run(
+            assessment_id, run_id, data, user_id=current_user.id, db=db
+        )
+    except run_service.PsychoEmotionalRunAlreadyFinished:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=i18n_key("api_errors", "psychoemotional_run_already_finished"),
+        ) from None
     if run is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=i18n_key("api_errors", "run_not_found_or_already_finished", locale="ru"),
+            detail=i18n_key("api_errors", "run_not_found_or_already_finished"),
         )
     return FinishPsychoEmotionalResponse(run_id=run.id, tech_invalid=run.tech_invalid)
