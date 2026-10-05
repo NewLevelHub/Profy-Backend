@@ -50,7 +50,7 @@ services:
     command: >
       sh -c "python scripts/heal_dev_db_drift.py &&
                alembic upgrade head &&
-               uvicorn app.main:app --host 0.0.0.0 --port 8000"
+               uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips '*'"
     env_file:
       - .env.development
     environment:
