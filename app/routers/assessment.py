@@ -7,7 +7,7 @@ from app.i18n.catalog import key as i18n_key
 from app.database import get_db
 from app.dependencies import get_current_student_user
 from app.models.user import User
-from app.schemas.assessment import AssessmentCreateRequest, AssessmentResponse
+from app.schemas.assessment import AssessmentCreateRequest, AssessmentResponse, SavedAnswersResponse
 from app.schemas.response import SubmitAnswersRequest, SubmitAnswersResponse
 from app.services import assessment_service
 from app.services.profile_service import get_profile
@@ -42,6 +42,16 @@ async def get_current_assessment(
     if assessment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "no_active_assessment_found", locale="ru"))
     return assessment
+
+
+@router.get("/{assessment_id}/saved-answers", response_model=SavedAnswersResponse)
+async def get_saved_answers(
+    assessment_id: uuid.UUID,
+    current_user: User = Depends(get_current_student_user),
+    db: AsyncSession = Depends(get_db),
+) -> SavedAnswersResponse:
+    profile_id = await _require_profile_id(current_user, db)
+    return await assessment_service.get_saved_answers(assessment_id, profile_id, db)
 
 
 @router.post("/{assessment_id}/answers", response_model=SubmitAnswersResponse)
