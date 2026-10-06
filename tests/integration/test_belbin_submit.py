@@ -1,6 +1,8 @@
-"""PRO-338 Ф2.4: POST /assessment/{id}/belbin — one-shot submit, 7 blocks x
-8 values, sum strictly 10 per block via ipsative_battery.validate_allocation
-(422 otherwise), Σ per 8 roles aggregated immediately into role_totals."""
+"""Belbin final submission and server-side block progress (PROFY-012).
+
+The final POST still validates seven 8-value blocks and aggregates all role
+totals; progress endpoints persist only individually completed blocks.
+"""
 import uuid
 
 from httpx import AsyncClient
@@ -8,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.assessment import Assessment, AssessmentGoal
+from app.models.belbin_progress import BelbinProgress
 from app.models.belbin_run import BelbinRun
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
@@ -76,6 +79,103 @@ async def test_valid_submission_stores_a_run_with_role_totals(
     assert run.assessment_id == assessment.id
     assert run.allocations == _VALID_ALLOCATIONS
     assert run.role_totals == body["role_totals"]
+
+
+async def test_completed_blocks_are_restored_overwritten_and_deleted_on_submit(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await _auth(db_session)
+    progress_url = f"/api/v1/assessment/{assessment.id}/belbin/progress"
+
+    empty = await client.get(progress_url, headers=headers)
+    assert empty.status_code == 200
+    assert empty.json() == {"completed": False, "blocks": []}
+
+    first = await client.put(
+        f"{progress_url}/0",
+        json={"allocation": _VALID_ALLOCATIONS[0]},
+        headers=headers,
+    )
+    assert first.status_code == 200, first.text
+    assert first.json()["blocks"] == [
+        {"block_index": 0, "allocation": _VALID_ALLOCATIONS[0]}
+    ]
+
+    replacement = _even_block(SECTIONS[0], first_item_points=4)
+    overwritten = await client.put(
+        f"{progress_url}/0",
+        json={"allocation": replacement},
+        headers=headers,
+    )
+    assert overwritten.status_code == 200, overwritten.text
+
+    third = await client.put(
+        f"{progress_url}/2",
+        json={"allocation": _VALID_ALLOCATIONS[2]},
+        headers=headers,
+    )
+    assert third.status_code == 200, third.text
+    restored = await client.get(progress_url, headers=headers)
+    assert restored.json()["blocks"] == [
+        {"block_index": 0, "allocation": replacement},
+        {"block_index": 2, "allocation": _VALID_ALLOCATIONS[2]},
+    ]
+
+    stored = await db_session.get(BelbinProgress, assessment.id)
+    assert stored is not None
+    assert stored.blocks == {
+        "0": replacement,
+        "2": _VALID_ALLOCATIONS[2],
+    }
+
+    submitted = await client.post(
+        f"/api/v1/assessment/{assessment.id}/belbin",
+        json={"allocations": _VALID_ALLOCATIONS},
+        headers=headers,
+    )
+    assert submitted.status_code == 201, submitted.text
+    assert (await client.get(progress_url, headers=headers)).json() == {
+        "completed": True,
+        "blocks": [],
+    }
+    assert (
+        await db_session.execute(
+            select(BelbinProgress).where(
+                BelbinProgress.assessment_id == assessment.id
+            )
+        )
+    ).scalar_one_or_none() is None
+
+    late_save = await client.put(
+        f"{progress_url}/0",
+        json={"allocation": _VALID_ALLOCATIONS[0]},
+        headers=headers,
+    )
+    assert late_save.status_code == 409
+
+
+async def test_progress_rejects_invalid_block_or_allocation(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await _auth(db_session)
+    progress_url = f"/api/v1/assessment/{assessment.id}/belbin/progress"
+
+    missing_block = await client.put(
+        f"{progress_url}/7",
+        json={"allocation": _VALID_ALLOCATIONS[0]},
+        headers=headers,
+    )
+    assert missing_block.status_code == 422
+
+    invalid = dict(_VALID_ALLOCATIONS[0])
+    invalid[next(iter(invalid))] += 1
+    wrong_total = await client.put(
+        f"{progress_url}/0",
+        json={"allocation": invalid},
+        headers=headers,
+    )
+    assert wrong_total.status_code == 422
+    assert await db_session.get(BelbinProgress, assessment.id) is None
 
 
 async def test_block_not_summing_to_10_is_422(
@@ -160,6 +260,19 @@ async def test_belongs_to_another_user_is_403(
     )
 
     assert resp.status_code == 403
+    assert (
+        await client.get(
+            f"/api/v1/assessment/{assessment.id}/belbin/progress",
+            headers=other_headers,
+        )
+    ).status_code == 403
+    assert (
+        await client.put(
+            f"/api/v1/assessment/{assessment.id}/belbin/progress/0",
+            json={"allocation": _VALID_ALLOCATIONS[0]},
+            headers=other_headers,
+        )
+    ).status_code == 403
 
 
 async def test_nonexistent_assessment_is_404(

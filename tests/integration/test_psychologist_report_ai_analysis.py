@@ -65,6 +65,7 @@ def _minimal_report_kwargs(assessment_id: uuid.UUID) -> dict:
         report_version=2,
         strength_cards=[{"title": "Сильная сторона", "description": "..."}],
         thinking_style_notes=[{"title": "Стиль мышления", "description": "..."}],
+        final_analysis="Итоговый вывод",
     )
 
 

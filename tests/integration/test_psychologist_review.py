@@ -399,6 +399,52 @@ async def test_publish_is_irreversible_and_notifies_student(
     await assessment_shared.get_redis().delete(assessment_shared.report_cache_key(assessment.id))
 
 
+async def test_publish_rejects_a_report_with_an_empty_required_section(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    test_user: User,
+    psychologist_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    emails = capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+    await generate(client, auth_headers, assessment)
+    await assign(db_session, psychologist_user, test_user)
+    psychologist_user.locale = "kk"
+    await db_session.flush()
+    url = _result_url(test_user, assessment.id)
+    original = (await client.get(url, headers=psychologist_headers)).json()
+
+    for field in ("careers", "strength_cards", "motivation_highlights"):
+        saved = await client.patch(url, json={field: []}, headers=psychologist_headers)
+        assert saved.status_code == 200
+
+        rejected = await client.post(
+            f"{url}/publish",
+            headers=psychologist_headers,
+        )
+        assert rejected.status_code == 422
+        assert rejected.json()["detail"] == (
+            "Есеп толық толтырылмаған — жарияламас бұрын міндетті бөлімдерді қосыңыз"
+        )
+        assert (await client.get(url, headers=psychologist_headers)).json()["review_status"] == "pending_review"
+        emails["published"].assert_not_awaited()
+
+        restored = await client.patch(
+            url,
+            json={field: original[field]},
+            headers=psychologist_headers,
+        )
+        assert restored.status_code == 200
+
+    published = await client.post(f"{url}/publish", headers=psychologist_headers)
+    assert published.status_code == 200
+    emails["published"].assert_awaited_once()
+
+
 async def test_personality_notes_follow_the_report_language_not_the_reviewer(
     client: httpx.AsyncClient,
     db_session: AsyncSession,

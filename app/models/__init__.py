@@ -7,6 +7,7 @@ from app.models.assessment import Assessment  # noqa: F401 — keep model import
 
 from app.models.astur_bank_version import AsturBankVersion  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.astur_run import AsturRun  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.belbin_progress import BelbinProgress  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.belbin_run import BelbinRun  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.consent import Consent  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.direction import Direction  # noqa: F401 — keep model imported so Alembic discovers it
@@ -31,7 +32,7 @@ from app.models.user_response import UserResponse  # noqa: F401 — keep model i
 from app.models.content_override import ContentOverride  # noqa: F401 — keep model imported so Alembic discovers it
 
 __all__ = [
-    "Base", "AnalysisResult", "Artifact", "Assessment", "AsturBankVersion", "AsturRun", "BelbinRun", "Consent",
+    "Base", "AnalysisResult", "Artifact", "Assessment", "AsturBankVersion", "AsturRun", "BelbinProgress", "BelbinRun", "Consent",
     "ContentOverride", "Direction", "ExtendedBlockAssignment",
     "EmailVerificationToken",
     "MotivationResponse", "MotivationStatement", "PasswordResetToken",

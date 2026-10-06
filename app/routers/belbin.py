@@ -15,6 +15,8 @@ from app.models.profile import Profile
 from app.models.user import User
 from app.schemas.belbin import (
     BelbinContentResponse,
+    BelbinProgressResponse,
+    SaveBelbinProgressRequest,
     SubmitBelbinRequest,
     SubmitBelbinResponse,
 )
@@ -62,6 +64,47 @@ async def _require_owned_assessment(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru")
         )
+
+
+@router.get(
+    "/{assessment_id}/belbin/progress",
+    response_model=BelbinProgressResponse,
+)
+async def get_belbin_progress(
+    assessment_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> BelbinProgressResponse:
+    await _require_owned_assessment(assessment_id, current_user, db)
+    completed, progress = await belbin_service.get_progress(assessment_id, db)
+    return BelbinProgressResponse(
+        completed=completed,
+        blocks=belbin_service.progress_blocks(progress),
+    )
+
+
+@router.put(
+    "/{assessment_id}/belbin/progress/{block_index}",
+    response_model=BelbinProgressResponse,
+)
+async def save_belbin_progress(
+    assessment_id: uuid.UUID,
+    block_index: int,
+    data: SaveBelbinProgressRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> BelbinProgressResponse:
+    await _require_owned_assessment(assessment_id, current_user, db)
+    progress = await belbin_service.save_progress_block(
+        assessment_id,
+        block_index,
+        data.allocation,
+        db=db,
+    )
+    return BelbinProgressResponse(
+        completed=False,
+        blocks=belbin_service.progress_blocks(progress),
+    )
 
 
 @router.post(
