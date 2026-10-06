@@ -85,8 +85,19 @@ async def start_astur_subtest(
     db: AsyncSession = Depends(get_db),
 ) -> StartAsturSubtestResponse:
     await _require_owned_assessment(assessment_id, current_user, db)
-    run, key, started_at = await runs.start_subtest(db, assessment_id, n, run_id=data.run_id)
-    return StartAsturSubtestResponse(run_id=run.id, subtest=key, started_at=started_at)
+    run, key, started_at = await runs.start_subtest(
+        db,
+        assessment_id,
+        n,
+        run_id=data.run_id,
+        state_version=data.state_version,
+    )
+    return StartAsturSubtestResponse(
+        run_id=run.id,
+        subtest=key,
+        started_at=started_at,
+        state_version=run.state_version,
+    )
 
 
 @router.post(
@@ -107,8 +118,14 @@ async def reset_astur_subtest(
     item with a fresh server timer.
     """
     await _require_owned_assessment(assessment_id, current_user, db)
-    run, key = await runs.reset_subtest(db, assessment_id, n, run_id=data.run_id)
-    return ResetAsturSubtestResponse(run_id=run.id, subtest=key)
+    run, key = await runs.reset_subtest(
+        db,
+        assessment_id,
+        n,
+        run_id=data.run_id,
+        state_version=data.state_version,
+    )
+    return ResetAsturSubtestResponse(run_id=run.id, subtest=key, state_version=run.state_version)
 
 
 @router.post(

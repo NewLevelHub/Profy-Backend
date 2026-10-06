@@ -71,17 +71,33 @@ async def submit(client: AsyncClient, assessment_id: uuid.UUID, number: int, pay
     return await client.post(f"/api/v1/assessment/{assessment_id}/astur/subtest/{number}", json=payload, headers=headers)
 
 
-async def start(client: AsyncClient, assessment_id: uuid.UUID, number: int, run_id, headers: dict):
+async def start(
+    client: AsyncClient,
+    assessment_id: uuid.UUID,
+    number: int,
+    run_id,
+    headers: dict,
+    *,
+    state_version: int = 0,
+):
     return await client.post(
         f"/api/v1/assessment/{assessment_id}/astur/subtest/{number}/start",
-        json={"run_id": str(run_id)}, headers=headers,
+        json={"run_id": str(run_id), "state_version": state_version}, headers=headers,
     )
 
 
-async def reset(client: AsyncClient, assessment_id: uuid.UUID, number: int, run_id, headers: dict):
+async def reset(
+    client: AsyncClient,
+    assessment_id: uuid.UUID,
+    number: int,
+    run_id,
+    headers: dict,
+    *,
+    state_version: int = 0,
+):
     return await client.post(
         f"/api/v1/assessment/{assessment_id}/astur/subtest/{number}/reset",
-        json={"run_id": str(run_id)}, headers=headers,
+        json={"run_id": str(run_id), "state_version": state_version}, headers=headers,
     )
 
 

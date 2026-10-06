@@ -112,6 +112,7 @@ async def test_confirmed_exit_resets_only_the_current_subtest_and_its_timer(
     exited = await reset(client, assessment.id, 2, run_id, headers)
     assert exited.status_code == 200
     assert exited.json()["subtest"] == "analogies"
+    assert exited.json()["state_version"] == 1
 
     state = await _state(client, assessment.id, headers)
     assert state["active_run"]["submitted_subtests"] == ["awareness"]
@@ -123,7 +124,7 @@ async def test_confirmed_exit_resets_only_the_current_subtest_and_its_timer(
     assert stale.status_code == 409
     assert stale.json()["detail"]["code"] == "astur_subtest_start_stale"
 
-    restarted = await start(client, assessment.id, 2, run_id, headers)
+    restarted = await start(client, assessment.id, 2, run_id, headers, state_version=1)
     new_payload = {
         "run_id": run_id,
         "started_at": restarted.json()["started_at"],
@@ -132,6 +133,37 @@ async def test_confirmed_exit_resets_only_the_current_subtest_and_its_timer(
     assert (await submit(client, assessment.id, 2, new_payload, headers)).status_code == 201
     resumed = await _state(client, assessment.id, headers)
     assert set(resumed["active_run"]["submitted_subtests"]) == {"awareness", "analogies"}
+
+
+async def test_reset_generation_rejects_a_delayed_start_without_clobbering_a_new_one(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await make_student(db_session)
+    run_id = (await open_attempt(client, assessment.id, headers))["run"]["run_id"]
+
+    # The exit/reset transaction wins the row lock before the older /start.
+    exited = await reset(client, assessment.id, 1, run_id, headers, state_version=0)
+    assert exited.status_code == 200
+    assert exited.json()["state_version"] == 1
+
+    delayed_start = await start(client, assessment.id, 1, run_id, headers, state_version=0)
+    assert delayed_start.status_code == 409
+    assert delayed_start.json()["detail"]["code"] == "astur_subtest_start_stale"
+
+    after_delayed_start = await _state(client, assessment.id, headers)
+    assert after_delayed_start["active_run"]["state_version"] == 1
+    assert "awareness" not in after_delayed_start["active_run"]["subtest_started_at"]
+
+    # A deliberate restart uses the new generation. Replaying the old reset
+    # afterwards is an idempotent no-op and cannot delete this newer timer.
+    restarted = await start(client, assessment.id, 1, run_id, headers, state_version=1)
+    assert restarted.status_code == 201
+    stale_reset = await reset(client, assessment.id, 1, run_id, headers, state_version=0)
+    assert stale_reset.status_code == 200
+    assert stale_reset.json()["state_version"] == 1
+
+    after_stale_reset = await _state(client, assessment.id, headers)
+    assert after_stale_reset["active_run"]["subtest_started_at"]["awareness"] == restarted.json()["started_at"]
 
 
 async def test_confirmed_exit_clears_quick_subtest_protocol(

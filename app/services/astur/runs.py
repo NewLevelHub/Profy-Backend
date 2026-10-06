@@ -108,6 +108,7 @@ async def run_summary(db: AsyncSession, run: AsturRun) -> dict:
         "completed_at": run.completed_at,
         "submitted_subtests": submitted_subtests(run),
         "subtest_started_at": run.subtest_started_at,
+        "state_version": run.state_version,
     }
 
 
@@ -245,10 +246,17 @@ def _subtest_or_404(bank: AsturBank, number: int) -> BankSubtest:
 
 
 async def start_subtest(
-    db: AsyncSession, assessment_id: uuid.UUID, number: int, *, run_id: uuid.UUID
+    db: AsyncSession,
+    assessment_id: uuid.UUID,
+    number: int,
+    *,
+    run_id: uuid.UUID,
+    state_version: int,
 ) -> tuple[AsturRun, str, str]:
     run = await _run_for_write(db, assessment_id, run_id)
     subtest = _subtest_or_404((await get_published(db, run.bank_version_id)).bank, number)
+    if state_version != run.state_version:
+        raise _conflict(STALE_SUBTEST_START, i18n_key("api_errors", "astur_subtest_start_stale"))
     started_at = dict(run.subtest_started_at)
     timing.start_subtest(started_at, subtest.key)
     run.subtest_started_at = started_at
@@ -258,7 +266,12 @@ async def start_subtest(
 
 
 async def reset_subtest(
-    db: AsyncSession, assessment_id: uuid.UUID, number: int, *, run_id: uuid.UUID
+    db: AsyncSession,
+    assessment_id: uuid.UUID,
+    number: int,
+    *,
+    run_id: uuid.UUID,
+    state_version: int,
 ) -> tuple[AsturRun, str]:
     """Discard one subtest from an open attempt after a confirmed exit.
 
@@ -270,6 +283,15 @@ async def reset_subtest(
     run = await _run_for_write(db, assessment_id, run_id)
     subtest = _subtest_or_404((await get_published(db, run.bank_version_id)).bank, number)
     key = subtest.key
+
+    # The reset is the ordering barrier for an in-flight /start. Once it has
+    # advanced the generation, an older reset is an idempotent no-op and an
+    # older start is rejected. Crucially, a repeated old reset never deletes
+    # a newer timer created under the next generation.
+    if state_version < run.state_version:
+        return run, key
+    if state_version > run.state_version:
+        raise _conflict(STALE_SUBTEST_START, i18n_key("api_errors", "astur_subtest_start_stale"))
 
     if key == QUICK_INSTRUCTIONS_KEY:
         run.lability_answers = {}
@@ -286,6 +308,7 @@ async def reset_subtest(
     started_at = dict(run.subtest_started_at)
     started_at.pop(key, None)
     run.subtest_started_at = started_at
+    run.state_version += 1
 
     await db.commit()
     await db.refresh(run)
