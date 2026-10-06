@@ -150,6 +150,9 @@ class AsturStateResponse(BaseModel):
     `completed` (the attempt is finished and can't be reopened)."""
 
     status: Literal["not_started", "in_progress", "completed"]
+    # Clock sample produced with this state snapshot. The client combines it
+    # with performance.now(), never its mutable wall clock, for countdowns.
+    server_now: datetime
     active_run: AsturRunSummary | None = None
     latest_completed_run: AsturRunSummary | None = None
 
@@ -196,6 +199,7 @@ class StartAsturSubtestResponse(BaseModel):
     run_id: uuid.UUID
     subtest: str
     started_at: str  # ISO 8601, server clock — the timer engine's anchor
+    server_now: datetime
     state_version: int
 
 

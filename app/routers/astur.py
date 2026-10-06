@@ -21,7 +21,7 @@ from app.schemas.astur import (
     SubmitAsturSubtestResponse,
 )
 from app.services import assessment_shared
-from app.services.astur import runs
+from app.services.astur import runs, timing
 
 router = APIRouter(tags=["astur"])
 
@@ -96,6 +96,7 @@ async def start_astur_subtest(
         run_id=run.id,
         subtest=key,
         started_at=started_at,
+        server_now=timing.now_utc(),
         state_version=run.state_version,
     )
 
@@ -156,14 +157,7 @@ async def submit_astur_subtest(
     # where the assessment itself can flip to `completed`.
     if completed:
         assessment_row = (await db.execute(select(Assessment).where(Assessment.id == assessment_id))).scalar_one()
-        likert_answered = await assessment_shared.likert_answered_count(assessment_id, db)
-        likert_total = await assessment_shared.likert_total_questions(db)
-        if await assessment_shared.try_complete_assessment(
-            assessment_row,
-            likert_completed=likert_total > 0 and likert_answered >= likert_total,
-            motivation_completed=await assessment_shared.motivation_completed(assessment_id, db),
-            db=db,
-        ):
+        if await assessment_shared.try_complete_assessment_if_ready(assessment_row, db):
             await db.commit()
 
     return SubmitAsturSubtestResponse(

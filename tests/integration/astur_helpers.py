@@ -110,23 +110,32 @@ async def complete_attempt(
     wrong: set[str] = frozenset(),
     skip: set[str] = frozenset(),
 ) -> list:
-    """Opens (or resumes) the attempt, then starts and submits every subtest
-    in order (except `skip`); returns the submit responses. Subtests in
-    `wrong` get valid-format but wrong answers."""
+    """Open (or resume), then submit the pinned sequence up to `skip`.
+
+    Already submitted blocks are ignored. Subtests in `wrong` get
+    valid-format but wrong answers.
+    """
     bank = bank or v1_bank()
-    run_id = (await open_attempt(client, assessment_id, headers))["run"]["run_id"]
+    opened = await open_attempt(client, assessment_id, headers)
+    run_id = opened["run"]["run_id"]
+    submitted = set(opened["run"]["submitted_subtests"])
     responses = []
-    for subtest in sorted(bank.subtests, key=lambda s: s.number):
-        if subtest.key in skip:
+    # Follow the order pinned to this run. The latest published version can
+    # change presentation order without changing stable subtest numbers.
+    for served_subtest in opened["content"]["subtests"]:
+        subtest = bank.subtest(served_subtest["key"])
+        if subtest.key in submitted:
             continue
-        started = await start(client, assessment_id, subtest.number, run_id, headers)
+        if subtest.key in skip:
+            break
+        started = await start(client, assessment_id, served_subtest["number"], run_id, headers)
         assert started.status_code == 201, started.text
         if subtest.key == "lability":
             payload = quick_payload(bank, run_id)
         else:
             payload = {"run_id": run_id, "answers": answered(content_answers(bank, wrong=wrong)[subtest.key])}
         payload["started_at"] = started.json()["started_at"]
-        resp = await submit(client, assessment_id, subtest.number, payload, headers)
+        resp = await submit(client, assessment_id, served_subtest["number"], payload, headers)
         assert resp.status_code == 201, resp.text
         responses.append(resp)
     return responses

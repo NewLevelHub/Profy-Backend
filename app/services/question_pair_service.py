@@ -168,10 +168,11 @@ async def submit_pair_answers(
 
     answered = await assessment_shared.likert_answered_count(assessment_id, db)
     total = await assessment_shared.likert_total_questions(db)
-    # Same caveat as assessment_service.submit_answers: this phase being done
-    # does not flip assessment.status — motivation_service does that once
-    # both phases are confirmed answered.
+    # Same caveat as assessment_service.submit_answers: this phase alone does
+    # not complete the assessment. Reconciliation checks every required phase.
     completed = total > 0 and answered >= total
+
+    await assessment_shared.try_complete_assessment_if_ready(assessment, db)
 
     await db.commit()
 

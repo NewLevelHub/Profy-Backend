@@ -4,17 +4,19 @@ The final POST still validates seven 8-value blocks and aggregates all role
 totals; progress endpoints persist only individually completed blocks.
 """
 import uuid
+from unittest.mock import AsyncMock
 
 from httpx import AsyncClient
+import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.assessment import Assessment, AssessmentGoal
+from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.belbin_progress import BelbinProgress
 from app.models.belbin_run import BelbinRun
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
-from app.services import auth_service
+from app.services import assessment_shared, auth_service
 from scripts.belbin_bank import SECTIONS
 
 
@@ -79,6 +81,49 @@ async def test_valid_submission_stores_a_run_with_role_totals(
     assert run.assessment_id == assessment.id
     assert run.allocations == _VALID_ALLOCATIONS
     assert run.role_totals == body["role_totals"]
+
+
+async def test_belbin_finalizes_assessment_when_it_is_the_last_required_stage(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Completion is a backend invariant, not a consequence of UI order."""
+    _, assessment, headers = await _auth(db_session)
+    monkeypatch.setattr(
+        assessment_shared,
+        "likert_answered_count",
+        AsyncMock(return_value=1),
+    )
+    monkeypatch.setattr(
+        assessment_shared,
+        "likert_total_questions",
+        AsyncMock(return_value=1),
+    )
+    monkeypatch.setattr(
+        assessment_shared,
+        "motivation_completed",
+        AsyncMock(return_value=True),
+    )
+    # Models the state in which ASTUR was completed before Belbin through a
+    # stale tab or direct API client. Once this POST stores Belbin, the whole
+    # required battery is complete.
+    monkeypatch.setattr(
+        assessment_shared,
+        "belbin_and_astur_completed",
+        AsyncMock(return_value=True),
+    )
+
+    response = await client.post(
+        f"/api/v1/assessment/{assessment.id}/belbin",
+        json={"allocations": _VALID_ALLOCATIONS},
+        headers=headers,
+    )
+
+    assert response.status_code == 201, response.text
+    await db_session.refresh(assessment)
+    assert assessment.status == AssessmentStatus.completed
+    assert assessment.completed_at is not None
 
 
 async def test_completed_blocks_are_restored_overwritten_and_deleted_on_submit(

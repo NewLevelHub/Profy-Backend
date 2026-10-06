@@ -20,7 +20,7 @@ from app.schemas.belbin import (
     SubmitBelbinRequest,
     SubmitBelbinResponse,
 )
-from app.services import belbin_service
+from app.services import assessment_shared, belbin_service
 from scripts.belbin_bank import BLOCK_TOTAL, INSTRUCTION, SECTIONS
 
 router = APIRouter(tags=["belbin"])
@@ -126,4 +126,11 @@ async def submit_belbin(
     run = await belbin_service.submit_run(
         assessment_id, data.allocations, user_id=current_user.id, db=db
     )
+    # A stale tab or direct API client can finish the required stages in a
+    # different order. If Belbin is last, it must finalize the assessment.
+    assessment = await db.get(Assessment, assessment_id)
+    if assessment is not None and await assessment_shared.try_complete_assessment_if_ready(
+        assessment, db
+    ):
+        await db.commit()
     return SubmitBelbinResponse(run_id=run.id, role_totals=run.role_totals)

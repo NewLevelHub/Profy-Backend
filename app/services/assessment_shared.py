@@ -199,6 +199,25 @@ async def try_complete_assessment(
     return True
 
 
+async def try_complete_assessment_if_ready(
+    assessment: Assessment, db: AsyncSession
+) -> bool:
+    """Reconcile completion after any required stage writes successfully.
+
+    The UI normally submits the stages in a fixed order, but stale tabs and
+    direct API clients need not do so. Every stage can call this helper, so
+    the database outcome does not depend on which required write arrives last.
+    """
+    likert_answered = await likert_answered_count(assessment.id, db)
+    likert_total = await likert_total_questions(db)
+    return await try_complete_assessment(
+        assessment,
+        likert_completed=likert_total > 0 and likert_answered >= likert_total,
+        motivation_completed=await motivation_completed(assessment.id, db),
+        db=db,
+    )
+
+
 async def response_time_deltas_ms(
     assessment_id: uuid.UUID, db: AsyncSession
 ) -> list[int]:

@@ -234,11 +234,12 @@ async def submit_answers(
 
     answered = await assessment_shared.likert_answered_count(assessment_id, db)
     total = await assessment_shared.likert_total_questions(db)
-    # This phase (Likert) being done does NOT mean the whole test is done —
-    # the motivation phase may still be pending. assessment.status only
-    # flips to completed once motivation_service.submit_motivation_answers
-    # confirms both phases are answered (see that function).
+    # This phase being done does not mean the whole test is done. The shared
+    # reconciliation below checks Motivation, Belbin and ASTUR too, so the
+    # assessment can complete regardless of which required phase arrives last.
     completed = total > 0 and answered >= total
+
+    await assessment_shared.try_complete_assessment_if_ready(assessment, db)
 
     await db.commit()
 
