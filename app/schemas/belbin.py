@@ -1,6 +1,6 @@
 """Belbin BTRSPI contracts (PRO-338 Ф2.4 / PROFY-012).
 
-Each completed block can be stored as a server-side draft and restored on
+Each block, including unspent points, can be stored as a draft and restored on
 another client. Scoring remains a separate one-shot submission of all seven
 blocks, so partial progress can never be mistaken for a completed run.
 """

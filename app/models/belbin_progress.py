@@ -9,7 +9,7 @@ from app.database import Base
 
 
 class BelbinProgress(Base):
-    """Server-side draft of completed Belbin blocks for one assessment.
+    """Server-side draft of partial or complete Belbin blocks for one assessment.
 
     Keys in ``blocks`` are zero-based section indexes encoded as JSON object
     keys; values are allocations already validated against the current

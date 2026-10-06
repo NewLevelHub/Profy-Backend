@@ -1,6 +1,6 @@
 """Submit + score + interpret a Belbin BTRSPI run (PRO-338 Ф2.4/Ф2.5).
 
-Progress (PROFY-012): validates and stores each completed block in a
+Progress (PROFY-012): validates and stores each partial or complete block in a
 server-side draft. Saves are idempotent and serialized with final submit.
 
 Submit (Ф2.4): validates all 7 blocks against `scripts/belbin_bank.py`'s
@@ -141,7 +141,7 @@ async def save_progress_block(
     *,
     db: AsyncSession,
 ) -> BelbinProgress:
-    """Validate and idempotently save one completed block."""
+    """Validate and save a draft block, including unspent points."""
     await _lock_assessment(assessment_id, db)
     if await get_run(assessment_id, db) is not None:
         raise _already_completed()
@@ -158,6 +158,7 @@ async def save_progress_block(
         allocation,
         expected_items=expected_items,
         total=config["block_total"],
+        allow_partial=True,
     )
 
     progress = await db.get(BelbinProgress, assessment_id)

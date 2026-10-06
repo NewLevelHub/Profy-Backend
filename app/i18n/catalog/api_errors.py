@@ -3,6 +3,7 @@ English responses. Calls pinned to ru preserve contract §7 and the admin/psycho
 interface; machine error codes are not catalog entries."""
 
 RU = {
+    "allocation_total_exceeded": "Сумма баллов не должна превышать {total}. Сейчас: {actual_total}",
     "access_denied": "Access denied",
     "admin_access_required": "Admin access required",
     "age_grade_mismatch": (
@@ -114,6 +115,7 @@ RU = {
 }
 
 KK = {
+    "allocation_total_exceeded": "Балл сомасы {total} мәнінен аспауы керек. Қазір: {actual_total}",
     "access_denied": "Қол жеткізуге рұқсат жоқ",
     "admin_access_required": "Әкімші құқығы қажет",
     "age_grade_mismatch": (

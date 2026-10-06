@@ -223,6 +223,27 @@ async def test_progress_rejects_invalid_block_or_allocation(
     assert await db_session.get(BelbinProgress, assessment.id) is None
 
 
+async def test_partial_progress_is_restored_but_cannot_be_finalized(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await _auth(db_session)
+    url = f"/api/v1/assessment/{assessment.id}/belbin"
+    partial = {key: 0 for key in _VALID_ALLOCATIONS[0]}
+    partial[next(iter(partial))] = 6
+    saved = await client.put(
+        f"{url}/progress/0", json={"allocation": partial}, headers=headers,
+    )
+    assert saved.status_code == 200, saved.text
+    restored = await client.get(f"{url}/progress", headers=headers)
+    assert restored.json() == {
+        "completed": False, "blocks": [{"block_index": 0, "allocation": partial}],
+    }
+    submitted = await client.post(
+        url, json={"allocations": [partial, *_VALID_ALLOCATIONS[1:]]}, headers=headers,
+    )
+    assert submitted.status_code == 422
+
+
 async def test_block_not_summing_to_10_is_422(
     client: AsyncClient, db_session: AsyncSession
 ) -> None:
