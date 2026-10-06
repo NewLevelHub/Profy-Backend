@@ -72,15 +72,24 @@ async def test_reset_acknowledgement_uses_request_locale_without_exposing_accoun
     assert initiate.await_count == 1
 
 
-@pytest.mark.parametrize("locale", ["ru", "kk"])
-def test_nested_http_error_keeps_contract_and_interpolated_values(locale, monkeypatch):
-    # Even a future KK translation must not change the stable legacy detail.
+@pytest.mark.parametrize(
+    ("locale", "expected_detail"),
+    [
+        ("ru", "Allocation must sum to exactly 10 points, got 9"),
+        ("kk", "translated 10 9"),
+    ],
+)
+def test_nested_http_error_keeps_structure_and_uses_request_locale(
+    locale, expected_detail, monkeypatch,
+):
+    # The structured fields stay stable; human-readable validation details
+    # now follow the request locale, including interpolated point totals.
     monkeypatch.setitem(api_errors.KK, "allocation_total_mismatch", "translated {total} {actual_total}")
     with use_locale(locale), pytest.raises(HTTPException) as error:
         ipsative_battery.validate_allocation({"a": 4, "b": 5}, expected_items=["a", "b"], total=10)
     assert error.value.status_code == 422
     assert error.value.detail == {
-        "detail": "Allocation must sum to exactly 10 points, got 9",
+        "detail": expected_detail,
         "expected_total": 10,
         "actual_total": 9,
     }
