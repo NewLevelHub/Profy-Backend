@@ -14,7 +14,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.i18n.catalog import key as i18n_key
-from app.models.assessment import Assessment, AssessmentStatus
+from app.models.assessment import Assessment
 from app.models.motivation import MotivationResponse, MotivationStatement
 from app.schemas.motivation import MotivationAnswerItem, SubmitMotivationResponse
 from app.services import assessment_shared
@@ -106,6 +106,8 @@ async def submit_motivation_answers(
     if assessment.profile_id != current_profile_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
 
+    assessment_shared.ensure_assessment_accepts_answers(assessment)
+
     grouped = await triplets(db)
     for item in answers:
         statements = grouped.get(item.triplet_index)
@@ -125,7 +127,6 @@ async def submit_motivation_answers(
                 status_code=status.HTTP_400_BAD_REQUEST, detail=i18n_key("api_errors", "most_and_least_must_differ", locale="ru")
             )
 
-    is_retake = assessment.status == AssessmentStatus.completed
     if answers:
         stmt = pg_insert(MotivationResponse).values(
             [
@@ -147,12 +148,6 @@ async def submit_motivation_answers(
             },
         )
         await db.execute(stmt)
-
-    if is_retake:
-        assessment.status = AssessmentStatus.in_progress
-        assessment.completed_at = None
-        redis = assessment_shared.get_redis()
-        await assessment_shared.invalidate_retake(assessment, db, redis)
 
     mot_answered = await answered_count(assessment_id, db)
     mot_total = await total_triplets(db)

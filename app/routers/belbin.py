@@ -15,10 +15,12 @@ from app.models.profile import Profile
 from app.models.user import User
 from app.schemas.belbin import (
     BelbinContentResponse,
+    BelbinProgressResponse,
+    SaveBelbinProgressRequest,
     SubmitBelbinRequest,
     SubmitBelbinResponse,
 )
-from app.services import belbin_service, student_strengths_service
+from app.services import assessment_shared, belbin_service
 from scripts.belbin_bank import BLOCK_TOTAL, INSTRUCTION, SECTIONS
 
 router = APIRouter(tags=["belbin"])
@@ -64,6 +66,47 @@ async def _require_owned_assessment(
         )
 
 
+@router.get(
+    "/{assessment_id}/belbin/progress",
+    response_model=BelbinProgressResponse,
+)
+async def get_belbin_progress(
+    assessment_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> BelbinProgressResponse:
+    await _require_owned_assessment(assessment_id, current_user, db)
+    completed, progress = await belbin_service.get_progress(assessment_id, db)
+    return BelbinProgressResponse(
+        completed=completed,
+        blocks=belbin_service.progress_blocks(progress),
+    )
+
+
+@router.put(
+    "/{assessment_id}/belbin/progress/{block_index}",
+    response_model=BelbinProgressResponse,
+)
+async def save_belbin_progress(
+    assessment_id: uuid.UUID,
+    block_index: int,
+    data: SaveBelbinProgressRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> BelbinProgressResponse:
+    await _require_owned_assessment(assessment_id, current_user, db)
+    progress = await belbin_service.save_progress_block(
+        assessment_id,
+        block_index,
+        data.allocation,
+        db=db,
+    )
+    return BelbinProgressResponse(
+        completed=False,
+        blocks=belbin_service.progress_blocks(progress),
+    )
+
+
 @router.post(
     "/{assessment_id}/belbin",
     response_model=SubmitBelbinResponse,
@@ -75,14 +118,19 @@ async def submit_belbin(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SubmitBelbinResponse:
-    """Опциональный блок вне основного потока (03-Фаза2-Белбин.md,
-    запускается из кабинета психолога) — один вызов, 7 блоков × 8 значений,
-    сумма строго 10 на блок (422 иначе), Σ по 8 ролям сразу при сабмите."""
+    """Belbin в основной батарее — один вызов, 7 блоков × 8 значений, сумма
+    строго 10 на блок (422 иначе), Σ по 8 ролям сразу при сабмите. Одно
+    прохождение на диагностику: повторная отправка — 409
+    (`belbin_already_completed`), заново проходится только вся диагностика."""
     await _require_owned_assessment(assessment_id, current_user, db)
     run = await belbin_service.submit_run(
         assessment_id, data.allocations, user_id=current_user.id, db=db
     )
-    response = SubmitBelbinResponse(run_id=run.id, role_totals=run.role_totals)
-    # A retake after the report: its strength cards now describe older results.
-    await student_strengths_service.flag_report_if_strengths_changed(assessment_id, db)
-    return response
+    # A stale tab or direct API client can finish the required stages in a
+    # different order. If Belbin is last, it must finalize the assessment.
+    assessment = await db.get(Assessment, assessment_id)
+    if assessment is not None and await assessment_shared.try_complete_assessment_if_ready(
+        assessment, db
+    ):
+        await db.commit()
+    return SubmitBelbinResponse(run_id=run.id, role_totals=run.role_totals)

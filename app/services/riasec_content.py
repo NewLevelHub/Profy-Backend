@@ -28,20 +28,6 @@ def riasec_strength_phrases() -> dict[str, str]:
     return tr("riasec")["strength_phrases"]
 
 
-def neutral_career_why_variants() -> list[str]:
-    """Honest "ranked by the overall pattern, not a specific strength"
-    disclosures for a matched career with no evidenced Holland overlap —
-    several rephrasings so a flat profile's 5-10 fallbacks don't read
-    copy-pasted (result-quality-fixes.md §3)."""
-    return tr("riasec")["neutral_why"]
-
-
-def neutral_career_why() -> str:
-    """The first, most-established phrasing — for callers that only need *a*
-    neutral fallback string, not the rotation."""
-    return tr("riasec")["neutral_why"][0]
-
-
 def neutral_try_now() -> str:
     """Safe non-empty `try_now` for a Direction with no `first_steps`."""
     return tr("riasec")["neutral_try_now"]

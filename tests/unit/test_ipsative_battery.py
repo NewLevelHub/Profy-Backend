@@ -32,6 +32,39 @@ def test_wrong_total_is_422() -> None:
     assert exc_info.value.detail["expected_total"] == 10
 
 
+@pytest.mark.parametrize("total", [0, 6, 10])
+def test_draft_allows_unspent_points(total: int) -> None:
+    ipsative_battery.validate_allocation(
+        _even_split(total, _BELBIN_BLOCK_ITEMS),
+        expected_items=_BELBIN_BLOCK_ITEMS, total=10, allow_partial=True,
+    )
+
+
+@pytest.mark.parametrize("locale", ["ru", "kk"])
+def test_draft_over_budget_is_rejected_in_request_locale(locale: str) -> None:
+    from app.i18n import use_locale
+    from app.i18n.catalog import api_errors
+
+    with use_locale(locale), pytest.raises(HTTPException) as exc_info:
+        ipsative_battery.validate_allocation(
+            _even_split(11, _BELBIN_BLOCK_ITEMS),
+            expected_items=_BELBIN_BLOCK_ITEMS, total=10, allow_partial=True,
+        )
+    catalog = api_errors.RU if locale == "ru" else api_errors.KK
+    assert exc_info.value.status_code == 422
+    assert exc_info.value.detail["detail"] == catalog["allocation_total_exceeded"].format(
+        total=10, actual_total=11,
+    )
+
+
+@pytest.mark.parametrize("allocation", [{"i1": 6}, {"i1": -1, **{f"i{n}": 0 for n in range(2, 9)}}])
+def test_partial_draft_still_validates_items_and_nonnegative_values(allocation) -> None:
+    with pytest.raises(HTTPException):
+        ipsative_battery.validate_allocation(
+            allocation, expected_items=_BELBIN_BLOCK_ITEMS, total=10, allow_partial=True,
+        )
+
+
 def test_negative_value_is_422_even_if_total_is_correct() -> None:
     """A client could zero out points elsewhere to compensate for one
     negative value and still hit the right sum — the negative-value check

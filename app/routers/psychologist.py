@@ -38,6 +38,7 @@ from app.schemas.psychologist_result import (
 from app.services import extended_block_service, psychologist_service
 from app.services.psychologist_service import (
     ResultAlreadyPublishedError,
+    ResultNotReadyForPublishError,
     ResultPatchInvalidError,
 )
 
@@ -108,8 +109,8 @@ async def rebuild_strength_cards(
     current_user: User = Depends(_require_psychologist),
     db: AsyncSession = Depends(get_db),
 ) -> PsychologistResultDetailResponse:
-    """Rebuilds «Сильные стороны» from the student's current results — the
-    way out of `strengths_stale` after a Belbin/АСТУР retake (PRO-432)."""
+    """Rebuilds «Сильные стороны» under the current strength rules — the way
+    out of `strengths_stale` (a report built under older rules, PRO-432)."""
     try:
         return await psychologist_service.rebuild_strength_cards(
             db,
@@ -157,6 +158,8 @@ async def publish_result(
         )
     except ResultAlreadyPublishedError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except ResultNotReadyForPublishError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 

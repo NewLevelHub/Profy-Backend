@@ -20,8 +20,6 @@ meaning domains are preferred. A completed RIASEC profile supplies the
 remaining cautiously worded interest observations so the student sees exactly
 `max_cards`; onboarding subjects and hobbies never become strength cards.
 """
-import hashlib
-import json
 import logging
 import uuid
 from collections import Counter
@@ -32,7 +30,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import StudentStrengthsRules, student_strengths_rules
 from app.i18n import use_locale
 from app.i18n.catalog import tr
-from app.models.analysis_result import AnalysisResult, ReviewStatus
+from app.models.analysis_result import AnalysisResult
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment
 from app.models.profile import Profile
@@ -155,14 +153,15 @@ def build_inputs(
 async def latest_battery_runs(assessment_id: uuid.UUID, db: AsyncSession) -> tuple[object | None, object | None]:
     """(latest Belbin run, latest completed АСТУР run) — the runs a report's
     strengths are built from."""
-    belbin_run = await belbin_service.get_latest_run(assessment_id, db)
+    belbin_run = await belbin_service.get_run(assessment_id, db)
     astur_run = await astur_runs.latest_completed_run(db, assessment_id)
     return belbin_run, astur_run
 
 
 async def collect_inputs(assessment_id: uuid.UUID, db: AsyncSession) -> StrengthInputs:
-    """Re-reads every instrument for an assessment — the retake / refresh
-    path, where no report generation has scored anything in memory."""
+    """Re-reads every instrument for an assessment — for the psychologist's
+    rebuild and the career-fit backfill, where no report generation has
+    scored anything in memory."""
     profile = (
         await db.execute(
             select(Profile).join(Assessment, Assessment.profile_id == Profile.id).where(Assessment.id == assessment_id)
@@ -202,18 +201,6 @@ async def collect_inputs(assessment_id: uuid.UUID, db: AsyncSession) -> Strength
     )
 
 
-def fingerprint(candidates: list[StrengthCandidate]) -> str:
-    """Identity of a report's strengths: which cards, grounded how, on which
-    facts — locale-free. A retake that leaves them the same (e.g. Belbin
-    resubmitted with the same leading role) doesn't make the report stale;
-    any change to what the cards would say does."""
-    payload = {
-        "rules_version": student_strengths_rules.version,
-        "candidates": [[c.source_id, c.basis, c.evidence_ids] for c in candidates],
-    }
-    return hashlib.sha256(json.dumps(payload, ensure_ascii=False).encode()).hexdigest()
-
-
 def rules_version_is_outdated(meta: dict | None) -> bool:
     """Whether stored cards predate the currently configured methodology."""
     return (meta or {}).get("strengths_rules_version") != student_strengths_rules.version
@@ -223,10 +210,6 @@ def rules_version_is_outdated_clause():
     """SQL equivalent of :func:`rules_version_is_outdated` for queues."""
     stored = AnalysisResult.meta.op("->>")("strengths_rules_version")
     return func.coalesce(stored, "") != str(student_strengths_rules.version)
-
-
-def strengths_are_stale(meta: dict | None) -> bool:
-    return bool((meta or {}).get("strengths_stale")) or rules_version_is_outdated(meta)
 
 
 # ── candidates ───────────────────────────────────────────────────────────────
@@ -572,11 +555,13 @@ def _select(candidates: list[StrengthCandidate], rules: StudentStrengthsRules) -
     return [candidates[i] for i in sorted(chosen, key=lambda i: (candidates[i].priority, i))]
 
 
-def select_strengths(
+def vetted_candidates(
     inputs: StrengthInputs, *, rules: StudentStrengthsRules = student_strengths_rules
 ) -> list[StrengthCandidate]:
-    """The vetted strength cards for one report, in display order. Renders
-    in the current request locale (callers wrap it in `use_locale`)."""
+    """Every candidate the methodology allows for this student, before the
+    five-card selection — the lie-scale rule already applied. The pool the
+    careers' «Почему тебе подходит» reasons are drawn from as well, so a
+    fact that didn't make the five cards can still explain a profession."""
     t = tr("student_strengths")
     others = (
         _astur_candidates(inputs.astur, t, rules)
@@ -591,6 +576,26 @@ def select_strengths(
             c for c in candidates
             if c.source_type not in _SELF_REPORT_TEST_SOURCES or c.basis == "interest"
         ]
+    return candidates
+
+
+def interest_candidates(
+    inputs: StrengthInputs, letters: list[str], *, rules: StudentStrengthsRules = student_strengths_rules
+) -> list[StrengthCandidate]:
+    """Interest-only observations for the given RIASEC letters, worded as
+    exploratory interest exactly like the cards' own fallback."""
+    return _interest_candidates(
+        inputs.model_copy(update={"riasec_ranked": list(letters)}), set(), tr("student_strengths"), rules
+    )
+
+
+def select_strengths(
+    inputs: StrengthInputs, *, rules: StudentStrengthsRules = student_strengths_rules
+) -> list[StrengthCandidate]:
+    """The vetted strength cards for one report, in display order. Renders
+    in the current request locale (callers wrap it in `use_locale`)."""
+    t = tr("student_strengths")
+    candidates = vetted_candidates(inputs, rules=rules)
 
     selected = _select(candidates, rules)
     if len(selected) < rules.max_cards:
@@ -637,75 +642,19 @@ def candidate_cards(candidates: list[StrengthCandidate]) -> list[dict]:
     )
 
 
-# ── retakes ──────────────────────────────────────────────────────────────────
+# ── rebuild ──────────────────────────────────────────────────────────────────
 
 
-async def _report_rows(assessment_id: uuid.UUID, db: AsyncSession) -> list[AnalysisResult]:
-    return list(
-        (await db.execute(select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)))
-        .scalars()
-        .all()
-    )
-
-
-async def flag_report_if_strengths_changed(assessment_id: uuid.UUID, db: AsyncSession) -> bool:
-    """Called after a Belbin / АСТУР attempt finishes. If a report already
-    exists and was built from other results, its strength cards are now
-    stale: the report goes back to review (never silently rewritten — the
-    psychologist decides whether to rebuild the cards), and the psychologist
-    is notified. Never raises into the submit that triggered it."""
-    try:
-        rows = await _report_rows(assessment_id, db)
-        if not rows:
-            return False
-        current = fingerprint(select_strengths(await collect_inputs(assessment_id, db)))
-        if all((row.meta or {}).get("strengths_fingerprint") == current for row in rows):
-            return False
-        was_published = any(row.review_status == ReviewStatus.published for row in rows)
-        for row in rows:
-            row.meta = {**(row.meta or {}), "strengths_stale": True}
-            row.review_status = ReviewStatus.pending_review
-        student = (
-            await db.execute(
-                select(Profile.user_id, Profile.name)
-                .join(Assessment, Assessment.profile_id == Profile.id)
-                .where(Assessment.id == assessment_id)
-            )
-        ).one_or_none()
-        await db.commit()
-    except Exception:  # noqa: BLE001 — the student's submit must not fail over this
-        logger.exception("strengths staleness check failed for assessment=%s", assessment_id)
-        await db.rollback()
-        return False
-
-    from app.services import assessment_shared, psychologist_service
-
-    await assessment_shared.safe_redis_delete(
-        assessment_shared.get_redis(), *assessment_shared.report_cache_keys(assessment_id)
-    )
-    if student is not None:
-        await psychologist_service.notify_review_pending(
-            db, student_id=student.user_id, student_name=student.name, assessment_id=assessment_id
-        )
-    logger.info(
-        "report strengths stale for assessment=%s (was_published=%s) — back to review", assessment_id, was_published
-    )
-    return True
-
-
-async def rebuild_cards(analysis: AnalysisResult, db: AsyncSession) -> tuple[list[dict], str]:
-    """Fresh deterministic cards for a report row, in that row's language,
-    and the fingerprint they were built from. Used by the psychologist's
-    explicit «Пересобрать» action — no LLM, so the result is predictable."""
+async def rebuild_cards(analysis: AnalysisResult, db: AsyncSession) -> list[dict]:
+    """Fresh deterministic cards for a report row, in that row's language.
+    Used by the psychologist's explicit «Пересобрать» action after the
+    strength rules changed — no LLM, so the result is predictable."""
     inputs = await collect_inputs(analysis.assessment_id, db)
     with use_locale(analysis.locale):
         candidates = select_strengths(inputs)
-    return candidate_cards(candidates), fingerprint(candidates)
+    return candidate_cards(candidates)
 
 
-def mark_fresh(meta: dict | None, strengths_fingerprint: str) -> dict:
-    """Meta of a row whose strength cards match `strengths_fingerprint`."""
-    fresh = {k: v for k, v in (meta or {}).items() if k != "strengths_stale"}
-    fresh["strengths_fingerprint"] = strengths_fingerprint
-    fresh["strengths_rules_version"] = student_strengths_rules.version
-    return fresh
+def mark_fresh(meta: dict | None) -> dict:
+    """Meta of a row whose strength cards follow the current rules version."""
+    return {**(meta or {}), "strengths_rules_version": student_strengths_rules.version}

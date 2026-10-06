@@ -3,6 +3,7 @@ English responses. Calls pinned to ru preserve contract §7 and the admin/psycho
 interface; machine error codes are not catalog entries."""
 
 RU = {
+    "allocation_total_exceeded": "Сумма баллов не должна превышать {total}. Сейчас: {actual_total}",
     "access_denied": "Access denied",
     "admin_access_required": "Admin access required",
     "age_grade_mismatch": (
@@ -13,8 +14,12 @@ RU = {
     "allocation_items_mismatch": "Allocation does not cover exactly the expected items for this block",
     "allocation_negative_values": "Allocation values must be >= 0",
     "allocation_total_mismatch": "Allocation must sum to exactly {total} points, got {actual_total}",
+    "answer_value_invalid_for_instrument": "Значение {value} недопустимо для методики {instrument}. Допустимые значения: {allowed}",
+    "assessment_already_completed": "Эта диагностика уже завершена — для повторного прохождения начните новую диагностику",
     "assessment_not_completed": "Тест ещё не завершён — сначала ответь на все обязательные вопросы",
     "assessment_not_found": "Assessment not found",
+    "belbin_already_completed": "Тест Белбина в этой диагностике уже пройден — заново можно пройти только всю диагностику",
+    "belbin_block_index_invalid": "Такого блока теста Белбина не существует",
     "astur_item_keys_mismatch": "{field_name} does not cover exactly this subtest's items",
     "astur_bank_validation_issues": "Bank version has validation issues",
     "astur_bank_version_not_found": "Bank version not found",
@@ -26,14 +31,20 @@ RU = {
     "astur_published_version_immutable": "A published version is immutable — create a new draft instead",
     "astur_versioned_instrument": "'{instrument}' content is edited through bank versions (/admin/astur/bank-versions)",
     "astur_subtest_not_found": "No such АСТУР subtest: {n}",
+    "astur_subtest_start_stale": "Этот запуск субтеста уже сброшен — начни субтест заново",
+    "astur_subtest_out_of_order": "Этот субтест сейчас недоступен — продолжи со следующего незавершённого субтеста",
     "certificate_score_out_of_range": "score for {type} must be between {low} and {high}",
     "credentials_not_validated": "Could not validate credentials",
+    "custom_value_too_long": "Слишком длинный вариант — не больше {max_length} символов",
     "direction_not_found": "Direction not found",
+    "duplicate_pair_indexes": "pair_index должен быть уникальным в пределах одного пакета. Повторы: {values}",
+    "duplicate_question_ids": "question_id должен быть уникальным в пределах одного пакета. Повторы: {values}",
     "duplicate_triplet_category": (
         "Category '{new_category}' is already used by statement #{order} in triplet "
         "{triplet_index} — the three statements of a triplet must carry three different "
         "categories, or scoring cannot tell the picked motives apart."
     ),
+    "duplicate_triplet_indexes": "triplet_index должен быть уникальным в пределах одного пакета. Повторы: {values}",
     "elapsed_ms_lability_only": "elapsed_ms is only accepted for the lability subtest",
     "elapsed_ms_out_of_range": "elapsed_ms values are out of the plausible range",
     "email_already_exists": "Email already exists",
@@ -75,6 +86,7 @@ RU = {
     "question_not_found": "Question not found",
     "question_not_in_pair": "Question {picked_question_id} is not part of pair {pair_index}",
     "question_pair_not_found": "Question pair not found",
+    "question_requires_pair_answer": "Этот вопрос требует выбора одного варианта в паре и не принимает ответ по шкале",
     "question_type_required": (
         "{type_field} cannot be null on a {instrument} question — scoring groups responses by "
         "this field for every student."
@@ -83,8 +95,11 @@ RU = {
     "report_locale_not_generated": "Отчёт на выбранном языке ещё не создан",
     "report_not_found": "Report not found",
     "result_is_already_published": "Result is already published",
+    "result_not_ready_for_publish": "Отчёт заполнен не полностью — добавьте обязательные разделы перед публикацией",
     "result_not_found": "Result not found",
+    "top_career_why_unavailable": "В отчёте ещё нет текста «Почему тебе подходит» от ИИ-анализа",
     "run_not_found_or_already_finished": "Run not found or already finished",
+    "psychoemotional_run_already_finished": "Психоэмоциональный тест уже завершён с другими ответами",
     "statement_does_not_belong_to_this_triplet": "Statement does not belong to this triplet",
     "student_access_required": "Student access required",
     "student_not_found": "Student not found",
@@ -100,6 +115,7 @@ RU = {
 }
 
 KK = {
+    "allocation_total_exceeded": "Балл сомасы {total} мәнінен аспауы керек. Қазір: {actual_total}",
     "access_denied": "Қол жеткізуге рұқсат жоқ",
     "admin_access_required": "Әкімші құқығы қажет",
     "age_grade_mismatch": (
@@ -110,8 +126,12 @@ KK = {
     "allocation_items_mismatch": "Бөлу осы блоктағы күтілетін элементтердің барлығын қамтымайды",
     "allocation_negative_values": "Бөлу мәндері 0-ден кем болмауы керек",
     "allocation_total_mismatch": "Бөлу сомасы дәл {total} балл болуы керек, ал қазір {actual_total}",
+    "answer_value_invalid_for_instrument": "{instrument} әдістемесі үшін {value} мәніне рұқсат етілмейді. Рұқсат етілген мәндер: {allowed}",
+    "assessment_already_completed": "Бұл диагностика аяқталған — қайта өту үшін жаңа диагностиканы бастаңыз",
     "assessment_not_completed": "Тест әлі аяқталған жоқ — алдымен барлық міндетті сұрақтарға жауап беріңіз",
     "assessment_not_found": "Тест табылмады",
+    "belbin_already_completed": "Белбин тесті бұл диагностикада аяқталған — қайтадан тек бүкіл диагностикадан өтуге болады",
+    "belbin_block_index_invalid": "Белбин тестінің мұндай блогы жоқ",
     "astur_item_keys_mismatch": "{field_name} осы субтест элементтерінің барлығын қамтымайды",
     "astur_bank_validation_issues": "Банк нұсқасында тексеруден өтпеген қателер бар",
     "astur_bank_version_not_found": "Банк нұсқасы табылмады",
@@ -123,10 +143,16 @@ KK = {
     "astur_published_version_immutable": "Жарияланған нұсқаны өзгертуге болмайды — оның орнына жаңа жоба жасау керек",
     "astur_versioned_instrument": "'{instrument}' мазмұны банк нұсқалары арқылы өңделеді (/admin/astur/bank-versions)",
     "astur_subtest_not_found": "Мұндай АСТУР субтесті жоқ: {n}",
+    "astur_subtest_start_stale": "Бұл субтест іске қосылымы жойылған — субтестті қайта бастаңыз",
+    "astur_subtest_out_of_order": "Бұл субтест қазір қолжетімсіз — келесі аяқталмаған субтесттен жалғастырыңыз",
     "certificate_score_out_of_range": "{type} балы {low} мен {high} аралығында болуы керек",
     "credentials_not_validated": "Тіркелгі деректерін тексеру мүмкін болмады",
+    "custom_value_too_long": "Нұсқа тым ұзын — {max_length} таңбадан аспауы керек",
     "direction_not_found": "Бағыт табылмады",
+    "duplicate_pair_indexes": "Бір пакет ішінде pair_index қайталанбауы керек. Қайталанған мәндер: {values}",
+    "duplicate_question_ids": "Бір пакет ішінде question_id қайталанбауы керек. Қайталанған мәндер: {values}",
     "duplicate_triplet_category": "'{new_category}' санаты {triplet_index}-триплеттегі №{order} тұжырымда бұрын қолданылған — үш тұжырымның санаттары әртүрлі болуы керек",
+    "duplicate_triplet_indexes": "Бір пакет ішінде triplet_index қайталанбауы керек. Қайталанған мәндер: {values}",
     "elapsed_ms_lability_only": "elapsed_ms тек лабильділік субтесті үшін қабылданады",
     "elapsed_ms_out_of_range": "elapsed_ms мәндері ықтимал ауқымнан тыс",
     "email_already_exists": "Бұл электрондық пошта бұрыннан тіркелген",
@@ -165,13 +191,17 @@ KK = {
     "question_not_found": "Сұрақ табылмады",
     "question_not_in_pair": "{picked_question_id} сұрағы {pair_index}-жұпқа кірмейді",
     "question_pair_not_found": "Сұрақтар жұбы табылмады",
+    "question_requires_pair_answer": "Бұл сұрақ жұптағы бір нұсқаны таңдауды талап етеді және шкала бойынша жауапты қабылдамайды",
     "question_type_required": "{instrument} сұрағында {type_field} бос болмауы керек — скоринг әр оқушының жауаптарын осы өріс бойынша топтайды.",
     "rate_limit_exceeded": "Сұраулар тым көп. Кейінірек қайталап көріңіз.",
     "report_locale_not_generated": "Таңдалған тілдегі есеп әлі жасалмаған",
     "report_not_found": "Есеп табылмады",
     "result_is_already_published": "Нәтиже бұрын жарияланған",
+    "result_not_ready_for_publish": "Есеп толық толтырылмаған — жарияламас бұрын міндетті бөлімдерді қосыңыз",
     "result_not_found": "Нәтиже табылмады",
+    "top_career_why_unavailable": "Есепте ЖИ-талдаудан «Неге саған сай» мәтіні әлі жоқ",
     "run_not_found_or_already_finished": "Іске қосу табылмады немесе бұрын аяқталған",
+    "psychoemotional_run_already_finished": "Психоэмоционалдық тест басқа жауаптармен аяқталған",
     "statement_does_not_belong_to_this_triplet": "Тұжырым бұл триплетке жатпайды",
     "student_access_required": "Оқушы құқығы қажет",
     "student_not_found": "Оқушы табылмады",

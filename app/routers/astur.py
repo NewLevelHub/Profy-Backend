@@ -13,14 +13,15 @@ from app.models.user import User
 from app.schemas.astur import (
     AsturAttemptResponse,
     AsturStateResponse,
-    OpenAsturAttemptRequest,
+    ResetAsturSubtestRequest,
+    ResetAsturSubtestResponse,
     StartAsturSubtestRequest,
     StartAsturSubtestResponse,
     SubmitAsturSubtestRequest,
     SubmitAsturSubtestResponse,
 )
-from app.services import assessment_shared, student_strengths_service
-from app.services.astur import runs
+from app.services import assessment_shared
+from app.services.astur import runs, timing
 
 router = APIRouter(tags=["astur"])
 
@@ -50,8 +51,7 @@ async def get_astur_state(
     db: AsyncSession = Depends(get_db),
 ) -> AsturStateResponse:
     """Not started / in progress (with submitted subtests, to resume) /
-    completed. The open attempt and the last completed one are reported
-    separately — an open retake never hides a finished result."""
+    completed."""
     await _require_owned_assessment(assessment_id, current_user, db)
     return AsturStateResponse(**await runs.get_state(db, assessment_id))
 
@@ -61,18 +61,15 @@ async def get_astur_state(
 )
 async def open_astur_attempt(
     assessment_id: uuid.UUID,
-    data: OpenAsturAttemptRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> AsturAttemptResponse:
     """Opens (or resumes) the attempt and returns its content in one step:
     bank version and locale are pinned before any item is shown, so the
-    items on screen are always scored with their own keys. After a completed
-    attempt only `retake: true` («Пройти заново») opens a new one."""
+    items on screen are always scored with their own keys. A completed
+    attempt is never reopened (409 `astur_attempt_completed`)."""
     await _require_owned_assessment(assessment_id, current_user, db)
-    return AsturAttemptResponse(
-        **await runs.open_attempt(db, assessment_id, user_id=current_user.id, retake=data.retake)
-    )
+    return AsturAttemptResponse(**await runs.open_attempt(db, assessment_id, user_id=current_user.id))
 
 
 @router.post(
@@ -88,8 +85,48 @@ async def start_astur_subtest(
     db: AsyncSession = Depends(get_db),
 ) -> StartAsturSubtestResponse:
     await _require_owned_assessment(assessment_id, current_user, db)
-    run, key, started_at = await runs.start_subtest(db, assessment_id, n, run_id=data.run_id)
-    return StartAsturSubtestResponse(run_id=run.id, subtest=key, started_at=started_at)
+    run, key, started_at = await runs.start_subtest(
+        db,
+        assessment_id,
+        n,
+        run_id=data.run_id,
+        state_version=data.state_version,
+    )
+    return StartAsturSubtestResponse(
+        run_id=run.id,
+        subtest=key,
+        started_at=started_at,
+        server_now=timing.now_utc(),
+        state_version=run.state_version,
+    )
+
+
+@router.post(
+    "/{assessment_id}/astur/subtest/{n}/reset",
+    response_model=ResetAsturSubtestResponse,
+)
+async def reset_astur_subtest(
+    assessment_id: uuid.UUID,
+    n: int,
+    data: ResetAsturSubtestRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ResetAsturSubtestResponse:
+    """Discard only this subtest in an open attempt.
+
+    Used after a confirmed exit from a timed subtest: earlier submitted
+    subtests remain intact, while this subtest starts later from its first
+    item with a fresh server timer.
+    """
+    await _require_owned_assessment(assessment_id, current_user, db)
+    run, key = await runs.reset_subtest(
+        db,
+        assessment_id,
+        n,
+        run_id=data.run_id,
+        state_version=data.state_version,
+    )
+    return ResetAsturSubtestResponse(run_id=run.id, subtest=key, state_version=run.state_version)
 
 
 @router.post(
@@ -112,28 +149,18 @@ async def submit_astur_subtest(
     await _require_owned_assessment(assessment_id, current_user, db)
     run, key, actual_ms, over_limit_items, completed = await runs.submit_subtest(
         db, assessment_id, n, data.answers,
-        run_id=data.run_id, elapsed_ms=data.elapsed_ms, client_timezone=data.client_timezone,
+        run_id=data.run_id, started_at=data.started_at,
+        elapsed_ms=data.elapsed_ms, client_timezone=data.client_timezone,
     )
 
     # АСТУР is the last phase of the continuous flow — its completion is
     # where the assessment itself can flip to `completed`.
     if completed:
         assessment_row = (await db.execute(select(Assessment).where(Assessment.id == assessment_id))).scalar_one()
-        likert_answered = await assessment_shared.likert_answered_count(assessment_id, db)
-        likert_total = await assessment_shared.likert_total_questions(db)
-        if await assessment_shared.try_complete_assessment(
-            assessment_row,
-            likert_completed=likert_total > 0 and likert_answered >= likert_total,
-            motivation_completed=await assessment_shared.motivation_completed(assessment_id, db),
-            db=db,
-        ):
+        if await assessment_shared.try_complete_assessment_if_ready(assessment_row, db):
             await db.commit()
 
-    response = SubmitAsturSubtestResponse(
+    return SubmitAsturSubtestResponse(
         run_id=run.id, subtest=key, actual_ms=actual_ms,
         over_limit_items=over_limit_items, run_completed=completed,
     )
-    if completed:
-        # A retake after the report: its strength cards now describe older results.
-        await student_strengths_service.flag_report_if_strengths_changed(assessment_id, db)
-    return response

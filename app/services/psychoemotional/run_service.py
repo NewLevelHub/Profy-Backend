@@ -10,6 +10,7 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.psychoemotional_run import PsychoEmotionalRun
@@ -18,6 +19,65 @@ from app.schemas.psychoemotional import (
     StartPsychoEmotionalRequest,
 )
 from app.services.psychoemotional.constants import CHOICE_COUNT, COLOR_IDS
+
+
+_PENDING_RUN_INDEX = "uq_psychoemotional_runs_assessment_pending"
+
+
+class PsychoEmotionalRunAlreadyFinished(Exception):
+    """A completed run was retried with a different second-circle payload."""
+
+
+def _is_pending_run_violation(exc: IntegrityError) -> bool:
+    current: BaseException | None = exc
+    while current is not None:
+        if getattr(current, "constraint_name", None) == _PENDING_RUN_INDEX:
+            return True
+        diag = getattr(current, "diag", None)
+        if getattr(diag, "constraint_name", None) == _PENDING_RUN_INDEX:
+            return True
+        current = current.__cause__ or current.__context__
+    return False
+
+
+async def get_current_run(
+    assessment_id: uuid.UUID,
+    *,
+    user_id: uuid.UUID,
+    db: AsyncSession,
+) -> PsychoEmotionalRun | None:
+    """Return the latest run for this assessment, pending or completed."""
+    return (
+        await db.execute(
+            select(PsychoEmotionalRun)
+            .where(
+                PsychoEmotionalRun.assessment_id == assessment_id,
+                PsychoEmotionalRun.user_id == user_id,
+            )
+            .order_by(PsychoEmotionalRun.created_at.desc(), PsychoEmotionalRun.id.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
+async def _get_pending_run(
+    assessment_id: uuid.UUID,
+    *,
+    user_id: uuid.UUID,
+    db: AsyncSession,
+) -> PsychoEmotionalRun | None:
+    return (
+        await db.execute(
+            select(PsychoEmotionalRun)
+            .where(
+                PsychoEmotionalRun.assessment_id == assessment_id,
+                PsychoEmotionalRun.user_id == user_id,
+                PsychoEmotionalRun.list2.is_(None),
+            )
+            .order_by(PsychoEmotionalRun.created_at.desc(), PsychoEmotionalRun.id.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
 
 
 def _is_valid_choice_list(ids: list[int]) -> bool:
@@ -35,6 +95,15 @@ async def start_run(
 ) -> PsychoEmotionalRun:
     """check-in + circle1 — перед основной батареей. `list2` заполнится на
     finish; до тех пор строка — «в процессе», движок её не трогает."""
+    # A response may be lost after the first request committed. Repeating
+    # start must recover that row instead of creating an orphan that the
+    # client cannot finish.
+    pending = await _get_pending_run(
+        assessment_id, user_id=user_id, db=db
+    )
+    if pending is not None:
+        return pending
+
     run = PsychoEmotionalRun(
         assessment_id=assessment_id,
         user_id=user_id,
@@ -44,7 +113,21 @@ async def start_run(
         tech_invalid=not _is_valid_choice_list(data.list1),
     )
     db.add(run)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError as exc:
+        await db.rollback()
+        if not _is_pending_run_violation(exc):
+            raise
+
+        # Two concurrent starts raced past the lookup. The partial unique
+        # index selected the winner; both callers receive its stable ID.
+        winner = await _get_pending_run(
+            assessment_id, user_id=user_id, db=db
+        )
+        if winner is None:
+            raise
+        return winner
     await db.refresh(run)
     return run
 
@@ -62,15 +145,22 @@ async def finish_run(
     append-only, в отличие от прохождения целиком)."""
     run = (
         await db.execute(
-            select(PsychoEmotionalRun).where(
+            select(PsychoEmotionalRun)
+            .where(
                 PsychoEmotionalRun.id == run_id,
                 PsychoEmotionalRun.assessment_id == assessment_id,
                 PsychoEmotionalRun.user_id == user_id,
             )
+            .with_for_update()
         )
     ).scalar_one_or_none()
-    if run is None or run.list2 is not None:
+    if run is None:
         return None
+
+    if run.list2 is not None:
+        if run.list2 == data.list2 and run.list2_dt_ms == data.list2_dt_ms:
+            return run
+        raise PsychoEmotionalRunAlreadyFinished
 
     pause_actual_sec = max(
         0, int((datetime.now(timezone.utc) - run.created_at).total_seconds())

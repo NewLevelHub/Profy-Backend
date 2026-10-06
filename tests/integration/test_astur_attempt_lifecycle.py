@@ -2,18 +2,20 @@
 explicitly with content pinned to their bank version and locale, every
 payload names its attempt, answers are explicit (answered / skipped),
 partial attempts have no result, the last submit finalizes atomically,
-completed attempts are frozen, retakes are explicit, marked as repeat
-exposure and never shadow a finished result."""
+completed attempts are frozen and never reopened, a repeat attempt in a
+later assessment is marked as repeat exposure."""
 import uuid
+from datetime import datetime, timezone
 
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.assessment import AssessmentStatus
 from app.models.astur_run import AsturRun, AsturRunStatus
 from app.models.profile import Profile
 from app.services.astur import bank_versions
-from app.services.astur.runs import freeze_legacy_snapshot
+from app.services.astur.runs import MAX_OPEN_TEXT_LENGTH, freeze_legacy_snapshot
 from app.services.new_tests_report_service import _build_intelligence_section
 from tests.astur_fixtures import content_answers, v1_bank
 from tests.integration.astur_helpers import (
@@ -22,6 +24,7 @@ from tests.integration.astur_helpers import (
     make_student,
     open_attempt,
     quick_payload,
+    reset,
     start,
     submit,
     v1_version_id,
@@ -52,7 +55,11 @@ def _awareness(run_id, **kwargs) -> dict:
 
 async def test_not_started_until_an_attempt_is_opened(client: AsyncClient, db_session: AsyncSession) -> None:
     _, assessment, headers = await make_student(db_session)
-    assert (await _state(client, assessment.id, headers))["status"] == "not_started"
+    before = datetime.now(timezone.utc)
+    state = await _state(client, assessment.id, headers)
+    after = datetime.now(timezone.utc)
+    assert state["status"] == "not_started"
+    assert before <= datetime.fromisoformat(state["server_now"]) <= after
     assert await _runs(db_session, assessment.id) == []
 
 
@@ -85,7 +92,181 @@ async def test_started_subtest_is_resumed_without_resetting_its_clock(
 
     assert first.status_code == second.status_code == 201
     assert first.json()["started_at"] == second.json()["started_at"]
+    assert datetime.fromisoformat(first.json()["server_now"]) >= datetime.fromisoformat(first.json()["started_at"])
+    assert datetime.fromisoformat(second.json()["server_now"]) >= datetime.fromisoformat(first.json()["server_now"])
     assert resumed["run"]["subtest_started_at"]["awareness"] == first.json()["started_at"]
+
+
+async def test_future_subtest_cannot_start_submit_or_reset_out_of_order(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await make_student(db_session)
+    opened = await open_attempt(client, assessment.id, headers)
+    run_id = opened["run"]["run_id"]
+    future = opened["content"]["subtests"][1]
+    future_payload = {
+        "run_id": run_id,
+        "answers": answered(content_answers(BANK)[future["key"]]),
+    }
+
+    responses = [
+        await start(client, assessment.id, future["number"], run_id, headers),
+        await submit(client, assessment.id, future["number"], future_payload, headers),
+        await reset(client, assessment.id, future["number"], run_id, headers),
+    ]
+    assert [response.status_code for response in responses] == [409, 409, 409]
+    assert {response.json()["detail"]["code"] for response in responses} == {"astur_subtest_out_of_order"}
+
+    state = await _state(client, assessment.id, headers)
+    assert state["active_run"]["submitted_subtests"] == []
+    assert state["active_run"]["subtest_started_at"] == {}
+
+
+async def test_only_one_subtest_timer_can_be_active(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await make_student(db_session)
+    opened = await open_attempt(client, assessment.id, headers)
+    run_id = opened["run"]["run_id"]
+    first, second = opened["content"]["subtests"][:2]
+
+    started = await start(client, assessment.id, first["number"], run_id, headers)
+    assert started.status_code == 201
+    rejected = await start(client, assessment.id, second["number"], run_id, headers)
+    assert rejected.status_code == 409
+    assert rejected.json()["detail"]["code"] == "astur_subtest_out_of_order"
+
+    state = await _state(client, assessment.id, headers)
+    assert set(state["active_run"]["subtest_started_at"]) == {first["key"]}
+
+
+async def test_start_heals_parallel_timer_anchors_left_by_an_old_run(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await make_student(db_session)
+    opened = await open_attempt(client, assessment.id, headers)
+    run_id = opened["run"]["run_id"]
+    [run] = await _runs(db_session, assessment.id)
+    old_anchor = datetime.now(timezone.utc).isoformat()
+    run.subtest_started_at = {"analogies": old_anchor, "lability": old_anchor}
+    await db_session.flush()
+
+    first = opened["content"]["subtests"][0]
+    started = await start(client, assessment.id, first["number"], run_id, headers)
+    assert started.status_code == 201
+    state = await _state(client, assessment.id, headers)
+    assert set(state["active_run"]["subtest_started_at"]) == {first["key"]}
+
+
+async def test_reset_cannot_roll_back_more_than_the_current_screen(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await make_student(db_session)
+    run_id = (await open_attempt(client, assessment.id, headers))["run"]["run_id"]
+    await submit(client, assessment.id, 1, _awareness(run_id), headers)
+    analogies = {"run_id": run_id, "answers": answered(content_answers(BANK)["analogies"])}
+    await submit(client, assessment.id, 2, analogies, headers)
+
+    rejected = await reset(client, assessment.id, 1, run_id, headers)
+    assert rejected.status_code == 409
+    assert rejected.json()["detail"]["code"] == "astur_subtest_out_of_order"
+    state = await _state(client, assessment.id, headers)
+    assert set(state["active_run"]["submitted_subtests"]) == {"awareness", "analogies"}
+
+
+async def test_confirmed_exit_resets_only_the_current_subtest_and_its_timer(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await make_student(db_session)
+    run_id = (await open_attempt(client, assessment.id, headers))["run"]["run_id"]
+
+    awareness_start = await start(client, assessment.id, 1, run_id, headers)
+    awareness = _awareness(run_id)
+    awareness["started_at"] = awareness_start.json()["started_at"]
+    assert (await submit(client, assessment.id, 1, awareness, headers)).status_code == 201
+
+    analogies_start = await start(client, assessment.id, 2, run_id, headers)
+    old_payload = {
+        "run_id": run_id,
+        "started_at": analogies_start.json()["started_at"],
+        "answers": answered(content_answers(BANK)["analogies"]),
+    }
+    assert (await submit(client, assessment.id, 2, old_payload, headers)).status_code == 201
+
+    exited = await reset(client, assessment.id, 2, run_id, headers)
+    assert exited.status_code == 200
+    assert exited.json()["subtest"] == "analogies"
+    assert exited.json()["state_version"] == 1
+
+    state = await _state(client, assessment.id, headers)
+    assert state["active_run"]["submitted_subtests"] == ["awareness"]
+    assert "analogies" not in state["active_run"]["subtest_started_at"]
+
+    # A delayed request from the screen that was exited must not restore its
+    # discarded answers after the reset committed.
+    stale = await submit(client, assessment.id, 2, old_payload, headers)
+    assert stale.status_code == 409
+    assert stale.json()["detail"]["code"] == "astur_subtest_start_stale"
+
+    restarted = await start(client, assessment.id, 2, run_id, headers, state_version=1)
+    new_payload = {
+        "run_id": run_id,
+        "started_at": restarted.json()["started_at"],
+        "answers": answered(content_answers(BANK, wrong={"analogies"})["analogies"]),
+    }
+    assert (await submit(client, assessment.id, 2, new_payload, headers)).status_code == 201
+    resumed = await _state(client, assessment.id, headers)
+    assert set(resumed["active_run"]["submitted_subtests"]) == {"awareness", "analogies"}
+
+
+async def test_reset_generation_rejects_a_delayed_start_without_clobbering_a_new_one(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await make_student(db_session)
+    run_id = (await open_attempt(client, assessment.id, headers))["run"]["run_id"]
+
+    # The exit/reset transaction wins the row lock before the older /start.
+    exited = await reset(client, assessment.id, 1, run_id, headers, state_version=0)
+    assert exited.status_code == 200
+    assert exited.json()["state_version"] == 1
+
+    delayed_start = await start(client, assessment.id, 1, run_id, headers, state_version=0)
+    assert delayed_start.status_code == 409
+    assert delayed_start.json()["detail"]["code"] == "astur_subtest_start_stale"
+
+    after_delayed_start = await _state(client, assessment.id, headers)
+    assert after_delayed_start["active_run"]["state_version"] == 1
+    assert "awareness" not in after_delayed_start["active_run"]["subtest_started_at"]
+
+    # A deliberate restart uses the new generation. Replaying the old reset
+    # afterwards is an idempotent no-op and cannot delete this newer timer.
+    restarted = await start(client, assessment.id, 1, run_id, headers, state_version=1)
+    assert restarted.status_code == 201
+    stale_reset = await reset(client, assessment.id, 1, run_id, headers, state_version=0)
+    assert stale_reset.status_code == 200
+    assert stale_reset.json()["state_version"] == 1
+
+    after_stale_reset = await _state(client, assessment.id, headers)
+    assert after_stale_reset["active_run"]["subtest_started_at"]["awareness"] == restarted.json()["started_at"]
+
+
+async def test_confirmed_exit_clears_quick_subtest_protocol(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await make_student(db_session)
+    run_id = (await open_attempt(client, assessment.id, headers))["run"]["run_id"]
+    await complete_attempt(client, assessment.id, headers, skip={"lability"})
+    started = await start(client, assessment.id, 3, run_id, headers)
+    payload = quick_payload(BANK, run_id)
+    payload["started_at"] = started.json()["started_at"]
+    assert (await submit(client, assessment.id, 3, payload, headers)).status_code == 201
+
+    assert (await reset(client, assessment.id, 3, run_id, headers)).status_code == 200
+    [run] = await _runs(db_session, assessment.id)
+    assert run.lability_answers == {}
+    assert run.client_timezone is None
+    assert "lability" not in run.subtest_timings_ms
+    assert "lability" not in run.subtest_started_at
 
 
 async def test_content_and_scoring_stay_in_the_attempts_locale(client: AsyncClient, db_session: AsyncSession) -> None:
@@ -180,11 +361,11 @@ async def test_double_submit_of_the_final_block_is_answered_as_success(
     client: AsyncClient, db_session: AsyncSession
 ) -> None:
     _, assessment, headers = await make_student(db_session)
-    await complete_attempt(client, assessment.id, headers, skip={"lability"})
+    await complete_attempt(client, assessment.id, headers, skip={"numeric_series"})
     run_id = (await _runs(db_session, assessment.id))[0].id
-    payload = quick_payload(BANK, run_id)
-    first = await submit(client, assessment.id, 3, payload, headers)
-    second = await submit(client, assessment.id, 3, payload, headers)
+    payload = {"run_id": str(run_id), "answers": answered(content_answers(BANK)["numeric_series"])}
+    first = await submit(client, assessment.id, 7, payload, headers)
+    second = await submit(client, assessment.id, 7, payload, headers)
     assert first.status_code == second.status_code == 201
     assert first.json()["run_completed"] is second.json()["run_completed"] is True
     assert len(await _runs(db_session, assessment.id)) == 1
@@ -198,26 +379,46 @@ async def test_answered_values_are_validated_and_blank_is_never_an_answer(
 ) -> None:
     _, assessment, headers = await make_student(db_session)
     run_id = (await open_attempt(client, assessment.id, headers))["run"]["run_id"]
+    awareness = answered(content_answers(BANK)["awareness"])
+    awareness["2"] = {"status": "answered", "value": "нет такого варианта"}
+    resp = await submit(client, assessment.id, 1, {"run_id": run_id, "answers": awareness}, headers)
+    assert resp.status_code == 422
+
+    await complete_attempt(client, assessment.id, headers, skip={"numeric_series"})
     numbers = answered(content_answers(BANK)["numeric_series"])
     numbers["1"] = {"status": "answered", "value": ["", ""]}
     resp = await submit(client, assessment.id, 7, {"run_id": run_id, "answers": numbers}, headers)
     assert resp.status_code == 422
     assert resp.json()["detail"]["invalid_items"] == ["1"]
 
-    awareness = answered(content_answers(BANK)["awareness"])
-    awareness["2"] = {"status": "answered", "value": "нет такого варианта"}
-    resp = await submit(client, assessment.id, 1, {"run_id": run_id, "answers": awareness}, headers)
+
+async def test_generalization_answer_is_capped_at_max_open_text_length(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await make_student(db_session)
+    run_id = (await open_attempt(client, assessment.id, headers))["run"]["run_id"]
+    await complete_attempt(client, assessment.id, headers, skip={"generalization"})
+    answers = answered(content_answers(BANK)["generalization"])
+    answers["1"] = {"status": "answered", "value": "а" * (MAX_OPEN_TEXT_LENGTH + 1)}
+    resp = await submit(client, assessment.id, 5, {"run_id": run_id, "answers": answers}, headers)
     assert resp.status_code == 422
+    assert resp.json()["detail"]["invalid_items"] == ["1"]
+    [run] = await _runs(db_session, assessment.id)
+    assert "generalization" not in (run.answers or {})
+
+    answers["1"] = {"status": "answered", "value": "а" * MAX_OPEN_TEXT_LENGTH}
+    resp = await submit(client, assessment.id, 5, {"run_id": run_id, "answers": answers}, headers)
+    assert resp.status_code == 201, resp.text
 
 
 async def test_skips_are_kept_apart_from_wrong_answers(client: AsyncClient, db_session: AsyncSession) -> None:
     _, assessment, headers = await make_student(db_session)
     run_id = (await open_attempt(client, assessment.id, headers))["run"]["run_id"]
+    await complete_attempt(client, assessment.id, headers, skip={"numeric_series"})
     numbers = answered(content_answers(BANK, wrong={"numeric_series"})["numeric_series"])
     numbers["1"] = {"status": "skipped", "value": None}
     numbers["2"] = {"status": "skipped", "value": None}
     assert (await submit(client, assessment.id, 7, {"run_id": run_id, "answers": numbers}, headers)).status_code == 201
-    await complete_attempt(client, assessment.id, headers, skip={"numeric_series"})
 
     [run] = await _runs(db_session, assessment.id)
     series = next(s for s in run.result_snapshot["subtests"] if s["key"] == "numeric_series")
@@ -263,7 +464,6 @@ async def test_last_submit_finalizes_and_freezes_the_result(client: AsyncClient,
 
     section = await _build_intelligence_section(assessment.id, db_session)
     assert section.run_id == run.id
-    assert section.retake_in_progress is False
     assert (await _state(client, assessment.id, headers))["status"] == "completed"
 
 
@@ -278,47 +478,21 @@ async def test_result_does_not_follow_later_profile_changes(client: AsyncClient,
     assert (section.age_at_completion, section.grade_at_completion) == (14, 8)
 
 
-# ── retake ──────────────────────────────────────────────────────────────────
+# ── no reopening ────────────────────────────────────────────────────────────
 
 
-async def test_retake_is_explicit_idempotent_and_never_shadows_the_result(
-    client: AsyncClient, db_session: AsyncSession
-) -> None:
+async def test_completed_attempt_is_never_reopened(client: AsyncClient, db_session: AsyncSession) -> None:
     _, assessment, headers = await make_student(db_session)
     await complete_attempt(client, assessment.id, headers)
-    [first] = await _runs(db_session, assessment.id)
 
-    retake = await open_attempt(client, assessment.id, headers, retake=True)
-    again = await open_attempt(client, assessment.id, headers, retake=True)
-    assert retake["run"]["run_id"] == again["run"]["run_id"] != str(first.id)
-
-    await complete_attempt(client, assessment.id, headers, wrong={"awareness"}, skip={"lability", "geometric_figures"})
-    state = await _state(client, assessment.id, headers)
-    assert state["status"] == "in_progress"
-    assert state["latest_completed_run"]["run_id"] == str(first.id)
-    section = await _build_intelligence_section(assessment.id, db_session)
-    assert section.run_id == first.id
-    assert section.retake_in_progress is True
-    assert section.overall_percent == 100.0
-
-
-async def test_finished_retake_is_shown_and_marked_as_repeat_exposure(
-    client: AsyncClient, db_session: AsyncSession
-) -> None:
-    _, assessment, headers = await make_student(db_session)
-    await complete_attempt(client, assessment.id, headers)
-    await complete_attempt(client, assessment.id, headers, wrong={"awareness"}, retake=True)
-
-    runs = await _runs(db_session, assessment.id)
-    assert [r.status for r in runs] == [AsturRunStatus.completed, AsturRunStatus.completed]
-    section = await _build_intelligence_section(assessment.id, db_session)
-    assert section.run_id == runs[1].id
-    assert section.history.attempt_number == 2
-    assert section.history.repeat_exposure is True
-    assert section.history.days_since_previous == 0
-    assert "repeat_exposure" in {f.code for f in section.protocol_quality.flags}
-    assert next(s for s in section.subtests if s.key == "awareness").percent == 0.0
-    assert runs[0].result_snapshot["overall_percent"] == 100.0
+    # The removed «Пройти заново» flag no longer opens a new attempt either.
+    resp = await client.post(
+        f"/api/v1/assessment/{assessment.id}/astur/attempt", json={"retake": True}, headers=headers
+    )
+    assert resp.status_code == 409
+    assert resp.json()["detail"]["code"] == "astur_attempt_completed"
+    assert len(await _runs(db_session, assessment.id)) == 1
+    assert (await _state(client, assessment.id, headers))["status"] == "completed"
 
 
 async def test_repeat_exposure_counts_attempts_of_other_assessments(
@@ -326,12 +500,19 @@ async def test_repeat_exposure_counts_attempts_of_other_assessments(
 ) -> None:
     user, first_assessment, headers = await make_student(db_session)
     await complete_attempt(client, first_assessment.id, headers)
+    first_assessment.status = AssessmentStatus.completed
+    await db_session.flush()
     _, second_assessment, headers = await make_student(db_session, user=user)
-    await complete_attempt(client, second_assessment.id, headers)
+    await complete_attempt(client, second_assessment.id, headers, wrong={"awareness"})
 
     section = await _build_intelligence_section(second_assessment.id, db_session)
     assert section.history.repeat_exposure is True
     assert section.history.attempt_number == 2
+    assert section.history.days_since_previous == 0
+    assert "repeat_exposure" in {f.code for f in section.protocol_quality.flags}
+    assert next(s for s in section.subtests if s.key == "awareness").percent == 0.0
+    first = await _build_intelligence_section(first_assessment.id, db_session)
+    assert first.overall_percent == 100.0
 
 
 # ── bank versions ───────────────────────────────────────────────────────────
@@ -349,12 +530,15 @@ async def _publish_v2_with_new_awareness_key(db: AsyncSession, admin_id: uuid.UU
     return await bank_versions.publish(db, draft.id, admin_id=admin_id, confirmed_item_ids={first["item_id"]})
 
 
-async def test_retake_after_a_publish_uses_the_new_version(client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_attempt_after_a_publish_uses_the_new_version(client: AsyncClient, db_session: AsyncSession) -> None:
     user, assessment, headers = await make_student(db_session)
     await complete_attempt(client, assessment.id, headers)
     v2 = await _publish_v2_with_new_awareness_key(db_session, user.id)
 
-    body = await open_attempt(client, assessment.id, headers, retake=True)
+    assessment.status = AssessmentStatus.completed
+    await db_session.flush()
+    _, next_assessment, headers = await make_student(db_session, user=user)
+    body = await open_attempt(client, next_assessment.id, headers)
     assert body["run"]["bank_version"] == v2.version
     # Served shuffled (PRO-441) — the new version is in the set, not the order.
     assert sorted(body["content"]["subtests"][0]["items"][0]["options"]) == ["вариант А", "вариант Б"]
@@ -371,6 +555,7 @@ async def test_server_timing_and_quick_timestamps_are_recorded(client: AsyncClie
     resp = await submit(client, assessment.id, 1, _awareness(run_id), headers)
     assert isinstance(resp.json()["actual_ms"], int)
 
+    await complete_attempt(client, assessment.id, headers, skip={"lability"})
     await start(client, assessment.id, 3, run_id, headers)
     quick = await submit(client, assessment.id, 3, quick_payload(BANK, run_id, over_limit={8}), headers)
     assert quick.json()["over_limit_items"] == ["8"]
@@ -385,6 +570,7 @@ async def test_server_timing_and_quick_timestamps_are_recorded(client: AsyncClie
 async def test_implausible_quick_times_are_rejected(client: AsyncClient, db_session: AsyncSession) -> None:
     _, assessment, headers = await make_student(db_session)
     run_id = (await open_attempt(client, assessment.id, headers))["run"]["run_id"]
+    await complete_attempt(client, assessment.id, headers, skip={"lability"})
     payload = quick_payload(BANK, run_id)
     payload["elapsed_ms"]["1"] = -5
     assert (await submit(client, assessment.id, 3, payload, headers)).status_code == 422
@@ -397,10 +583,11 @@ async def test_over_limit_and_missing_timing_reach_protocol_quality(
 ) -> None:
     _, assessment, headers = await make_student(db_session)
     run_id = (await open_attempt(client, assessment.id, headers))["run"]["run_id"]
+    await submit(client, assessment.id, 1, _awareness(run_id), headers)  # no /start → no timing
     analogies = {"run_id": run_id, "answers": answered(content_answers(BANK)["analogies"])}
     await submit(client, assessment.id, 2, analogies, headers)  # no /start → no timing
     await submit(client, assessment.id, 3, quick_payload(BANK, run_id, over_limit={1, 2, 3}), headers)
-    await complete_attempt(client, assessment.id, headers, skip={"analogies", "lability"})
+    await complete_attempt(client, assessment.id, headers)
 
     [run] = await _runs(db_session, assessment.id)
     codes = {(f["code"], f["subtest"]) for f in run.protocol_quality["flags"]}

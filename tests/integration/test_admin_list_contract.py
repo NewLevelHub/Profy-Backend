@@ -40,7 +40,7 @@ async def admin_headers(db_session: AsyncSession) -> dict[str, str]:
     )
     db_session.add(admin)
     await db_session.flush()
-    return {"Authorization": f"Bearer {auth_service.create_jwt_token(admin.id)}"}
+    return {"Authorization": f"Bearer {auth_service.create_jwt_token(admin)}"}
 
 
 def _marker() -> str:

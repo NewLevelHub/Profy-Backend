@@ -11,10 +11,10 @@ from app.database import Base
 class BelbinRun(Base):
     """Одно завершённое прохождение Belbin BTRSPI (PRO-338 Ф2.3, epic
     Тикеты-новые-тесты/03-Фаза2-Белбин.md). Мирроит `PsychoEmotionalRun`
-    (psychoemotional_runs, PRO-305): **append-only история** —
-    `assessment_id` НЕ unique, повторное прохождение = новая строка,
-    предыдущие не перезаписываются. Секция отчёта (`TeamRoleSection`, Ф2.7)
-    читает последнюю строку по `assessment_id`.
+    (psychoemotional_runs, PRO-305), но **одно прохождение на диагностику**:
+    `assessment_id` unique, точечно перепройти Belbin нельзя — заново можно
+    пройти только всю диагностику (это новый assessment). Секция отчёта
+    (`TeamRoleSection`, Ф2.7) читает эту строку.
 
     `allocations` — список из 7 блоков (разделы I–VII), каждый блок сырой
     `{item_id: баллы}` в формате `app/services/ipsative_battery.py::
@@ -44,7 +44,8 @@ class BelbinRun(Base):
         UUID(as_uuid=True),
         ForeignKey("assessments.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,  # NOT unique — append-only история прохождений
+        index=True,
+        unique=True,  # one Belbin per assessment — no separate retake
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),

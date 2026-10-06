@@ -12,8 +12,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
+from app.models.psychoemotional_run import PsychoEmotionalRun
 from app.models.user import User
 from app.services import assessment_shared
+from app.services.psychoemotional import scoring as psychoemotional_scoring
 
 from tests.integration.review_helpers import (
     answer_legacy_big_five,
@@ -368,5 +370,45 @@ async def test_fallback_translation_keeps_edited_narrative_verbatim(
     # final_analysis was not edited: it stays the Kazakh fallback text.
     assert set("әғқңөұүһі") & set(kk.final_analysis.lower())
     assert translated.json()["summary"] == "Психолог: сводка."
+
+    await _clear_report_cache(assessment.id)
+
+
+async def test_psychoemotional_scoring_with_two_locale_rows(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    test_user: User,
+    psychologist_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A МЦВ run scored after the report exists in two languages used to hit
+    MultipleResultsFound — swallowed by the report, so the run never got its
+    metrics. The locale-free container goes to every row."""
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+    await assign(db_session, psychologist_user, test_user)
+    await generate(client, auth_headers, assessment)
+    await _switch_owner_locale(db_session, test_user, assessment.id, "kk")
+    await generate(client, auth_headers, assessment)
+    assert {row.locale for row in await _rows(db_session, assessment.id)} == {"ru", "kk"}
+
+    run = PsychoEmotionalRun(
+        assessment_id=assessment.id, user_id=test_user.id,
+        list1=[3, 4, 2, 1, 5, 6, 0, 7], list2=[3, 2, 4, 1, 5, 0, 6, 7], pause_actual_sec=130,
+    )
+    db_session.add(run)
+    await db_session.flush()
+
+    metrics = await psychoemotional_scoring.score_and_store(assessment.id, db_session)
+
+    assert metrics is not None
+    await db_session.refresh(run)
+    assert run.metrics
+    assert {row.locale: row.psychoemotional for row in await _rows(db_session, assessment.id)} == {
+        "ru": metrics.container(),
+        "kk": metrics.container(),
+    }
 
     await _clear_report_cache(assessment.id)

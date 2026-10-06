@@ -328,17 +328,42 @@ class StudentInterestCombination(BaseModel):
     model_config = _model_config
 
 
+class StudentFitReason(BaseModel):
+    """One «Почему тебе подходит» reason: a vetted fact about the student
+    tied to something this profession needs (career_fit_service)."""
+
+    kind: Literal["fact", "subject"]
+    # The student half alone (strength card title / subject name) — for
+    # compact lists that don't repeat the profession half.
+    fact: str = Field(min_length=1)
+    text: str = Field(min_length=1)
+    model_config = _model_config
+
+
 class StudentCareer(BaseModel):
     slug: str
     name: str
     rank: int
     tier: Literal["strong", "good", "worth_trying"]
-    why: str = Field(min_length=1)  # never empty — TZ_Profi.md §18.2
-    matched_strengths: list[str] = []  # legitimately empty when why falls back to the neutral phrase
+    # «Почему тебе подходит» (career_fit_service): one connected text over
+    # every concrete reason; without one, the shared interests or a
+    # profession skill — never empty (TZ_Profi.md §18.2).
+    why: str = Field(min_length=1)
     try_now: str = Field(min_length=1)  # never empty — always has a safe fallback, see riasec_content.NEUTRAL_TRY_NOW
     description: str | None = None
     skills_needed: list[str] = []
     subjects_to_develop: list[str] = []
+    # The concrete reasons `why` is written from, one by one: a vetted fact
+    # about the student (or a school subject) tied to a skill of this
+    # profession — for compact views. Empty for a career added by hand.
+    fit_reasons: list[StudentFitReason] = []
+    # Locale-free keys of what the fit rests on ("riasec:I", a strength
+    # source id, "subject:…") — for comparing careers, never shown.
+    fit_keys: list[str] = []
+    # `why` is the AI analysis's text for the best match
+    # (AnalysisResult.top_career_why) — it already covers the reasons, so it
+    # is shown alone; `fit_reasons` stay for the views that list facts.
+    why_by_ai: bool = False
     model_config = _model_config
 
 

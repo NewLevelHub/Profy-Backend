@@ -90,8 +90,8 @@ async def _dispose_engine_pool_per_loop() -> AsyncGenerator[None, None]:
 
     # Redis data (unlike the DB, which each test rolls back) otherwise persists
     # across tests — notably the auth router's `_check_rate_limit` counters
-    # (`register_ip:*`, `forgot_pwd_*`, `verify_*`), which accumulate over a
-    # run and make a later test's first `/register` or `/forgot-password` 429.
+    # (`register_ip:*`, `login_*`, `forgot_pwd_*`, `verify_*`), which accumulate
+    # over a run and make a later test's first `/register` or `/forgot-password` 429.
     # Flush between tests so every test starts from clean Redis state.
     import redis.asyncio as _aioredis
 
@@ -139,7 +139,7 @@ async def test_user(db_session: AsyncSession) -> User:
 
 @pytest_asyncio.fixture
 async def auth_headers(test_user: User) -> dict[str, str]:
-    token = auth_service.create_jwt_token(test_user.id)
+    token = auth_service.create_jwt_token(test_user)
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -159,7 +159,7 @@ async def admin_user(db_session: AsyncSession) -> User:
 
 @pytest_asyncio.fixture
 async def admin_headers(admin_user: User) -> dict[str, str]:
-    token = auth_service.create_jwt_token(admin_user.id)
+    token = auth_service.create_jwt_token(admin_user)
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -179,5 +179,5 @@ async def psychologist_user(db_session: AsyncSession) -> User:
 
 @pytest_asyncio.fixture
 async def psychologist_headers(psychologist_user: User) -> dict[str, str]:
-    token = auth_service.create_jwt_token(psychologist_user.id)
+    token = auth_service.create_jwt_token(psychologist_user)
     return {"Authorization": f"Bearer {token}"}

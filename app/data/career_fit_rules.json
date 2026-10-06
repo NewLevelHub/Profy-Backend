@@ -1,0 +1,154 @@
+{
+  "version": 6,
+  "comment": "«Почему тебе подходит» for the student's careers. A reason pairs one vetted student fact (the same pool the «Сильные стороны» cards are chosen from) with one concrete catalog skill of that profession that shares an axis. Visible cautious RIASEC interest cards may also ground a reason for a flat profile, but they never claim an ability. `evidence_axes` maps a fact's evidence id to the axes it can speak for; ДДО ids are matched by scale, so `ddo_ability:*` and `ddo_interest:*` read the `ddo:*` entry. A cross-test fact speaks for its RIASEC interest only (its first evidence id) — the confirming fact is why it is trusted, not what it says. Skill axes live in career_fit_skill_axes.json. `subject_aliases` maps onboarding subjects and the catalog's free-text `subjects_to_develop` to the canonical onboarding subject (the `subjects.school_subjects` catalog key) after lower-casing and dropping a trailing «(…)»; `subject_axes` then links that subject to a relevant catalog skill. A subject reason is omitted when no such skill exists, instead of emitting the same subject-only explanation for unrelated professions. `max_letters` bounds the interest summary; only confirmed interests above the average for BOTH the student and the profession are named. If no personal evidence renders, the fallback names a profession skill and explicitly says that the personal link is not yet established. Bump `version` on any change: stored reasons of an older version are recomputed by scripts/backfill_career_fit.py on deploy.",
+  "axes": [
+    "analysis",
+    "numbers",
+    "spatial",
+    "language",
+    "hands_on",
+    "nature",
+    "people",
+    "communication",
+    "leadership",
+    "teamwork",
+    "order",
+    "creativity",
+    "composure",
+    "drive"
+  ],
+  "evidence_axes": {
+    "astur:numeric": [
+      "numbers"
+    ],
+    "astur:spatial": [
+      "spatial"
+    ],
+    "astur:logical_reasoning": [
+      "analysis"
+    ],
+    "astur:verbal_connections": [
+      "language"
+    ],
+    "astur:categorization": [
+      "analysis"
+    ],
+    "astur:generalization": [
+      "analysis",
+      "language"
+    ],
+    "astur:instructions": [
+      "order"
+    ],
+    "ddo:practical": [
+      "nature"
+    ],
+    "ddo:technical": [
+      "hands_on"
+    ],
+    "ddo:social": [
+      "people",
+      "communication"
+    ],
+    "ddo:sign": [
+      "numbers",
+      "analysis"
+    ],
+    "ddo:artistic": [
+      "creativity"
+    ],
+    "belbin:implementer": [
+      "order"
+    ],
+    "belbin:coordinator": [
+      "leadership",
+      "teamwork"
+    ],
+    "belbin:shaper": [
+      "leadership",
+      "drive"
+    ],
+    "belbin:plant": [
+      "creativity"
+    ],
+    "belbin:resource_investigator": [
+      "communication"
+    ],
+    "belbin:evaluator": [
+      "analysis"
+    ],
+    "belbin:team_worker": [
+      "teamwork",
+      "people"
+    ],
+    "belbin:finisher": [
+      "order"
+    ],
+    "empathy": [
+      "people"
+    ],
+    "social_confidence": [
+      "communication"
+    ],
+    "elers": [
+      "drive"
+    ],
+    "riasec:R": [
+      "hands_on"
+    ],
+    "riasec:I": [
+      "analysis"
+    ],
+    "riasec:A": [
+      "creativity"
+    ],
+    "riasec:S": [
+      "people"
+    ],
+    "riasec:E": [
+      "leadership"
+    ],
+    "riasec:C": [
+      "order"
+    ]
+  },
+  "subject_axes": {
+    "Математика": ["numbers", "analysis"],
+    "Физика": ["numbers", "analysis", "spatial", "hands_on"],
+    "Химия": ["analysis", "numbers", "hands_on"],
+    "Биология": ["nature", "analysis"],
+    "История": ["language", "analysis", "people"],
+    "География": ["nature", "spatial", "analysis"],
+    "Русский язык": ["language", "communication"],
+    "Литература": ["language", "creativity"],
+    "Английский язык": ["language", "communication"],
+    "Информатика": ["analysis", "numbers", "order", "hands_on"],
+    "Физкультура": ["drive", "teamwork", "composure"],
+    "Рисование": ["creativity", "spatial"],
+    "Музыка": ["creativity"]
+  },
+  "subject_aliases": {
+    "математика": "Математика",
+    "физика": "Физика",
+    "химия": "Химия",
+    "биология": "Биология",
+    "история": "История",
+    "география": "География",
+    "русский язык": "Русский язык",
+    "русский/казахский язык": "Русский язык",
+    "литература": "Литература",
+    "английский язык": "Английский язык",
+    "иностранный язык": "Английский язык",
+    "информатика": "Информатика",
+    "физкультура": "Физкультура",
+    "физическая культура": "Физкультура",
+    "рисование": "Рисование",
+    "изобразительное искусство": "Рисование",
+    "изо": "Рисование",
+    "искусство": "Рисование",
+    "музыка": "Музыка"
+  },
+  "max_reasons": 3,
+  "max_fact_reasons": 2,
+  "max_letters": 3
+}

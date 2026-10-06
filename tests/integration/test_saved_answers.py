@@ -49,7 +49,7 @@ async def _make_assessment_with_user(db: AsyncSession) -> tuple[Assessment, User
 
 
 def _auth(user: User) -> dict:
-    return {"Authorization": f"Bearer {auth_service.create_jwt_token(user.id)}"}
+    return {"Authorization": f"Bearer {auth_service.create_jwt_token(user)}"}
 
 
 async def _seed(db: AsyncSession) -> dict:

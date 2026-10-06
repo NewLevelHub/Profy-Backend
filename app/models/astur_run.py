@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, func, text
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, String, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -24,8 +24,8 @@ class AsturRun(Base):
     finalized atomically by the submit that delivers its last required
     block: status flips to `completed`, and the scored result is frozen into
     `result_snapshot` together with `scoring_version`. A completed attempt is
-    never rescored, never extended; a new attempt exists only after an
-    explicit retake. At most one attempt per assessment is `in_progress`.
+    never rescored, never extended, never followed by another attempt of
+    the same assessment. At most one attempt per assessment is `in_progress`.
 
     `bank_version_id` pins the bank version the respondent actually saw —
     scoring reads keys from that version, never from the latest one."""
@@ -58,11 +58,16 @@ class AsturRun(Base):
         UUID(as_uuid=True), ForeignKey("astur_bank_versions.id", ondelete="RESTRICT"), nullable=False
     )
 
-    # --- Raw protocol (never deleted, never rewritten after completion) ---
+    # --- Raw protocol (a confirmed exit may reset one block while open;
+    #     never deleted or rewritten after completion) ---
     answers: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     subtest_timings_ms: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     # {subtest_key: ISO timestamp} — server clock anchor of each subtest timer.
     subtest_started_at: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    # Monotonic generation for start/reset ordering. A confirmed reset bumps
+    # it, so a /start request created before that reset cannot recreate the
+    # timer merely because its transaction obtains the row lock afterwards.
+    state_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     # {"1".."N": {"answer", "elapsed_ms", "over_limit", "answered_at"}}
     lability_answers: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     # IANA timezone reported with the quick-instructions block.

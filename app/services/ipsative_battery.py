@@ -28,16 +28,12 @@ from typing import TypeAlias
 
 from fastapi import HTTPException, status
 
-from app.i18n import DEFAULT_LOCALE
-from app.i18n.catalog import tr
+from app.i18n.catalog import key as i18n_key
 
 
-def _stable_error(name: str) -> str:
-    """A structured error body is a stable contract: its `detail` stays in
-    the base catalog whatever the request locale (`catalog.key()` would
-    resolve to the request's), so clients matching on it don't break per
-    language."""
-    return tr("api_errors", locale=DEFAULT_LOCALE)[name]
+def _error_text(name: str) -> str:
+    """Resolve validation details through the active request locale."""
+    return i18n_key("api_errors", name)
 
 
 # One block's raw input: item_id -> points assigned to that item. Values are
@@ -51,6 +47,7 @@ def validate_allocation(
     *,
     expected_items: Collection[str],
     total: int,
+    allow_partial: bool = False,
 ) -> None:
     """Raises HTTPException(422) if `allocation` is not a valid split of
     exactly `total` points across exactly `expected_items` — never trusts
@@ -68,14 +65,15 @@ def validate_allocation(
          requires the full budget spent every time.
 
     Returns None (a guard, not a transform) — call it, then use the
-    already-validated `allocation` as-is."""
+    already-validated `allocation` as-is. Drafts may opt into
+    ``allow_partial`` to leave points unspent; final scoring must not."""
     expected = set(expected_items)
     got = set(allocation.keys())
     if got != expected:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={
-                "detail": _stable_error("allocation_items_mismatch"),
+                "detail": _error_text("allocation_items_mismatch"),
                 "missing_items": sorted(expected - got),
                 "unexpected_items": sorted(got - expected),
             },
@@ -85,15 +83,17 @@ def validate_allocation(
     if negative:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail={"detail": _stable_error("allocation_negative_values"), "negative_items": negative},
+            detail={"detail": _error_text("allocation_negative_values"), "negative_items": negative},
         )
 
     actual_total = sum(allocation.values())
-    if actual_total != total:
+    if actual_total > total or (not allow_partial and actual_total != total):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={
-                "detail": _stable_error("allocation_total_mismatch").format(total=total, actual_total=actual_total),
+                "detail": _error_text(
+                    "allocation_total_exceeded" if allow_partial else "allocation_total_mismatch"
+                ).format(total=total, actual_total=actual_total),
                 "expected_total": total,
                 "actual_total": actual_total,
             },

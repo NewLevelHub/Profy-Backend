@@ -1,11 +1,14 @@
 """Submit + score + interpret a Belbin BTRSPI run (PRO-338 Ф2.4/Ф2.5).
 
+Progress (PROFY-012): validates and stores each partial or complete block in a
+server-side draft. Saves are idempotent and serialized with final submit.
+
 Submit (Ф2.4): validates all 7 blocks against `scripts/belbin_bank.py`'s
 content (Ф2.2) via `ipsative_battery.validate_allocation` (Ф0.6 — 422 on any
 mismatch, never trusts the client's own live-remaining-points UI), then
 aggregates into `role_totals` via `ipsative_battery.aggregate_by_key`, and
-persists one append-only `BelbinRun` row (Ф2.3 — `assessment_id` is not
-unique, a resubmit is a new row, not an overwrite).
+persists one immutable `BelbinRun` row and deletes its draft in the same
+transaction (Ф2.3 — one run per assessment).
 
 Interpretation (Ф2.5): `interpret_role_totals()` ranks the 8 roles by score
 into dominant / supporting / avoidance per the spec's own rule. Deliberately
@@ -17,11 +20,16 @@ new function, not an extension of this one."""
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import select
+from fastapi import HTTPException, status
+from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import BelbinThresholds, belbin_thresholds
 from app.i18n import pick_locale, get_locale
+from app.i18n.catalog import key as i18n_key
+from app.models.assessment import Assessment
+from app.models.belbin_progress import BelbinProgress
 from app.models.belbin_run import BelbinRun
 from app.services import ipsative_battery
 from scripts.belbin_bank import BLOCK_TOTAL, ITEM_ROLE, ROLES, SECTIONS, INSTRUCTION
@@ -78,12 +86,9 @@ async def build_content(db: AsyncSession, ignore_override: bool = False) -> dict
     }
 
 
-async def get_latest_run(assessment_id: uuid.UUID, db: AsyncSession) -> BelbinRun | None:
-    """Append-only history (Ф2.3) — the specialist report (Ф2.7) always
-    reads the most recent attempt, same "latest by created_at" convention
-    as psychoemotional's `_latest_run`. `None` if Belbin was never
-    assigned/completed for this assessment — a normal, common case (it's an
-    optional psychologist-assigned block, not part of the main battery)."""
+async def get_run(assessment_id: uuid.UUID, db: AsyncSession) -> BelbinRun | None:
+    """The assessment's Belbin run — at most one (unique per assessment, no
+    separate retake). `None` while Belbin isn't completed yet."""
     return (
         await db.execute(
             select(BelbinRun)
@@ -92,6 +97,85 @@ async def get_latest_run(assessment_id: uuid.UUID, db: AsyncSession) -> BelbinRu
             .limit(1)
         )
     ).scalar_one_or_none()
+
+
+async def get_progress(
+    assessment_id: uuid.UUID, db: AsyncSession
+) -> tuple[bool, BelbinProgress | None]:
+    """Return completion separately from the draft.
+
+    A final run always wins over a stale draft left by an interrupted or
+    racing request, so callers never mistake saved blocks for completion.
+    """
+    if await get_run(assessment_id, db) is not None:
+        return True, None
+    return False, await db.get(BelbinProgress, assessment_id)
+
+
+def progress_blocks(progress: BelbinProgress | None) -> list[dict]:
+    if progress is None:
+        return []
+    return [
+        {"block_index": int(index), "allocation": allocation}
+        for index, allocation in sorted(
+            progress.blocks.items(), key=lambda item: int(item[0])
+        )
+    ]
+
+
+async def _lock_assessment(assessment_id: uuid.UUID, db: AsyncSession) -> None:
+    # Serializes saves with final submission. Without this lock, a block save
+    # that began just before submit could recreate a stale draft after submit
+    # deleted it.
+    await db.execute(
+        select(Assessment.id)
+        .where(Assessment.id == assessment_id)
+        .with_for_update()
+    )
+
+
+async def save_progress_block(
+    assessment_id: uuid.UUID,
+    block_index: int,
+    allocation: dict[str, int],
+    *,
+    db: AsyncSession,
+) -> BelbinProgress:
+    """Validate and save a draft block, including unspent points."""
+    await _lock_assessment(assessment_id, db)
+    if await get_run(assessment_id, db) is not None:
+        raise _already_completed()
+
+    config = await get_belbin_config(db)
+    if block_index < 0 or block_index >= len(config["sections"]):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=i18n_key("api_errors", "belbin_block_index_invalid"),
+        )
+    section = config["sections"][block_index]
+    expected_items = [item["id"] for item in section["items"]]
+    ipsative_battery.validate_allocation(
+        allocation,
+        expected_items=expected_items,
+        total=config["block_total"],
+        allow_partial=True,
+    )
+
+    progress = await db.get(BelbinProgress, assessment_id)
+    if progress is None:
+        progress = BelbinProgress(
+            assessment_id=assessment_id,
+            blocks={str(block_index): allocation},
+        )
+        db.add(progress)
+    else:
+        progress.blocks = {
+            **progress.blocks,
+            str(block_index): allocation,
+        }
+    await db.commit()
+    await db.refresh(progress)
+    return progress
 
 
 async def submit_run(
@@ -106,6 +190,7 @@ async def submit_run(
     Raises HTTPException(422) via `validate_allocation` on the first block
     that doesn't sum to exactly `BLOCK_TOTAL` across exactly that section's
     8 item ids."""
+    await _lock_assessment(assessment_id, db)
     config = await get_belbin_config(db)
     for section, block in zip(config["sections"], allocations, strict=True):
         expected_items = [item["id"] for item in section["items"]]
@@ -113,6 +198,10 @@ async def submit_run(
 
     role_totals = ipsative_battery.aggregate_by_key(allocations, config["item_role"])
 
+    # One Belbin per assessment: a student retakes the whole diagnostic
+    # (a new assessment), never Belbin alone.
+    if await get_run(assessment_id, db) is not None:
+        raise _already_completed()
     run = BelbinRun(
         assessment_id=assessment_id,
         user_id=user_id,
@@ -120,9 +209,23 @@ async def submit_run(
         role_totals=role_totals,
     )
     db.add(run)
-    await db.commit()
+    await db.execute(
+        delete(BelbinProgress).where(BelbinProgress.assessment_id == assessment_id)
+    )
+    try:
+        await db.commit()
+    except IntegrityError:
+        # A concurrent submit won the race — the unique index holds.
+        await db.rollback()
+        raise _already_completed() from None
     await db.refresh(run)
     return run
+
+
+def _already_completed() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_409_CONFLICT, detail=i18n_key("api_errors", "belbin_already_completed")
+    )
 
 
 async def role_evidence(db: AsyncSession, run: BelbinRun) -> dict[str, dict]:

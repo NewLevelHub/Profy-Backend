@@ -16,7 +16,7 @@ import asyncio
 import logging
 import uuid
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Callable
 
 from sqlalchemy import Select, case, delete, or_, select, tuple_, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,7 +25,7 @@ from sqlalchemy.orm import aliased
 from app.i18n.catalog import key as i18n_key, tr
 from app.i18n import DEFAULT_LOCALE
 from app.models.analysis_result import AnalysisResult, ReviewStatus
-from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
+from app.models.analysis_result_review_edit import AnalysisResultReviewEdit, ReviewEditSource
 from app.models.assessment import Assessment, AssessmentStatus
 from app.models.extended_block_assignment import ExtendedBlock, ExtendedBlockAssignment
 from app.models.profile import Profile
@@ -111,6 +111,10 @@ class ResultAlreadyPublishedError(Exception):
 
 class ResultPatchInvalidError(Exception):
     """Well-formed patch that doesn't fit the stored result → 422."""
+
+
+class ResultNotReadyForPublishError(Exception):
+    """A draft is valid to save, but lacks required student-facing content."""
 
 
 async def _require_assigned_student(
@@ -580,6 +584,29 @@ async def _student_profile_facts(student_id: uuid.UUID, db: AsyncSession) -> tup
 async def _get_or_generate_psych_ai_analysis(
     analysis, *, report, new_tests, student_id: uuid.UUID, db: AsyncSession, force: bool = False
 ) -> PsychAiAnalysisOutput | None:
+    """The AI analysis (see _cached_or_new_psych_ai_analysis), with its
+    recommended profession applied to the student's report
+    (_apply_ai_recommendation)."""
+    output = await _cached_or_new_psych_ai_analysis(
+        analysis, report=report, new_tests=new_tests, student_id=student_id, db=db, force=force
+    )
+    if output is None:
+        return output
+    # Read before the try: a rollback expires `analysis`, and touching it
+    # afterwards would lazy-load outside the async context.
+    assessment_id = analysis.assessment_id
+    try:
+        await _apply_ai_recommendation(db, analysis, student_id=student_id)
+    except Exception:
+        # Same isolation as the analysis itself: the report must still open.
+        await db.rollback()
+        logger.exception("Failed to apply the AI recommendation for assessment %s", assessment_id)
+    return output
+
+
+async def _cached_or_new_psych_ai_analysis(
+    analysis, *, report, new_tests, student_id: uuid.UUID, db: AsyncSession, force: bool = False
+) -> PsychAiAnalysisOutput | None:
     """Lazily generates + caches the AI analysis on first view (product
     decision: auto-generate rather than requiring an explicit action first)
     — `analysis.psych_ai_analysis` is the cache, `force=True` (the
@@ -616,6 +643,13 @@ async def _get_or_generate_psych_ai_analysis(
     try:
         if not has_any_data(context):
             return None
+        # The model reads the careers in the system's order — after a
+        # promotion the stored order starts with its own previous pick, and
+        # that position alone would steer it to the same answer again.
+        system_slugs = await _system_career_slugs(db, analysis)
+        context = context.model_copy(
+            update={"careers": _ordered_by_slugs(context.careers, system_slugs, slug_of=lambda career: career.slug)}
+        )
         output, is_ai_generated = await psych_ai_analysis_service.generate_psych_ai_analysis(context)
         if not is_ai_generated or output is None:
             return None
@@ -628,6 +662,177 @@ async def _get_or_generate_psych_ai_analysis(
             "Failed to generate psych_ai_analysis for assessment %s", analysis.assessment_id
         )
         return None
+
+
+def _ordered_by_slugs(
+    items: list[Any], slugs: list[str], *, slug_of: Callable[[Any], str | None] = lambda career: career.get("slug")
+) -> list[Any]:
+    """`items` in the order of `slugs`; ones not in `slugs` keep their
+    relative order at the end."""
+    rank = {slug: index for index, slug in enumerate(slugs)}
+    return sorted(items, key=lambda item: rank.get(slug_of(item), len(rank)))
+
+
+def _careers_with_pick_first(careers: list[dict], *, slug: str, system_order: list[str]) -> list[dict]:
+    """`careers` in the system's (RIASEC) order, `slug` moved to the top."""
+    ordered = _ordered_by_slugs(careers, system_order)
+    return [c for c in ordered if c.get("slug") == slug] + [c for c in ordered if c.get("slug") != slug]
+
+
+def _stored_recommendation(analysis: AnalysisResult) -> dict:
+    return (analysis.psych_ai_analysis or {}).get("recommended_profession") or {}
+
+
+def _stored_ai_pick(analysis: AnalysisResult) -> str | None:
+    """The recommended profession of the AI analysis stored on the row."""
+    return _stored_recommendation(analysis).get("slug")
+
+
+def _stored_student_text(analysis: AnalysisResult, locale: str) -> str | None:
+    """The analysis's «Почему тебе подходит» for the student, in `locale`."""
+    return psych_ai_analysis_service.reasoning_in(_stored_recommendation(analysis), locale)
+
+
+async def _field_edits(db: AsyncSession, assessment_id: uuid.UUID, field: str) -> list[Any]:
+    """Every edit of `field` across the assessment's locale rows, oldest first."""
+    return list(
+        (
+            await db.execute(
+                select(AnalysisResultReviewEdit.source, AnalysisResultReviewEdit.changed_fields)
+                .join(AnalysisResult, AnalysisResult.id == AnalysisResultReviewEdit.analysis_result_id)
+                .where(
+                    AnalysisResult.assessment_id == assessment_id,
+                    AnalysisResultReviewEdit.changed_fields.has_key(field),
+                )
+                .order_by(AnalysisResultReviewEdit.edited_at.asc(), AnalysisResultReviewEdit.id.asc())
+            )
+        ).all()
+    )
+
+
+def _has_psychologist_edit(edits: list[Any]) -> bool:
+    return any(edit.source != ReviewEditSource.ai_recommendation for edit in edits)
+
+
+def _system_order(edits: list[Any], current_careers: list[dict]) -> list[str]:
+    """The careers' order before any AI reorder: the `old` of the first one.
+    After a psychologist's edit their order is the one that counts."""
+    if not edits or _has_psychologist_edit(edits):
+        return [career.get("slug") for career in current_careers]
+    return [career.get("slug") for career in edits[0].changed_fields["careers"]["old"]]
+
+
+async def _system_career_slugs(db: AsyncSession, analysis: AnalysisResult) -> list[str]:
+    return _system_order(await _field_edits(db, analysis.assessment_id, "careers"), list(analysis.careers or []))
+
+
+def _needs_promotion(analysis: AnalysisResult, slug: str | None) -> bool:
+    slugs = [career.get("slug") for career in analysis.careers or []]
+    return (
+        analysis.review_status == ReviewStatus.pending_review
+        and slug is not None
+        and slug in slugs
+        and slugs[0] != slug
+    )
+
+
+def _top_career_why_is_stale(
+    row: AnalysisResult, *, slug: str | None, text: str | None, psychologist_edited: bool
+) -> bool:
+    """The row's student text differs from the analysis's one. The
+    psychologist's wording is kept for as long as it is about the same career."""
+    if row.review_status != ReviewStatus.pending_review or slug is None or text is None:
+        return False
+    current = row.top_career_why or {}
+    if psychologist_edited and current.get("slug") == slug:
+        return False
+    return current != {"slug": slug, "text": text}
+
+
+async def _apply_ai_recommendation(
+    db: AsyncSession, analysis: AnalysisResult, *, student_id: uuid.UUID
+) -> None:
+    """Product default: the AI analysis's recommended profession is the
+    student's #1 career, even when RIASEC ranks it lower — in practice it
+    fits best — and its «Почему тебе подходит» is the analysis's reasoning,
+    the psychologist's exact text (`top_career_why`).
+
+    The order is applied while the report is pending review and only as long
+    as the psychologist has not edited the careers themselves: their order
+    always wins. A later analysis that picks another career restores the
+    RIASEC order (the `old` of the first AI reorder) and puts the new pick on
+    top. Every locale row is reordered in place — careers are the same slugs
+    in each — and the change is logged as an `ai_recommendation` edit, which
+    is not a review: `reviewed_by`/`reviewed_at` stay untouched. The text is
+    written into each locale row in its language, not logged: like the
+    rest of the generated report it is the starting point, and a
+    psychologist's edit of it is kept until the pick itself changes.
+
+    The pick is read from the analysis stored on the row, under the lock —
+    never from the caller's freshly generated one: with two generations in
+    flight, the one stored last is the one the report must follow."""
+    assessment_id = analysis.assessment_id
+    slug = _stored_ai_pick(analysis)
+    # Unlocked pre-checks keep the common no-op view (already applied, or the
+    # psychologist's own order) free of locks; they are repeated under the lock.
+    reorder = _needs_promotion(analysis, slug) and not _has_psychologist_edit(
+        await _field_edits(db, assessment_id, "careers")
+    )
+    retext = _top_career_why_is_stale(
+        analysis,
+        slug=slug,
+        text=_stored_student_text(analysis, analysis.locale),
+        psychologist_edited=bool(await _field_edits(db, assessment_id, "top_career_why")),
+    )
+    if not (reorder or retext):
+        return
+
+    await report_service.lock_report_generation(assessment_id, db)
+    reviewed = await _require_result_for_student(
+        db, student_id=student_id, assessment_id=assessment_id, for_update=True
+    )
+    locale_rows = (
+        await db.execute(select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id))
+    ).scalars().all()
+    await _apply_ai_pick(db, reviewed, locale_rows)
+    await _apply_ai_student_text(db, reviewed, locale_rows)
+    # Also when nothing changed — the commit releases the advisory and row locks.
+    await db.commit()
+    await _drop_report_cache(assessment_id)
+
+
+async def _apply_ai_pick(db: AsyncSession, reviewed: AnalysisResult, locale_rows: list[AnalysisResult]) -> None:
+    slug = _stored_ai_pick(reviewed)
+    if not _needs_promotion(reviewed, slug):
+        return
+    edits = await _field_edits(db, reviewed.assessment_id, "careers")
+    if _has_psychologist_edit(edits):
+        return
+    old_careers = list(reviewed.careers or [])
+    new_careers = _careers_with_pick_first(old_careers, slug=slug, system_order=_system_order(edits, old_careers))
+    new_slugs = [career.get("slug") for career in new_careers]
+    for row in locale_rows:
+        row.careers = _ordered_by_slugs(list(row.careers or []), new_slugs)
+    db.add(
+        AnalysisResultReviewEdit(
+            analysis_result_id=reviewed.id,
+            editor_id=None,
+            source=ReviewEditSource.ai_recommendation,
+            edited_at=datetime.now(timezone.utc),
+            changed_fields={"careers": {"old": old_careers, "new": new_careers}},
+        )
+    )
+
+
+async def _apply_ai_student_text(
+    db: AsyncSession, reviewed: AnalysisResult, locale_rows: list[AnalysisResult]
+) -> None:
+    slug = _stored_ai_pick(reviewed)
+    edited = bool(await _field_edits(db, reviewed.assessment_id, "top_career_why"))
+    for row in locale_rows:
+        text = _stored_student_text(reviewed, row.locale)
+        if _top_career_why_is_stale(row, slug=slug, text=text, psychologist_edited=edited):
+            row.top_career_why = {"slug": slug, "text": text}
 
 
 # --- Report review (PRO-337) -------------------------------------------------
@@ -767,7 +972,9 @@ def _to_detail(analysis: AnalysisResult) -> PsychologistResultDetailResponse:
     return detail.model_copy(
         update={
             "personality_notes": report_service.student_personality_notes(analysis),
-            "strengths_stale": student_strengths_service.strengths_are_stale(analysis.meta),
+            "strengths_stale": student_strengths_service.rules_version_is_outdated(analysis.meta),
+            "ai_recommended_slug": _stored_ai_pick(analysis),
+            "top_career_why_slug": (analysis.top_career_why or {}).get("slug"),
         }
     )
 
@@ -823,6 +1030,7 @@ async def list_review_edits(
             edited_at=edit.edited_at,
             editor_id=edit.editor_id,
             editor_email=email,
+            source=edit.source,
             changed_fields=edit.changed_fields,
         )
         for edit, email in reversed(rows)
@@ -912,6 +1120,7 @@ async def update_result_content(
     # computed phrase, so a correction is kept as an override of that phrase,
     # trait by trait — untouched traits keep following the scores.
     notes_patch = values.pop("personality_notes", None)
+    top_why_text = values.pop("top_career_why", None)
     if notes_patch is not None:
         unknown_traits = set(notes_patch) - set(bigfive_content.personality_labels())
         if unknown_traits:
@@ -957,6 +1166,14 @@ async def update_result_content(
                 "new": {**default_notes, **new_override},
             }
             analysis.personality_notes_override = new_override
+
+    if top_why_text is not None:
+        current = analysis.top_career_why
+        if not current:
+            raise ResultPatchInvalidError(i18n_key("api_errors", "top_career_why_unavailable", locale="ru"))
+        if top_why_text != current.get("text"):
+            changed["top_career_why"] = {"old": current.get("text"), "new": top_why_text}
+            analysis.top_career_why = {**current, "text": top_why_text}
 
     return await _save_review_changes(db, analysis, editor_id=psychologist_id, changed=changed)
 
@@ -1024,8 +1241,8 @@ async def rebuild_strength_cards(
     assessment_id: uuid.UUID,
 ) -> PsychologistResultDetailResponse:
     """Explicit «Пересобрать сильные стороны» (PRO-432): replaces the cards
-    with ones built from the student's current results (e.g. after a Belbin
-    or АСТУР retake), in the deterministic wording — the psychologist's own
+    with ones built under the current strength rules (a report built under
+    an older rules version), in the deterministic wording — the psychologist's own
     edits are overwritten only because they asked for it. Recorded like any
     other review edit."""
     await _require_assigned_student(db, psychologist_id=psychologist_id, student_id=student_id)
@@ -1042,11 +1259,11 @@ async def rebuild_strength_cards(
         await db.execute(select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id))
     ).scalars().all()
     for row in rows:
-        cards, strengths_fingerprint = await student_strengths_service.rebuild_cards(row, db)
+        cards = await student_strengths_service.rebuild_cards(row, db)
         if row.id == analysis.id and cards != list(row.strength_cards):
             changed["strength_cards"] = {"old": list(row.strength_cards), "new": cards}
         row.strength_cards = cards
-        row.meta = student_strengths_service.mark_fresh(row.meta, strengths_fingerprint)
+        row.meta = student_strengths_service.mark_fresh(row.meta)
         if rules_outdated:
             row.review_status = ReviewStatus.pending_review
     return await _save_review_changes(db, analysis, editor_id=psychologist_id, changed=changed)
@@ -1077,11 +1294,12 @@ async def _publish(
 ) -> PsychologistResultDetailResponse:
     if analysis.review_status == ReviewStatus.published:
         raise ResultAlreadyPublishedError(i18n_key("api_errors", "result_is_already_published", locale="ru"))
+    if not _is_ready_for_publication(analysis):
+        raise ResultNotReadyForPublishError(
+            i18n_key("api_errors", "result_not_ready_for_publish")
+        )
     now = datetime.now(timezone.utc)
     analysis.review_status = ReviewStatus.published
-    # Publishing is the psychologist's decision that the cards are fine as
-    # they are, rebuilt or not.
-    analysis.meta = {k: v for k, v in (analysis.meta or {}).items() if k != "strengths_stale"}
     analysis.published_by = publisher_id
     analysis.published_at = now
     # Published without edits — publishing still counts as a review.
@@ -1111,6 +1329,45 @@ async def _publish(
     await _drop_report_cache(analysis.assessment_id)
     await _notify_result_published(db, analysis.assessment_id)
     return detail
+
+
+def _is_ready_for_publication(analysis: AnalysisResult) -> bool:
+    """Keep incomplete content saveable as a draft, but never expose it.
+
+    Big Five-derived sections may legitimately be absent for reports created
+    after that test was retired. The three collections below are produced by
+    every current RIASEC report and form the minimum useful student report.
+    """
+
+    def non_blank(value: Any) -> bool:
+        return isinstance(value, str) and bool(value.strip())
+
+    careers = analysis.careers
+    strength_cards = analysis.strength_cards
+    motivation = analysis.motivation_highlights
+    return (
+        non_blank(analysis.summary)
+        and non_blank(analysis.final_analysis)
+        and isinstance(careers, list)
+        and bool(careers)
+        and all(
+            isinstance(career, dict)
+            and non_blank(career.get("slug"))
+            and non_blank(career.get("name"))
+            for career in careers
+        )
+        and isinstance(strength_cards, list)
+        and bool(strength_cards)
+        and all(
+            isinstance(card, dict)
+            and non_blank(card.get("title"))
+            and non_blank(card.get("description"))
+            for card in strength_cards
+        )
+        and isinstance(motivation, list)
+        and bool(motivation)
+        and all(non_blank(item) for item in motivation)
+    )
 
 
 async def _drop_report_cache(assessment_id: uuid.UUID) -> None:

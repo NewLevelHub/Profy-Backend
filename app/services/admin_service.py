@@ -15,7 +15,7 @@ from app.models.psychoemotional_run import PsychoEmotionalRun
 from app.models.motivation import MotivationResponse
 from app.models.product_feedback import ProductFeedback
 from app.models.profile import Profile
-from app.models.question import Question, QuestionInstrument
+from app.models.question import Question, QuestionInstrument, active_question_clause
 from app.models.user import User, UserRole
 from app.models.user_response import UserResponse
 from app.schemas.admin import (
@@ -338,7 +338,11 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
 
             answered_result = await db.execute(
                 select(UserResponse.assessment_id, func.count(UserResponse.id))
-                .where(UserResponse.assessment_id.in_(assessment_ids))
+                .join(Question, Question.id == UserResponse.question_id)
+                .where(
+                    UserResponse.assessment_id.in_(assessment_ids),
+                    active_question_clause(),
+                )
                 .group_by(UserResponse.assessment_id)
             )
             answered_by_assessment = dict(answered_result.all())
@@ -521,6 +525,7 @@ async def get_assessment_detail(
         analysis_result = AdminAnalysisResultResponse.model_validate(analysis)
 
     total_questions = await assessment_shared.likert_total_questions(db)
+    answered_count = await assessment_shared.likert_answered_count(assessment.id, db)
 
     astur_runs_result = await db.execute(
         select(AsturRun)
@@ -576,7 +581,7 @@ async def get_assessment_detail(
         profile_name=profile.name,
         goal=assessment.goal.value,
         status=assessment.status.value,
-        answered_count=len(user_responses),
+        answered_count=answered_count,
         total_questions=total_questions,
         created_at=assessment.created_at,
         completed_at=assessment.completed_at,

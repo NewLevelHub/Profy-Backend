@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, func
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Index, Integer, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -36,6 +36,14 @@ class PsychoEmotionalRun(Base):
     """
 
     __tablename__ = "psychoemotional_runs"
+    __table_args__ = (
+        Index(
+            "uq_psychoemotional_runs_assessment_pending",
+            "assessment_id",
+            unique=True,
+            postgresql_where=text("list2 IS NULL"),
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4

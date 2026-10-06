@@ -1,8 +1,9 @@
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from app.models.question import BigFiveDomain, HollandType, QuestionInstrument
+from app.schemas.validation import ensure_unique
 
 
 class QuestionPairOption(BaseModel):
@@ -34,6 +35,17 @@ class PairAnswerItem(BaseModel):
 
 class SubmitPairAnswersRequest(BaseModel):
     answers: list[PairAnswerItem]
+
+    @field_validator("answers")
+    @classmethod
+    def pair_indexes_are_unique(
+        cls, answers: list[PairAnswerItem]
+    ) -> list[PairAnswerItem]:
+        ensure_unique(
+            (item.pair_index for item in answers),
+            error_code="duplicate_pair_indexes",
+        )
+        return answers
 
 
 class SubmitPairAnswersResponse(BaseModel):

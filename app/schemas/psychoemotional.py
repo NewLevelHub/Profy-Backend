@@ -5,6 +5,7 @@ check-in + circle1 отправляются перед основной бата
 (`/{run_id}/finish`). Метрики и флаг достоверности наполняет движок
 PRO-307/PRO-308 отдельно."""
 import uuid
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -22,6 +23,11 @@ class StartPsychoEmotionalRequest(BaseModel):
 
 class StartPsychoEmotionalResponse(BaseModel):
     run_id: uuid.UUID
+
+
+class PsychoEmotionalStateResponse(BaseModel):
+    run_id: uuid.UUID | None = None
+    status: Literal["not_started", "pending", "completed"]
 
 
 class FinishPsychoEmotionalRequest(BaseModel):

@@ -4,10 +4,12 @@ Rules:
 - at most one `in_progress` attempt per assessment (partial unique index);
 - an attempt is opened explicitly (`open_attempt`), which pins its bank
   version AND locale and returns its content in the same response — items
-  are never shown before the attempt that will score them exists; a new
-  attempt after a completed one needs `retake=True` («Пройти заново»);
+  are never shown before the attempt that will score them exists; a
+  completed attempt is never reopened and never followed by a new one;
 - every start/submit names its `run_id`; a payload for another attempt is
   rejected, never re-targeted onto the open one;
+- only the first unfinished subtest in the pinned presentation order may be
+  started or submitted, and an open attempt has at most one timer anchor;
 - item answers are explicit: answered (value validated against the
   subtest's scoring method) or skipped — a blank value is never an answer;
 - re-sending an already accepted subtest with the same payload is a no-op
@@ -40,6 +42,8 @@ from app.services.astur.scoring_rules import LEGACY_SCORING_VERSION, ScoringRule
 ATTEMPT_COMPLETED = "astur_attempt_completed"
 RUN_MISMATCH = "astur_run_mismatch"
 ALREADY_SUBMITTED = "astur_subtest_already_submitted"
+STALE_SUBTEST_START = "astur_subtest_start_stale"
+SUBTEST_OUT_OF_ORDER = "astur_subtest_out_of_order"
 MAX_OPEN_TEXT_LENGTH = 200
 # Client-reported time per quick command beyond this multiple of the limit is
 # not plausible (a backgrounded tab still reports its real stall).
@@ -96,6 +100,37 @@ def submitted_subtests(run: AsturRun) -> list[str]:
     return keys
 
 
+def _expected_subtest(bank: AsturBank, run: AsturRun) -> BankSubtest | None:
+    submitted = set(submitted_subtests(run))
+    return next((subtest for subtest in bank.ordered_subtests() if subtest.key not in submitted), None)
+
+
+def _require_expected_subtest(bank: AsturBank, run: AsturRun, subtest: BankSubtest) -> None:
+    expected = _expected_subtest(bank, run)
+    if expected is None or expected.key != subtest.key:
+        raise _conflict(SUBTEST_OUT_OF_ORDER, i18n_key("api_errors", "astur_subtest_out_of_order"))
+
+
+def _require_resettable_subtest(bank: AsturBank, run: AsturRun, subtest: BankSubtest) -> None:
+    """Allow resetting the current screen, never an arbitrary completed block.
+
+    Before a timer starts the UI may still be showing the result screen of
+    the immediately preceding subtest, so that one remains resettable. Once
+    a timer exists, only the expected unfinished subtest may be reset.
+    """
+    expected = _expected_subtest(bank, run)
+    allowed = {expected.key} if expected is not None else set()
+    if expected is not None and not run.subtest_started_at:
+        ordered = bank.ordered_subtests()
+        expected_index = next(i for i, item in enumerate(ordered) if item.key == expected.key)
+        if expected_index:
+            previous = ordered[expected_index - 1]
+            if previous.key in submitted_subtests(run):
+                allowed.add(previous.key)
+    if subtest.key not in allowed:
+        raise _conflict(SUBTEST_OUT_OF_ORDER, i18n_key("api_errors", "astur_subtest_out_of_order"))
+
+
 async def run_summary(db: AsyncSession, run: AsturRun) -> dict:
     bank = await get_published(db, run.bank_version_id)
     return {
@@ -107,6 +142,7 @@ async def run_summary(db: AsyncSession, run: AsturRun) -> dict:
         "completed_at": run.completed_at,
         "submitted_subtests": submitted_subtests(run),
         "subtest_started_at": run.subtest_started_at,
+        "state_version": run.state_version,
     }
 
 
@@ -119,10 +155,13 @@ async def get_state(db: AsyncSession, assessment_id: uuid.UUID) -> dict:
         state = "completed"
     else:
         state = "not_started"
+    active_summary = await run_summary(db, active) if active else None
+    completed_summary = await run_summary(db, completed) if completed else None
     return {
         "status": state,
-        "active_run": await run_summary(db, active) if active else None,
-        "latest_completed_run": await run_summary(db, completed) if completed else None,
+        "server_now": timing.now_utc(),
+        "active_run": active_summary,
+        "latest_completed_run": completed_summary,
     }
 
 
@@ -150,16 +189,14 @@ async def _open_run(db: AsyncSession, assessment_id: uuid.UUID, user_id: uuid.UU
     return run
 
 
-async def open_attempt(
-    db: AsyncSession, assessment_id: uuid.UUID, *, user_id: uuid.UUID, retake: bool
-) -> dict:
+async def open_attempt(db: AsyncSession, assessment_id: uuid.UUID, *, user_id: uuid.UUID) -> dict:
     """Opens (or resumes) the attempt and returns it together with its
     content — bank version and locale are pinned before any item is shown.
     Idempotent while an attempt is open (a double click resumes it)."""
     run = await active_run(db, assessment_id, for_update=True)
     if run is None:
-        if await has_completed_run(db, assessment_id) and not retake:
-            raise _conflict(ATTEMPT_COMPLETED, "АСТУР attempt is already completed; open a retake explicitly")
+        if await has_completed_run(db, assessment_id):
+            raise _conflict(ATTEMPT_COMPLETED, "АСТУР attempt is already completed")
         run = await _open_run(db, assessment_id, user_id)
     await db.commit()
     await db.refresh(run)
@@ -246,16 +283,82 @@ def _subtest_or_404(bank: AsturBank, number: int) -> BankSubtest:
 
 
 async def start_subtest(
-    db: AsyncSession, assessment_id: uuid.UUID, number: int, *, run_id: uuid.UUID
+    db: AsyncSession,
+    assessment_id: uuid.UUID,
+    number: int,
+    *,
+    run_id: uuid.UUID,
+    state_version: int,
 ) -> tuple[AsturRun, str, str]:
     run = await _run_for_write(db, assessment_id, run_id)
-    subtest = _subtest_or_404((await get_published(db, run.bank_version_id)).bank, number)
-    started_at = dict(run.subtest_started_at)
+    bank = (await get_published(db, run.bank_version_id)).bank
+    subtest = _subtest_or_404(bank, number)
+    if state_version != run.state_version:
+        raise _conflict(STALE_SUBTEST_START, i18n_key("api_errors", "astur_subtest_start_stale"))
+    _require_expected_subtest(bank, run, subtest)
+    # Keep an idempotent timer for this block, while healing invalid anchors
+    # left by backend versions that allowed several subtests to be started.
+    current_anchor = run.subtest_started_at.get(subtest.key)
+    started_at = {subtest.key: current_anchor} if current_anchor is not None else {}
     timing.start_subtest(started_at, subtest.key)
     run.subtest_started_at = started_at
     await db.commit()
     await db.refresh(run)
     return run, subtest.key, run.subtest_started_at[subtest.key]
+
+
+async def reset_subtest(
+    db: AsyncSession,
+    assessment_id: uuid.UUID,
+    number: int,
+    *,
+    run_id: uuid.UUID,
+    state_version: int,
+) -> tuple[AsturRun, str]:
+    """Discard one subtest from an open attempt after a confirmed exit.
+
+    The run and every other submitted subtest stay intact. Removing the
+    server start anchor makes the next `/start` create a fresh timer. The row
+    lock serializes this with submit; clients also echo the old start anchor
+    on submit so a request that arrives after this reset is rejected.
+    """
+    run = await _run_for_write(db, assessment_id, run_id)
+    bank = (await get_published(db, run.bank_version_id)).bank
+    subtest = _subtest_or_404(bank, number)
+    key = subtest.key
+
+    # The reset is the ordering barrier for an in-flight /start. Once it has
+    # advanced the generation, an older reset is an idempotent no-op and an
+    # older start is rejected. Crucially, a repeated old reset never deletes
+    # a newer timer created under the next generation.
+    if state_version < run.state_version:
+        return run, key
+    if state_version > run.state_version:
+        raise _conflict(STALE_SUBTEST_START, i18n_key("api_errors", "astur_subtest_start_stale"))
+
+    _require_resettable_subtest(bank, run, subtest)
+
+    if key == QUICK_INSTRUCTIONS_KEY:
+        run.lability_answers = {}
+        run.client_timezone = None
+    else:
+        answers = dict(run.answers)
+        answers.pop(key, None)
+        run.answers = answers
+
+    timings = dict(run.subtest_timings_ms)
+    timings.pop(key, None)
+    run.subtest_timings_ms = timings
+
+    # A reset is the recovery path for runs created before the single-timer
+    # invariant. Clearing every unsubmitted start anchor heals such a run and
+    # guarantees that the next allowed `/start` creates exactly one timer.
+    run.subtest_started_at = {}
+    run.state_version += 1
+
+    await db.commit()
+    await db.refresh(run)
+    return run, key
 
 
 def _stored_payload(run: AsturRun, key: str) -> dict | None:
@@ -288,6 +391,7 @@ async def submit_subtest(
     answers: dict,
     *,
     run_id: uuid.UUID,
+    started_at: str | None,
     elapsed_ms: dict | None,
     client_timezone: str | None,
 ) -> tuple[AsturRun, str, int | None, list[str], bool]:
@@ -298,13 +402,23 @@ async def submit_subtest(
     published = await get_published(db, run.bank_version_id)
     subtest = _subtest_or_404(published.bank, number)
     is_quick = subtest.key == QUICK_INSTRUCTIONS_KEY
-    payload = _validate_answers(subtest, answers, run.locale)
 
     stored = _stored_payload(run, subtest.key)
     if stored is not None:
+        payload = _validate_answers(subtest, answers, run.locale)
         if stored == payload:
             return run, subtest.key, run.subtest_timings_ms.get(subtest.key), [], False
         raise _conflict(ALREADY_SUBMITTED, "This subtest was already submitted in the open attempt")
+
+    _require_expected_subtest(published.bank, run, subtest)
+    payload = _validate_answers(subtest, answers, run.locale)
+
+    # Treat the server start anchor as this subtest run's generation token.
+    # A reset deletes it; a restart creates another one. Consequently, a
+    # delayed request from the screen the student exited cannot put its old
+    # answers back after the reset transaction committed.
+    if started_at is not None and run.subtest_started_at.get(subtest.key) != started_at:
+        raise _conflict(STALE_SUBTEST_START, i18n_key("api_errors", "astur_subtest_start_stale"))
 
     limit = published.bank.lability_item_limit_ms
     if is_quick:
@@ -321,7 +435,9 @@ async def submit_subtest(
 
     received_at = timing.now_utc()
     actual_ms = timing.elapsed_ms_since_start(run.subtest_started_at, subtest.key, now=received_at)
-    run.subtest_started_at = {k: v for k, v in run.subtest_started_at.items() if k != subtest.key}
+    # Every other anchor would belong to an out-of-order legacy start. An
+    # accepted submit leaves no active timer and heals that old state too.
+    run.subtest_started_at = {}
     if actual_ms is not None:
         run.subtest_timings_ms = {**run.subtest_timings_ms, subtest.key: actual_ms}
 

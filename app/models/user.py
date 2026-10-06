@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, String, false, func
+from sqlalchemy import Boolean, DateTime, Enum, Integer, String, false, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -29,6 +29,11 @@ class User(Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Embedded in every access token. Password recovery increments it so all
+    # tokens issued before the password change stop authenticating immediately.
+    token_version: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False
+    )
     role: Mapped[UserRole] = mapped_column(
         Enum(UserRole, name="user_role_enum"), default=UserRole.student, nullable=False
     )

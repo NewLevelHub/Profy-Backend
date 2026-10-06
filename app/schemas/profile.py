@@ -1,9 +1,10 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
-from app.schemas.artifact import ArtifactItem
+from app.i18n.catalog import key as i18n_key
+from app.schemas.artifact import ArtifactInput, ArtifactItem
 from app.schemas.certificate import CertificateItem
 from app.services.age_grade import age_grade_mismatch_message, is_age_grade_compatible
 
@@ -12,6 +13,21 @@ from app.services.age_grade import age_grade_mismatch_message, is_age_grade_comp
 # frontend's NAME_PATTERN (useProfileSetup.ts). pydantic-core's `pattern`
 # compiles with Rust's `regex` crate, which supports \p{L} natively.
 NAME_PATTERN = r"^[\p{L}\s'-]+$"
+
+# A subject is a chip label — preset or the student's own «+ своё». Mirrors
+# the frontend's CUSTOM_CHIP_MAX_LENGTH (pages/onboarding/components/AddCustomChip.tsx).
+SUBJECT_MAX_LENGTH = 60
+_SUBJECT_FIELDS = ("subjects_liked", "subjects_disliked", "subjects_easy", "subjects_hard")
+
+
+def _check_subject_lengths(subjects: list[str] | None) -> list[str] | None:
+    if subjects is None:
+        return None
+    if any(len(subject) > SUBJECT_MAX_LENGTH for subject in subjects):
+        raise ValueError(
+            i18n_key("api_errors", "custom_value_too_long").format(max_length=SUBJECT_MAX_LENGTH)
+        )
+    return subjects
 
 # NOTE: the `profiles.gpa_value` / `gpa_scale` columns still exist (see
 # app/models/profile.py) but are no longer part of the profile API — GPA was
@@ -43,11 +59,16 @@ class ProfileCreateRequest(BaseModel):
     # brand-new profile, but goes through the same code path). See
     # app/routers/profile.py::create_profile for how this is applied
     # atomically alongside the Profile row.
-    artifacts: list[ArtifactItem] | None = None
+    artifacts: list[ArtifactInput] | None = None
     # Same optional/atomic-write contract as `artifacts`, but backed by
     # app/services/certificate_service.py instead. `None` = not managing
     # certificates here; any list (including `[]`) replaces them wholesale.
     certificates: list[CertificateItem] | None = None
+
+    @field_validator(*_SUBJECT_FIELDS)
+    @classmethod
+    def _subjects_fit(cls, subjects: list[str] | None) -> list[str] | None:
+        return _check_subject_lengths(subjects)
 
     @model_validator(mode="after")
     def _age_matches_grade(self) -> "ProfileCreateRequest":
@@ -71,9 +92,14 @@ class ProfileUpdateRequest(BaseModel):
     # "caller isn't managing artifacts here, leave them untouched"; any list
     # (including `[]`) replaces the profile's artifacts wholesale via the
     # same delete-then-insert as the standalone POST /profile/artifacts.
-    artifacts: list[ArtifactItem] | None = None
+    artifacts: list[ArtifactInput] | None = None
     # Same semantics as `artifacts`, backed by certificate_service instead.
     certificates: list[CertificateItem] | None = None
+
+    @field_validator(*_SUBJECT_FIELDS)
+    @classmethod
+    def _subjects_fit(cls, subjects: list[str] | None) -> list[str] | None:
+        return _check_subject_lengths(subjects)
 
     @model_validator(mode="after")
     def _age_matches_grade_when_both_sent(self) -> "ProfileUpdateRequest":
