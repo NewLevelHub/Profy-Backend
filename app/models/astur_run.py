@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, func, text
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, String, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -64,6 +64,10 @@ class AsturRun(Base):
     subtest_timings_ms: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     # {subtest_key: ISO timestamp} — server clock anchor of each subtest timer.
     subtest_started_at: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    # Monotonic generation for start/reset ordering. A confirmed reset bumps
+    # it, so a /start request created before that reset cannot recreate the
+    # timer merely because its transaction obtains the row lock afterwards.
+    state_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     # {"1".."N": {"answer", "elapsed_ms", "over_limit", "answered_at"}}
     lability_answers: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     # IANA timezone reported with the quick-instructions block.

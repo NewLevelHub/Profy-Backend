@@ -113,6 +113,10 @@ class ResultPatchInvalidError(Exception):
     """Well-formed patch that doesn't fit the stored result → 422."""
 
 
+class ResultNotReadyForPublishError(Exception):
+    """A draft is valid to save, but lacks required student-facing content."""
+
+
 async def _require_assigned_student(
     db: AsyncSession,
     *,
@@ -1290,6 +1294,10 @@ async def _publish(
 ) -> PsychologistResultDetailResponse:
     if analysis.review_status == ReviewStatus.published:
         raise ResultAlreadyPublishedError(i18n_key("api_errors", "result_is_already_published", locale="ru"))
+    if not _is_ready_for_publication(analysis):
+        raise ResultNotReadyForPublishError(
+            i18n_key("api_errors", "result_not_ready_for_publish")
+        )
     now = datetime.now(timezone.utc)
     analysis.review_status = ReviewStatus.published
     analysis.published_by = publisher_id
@@ -1321,6 +1329,45 @@ async def _publish(
     await _drop_report_cache(analysis.assessment_id)
     await _notify_result_published(db, analysis.assessment_id)
     return detail
+
+
+def _is_ready_for_publication(analysis: AnalysisResult) -> bool:
+    """Keep incomplete content saveable as a draft, but never expose it.
+
+    Big Five-derived sections may legitimately be absent for reports created
+    after that test was retired. The three collections below are produced by
+    every current RIASEC report and form the minimum useful student report.
+    """
+
+    def non_blank(value: Any) -> bool:
+        return isinstance(value, str) and bool(value.strip())
+
+    careers = analysis.careers
+    strength_cards = analysis.strength_cards
+    motivation = analysis.motivation_highlights
+    return (
+        non_blank(analysis.summary)
+        and non_blank(analysis.final_analysis)
+        and isinstance(careers, list)
+        and bool(careers)
+        and all(
+            isinstance(career, dict)
+            and non_blank(career.get("slug"))
+            and non_blank(career.get("name"))
+            for career in careers
+        )
+        and isinstance(strength_cards, list)
+        and bool(strength_cards)
+        and all(
+            isinstance(card, dict)
+            and non_blank(card.get("title"))
+            and non_blank(card.get("description"))
+            for card in strength_cards
+        )
+        and isinstance(motivation, list)
+        and bool(motivation)
+        and all(non_blank(item) for item in motivation)
+    )
 
 
 async def _drop_report_cache(assessment_id: uuid.UUID) -> None:

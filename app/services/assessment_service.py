@@ -1,19 +1,51 @@
 import uuid
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.i18n.catalog import key as i18n_key
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import Profile
-from app.models.question import Question
+from app.models.question import Question, active_question_clause
 from app.models.user_response import UserResponse
 from app.schemas.assessment import AssessmentResponse, SavedAnswersResponse, SavedMotivationAnswer
 from app.schemas.response import AnswerItem, SubmitAnswersResponse
-from app.services import assessment_shared, belbin_service, motivation_service, question_pair_service
+from app.services import (
+    answer_validation,
+    assessment_shared,
+    belbin_service,
+    motivation_service,
+    question_pair_service,
+)
 from app.services.astur import runs as astur_runs
+
+
+_SINGLE_ACTIVE_INDEX = "uq_assessments_profile_single_active"
+
+
+async def _get_in_progress_assessment(
+    profile_id: uuid.UUID, db: AsyncSession
+) -> Assessment | None:
+    result = await db.execute(
+        select(Assessment).where(
+            Assessment.profile_id == profile_id,
+            Assessment.status == AssessmentStatus.in_progress,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+def _is_single_active_violation(exc: IntegrityError) -> bool:
+    """Recognize the partial unique index through asyncpg's wrappers."""
+    current: BaseException | None = exc.orig
+    while current is not None:
+        if getattr(current, "constraint_name", None) == _SINGLE_ACTIVE_INDEX:
+            return True
+        current = current.__cause__
+    return _SINGLE_ACTIVE_INDEX in str(exc.orig)
 
 
 async def _to_response(assessment: Assessment, db: AsyncSession) -> AssessmentResponse:
@@ -50,13 +82,7 @@ async def create_assessment(
     if profile is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "profile_not_found", locale="ru"))
 
-    existing_result = await db.execute(
-        select(Assessment).where(
-            Assessment.profile_id == profile_id,
-            Assessment.status == AssessmentStatus.in_progress,
-        )
-    )
-    existing = existing_result.scalar_one_or_none()
+    existing = await _get_in_progress_assessment(profile_id, db)
     if existing is not None:
         # Discard, don't relabel: stamping an abandoned, possibly-incomplete
         # attempt as `completed` made that status lie — everything else in
@@ -68,10 +94,13 @@ async def create_assessment(
         # status said completed, but no AnalysisResult could ever be built.
         # Deleting cascades to its UserResponse/MotivationResponse
         # rows (all FK ondelete="CASCADE") — same
-        # "discard stale artifacts on a fresh start" pattern retake
-        # invalidation already uses elsewhere in this codebase.
-        await db.delete(existing)
-        await db.commit()
+        # A full retake starts from a new row; completed assessments and their
+        # reviewed reports remain immutable.
+        # Execute now so the old row leaves the partial unique index before
+        # the replacement INSERT, but do not commit: replacement remains one
+        # atomic transaction. A Core DELETE also tolerates the other racer
+        # having removed the same row while this request waited on its lock.
+        await db.execute(delete(Assessment).where(Assessment.id == existing.id))
 
     assessment = Assessment(
         profile_id=profile_id,
@@ -79,7 +108,24 @@ async def create_assessment(
         status=AssessmentStatus.in_progress,
     )
     db.add(assessment)
-    await db.commit()
+    try:
+        # Deleting an abandoned attempt and inserting its replacement is one
+        # atomic state transition. The partial unique index is the final
+        # arbiter when two /start requests race: exactly one insert wins.
+        await db.commit()
+    except IntegrityError as exc:
+        await db.rollback()
+        if not _is_single_active_violation(exc):
+            raise
+
+        # A concurrent request created the active attempt first. Return that
+        # winner so both callers receive a usable, identical assessment ID
+        # instead of leaking the database conflict as HTTP 500.
+        winner = await _get_in_progress_assessment(profile_id, db)
+        if winner is None:
+            raise
+        return await _to_response(winner, db)
+
     await db.refresh(assessment)
     return await _to_response(assessment, db)
 
@@ -87,13 +133,7 @@ async def create_assessment(
 async def get_current_assessment(profile_id: uuid.UUID, db: AsyncSession) -> AssessmentResponse | None:
     # Prefer in-progress; fall back to most recent completed so the frontend
     # can restore state after logout without losing the completed assessment.
-    result = await db.execute(
-        select(Assessment).where(
-            Assessment.profile_id == profile_id,
-            Assessment.status == AssessmentStatus.in_progress,
-        )
-    )
-    assessment = result.scalar_one_or_none()
+    assessment = await _get_in_progress_assessment(profile_id, db)
     if assessment is None:
         result = await db.execute(
             select(Assessment)
@@ -122,7 +162,12 @@ async def get_saved_answers(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
 
     rows = await db.execute(
-        select(UserResponse.question_id, UserResponse.answer_value).where(UserResponse.assessment_id == assessment_id)
+        select(UserResponse.question_id, UserResponse.answer_value)
+        .join(Question, Question.id == UserResponse.question_id)
+        .where(
+            UserResponse.assessment_id == assessment_id,
+            active_question_clause(),
+        )
     )
     scale_values, pair_picks = await question_pair_service.split_saved_values(
         {question_id: value for question_id, value in rows.all()}, db
@@ -152,18 +197,25 @@ async def submit_answers(
     if assessment.profile_id != current_profile_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
 
+    assessment_shared.ensure_assessment_accepts_answers(assessment)
 
     question_ids = [item.question_id for item in answers]
-    questions_result = await db.execute(select(Question.id).where(Question.id.in_(question_ids)))
-    valid_ids = set(questions_result.scalars().all())
+    questions_result = await db.execute(
+        select(Question.id, Question.instrument).where(
+            Question.id.in_(question_ids),
+            active_question_clause(),
+        )
+    )
+    instruments_by_id = dict(questions_result.all())
     for item in answers:
-        if item.question_id not in valid_ids:
+        instrument = instruments_by_id.get(item.question_id)
+        if instrument is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=i18n_key("api_errors", "question_id_not_found", locale="ru").format(question_id=item.question_id),
             )
+        answer_validation.validate_answer_value(instrument, item.value)
 
-    is_retake = assessment.status == AssessmentStatus.completed
     if answers:
         stmt = pg_insert(UserResponse).values([
             {
@@ -180,19 +232,14 @@ async def submit_answers(
         )
         await db.execute(stmt)
 
-    if is_retake:
-        assessment.status = AssessmentStatus.in_progress
-        assessment.completed_at = None
-        redis = assessment_shared.get_redis()
-        await assessment_shared.invalidate_retake(assessment, db, redis)
-
     answered = await assessment_shared.likert_answered_count(assessment_id, db)
     total = await assessment_shared.likert_total_questions(db)
-    # This phase (Likert) being done does NOT mean the whole test is done —
-    # the motivation phase may still be pending. assessment.status only
-    # flips to completed once motivation_service.submit_motivation_answers
-    # confirms both phases are answered (see that function).
+    # This phase being done does not mean the whole test is done. The shared
+    # reconciliation below checks Motivation, Belbin and ASTUR too, so the
+    # assessment can complete regardless of which required phase arrives last.
     completed = total > 0 and answered >= total
+
+    await assessment_shared.try_complete_assessment_if_ready(assessment, db)
 
     await db.commit()
 

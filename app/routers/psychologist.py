@@ -38,6 +38,7 @@ from app.schemas.psychologist_result import (
 from app.services import extended_block_service, psychologist_service
 from app.services.psychologist_service import (
     ResultAlreadyPublishedError,
+    ResultNotReadyForPublishError,
     ResultPatchInvalidError,
 )
 
@@ -157,6 +158,8 @@ async def publish_result(
         )
     except ResultAlreadyPublishedError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except ResultNotReadyForPublishError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 

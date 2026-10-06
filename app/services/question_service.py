@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.i18n import pick_locale
-from app.models.question import Question, QuestionInstrument
+from app.models.question import Question, QuestionInstrument, active_question_clause
 from app.schemas.question import QuestionResponse
 def _bigfive_scale(question: Question) -> bool:
     return question.instrument == QuestionInstrument.big_five
@@ -39,7 +39,7 @@ async def get_all_questions(
     """The Likert battery for one assessment."""
     result = await db.execute(
         select(Question)
-        .where(Question.instrument != QuestionInstrument.big_five)
+        .where(active_question_clause())
         .order_by(Question.order)
     )
     questions = list(result.scalars().all())

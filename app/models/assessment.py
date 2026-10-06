@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -23,6 +23,14 @@ class AssessmentStatus(str, enum.Enum):
 
 class Assessment(Base):
     __tablename__ = "assessments"
+    __table_args__ = (
+        Index(
+            "uq_assessments_profile_single_active",
+            "profile_id",
+            unique=True,
+            postgresql_where=text("status = 'in_progress'"),
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4

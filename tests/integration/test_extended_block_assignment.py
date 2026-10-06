@@ -48,7 +48,7 @@ async def test_psychologist_assigns_a_block_and_student_sees_it(
     assert resp.json()["block"] == "belbin"
     assert resp.json()["completed"] is False
 
-    student_headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(test_user.id)}"}
+    student_headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(test_user)}"}
     resp2 = await client.get(
         f"/api/v1/assessment/{assessment.id}/extended-blocks",
         headers=student_headers,
@@ -78,7 +78,7 @@ async def test_assigning_twice_is_idempotent(
         )
         assert resp.status_code == 201
 
-    student_headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(test_user.id)}"}
+    student_headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(test_user)}"}
     resp = await client.get(
         f"/api/v1/assessment/{assessment.id}/extended-blocks", headers=student_headers,
     )
@@ -105,7 +105,7 @@ async def test_completed_flag_reflects_a_real_belbin_run(
     ))
     await db_session.flush()
 
-    student_headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(test_user.id)}"}
+    student_headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(test_user)}"}
     resp = await client.get(
         f"/api/v1/assessment/{assessment.id}/extended-blocks", headers=student_headers,
     )
@@ -134,7 +134,7 @@ async def test_astur_completed_requires_all_scored_subtests_not_just_any_row(
     ))
     await db_session.flush()
 
-    student_headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(test_user.id)}"}
+    student_headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(test_user)}"}
     resp = await client.get(
         f"/api/v1/assessment/{assessment.id}/extended-blocks", headers=student_headers,
     )
@@ -159,7 +159,7 @@ async def test_a_different_student_cannot_see_another_students_assignments(
     other = User(email=f"{uuid.uuid4()}@example.com", hashed_password="x", is_active=True, is_verified=True)
     db_session.add(other)
     await db_session.flush()
-    other_headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(other.id)}"}
+    other_headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(other)}"}
 
     resp = await client.get(
         f"/api/v1/assessment/{assessment.id}/extended-blocks", headers=other_headers,

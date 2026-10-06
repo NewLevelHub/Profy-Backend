@@ -1,3 +1,7 @@
+import hashlib
+import hmac
+import logging
+
 import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,6 +29,7 @@ from app.schemas.auth import (
 from app.services import auth_service, oauth_service, password_reset_service
 
 router = APIRouter(tags=["auth"])
+logger = logging.getLogger(__name__)
 
 _redis: aioredis.Redis | None = None
 
@@ -38,6 +43,18 @@ _FORGOT_EMAIL_LIMIT = 3
 _FORGOT_EMAIL_WINDOW = 600
 _REGISTER_IP_LIMIT = 5
 _REGISTER_IP_WINDOW = 600      # 10 минут
+_LOGIN_IP_LIMIT = 30
+_LOGIN_IP_WINDOW = 900
+_LOGIN_EMAIL_LIMIT = 5
+_LOGIN_EMAIL_WINDOW = 900
+
+_RATE_LIMIT_SCRIPT = """
+local count = redis.call('INCR', KEYS[1])
+if count == 1 then
+    redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+return {count, redis.call('TTL', KEYS[1])}
+"""
 
 
 def _get_redis() -> aioredis.Redis:
@@ -51,16 +68,78 @@ def _client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-async def _check_rate_limit(key: str, limit: int, window: int) -> None:
+def _login_rate_key(scope: str, value: str) -> str:
+    """Build a stable Redis key without retaining an email or IP as PII."""
+    digest = hmac.new(
+        settings.SECRET_KEY.encode("utf-8"),
+        f"{scope}:{value}".encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+    return f"login_{scope}:{digest}"
+
+
+def _login_email_rate_key(email: str) -> str:
+    return _login_rate_key("email", str(email).strip().lower())
+
+
+def _login_ip_rate_key(ip: str) -> str:
+    return _login_rate_key("ip", ip)
+
+
+async def _increment_rate_limit(key: str, window: int) -> tuple[int, int]:
     redis = _get_redis()
-    count = await redis.incr(key)
-    if count == 1:
-        await redis.expire(key, window)
+    # INCR and first-key expiry must be atomic. Otherwise a worker stopping
+    # between the two commands can leave a permanent lockout key behind.
+    count, ttl = await redis.eval(_RATE_LIMIT_SCRIPT, 1, key, window)
+    return int(count), int(ttl)
+
+
+def _raise_rate_limit(scope: str, count: int, ttl: int) -> None:
+    retry_after = max(ttl, 1)
+    logger.warning(
+        "Authentication rate limit exceeded: scope=%s count=%s retry_after=%s",
+        scope,
+        count,
+        retry_after,
+    )
+    raise HTTPException(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        detail=i18n_key("api_errors", "rate_limit_exceeded"),
+        headers={"Retry-After": str(retry_after)},
+    )
+
+
+async def _check_rate_limit(
+    key: str,
+    limit: int,
+    window: int,
+    *,
+    scope: str = "auth",
+) -> None:
+    count, ttl = await _increment_rate_limit(key, window)
     if count > limit:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=i18n_key("api_errors", "rate_limit_exceeded", locale="ru"),
-        )
+        _raise_rate_limit(scope, count, ttl)
+
+
+async def _reject_if_rate_limited(key: str, limit: int, *, scope: str) -> None:
+    redis = _get_redis()
+    count = await redis.get(key)
+    if count is None or int(count) < limit:
+        return
+    _raise_rate_limit(scope, int(count), int(await redis.ttl(key)))
+
+
+async def _record_login_failure(ip_key: str, email_key: str) -> None:
+    # Both dimensions are recorded even when one of them crosses its limit,
+    # so a concurrent burst cannot evade the other limiter.
+    ip_count, ip_ttl = await _increment_rate_limit(ip_key, _LOGIN_IP_WINDOW)
+    email_count, email_ttl = await _increment_rate_limit(
+        email_key, _LOGIN_EMAIL_WINDOW
+    )
+    if ip_count > _LOGIN_IP_LIMIT:
+        _raise_rate_limit("login_ip", ip_count, ip_ttl)
+    if email_count > _LOGIN_EMAIL_LIMIT:
+        _raise_rate_limit("login_email", email_count, email_ttl)
 
 
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
@@ -78,10 +157,29 @@ async def register(body: RegisterRequest, request: Request, db: AsyncSession = D
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
+async def login(
+    body: LoginRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    client_ip = _client_ip(request)
+    ip_rate_key = _login_ip_rate_key(client_ip)
+    email_rate_key = _login_email_rate_key(body.email)
+    await _reject_if_rate_limited(
+        ip_rate_key,
+        _LOGIN_IP_LIMIT,
+        scope="login_ip",
+    )
+    await _reject_if_rate_limited(
+        email_rate_key,
+        _LOGIN_EMAIL_LIMIT,
+        scope="login_email",
+    )
+
     try:
         user, token = await auth_service.login(body.email, body.password, db)
     except PermissionError as exc:
+        await _record_login_failure(ip_rate_key, email_rate_key)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc))
     except LookupError as exc:
         kind, email = str(exc).split(":", 1)
@@ -90,6 +188,11 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
             detail={"detail": kind, "email": email},
         )
 
+    # The account counter represents consecutive unsuccessful attempts. The
+    # IP counter already contains failures only and is deliberately retained,
+    # so rotating through many accounts cannot bypass credential-stuffing
+    # protection. Successful logins never consume the shared IP budget.
+    await _get_redis().delete(email_rate_key)
     return TokenResponse(access_token=token, user=user)
 
 

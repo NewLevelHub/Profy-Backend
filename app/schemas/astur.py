@@ -139,6 +139,9 @@ class AsturRunSummary(BaseModel):
     # First server start for every currently unfinished subtest. The client
     # resumes its countdown from this anchor after a reload.
     subtest_started_at: dict[str, str]
+    # Monotonic start/reset generation. Clients echo it in both operations;
+    # reset increments it and thereby invalidates an older in-flight start.
+    state_version: int
 
 
 class AsturStateResponse(BaseModel):
@@ -147,6 +150,9 @@ class AsturStateResponse(BaseModel):
     `completed` (the attempt is finished and can't be reopened)."""
 
     status: Literal["not_started", "in_progress", "completed"]
+    # Clock sample produced with this state snapshot. The client combines it
+    # with performance.now(), never its mutable wall clock, for countdowns.
+    server_now: datetime
     active_run: AsturRunSummary | None = None
     latest_completed_run: AsturRunSummary | None = None
 
@@ -182,6 +188,9 @@ class AsturAttemptResponse(BaseModel):
 
 class StartAsturSubtestRequest(BaseModel):
     run_id: uuid.UUID
+    # Default keeps fresh attempts compatible with clients deployed before
+    # PROFY-015; after the first reset those clients cannot start stale work.
+    state_version: int = Field(default=0, ge=0)
 
     model_config = {"extra": "forbid"}
 
@@ -190,10 +199,13 @@ class StartAsturSubtestResponse(BaseModel):
     run_id: uuid.UUID
     subtest: str
     started_at: str  # ISO 8601, server clock — the timer engine's anchor
+    server_now: datetime
+    state_version: int
 
 
 class ResetAsturSubtestRequest(BaseModel):
     run_id: uuid.UUID
+    state_version: int = Field(default=0, ge=0)
 
     model_config = {"extra": "forbid"}
 
@@ -201,6 +213,7 @@ class ResetAsturSubtestRequest(BaseModel):
 class ResetAsturSubtestResponse(BaseModel):
     run_id: uuid.UUID
     subtest: str
+    state_version: int
 
 
 class AsturItemAnswer(BaseModel):

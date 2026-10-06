@@ -152,7 +152,7 @@ async def test_foreign_note_returns_404(
     db_session.add(other)
     await db_session.flush()
     other_headers = {
-        "Authorization": f"Bearer {auth_service.create_jwt_token(other.id)}"
+        "Authorization": f"Bearer {auth_service.create_jwt_token(other)}"
     }
 
     await assign(db_session, psychologist_user, test_user)

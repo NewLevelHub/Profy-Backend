@@ -18,7 +18,7 @@ from sqlalchemy.orm import aliased
 
 from app.i18n.catalog import key as i18n_key
 from app.i18n import pick_locale
-from app.models.assessment import Assessment, AssessmentStatus
+from app.models.assessment import Assessment
 from app.models.question import Question, QuestionInstrument
 from app.models.question_pair import QuestionPair
 from app.models.user_response import UserResponse
@@ -124,6 +124,7 @@ async def submit_pair_answers(
     if assessment.profile_id != current_profile_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
 
+    assessment_shared.ensure_assessment_accepts_answers(assessment)
 
     pair_indexes = [item.pair_index for item in answers]
     pairs_result = await db.execute(
@@ -157,7 +158,6 @@ async def submit_pair_answers(
             "question_id": other_id, "answer_value": _OTHER_VALUE,
         })
 
-    is_retake = assessment.status == AssessmentStatus.completed
     if response_rows:
         stmt = pg_insert(UserResponse).values(response_rows)
         stmt = stmt.on_conflict_do_update(
@@ -166,18 +166,13 @@ async def submit_pair_answers(
         )
         await db.execute(stmt)
 
-    if is_retake:
-        assessment.status = AssessmentStatus.in_progress
-        assessment.completed_at = None
-        redis = assessment_shared.get_redis()
-        await assessment_shared.invalidate_retake(assessment, db, redis)
-
     answered = await assessment_shared.likert_answered_count(assessment_id, db)
     total = await assessment_shared.likert_total_questions(db)
-    # Same caveat as assessment_service.submit_answers: this phase being done
-    # does not flip assessment.status — motivation_service does that once
-    # both phases are confirmed answered.
+    # Same caveat as assessment_service.submit_answers: this phase alone does
+    # not complete the assessment. Reconciliation checks every required phase.
     completed = total > 0 and answered >= total
+
+    await assessment_shared.try_complete_assessment_if_ready(assessment, db)
 
     await db.commit()
 

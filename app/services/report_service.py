@@ -66,7 +66,7 @@ logger = logging.getLogger(__name__)
 CACHE_TTL = 60 * 60 * 24  # 24 hours
 
 # The owner-locale pointer (`_resolve_owner_locale`) is a cheap 2-join query to
-# recompute, and its invalidation on retake / PATCH /auth/me is best-effort
+# recompute, and its invalidation on report edits / PATCH /auth/me is best-effort
 # (`safe_redis_delete` swallows RedisError). A short TTL bounds how long a
 # silently-missed delete can keep `/result` pointed at the previous language —
 # instead of the full 24h report TTL — while still being long enough that the
@@ -83,9 +83,8 @@ def _get_redis() -> aioredis.Redis:
     return _redis
 
 
-# Cache key itself lives in assessment_shared (report_cache_key) so the one
-# place that invalidates it on retake (invalidate_retake) can never drift
-# from the key this module reads/writes.
+# Cache key itself lives in assessment_shared so all readers and explicit
+# invalidation paths use the same versioned key.
 _cache_key = assessment_shared.report_cache_key
 
 

@@ -38,7 +38,7 @@ async def _auth(db: AsyncSession) -> tuple[User, Assessment, dict]:
     assessment = Assessment(profile_id=profile.id, goal=AssessmentGoal.explore)
     db.add(assessment)
     await db.flush()
-    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user.id)}"}
+    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user)}"}
     return user, assessment, headers
 
 
@@ -92,23 +92,24 @@ async def test_finish_completes_the_same_row(
     assert run.thresholds_version is None
 
 
-async def test_repeat_start_appends_a_second_row(
+async def test_repeat_start_returns_the_same_pending_run(
     client: AsyncClient, db_session: AsyncSession
 ) -> None:
     _, assessment, headers = await _auth(db_session)
 
-    await _start(client, assessment.id, headers)
-    await _start(client, assessment.id, headers)
+    first_id = await _start(client, assessment.id, headers)
+    second_id = await _start(client, assessment.id, headers)
 
     rows = (await db_session.execute(
         select(PsychoEmotionalRun).where(
             PsychoEmotionalRun.assessment_id == assessment.id
         )
     )).scalars().all()
-    assert len(rows) == 2  # append-only, no overwrite
+    assert first_id == second_id
+    assert [str(row.id) for row in rows] == [first_id]
 
 
-async def test_finish_twice_is_404_on_the_second_call(
+async def test_finish_retry_with_the_same_payload_is_idempotent(
     client: AsyncClient, db_session: AsyncSession
 ) -> None:
     _, assessment, headers = await _auth(db_session)
@@ -119,7 +120,62 @@ async def test_finish_twice_is_404_on_the_second_call(
     assert first.status_code == 200
 
     second = await client.post(url, json=_FINISH_PAYLOAD, headers=headers)
-    assert second.status_code == 404
+    assert second.status_code == 200
+    assert second.json() == first.json()
+
+
+async def test_finish_retry_with_different_payload_is_409(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await _auth(db_session)
+    run_id = await _start(client, assessment.id, headers)
+    url = f"/api/v1/assessment/{assessment.id}/psychoemotional/{run_id}/finish"
+    assert (await client.post(url, json=_FINISH_PAYLOAD, headers=headers)).status_code == 200
+
+    changed = {
+        "list2": list(reversed(_LIST2)),
+        "list2_dt_ms": _DT,
+    }
+    response = await client.post(url, json=changed, headers=headers)
+    assert response.status_code == 409
+
+
+async def test_start_after_completion_appends_a_new_pending_run(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await _auth(db_session)
+    first_id = await _start(client, assessment.id, headers)
+    finish_url = f"/api/v1/assessment/{assessment.id}/psychoemotional/{first_id}/finish"
+    assert (await client.post(finish_url, json=_FINISH_PAYLOAD, headers=headers)).status_code == 200
+
+    second_id = await _start(client, assessment.id, headers)
+    assert second_id != first_id
+    rows = (await db_session.execute(
+        select(PsychoEmotionalRun).where(
+            PsychoEmotionalRun.assessment_id == assessment.id
+        )
+    )).scalars().all()
+    assert len(rows) == 2
+
+
+async def test_current_reports_not_started_pending_and_completed(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await _auth(db_session)
+    url = f"/api/v1/assessment/{assessment.id}/psychoemotional/current"
+
+    response = await client.get(url, headers=headers)
+    assert response.status_code == 200
+    assert response.json() == {"run_id": None, "status": "not_started"}
+
+    run_id = await _start(client, assessment.id, headers)
+    response = await client.get(url, headers=headers)
+    assert response.json() == {"run_id": run_id, "status": "pending"}
+
+    finish_url = f"/api/v1/assessment/{assessment.id}/psychoemotional/{run_id}/finish"
+    assert (await client.post(finish_url, json=_FINISH_PAYLOAD, headers=headers)).status_code == 200
+    response = await client.get(url, headers=headers)
+    assert response.json() == {"run_id": run_id, "status": "completed"}
 
 
 async def test_finish_unknown_run_is_404(

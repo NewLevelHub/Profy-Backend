@@ -134,7 +134,9 @@ async def test_get_report_signals_locale_not_generated_vs_not_found(
     profile_a = (await db_session.execute(
         select(Profile).where(Profile.id == assessment_a.profile_id)
     )).scalar_one()
-    headers_a = {"Authorization": f"Bearer {auth_service.create_jwt_token(profile_a.user_id)}"}
+    user_a = await db_session.get(User, profile_a.user_id)
+    assert user_a is not None
+    headers_a = {"Authorization": f"Bearer {auth_service.create_jwt_token(user_a)}"}
     await db_session.commit()
 
     r = await client.get(f"/api/v1/result/{assessment_a.id}", headers=headers_a)
@@ -145,7 +147,7 @@ async def test_get_report_signals_locale_not_generated_vs_not_found(
 
     # (b) a ru row exists, owner is now kk -> 404 with the KZ-406 code
     assessment_b, user_b = await _senior_ru_then_kk(db_session, monkeypatch)
-    headers_b = {"Authorization": f"Bearer {auth_service.create_jwt_token(user_b.id)}"}
+    headers_b = {"Authorization": f"Bearer {auth_service.create_jwt_token(user_b)}"}
     await db_session.commit()
 
     # PRO-337: while the ru report waits for psychologist review it is hidden

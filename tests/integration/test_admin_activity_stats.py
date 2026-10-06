@@ -33,7 +33,7 @@ async def admin_headers(db_session: AsyncSession) -> dict[str, str]:
     )
     db_session.add(admin)
     await db_session.flush()
-    return {"Authorization": f"Bearer {auth_service.create_jwt_token(admin.id)}"}
+    return {"Authorization": f"Bearer {auth_service.create_jwt_token(admin)}"}
 
 
 async def _user(db: AsyncSession, *, marker: str = "", last_active_at=None) -> User:
@@ -76,7 +76,7 @@ async def test_an_authenticated_request_records_the_user_as_seen(
 ) -> None:
     user = await _user(db_session)
     assert user.last_active_at is None
-    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user.id)}"}
+    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user)}"}
 
     response = await client.get("/api/v1/profile", headers=headers)
 
@@ -93,7 +93,7 @@ async def test_a_fresh_timestamp_is_not_rewritten_on_every_request(
     feeds are all day-scale."""
     recent = datetime.now(timezone.utc) - ACTIVITY_REFRESH_INTERVAL / 2
     user = await _user(db_session, last_active_at=recent)
-    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user.id)}"}
+    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user)}"}
 
     await client.get("/api/v1/profile", headers=headers)
 
@@ -106,7 +106,7 @@ async def test_a_stale_timestamp_is_refreshed(
 ) -> None:
     stale = datetime.now(timezone.utc) - ACTIVITY_REFRESH_INTERVAL * 3
     user = await _user(db_session, last_active_at=stale)
-    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user.id)}"}
+    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user)}"}
 
     await client.get("/api/v1/profile", headers=headers)
 

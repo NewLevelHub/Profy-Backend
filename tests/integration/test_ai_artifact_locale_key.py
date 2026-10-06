@@ -225,7 +225,7 @@ async def test_patch_auth_me_locale_change_clears_the_owner_locale_cache(
     assert await redis.get(loc_key) == "ru"
     assert await redis.get(ru_report_key) is not None
 
-    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user.id)}"}
+    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user)}"}
     r = await client.patch("/api/v1/auth/me", json={"locale": "kk"}, headers=headers)
     assert r.status_code == 200
 

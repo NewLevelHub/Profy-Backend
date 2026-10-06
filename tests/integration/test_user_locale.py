@@ -121,7 +121,7 @@ async def test_profile_create_flips_autoseeded_kk_to_ru_when_language_is_russian
     )
     db_session.add(user)
     await db_session.flush()
-    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user.id)}"}
+    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user)}"}
 
     payload = {**_PROFILE_PAYLOAD, "language": "русский"}
     created = await client.post("/api/v1/profile", json=payload, headers=headers)

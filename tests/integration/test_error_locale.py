@@ -83,7 +83,7 @@ async def test_unfinished_assessment_error_carries_code_and_unchanged_detail(
     await db_session.flush()
     await db_session.commit()
 
-    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user.id)}"}
+    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(user)}"}
     resp = await client.post(
         "/api/v1/result/generate",
         json={"assessment_id": str(assessment.id)},

@@ -1,8 +1,9 @@
-"""Belbin BTRSPI submit contract (PRO-338 Ф2.4). One-shot submission —
-unlike psychoemotional's checkin/circle1/circle2 two-phase contract, Belbin
-has no natural "before/after the main battery" split (Ф2.3's own decision
-not to mirror that structure), so the whole 7-block allocation is sent and
-scored in a single call."""
+"""Belbin BTRSPI contracts (PRO-338 Ф2.4 / PROFY-012).
+
+Each block, including unspent points, can be stored as a draft and restored on
+another client. Scoring remains a separate one-shot submission of all seven
+blocks, so partial progress can never be mistaken for a completed run.
+"""
 import uuid
 
 from pydantic import BaseModel, Field
@@ -20,6 +21,22 @@ class SubmitBelbinRequest(BaseModel):
 class SubmitBelbinResponse(BaseModel):
     run_id: uuid.UUID
     role_totals: dict[str, int]
+
+
+class SaveBelbinProgressRequest(BaseModel):
+    allocation: dict[str, int]
+
+    model_config = {"extra": "forbid"}
+
+
+class BelbinProgressBlock(BaseModel):
+    block_index: int
+    allocation: dict[str, int]
+
+
+class BelbinProgressResponse(BaseModel):
+    completed: bool
+    blocks: list[BelbinProgressBlock]
 
 
 class BelbinContentItem(BaseModel):

@@ -8,10 +8,9 @@ abandoned attempt was then permanently stuck: `status=completed` but no
 `AnalysisResult` could ever be built for it, since the real completion
 check correctly rejected it — `/result` 409'd on generate and 404'd on GET.
 
-Fix: `create_assessment()` now deletes an abandoned incomplete `in_progress`
-assessment instead of relabeling it — matching the "discard stale
-artifacts on a fresh start" pattern retake invalidation already uses
-elsewhere (assessment_shared.invalidate_retake).
+Fix: `create_assessment()` deletes an abandoned incomplete `in_progress`
+assessment instead of relabeling it. Completed assessments remain immutable;
+a full retake is represented by the newly created row.
 """
 import uuid
 
