@@ -105,6 +105,72 @@ def compensation_index(list2: list[int]) -> dict:
     }
 
 
+def choice_analysis(colors: list[int]) -> dict:
+    """Разметка одного из двух цветовых выборов для полного протокола.
+
+    Итоговые индексы по-прежнему считаются по второму, более спонтанному
+    выбору.  Но первый ряд нельзя терять: сопоставление двух разметок
+    показывает, сохраняются ли тревожные и компенсаторные позиции либо они
+    возникли только в одном предъявлении.
+    """
+    anxiety = anxiety_index(colors)
+    compensation = compensation_index(colors)
+    return {
+        "anxiety": anxiety,
+        "compensation": compensation,
+    }
+
+
+def functional_groups(list1: list[int], list2: list[int]) -> list[dict]:
+    """Группы второго выбора с учётом устойчивых пар первого выбора.
+
+    Пара сохраняется как единая группа, если её цвета вновь стоят рядом
+    (порядок внутри пары может поменяться). Расщепившиеся пары показываются
+    отдельными цветами. Функциональный знак определяется фактической зоной
+    второго ряда; это не меняет классические четыре позиционные пары, а даёт
+    отдельный слой анализа устойчивости МЦВ.
+    """
+    pos2 = _positions(list2)
+    stable_pair_by_color: dict[int, frozenset[int]] = {}
+    for left, right in (list1[0:2], list1[2:4], list1[4:6], list1[6:8]):
+        if abs(pos2[left] - pos2[right]) == 1:
+            pair = frozenset((left, right))
+            stable_pair_by_color[left] = pair
+            stable_pair_by_color[right] = pair
+
+    def sign_for_position(position: float) -> str:
+        if position <= 2:
+            return SIGN_PLUS
+        if position <= 4:
+            return SIGN_CROSS
+        if position <= 6:
+            return SIGN_EQUAL
+        return SIGN_MINUS
+
+    groups: list[dict] = []
+    used: set[int] = set()
+    for color_id in list2:
+        if color_id in used:
+            continue
+        stable_pair = stable_pair_by_color.get(color_id)
+        if stable_pair is None:
+            colors = [color_id]
+            stable = False
+        else:
+            colors = [candidate for candidate in list2 if candidate in stable_pair]
+            stable = True
+        used.update(colors)
+        mean_position = sum(pos2[candidate] for candidate in colors) / len(colors)
+        groups.append(
+            {
+                "sign": sign_for_position(mean_position),
+                "colors": colors,
+                "stable": stable,
+            }
+        )
+    return groups
+
+
 def so_deviation(list2: list[int]) -> int:
     """§6.6 — СО = Σ|позиция в списке 2 − позиция в аутогенной норме|,
     норма `3,4,2,5,1,6,0,7`. Диапазон 0–32, всегда чётное."""

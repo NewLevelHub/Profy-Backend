@@ -17,13 +17,21 @@
 """
 from app.i18n.catalog import tr
 from app.schemas.result_v2 import (
+    PsychoEmotionalConversationPrompt,
     PsychoEmotionalHighlight,
     PsychoEmotionalIndexNote,
     PsychoEmotionalInterpretation,
+    PsychoEmotionalMcvGroup,
     PsychoEmotionalPositionNote,
 )
 from app.services.psychoemotional.constants import BASIC_COLOR_IDS, BORDER_COLOR_ID, EXTRA_COLOR_IDS
-from app.services.psychoemotional.engine import SIGN_CROSS, SIGN_EQUAL, SIGN_MINUS, SIGN_PLUS
+from app.services.psychoemotional.engine import (
+    SIGN_CROSS,
+    SIGN_EQUAL,
+    SIGN_MINUS,
+    SIGN_PLUS,
+    functional_groups,
+)
 
 _SIGNS = (SIGN_PLUS, SIGN_CROSS, SIGN_EQUAL, SIGN_MINUS)
 
@@ -85,7 +93,9 @@ def _positions(pairs: dict, texts: dict) -> list[PsychoEmotionalPositionNote]:
     противоречие — в порядке «первый, последний» (оно направленное)."""
     notes = [
         PsychoEmotionalPositionNote(
-            sign=sign, colors=list(pairs[sign]), text=texts["pair"][sign]["".join(map(str, sorted(pairs[sign])))]
+            sign=sign,
+            colors=list(pairs[sign]),
+            text=texts["pair"][sign]["".join(map(str, sorted(pairs[sign])))],
         )
         for sign in _SIGNS
     ]
@@ -94,7 +104,57 @@ def _positions(pairs: dict, texts: dict) -> list[PsychoEmotionalPositionNote]:
     return notes
 
 
-def interpret(metrics: dict, list2: list[int]) -> PsychoEmotionalInterpretation:
+def _mcv_groups(list1: list[int], list2: list[int], texts: dict) -> list[PsychoEmotionalMcvGroup]:
+    """Тексты для отдельного слоя МЦВ: устойчивые пары и расщеплённые цвета."""
+    notes: list[PsychoEmotionalMcvGroup] = []
+    for group in functional_groups(list1, list2):
+        sign = group["sign"]
+        colors = group["colors"]
+        if len(colors) == 2:
+            key = "".join(map(str, sorted(colors)))
+            text = texts["pair"][sign][key]
+        else:
+            text = texts["single"][sign][str(colors[0])]
+        notes.append(
+            PsychoEmotionalMcvGroup(
+                sign=sign,
+                colors=colors,
+                stable=group["stable"],
+                text=text,
+            )
+        )
+    return notes
+
+
+def _conversation_prompts(
+    metrics: dict, list2: list[int], texts: dict
+) -> list[PsychoEmotionalConversationPrompt]:
+    """Два обязательных вопроса по полюсам выбора и вопросы по отклонённым индексам."""
+    prompts = [
+        PsychoEmotionalConversationPrompt(
+            key="leading",
+            text=texts["conversation"]["leading"][str(list2[0])],
+        ),
+        PsychoEmotionalConversationPrompt(
+            key="tension",
+            text=texts["conversation"]["tension"][str(list2[-1])],
+        ),
+    ]
+    normal_levels = {"low", "norm", "balance"}
+    for metric in ("anxiety", "so", "vk"):
+        level = metrics[metric]["level"]
+        if level in normal_levels:
+            continue
+        prompts.append(
+            PsychoEmotionalConversationPrompt(
+                key=f"{metric}_{level}",
+                text=texts["conversation"][metric][level],
+            )
+        )
+    return prompts
+
+
+def interpret(metrics: dict, list1: list[int], list2: list[int]) -> PsychoEmotionalInterpretation:
     """Метрики прохождения → гипотезы на языке запроса.
 
     Качество прохождения (флаг достоверности и причины) здесь не озвучивается:
@@ -124,4 +184,6 @@ def interpret(metrics: dict, list2: list[int]) -> PsychoEmotionalInterpretation:
         highlights=_highlights(pos, texts),
         indices=indices,
         positions=_positions(metrics["pairs"], texts),
+        mcv_groups=_mcv_groups(list1, list2, texts),
+        conversation_prompts=_conversation_prompts(metrics, list2, texts),
     )

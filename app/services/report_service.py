@@ -55,6 +55,7 @@ from app.services import (
 from app.services.bigfive_content import strength_phrases
 from app.services.motivation_content import highlight_phrases as motivation_highlight_phrases
 from app.services.psychoemotional import interpretation as psychoemotional_interpretation
+from app.services.psychoemotional import engine as psychoemotional_engine
 from app.services.psychoemotional import scoring as psychoemotional_scoring
 from app.services.report_narrative_service import (
     generate_report_narrative,
@@ -556,6 +557,27 @@ async def _build_psychoemotional_section(
     anxiety = m["anxiety"]
     compensation = m["compensation"]
 
+    def choice_analysis(round_number: int, colors: list[int]) -> dict:
+        analysis = psychoemotional_engine.choice_analysis(colors)
+        choice_anxiety = analysis["anxiety"]
+        choice_compensation = analysis["compensation"]
+        return {
+            "round": round_number,
+            "colors": colors,
+            "anxiety": {
+                "score": choice_anxiety["score"],
+                "level": psychoemotional_engine._anxiety_level(choice_anxiety["score"]),
+                "breakdown": {str(k): v for k, v in choice_anxiety["breakdown"].items()},
+            },
+            "compensation": {
+                "score": choice_compensation["score"],
+                "level": psychoemotional_engine._compensation_level(choice_compensation["score"]),
+                "breakdown": {str(k): v for k, v in choice_compensation["breakdown"].items()},
+                "purple_forward": choice_compensation["purple_forward"],
+                "purple_position": choice_compensation["purple_position"],
+            },
+        }
+
     history = [
         PsychoEmotionalHistoryItem(
             run_number=i + 1,
@@ -583,6 +605,10 @@ async def _build_psychoemotional_section(
         validity_reasons=list(latest.validity_reasons or []),
         choice_1=list(latest.list1),
         choice_2=list(latest.list2),
+        choice_analyses=[
+            choice_analysis(1, list(latest.list1)),
+            choice_analysis(2, list(latest.list2)),
+        ],
         d_value=m["d"]["value"],
         d_memory=m["d"]["memory"],
         d_situationally_unstable=m["d"]["situationally_unstable"],
@@ -614,7 +640,9 @@ async def _build_psychoemotional_section(
         vk_value=m["vk"]["value"],
         vk_level=m["vk"]["level"],
         black_first=list(latest.list2)[0] == 7,
-        interpretation=psychoemotional_interpretation.interpret(m, list(latest.list2)),
+        interpretation=psychoemotional_interpretation.interpret(
+            m, list(latest.list1), list(latest.list2)
+        ),
     )
 
 

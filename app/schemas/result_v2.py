@@ -149,12 +149,49 @@ class PsychoEmotionalIndexNote(BaseModel):
     model_config = _model_config
 
 
+class PsychoEmotionalChoiceAnalysis(BaseModel):
+    """Разметка одного предъявления: нужна для сравнения двух выборов."""
+
+    round: Literal[1, 2]
+    colors: list[int] = Field(min_length=8, max_length=8)
+    anxiety: PsychoEmotionalAnxiety
+    compensation: PsychoEmotionalCompensation
+    model_config = _model_config
+
+
+class PsychoEmotionalColorNote(BaseModel):
+    """Вклад отдельного цвета в смысл функциональной пары."""
+
+    color: int
+    text: str
+    model_config = _model_config
+
+
 class PsychoEmotionalPositionNote(BaseModel):
     """Толкование пары цветов функциональной группы в порядке списка 2;
     `plus_minus` — контраст [первый, последний] цвет без диагностического веса."""
 
     sign: Literal["plus", "cross", "equal", "minus", "plus_minus"]
     colors: list[int]
+    text: str
+    details: list[PsychoEmotionalColorNote] = Field(default_factory=list)
+    model_config = _model_config
+
+
+class PsychoEmotionalMcvGroup(BaseModel):
+    """Группа второго выбора после сопоставления с парами первого выбора."""
+
+    sign: Literal["plus", "cross", "equal", "minus"]
+    colors: list[int] = Field(min_length=1, max_length=2)
+    stable: bool
+    text: str
+    model_config = _model_config
+
+
+class PsychoEmotionalConversationPrompt(BaseModel):
+    """Вопрос для проверки гипотезы в беседе со специалистом."""
+
+    key: str
     text: str
     model_config = _model_config
 
@@ -168,6 +205,10 @@ class PsychoEmotionalInterpretation(BaseModel):
     highlights: list[PsychoEmotionalHighlight] = Field(default_factory=list)
     indices: list[PsychoEmotionalIndexNote] = Field(default_factory=list)
     positions: list[PsychoEmotionalPositionNote] = Field(default_factory=list)
+    mcv_groups: list[PsychoEmotionalMcvGroup] = Field(default_factory=list)
+    conversation_prompts: list[PsychoEmotionalConversationPrompt] = Field(
+        default_factory=list
+    )
     model_config = _model_config
 
 
@@ -222,6 +263,7 @@ class PsychoEmotionalSection(BaseModel):
     # Списки выбора (цвета по позициям) + расхождение D (§B5.7)
     choice_1: list[int]
     choice_2: list[int]
+    choice_analyses: list[PsychoEmotionalChoiceAnalysis] = Field(default_factory=list)
     d_value: int  # 0–32, чётное
     d_memory: bool  # D = 0 — второй выбор по памяти
     d_situationally_unstable: bool  # D ≥ 20 — трактовать метрики осторожно

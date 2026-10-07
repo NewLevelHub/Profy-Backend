@@ -95,6 +95,31 @@ def test_split_pairs_instability_flag() -> None:
     assert m.split["instability"] is True
 
 
+def test_choice_analysis_keeps_both_rounds_visible() -> None:
+    first = engine.choice_analysis([3, 1, 6, 0, 5, 2, 7, 4])
+    second = engine.choice_analysis([0, 5, 1, 2, 4, 3, 7, 6])
+    assert first["anxiety"]["score"] == 4
+    assert second["anxiety"]["score"] == 1
+    assert first["compensation"]["score"] == 1
+    assert second["compensation"]["score"] == 3
+
+
+def test_functional_groups_preserve_only_stable_pairs() -> None:
+    groups = engine.functional_groups(
+        [3, 4, 2, 1, 5, 6, 0, 7],
+        [3, 4, 2, 0, 1, 5, 6, 7],
+    )
+    assert groups == [
+        {"sign": "plus", "colors": [3, 4], "stable": True},
+        {"sign": "cross", "colors": [2], "stable": False},
+        {"sign": "cross", "colors": [0], "stable": False},
+        {"sign": "equal", "colors": [1], "stable": False},
+        {"sign": "equal", "colors": [5], "stable": False},
+        {"sign": "minus", "colors": [6], "stable": False},
+        {"sign": "minus", "colors": [7], "stable": False},
+    ]
+
+
 def test_purple_forward_note_no_score() -> None:
     m = engine.compute(_NORM, [5, 1, 2, 3, 4, 6, 0, 7])  # фиолетовый на позиции 1
     assert m.compensation["purple_forward"] is True

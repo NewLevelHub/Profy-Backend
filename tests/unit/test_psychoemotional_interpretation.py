@@ -10,7 +10,7 @@ from app.services.psychoemotional.interpretation import interpret
 
 
 def _interpret(list1: list[int], list2: list[int]):
-    return interpret(compute(list1, list2).as_dict(), list2)
+    return interpret(compute(list1, list2).as_dict(), list1, list2)
 
 
 def _flat(tree: dict) -> list[str]:
@@ -44,6 +44,23 @@ def test_reference_run_matches_the_expected_blocks() -> None:
         texts["pair"]["minus"]["67"],
         texts["pm"]["06"],
     ]
+    assert all(position.details == [] for position in result.positions)
+    assert [(group.sign, group.colors, group.stable) for group in result.mcv_groups] == [
+        ("plus", [0], False),
+        ("plus", [5], False),
+        ("cross", [1], False),
+        ("cross", [2], False),
+        ("equal", [4], False),
+        ("equal", [3], False),
+        ("minus", [7], False),
+        ("minus", [6], False),
+    ]
+    assert [(prompt.key, prompt.text) for prompt in result.conversation_prompts] == [
+        ("leading", texts["conversation"]["leading"]["0"]),
+        ("tension", texts["conversation"]["tension"]["6"]),
+        ("so_elevated", texts["conversation"]["so"]["elevated"]),
+        ("vk_reduced", texts["conversation"]["vk"]["reduced"]),
+    ]
 
 
 def test_a_link_replaces_the_separate_notes_about_its_two_colours() -> None:
@@ -71,7 +88,9 @@ def test_texts_follow_the_request_locale() -> None:
     with use_locale("kk"):
         result = _interpret(list2, list2)
     assert result.positions[0].text == KK["pair"]["plus"]["05"]
+    assert result.mcv_groups[0].text == KK["pair"]["plus"]["05"]
     assert result.indices[1].text == KK["level"]["so"]["elevated"]
+    assert result.conversation_prompts[0].text == KK["conversation"]["leading"]["0"]
 
 
 def test_a_stable_run_has_no_reading_notes() -> None:
@@ -88,18 +107,39 @@ def test_every_pickable_key_has_a_text_in_both_locales() -> None:
         assert set(tree["reading"]) == {"split", "d_high"}
         assert set(tree["pair"]) == {"plus", "cross", "equal", "minus"}
         assert all(set(pairs) == unordered for pairs in tree["pair"].values())
+        assert set(tree["single"]) == {"plus", "cross", "equal", "minus"}
+        assert all(
+            set(notes) == {str(color_id) for color_id in COLOR_IDS}
+            for notes in tree["single"].values()
+        )
         assert set(tree["pm"]) == ordered
         assert set(tree["anxiety"]) == {f"{c}.{p}" for c in BASIC_COLOR_IDS for p in (6, 7, 8)}
         assert set(tree["comp"]) == {f"{c}.{p}" for c in EXTRA_COLOR_IDS for p in (1, 2, 3)} | {"5.forward"}
         assert set(tree["level"]["anxiety"]) == {"low", "moderate", "high", "very_high"}
         assert set(tree["level"]["so"]) == {"norm", "elevated", "high"}
         assert set(tree["level"]["vk"]) == {"low_tone", "reduced", "balance", "overexcited"}
+        assert set(tree["conversation"]["leading"]) == {str(color_id) for color_id in COLOR_IDS}
+        assert set(tree["conversation"]["tension"]) == {str(color_id) for color_id in COLOR_IDS}
+        assert set(tree["conversation"]["anxiety"]) == {"moderate", "high", "very_high"}
+        assert set(tree["conversation"]["so"]) == {"elevated", "high"}
+        assert set(tree["conversation"]["vk"]) == {"low_tone", "reduced", "overexcited"}
 
 
 def test_any_ordering_interprets_without_a_missing_key() -> None:
     for list2 in itertools.islice(itertools.permutations(range(8)), 0, 40320, 97):
         result = _interpret(list(list2), list(list2))
         assert len(result.indices) == 3 and len(result.positions) == 5
+        assert all(position.details == [] for position in result.positions)
+        assert 4 <= len(result.mcv_groups) <= 8
+        assert 2 <= len(result.conversation_prompts) <= 5
+
+
+def test_auxiliary_colours_at_the_end_are_not_described_as_anxiety() -> None:
+    for locale_tree in (RU, KK):
+        for color_id in (0, 5, 6, 7):
+            text = locale_tree["single"]["minus"][str(color_id)].lower()
+            assert "риск" not in text
+            assert "жасырын кернеу" not in text
 
 
 def test_no_clinical_labels_or_trademark_in_any_text() -> None:
