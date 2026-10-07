@@ -140,6 +140,20 @@ class DeploymentIsolationTests(unittest.TestCase):
             else:
                 self.assertNotIn("depends_on", config["services"]["nginx"])
 
+    def test_prod_attaches_nginx_and_api_to_the_edge_network(self):
+        config = read_yaml("docker-compose.prod.yml")
+        self.assertEqual(config["networks"]["profi_edge"], {"external": "true", "name": "profi_edge"})
+        for service in ("api", "nginx"):
+            self.assertIn("profi_edge", config["services"][service]["networks"])
+        # Data services never sit on the edge network.
+        for service in ("db", "redis"):
+            self.assertEqual(config["services"][service]["networks"], ["profi_network"])
+        job = read_yaml(".github/workflows/cd.yml")["jobs"]["deploy_production"]
+        script = next(s for s in job["steps"] if s.get("uses", "").startswith("appleboy/ssh-action"))["with"]["script"]
+        create = "docker network inspect profi_edge >/dev/null 2>&1 || docker network create profi_edge"
+        self.assertIn(create, script)
+        self.assertLess(script.index(create), script.index("docker compose"))
+
     def test_prod_routing_uses_explicit_production_container(self):
         nginx = (ROOT / "nginx.prod.conf").read_text()
         prod = nginx.split("# -- Dev:")[0]

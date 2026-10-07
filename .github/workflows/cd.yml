@@ -135,6 +135,12 @@ jobs:
 
             docker pull "$PROD_API_IMAGE"
 
+            # Edge network shared by nginx, both APIs and both frontends (see
+            # docker-compose.prod.yml). Only this workflow creates it: dev and the
+            # frontend deploys refuse to start until it exists, i.e. until nginx
+            # has been attached to it by a production deploy.
+            docker network inspect profi_edge >/dev/null 2>&1 || docker network create profi_edge
+
             # Let's Encrypt certs for both vhosts on this edge nginx live 90 days and
             # nothing else renews them. `certbot renew` is a no-op unless a cert is
             # within 30 days of expiry, so running it on every deploy is cheap; the
