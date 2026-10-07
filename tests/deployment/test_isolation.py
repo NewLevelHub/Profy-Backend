@@ -48,7 +48,7 @@ class DeploymentIsolationTests(unittest.TestCase):
                        COMMAND_LOG=str(path / "commands"), DEPLOY_PATH=directory,
                        DOCKER_PASSWORD="test", DOCKER_USERNAME="test",
                        DOCKER_REGISTRY="registry.test", DOCKER_REPOSITORY="backend",
-                       COMMIT_SHA="123456789abcdef", PROFI_EDGE_NETWORK_NAME="edge",
+                       COMMIT_SHA="123456789abcdef",
                        API_IMAGE="registry.test/backend:sha-production")
             subprocess.run(["bash", "-eu", "-c", step["with"]["script"]], env=env,
                            check=True, capture_output=True, text=True)
@@ -104,7 +104,7 @@ class DeploymentIsolationTests(unittest.TestCase):
                        IN_USE_IMAGE="test/backend:dev-sha-0dd0dd0",
                        DEPLOY_PATH=directory, DOCKER_PASSWORD="test", DOCKER_USERNAME="test",
                        DOCKER_REGISTRY="registry.test", DOCKER_REPOSITORY="backend",
-                       COMMIT_SHA="123456789abcdef", PROFI_EDGE_NETWORK_NAME="edge")
+                       COMMIT_SHA="123456789abcdef")
             subprocess.run(["bash", "-eu", "-c", step["with"]["script"]], env=env,
                            check=True, capture_output=True, text=True)
             commands = (path / "commands").read_text().splitlines()
@@ -153,6 +153,20 @@ class DeploymentIsolationTests(unittest.TestCase):
         create = "docker network inspect profi_edge >/dev/null 2>&1 || docker network create profi_edge"
         self.assertIn(create, script)
         self.assertLess(script.index(create), script.index("docker compose"))
+
+    def test_dev_reaches_nginx_only_through_the_edge_network(self):
+        config = read_yaml("docker-compose.dev.yml")
+        self.assertEqual(config["networks"]["profi_edge"], {"external": "true", "name": "profi_edge"})
+        self.assertEqual(config["services"]["api_dev"]["networks"], ["profi_network_dev", "profi_edge"])
+        for service in ("db", "redis"):
+            self.assertEqual(config["services"][service]["networks"], ["profi_network_dev"])
+        # Never the production stack's own network (profi_db_prod / profi_redis_prod).
+        names = {network.get("name") for network in config["networks"].values()}
+        self.assertNotIn("profi-backend_profi_network", names)
+        # Dev only checks that the edge network exists; creating it is production's job.
+        workflow = (ROOT / ".github/workflows/cd-dev.yml").read_text()
+        self.assertIn("docker network inspect profi_edge", workflow)
+        self.assertNotIn("network create", workflow)
 
     def test_prod_routing_uses_explicit_production_container(self):
         nginx = (ROOT / "nginx.prod.conf").read_text()
