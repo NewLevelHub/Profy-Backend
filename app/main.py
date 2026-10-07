@@ -18,6 +18,11 @@ from app.services.admin_listing import AdminSortFieldError
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+_VALIDATION_MESSAGE_KEYS = {
+    "missing": "field_required",
+    "string_type": "string_required",
+}
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -74,13 +79,15 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
 
 @app.exception_handler(RequestValidationError)
 async def _validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-    """FastAPI's 422, with pydantic's English "Field required" in the
-    request locale. Only `msg` changes — `type`, `loc` and the body shape
-    stay as before; rules that need their own text raise
-    `PydanticCustomError` with catalog text already."""
+    """Localize the built-in validation errors used by request schemas.
+
+    Only ``msg`` changes: ``type``, ``loc`` and the response shape remain
+    stable. Domain rules use ``PydanticCustomError`` with catalog text at the
+    validation site and therefore are intentionally left untouched here.
+    """
     errors = [
-        {**error, "msg": i18n_key("api_errors", "field_required")}
-        if error.get("type") == "missing"
+        {**error, "msg": i18n_key("api_errors", message_key)}
+        if (message_key := _VALIDATION_MESSAGE_KEYS.get(error.get("type")))
         else error
         for error in exc.errors()
     ]

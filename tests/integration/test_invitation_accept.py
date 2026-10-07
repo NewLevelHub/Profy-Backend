@@ -283,6 +283,25 @@ async def test_missing_field_is_422_with_localized_message(
     assert error["msg"] == message
 
 
+@pytest.mark.parametrize(
+    ("accept_language", "message"),
+    [("ru", "Значение должно быть строкой"), ("kk", "Мән мәтін болуы керек")],
+)
+async def test_wrong_field_types_are_422_with_localized_messages(
+    client: httpx.AsyncClient, accept_language: str, message: str
+) -> None:
+    response = await client.post(
+        ACCEPT_URL,
+        json={"token": 123, "password": []},
+        headers={"Accept-Language": accept_language},
+    )
+
+    assert response.status_code == 422
+    errors = response.json()["detail"]
+    assert [error["type"] for error in errors] == ["string_type", "string_type"]
+    assert [error["msg"] for error in errors] == [message, message]
+
+
 # ── existing accounts on the invited email ─────────────────────────────────
 
 

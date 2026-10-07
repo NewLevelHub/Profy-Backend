@@ -230,26 +230,34 @@ async def _inviter_email(db: AsyncSession, invitation: Invitation) -> str | None
 
 
 async def _sent(
-    db: AsyncSession, invitation: Invitation, token: str, now: datetime
+    db: AsyncSession, invitation: Invitation, token: str
 ) -> AdminInvitationSent:
     """Called once the new token is committed: the email only ever carries a
     link that already works, and the provider call holds no lock.
 
-    Because no lock is held, another resend may replace the token while this
-    email goes out. The outcome is recorded only while `token` is still the
-    current one — otherwise this request answers `invitation_superseded`
-    instead of handing back a dead link, and the newer email keeps its id
-    (the webhook matches events by it)."""
+    Because no lock is held, another request may replace or close the
+    invitation while this email goes out. The outcome is recorded only while
+    `token` still belongs to a pending invitation — otherwise this request
+    answers `invitation_superseded` instead of handing back a dead link, and
+    the newer email keeps its id (the webhook matches events by it)."""
     message_id = await _send_email(invitation, token)
+    recorded_at = _now()
     recorded = await db.execute(
         update(Invitation)
-        .where(Invitation.id == invitation.id, Invitation.token_hash == hash_token(token))
+        .where(
+            Invitation.id == invitation.id,
+            Invitation.token_hash == hash_token(token),
+            Invitation.accepted_at.is_(None),
+            Invitation.revoked_at.is_(None),
+            Invitation.token_ciphertext.is_not(None),
+            Invitation.expires_at > recorded_at,
+        )
         .values(
             email_message_id=message_id or None,
             email_status=(
                 InvitationEmailStatus.sent if message_id is not None else InvitationEmailStatus.failed
             ),
-            email_status_at=now,
+            email_status_at=recorded_at,
         )
         .execution_options(synchronize_session=False)
     )
@@ -257,7 +265,7 @@ async def _sent(
     if recorded.rowcount == 0:
         raise invitation_error(status.HTTP_409_CONFLICT, "invitation_superseded")
     await db.refresh(invitation)
-    item = _item(invitation, await _inviter_email(db, invitation), now)
+    item = _item(invitation, await _inviter_email(db, invitation), recorded_at)
     return AdminInvitationSent(
         **item.model_dump(),
         invite_url=build_invite_url(token),
@@ -292,7 +300,7 @@ async def create_invitation(
     db.add(invitation)
     await db.commit()
     await db.refresh(invitation)
-    return await _sent(db, invitation, token, now)
+    return await _sent(db, invitation, token)
 
 
 async def list_invitations(
@@ -347,7 +355,7 @@ async def resend_invitation(db: AsyncSession, invitation_id: uuid.UUID) -> Admin
 
     token = _issue_token(invitation, now)
     await db.commit()
-    return await _sent(db, invitation, token, now)
+    return await _sent(db, invitation, token)
 
 
 async def revoke_invitation(db: AsyncSession, invitation_id: uuid.UUID) -> AdminInvitationItem:

@@ -371,6 +371,39 @@ async def test_resend_overtaken_by_another_resend_is_409_and_keeps_the_newer_ema
     assert invitation.email_message_id == "msg-newer"
 
 
+@pytest.mark.parametrize("closed_field", ["revoked_at", "accepted_at"])
+async def test_resend_overtaken_by_closure_is_409_and_does_not_record_the_email(
+    client: httpx.AsyncClient,
+    admin_headers: dict[str, str],
+    db_session: AsyncSession,
+    monkeypatch,
+    closed_field: str,
+) -> None:
+    """A revoke or accept while the provider call is in flight closes the
+    token even though its hash stays on the row. The response must not expose
+    that dead link or attach the provider message to the closed invitation."""
+    invitation = await _add_invitation(db_session, _email())
+
+    async def _closed_while_sending(*_args, **_kwargs) -> str:
+        await db_session.execute(
+            update(Invitation)
+            .where(Invitation.id == invitation.id)
+            .values(**{closed_field: datetime.now(timezone.utc), "token_ciphertext": None})
+        )
+        return "msg-after-close"
+
+    monkeypatch.setattr(email_service, "send_invitation_email", _closed_while_sending)
+
+    response = await client.post(f"{URL}/{invitation.id}/resend", headers=admin_headers)
+
+    assert response.status_code == 409
+    assert response.json()["error_code"] == "invitation_superseded"
+    await db_session.refresh(invitation)
+    assert getattr(invitation, closed_field) is not None
+    assert invitation.email_message_id is None
+    assert invitation.email_status is None
+
+
 @pytest.mark.parametrize(
     ("closed", "error_code"),
     [({"accepted": True}, "invitation_used"), ({"revoked": True}, "invitation_revoked")],
