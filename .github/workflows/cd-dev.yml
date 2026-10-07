@@ -90,7 +90,6 @@ jobs:
           DOCKER_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_DEV }}
           COMMIT_SHA: ${{ github.sha }}
-          PROFI_EDGE_NETWORK_NAME: ${{ secrets.PROFI_EDGE_NETWORK_NAME }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
@@ -101,12 +100,11 @@ jobs:
           # generous headroom rather than a hard requirement; left this size
           # in case that step is ever reinstated or another one grows slow.
           command_timeout: 40m
-          envs: DOCKER_REGISTRY,DOCKER_USERNAME,DOCKER_PASSWORD,DOCKER_REPOSITORY,DEPLOY_PATH,COMMIT_SHA,PROFI_EDGE_NETWORK_NAME
+          envs: DOCKER_REGISTRY,DOCKER_USERNAME,DOCKER_PASSWORD,DOCKER_REPOSITORY,DEPLOY_PATH,COMMIT_SHA
           script: |
             set -e
 
             DEPLOY_PATH="$(printf '%s' "$DEPLOY_PATH" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-            PROFI_EDGE_NETWORK_NAME="$(printf '%s' "${PROFI_EDGE_NETWORK_NAME:-profi-backend_profi_network}" | tr -d '\r\n')"
 
             echo "$DOCKER_PASSWORD" | docker login "$DOCKER_REGISTRY" -u "$DOCKER_USERNAME" --password-stdin
             unset DOCKER_PASSWORD
@@ -118,7 +116,6 @@ jobs:
             fi
             SHORT_SHA="${COMMIT_SHA::7}"
             export DEV_API_IMAGE="${DOCKER_REGISTRY}/${IMAGE_PATH}:dev-sha-${SHORT_SHA}"
-            export PROFI_EDGE_NETWORK_NAME
 
             if [ ! -f ".env.development" ]; then
               echo "ERROR: .env.development not found in $DEPLOY_PATH"
@@ -132,15 +129,17 @@ jobs:
               exit 1
             fi
 
-            if ! docker network inspect "$PROFI_EDGE_NETWORK_NAME" >/dev/null 2>&1; then
-              echo "ERROR: edge network '$PROFI_EDGE_NETWORK_NAME' not found — is prod stack running?"
+            # profi_edge is created only by the production deploy (cd.yml), which
+            # attaches nginx to it — never create it here: joining it before nginx
+            # does would leave dev.profile.newlevelhub.kz unroutable (502).
+            if ! docker network inspect profi_edge >/dev/null 2>&1; then
+              echo "ERROR: edge network 'profi_edge' not found — deploy backend main (production) first"
               exit 1
             fi
 
             {
               grep -vE '^(API_IMAGE|DEV_API_IMAGE|PROFI_EDGE_NETWORK_NAME)=' .env.development || true
               echo "DEV_API_IMAGE=${DEV_API_IMAGE}"
-              echo "PROFI_EDGE_NETWORK_NAME=${PROFI_EDGE_NETWORK_NAME}"
             } > .env.development.tmp
             mv .env.development.tmp .env.development
 
