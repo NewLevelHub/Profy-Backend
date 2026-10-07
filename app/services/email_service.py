@@ -197,10 +197,12 @@ async def send_password_reset_email(
 
 async def send_invitation_email(
     to: str, invite_url: str, *, role: UserRole, locale: str = DEFAULT_LOCALE
-) -> None:
+) -> bool:
     """Staff invitation (PRO-461). `locale` is `invitations.locale` — the
-    invitee has no `users` row yet. Raises on a provider failure, like the
-    OTP emails: the inviting admin must learn the email did not go out."""
+    invitee has no `users` row yet. Returns whether the email actually went
+    out: False without `RESEND_API_KEY`. Raises on a provider failure. The
+    link is never logged — it is a bearer credential for a staff account,
+    and the admin already gets it in the create/resend response."""
     loc = _email_locale(locale)
     strings = tr("email", locale=loc)
     params = {
@@ -215,11 +217,12 @@ async def send_invitation_email(
     )
 
     if not settings.RESEND_API_KEY:
-        logger.warning("Resend not configured — invitation link for %s: %s", to, invite_url)
-        return
+        logger.warning("Resend not configured — invitation email to %s not sent", to)
+        return False
 
     try:
         await asyncio.to_thread(_send_resend, to, subject, plain, html)
     except Exception:
         logger.exception("Failed to send invitation email to %s", to)
         raise
+    return True

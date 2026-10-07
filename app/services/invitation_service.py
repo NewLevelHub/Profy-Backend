@@ -107,8 +107,9 @@ async def _get_for_update(db: AsyncSession, invitation_id: uuid.UUID) -> Invitat
 
 
 async def _send_email(invitation: Invitation, token: str) -> bool:
+    """Whether the email went out; False also when email isn't configured."""
     try:
-        await email_service.send_invitation_email(
+        return await email_service.send_invitation_email(
             invitation.email,
             build_invite_url(token),
             role=invitation.role,
@@ -117,7 +118,6 @@ async def _send_email(invitation: Invitation, token: str) -> bool:
     except Exception:
         # email_service has logged the provider error; the link is still valid.
         return False
-    return True
 
 
 def _item(invitation: Invitation, inviter_email: str | None, now: datetime) -> AdminInvitationItem:

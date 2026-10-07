@@ -22,8 +22,9 @@ URL = "/api/v1/admin/invitations"
 def sent_emails(monkeypatch) -> list[dict]:
     captured: list[dict] = []
 
-    async def _capture(to: str, invite_url: str, *, role: UserRole, locale: str) -> None:
+    async def _capture(to: str, invite_url: str, *, role: UserRole, locale: str) -> bool:
         captured.append({"to": to, "invite_url": invite_url, "role": role, "locale": locale})
+        return True
 
     monkeypatch.setattr(email_service, "send_invitation_email", _capture)
     return captured
@@ -218,6 +219,45 @@ async def test_create_survives_email_provider_failure(
     assert response.json()["email_sent"] is False
     assert response.json()["invite_url"]
     assert await db_session.scalar(select(Invitation).where(Invitation.email == email)) is not None
+
+
+async def test_create_without_email_configured_reports_not_sent(
+    client: httpx.AsyncClient, admin_headers: dict[str, str], monkeypatch
+) -> None:
+    """Real email_service, no RESEND_API_KEY: the admin must see that nothing went out."""
+    monkeypatch.setattr(email_service.settings, "RESEND_API_KEY", "")
+
+    response = await client.post(URL, json={"email": _email(), "role": "psychologist"}, headers=admin_headers)
+
+    assert response.status_code == 201
+    assert response.json()["email_sent"] is False
+
+
+# An authenticated request takes the locale from `users.locale` first.
+@pytest.mark.parametrize(
+    ("payload", "admin_locale", "message"),
+    [
+        ({"role": "student"}, "ru", "Пригласить можно только психолога или админа"),
+        ({"role": "superuser"}, "kk", "Тек психологты немесе әкімшіні шақыруға болады"),
+        ({"role": "psychologist", "email": "not-an-email"}, "ru", "Введите корректный email"),
+        ({"role": "psychologist", "locale": "en"}, "ru", "Язык письма должен быть одним из: ru, kk"),
+    ],
+    ids=["student_ru", "unknown_role_kk", "bad_email_ru", "bad_locale"],
+)
+async def test_validation_errors_are_localized(
+    client: httpx.AsyncClient,
+    admin_headers: dict[str, str],
+    admin_user: User,
+    payload: dict,
+    admin_locale: str,
+    message: str,
+) -> None:
+    admin_user.locale = admin_locale
+
+    response = await client.post(URL, json={"email": _email(), **payload}, headers=admin_headers)
+
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["msg"] == message
 
 
 # ── resend ──────────────────────────────────────────────────────────────────

@@ -78,19 +78,31 @@ async def test_url_is_html_escaped_in_html_but_not_in_plain(sent) -> None:
     assert "<c>" not in msg["html"]
 
 
-async def test_without_resend_key_link_is_logged_and_nothing_sent(monkeypatch, caplog) -> None:
+async def test_without_resend_key_nothing_is_sent_and_link_is_not_logged(monkeypatch, caplog) -> None:
     def _fail(*_args) -> None:
         raise AssertionError("must not send without RESEND_API_KEY")
 
     monkeypatch.setattr(email_service.settings, "RESEND_API_KEY", "")
     monkeypatch.setattr(email_service, "_send_resend", _fail)
 
-    with caplog.at_level(logging.WARNING, logger=email_service.logger.name):
-        await email_service.send_invitation_email(
+    with caplog.at_level(logging.DEBUG, logger=email_service.logger.name):
+        was_sent = await email_service.send_invitation_email(
             "psy@example.com", INVITE_URL, role=UserRole.psychologist, locale="ru"
         )
 
-    assert INVITE_URL in caplog.text
+    assert was_sent is False
+    # The link is a bearer credential for a staff account — never in logs.
+    assert "token=" not in caplog.text
+    assert "psy@example.com" in caplog.text
+
+
+async def test_successful_send_reports_true(sent) -> None:
+    was_sent = await email_service.send_invitation_email(
+        "psy@example.com", INVITE_URL, role=UserRole.psychologist, locale="ru"
+    )
+
+    assert was_sent is True
+    assert len(sent) == 1
 
 
 async def test_provider_failure_is_raised(monkeypatch) -> None:

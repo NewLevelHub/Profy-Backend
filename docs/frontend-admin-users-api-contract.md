@@ -54,12 +54,14 @@ Self-registration (`/auth/register`, Google) создаёт только `studen
 консоли, пароль в командную строку не передаётся:
 
 ```bash
-docker compose exec api python scripts/create_admin_user.py <email> [--locale ru|kk]
-docker compose exec api python scripts/create_psychologist_user.py <email> [--locale ru|kk]
+docker compose exec api python scripts/create_admin_user.py <email> [--locale ru|kk] [--replace]
+docker compose exec api python scripts/create_psychologist_user.py <email> [--locale ru|kk] [--replace]
 ```
 
-Скрипт печатает ссылку-приглашение; если на почту уже есть активное
-приглашение, перевыпускает его ссылку (старая перестаёт работать).
+Скрипт печатает ссылку-приглашение. Если на почту уже есть активное
+приглашение с той же ролью и языком, перевыпускает его ссылку (старая
+перестаёт работать); с другой ролью или языком — отказывает, пока не передан
+`--replace` (тогда старое отзывается и создаётся новое).
 
 ## 2. Список юзеров
 

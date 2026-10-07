@@ -79,8 +79,9 @@ async def test_invite_preview_accept_and_use_the_account(
 ) -> None:
     links: list[str] = []
 
-    async def _capture(to: str, invite_url: str, **_kwargs) -> None:
+    async def _capture(to: str, invite_url: str, **_kwargs) -> bool:
         links.append(invite_url)
+        return True
 
     monkeypatch.setattr(email_service, "send_invitation_email", _capture)
     email = _email()
@@ -161,8 +162,8 @@ async def test_closed_or_unknown_token_is_400_with_code(
 async def test_resend_invalidates_the_old_link(
     client: httpx.AsyncClient, admin_headers: dict[str, str], db_session: AsyncSession, monkeypatch
 ) -> None:
-    async def _noop(*_args, **_kwargs) -> None:
-        return None
+    async def _noop(*_args, **_kwargs) -> bool:
+        return True
 
     monkeypatch.setattr(email_service, "send_invitation_email", _noop)
     invitation, old_token = await _add_invitation(db_session, _email())
@@ -177,12 +178,26 @@ async def test_resend_invalidates_the_old_link(
     assert new.status_code == 200
 
 
-async def test_weak_password_is_422(client: httpx.AsyncClient, db_session: AsyncSession) -> None:
+@pytest.mark.parametrize(
+    ("password", "accept_language", "message"),
+    [
+        ("Ab1", "ru", "Пароль должен быть не короче 8 символов"),
+        ("Ab1", "kk", "Құпиясөз кемінде 8 таңбадан тұруы керек"),
+        ("onlyletters", "kk", "Құпиясөзде кемінде бір цифр болуы керек"),
+    ],
+    ids=["short_ru", "short_kk", "no_digit_kk"],
+)
+async def test_weak_password_is_422_with_localized_message(
+    client: httpx.AsyncClient, db_session: AsyncSession, password: str, accept_language: str, message: str
+) -> None:
     _, token = await _add_invitation(db_session, _email())
 
-    response = await client.post(ACCEPT_URL, json={"token": token, "password": "onlyletters"})
+    response = await client.post(
+        ACCEPT_URL, json={"token": token, "password": password}, headers={"Accept-Language": accept_language}
+    )
 
     assert response.status_code == 422
+    assert response.json()["detail"][0]["msg"] == message
 
 
 # ── existing accounts on the invited email ─────────────────────────────────
