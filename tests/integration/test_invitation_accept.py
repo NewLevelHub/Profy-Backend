@@ -248,8 +248,10 @@ async def test_resend_invalidates_the_old_link(
         ("Ab1", "ru", "Пароль должен быть не короче 8 символов"),
         ("Ab1", "kk", "Құпиясөз кемінде 8 таңбадан тұруы керек"),
         ("onlyletters", "kk", "Құпиясөзде кемінде бір цифр болуы керек"),
+        ("onlyletters", "ru", "Пароль должен содержать хотя бы одну цифру"),
+        ("12345678", "ru", "Пароль должен содержать хотя бы одну букву"),
     ],
-    ids=["short_ru", "short_kk", "no_digit_kk"],
+    ids=["short_ru", "short_kk", "no_digit_kk", "no_digit_ru", "no_letter_ru"],
 )
 async def test_weak_password_is_422_with_localized_message(
     client: httpx.AsyncClient, db_session: AsyncSession, password: str, accept_language: str, message: str
@@ -262,6 +264,23 @@ async def test_weak_password_is_422_with_localized_message(
 
     assert response.status_code == 422
     assert response.json()["detail"][0]["msg"] == message
+
+
+@pytest.mark.parametrize(
+    ("accept_language", "message"), [("ru", "Обязательное поле"), ("kk", "Міндетті өріс")]
+)
+async def test_missing_field_is_422_with_localized_message(
+    client: httpx.AsyncClient, accept_language: str, message: str
+) -> None:
+    response = await client.post(
+        ACCEPT_URL, json={"token": "x"}, headers={"Accept-Language": accept_language}
+    )
+
+    assert response.status_code == 422
+    error = response.json()["detail"][0]
+    assert error["type"] == "missing"
+    assert error["loc"] == ["body", "password"]
+    assert error["msg"] == message
 
 
 # ── existing accounts on the invited email ─────────────────────────────────
@@ -365,6 +384,60 @@ async def test_two_concurrent_accepts_only_one_wins(
         async with AsyncSession(engine) as check:
             users = (await check.scalars(select(User).where(User.email == email))).all()
             assert len(users) == 1
+    finally:
+        async with AsyncSession(engine) as cleanup:
+            await cleanup.execute(delete(Invitation).where(Invitation.email == email))
+            await cleanup.execute(delete(User).where(User.email == email))
+            await cleanup.commit()
+
+
+async def test_confirming_email_waits_for_an_invitation_being_created(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An unverified account confirms its code while an admin's create is
+    between its "no verified user" check and its commit. Without the shared
+    email lock both would commit: a verified student plus a pending
+    invitation nobody can accept. With it the confirmation waits and then
+    accepts the invitation."""
+    email = _email()
+    async with AsyncSession(engine, expire_on_commit=False) as setup:
+        user = User(email=email, hashed_password="x", is_verified=False)
+        setup.add(user)
+        await setup.flush()
+        code = await auth_service._create_verification_token(user.id, setup)
+        await setup.commit()
+
+    try:
+        async with AsyncSession(engine, expire_on_commit=False) as creating:
+            # The create transaction, paused right before its commit.
+            await invitation_service.lock_email(creating, email)
+            creating.add(
+                Invitation(
+                    email=email,
+                    role=UserRole.psychologist,
+                    locale="kk",
+                    token_hash=hash_token(uuid.uuid4().hex),
+                    expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+                )
+            )
+            await creating.flush()
+
+            async def _confirm() -> User:
+                async with AsyncSession(engine, expire_on_commit=False) as session:
+                    confirmed, _ = await auth_service.verify_email(email, code, session)
+                    return confirmed
+
+            confirming = asyncio.create_task(_confirm())
+            await asyncio.sleep(0.5)
+            assert not confirming.done(), "confirmation must wait for the create to commit"
+            await creating.commit()
+
+        confirmed = await asyncio.wait_for(confirming, timeout=5)
+        assert confirmed.role == UserRole.psychologist
+        assert confirmed.locale == "kk"
+        async with AsyncSession(engine) as check:
+            invitation = await check.scalar(select(Invitation).where(Invitation.email == email))
+            assert invitation.status == InvitationStatus.accepted
     finally:
         async with AsyncSession(engine) as cleanup:
             await cleanup.execute(delete(Invitation).where(Invitation.email == email))

@@ -7,7 +7,7 @@ from urllib.parse import parse_qs, urlparse
 
 import httpx
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from email_validator import EmailUndeliverableError
@@ -338,6 +338,37 @@ async def test_resend_replaces_token_and_restarts_ttl(
     assert await db_session.scalar(select(Invitation).where(Invitation.token_hash == old_hash)) is None
     assert invitation.expires_at > datetime.now(timezone.utc) + timedelta(hours=71)
     assert [m["invite_url"] for m in sent_emails] == [body["invite_url"]]
+
+
+async def test_resend_overtaken_by_another_resend_is_409_and_keeps_the_newer_email(
+    client: httpx.AsyncClient, admin_headers: dict[str, str], db_session: AsyncSession, monkeypatch
+) -> None:
+    """Another admin's resend replaces the token while this email is going
+    out: this request must not hand back its now-dead link, nor overwrite
+    the newer email's id (webhook events are matched by it)."""
+    invitation = await _add_invitation(db_session, _email())
+
+    async def _overtaken(*_args, **_kwargs) -> str:
+        await db_session.execute(
+            update(Invitation)
+            .where(Invitation.id == invitation.id)
+            .values(
+                token_hash=hash_token("newer-token"),
+                email_message_id="msg-newer",
+                email_status=InvitationEmailStatus.sent,
+            )
+        )
+        return "msg-older"
+
+    monkeypatch.setattr(email_service, "send_invitation_email", _overtaken)
+
+    response = await client.post(f"{URL}/{invitation.id}/resend", headers=admin_headers)
+
+    assert response.status_code == 409
+    assert response.json()["error_code"] == "invitation_superseded"
+    await db_session.refresh(invitation)
+    assert invitation.token_hash == hash_token("newer-token")
+    assert invitation.email_message_id == "msg-newer"
 
 
 @pytest.mark.parametrize(

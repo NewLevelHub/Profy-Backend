@@ -36,6 +36,7 @@ _RESEND_EVENTS: dict[str, InvitationEmailStatus] = {
     "email.bounced": InvitationEmailStatus.bounced,
     "email.complained": InvitationEmailStatus.complained,
     "email.failed": InvitationEmailStatus.failed,
+    "email.suppressed": InvitationEmailStatus.suppressed,
 }
 
 

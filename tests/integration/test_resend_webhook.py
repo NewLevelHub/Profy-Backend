@@ -73,6 +73,7 @@ def _event(kind: str, message_id: str) -> dict:
         ("email.bounced", InvitationEmailStatus.bounced),
         ("email.complained", InvitationEmailStatus.complained),
         ("email.failed", InvitationEmailStatus.failed),
+        ("email.suppressed", InvitationEmailStatus.suppressed),
     ],
 )
 async def test_event_updates_the_invitation(

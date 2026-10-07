@@ -93,8 +93,10 @@ i18n-каталога фронта по коду.
   (`student` или неизвестная роль), `invitation_locale_invalid`,
   `password_too_short`, `password_letter_required`,
   `password_digit_required`. Фронт проверяет то же самое до отправки.
-  Исключение — 422 `invitation_email_undeliverable` (§2.3): обычный
-  `AppError` с `error_code`.
+  Отсутствующее поле — `type: "missing"`, `msg` тоже на языке запроса
+  («Обязательное поле» / «Міндетті өріс», для всего API). Исключение —
+  422 `invitation_email_undeliverable` (§2.3): обычный `AppError` с
+  `error_code`.
 - **429** — rate limit, как на остальных `/auth/*`: `{"detail": "..."}`
   **без** `error_code` + заголовок `Retry-After` (секунды). Определять по
   HTTP-статусу.
@@ -111,6 +113,7 @@ i18n-каталога фронта по коду.
 | 404 | `invitation_not_found` | админский эндпоинт: нет приглашения с таким `id` |
 | 409 | `user_exists` | на почту уже есть **подтверждённый** аккаунт (любой роли) |
 | 409 | `invitation_pending` | на почту уже есть приглашение в статусе `pending` — используйте «Отправить повторно» |
+| 409 | `invitation_superseded` | create / resend: пока письмо уходило, ссылку заменил другой resend — ответ со старой ссылкой не отдаётся; актуальная — §3.6 |
 | 409 | `invitation_link_unavailable` | §3.6: ссылку не восстановить (приглашение старше хранения ссылок или сменился `SECRET_KEY`) — «Отправить повторно» |
 | 422 | `invitation_email_undeliverable` | §3.2: домен почты не принимает письма (нет MX/A-записи) |
 | 409 | `invited_email_register` | `POST /auth/register` на почту с `pending`-приглашением (§4.3) |
@@ -152,6 +155,7 @@ i18n-каталога фронта по коду.
 | `bounced` | не доставлено: ящика нет или сервер отказал | вебхук |
 | `complained` | получатель пометил письмо как спам | вебхук |
 | `failed` | письмо не ушло: ошибка провайдера или почта не настроена | бэкенд / вебхук |
+| `suppressed` | Resend не стал слать: адрес в его suppression-списке после прошлых отказов или жалоб | вебхук |
 | `null` | приглашение создано до отслеживания доставки | — |
 
 Без настроенного вебхука (§3.7) статус остаётся `sent`. Статус не
@@ -291,7 +295,7 @@ resend — новую).
 Настройка окружения: в Resend → Webhooks добавить
 `https://<api-host>/api/v1/webhooks/resend` с событиями `email.delivered`,
 `email.delivery_delayed`, `email.bounced`, `email.complained`,
-`email.failed`; секрет подписи (`whsec_…`) — в `RESEND_WEBHOOK_SECRET`.
+`email.failed`, `email.suppressed`; секрет подписи (`whsec_…`) — в `RESEND_WEBHOOK_SECRET`.
 
 События сопоставляются с приглашением по id последнего письма, поэтому
 события письма, заменённого через resend, не учитываются. Остальные письма

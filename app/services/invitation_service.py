@@ -23,7 +23,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from email_validator import EmailUndeliverableError, validate_email
 from fastapi import status
-from sqlalchemy import exists, func, select, text
+from sqlalchemy import exists, func, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -66,6 +66,7 @@ _EMAIL_STATUS_RANK: dict[InvitationEmailStatus, int] = {
     InvitationEmailStatus.bounced: 3,
     InvitationEmailStatus.complained: 3,
     InvitationEmailStatus.failed: 3,
+    InvitationEmailStatus.suppressed: 3,
 }
 
 
@@ -143,9 +144,16 @@ async def ensure_deliverable(email: str) -> None:
         ) from None
 
 
-async def _lock_email(db: AsyncSession, email: str) -> None:
-    """Serialize create/resend per email until commit, so two concurrent
-    requests can't both pass the "no pending invitation" check."""
+async def lock_email(db: AsyncSession, email: str) -> None:
+    """Per-email lock until commit, taken by everything that decides an
+    invitation's fate: create/resend (no two pending invitations) and the
+    paths that verify an account on the email — code confirmation and Google
+    login (`auth_service`, `oauth_service`). Without it an account could be
+    verified between create's "no verified user" check and its commit,
+    leaving a pending invitation nobody can ever accept.
+
+    Take it before any row lock on `invitations`, so lock order is always
+    the same and two such paths can't deadlock."""
     await db.execute(
         text("SELECT pg_advisory_xact_lock(hashtext(:key))"), {"key": f"invitation:{email}"}
     )
@@ -179,11 +187,11 @@ async def _get_for_update(db: AsyncSession, invitation_id: uuid.UUID) -> Invitat
     return invitation
 
 
-async def _send_email(invitation: Invitation, token: str, now: datetime) -> None:
-    """Send, and record the outcome on `invitation` (the caller commits).
-    A failure leaves the link valid — the admin hands it over by hand."""
+async def _send_email(invitation: Invitation, token: str) -> str | None:
+    """The Resend id of the queued email; None when it didn't go out (the
+    link still works — the admin hands it over by hand)."""
     try:
-        message_id = await email_service.send_invitation_email(
+        return await email_service.send_invitation_email(
             invitation.email,
             build_invite_url(token),
             role=invitation.role,
@@ -191,12 +199,7 @@ async def _send_email(invitation: Invitation, token: str, now: datetime) -> None
         )
     except Exception:
         # email_service has logged the provider error.
-        message_id = None
-    invitation.email_message_id = message_id or None
-    invitation.email_status = (
-        InvitationEmailStatus.sent if message_id is not None else InvitationEmailStatus.failed
-    )
-    invitation.email_status_at = now
+        return None
 
 
 def _item(invitation: Invitation, inviter_email: str | None, now: datetime) -> AdminInvitationItem:
@@ -230,9 +233,30 @@ async def _sent(
     db: AsyncSession, invitation: Invitation, token: str, now: datetime
 ) -> AdminInvitationSent:
     """Called once the new token is committed: the email only ever carries a
-    link that already works, and the provider call holds no lock."""
-    await _send_email(invitation, token, now)
+    link that already works, and the provider call holds no lock.
+
+    Because no lock is held, another resend may replace the token while this
+    email goes out. The outcome is recorded only while `token` is still the
+    current one — otherwise this request answers `invitation_superseded`
+    instead of handing back a dead link, and the newer email keeps its id
+    (the webhook matches events by it)."""
+    message_id = await _send_email(invitation, token)
+    recorded = await db.execute(
+        update(Invitation)
+        .where(Invitation.id == invitation.id, Invitation.token_hash == hash_token(token))
+        .values(
+            email_message_id=message_id or None,
+            email_status=(
+                InvitationEmailStatus.sent if message_id is not None else InvitationEmailStatus.failed
+            ),
+            email_status_at=now,
+        )
+        .execution_options(synchronize_session=False)
+    )
     await db.commit()
+    if recorded.rowcount == 0:
+        raise invitation_error(status.HTTP_409_CONFLICT, "invitation_superseded")
+    await db.refresh(invitation)
     item = _item(invitation, await _inviter_email(db, invitation), now)
     return AdminInvitationSent(
         **item.model_dump(),
@@ -253,7 +277,7 @@ async def create_invitation(
     # Before the lock: a DNS lookup must not hold other requests up.
     if check_deliverability:
         await ensure_deliverable(body.email)
-    await _lock_email(db, body.email)
+    await lock_email(db, body.email)
     await ensure_no_verified_user(db, body.email)
     now = _now()
     await _ensure_no_other_pending(db, body.email, now)
@@ -305,13 +329,18 @@ async def list_invitations(
 
 async def resend_invitation(db: AsyncSession, invitation_id: uuid.UUID) -> AdminInvitationSent:
     """`pending` / `expired` only: same row, new token and TTL, new email."""
+    # The email lock comes before the row lock (see `lock_email`); an
+    # invitation's email never changes, so reading it unlocked is safe.
+    email = await db.scalar(select(Invitation.email).where(Invitation.id == invitation_id))
+    if email is None:
+        raise invitation_error(status.HTTP_404_NOT_FOUND, "invitation_not_found")
+    await lock_email(db, email)
     invitation = await _get_for_update(db, invitation_id)
     now = _now()
     current = invitation.status_at(now)
     if current in (InvitationStatus.accepted, InvitationStatus.revoked):
         raise invitation_error(status.HTTP_400_BAD_REQUEST, _CLOSED_STATUS_ERRORS[current])
 
-    await _lock_email(db, invitation.email)
     await ensure_no_verified_user(db, invitation.email)
     # An expired row coming back to life must not duplicate a newer pending one.
     await _ensure_no_other_pending(db, invitation.email, now, exclude_id=invitation.id)

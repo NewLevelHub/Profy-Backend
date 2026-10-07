@@ -29,6 +29,9 @@ class InvitationEmailStatus(str, enum.Enum):
     complained = "complained"
     # Provider error on send, Resend not configured, or `email.failed`.
     failed = "failed"
+    # Resend didn't even try: the address is on its suppression list after
+    # an earlier bounce or spam complaint (`email.suppressed`).
+    suppressed = "suppressed"
 
 
 class Invitation(Base):

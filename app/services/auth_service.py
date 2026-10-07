@@ -150,7 +150,10 @@ async def verify_email(email: str, code: str, db: AsyncSession) -> tuple[User, s
     token.used_at = now
     if not user.is_verified:
         # The code proves the mailbox, as Google does in `oauth_service`:
-        # an open invitation on this email is accepted with it.
+        # an open invitation on this email is accepted with it. The lock
+        # orders this against a concurrent create — either the invitation
+        # is seen here, or create sees the verified account.
+        await invitation_service.lock_email(db, user.email)
         invitation = await invitation_service.pending_for_email(db, user.email)
         if invitation is not None:
             invitation_service.apply_to_user(user, invitation)

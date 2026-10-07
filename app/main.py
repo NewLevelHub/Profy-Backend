@@ -2,6 +2,8 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
@@ -9,6 +11,7 @@ from sqlalchemy import text
 from app.database import engine
 from app.errors import AppError
 from app.i18n import _current_locale, normalize_locale
+from app.i18n.catalog import key as i18n_key
 from app.routers import api_router
 from app.services.admin_listing import AdminSortFieldError
 
@@ -66,6 +69,23 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
         status_code=exc.status_code,
         content={"detail": exc.detail, "error_code": exc.error_code},
         headers=exc.headers,
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def _validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    """FastAPI's 422, with pydantic's English "Field required" in the
+    request locale. Only `msg` changes — `type`, `loc` and the body shape
+    stay as before; rules that need their own text raise
+    `PydanticCustomError` with catalog text already."""
+    errors = [
+        {**error, "msg": i18n_key("api_errors", "field_required")}
+        if error.get("type") == "missing"
+        else error
+        for error in exc.errors()
+    ]
+    return await request_validation_exception_handler(
+        request, RequestValidationError(errors, body=exc.body)
     )
 
 

@@ -85,6 +85,8 @@ async def login_or_register_google(token: str, db: AsyncSession) -> tuple[User, 
     claims = await verify_google_id_token(token)
     google_id, email = claims["sub"], claims["email"].strip().lower()
 
+    # Ordered against a concurrent invitation create — see `lock_email`.
+    await invitation_service.lock_email(db, email)
     user = await _lookup_google_user(google_id, email, db)
     invitation = await invitation_service.pending_for_email(db, email)
 
@@ -113,6 +115,7 @@ async def login_or_register_google(token: str, db: AsyncSession) -> tuple[User, 
         # earlier would still grant access to the row Google just verified.
         # The rollback dropped the invitation lock too — look it up again.
         await db.rollback()
+        await invitation_service.lock_email(db, email)
         user = await _lookup_google_user(google_id, email, db)
         if user is None:
             raise
