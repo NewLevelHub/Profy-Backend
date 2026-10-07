@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, String, func
+from sqlalchemy import CheckConstraint, ColumnElement, DateTime, Enum, ForeignKey, String, and_, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -78,3 +78,17 @@ class Invitation(Base):
     @property
     def status(self) -> InvitationStatus:
         return self.status_at(datetime.now(timezone.utc))
+
+    @classmethod
+    def status_filter(cls, status: InvitationStatus, now: datetime) -> ColumnElement[bool]:
+        """SQL twin of `status_at` for list filters — keep the two in sync."""
+        is_open = and_(cls.accepted_at.is_(None), cls.revoked_at.is_(None))
+        match status:
+            case InvitationStatus.accepted:
+                return cls.accepted_at.is_not(None)
+            case InvitationStatus.revoked:
+                return and_(cls.accepted_at.is_(None), cls.revoked_at.is_not(None))
+            case InvitationStatus.expired:
+                return and_(is_open, cls.expires_at <= now)
+            case InvitationStatus.pending:
+                return and_(is_open, cls.expires_at > now)

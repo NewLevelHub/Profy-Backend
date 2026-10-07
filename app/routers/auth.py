@@ -12,6 +12,7 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.i18n import KNOWN_LOCALES, normalize_locale
 from app.models.user import User
+from app.schemas.invitation import AcceptInvitationRequest, InvitationPreview
 from app.schemas.auth import (
     ForgotPasswordRequest,
     GoogleAuthRequest,
@@ -26,7 +27,7 @@ from app.schemas.auth import (
     VerifyEmailRequest,
     VerifyResetCodeRequest,
 )
-from app.services import auth_service, oauth_service, password_reset_service
+from app.services import auth_service, invitation_service, oauth_service, password_reset_service
 
 router = APIRouter(tags=["auth"])
 logger = logging.getLogger(__name__)
@@ -47,6 +48,11 @@ _LOGIN_IP_LIMIT = 30
 _LOGIN_IP_WINDOW = 900
 _LOGIN_EMAIL_LIMIT = 5
 _LOGIN_EMAIL_WINDOW = 900
+# Staff invitations (PRO-462), per client IP. Preview runs on every /invite
+# page load, so it gets more headroom than the password-setting accept.
+_INVITATION_PREVIEW_IP_LIMIT = 30
+_INVITATION_ACCEPT_IP_LIMIT = 10
+_INVITATION_IP_WINDOW = 900
 
 _RATE_LIMIT_SCRIPT = """
 local count = redis.call('INCR', KEYS[1])
@@ -203,6 +209,31 @@ async def google_login(body: GoogleAuthRequest, db: AsyncSession = Depends(get_d
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
+    return TokenResponse(access_token=token, user=user)
+
+
+@router.get("/invitations/{token}", response_model=InvitationPreview)
+async def preview_invitation(
+    token: str, request: Request, db: AsyncSession = Depends(get_db)
+) -> InvitationPreview:
+    await _check_rate_limit(
+        f"invitation_preview_ip:{_client_ip(request)}",
+        _INVITATION_PREVIEW_IP_LIMIT,
+        _INVITATION_IP_WINDOW,
+    )
+    return await invitation_service.preview_invitation(db, token)
+
+
+@router.post("/invitations/accept", response_model=TokenResponse)
+async def accept_invitation(
+    body: AcceptInvitationRequest, request: Request, db: AsyncSession = Depends(get_db)
+) -> TokenResponse:
+    await _check_rate_limit(
+        f"invitation_accept_ip:{_client_ip(request)}",
+        _INVITATION_ACCEPT_IP_LIMIT,
+        _INVITATION_IP_WINDOW,
+    )
+    user, token = await invitation_service.accept_invitation(db, body)
     return TokenResponse(access_token=token, user=user)
 
 

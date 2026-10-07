@@ -10,7 +10,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.i18n.catalog import key as i18n_key
 from app.config import settings
+from app.models.invitation import Invitation
 from app.models.user import User
+from app.services import invitation_service
 from app.services.auth_service import create_jwt_token
 
 # requests.Session (which google.auth.transport.requests.Request wraps) isn't
@@ -60,7 +62,7 @@ async def _lookup_google_user(google_id: str, email: str, db: AsyncSession) -> U
     return result.scalar_one_or_none()
 
 
-def _adopt_as_google_verified(user: User, google_id: str) -> None:
+def _adopt_as_google_verified(user: User, google_id: str, invitation: Invitation | None) -> None:
     if not user.is_verified:
         # An unverified row could have been created by someone else
         # squatting on this email with a password of their choosing —
@@ -68,23 +70,33 @@ def _adopt_as_google_verified(user: User, google_id: str) -> None:
         # row's existing password is not. Clear it so that password
         # stops granting access once we adopt the row as verified.
         user.hashed_password = None
+        # Only an adopted row takes the invited role: a verified account is
+        # never silently promoted, its invitation just stays pending.
+        if invitation is not None:
+            invitation_service.apply_to_user(user, invitation)
     user.google_id = google_id
     user.is_verified = True
 
 
 async def login_or_register_google(token: str, db: AsyncSession) -> tuple[User, str]:
+    """Google sign-in. A pending staff invitation on the Google email is
+    accepted here as well (PRO-462): a new or adopted account gets the
+    invited role instead of `student`."""
     claims = await verify_google_id_token(token)
     google_id, email = claims["sub"], claims["email"].strip().lower()
 
     user = await _lookup_google_user(google_id, email, db)
+    invitation = await invitation_service.pending_for_email(db, email)
 
     if user:
-        _adopt_as_google_verified(user, google_id)
+        _adopt_as_google_verified(user, google_id, invitation)
         await db.commit()
         await db.refresh(user)
         return user, create_jwt_token(user)
 
     user = User(email=email, hashed_password=None, google_id=google_id, is_verified=True)
+    if invitation is not None:
+        invitation_service.apply_to_user(user, invitation)
     db.add(user)
     try:
         await db.commit()
@@ -99,11 +111,13 @@ async def login_or_register_google(token: str, db: AsyncSession) -> tuple[User, 
         # Google login — apply the same squatting-adoption logic as the
         # `if user:` branch above, or an attacker's password set moments
         # earlier would still grant access to the row Google just verified.
+        # The rollback dropped the invitation lock too — look it up again.
         await db.rollback()
         user = await _lookup_google_user(google_id, email, db)
         if user is None:
             raise
-        _adopt_as_google_verified(user, google_id)
+        invitation = await invitation_service.pending_for_email(db, email)
+        _adopt_as_google_verified(user, google_id, invitation)
         await db.commit()
         await db.refresh(user)
         return user, create_jwt_token(user)
