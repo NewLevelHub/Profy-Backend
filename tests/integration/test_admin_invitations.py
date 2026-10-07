@@ -104,7 +104,6 @@ async def test_create_stores_invitation_without_user_and_sends_email(
     invitation = await db_session.scalar(select(Invitation).where(Invitation.email == email))
     assert invitation is not None
     assert invitation.token_hash == hash_token(_token(body["invite_url"]))
-    assert invitation.email_message_id is not None
     assert invitation.email_status == InvitationEmailStatus.sent
     ttl = invitation.expires_at - invitation.created_at
     assert timedelta(hours=71) < ttl <= timedelta(hours=72, minutes=1)
@@ -344,8 +343,8 @@ async def test_resend_overtaken_by_another_resend_is_409_and_keeps_the_newer_ema
     client: httpx.AsyncClient, admin_headers: dict[str, str], db_session: AsyncSession, monkeypatch
 ) -> None:
     """Another admin's resend replaces the token while this email is going
-    out: this request must not hand back its now-dead link, nor overwrite
-    the newer email's id (webhook events are matched by it)."""
+    out: this request must not hand back its now-dead link or overwrite the
+    newer attempt's result."""
     invitation = await _add_invitation(db_session, _email())
 
     async def _overtaken(*_args, **_kwargs) -> str:
@@ -354,7 +353,6 @@ async def test_resend_overtaken_by_another_resend_is_409_and_keeps_the_newer_ema
             .where(Invitation.id == invitation.id)
             .values(
                 token_hash=hash_token("newer-token"),
-                email_message_id="msg-newer",
                 email_status=InvitationEmailStatus.sent,
             )
         )
@@ -368,7 +366,7 @@ async def test_resend_overtaken_by_another_resend_is_409_and_keeps_the_newer_ema
     assert response.json()["error_code"] == "invitation_superseded"
     await db_session.refresh(invitation)
     assert invitation.token_hash == hash_token("newer-token")
-    assert invitation.email_message_id == "msg-newer"
+    assert invitation.email_status == InvitationEmailStatus.sent
 
 
 @pytest.mark.parametrize("closed_field", ["revoked_at", "accepted_at"])
@@ -381,7 +379,7 @@ async def test_resend_overtaken_by_closure_is_409_and_does_not_record_the_email(
 ) -> None:
     """A revoke or accept while the provider call is in flight closes the
     token even though its hash stays on the row. The response must not expose
-    that dead link or attach the provider message to the closed invitation."""
+    that dead link or record the obsolete attempt on the closed invitation."""
     invitation = await _add_invitation(db_session, _email())
 
     async def _closed_while_sending(*_args, **_kwargs) -> str:
@@ -400,7 +398,6 @@ async def test_resend_overtaken_by_closure_is_409_and_does_not_record_the_email(
     assert response.json()["error_code"] == "invitation_superseded"
     await db_session.refresh(invitation)
     assert getattr(invitation, closed_field) is not None
-    assert invitation.email_message_id is None
     assert invitation.email_status is None
 
 

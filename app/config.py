@@ -41,10 +41,6 @@ class Settings(BaseSettings):
     # Reject an invitation to a domain that cannot receive mail (no MX / A
     # record). One DNS lookup on create; a lookup timeout lets it through.
     INVITATION_CHECK_DELIVERABILITY: bool = True
-    # Signing secret ("whsec_…") of the Resend webhook that reports delivery
-    # of invitation emails. Empty — the endpoint is off and an invitation
-    # stays "sent" (accepted by Resend) forever.
-    RESEND_WEBHOOK_SECRET: str = ""
     GOOGLE_CLIENT_ID: str = ""
 
     # Which backend build_storage_backend() returns:

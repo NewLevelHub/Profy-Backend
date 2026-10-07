@@ -77,9 +77,8 @@ class AdminInvitationItem(BaseModel):
     expires_at: datetime
     accepted_at: datetime | None
     revoked_at: datetime | None
-    # Fate of the latest email: `sent` = accepted by Resend; delivered /
-    # delayed / bounced / complained come from the Resend webhook; `failed` =
-    # not sent at all. null only for rows older than delivery tracking.
+    # Synchronous result of the latest attempt: accepted by the configured
+    # provider, or not sent. It does not claim delivery to the recipient.
     email_status: InvitationEmailStatus | None
 
 

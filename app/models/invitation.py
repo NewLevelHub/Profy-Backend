@@ -19,19 +19,11 @@ class InvitationStatus(str, enum.Enum):
 
 
 class InvitationEmailStatus(str, enum.Enum):
-    """What happened to the latest invitation email. `sent` only means Resend
-    accepted it; the rest arrive later through the Resend webhook."""
+    """Synchronous result of the latest invitation-email attempt."""
 
     sent = "sent"
-    delayed = "delayed"
-    delivered = "delivered"
-    bounced = "bounced"
-    complained = "complained"
-    # Provider error on send, Resend not configured, or `email.failed`.
+    # Provider error on send, or email is not configured in this environment.
     failed = "failed"
-    # Resend didn't even try: the address is on its suppression list after
-    # an earlier bounce or spam complaint (`email.suppressed`).
-    suppressed = "suppressed"
 
 
 class Invitation(Base):
@@ -84,13 +76,9 @@ class Invitation(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    # Resend id of the latest email: webhook events are matched by it, so
-    # events of an email replaced by a resend are ignored.
-    email_message_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     email_status: Mapped[InvitationEmailStatus | None] = mapped_column(
         Enum(InvitationEmailStatus, native_enum=False, length=16), nullable=True
     )
-    email_status_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     def status_at(self, now: datetime) -> InvitationStatus:
         if self.accepted_at is not None:

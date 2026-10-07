@@ -57,19 +57,6 @@ _CLOSED_STATUS_ERRORS: dict[InvitationStatus, str] = {
     InvitationStatus.expired: "invitation_expired",
 }
 
-# Delivery events never move the status back: a "delayed" arriving after
-# "delivered", or anything after a bounce, is ignored.
-_EMAIL_STATUS_RANK: dict[InvitationEmailStatus, int] = {
-    InvitationEmailStatus.sent: 0,
-    InvitationEmailStatus.delayed: 1,
-    InvitationEmailStatus.delivered: 2,
-    InvitationEmailStatus.bounced: 3,
-    InvitationEmailStatus.complained: 3,
-    InvitationEmailStatus.failed: 3,
-    InvitationEmailStatus.suppressed: 3,
-}
-
-
 def invitation_error(status_code: int, error_code: str) -> AppError:
     return AppError(
         status_code=status_code,
@@ -187,19 +174,25 @@ async def _get_for_update(db: AsyncSession, invitation_id: uuid.UUID) -> Invitat
     return invitation
 
 
-async def _send_email(invitation: Invitation, token: str) -> str | None:
-    """The Resend id of the queued email; None when it didn't go out (the
-    link still works — the admin hands it over by hand)."""
+async def _send_email(invitation: Invitation, token: str) -> bool:
+    """Whether the provider accepted the email for sending.
+
+    This deliberately makes no claim about delivery to the recipient. The
+    link remains available to the admin when the attempt fails.
+    """
     try:
-        return await email_service.send_invitation_email(
-            invitation.email,
-            build_invite_url(token),
-            role=invitation.role,
-            locale=invitation.locale,
+        return (
+            await email_service.send_invitation_email(
+                invitation.email,
+                build_invite_url(token),
+                role=invitation.role,
+                locale=invitation.locale,
+            )
+            is not None
         )
     except Exception:
         # email_service has logged the provider error.
-        return None
+        return False
 
 
 def _item(invitation: Invitation, inviter_email: str | None, now: datetime) -> AdminInvitationItem:
@@ -238,9 +231,9 @@ async def _sent(
     Because no lock is held, another request may replace or close the
     invitation while this email goes out. The outcome is recorded only while
     `token` still belongs to a pending invitation — otherwise this request
-    answers `invitation_superseded` instead of handing back a dead link, and
-    the newer email keeps its id (the webhook matches events by it)."""
-    message_id = await _send_email(invitation, token)
+    answers `invitation_superseded` instead of handing back a dead link or
+    overwriting the result of the newer attempt."""
+    email_sent = await _send_email(invitation, token)
     recorded_at = _now()
     recorded = await db.execute(
         update(Invitation)
@@ -253,11 +246,9 @@ async def _sent(
             Invitation.expires_at > recorded_at,
         )
         .values(
-            email_message_id=message_id or None,
             email_status=(
-                InvitationEmailStatus.sent if message_id is not None else InvitationEmailStatus.failed
-            ),
-            email_status_at=recorded_at,
+                InvitationEmailStatus.sent if email_sent else InvitationEmailStatus.failed
+            )
         )
         .execution_options(synchronize_session=False)
     )
@@ -383,25 +374,6 @@ async def invitation_link(db: AsyncSession, invitation_id: uuid.UUID) -> AdminIn
     if token is None:
         raise invitation_error(status.HTTP_409_CONFLICT, "invitation_link_unavailable")
     return AdminInvitationLink(invite_url=build_invite_url(token), expires_at=invitation.expires_at)
-
-
-async def record_email_event(
-    db: AsyncSession, message_id: str, email_status: InvitationEmailStatus, at: datetime
-) -> bool:
-    """Resend webhook: apply a delivery event to the invitation whose latest
-    email it is. False when none matches — another kind of email, or one
-    already replaced by a resend."""
-    invitation = await db.scalar(
-        select(Invitation).where(Invitation.email_message_id == message_id).with_for_update()
-    )
-    if invitation is None:
-        return False
-    current = invitation.email_status
-    if current is None or _EMAIL_STATUS_RANK[email_status] >= _EMAIL_STATUS_RANK[current]:
-        invitation.email_status = email_status
-        invitation.email_status_at = at
-    await db.commit()
-    return True
 
 
 # ── accepting (public) ──────────────────────────────────────────────────────
