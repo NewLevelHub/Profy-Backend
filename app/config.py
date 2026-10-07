@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = ""
     # Public SPA origin for deep links in transactional emails (no trailing slash).
     FRONTEND_URL: str = "http://localhost:5173"
+    # Lifetime of a staff invitation link (PRO-457); also printed in the email.
+    INVITATION_TTL_HOURS: int = 72
     GOOGLE_CLIENT_ID: str = ""
 
     # Which backend build_storage_backend() returns:

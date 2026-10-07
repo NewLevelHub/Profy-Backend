@@ -9,6 +9,7 @@ import resend
 from app.config import settings
 from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
 from app.i18n.catalog import tr
+from app.models.user import UserRole
 
 logger = logging.getLogger(__name__)
 
@@ -191,4 +192,34 @@ async def send_password_reset_email(
         await asyncio.to_thread(_send_resend, to, subject, plain, html)
     except Exception:
         logger.exception("Failed to send password reset email to %s", to)
+        raise
+
+
+async def send_invitation_email(
+    to: str, invite_url: str, *, role: UserRole, locale: str = DEFAULT_LOCALE
+) -> None:
+    """Staff invitation (PRO-461). `locale` is `invitations.locale` — the
+    invitee has no `users` row yet. Raises on a provider failure, like the
+    OTP emails: the inviting admin must learn the email did not go out."""
+    loc = _email_locale(locale)
+    strings = tr("email", locale=loc)
+    params = {
+        "role": strings[f"invitation_role_{role.value}"],
+        "hours": str(settings.INVITATION_TTL_HOURS),
+        "invite_url": invite_url,
+    }
+    subject = strings["invitation_subject"]
+    plain = strings["invitation_plain"].format(**params)
+    html = _load_template(
+        "invitation.html", loc, **{k: escape(v) for k, v in params.items()}
+    )
+
+    if not settings.RESEND_API_KEY:
+        logger.warning("Resend not configured — invitation link for %s: %s", to, invite_url)
+        return
+
+    try:
+        await asyncio.to_thread(_send_resend, to, subject, plain, html)
+    except Exception:
+        logger.exception("Failed to send invitation email to %s", to)
         raise
