@@ -42,8 +42,8 @@ services:
   # STORAGE_FS_ROOT=/srv/media in .env.development; MEDIA_DIR must match the
   # prod stack's MEDIA_DIR (default /srv/profy-media).
 
-  # Service name api_dev (not "api") so joining the prod edge network
-  # does not steal DNS name "api" / "db" from production.
+  # Service name api_dev (not "api") so joining the shared edge network
+  # does not steal DNS name "api" from production.
   api_dev:
     image: ${DEV_API_IMAGE:?DEV_API_IMAGE must be set by the deployment workflow}
     container_name: profi_api_dev
@@ -82,6 +82,9 @@ networks:
   profi_network_dev:
     name: profi_network_dev
     driver: bridge
+  # nginx's edge network (see docker-compose.prod.yml) — never the production
+  # stack's own profi-backend_profi_network, where profi_db_prod and
+  # profi_redis_prod live.
   profi_edge:
     external: true
-    name: ${PROFI_EDGE_NETWORK_NAME:-profi-backend_profi_network}
+    name: profi_edge
