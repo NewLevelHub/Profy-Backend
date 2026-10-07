@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "comment": "Eysenck EPI cut-offs (epic PRO-338, Ф1.5). Loaded by app.config.load_eysenck_thresholds. Changing a threshold = edit here + bump `version`, NO code change (same contract as validity_thresholds.json / PRO-297). lie_scale_max_ok=4: source spec says '> 4-5 указывает на неискренность' — >4 taken as the clear boundary, i.e. raw 5+ flags the protocol (Тикеты-новые-тесты/02-Фаза1-Лёгкие-тесты.md §1.Б Ф1.5). extraversion_bounds/neuroticism_bounds are ascending inclusive upper bounds for every band except the last, which is 'greater than the last bound'.",
+  "lie_scale_max_ok": 4,
+  "extraversion_bounds": [4, 8, 14, 19],
+  "neuroticism_bounds": [8, 13, 19]
+}

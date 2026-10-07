@@ -5,15 +5,16 @@ Category lives on `MotivationStatement`, never duplicated onto
 bigfive_service (response rows store which *statement* was picked, not its
 category; category is read via a join/lookup at scoring time)."""
 
+
 import uuid
-from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.assessment import Assessment, AssessmentStatus
+from app.i18n.catalog import key as i18n_key
+from app.models.assessment import Assessment
 from app.models.motivation import MotivationResponse, MotivationStatement
 from app.schemas.motivation import MotivationAnswerItem, SubmitMotivationResponse
 from app.services import assessment_shared
@@ -25,12 +26,11 @@ _LEAST_POINTS = 0
 
 
 async def triplets(db: AsyncSession) -> dict[int, list[MotivationStatement]]:
-    result = await db.execute(
-        select(MotivationStatement).order_by(
-            MotivationStatement.triplet_index, MotivationStatement.order
-        )
+    stmt = select(MotivationStatement).order_by(
+        MotivationStatement.triplet_index, MotivationStatement.order
     )
     grouped: dict[int, list[MotivationStatement]] = {}
+    result = await db.execute(stmt)
     for statement in result.scalars().all():
         grouped.setdefault(statement.triplet_index, []).append(statement)
     return grouped
@@ -50,6 +50,18 @@ async def answered_count(assessment_id: uuid.UUID, db: AsyncSession) -> int:
         )
     )
     return result.scalar_one()
+
+
+async def saved_answers(assessment_id: uuid.UUID, db: AsyncSession) -> dict[int, tuple[uuid.UUID, uuid.UUID]]:
+    """triplet_index → (most_statement_id, least_statement_id)."""
+    result = await db.execute(
+        select(
+            MotivationResponse.triplet_index,
+            MotivationResponse.most_statement_id,
+            MotivationResponse.least_statement_id,
+        ).where(MotivationResponse.assessment_id == assessment_id)
+    )
+    return {triplet_index: (most, least) for triplet_index, most, least in result.all()}
 
 
 async def raw_scores(assessment_id: uuid.UUID, db: AsyncSession) -> dict[str, int]:
@@ -90,9 +102,11 @@ async def submit_motivation_answers(
     row_result = await db.execute(select(Assessment).where(Assessment.id == assessment_id))
     assessment = row_result.scalar_one_or_none()
     if assessment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "assessment_not_found", locale="ru"))
     if assessment.profile_id != current_profile_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=i18n_key("api_errors", "access_denied", locale="ru"))
+
+    assessment_shared.ensure_assessment_accepts_answers(assessment)
 
     grouped = await triplets(db)
     for item in answers:
@@ -100,20 +114,19 @@ async def submit_motivation_answers(
         if not statements:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Unknown triplet {item.triplet_index}",
+                detail=i18n_key("api_errors", "unknown_triplet", locale="ru").format(triplet_index=item.triplet_index),
             )
         valid_ids = {s.id for s in statements}
         if item.most_statement_id not in valid_ids or item.least_statement_id not in valid_ids:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Statement does not belong to this triplet",
+                detail=i18n_key("api_errors", "statement_does_not_belong_to_this_triplet", locale="ru"),
             )
         if item.most_statement_id == item.least_statement_id:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="most and least must differ"
+                status_code=status.HTTP_400_BAD_REQUEST, detail=i18n_key("api_errors", "most_and_least_must_differ", locale="ru")
             )
 
-    is_retake = assessment.status == AssessmentStatus.completed
     if answers:
         stmt = pg_insert(MotivationResponse).values(
             [
@@ -136,24 +149,21 @@ async def submit_motivation_answers(
         )
         await db.execute(stmt)
 
-    if is_retake:
-        assessment.status = AssessmentStatus.in_progress
-        assessment.completed_at = None
-        redis = assessment_shared.get_redis()
-        await assessment_shared.invalidate_retake(assessment, db, redis)
-
     mot_answered = await answered_count(assessment_id, db)
     mot_total = await total_triplets(db)
     mot_completed = mot_total > 0 and mot_answered >= mot_total
 
-    age_group = await assessment_shared.get_profile_age_group(assessment.profile_id, db)
     likert_answered = await assessment_shared.likert_answered_count(assessment_id, db)
-    likert_total = await assessment_shared.likert_total_questions(db, age_group)
+    likert_total = await assessment_shared.likert_total_questions(db)
     likert_completed = likert_total > 0 and likert_answered >= likert_total
 
-    if mot_completed and likert_completed and assessment.status != AssessmentStatus.completed:
-        assessment.status = AssessmentStatus.completed
-        assessment.completed_at = datetime.now(timezone.utc)
+    # `assessment.status` only flips once Belbin + АСТУР are done too (they're
+    # not optional/psychologist-only despite an older comment elsewhere
+    # claiming that — the continuous flow routes every student through both
+    # right after this triplet phase) — see try_complete_assessment.
+    await assessment_shared.try_complete_assessment(
+        assessment, likert_completed=likert_completed, motivation_completed=mot_completed, db=db
+    )
 
     await db.commit()
 

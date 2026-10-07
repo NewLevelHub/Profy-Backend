@@ -82,8 +82,9 @@ async def test_uploads_new_photo_and_marks_it_primary(db_session: AsyncSession):
     images_result = await db_session.execute(select(UniversityImage).where(UniversityImage.university_id == university.id))
     image = images_result.scalar_one()
     assert image.is_primary is True
-    # Every import is re-encoded to WebP by optimize_image(), whatever the
-    # source format was — the PNG fed in above is never what gets stored.
+    # optimize_image() always re-encodes to WebP regardless of the source
+    # format (app/services/university_photo_import_service.py) — a PNG in
+    # stays a WebP out.
     assert image.content_type == "image/webp"
 
 

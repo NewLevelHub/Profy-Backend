@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.database import get_db
 from app.dependencies import get_current_student_user
+from app.i18n import guess_locale_from_language_field
 from app.models.artifact import Artifact
 from app.models.certificate import Certificate
 from app.models.profile import Profile
@@ -15,6 +17,7 @@ from app.schemas.profile import (
     ProfileUpdateRequest,
 )
 from app.services import artifact_service, certificate_service, profile_service
+from app.services.profile_service import AgeGradeMismatchError
 
 router = APIRouter(tags=["profile"])
 
@@ -49,6 +52,16 @@ async def create_profile(
     try:
         profile = await profile_service.create_profile(current_user.id, data, db, commit=False)
 
+        # Pre-fill the UI locale from the "language of instruction" field at
+        # profile creation. Gated ONLY on `locale_explicit` (contract §6): while
+        # the user has never picked a locale via the switcher, the language
+        # field is the authoritative implicit signal and always wins — including
+        # over an `Accept-Language`-seeded "kk" when the language of instruction
+        # is Russian. The heuristic yields "kk" or "ru", so this can move the
+        # value either way. Any explicit switcher choice disables this for good.
+        if not current_user.locale_explicit:
+            current_user.locale = guess_locale_from_language_field(data.language)
+
         saved_artifacts: list[Artifact] = []
         if data.artifacts is not None:
             saved_artifacts = await artifact_service.save_artifacts(
@@ -76,7 +89,7 @@ async def get_profile(
 ) -> ProfileResponse:
     profile = await profile_service.get_profile(current_user.id, db)
     if profile is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "profile_not_found", locale="ru"))
     artifacts = await artifact_service.get_artifacts(profile.id, db)
     certificates = await certificate_service.get_certificates(profile.id, db)
     return _to_response(profile, artifacts, certificates)
@@ -98,6 +111,8 @@ async def update_profile(
         profile, artifacts, certificates = await profile_service.update_profile(
             current_user.id, data, db
         )
+    except AgeGradeMismatchError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     return _to_response(profile, artifacts, certificates)

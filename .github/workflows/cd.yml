@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: backend-production
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
@@ -14,6 +18,7 @@ env:
 jobs:
   build_and_push:
     name: Build and push production image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
@@ -58,6 +63,7 @@ jobs:
   deploy_production:
     name: Deploy to production
     needs: build_and_push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
 
@@ -88,10 +94,10 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          # Default is 10m — too short for build_universities.py's first-run
-          # destructive rebuild (prune + reinsert every University/Program row)
-          # against a real database; every later run is a near no-op, but the
-          # timeout has to cover the slow first run too.
+          # University/program loading (build_universities.py) no longer runs
+          # here — see the comment near the bottom of this script — so 40m is
+          # generous headroom rather than a hard requirement; left this size
+          # in case that step is ever reinstated or another one grows slow.
           command_timeout: 40m
           envs: DOCKER_REGISTRY,DOCKER_USERNAME,DOCKER_PASSWORD,DOCKER_REPOSITORY,DEPLOY_PATH,COMMIT_SHA
           script: |
@@ -109,7 +115,7 @@ jobs:
               IMAGE_PATH="${DOCKER_USERNAME}/${IMAGE_PATH}"
             fi
             SHORT_SHA="${COMMIT_SHA::7}"
-            export API_IMAGE="${DOCKER_REGISTRY}/${IMAGE_PATH}:sha-${SHORT_SHA}"
+            export PROD_API_IMAGE="${DOCKER_REGISTRY}/${IMAGE_PATH}:sha-${SHORT_SHA}"
 
             if [ ! -f ".env.production" ]; then
               echo "ERROR: .env.production not found in $DEPLOY_PATH"
@@ -123,13 +129,26 @@ jobs:
               exit 1
             fi
 
-            grep -v '^API_IMAGE=' .env.production > .env.production.tmp
-            echo "API_IMAGE=${API_IMAGE}" >> .env.production.tmp
+            grep -vE '^(API_IMAGE|PROD_API_IMAGE)=' .env.production > .env.production.tmp
+            echo "PROD_API_IMAGE=${PROD_API_IMAGE}" >> .env.production.tmp
             mv .env.production.tmp .env.production
 
-            docker pull "$API_IMAGE"
+            docker pull "$PROD_API_IMAGE"
 
-            docker rm -f profi_api_prod profi_nginx_prod 2>/dev/null || true
+            # Let's Encrypt certs for both vhosts on this edge nginx live 90 days and
+            # nothing else renews them. `certbot renew` is a no-op unless a cert is
+            # within 30 days of expiry, so running it on every deploy is cheap; the
+            # nginx recreate below picks up the renewed files. The HTTP-01 challenge
+            # is answered by the running nginx from ./certbot/www (the
+            # /.well-known/acme-challenge/ location in nginx.prod.conf), so this runs
+            # before the production nginx recreation. A failed renewal warns but does not block a deploy.
+            mkdir -p certbot/www
+            if ! flock /tmp/profi-edge-nginx.lock docker run --rm \
+                -v /etc/letsencrypt:/etc/letsencrypt \
+                -v "$PWD/certbot/www:/var/www/certbot" \
+                certbot/certbot renew --non-interactive --webroot -w /var/www/certbot; then
+              echo "WARN: certbot renew failed — certificates in /etc/letsencrypt may expire"
+            fi
 
             # Ensure db/redis are running (first deploy); do not force-recreate to keep data volumes.
             docker compose --env-file .env.production -f docker-compose.prod.yml up -d db redis
@@ -149,9 +168,9 @@ jobs:
             done
 
             # nginx.conf is regenerated from the git-tracked nginx.prod.conf on every
-            # deploy instead of relying on server-side hand-edits. The dev pipeline
-            # (cd-dev.yml) restarts the same shared profi_nginx_prod container, so this
-            # is flock-guarded to avoid the two pipelines interleaving on the same file.
+            # deploy instead of relying on server-side hand-edits. Only main owns this shared edge; dev never copies
+            # configuration or recreates production containers. Keep the lock for
+            # server-side maintenance using the same edge lock.
             flock /tmp/profi-edge-nginx.lock -c '
               if [ -f nginx.prod.conf ]; then
                 cp nginx.prod.conf nginx.conf
@@ -176,34 +195,32 @@ jobs:
             echo "Running seed scripts..."
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_riasec_questions.py
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_bigfive_questions.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_mi_questions.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_question_pairs.py
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_motivation_statements.py
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_motivation_pairs.py
+            # PRO-338: psychological block (ДДО, Eysenck, Elers, Boyko, Kondash) — content lives in `questions`
+            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_professional_types_questions.py
+            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_eysenck_questions.py
+            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_elers_questions.py
+            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_boyko_empathy_questions.py
+            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_kondash_anxiety_questions.py
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/seed_riasec_directions.py
             docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/apply_direction_content.py
-            # Universities/programs — single committed snapshot
-            # (scripts/data/university_snapshot.clean.json), one loader.
-            # Replaces the ~30-script seed/apply/backfill pipeline this block
-            # used to run (seed_kz_universities.py, seed_92_professions_universities.py,
-            # import_jinaq_universities.py, every apply_*/backfill_*/merge_* for
-            # universities). Deterministic uuid5 ids: on the FIRST run against a DB
-            # seeded the old way, this is a one-time destructive rebuild (every
-            # University/Program row gets pruned and reinserted under a new id —
-            # direction_roadmaps.program_id is nulled, ON DELETE SET NULL); every
-            # later run is a near no-op. See docs/content-pipeline-id-resolution-audit.md.
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/build_universities.py
-            # University photo files are named by the pre-canonicalization slugs;
-            # build_universities.py's dedup + canonical-slug pass renames ~220
-            # university slugs, so rename the matching <slug>.webp / <slug>.card.webp
-            # in the shared media folder to match (idempotent — already-renamed
-            # files are skipped). Run inside the api container (not on this host —
-            # $DEPLOY_PATH only has docker-compose.prod.yml/nginx.prod.conf, not the
-            # scripts/ tree) against /srv/media, the same path api mounts read-write.
-            if docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api test -d /srv/media/universities; then
-              docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/rename_university_photos.py --media-dir /srv/media --apply
-            fi
+            # PRO-427: freeze result snapshots of АСТУР attempts finished before
+            # snapshots existed (idempotent — a no-op once done).
+            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/backfill_astur_legacy_snapshots.py
+            # «Почему тебе подходит» for reports built before it or under an older
+            # career_fit_rules.json version (idempotent — a no-op once current).
+            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/backfill_career_fit.py
+            # Universities/programs (scripts/data/university_snapshot.clean.json)
+            # removed from every-deploy CD (2026-09-28): the snapshot changes
+            # rarely (twice total as of this date, last 2026-09-02) and
+            # build_universities.py is the slowest step in this whole script —
+            # up to ~40m on a full rebuild, and a real DB round-trip diffing
+            # ~12.4k programs even on a no-op run. Run manually after editing
+            # the snapshot (see its own docstring for the full explanation —
+            # deterministic uuid5 ids, prune-then-upsert, admin-lock-aware):
+            #   docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/build_universities.py
+            #   docker compose --env-file .env.production -f docker-compose.prod.yml exec -T api python scripts/rename_university_photos.py --media-dir /srv/media --apply
 
             echo "=== Production deploy complete ==="
-            echo "Image: $API_IMAGE"
+            echo "Image: $PROD_API_IMAGE"
             docker compose --env-file .env.production -f docker-compose.prod.yml ps

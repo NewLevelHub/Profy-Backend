@@ -12,7 +12,7 @@ class UniversityExternalRef(Base):
     """Links one external source's record (e.g. jinaq institution id) to a
     University row. Populated by scripts/import_jinaq_universities.py — see
     that script's docstring for the exact-match-only linking rule (no fuzzy
-    matching, mirrors scripts/apply_ovpo_codes.py). Re-running the import
+    matching). Re-running the import
     looks a record up here first, so a source id always resolves to the same
     university_id regardless of what name-matching would produce this time.
     """

@@ -83,12 +83,8 @@ async def complete_json(
 ) -> dict[str, Any]:
     """Return the model's JSON object, constrained to `schema`. Raises LLMError on failure.
 
-    `timeout` and `max_tokens` default to the global settings; long generations
-    (both roadmap generators) override them — the defaults are sized for short
-    completions and a big plan simply cannot finish inside them. `model` likewise
-    defaults to the global cheap model; the roadmap generators pass a stronger
-    one (`settings.LLM_ROADMAP_MODEL`) since they're the densest, highest-value
-    output in the app."""
+    `timeout`, `max_tokens` and `model` default to the global settings; a caller
+    with a longer generation can override them."""
     if not is_enabled():
         raise LLMError("LLM disabled or API key missing")
 

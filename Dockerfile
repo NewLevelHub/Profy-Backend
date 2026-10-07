@@ -22,4 +22,7 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# The API is only exposed to the internal Docker network; nginx is the public
+# edge. Trust its forwarded client IP so per-IP security limits do not collapse
+# every user into the nginx container's address.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]

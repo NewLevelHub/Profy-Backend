@@ -1,0 +1,76 @@
+name: migrations guard
+
+# PRO-429 — blocking Alembic checks on every PR into dev/main. The same checks
+# run locally from .githooks/ (pre-push etc.), this is the net for anything
+# pushed around them. No `paths:` filter on purpose: a required check that
+# doesn't run on some PRs leaves them stuck on "expected".
+on:
+  pull_request:
+    branches: [dev, main]
+    # labeled/unlabeled: re-run when `migration-edit-approved` is added/removed.
+    # edited: changing the PR base must check the new target branch.
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+  merge_group:
+
+jobs:
+  history:
+    name: migrations-history
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # needs the base branch and the merge-base
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: check
+        env:
+          BASE_REF: ${{ github.base_ref || github.event.merge_group.base_ref }}
+          ALLOW_MODIFIED: ${{ contains(github.event.pull_request.labels.*.name, 'migration-edit-approved') }}
+        run: |
+          flags="--base origin/${BASE_REF#refs/heads/}"
+          if [ "$ALLOW_MODIFIED" = "true" ]; then
+            echo "::warning::migration-edit-approved: правка уже влитых миграций разрешена меткой"
+            flags="$flags --allow-modified"
+          fi
+          python scripts/migrations_fix.py check $flags || {
+            echo "::error::Проверка миграций не прошла (подробности выше). Локально: python scripts/migrations_fix.py fix"
+            exit 1
+          }
+
+  schema:
+    name: migrations-schema
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: profi_user
+          POSTGRES_PASSWORD: profi_password
+          POSTGRES_DB: profi_db
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U profi_user -d profi_db"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://profi_user:profi_password@localhost:5432/profi_db
+      REDIS_URL: redis://localhost:6379/0
+      SECRET_KEY: ci-not-a-secret
+      LLM_ENABLED: "false"
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      - name: alembic upgrade head
+        run: alembic upgrade head
+
+      - name: models match migrations
+        run: python scripts/check_schema_drift.py

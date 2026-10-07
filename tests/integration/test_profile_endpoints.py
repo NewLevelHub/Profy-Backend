@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.artifact import Artifact
-from app.models.profile import Profile
+from app.models.profile import Profile, compute_age_group
 from app.models.user import User
 
 _BASE_PAYLOAD = {
@@ -125,6 +125,21 @@ async def test_combined_create_rejects_invalid_artifact_without_creating_profile
     assert result.scalar_one_or_none() is None
 
 
+async def test_create_rejects_incompatible_age_and_grade(
+    client: httpx.AsyncClient,
+    auth_headers: dict[str, str],
+    test_user: User,
+    db_session: AsyncSession,
+) -> None:
+    """PRO-420: 17 years + grade 3 must 422, not land in the DB."""
+    payload = {**_BASE_PAYLOAD, "age": 17, "grade": 3}
+    response = await client.post("/api/v1/profile", json=payload, headers=auth_headers)
+    assert response.status_code == 422
+
+    result = await db_session.execute(select(Profile).where(Profile.user_id == test_user.id))
+    assert result.scalar_one_or_none() is None
+
+
 async def test_combined_create_conflict_when_profile_already_exists(
     client: httpx.AsyncClient, auth_headers: dict[str, str], test_user: User
 ) -> None:
@@ -203,3 +218,70 @@ async def test_update_profile_without_artifacts_leaves_them_untouched(
     body = update_response.json()
     assert body["name"] == "Айгерим"
     assert [item["value"] for item in body["artifacts"]] == ["Шахматы"]
+
+
+async def _legacy_profile(db_session: AsyncSession, user: User, *, age: int, grade: int, name: str = "Аружан") -> None:
+    """A row saved before today's validation rules existed — written straight
+    to the DB, since the API would (rightly) refuse to create it now."""
+    db_session.add(
+        Profile(
+            user_id=user.id, name=name, age=age, grade=grade, city="Алматы", country="Казахстан",
+            language="ru", age_group=compute_age_group(age),
+        )
+    )
+    await db_session.flush()
+
+
+async def test_legacy_incompatible_pair_does_not_block_unrelated_updates(
+    client: httpx.AsyncClient, auth_headers: dict[str, str], test_user: User, db_session: AsyncSession
+) -> None:
+    """PRO-430: a pre-PRO-420 17 + grade 3 profile must still save its
+    certificates, artifacts and name — none of those touch the pair."""
+    await _legacy_profile(db_session, test_user, age=17, grade=3)
+
+    for payload in (
+        {"certificates": []},
+        {"artifacts": [{"type": "hobby", "value": "Шахматы"}]},
+        {"name": "Айгерим"},
+    ):
+        response = await client.put("/api/v1/profile", json=payload, headers=auth_headers)
+        assert response.status_code == 200, (payload, response.json())
+
+
+async def test_legacy_pair_still_rejected_when_the_request_touches_it(
+    client: httpx.AsyncClient, auth_headers: dict[str, str], test_user: User, db_session: AsyncSession
+) -> None:
+    await _legacy_profile(db_session, test_user, age=17, grade=3)
+
+    response = await client.put("/api/v1/profile", json={"grade": 4}, headers=auth_headers)
+    assert response.status_code == 422
+
+    fixed = await client.put("/api/v1/profile", json={"grade": 11}, headers=auth_headers)
+    assert fixed.status_code == 200
+    assert fixed.json()["grade"] == 11
+
+
+async def test_legacy_under_14_profile_can_save_artifacts(
+    client: httpx.AsyncClient, auth_headers: dict[str, str], test_user: User, db_session: AsyncSession
+) -> None:
+    """Ages 6–13 were valid until 2026-09-24; such a profile must not be
+    locked out of artifact edits that leave age alone."""
+    await _legacy_profile(db_session, test_user, age=12, grade=6, name="Ан")
+
+    response = await client.put(
+        "/api/v1/profile", json={"artifacts": [{"type": "hobby", "value": "Шахматы"}]}, headers=auth_headers
+    )
+    assert response.status_code == 200, response.json()
+
+
+async def test_age_grade_mismatch_message_is_localized(
+    client: httpx.AsyncClient, auth_headers: dict[str, str], test_user: User, db_session: AsyncSession
+) -> None:
+    payload = {**_BASE_PAYLOAD, "age": 17, "grade": 3}
+    ru = await client.post("/api/v1/profile", json=payload, headers=auth_headers)
+    test_user.locale = "kk"
+    await db_session.flush()
+    kk = await client.post("/api/v1/profile", json=payload, headers=auth_headers)
+    assert ru.status_code == kk.status_code == 422
+    assert "incompatible with grade 3" in str(ru.json())
+    assert "сәйкес келмейді" in str(kk.json())

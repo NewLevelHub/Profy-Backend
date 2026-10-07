@@ -11,12 +11,10 @@ always produces zero issues here.
 import re
 from dataclasses import dataclass
 
-from app.models.profile import AgeGroup
 from app.schemas.report_narrative import ReportNarrativeOutput
 from app.schemas.report_narrative_context import ReportNarrativeContext
-from app.services.mi_content import MI_LABELS
-from app.services.report_narrative_context import STRENGTH_CARD_EXCLUDED_SOURCE_TYPES, unknown_source_ids
-from app.services.riasec_content import RIASEC_LABELS
+from app.services.report_narrative_context import unknown_source_ids
+from app.services.riasec_content import riasec_labels
 
 # Приложение C, В.1 — verbatim phrases, matched as lowercase substrings.
 # Diagnoses/states is explicitly open-ended in the TZ ("любые формулировки о
@@ -42,39 +40,94 @@ BANNED_PHRASES: tuple[str, ...] = (
     "диагноз", "расстройство", "синдром", "психическое состояние",
 )
 
-# TZ §4.1 / mi_content.py: junior is not career-oriented — no profession,
-# university or exam language anywhere in a junior narrative.
-JUNIOR_CAREER_TERMS: tuple[str, ...] = (
-    "професси", "карьер", "университет", "поступлени", "специальност",
-    "экзамен", "зарплат", "резюме", "собеседован", "диплом",
+# KZ-402/KZ-403: the quality guards below match Russian substrings; a Kazakh
+# narrative (AI or fallback) needs the same checks in Kazakh. Kept separate,
+# not merged, so ru output is byte-unaffected. Both sets are checked for a
+# `kk` narrative (a kk answer that code-switches into a Russian banned
+# phrase is still bad).
+BANNED_PHRASES_KK: tuple[str, ...] = (
+    "сен гуманитарийсің", "сен технарьсің", "сен шығармашыл тұлғасың",
+    "сенің типің —", "сенің тұлғаң —", "тұлғасына жатасың",
+    "сен интровертсің", "сен экстравертсің",
+    "сенде қабілет жоқ", "саған берілмейді", "бұл сенікі емес",
+    "саған қиын болады", "сен алмайсың", "қолыңнан келмейді",
+    "саған сай келмейді", "бұл мамандық саған арналмаған",
+    "баруға тұрмайды", "басқасын таңдаған дұрыс",
+    "болуың керек", "таңдау керек", "сенің мамандығың —",
+    "төмен нәтиже", "әлсіз жағың", "әлсіз тұс", "нашар көрсеткіш",
+    "жеткіліксіз", "толық сәтсіздік", "артта қалу",
+    "көпшіліктен жақсырақ", "құрдастарыңнан нашар", "жасына орташа деңгей",
+    "міндетті түрде түсесің", "мүмкіндігің жоғары", "түсу ықтималдығы",
+    "табысқа жетесің", "қазір бастамасаң", "қазірдің өзінде артта қалдың",
+    "уақыт тым аз қалды",
+    "диагноз", "бұзылыс", "синдром", "психикалық жағдай",
 )
 
 _MAX_CAREER_CARDS = 3
+# PRO-432: an `interest` strength card must stay an interest to check, never
+# a proven ability ("умеешь", "хорошо понимаешь людей" from a RIASEC score
+# alone). Lowercase substrings; kk is checked together with ru.
+INTEREST_ABILITY_CLAIMS: tuple[str, ...] = (
+    "умеешь", "хорошо понимаешь", "у тебя получается", "тебе хорошо даётся",
+    "легко даётся", "способност", "способен", "способна", "талант",
+)
+INTEREST_ABILITY_CLAIMS_KK: tuple[str, ...] = (
+    "білесің", "қолыңнан келеді", "қабілет", "дарын", "жақсы түсінесің", "оңай беріледі",
+)
+# Any strength card: no intelligence labels — an АСТУР result is an
+# observation about task types, not a measure of the student.
+IQ_LABELS: tuple[str, ...] = (
+    "интеллект", "умнее", "гениальн", "одарённ", "одаренн", "умственн", "ақылдырақ", "дарынды",
+)
+_IQ_RE = re.compile(r"\biq\b", re.IGNORECASE)
 
-# Not exact TZ numbers (the TZ gives relative guidance — "объём в 2-3 раза
-# меньше" — not char counts): a generous per-age ceiling that still keeps
-# junior meaningfully shorter than senior, catching a runaway/rambling
+
+# Not exact TZ numbers: a generous ceiling that catches a runaway/rambling
 # generation without rejecting normal evidence-derived sentences. Raised
 # 2026-08-17 alongside the 3->5-6 sentence bump (product decision) — must
-# stay above report_narrative_fallback._summary()'s own length for every
-# age group, or the fallback would fail its own validator.
-_SUMMARY_MAX_LEN = {AgeGroup.junior: 550, AgeGroup.middle: 800, AgeGroup.senior: 1000}
-_CARD_DESC_MAX_LEN = {AgeGroup.junior: 160, AgeGroup.middle: 240, AgeGroup.senior: 320}
+# stay above report_narrative_fallback._summary()'s own length, or the
+# fallback would fail its own validator.
+_SUMMARY_MAX_LEN = 1000
+_CARD_DESC_MAX_LEN = 320
 # thinking_style_notes gets its own, larger budget: it's now one card
-# merging up to 2 signals (cue + example each) plus, for middle/senior, a
+# merging up to 2 signals (cue + example each) plus a
 # real-world-relevance sentence AND (when there's a high-tier personality
 # trait) one more sentence synthesizing it with the style — more genuine
 # content than a single strength/career card ever carries, not padding.
-_THINKING_STYLE_DESC_MAX_LEN = {AgeGroup.junior: 220, AgeGroup.middle: 480, AgeGroup.senior: 560}
+_THINKING_STYLE_DESC_MAX_LEN = 560
 # final_analysis: last section of the report, 3-5 sentences tying multiple
 # earlier sections together — naturally longer than a single card.
-_FINAL_ANALYSIS_MAX_LEN = {AgeGroup.junior: 400, AgeGroup.middle: 550, AgeGroup.senior: 650}
+_FINAL_ANALYSIS_MAX_LEN = 650
 
 _CYRILLIC_RE = re.compile(r"[а-яё]", re.IGNORECASE)
+_CYRILLIC_KK_RE = re.compile(r"[а-яёәғқңөұүһі]", re.IGNORECASE)
 _LATIN_RE = re.compile(r"[a-z]", re.IGNORECASE)
 _DIGIT_OR_PERCENT_RE = re.compile(r"[\d%]")
 _MIN_CYRILLIC_RATIO = 0.85
 _SENTENCE_END_RE = re.compile(r"[.!?]+(?=\s|$)")
+
+KK_SPECIFIC_CHARS: frozenset[str] = frozenset("әғқңөұүһі")
+
+RU_MARKER_WORDS: frozenset[str] = frozenset({
+    "и", "в", "не", "на", "с", "что", "как", "это", "по", "но", "к", "у", "ты",
+    "из", "за", "от", "о", "для", "или", "если", "когда", "только", "тебе",
+    "тебя", "твои", "твоя", "твой", "тобой", "твоем", "твоих", "очень", "также",
+    "так", "можно", "нужно", "будет", "было", "который", "которая", "которое",
+    "которые", "чтобы", "потому", "поэтому", "даже", "между", "через", "всегда",
+    "после", "перед", "более", "менее", "все", "всё", "всех", "всем", "свой",
+    "своей", "своего", "своих", "себя", "наш", "наша", "наше", "наши", "его",
+    "ее", "их", "еще", "уже", "где", "куда", "зачем", "почему", "раздел", "отчет",
+})
+
+KK_COMMON_WORDS: frozenset[str] = frozenset({
+    "және", "мен", "бен", "пен", "үшін", "туралы", "арқылы", "бойынша",
+    "себебі", "өйткені", "бірақ", "сондықтан", "егер", "онда", "қана", "ғана",
+    "емес", "болады", "болуы", "керек", "қажет", "тиіс", "мүмкін", "жақсы",
+    "жоғары", "төмен", "орташа", "бар", "жоқ", "бұл", "осы", "сол", "бір",
+    "екі", "үш", "әр", "барлық", "көп", "аз", "сен", "сенің", "саған",
+    "сенде", "сенен", "өзің", "өзіңнің", "мақсат", "бағыт", "дағды", "қабілет",
+    "нәтиже", "талдау", "жұмыс", "оқу", "білім", "мектеп", "жоба", "кезең",
+})
 # Product decision, 2026-08-17: summary must be 5-6 sentences, not the
 # earlier 3-5 — each new sentence must add real framing (see
 # report_narrative_fallback._summary's own docstring), not pad toward the
@@ -102,35 +155,103 @@ def _all_texts(output: ReportNarrativeOutput) -> list[str]:
 
 _MIN_LETTERS_TO_JUDGE = 15
 
+# Latin tokens the kk glossary (app/prompts/_locale.py: _LATIN_PROFESSION_TERMS
+# + glossary rule 1 "университеттердің ресми атауларын сақта") explicitly tells
+# the model to KEEP untranslated. Stripped before the Cyrillic-ratio check so
+# a mostly-Kazakh card that cites "Nazarbayev University" or "Data Engineer"
+# isn't flagged LANGUAGE_MISMATCH (which would burn retries and fall a valid
+# answer back to Russian). A genuinely English/Russian answer still trips the
+# ratio on its non-allowlisted Latin, and steps 2-3 catch Russian vocabulary.
+_ALLOWED_LATIN_TOKENS: frozenset[str] = frozenset({
+    "data", "engineer", "devops", "mobile", "ux", "ui", "qa", "hr", "pr",
+    "event", "digital", "nazarbayev", "university", "science", "excel", "kimep", "sdu",
+    "kbtu", "aitu", "narxoz", "it", "ai", "ml",
+})
+_ALLOWED_LATIN_RE = re.compile(
+    r"\b(?:" + "|".join(sorted(_ALLOWED_LATIN_TOKENS, key=len, reverse=True)) + r")\b",
+    re.IGNORECASE,
+)
 
-def _check_language(texts: list[str], language: str) -> list[ValidationIssue]:
-    if language != "ru":
-        # Only ru content/vocabulary exists to validate against right now
-        # (TZ_Profi.md §30 localization is future scope) — nothing to check.
-        return []
-    # Per-text, not aggregated: one field written in the wrong language must
-    # not be diluted into a passing ratio by every other (correct) field.
+
+def _check_language_kk(texts: list[str]) -> list[ValidationIssue]:
+    # 1. Cyrillic alphabet ratio check (allowlisted Latin proper nouns removed)
     for text in texts:
-        cyrillic = _CYRILLIC_RE.findall(text)
-        letters = cyrillic + _LATIN_RE.findall(text)
+        probe = _ALLOWED_LATIN_RE.sub(" ", text)
+        cyrillic = _CYRILLIC_KK_RE.findall(probe)
+        letters = cyrillic + _LATIN_RE.findall(probe)
         if len(letters) < _MIN_LETTERS_TO_JUDGE:
-            continue  # too short to judge reliably (e.g. a bare category title)
+            continue
         ratio = len(cyrillic) / len(letters)
         if ratio < _MIN_CYRILLIC_RATIO:
-            return [ValidationIssue("language", f"cyrillic ratio {ratio:.2f} below {_MIN_CYRILLIC_RATIO}")]
+            return [ValidationIssue("LANGUAGE_MISMATCH", f"cyrillic ratio {ratio:.2f} below {_MIN_CYRILLIC_RATIO}")]
+
+    # 2. Per-field Russian vs Kazakh markers check
+    for text in texts:
+        words = re.findall(r"[а-яёәғқңөұүһі]+", text.lower())
+        if len(words) < 4:
+            continue
+        ru_count = sum(1 for w in words if w in RU_MARKER_WORDS)
+        kk_chars_count = sum(1 for c in text.lower() if c in KK_SPECIFIC_CHARS)
+        kk_words_count = sum(1 for w in words if w in KK_COMMON_WORDS)
+        if ru_count >= 2 and kk_chars_count == 0 and kk_words_count == 0:
+            return [
+                ValidationIssue(
+                    "LANGUAGE_MISMATCH",
+                    f"Russian words detected in Kazakh narrative (ru_markers={ru_count}, kk_chars=0)",
+                )
+            ]
+
+    # 3. Whole response aggregated check
+    combined = " ".join(texts)
+    combined_words = re.findall(r"[а-яёәғқңөұүһі]+", combined.lower())
+    if len(combined_words) >= 10:
+        total_ru = sum(1 for w in combined_words if w in RU_MARKER_WORDS)
+        total_kk_chars = sum(1 for c in combined.lower() if c in KK_SPECIFIC_CHARS)
+        total_kk_words = sum(1 for w in combined_words if w in KK_COMMON_WORDS)
+        if total_ru >= 3 and total_ru > total_kk_chars + total_kk_words:
+            return [
+                ValidationIssue(
+                    "LANGUAGE_MISMATCH",
+                    f"Dominant Russian vocabulary in Kazakh response (ru={total_ru}, kk_chars={total_kk_chars}, kk_words={total_kk_words})",
+                )
+            ]
+        if total_kk_chars == 0 and (total_ru >= 2 or len(combined_words) >= 30):
+            return [
+                ValidationIssue(
+                    "LANGUAGE_MISMATCH",
+                    f"No Kazakh-specific characters found in response of {len(combined_words)} words",
+                )
+            ]
+
     return []
 
 
-def _check_banned_vocabulary(texts: list[str], age_group: AgeGroup) -> list[ValidationIssue]:
+def _check_language(texts: list[str], language: str) -> list[ValidationIssue]:
+    if language == "ru":
+        # Per-text, not aggregated: one field written in the wrong language must
+        # not be diluted into a passing ratio by every other (correct) field.
+        for text in texts:
+            cyrillic = _CYRILLIC_RE.findall(text)
+            letters = cyrillic + _LATIN_RE.findall(text)
+            if len(letters) < _MIN_LETTERS_TO_JUDGE:
+                continue  # too short to judge reliably (e.g. a bare category title)
+            ratio = len(cyrillic) / len(letters)
+            if ratio < _MIN_CYRILLIC_RATIO:
+                return [ValidationIssue("language", f"cyrillic ratio {ratio:.2f} below {_MIN_CYRILLIC_RATIO}")]
+        return []
+    if language == "kk":
+        return _check_language_kk(texts)
+    return []
+
+
+def _check_banned_vocabulary(texts: list[str], language: str = "ru") -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     lowered = [t.lower() for t in texts]
-    for phrase in BANNED_PHRASES:
+
+    banned = BANNED_PHRASES + (BANNED_PHRASES_KK if language == "kk" else ())
+    for phrase in banned:
         if any(phrase in t for t in lowered):
             issues.append(ValidationIssue("banned_phrase", phrase))
-    if age_group == AgeGroup.junior:
-        for term in JUNIOR_CAREER_TERMS:
-            if any(term in t for t in lowered):
-                issues.append(ValidationIssue("junior_career_term", term))
     return issues
 
 
@@ -149,7 +270,7 @@ def _check_evidence_ids(output: ReportNarrativeOutput, context: ReportNarrativeC
 
 
 def _check_interests(output: ReportNarrativeOutput, context: ReportNarrativeContext) -> list[ValidationIssue]:
-    labels = MI_LABELS if context.interest_instrument == "mi" else RIASEC_LABELS
+    labels = riasec_labels()
     expected = set(labels.keys())
     got_categories = [i.category for i in output.interests]
     issues: list[ValidationIssue] = []
@@ -164,9 +285,8 @@ def _check_interests(output: ReportNarrativeOutput, context: ReportNarrativeCont
             f"expected categories {sorted(expected)}, got {sorted(set(got_categories))}",
         ))
 
-    strength_source_type = "mi_category" if context.interest_instrument == "mi" else "riasec_category"
     strong_categories = {
-        e.source_id.split(":", 1)[1] for e in context.evidence if e.source_type == strength_source_type
+        e.source_id.split(":", 1)[1] for e in context.evidence if e.source_type == "riasec_category"
     }
     for item in output.interests:
         if item.tier == "strong" and item.category not in strong_categories:
@@ -196,28 +316,55 @@ def _check_thinking_style_count(output: ReportNarrativeOutput, context: ReportNa
 
 
 def _check_strength_card_count(output: ReportNarrativeOutput, context: ReportNarrativeContext) -> list[ValidationIssue]:
-    # thinking_style evidence doesn't count here — it's reserved for
-    # thinking_style_notes (see _check_strength_card_sources below), so it
-    # can't inflate the pool this cardinality is measured against.
-    available = sum(1 for e in context.evidence if e.source_type not in STRENGTH_CARD_EXCLUDED_SOURCE_TYPES)
-    lo, hi = min(5, available), min(7, available)
-    count = len(output.strength_cards)
-    if not (lo <= count <= hi):
-        return [ValidationIssue("strength_card_count", f"expected {lo}-{hi}, got {count}")]
+    """The candidates are already the methodologically vetted list (PRO-432)
+    — one card each, never padded past it, never silently dropping one."""
+    expected = len(context.strength_candidates)
+    if len(output.strength_cards) != expected:
+        return [ValidationIssue("strength_card_count", f"expected {expected}, got {len(output.strength_cards)}")]
     return []
 
 
 def _check_strength_card_sources(output: ReportNarrativeOutput, context: ReportNarrativeContext) -> list[ValidationIssue]:
-    """TZ_Profi.md §18.2 п.2 vs п.4: "Сильные стороны" and "Стиль мышления"
-    are two different sections — a strength_card citing thinking_style
-    evidence would duplicate thinking_style_notes verbatim, so this is
-    rejected structurally rather than left to prompt-following alone."""
-    excluded_ids = {e.source_id for e in context.evidence if e.source_type in STRENGTH_CARD_EXCLUDED_SOURCE_TYPES}
+    """Each strength card cites exactly one strength candidate and nothing
+    else — RIASEC / personality / thinking-style / motivation evidence has
+    its own section, and a card grounded in no candidate would be a strength
+    the methodology never approved."""
+    candidate_ids = {c.source_id for c in context.strength_candidates}
     issues: list[ValidationIssue] = []
     for card in output.strength_cards:
-        leaked = excluded_ids & set(card.evidence_ids)
-        if leaked:
-            issues.append(ValidationIssue("strength_card_excluded_source_leak", card.title))
+        if len(card.evidence_ids) != 1 or card.evidence_ids[0] not in candidate_ids:
+            issues.append(ValidationIssue("strength_card_not_candidate", card.title))
+    return issues
+
+
+def _check_strength_card_explanations(
+    output: ReportNarrativeOutput, context: ReportNarrativeContext
+) -> list[ValidationIssue]:
+    """Require the exact methodology-owned explanation for every card."""
+    candidates = {candidate.source_id: candidate for candidate in context.strength_candidates}
+    issues: list[ValidationIssue] = []
+    for card in output.strength_cards:
+        if len(card.evidence_ids) != 1:
+            continue
+        candidate = candidates.get(card.evidence_ids[0])
+        if candidate is not None and card.description != candidate.description:
+            issues.append(ValidationIssue("strength_card_explanation_changed", card.title))
+    return issues
+
+
+def _check_strength_card_wording(
+    output: ReportNarrativeOutput, context: ReportNarrativeContext, language: str = "ru"
+) -> list[ValidationIssue]:
+    basis_by_id = {c.source_id: c.basis for c in context.strength_candidates}
+    ability_claims = INTEREST_ABILITY_CLAIMS + (INTEREST_ABILITY_CLAIMS_KK if language == "kk" else ())
+    issues: list[ValidationIssue] = []
+    for card in output.strength_cards:
+        text = f"{card.title} {card.description}".lower()
+        if any(label in text for label in IQ_LABELS) or _IQ_RE.search(text):
+            issues.append(ValidationIssue("strength_card_iq_label", card.title))
+        is_interest = any(basis_by_id.get(e) == "interest" for e in card.evidence_ids)
+        if is_interest and any(claim in text for claim in ability_claims):
+            issues.append(ValidationIssue("strength_card_interest_as_ability", card.title))
     return issues
 
 
@@ -238,14 +385,36 @@ def _check_strength_card_duplicate_evidence(output: ReportNarrativeOutput) -> li
     return issues
 
 
-def _check_career_narrative(
-    output: ReportNarrativeOutput, context: ReportNarrativeContext, age_group: AgeGroup
-) -> list[ValidationIssue]:
-    if age_group == AgeGroup.junior:
-        if output.career_narrative:
-            return [ValidationIssue("junior_career_narrative", "junior must not receive a career narrative")]
-        return []
+def _check_strength_card_repetition(output: ReportNarrativeOutput) -> list[ValidationIssue]:
+    """Reject a templated wall of cards even when every source is valid.
 
+    Repeating an identical explanation or the same three-word title opening
+    three or more times makes distinct observations read like copy-paste.
+    The deterministic fallback intentionally uses separate wording per RIASEC
+    direction, so an AI result that fails this check can safely fall back.
+    """
+    normalized_descriptions: dict[str, int] = {}
+    title_openings: dict[str, int] = {}
+    for card in output.strength_cards:
+        description = " ".join(card.description.lower().split())
+        normalized_descriptions[description] = normalized_descriptions.get(description, 0) + 1
+
+        words = re.findall(r"[а-яёәғқңөұүһіa-z]+", card.title.lower())
+        opening = " ".join(words[:3])
+        if len(words) >= 3:
+            title_openings[opening] = title_openings.get(opening, 0) + 1
+
+    issues: list[ValidationIssue] = []
+    for description, count in normalized_descriptions.items():
+        if description and count >= 2:
+            issues.append(ValidationIssue("strength_card_repeated_description", description[:120]))
+    for opening, count in title_openings.items():
+        if count >= 3:
+            issues.append(ValidationIssue("strength_card_repeated_title_opening", opening))
+    return issues
+
+
+def _check_career_narrative(output: ReportNarrativeOutput, context: ReportNarrativeContext) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     if len(output.career_narrative) > _MAX_CAREER_CARDS:
         issues.append(ValidationIssue(
@@ -266,10 +435,11 @@ def _check_no_source_id_leak(output: ReportNarrativeOutput, context: ReportNarra
     instructed. _check_language's Cyrillic-ratio check doesn't catch this
     (the leaked id is a tiny fraction of an otherwise-Russian sentence)."""
     texts = _all_texts(output)
+    source_ids = [e.source_id for e in context.evidence] + [c.source_id for c in context.strength_candidates]
     issues: list[ValidationIssue] = []
-    for evidence in context.evidence:
-        if any(evidence.source_id in t for t in texts):
-            issues.append(ValidationIssue("source_id_leak", evidence.source_id))
+    for source_id in source_ids:
+        if any(source_id in t for t in texts):
+            issues.append(ValidationIssue("source_id_leak", source_id))
     return issues
 
 
@@ -292,16 +462,28 @@ _FRAME_PHRASE_SUBSTRINGS: tuple[str, ...] = (
     "карта возможных направлений",
 )
 
+# Kazakh paraphrase of the same disclaimer idea (KZ-403). The kk disclaimer
+# text lives in app/i18n/catalog/result_v2.py (`disclaimer` key); these are
+# the substrings a kk narrative would use if it re-stated the "not a final
+# choice / a map of possible directions" framing.
+_FRAME_PHRASE_SUBSTRINGS_KK: tuple[str, ...] = (
+    "түпкілікті таңдау емес",
+    "мүмкін бағыттардың картасы",
+)
 
-def _check_no_disclaimer_duplicate(output: ReportNarrativeOutput) -> list[ValidationIssue]:
+
+def _check_no_disclaimer_duplicate(
+    output: ReportNarrativeOutput, language: str = "ru"
+) -> list[ValidationIssue]:
     """Applies to both summary and final_analysis — same reasoning either
     way: DISCLAIMER already carries this exact idea, shown unconditionally
     on the page, so writing it again anywhere in the LLM's own text
     duplicates that line."""
+    phrases = _FRAME_PHRASE_SUBSTRINGS + (_FRAME_PHRASE_SUBSTRINGS_KK if language == "kk" else ())
     issues: list[ValidationIssue] = []
     for field_name, text in (("summary", output.summary), ("final_analysis", output.final_analysis)):
         lowered = text.lower()
-        for phrase in _FRAME_PHRASE_SUBSTRINGS:
+        for phrase in phrases:
             if phrase in lowered:
                 code = "summary_duplicates_disclaimer" if field_name == "summary" else "final_analysis_duplicates_disclaimer"
                 issues.append(ValidationIssue(code, phrase))
@@ -334,25 +516,25 @@ def _check_final_analysis_sentence_count(output: ReportNarrativeOutput) -> list[
     return []
 
 
-def _check_lengths(output: ReportNarrativeOutput, age_group: AgeGroup) -> list[ValidationIssue]:
+def _check_lengths(output: ReportNarrativeOutput) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
-    summary_max = _SUMMARY_MAX_LEN[age_group]
+    summary_max = _SUMMARY_MAX_LEN
     if not (10 <= len(output.summary) <= summary_max):
         issues.append(ValidationIssue("summary_length", f"len={len(output.summary)}, max={summary_max}"))
 
-    final_analysis_max = _FINAL_ANALYSIS_MAX_LEN[age_group]
+    final_analysis_max = _FINAL_ANALYSIS_MAX_LEN
     if not (10 <= len(output.final_analysis) <= final_analysis_max):
         issues.append(ValidationIssue(
             "final_analysis_length", f"len={len(output.final_analysis)}, max={final_analysis_max}",
         ))
 
-    desc_max = _CARD_DESC_MAX_LEN[age_group]
+    desc_max = _CARD_DESC_MAX_LEN
     all_cards = output.strength_cards + output.career_narrative + [output.motivation_narrative]
     for card in all_cards:
         if not (5 <= len(card.description) <= desc_max):
             issues.append(ValidationIssue("card_length", f"{card.title!r} len={len(card.description)}, max={desc_max}"))
 
-    ts_max = _THINKING_STYLE_DESC_MAX_LEN[age_group]
+    ts_max = _THINKING_STYLE_DESC_MAX_LEN
     for card in output.thinking_style_notes:
         if not (5 <= len(card.description) <= ts_max):
             issues.append(ValidationIssue("card_length", f"{card.title!r} len={len(card.description)}, max={ts_max}"))
@@ -365,24 +547,26 @@ def validate(
     *,
     language: str = "ru",
 ) -> list[ValidationIssue]:
-    age_group = AgeGroup(context.age_group)
     texts = _all_texts(output)
 
     issues: list[ValidationIssue] = []
     issues += _check_language(texts, language)
-    issues += _check_banned_vocabulary(texts, age_group)
+    issues += _check_banned_vocabulary(texts, language)
     issues += _check_no_new_numbers(texts)
     issues += _check_evidence_ids(output, context)
     issues += _check_interests(output, context)
     issues += _check_thinking_style_count(output, context)
     issues += _check_strength_card_count(output, context)
     issues += _check_strength_card_sources(output, context)
+    issues += _check_strength_card_explanations(output, context)
     issues += _check_strength_card_duplicate_evidence(output)
-    issues += _check_career_narrative(output, context, age_group)
+    issues += _check_strength_card_repetition(output)
+    issues += _check_strength_card_wording(output, context, language)
+    issues += _check_career_narrative(output, context)
     issues += _check_no_source_id_leak(output, context)
     issues += _check_motivation_grounding(output, context)
     issues += _check_summary_sentence_count(output)
     issues += _check_final_analysis_sentence_count(output)
-    issues += _check_no_disclaimer_duplicate(output)
-    issues += _check_lengths(output, age_group)
+    issues += _check_no_disclaimer_duplicate(output, language)
+    issues += _check_lengths(output)
     return issues

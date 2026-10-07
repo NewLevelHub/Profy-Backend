@@ -23,8 +23,7 @@ class NarrativeCard(BaseModel):
 
 
 class InterestCard(BaseModel):
-    """One entry per category of the age group's interest instrument (all 8
-    MI categories for junior, all 6 RIASEC letters for middle/senior) — the
+    """One entry per RIASEC letter (all 6) — the
     "Карта интересов" section, TZ_Profi.md §18.2/§18.3. `tier` is "strong"
     only for a category the evidence catalog actually flagged as a top
     interest; every other category is "steady" — never framed as a
@@ -39,10 +38,8 @@ class InterestCard(BaseModel):
 
 
 class MotivationNarrative(BaseModel):
-    """Single unified shape regardless of whether motivation_top came from
-    junior/middle's Harter pairs or senior's MOST/LEAST triplets — the
-    evidence catalog already collapsed that distinction before this prompt
-    ever runs (see report_narrative_context.py)."""
+    """Built from motivation_top (MOST/LEAST triplets) via the evidence
+    catalog (see report_narrative_context.py)."""
 
     title: str
     description: str
@@ -55,9 +52,7 @@ class ReportNarrativeOutput(BaseModel):
     interests: list[InterestCard]
     thinking_style_notes: list[NarrativeCard]
     motivation_narrative: MotivationNarrative
-    # Junior (TZ_Profi.md §4.1: not career-oriented) must get an empty list.
-    # middle/senior get a short, RIASEC-evidence-grounded "why explore this"
-    # narrative — never profession names/salaries/university facts, since
+    # A short, RIASEC-evidence-grounded "why explore this" narrative — never profession names/salaries/university facts, since
     # none of that exists in the evidence catalog to ground it in.
     career_narrative: list[NarrativeCard] = []
     # Shown last on the page, after every other section — ties the report

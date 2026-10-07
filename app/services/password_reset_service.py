@@ -56,7 +56,7 @@ async def initiate_reset(email: str, db: AsyncSession) -> None:
     await db.commit()
 
     try:
-        await email_service.send_password_reset_email(email, code)
+        await email_service.send_password_reset_email(email, code, locale=user.locale)
     except Exception:
         logger.exception("Failed to send password reset email for %s", email)
 
@@ -81,7 +81,12 @@ async def verify_code(email: str, code: str, db: AsyncSession) -> None:
 
 
 async def reset_password(email: str, code: str, new_password: str, db: AsyncSession) -> None:
-    result = await db.execute(select(User).where(User.email == email))
+    # Serialize resets for one account. Besides protecting token_version from
+    # a lost update, this makes the reset code truly one-time when two copies
+    # of the same request arrive concurrently.
+    result = await db.execute(
+        select(User).where(User.email == email).with_for_update()
+    )
     user = result.scalar_one_or_none()
     if not user:
         raise ValueError("Invalid code")
@@ -99,5 +104,6 @@ async def reset_password(email: str, code: str, new_password: str, db: AsyncSess
         raise ValueError("Invalid code")
 
     user.hashed_password = hash_password(new_password)
+    user.token_version += 1
     await _invalidate_reset_tokens(user.id, db)
     await db.commit()

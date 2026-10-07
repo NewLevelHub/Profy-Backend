@@ -1,57 +1,66 @@
 """Low-level helpers shared between assessment_service.py and
 motivation_service.py — split out to avoid a circular import (assessment
 needs motivation's totals for AssessmentResponse; motivation needs
-assessment's Likert totals + retake-invalidation to decide when the whole
-test — not just its own phase — is complete)."""
+assessment's Likert totals and completion guard to decide when the whole test
+— not just its own phase — is complete)."""
 
 import logging
 import uuid
+from datetime import datetime, timezone
 
 import redis.asyncio as aioredis
+from fastapi import status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models.analysis_result import AnalysisResult
-from app.models.assessment import Assessment, AssessmentGoal
-from app.models.direction_inquiry import DirectionInquiry
-from app.models.direction_roadmap import DirectionRoadmap
-from app.models.profile import AgeGroup, Profile
-from app.models.question import Question, QuestionInstrument
-from app.models.roadmap import Roadmap
+from app.errors import AppError
+from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
+from app.i18n.catalog import key as i18n_key
+from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
+from app.models.profile import AgeGroup
+from app.models.question import Question, active_question_clause
 from app.models.user_response import UserResponse
-from app.services.age_tiers import visible_tiers
 
 logger = logging.getLogger(__name__)
 
 _redis: aioredis.Redis | None = None
 
-# Single source of truth for the report cache key — report_service.py reads/
-# writes this, invalidate_retake() below must delete the exact same key.
+# Single source of truth for the report cache key used by report generation,
+# publication, locale changes, and other explicit cache invalidation paths.
 # Versioned (was bare "report:{id}", then "report:v2") so a pre-rollout
 # payload can never be read back under new semantics: the old prefix is
 # simply never addressed again by any code path, not filtered out at read
 # time. Bumped to v3 alongside the Big Five relative-tiering / acquiescence
 # correction rework — the response shape is unchanged but the personality
 # levels a cached v2 payload carries are the old absolute-cutoff ones.
-REPORT_CACHE_KEY_PREFIX = "report:v3"
+# Bumped to v4 for KZ-405: the key now carries the artifact locale
+# (`report:v4:{locale}:{assessment_id}`, now v5) so a `ru` and a `kk` report for the
+# same assessment don't clobber each other's cache entry.
+# Bumped to v5 with the careers' «Почему тебе подходит» (`why` rebuilt from
+# career fit, `fit_reasons` / `fit_keys` added): a v4 payload would serve
+# the old career text for up to the 24h TTL.
+REPORT_CACHE_KEY_PREFIX = "report:v5"
 
-# Same versioning principle for the goal roadmap cache — bumped 2026-08-18
-# alongside the portrait/recommended_paths prompt rework, so no stale
-# pre-rollout cache entry (old wording) can be served after a deploy.
-# roadmap_builder._cache_key builds the full key from this prefix; this
-# module only needs the prefix to scan-invalidate on retake.
-ROADMAP_CACHE_KEY_PREFIX = "roadmap:v2"
-
-# Same principle for the direction roadmap cache — bumped alongside the
-# subject_focus-by-grade prompt rework. roadmap_builder.direction_cache_key
-# builds the full key from this prefix; this module needs it to delete the
-# exact key on invalidate_direction_flow.
-DIRECTION_ROADMAP_CACHE_KEY_PREFIX = "droadmap:v2"
+def report_cache_key(assessment_id: uuid.UUID, locale: str = DEFAULT_LOCALE) -> str:
+    return f"{REPORT_CACHE_KEY_PREFIX}:{locale}:{assessment_id}"
 
 
-def report_cache_key(assessment_id: uuid.UUID) -> str:
-    return f"{REPORT_CACHE_KEY_PREFIX}:{assessment_id}"
+def owner_locale_cache_key(assessment_id: uuid.UUID) -> str:
+    """Caches the report's owner locale (`users.locale`) so the hot
+    `GET /result` path — polled ~every 2s during generation and on every
+    results-page load — doesn't run a 2-join `assessment→profile→user` query
+    before every cache hit. Invalidated on retake and on `PATCH /auth/me`
+    (the only ways the owner locale changes)."""
+    return f"{REPORT_CACHE_KEY_PREFIX}:loc:{assessment_id}"
+
+
+def report_cache_keys(assessment_id: uuid.UUID) -> list[str]:
+    """Every per-locale report cache key + the owner-locale pointer — retake /
+    invalidation must clear all, not just the one the retaking client is on."""
+    return [report_cache_key(assessment_id, loc) for loc in KNOWN_LOCALES] + [
+        owner_locale_cache_key(assessment_id)
+    ]
 
 
 def get_redis() -> aioredis.Redis:
@@ -74,97 +83,20 @@ async def safe_redis_delete(redis: aioredis.Redis, *keys: str) -> None:
         logger.warning("redis delete failed for keys=%s", keys, exc_info=True)
 
 
-async def safe_redis_scan(redis: aioredis.Redis, pattern: str) -> list[str]:
-    try:
-        return [key async for key in redis.scan_iter(match=pattern)]
-    except aioredis.RedisError:
-        logger.warning("redis scan failed for pattern=%s", pattern, exc_info=True)
-        return []
+def ensure_assessment_accepts_answers(assessment: Assessment) -> None:
+    """Keep completed diagnostics and their reviewed reports immutable.
 
-
-async def invalidate_direction_flow(
-    assessment: Assessment, db: AsyncSession, redis: aioredis.Redis
-) -> None:
-    """Drop everything derived from the direction flow for this assessment."""
-    assessment_id = assessment.id
-    slugs_result = await db.execute(
-        select(DirectionInquiry.direction_slug).where(
-            DirectionInquiry.assessment_id == assessment_id
+    A retake is a new ``Assessment`` created through ``create_assessment``;
+    answer endpoints must never reopen an old row.  This guard is shared by
+    Likert, forced-choice pairs, and motivation so a stale tab cannot erase a
+    generated report through any of the three write paths.
+    """
+    if assessment.status == AssessmentStatus.completed:
+        raise AppError(
+            status_code=status.HTTP_409_CONFLICT,
+            error_code="assessment_already_completed",
+            detail=i18n_key("api_errors", "assessment_already_completed"),
         )
-    )
-    slugs = slugs_result.scalars().all()
-
-    await db.execute(
-        DirectionRoadmap.__table__.delete().where(DirectionRoadmap.assessment_id == assessment_id)
-    )
-    await db.execute(
-        DirectionInquiry.__table__.delete().where(DirectionInquiry.assessment_id == assessment_id)
-    )
-    assessment.selected_direction_slug = None
-
-    for slug in slugs:
-        await safe_redis_delete(
-            redis,
-            f"{DIRECTION_ROADMAP_CACHE_KEY_PREFIX}:{assessment_id}:{slug}",
-            f"dq:{assessment_id}:{slug}",
-        )
-
-
-async def invalidate_goal_roadmap(
-    assessment_id: uuid.UUID, db: AsyncSession, redis: aioredis.Redis
-) -> None:
-    """Drop the goal roadmap (roadmap_builder.generate_roadmap/get_roadmap):
-    the DB row plus every cached variant for this assessment, including the
-    program-specific ones from the university gap-analysis path. Cache keys
-    are a plain `roadmap:{assessment_id}:{program_id|"none"}` (see
-    roadmap_builder._cache_key — deliberately not hashed) so every variant
-    can be found via a scan, not just the one program_id this call happens
-    to know about. Takes the bare id (not the `Assessment` object, unlike
-    `invalidate_direction_flow`) — see tests/integration/
-    test_goal_roadmap_retake_invalidation.py for the contract this matches."""
-    pattern = f"{ROADMAP_CACHE_KEY_PREFIX}:{assessment_id}:*"
-    stale_keys = await safe_redis_scan(redis, pattern)
-    await safe_redis_delete(redis, *stale_keys)
-    await db.execute(Roadmap.__table__.delete().where(Roadmap.assessment_id == assessment_id))
-
-
-async def invalidate_retake(
-    assessment: Assessment, db: AsyncSession, redis: aioredis.Redis
-) -> None:
-    """Full retake reset, shared by every submit-answers entrypoint (ordinary
-    Likert, question pairs, senior motivation triplets, Harter motivation
-    pairs): drop the stale report, the direction flow and the goal roadmap so
-    a completed retake never leaves old-data artifacts behind for the next
-    GET. Caller is still responsible for flipping `assessment.status` back to
-    `in_progress` — that's entrypoint-specific (some flip it unconditionally,
-    the motivation ones only after checking the other phase)."""
-    assessment_id = assessment.id
-
-    old_result = await db.execute(
-        select(AnalysisResult).where(AnalysisResult.assessment_id == assessment_id)
-    )
-    old_analysis = old_result.scalar_one_or_none()
-    if old_analysis is not None:
-        await db.delete(old_analysis)
-
-    # Reset goal changed count and secondary goals
-    assessment.goal_changed_count = 0
-    assessment.secondary_goals = []
-
-    # Clean up goal overlays and their caches
-    from app.models.goal_overlay import GoalOverlay
-    from app.services.goal_overlay_service import invalidate_goal_overlay_cache
-    await db.execute(GoalOverlay.__table__.delete().where(GoalOverlay.assessment_id == assessment_id))
-    await invalidate_goal_overlay_cache(assessment_id, db)
-
-    await safe_redis_delete(redis, report_cache_key(assessment_id))
-    await invalidate_direction_flow(assessment, db, redis)
-    await invalidate_goal_roadmap(assessment_id, db, redis)
-
-
-async def get_profile_age_group(profile_id: uuid.UUID, db: AsyncSession) -> AgeGroup:
-    result = await db.execute(select(Profile.age_group).where(Profile.id == profile_id))
-    return result.scalar_one()
 
 
 def get_effective_goal(age_group: AgeGroup, primary_goal: AssessmentGoal) -> AssessmentGoal:
@@ -174,12 +106,11 @@ def get_effective_goal(age_group: AgeGroup, primary_goal: AssessmentGoal) -> Ass
     stored (defensive: the only enforced gate today is at goal-selection and
     goal-change time, not here).
 
-    This is the single source of truth for "which goal does report/roadmap
+    This is the single source of truth for "which goal does report
     generation actually run under" — `goal_overlay_service` uses it to derive
-    the displayed scenario (A/B/C) and banner text; `roadmap_builder` and
-    `student_context` must use it too so what gets generated always matches
-    what the student was told. Never branch on `assessment.goal` directly for
-    generation — always resolve it through this function first."""
+    the displayed scenario (A/B/C) and banner text. Never branch on
+    `assessment.goal` directly for generation — always resolve it through
+    this function first."""
     if age_group == AgeGroup.junior:
         return AssessmentGoal.explore
     if age_group == AgeGroup.middle and primary_goal == AssessmentGoal.university:
@@ -189,19 +120,129 @@ def get_effective_goal(age_group: AgeGroup, primary_goal: AssessmentGoal) -> Ass
     return primary_goal
 
 
-async def likert_total_questions(db: AsyncSession, age_group: AgeGroup) -> int:
-    query = select(func.count(Question.id)).where(Question.age_tier.in_(visible_tiers(age_group)))
-    if age_group == AgeGroup.junior:
-        # Junior's RIASEC content is retired in favor of the MI instrument
-        # (see question_pair_service.get_pairs) — exclude it from the total
-        # so completion tracking doesn't count stale, never-shown questions.
-        query = query.where(Question.instrument != QuestionInstrument.riasec)
-    result = await db.execute(query)
+async def likert_total_questions(db: AsyncSession) -> int:
+    result = await db.execute(
+        select(func.count(Question.id)).where(active_question_clause())
+    )
     return result.scalar_one()
 
 
 async def likert_answered_count(assessment_id: uuid.UUID, db: AsyncSession) -> int:
     result = await db.execute(
-        select(func.count(UserResponse.id)).where(UserResponse.assessment_id == assessment_id)
+        select(func.count(UserResponse.id))
+        .join(Question, Question.id == UserResponse.question_id)
+        .where(
+            UserResponse.assessment_id == assessment_id,
+            active_question_clause(),
+        )
     )
     return result.scalar_one()
+
+
+async def motivation_completed(assessment_id: uuid.UUID, db: AsyncSession) -> bool:
+    """Whether the motivation triplets are all answered. Local import for
+    the same circular-import reason as try_complete_assessment below
+    (motivation_service imports this module)."""
+    from app.services import motivation_service
+
+    mot_answered = await motivation_service.answered_count(assessment_id, db)
+    mot_total = await motivation_service.total_triplets(db)
+    return mot_total > 0 and mot_answered >= mot_total
+
+
+async def belbin_and_astur_completed(assessment_id: uuid.UUID, db: AsyncSession) -> bool:
+    """Whether both Belbin and АСТУР are done for this assessment. Belbin/
+    АСТУР used to be treated as separate/optional (an older comment
+    elsewhere in this codebase claimed they're psychologist-only), but the
+    continuous flow (MotivationTripletFlow.tsx)
+    routes every student through both right after motivation — so anything
+    that decides "is this assessment actually done" (report generation,
+    `assessment.status`) must require them too, or a student who exits
+    between motivation and Belbin gets a "report ready" screen for a test
+    they haven't finished (observed live: an assessment marked completed
+    with 0 belbin_runs and 0 astur_runs).
+
+    Local import: belbin_service/astur runs are import-free of this
+    module, so this direction is safe, but keeping it local (rather than at
+    module level) keeps this file's own import graph simple regardless."""
+    from app.services import belbin_service
+    from app.services.astur import runs as astur_runs
+
+    belbin_run = await belbin_service.get_run(assessment_id, db)
+    if belbin_run is None:
+        return False
+    return await astur_runs.has_completed_run(db, assessment_id)
+
+
+async def try_complete_assessment(
+    assessment: Assessment, *, likert_completed: bool, motivation_completed: bool, db: AsyncSession
+) -> bool:
+    """Flips `assessment.status` to `completed` once every required phase is
+    actually done — Likert/pairs, motivation, Belbin, AND АСТУР (see
+    `belbin_and_astur_completed`). Called from the tail end of each phase's
+    own submit (motivation_service, astur router)
+    since none of them alone knows when the *last* phase finishes; whichever
+    call lands last is the one that actually flips it.
+
+    Does not commit — caller's existing commit picks this up in the same
+    transaction as its own phase's write, so a completed-without-Belbin/
+    АСТУР assessment can't land even under a partial failure."""
+    if assessment.status == AssessmentStatus.completed:
+        return False
+    if not (likert_completed and motivation_completed):
+        return False
+    if not await belbin_and_astur_completed(assessment.id, db):
+        return False
+
+    assessment.status = AssessmentStatus.completed
+    assessment.completed_at = datetime.now(timezone.utc)
+    return True
+
+
+async def try_complete_assessment_if_ready(
+    assessment: Assessment, db: AsyncSession
+) -> bool:
+    """Reconcile completion after any required stage writes successfully.
+
+    The UI normally submits the stages in a fixed order, but stale tabs and
+    direct API clients need not do so. Every stage can call this helper, so
+    the database outcome does not depend on which required write arrives last.
+    """
+    likert_answered = await likert_answered_count(assessment.id, db)
+    likert_total = await likert_total_questions(db)
+    return await try_complete_assessment(
+        assessment,
+        likert_completed=likert_total > 0 and likert_answered >= likert_total,
+        motivation_completed=await motivation_completed(assessment.id, db),
+        db=db,
+    )
+
+
+async def response_time_deltas_ms(
+    assessment_id: uuid.UUID, db: AsyncSession
+) -> list[int]:
+    """Passively-collected reaction-time signal for the protocol-validity
+    module (PRO-298): milliseconds between consecutive answer saves, in save
+    order. Read straight off `user_responses.created_at` (stamped server-side
+    on every write) — nothing is collected from or shown to the client.
+
+    NOT part of scoring. validity_service (PRO-299) stores this on
+    `assessment_validity.rt_ms` as raw calibration data only; `sd_level` /
+    `traffic_light` never depend on it.
+
+    Granularity is page-level, not per-question: the client submits answers
+    in batches (LikertPage = 5 at a time) and each batch is one INSERT, so
+    every row in a batch shares a `created_at` and appears here as a run of
+    `0`s followed by one real inter-batch gap ≈ time spent on that page. The
+    ticket forbids a frontend change, so finer timing isn't available.
+    """
+    result = await db.execute(
+        select(UserResponse.created_at)
+        .where(UserResponse.assessment_id == assessment_id)
+        .order_by(UserResponse.created_at, UserResponse.id)
+    )
+    stamps = list(result.scalars().all())
+    return [
+        max(0, round((later - earlier).total_seconds() * 1000))
+        for earlier, later in zip(stamps, stamps[1:])
+    ]

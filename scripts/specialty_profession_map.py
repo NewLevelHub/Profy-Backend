@@ -4,13 +4,13 @@ system kept breaking because it inferred a profession match from a shared
 CATEGORY, and categories necessarily blur together things (a style word like
 "инженерия" fit a dozen unrelated jobs; a group's own title sometimes lied
 about its contents). This file instead says, for each real specialty name in
-university-data/*.py, exactly which profession(s) from scripts/riasec_professions.py
+the KZ university catalogue, exactly which profession(s) from scripts/riasec_professions.py
 it actually trains someone for — hand-authored, not inferred by substring
 matching. A specialty can list more than one profession (e.g. "Хореография"
 trains a "Хореограф" who could also become a "Преподаватель искусства"); a
 program with no clear professional match should not be force-fit — leave it
-out of SPECIALTY_TO_PROFESSIONS and it will show up in
-scripts/seed_kz_universities.py's "unmapped" report for manual review.
+out of SPECIALTY_TO_PROFESSIONS and it will show up as uncovered in
+scripts/build_program_direction_map.py's coverage report for manual review.
 
 GARBAGE_SPECIALTIES holds source-data entries that are not real specialties
 at all — a partner university's own name listed as if it were a program
@@ -233,7 +233,10 @@ SPECIALTY_TO_PROFESSIONS: dict[str, list[str]] = {
     "Менеджмент предприятий": ["predprinimatel"],
     "Глобальный менеджмент": ["predprinimatel"],
     "Инновационный менеджмент": ["predprinimatel"],
-    "Бизнес администрирование": ["predprinimatel", "sekretar-deloproizvoditel", "spetsialist-po-kadrovomu-deloproizvodstvu"],
+    "Бизнес администрирование": ["predprinimatel", "sekretar-deloproizvoditel", "hr-menedzher"],
+    # Was tagged "Специалист по кадровому делопроизводству" until that
+    # profession merged into HR-менеджер (PRO-432).
+    "Human Resource Management (Personnel Administration)": ["hr-menedzher"],
     "Бизнес и управление": ["predprinimatel"],
     "Бизнес-предпринимательство и инновации": ["predprinimatel"],
     "Международный бизнес": ["predprinimatel"],
@@ -577,7 +580,7 @@ SPECIALTY_TO_PROFESSIONS: dict[str, list[str]] = {
     "Аквакультура": ["veterinar"],
     "Английский язык": ["shkolnyy-uchitel"],
     "Банковское дело и финансы": ["finansovyy-konsultant"],
-    "Бизнес-администрирование": ["predprinimatel", "sekretar-deloproizvoditel", "spetsialist-po-kadrovomu-deloproizvodstvu"],
+    "Бизнес-администрирование": ["predprinimatel", "sekretar-deloproizvoditel", "hr-menedzher"],
     "Бурение скважин": ["burovoy-inzhener-neftegazovoe-delo"],
     "Бухгалтерия": ["buhgalter"],
     "Бухгалтерия и аудит": ["buhgalter", "auditor"],
@@ -667,14 +670,14 @@ SPECIALTY_TO_PROFESSIONS: dict[str, list[str]] = {
 #   * the new mappings stay reviewable as one unit;
 #   * a key that already exists can't be silently dropped by a duplicate literal
 #     (a real Python footgun — last dict key wins);
-#   * seed_kz_universities.py needs no change — it still just reads
-#     SPECIALTY_TO_PROFESSIONS.
+#   * consumers (build_program_direction_map.py) need no change — they still
+#     just read SPECIALTY_TO_PROFESSIONS.
 # Each list holds ONLY the slugs to ADD; the merge loop below appends them to the
 # existing list (deduped) or creates the key. Same rule as the rest of the file:
 # a specialty is listed under a profession only when it genuinely trains for it,
 # not by shared category. `voennyy-ofitser` is deliberately absent — no civilian
-# bachelor specialty in university-data/*.py trains an army officer, and the
-# module docstring prefers leaving it in the "unmapped" report over a forced fit.
+# bachelor specialty in the KZ catalogue trains an army officer, and the
+# module docstring prefers leaving it uncovered over a forced fit.
 _ADDITIONAL_SPECIALTY_PROFESSIONS: dict[str, list[str]] = {
     # --- IT: roles that share the CS/SE/IS specialties ---
     "Информационные системы": ["data-engineer"],

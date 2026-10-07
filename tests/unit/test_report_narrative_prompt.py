@@ -1,31 +1,20 @@
 """app/prompts/report_narrative.py — pure prompt-text/schema unit tests, no
-DB, no LLM. Same style as tests/unit/test_roadmap_prompt.py.
+DB, no LLM.
 
 Structured Outputs (strict mode) forbids minItems/maxItems, so exact
-cardinality (8 MI / 6 RIASEC interests, junior's empty career_narrative)
+cardinality (6 RIASEC interests)
 can't be enforced by the JSON schema itself — this file checks the schema
 shape and that the system prompt actually spells out those rules in text,
 since app.services.report_narrative_validator is what enforces them for real.
 """
-from app.models.profile import AgeGroup
 from app.prompts import report_narrative as prompt
 from app.schemas.report_narrative_context import EvidenceItem, ReportNarrativeContext
-from app.services.mi_content import MI_LABELS
-from app.services.riasec_content import RIASEC_LABELS
-
-
-def _junior_context() -> ReportNarrativeContext:
-    return ReportNarrativeContext(
-        age_group=AgeGroup.junior.value,
-        interest_instrument="mi",
-        evidence=[EvidenceItem(source_id="mi:logical", source_type="mi_category", text="Логика и счёт")],
-    )
+from app.schemas.student_strengths import StrengthCandidate
+from app.services.riasec_content import riasec_labels
 
 
 def _senior_context() -> ReportNarrativeContext:
     return ReportNarrativeContext(
-        age_group=AgeGroup.senior.value,
-        interest_instrument="riasec",
         evidence=[EvidenceItem(source_id="riasec:R", source_type="riasec_category", text="Реалистичный")],
     )
 
@@ -62,19 +51,11 @@ def test_build_messages_returns_system_and_user_roles():
     assert messages[1]["content"]
 
 
-def test_junior_system_prompt_forbids_career_narrative_and_lists_all_eight_mi_categories():
-    system = prompt._system_prompt(_junior_context())
-    assert "career_narrative обязан быть пустым списком" in system
-    assert len(MI_LABELS) == 8
-    for key, label in MI_LABELS.items():
-        assert f"{key} ({label})" in system
-
-
 def test_senior_system_prompt_allows_limited_career_narrative_and_lists_six_riasec_categories():
     system = prompt._system_prompt(_senior_context())
     assert "не больше 3 карточек" in system
-    assert len(RIASEC_LABELS) == 6
-    for key, label in RIASEC_LABELS.items():
+    assert len(riasec_labels()) == 6
+    for key, label in riasec_labels().items():
         assert f"{key} ({label})" in system
 
 
@@ -90,9 +71,22 @@ def test_system_prompt_requires_evidence_backed_claims_and_bans_numbers():
     assert "Никогда не цитируй числа" in system
 
 
-def test_system_prompt_forbids_thinking_style_evidence_in_strength_cards():
-    system = prompt._system_prompt(_senior_context())
-    assert 'НЕ используй здесь evidence с source_type "thinking_style"' in system
+def test_system_prompt_ties_strength_cards_to_the_candidate_catalog():
+    candidate = StrengthCandidate(
+        source_id="strength:elers", source_type="elers", domain="self_regulation", basis="self_report",
+        content_key="elers", evidence_ids=["elers"], quality_flags=["x"], priority=5,
+        title="Ты настойчиво идёшь к своей цели", description="Описание",
+    )
+    context = _senior_context().model_copy(update={"strength_candidates": [candidate]})
+
+    system = prompt._system_prompt(context)
+
+    assert "РОВНО по одной карточке на КАЖДОГО кандидата" in system
+    assert "interest — это ИНТЕРЕС, который стоит проверить" in system
+    assert '"source_id": "strength:elers"' in system
+    assert "Ты настойчиво идёшь к своей цели" in system
+    # Internal selection details never reach the model.
+    assert '"elers"' not in system and "self_regulation" not in system
 
 
 def test_system_prompt_embeds_the_evidence_catalog_as_json():

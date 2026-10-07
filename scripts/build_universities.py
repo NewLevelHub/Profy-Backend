@@ -24,10 +24,8 @@ Design
        collide on the `slug` / `ror_id` / `ovpo_code` unique indexes.
     2. UPSERT — insert missing rows, update changed rows field-by-field,
        leave unchanged rows untouched.
-  On every later run the prune set is empty and step 2 is a near no-op, so
-  `direction_roadmaps.program_id` (the one long-lived FK into `programs`,
-  `ON DELETE SET NULL`) is nulled only on that first rebuild and stays intact
-  afterwards (the program keeps a stable id).
+  On every later run the prune set is empty and step 2 is a near no-op (each
+  program keeps a stable id).
 
 * Never sets `name_normalized` (DB-computed), `cost_*` or `ranking_label` /
   `uniranks_*` (deliberately not in the snapshot). `world_rank` -> `ranking`.
@@ -59,12 +57,11 @@ from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import selectinload
 
 from app.database import async_session
 from app.models.direction import Direction
-from app.models.direction_roadmap import DirectionRoadmap
 from app.models.program import Program
 from app.models.university import University
 from app.models.university_external_ref import UniversityExternalRef
@@ -118,9 +115,7 @@ def university_id(rec: dict) -> uuid.UUID:
     every child program's id, which is derived from it) never moves. The
     `slug` / `ror_id` / `ncc` fallbacks are only for the ~150 rows with no
     jinaq_id at all; for those, a slug change DOES move the id, which re-keys
-    their programs and nulls `direction_roadmaps.program_id`
-    (ON DELETE SET NULL) for any student who saved a plan against one. That
-    is acceptable only because slug canonicalization is a one-time build-time
+    their programs. That is acceptable only because slug canonicalization is a one-time build-time
     step that produces stable slugs — after it has run once, these ids are
     fixed too. Don't add a runtime code path that renames a curated slug."""
     k = rec.get("keys") or {}
@@ -166,7 +161,6 @@ class Stats:
         self.untagged_programs = 0
         self.unknown_slugs: set[str] = set()
         self.dupe_program_names: list[str] = []
-        self.roadmaps_unlinked = 0
         self.progs_per_slug: Counter = Counter()
         self.professions_empty: list[str] = []
         self.professions_thin: list[tuple[str, int]] = []
@@ -186,9 +180,6 @@ class Stats:
             f"external_refs  insert={self.ref_ins}  update={self.ref_upd}  prune={self.ref_del}\n"
             f"profession tag links: {self.tag_links}   programs with no tag: {self.untagged_programs}\n"
         )
-        if self.roadmaps_unlinked:
-            out += (f"WARNING: {self.roadmaps_unlinked} direction_roadmaps.program_id set NULL "
-                    f"by pruning old-id programs (one-time, on the first rebuild)\n")
         if self.unknown_slugs:
             out += f"unknown profession slugs (skipped): {sorted(self.unknown_slugs)}\n"
         if self.dupe_program_names:
@@ -257,15 +248,6 @@ async def main() -> int:
         stale_uni = [i for i in existing_uni_ids if i not in all_uni_ids]
         stale_ref = [k for k in existing_ref_keys if k not in all_ref_keys]
         st.prog_del, st.uni_del, st.ref_del = len(stale_prog), len(stale_uni), len(stale_ref)
-
-        if stale_prog:
-            st.roadmaps_unlinked = (
-                await db.execute(
-                    select(func.count()).select_from(DirectionRoadmap).where(
-                        DirectionRoadmap.program_id.in_(stale_prog)
-                    )
-                )
-            ).scalar_one()
 
         # ---- PHASE 1: prune (before any insert — avoids unique-index clashes) ----
         if not dry:

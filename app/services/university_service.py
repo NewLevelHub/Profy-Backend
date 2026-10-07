@@ -6,6 +6,10 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import noload, selectinload
 
+from app.i18n.catalog import key as i18n_key
+from app.i18n import DEFAULT_LOCALE, resolve_column_i18n
+from app.i18n.data_strings import translate_data_list, translate_data_string
+from app.i18n.geo import source_cities_matching
 from app.models.direction import Direction
 from app.models.program import Program
 from app.models.university import University
@@ -48,23 +52,33 @@ def _favorite_first_clause(user_id: uuid.UUID | None):
 
 
 def _search_clause(search: str):
-    """Matches name, short name, city and any alias.
+    """Matches name, short name, city, any alias and any translated name.
 
     Name-only search is why a university can't be found by the abbreviation
     everyone actually calls it, or by its city. `aliases` is a JSONB array of
     strings, so each element is unnested and matched on its own rather than
     pattern-matching the array's JSON text (which would also match
-    punctuation and escapes).
+    punctuation and escapes). `name_i18n` ({"kk": ...}) is matched the same
+    way, and so are translated city names («Өскемен» → «Усть-Каменогорск»),
+    whatever the request locale: the kk UI shows those, so they are what a
+    student types there (PRO-450).
     """
     like = f"%{search.strip()}%"
     alias = func.jsonb_array_elements_text(University.aliases).table_valued("value")
     alias_match = select(1).select_from(alias).where(alias.c.value.ilike(like)).exists()
-    return or_(
+    translated = func.jsonb_each_text(University.name_i18n).table_valued("key", "value")
+    translated_name_match = select(1).select_from(translated).where(translated.c.value.ilike(like)).exists()
+    clauses = [
         University.name.ilike(like),
         University.short_name.ilike(like),
         University.city.ilike(like),
         alias_match,
-    )
+        translated_name_match,
+    ]
+    translated_cities = source_cities_matching(search)
+    if translated_cities:
+        clauses.append(University.city.in_(translated_cities))
+    return or_(*clauses)
 
 
 def _catalogue_order_by(sort: str | None, order: str):
@@ -86,12 +100,79 @@ def _catalogue_order_by(sort: str | None, order: str):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={
-                "detail": f"Unknown sort field: {sort}",
+                "detail": i18n_key("api_errors", "invalid_sort_field", locale="ru").format(sort=sort),
                 "allowed_sort_fields": sorted(UNIVERSITY_SORT_FIELDS),
             },
         )
     ordered = column.desc().nulls_last() if descending else column.asc().nulls_last()
     return [ordered]
+
+
+def _localized_university_fields(university: University, locale: str) -> dict:
+    """`description` (KZ-501) and `name` (KZ-206 follow-up, Kazakhstan
+    universities) resolved for `locale`: the `kk` override when present, else
+    the `ru` base column, with `description_locale` / `name_locale` reporting
+    which was served. Every response shape built from a University row applies
+    this — the catalogue and the university page once skipped it and showed
+    Russian text in the kk UI although the kk overlay was there (PRO-450)."""
+    description, description_locale = resolve_column_i18n(
+        university.description_i18n, university.description, locale
+    )
+    name, name_locale = resolve_column_i18n(
+        university.name_i18n, university.name, locale
+    )
+    return {
+        "name": name,
+        "name_locale": name_locale,
+        "description": description,
+        "description_locale": description_locale,
+    }
+
+
+def _university_brief(university: University, locale: str) -> UniversityBrief:
+    return UniversityBrief.model_validate(university).model_copy(
+        update=_localized_university_fields(university, locale)
+    )
+
+
+def _program_brief(program: Program, locale: str) -> ProgramBrief:
+    description, description_locale = resolve_column_i18n(
+        program.description_i18n, program.description, locale
+    )
+    name, name_locale = resolve_column_i18n(program.name_i18n, program.name, locale)
+    return ProgramBrief.model_validate(program).model_copy(
+        update={
+            "name": name,
+            "name_locale": name_locale,
+            "language": translate_data_string(program.language, locale=locale) or program.language,
+            "description": description,
+            "description_locale": description_locale,
+            "university": _university_brief(program.university, locale),
+        }
+    )
+
+
+def _localized_grants(grants: list | None, locale: str) -> list:
+    """`Program.grants` with each entry's free text resolved for `locale`.
+
+    `requirements_summary.grants` is already localized by
+    `university_requirements.map_program_requirement`, but the program screen
+    renders this raw sibling field, so it needs the same treatment — otherwise
+    a Kazakh page carries a Russian scholarship paragraph under a Kazakh
+    heading. Entries are dicts (`name` / `amount` / `conditions`); anything
+    else passes through untouched rather than being reshaped here.
+    """
+    out = []
+    for grant in grants or []:
+        if not isinstance(grant, dict):
+            out.append(grant)
+            continue
+        localized = dict(grant)
+        for field in ("name", "conditions"):
+            if isinstance(localized.get(field), str):
+                localized[field] = translate_data_string(localized[field], locale=locale)
+        out.append(localized)
+    return out
 
 
 async def search_programs(
@@ -132,6 +213,19 @@ async def search_programs(
     return list(result.scalars().all())
 
 
+async def list_program_briefs(
+    db: AsyncSession,
+    profession_slug: str,
+    country: str | None = None,
+    limit: int = 10,
+    locale: str = DEFAULT_LOCALE,
+) -> list[ProgramBrief]:
+    """`search_programs` shaped into `ProgramBrief`, with each program's and
+    its university's `description` resolved for `locale` (KZ-501)."""
+    programs = await search_programs(db, profession_slug, country, limit)
+    return [_program_brief(program, locale) for program in programs]
+
+
 async def get_program_by_id(db: AsyncSession, program_id: uuid.UUID) -> Program:
     result = await db.execute(
         select(Program)
@@ -140,36 +234,56 @@ async def get_program_by_id(db: AsyncSession, program_id: uuid.UUID) -> Program:
     )
     program = result.scalar_one_or_none()
     if program is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Program not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "program_not_found", locale="ru"))
     return program
 
 
 async def get_program_detail(
     db: AsyncSession,
     program_id: uuid.UUID,
+    locale: str = DEFAULT_LOCALE,
     user_id: uuid.UUID | None = None,
 ) -> ProgramDetail:
     """`ProgramDetail`, ready for the client — `requirements_summary` is the
-    same clean, typed mapping the direction-roadmap prompt uses
-    (app/services/university_requirements.py), not a re-derivation. Separate
+    clean, typed mapping from app/services/university_requirements.py,
+    not a re-derivation. Separate
     from `get_program_by_id` because that one returns the raw ORM `Program`
-    for callers that need it as-is (gap-analysis)."""
+    for callers that need it as-is (admin program editor).
+
+    `description` / `who_its_for` are resolved for `locale` (KZ-501): the `kk`
+    override when present, else the `ru` base column, with `*_locale` fields
+    reporting which was served. `language`, `career_options` and `grants` are
+    free text inside the catalog rather than columns of their own, so they go
+    through the source-string dictionary instead (contract §14) — the program
+    screen renders these raw fields directly, not their
+    `requirements_summary` counterparts."""
     program = await get_program_by_id(db, program_id)
+    name, name_locale = resolve_column_i18n(program.name_i18n, program.name, locale)
+    description, description_locale = resolve_column_i18n(
+        program.description_i18n, program.description, locale
+    )
+    who_its_for, who_its_for_locale = resolve_column_i18n(
+        program.who_its_for_i18n, program.who_its_for, locale
+    )
     favorite_ids = await favorite_university_ids(db, user_id) if user_id else set()
-    university = _brief_with_favorite(program.university, favorite_ids)
+    university = _university_brief(program.university, locale)
+    university.is_favorite = program.university_id in favorite_ids
     return ProgramDetail(
         id=program.id,
-        name=program.name,
+        name=name,
+        name_locale=name_locale,
         profession_slugs=program.profession_slugs,
-        language=program.language,
+        language=translate_data_string(program.language, locale=locale) or program.language,
         cost_per_year=program.cost_per_year,
         cost_label=program.cost_label,
-        description=program.description,
-        who_its_for=program.who_its_for,
-        career_options=program.career_options,
+        description=description,
+        description_locale=description_locale,
+        who_its_for=who_its_for,
+        who_its_for_locale=who_its_for_locale,
+        career_options=translate_data_list(program.career_options, locale=locale),
         requirements=program.requirements,
         deadlines=program.deadlines,
-        grants=program.grants,
+        grants=_localized_grants(program.grants, locale),
         created_at=program.created_at,
         university=university,
         requirements_summary=ureq.map_program_requirement(program, program.university),
@@ -184,20 +298,18 @@ async def favorite_university_ids(db: AsyncSession, user_id: uuid.UUID) -> set[u
     return set(result.scalars().all())
 
 
-def _brief_with_favorite(university: University, favorite_ids: set[uuid.UUID]) -> UniversityBrief:
-    brief = UniversityBrief.model_validate(university)
-    brief.is_favorite = university.id in favorite_ids
-    return brief
-
-
 async def search_programs_for_user(
     db: AsyncSession,
     profession_slug: str,
     country: str | None = None,
     limit: int = 10,
     user_id: uuid.UUID | None = None,
+    locale: str = DEFAULT_LOCALE,
 ) -> list[ProgramBrief]:
-    """`search_programs`, mapped to the wire schema with `is_favorite` filled in.
+    """`search_programs`, mapped to the wire schema with `is_favorite` filled
+    in and `name`/`description` resolved for `locale` (KZ-501) via
+    `_program_brief` — same resolution `list_program_briefs` does, just with
+    `is_favorite` stamped on top.
 
     The router used to hand FastAPI the raw ORM rows and let `from_attributes`
     do the mapping, but `is_favorite` is per-caller and has no ORM column
@@ -210,7 +322,7 @@ async def search_programs_for_user(
     favorite_ids = await favorite_university_ids(db, user_id) if user_id else set()
     briefs = []
     for program in programs:
-        brief = ProgramBrief.model_validate(program)
+        brief = _program_brief(program, locale)
         brief.university.is_favorite = program.university_id in favorite_ids
         briefs.append(brief)
     return briefs
@@ -228,6 +340,7 @@ async def list_universities(
     only_favorites: bool = False,
     sort: str | None = None,
     order: str = "asc",
+    locale: str = DEFAULT_LOCALE,
 ) -> UniversityListResponse:
     """The standalone catalogue (PRO-265).
 
@@ -280,7 +393,9 @@ async def list_universities(
     favorite_ids = await favorite_university_ids(db, user_id) if user_id else set()
     items = []
     for university, count in rows:
-        item = UniversityListItem.model_validate(university)
+        item = UniversityListItem.model_validate(university).model_copy(
+            update=_localized_university_fields(university, locale)
+        )
         item.is_favorite = university.id in favorite_ids
         item.programs_count = count
         items.append(item)
@@ -303,6 +418,7 @@ async def get_university_for_user(
     db: AsyncSession,
     university_id: uuid.UUID,
     user_id: uuid.UUID | None = None,
+    locale: str = DEFAULT_LOCALE,
 ) -> UniversityDetail:
     # `Program.university` has to be eager-loaded explicitly: University.programs
     # is lazy="selectin", but the back-reference on each loaded Program is not,
@@ -315,22 +431,24 @@ async def get_university_for_user(
     )
     university = result.scalar_one_or_none()
     if university is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="University not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "university_not_found", locale="ru"))
 
     favorite_ids = await favorite_university_ids(db, user_id) if user_id else set()
     is_favorite = university.id in favorite_ids
 
     programs = []
     for program in university.programs:
-        brief = ProgramBrief.model_validate(program)
+        brief = _program_brief(program, locale)
         brief.university.is_favorite = is_favorite
         programs.append(brief)
 
+    brief = _university_brief(university, locale)
+    brief.is_favorite = is_favorite
     # Built field-by-field rather than model_validate(university): UniversityDetail
     # declares `programs`, and from_attributes would re-derive them from the ORM
     # relationship without the `is_favorite` stamping above.
     return UniversityDetail(
-        **_brief_with_favorite(university, favorite_ids).model_dump(),
+        **brief.model_dump(),
         contacts=university.contacts,
         facilities=university.facilities,
         source_url=university.source_url,
@@ -342,7 +460,7 @@ async def _require_university(db: AsyncSession, university_id: uuid.UUID) -> Uni
     result = await db.execute(select(University).where(University.id == university_id))
     university = result.scalar_one_or_none()
     if university is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="University not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "university_not_found", locale="ru"))
     return university
 
 

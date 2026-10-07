@@ -3,16 +3,25 @@ no DB access — keeps admin_service.py focused on data assembly, this module
 on presentation. See docs/frontend-admin-users-api-contract.md for the
 column layout this produces."""
 
+
 import csv
 import io
 import re
 import zipfile
 from datetime import datetime
 
+from app.i18n import DEFAULT_LOCALE
+from app.i18n.catalog import tr
 from app.schemas.admin import AdminAssessmentDetailResponse, AdminUserListItem
-from app.services.bigfive_content import BIGFIVE_LABELS
-from app.services.mi_content import MI_LABELS
-from app.services.riasec_content import RIASEC_LABELS
+
+# The export is Russian-only by contract (see app/i18n/catalog/admin_export.py),
+# whatever the admin's UI locale. Every label is pinned to ru explicitly:
+# `catalog.key(..., locale="ru")` does NOT pin — it resolves to the request
+# locale — so a kk admin used to get Kazakh headers over Russian values
+# (PRO-430). The router builds the exported data under use_locale(ru) too.
+_T = tr("admin_export", locale=DEFAULT_LOCALE)
+_RIASEC_LABELS = tr("riasec", locale=DEFAULT_LOCALE)["labels"]
+_BIG_FIVE_LABELS = tr("bigfive", locale=DEFAULT_LOCALE)["labels"]
 
 # Excel does not sniff UTF-8 in a .csv: without a BOM it reads the file in the
 # system codepage and every Cyrillic name turns into mojibake ("Бекзат" ->
@@ -32,36 +41,28 @@ _DATETIME_FORMAT = "%Y-%m-%d %H:%M"
 _UTC_SUFFIX = " (UTC)"
 
 # Python's True/False are not booleans to Excel, just words.
-_YES, _NO = "да", "нет"
+_YES, _NO = _T["yes"], _T["no"]
 
 # Localized exactly as the admin UI shows them
-# (Profy-Frontend/src/shared/lib/assessmentLabels.ts and
-# shared/config/constants.ts): an export that says `age_group=senior` while
-# the screen says "10–11 класс" makes the reader translate by hand.
-_AGE_GROUP_LABELS = {
-    "junior": "5–7 класс",
-    "middle": "8–9 класс",
-    "senior": "10–11 класс",
-}
+# (Profy-Frontend/src/shared/lib/assessmentLabels.ts).
 _GOAL_LABELS = {
-    "explore": "Исследовать",
-    "profession": "Выбрать профессию",
-    "university": "Поступить в вуз",
-    "unsure": "Не уверен",
+    "explore": _T["goal_explore"],
+    "profession": _T["goal_profession"],
+    "university": _T["goal_university"],
+    "unsure": _T["goal_unsure"],
 }
 _STATUS_LABELS = {
-    "in_progress": "В процессе",
-    "completed": "Завершён",
+    "in_progress": _T["status_in_progress"],
+    "completed": _T["status_completed"],
 }
 _ROLE_LABELS = {
-    "student": "Ученик",
-    "admin": "Администратор",
-    "psychologist": "Психолог",
+    "student": _T["role_student"],
+    "admin": _T["role_admin"],
+    "psychologist": _T["role_psychologist"],
 }
 _INSTRUMENT_LABELS = {
     "riasec": "RIASEC",
     "big_five": "Big Five",
-    "mi": "Множественный интеллект",
 }
 
 
@@ -81,37 +82,31 @@ def _label(labels: dict[str, str], value: str | None) -> str:
     return labels.get(value, value)
 
 
-# Fixed order matches HollandType (app/models/question.py) — AdminUserListItem.riasec
-# is only ever populated for middle/senior (admin_service._build_user_list_items
-# deliberately leaves it None for junior, whose instrument is MI, not RIASEC),
-# so a fixed RIASEC column set is safe here.
+# Fixed order matches HollandType (app/models/question.py).
 _RIASEC_KEYS = ("R", "I", "A", "S", "E", "C")
 _BIG_FIVE_KEYS = ("N", "E", "O", "A", "C")
-_MI_KEYS = tuple(MI_LABELS)
 
 # Every header is the human name of what the column holds. The file is opened
 # in Excel by people who are not the developers who named the fields.
 _USER_COLUMNS = (
     "ID",
     "Email",
-    "Почта подтверждена",
-    "Аккаунт активен",
-    "Роль",
-    "Администратор",
-    "Регистрация" + _UTC_SUFFIX,
-    "Последняя активность" + _UTC_SUFFIX,
-    "Есть профиль",
-    "Имя",
-    "Класс (группа)",
-    "Класс",
-    "Город",
-    "Тестирований",
-    "Статус последнего",
-    "Цель последнего",
-    "Инструмент интересов",
-    *(f"RIASEC: {RIASEC_LABELS[k]}" for k in _RIASEC_KEYS),
-    *(f"MI: {MI_LABELS[k]}" for k in _MI_KEYS),
-    *(f"Big Five: {BIGFIVE_LABELS[k]}" for k in _BIG_FIVE_KEYS),
+    _T["email_verified"],
+    _T["account_active"],
+    _T["role"],
+    _T["role_admin"],
+    _T["registered_at"] + _UTC_SUFFIX,
+    _T["last_active_at"] + _UTC_SUFFIX,
+    _T["has_profile"],
+    _T["name"],
+    _T["age"],
+    _T["grade"],
+    _T["city"],
+    _T["assessment_count"],
+    _T["latest_status"],
+    _T["latest_goal"],
+    *(f"RIASEC: {_RIASEC_LABELS[k]}" for k in _RIASEC_KEYS),
+    *(f"Big Five: {_BIG_FIVE_LABELS[k]}" for k in _BIG_FIVE_KEYS),
 )
 
 
@@ -126,14 +121,7 @@ def users_to_csv(items: list[AdminUserListItem]) -> str:
 
     for item in items:
         riasec = item.riasec or {}
-        mi = item.mi or {}
         big_five = item.big_five or {}
-        # Which interest instrument this user was actually measured on. Junior
-        # takes MI and never RIASEC, so without this column a completed junior
-        # row reads as "finished, but no scores" — identical to a broken one.
-        instrument = _INSTRUMENT_LABELS["mi"] if item.age_group == "junior" else (
-            _INSTRUMENT_LABELS["riasec"] if item.age_group else ""
-        )
         writer.writerow(
             [
                 str(item.id),
@@ -146,15 +134,13 @@ def users_to_csv(items: list[AdminUserListItem]) -> str:
                 _at(item.last_active_at),
                 _yes_no(item.has_profile),
                 item.profile_name or "",
-                _label(_AGE_GROUP_LABELS, item.age_group),
+                item.age if item.age is not None else "",
                 item.grade if item.grade is not None else "",
                 item.city or "",
                 item.assessments_count,
                 _label(_STATUS_LABELS, item.latest_assessment_status),
                 _label(_GOAL_LABELS, item.latest_assessment_goal),
-                instrument,
                 *(riasec.get(k, "") for k in _RIASEC_KEYS),
-                *(mi.get(k, "") for k in _MI_KEYS),
                 *(big_five.get(k, "") for k in _BIG_FIVE_KEYS),
             ]
         )
@@ -163,11 +149,7 @@ def users_to_csv(items: list[AdminUserListItem]) -> str:
 
 
 def _analysis_result_rows(analysis: dict) -> list[tuple[str, str]]:
-    """Flattens AdminAnalysisResultResponse into metric/value pairs. `profile`
-    keys are dynamic on purpose — RIASEC letters for middle/senior, MI
-    category keys for junior (see AdminAnalysisResultResponse's docstring),
-    unlike the fixed RIASEC columns used in `users_to_csv` (which only ever
-    sees the middle/senior shape)."""
+    """Flattens AdminAnalysisResultResponse into metric/value pairs."""
     rows: list[tuple[str, str]] = [
         ("report_version", str(analysis["report_version"])),
         ("summary", analysis["summary"]),
@@ -203,16 +185,15 @@ def _summary_csv(detail: AdminAssessmentDetailResponse) -> str:
     buffer = io.StringIO()
     writer = csv.writer(buffer)
 
-    writer.writerow(["Показатель", "Значение"])
+    writer.writerow([_T["metric"], _T["value"]])
     writer.writerow(["Email", detail.user_email])
-    writer.writerow(["Имя", detail.profile_name or ""])
-    writer.writerow(["Цель", _label(_GOAL_LABELS, detail.goal)])
-    writer.writerow(["Статус", _label(_STATUS_LABELS, detail.status)])
-    writer.writerow(["Начато" + _UTC_SUFFIX, _at(detail.created_at)])
-    writer.writerow(["Завершено" + _UTC_SUFFIX, _at(detail.completed_at)])
-    writer.writerow(["Отвечено вопросов", detail.answered_count])
-    writer.writerow(["Всего вопросов", detail.total_questions])
-    writer.writerow(["Есть роадмап", _yes_no(detail.roadmap is not None)])
+    writer.writerow([_T["name"], detail.profile_name or ""])
+    writer.writerow([_T["goal"], _label(_GOAL_LABELS, detail.goal)])
+    writer.writerow([_T["status"], _label(_STATUS_LABELS, detail.status)])
+    writer.writerow([_T["started_at"] + _UTC_SUFFIX, _at(detail.created_at)])
+    writer.writerow([_T["completed_at"] + _UTC_SUFFIX, _at(detail.completed_at)])
+    writer.writerow([_T["answered_questions"], detail.answered_count])
+    writer.writerow([_T["total_questions"], detail.total_questions])
     if detail.analysis_result is not None:
         for metric, value in _analysis_result_rows(detail.analysis_result.model_dump()):
             writer.writerow([metric, value])
@@ -226,11 +207,9 @@ def _scale_name(instrument: str, category: str) -> str:
     column. The neighbouring instrument column separates them, but only if the
     reader knows to look — this states the scale outright."""
     if instrument == "riasec":
-        return RIASEC_LABELS.get(category, category)
+        return _RIASEC_LABELS.get(category, category)
     if instrument == "big_five":
-        return BIGFIVE_LABELS.get(category, category)
-    if instrument == "mi":
-        return MI_LABELS.get(category, category)
+        return _BIG_FIVE_LABELS.get(category, category)
     return category
 
 
@@ -239,14 +218,14 @@ def _responses_csv(detail: AdminAssessmentDetailResponse) -> str:
     writer = csv.writer(buffer)
     writer.writerow(
         [
-            "№ вопроса",
-            "Инструмент",
-            "Код шкалы",
-            "Шкала",
-            "Вопрос",
-            "Ответ (1-5)",
-            "Ответ словами",
-            "Время ответа" + _UTC_SUFFIX,
+            _T["question_number"],
+            _T["instrument"],
+            _T["scale_code"],
+            _T["scale"],
+            _T["question"],
+            _T["answer_score"],
+            _T["answer_words"],
+            _T["answered_at"] + _UTC_SUFFIX,
         ]
     )
     for response in detail.responses:
@@ -275,13 +254,13 @@ def _motivation_csv(detail: AdminAssessmentDetailResponse) -> str:
     writer = csv.writer(buffer)
     writer.writerow(
         [
-            "№ триплета",
-            "Выбрано как важное",
-            "Категория важного",
-            "Выбрано как неважное",
-            "Категория неважного",
-            "Не выбрано",
-            "Категория невыбранного",
+            _T["triplet_number"],
+            _T["most_selected"],
+            _T["most_category"],
+            _T["least_selected"],
+            _T["least_category"],
+            _T["unselected"],
+            _T["unselected_category"],
         ]
     )
     for row in detail.motivation_responses:

@@ -6,7 +6,7 @@ Deletes, in FK-safe order (profiles.user_id and artifacts.profile_id have
 no ON DELETE CASCADE, unlike everything under assessments):
   1. artifacts (by profile_id)
   2. assessments (by profile_id) — cascades to analysis_results,
-     direction_roadmap, assessment_session, subject_readiness_session,
+     assessment_session, subject_readiness_session,
      profession_simulation_log, known_profession_quiz_log; nulls out
      product_feedback.assessment_id
   3. profile

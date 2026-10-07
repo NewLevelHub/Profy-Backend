@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from pydantic import BaseModel
 
-from app.schemas.roadmap import ProgramGrant
+from app.schemas.university import ProgramGrant
 
 
 class AdminProgramGrant(ProgramGrant):
@@ -12,7 +12,7 @@ class AdminProgramGrant(ProgramGrant):
     The shape was undocumented and untyped, so the admin edited grants as raw
     JSON in a textarea: one typo and the save failed, or worse, saved a
     structure nothing downstream could read. It is the same `ProgramGrant`
-    the roadmap already builds from these rows — `name` plus optional
+    the program card builds from these rows — `name` plus optional
     `amount`/`conditions` — which is what all 1309 programs carrying grants
     actually hold today (every live entry has `name` and nothing else).
 

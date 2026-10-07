@@ -1,0 +1,32 @@
+{
+  "_comment": "KZ-602 — single source of truth for what the i18n RU-leak guard (tests/guard/) is allowed to skip. Not hardcoded in the guard so the allowlist can shrink without touching test code. Mirrors the frontend's scripts/i18n-exclude.json.",
+
+  "always_raw_fields": {
+    "_comment": "Response keys that legitimately carry Russian (or mixed) text forever — official names, raw scraped catalog data, machine keys. Not UI copy, never translated. Same rule as the FE KZ-206 'backend data' allowlist.",
+    "keys": [
+      "name", "university_name", "program_name", "city", "country", "location",
+      "exams", "exam_hint_from_notes", "notes", "grants", "career_options",
+      "admission_scores_2026", "grant_scores", "extracurriculars",
+      "admissions_contacts", "aliases", "requirement", "slug", "holland_code",
+      "email", "website", "ranking_label", "cost_label", "dormitory_cost_label"
+    ]
+  },
+
+  "catalog_temp_allowlist": {
+    "_comment": "Was a TEMPORARY allowlist for free-text catalog descriptions served in Russian until KZ-504/505 backfilled description_i18n['kk']. KZ-505 is done (all 2399 universities + 1398 programs translated + native-reviewed, applied 2026-09-08), so this is now EMPTY. test_guard_config_temp_allowlist_is_only_kz504_pending_fields asserts it stays empty — a re-added key means a RU-leak is being hidden.",
+    "keys": []
+  },
+
+  "ru_marker_words": {
+    "_comment": "Word-level (not substring) markers that appear in Russian prose but not in literary Kazakh. Used to flag a Russian leak in a field that is supposed to be fully kk. Kept short and unambiguous to avoid false positives.",
+    "words": [
+      "который", "которая", "которое", "которые", "чтобы", "потому", "поэтому",
+      "нужно", "можно", "будет", "было", "очень", "тебе", "тебя", "твои",
+      "твоя", "твой", "себя", "своей", "своих", "если", "когда", "только",
+      "уже", "ещё", "также", "между", "через", "после", "перед", "раздел",
+      "отчёт", "отчет"
+    ]
+  },
+
+  "ent_terms": { "ru": "ЕНТ", "kk": "ҰБТ" }
+}

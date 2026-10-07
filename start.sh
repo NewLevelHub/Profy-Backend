@@ -3,6 +3,10 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
+# PRO-429: Alembic history hooks (relink migrations on pull/push). Repo-local
+# setting; see the Migrations section of README.md.
+git config core.hooksPath .githooks
+
 # University photos are served by nginx straight from a host folder (no MinIO).
 # docker-compose.yml bind-mounts ${MEDIA_DIR:-../profy-media} at /srv/media in
 # both api and nginx. The folder is NOT in git — get profy-media.tar.gz from
@@ -22,14 +26,25 @@ if [ -z "$(find "$MEDIA_DIR/universities" -maxdepth 1 -name '*.webp' -print -qui
   echo "         scripts/export_university_photos.py + scripts/generate_card_thumbnails.py."
 fi
 
+# Build before stopping the current app to keep local downtime short. The API
+# and nginx are then stopped while migrations/backfills run, so no request can
+# hit the new code against the previous schema.
+docker compose build api
+docker compose up -d --wait db redis
+docker compose stop nginx api
+docker compose run --rm -T --no-deps api alembic upgrade head
+# PRO-427: freeze result snapshots of АСТУР attempts finished before snapshots
+# existed (idempotent — a no-op once done).
+docker compose run --rm -T --no-deps api python scripts/backfill_astur_legacy_snapshots.py
+
 # --remove-orphans clears the old minio / minio-init containers on machines
 # that ran the pre-filesystem stack.
-docker compose up -d --build --remove-orphans
+docker compose up -d --remove-orphans
 docker compose restart nginx
 
 # Wait for the api container to actually accept connections before the first
-# `exec` — `up -d --build` returns as soon as the container is *started*, not
-# ready, and a rebuild makes it recreate mid-script (cd.yml has the same loop).
+# seed command. Detached `up` returns as soon as the container is started, not
+# necessarily when Uvicorn is accepting connections (cd.yml has the same loop).
 echo "Waiting for api..."
 for i in $(seq 1 60); do
   if docker compose exec -T api python -c "import socket; s=socket.socket(); s.settimeout(1); s.connect(('127.0.0.1', 8000)); s.close()" >/dev/null 2>&1; then
@@ -38,10 +53,6 @@ for i in $(seq 1 60); do
   [ "$i" -eq 60 ] && { echo "ERROR: api did not become ready in 60s"; docker compose logs api | tail -40; exit 1; }
   sleep 1
 done
-
-docker compose exec api alembic upgrade head
-
-echo "Backend is ready: http://localhost/docs"
 
 # Photo-serving smoke check — diagnostic only, must never abort the script
 # (set -euo pipefail is unforgiving of SIGPIPE from `ls | head`, curl, grep).
@@ -61,30 +72,46 @@ set +e
 }
 set -e
 
-# Question banks — order matters: bigfive/mi/question_pairs each resolve
-# `order`/name references against whatever was seeded before them.
-docker-compose exec api python scripts/seed_riasec_questions.py
+# Question banks — order matters: later banks resolve `order`/name
+# references against whatever was seeded before them.
+docker compose exec api python scripts/seed_riasec_questions.py
 # Ожидается: Total questions in bank: 146
-docker-compose exec api python scripts/seed_bigfive_questions.py
+docker compose exec api python scripts/seed_bigfive_questions.py
 # Ожидается: Total questions in bank: 120
-docker-compose exec api python scripts/seed_mi_questions.py
-# Ожидается: Total questions in bank: 48
-docker-compose exec api python scripts/seed_question_pairs.py
-# Ожидается: Total pairs in bank: 67
 
-# Motivation block (senior triplets + junior/middle Harter pairs)
-docker-compose exec api python scripts/seed_motivation_statements.py
-docker-compose exec api python scripts/seed_motivation_pairs.py
-# Ожидается: Total pairs in bank: 18
+# "Дополнительные тесты" — PRO-338 Ф0.8/Ф1.10: professional_types_abilities/
+# eysenck/elers/boyko_empathy/kondash_anxiety form one contiguous,
+# non-interleaved sub-section after RIASEC/BigFive (order 400-586) and are
+# never woven into them.
+docker compose exec api python scripts/seed_professional_types_questions.py
+# Ожидается: Total professional_types_abilities items in bank: 5
+docker compose exec api python scripts/seed_eysenck_questions.py
+# Ожидается: Total eysenck items in bank: 57
+docker compose exec api python scripts/seed_elers_questions.py
+# Ожидается: Total elers items in bank: 41
+docker compose exec api python scripts/seed_boyko_empathy_questions.py
+# Ожидается: Total boyko_empathy items in bank: 36
+docker compose exec api python scripts/seed_kondash_anxiety_questions.py
+# Ожидается: Total kondash_anxiety items in bank: 40
 
-docker-compose exec api python scripts/seed_riasec_directions.py
+
+# Motivation block (triplets)
+docker compose exec api python scripts/seed_motivation_statements.py
+
+docker compose exec api python scripts/seed_riasec_directions.py
 # Direction description/skills_needed/subjects_to_develop/first_steps — empty
 # by default after the RIASEC migration (see app/models/direction.py).
 # Content already LLM-drafted and human-reviewed into
 # scripts/direction_content_review.json (committed) — this only applies that
 # reviewed file, it does not call the LLM. Idempotent, needs directions'
 # slugs to already exist, so it must run after seed_riasec_directions.py.
-docker-compose exec api python scripts/apply_direction_content.py
+docker compose exec api python scripts/apply_direction_content.py
+
+# «Почему тебе подходит» for reports built before career_fit existed or under
+# an older career_fit_rules.json version. Idempotent: current reports are
+# skipped. Must run after directions and their reviewed skills are up to date,
+# because the backfill ties student evidence to those concrete skills.
+docker compose exec api python scripts/backfill_career_fit.py
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Universities / programs — ONE committed file, ONE loader.
@@ -106,6 +133,14 @@ docker-compose exec api python scripts/apply_direction_content.py
 # Requires `directions` seeded above (profession tags resolve by Direction slug).
 docker compose exec api python scripts/build_universities.py
 
+# Kazakh overlay for university/program descriptions (KZ-504/505). Reads ONE
+# committed file (scripts/data/catalog_descriptions_kk.json) and writes only
+# description_i18n['kk'] — the ru base columns are untouched, so it is safe to
+# re-run and a no-op until kk is enabled (KZ-603). Directions' kk content is
+# already handled by apply_direction_content.py above. Needs universities in
+# the DB, so it runs after build_universities.py.
+docker compose exec api python scripts/apply_catalog_descriptions_kk.py apply
+
 # University photo files are named by the pre-canonicalization slugs; the
 # dedup + canonical-slug pass renamed ~220 university slugs. Rename the
 # matching <slug>.webp / <slug>.card.webp (from scripts/data/slug_rename_map.json
@@ -118,3 +153,5 @@ if [ -n "$(find "$MEDIA_DIR/universities" -maxdepth 1 -name '*.webp' -print -qui
   [ -z "$_py" ] && { command -v python3 >/dev/null 2>&1 && _py=python3 || _py=python; }
   "$_py" scripts/rename_university_photos.py --media-dir "$MEDIA_DIR" --apply
 fi
+
+echo "Backend is ready: http://localhost/docs"

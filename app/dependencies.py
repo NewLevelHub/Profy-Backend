@@ -7,8 +7,10 @@ from jose import JWTError, jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n.catalog import key as i18n_key
 from app.config import settings
 from app.database import get_db
+from app.i18n import SUPPORTED_LOCALES, set_locale
 from app.models.user import User, UserRole
 
 _bearer = HTTPBearer()
@@ -23,6 +25,27 @@ _bearer_optional = HTTPBearer(auto_error=False)
 # abandoned-diagnostic counts) are all day-scale, so minute-scale precision
 # buys nothing.
 ACTIVITY_REFRESH_INTERVAL = timedelta(minutes=5)
+
+
+def _decode_access_token(token: str) -> tuple[uuid.UUID, int]:
+    payload = jwt.decode(
+        token,
+        settings.SECRET_KEY,
+        algorithms=[settings.ALGORITHM],
+    )
+    user_id = payload.get("sub")
+    # Tokens issued before PROFY-010 had no version. Treat them as v0 so the
+    # deployment itself preserves existing sessions; the first password reset
+    # increments the database value and invalidates those legacy tokens too.
+    token_version = payload.get("ver", 0)
+    if (
+        not isinstance(user_id, str)
+        or isinstance(token_version, bool)
+        or not isinstance(token_version, int)
+        or token_version < 0
+    ):
+        raise JWTError("Invalid access token claims")
+    return uuid.UUID(user_id), token_version
 
 
 async def _touch_last_active(db: AsyncSession, user: User) -> None:
@@ -41,27 +64,31 @@ async def get_current_user(
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
+        detail=i18n_key("api_errors", "credentials_not_validated", locale="ru"),
         headers={"WWW-Authenticate": "Bearer"},
     )
 
     try:
-        payload = jwt.decode(
-            credentials.credentials,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM],
-        )
-        user_id: str | None = payload.get("sub")
-        if user_id is None:
-            raise credentials_exception
-    except JWTError:
+        user_id, token_version = _decode_access_token(credentials.credentials)
+    except (JWTError, ValueError):
         raise credentials_exception
 
-    result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)))
+    result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
 
-    if user is None or not user.is_active:
+    if (
+        user is None
+        or not user.is_active
+        or user.token_version != token_version
+    ):
         raise credentials_exception
+
+    # users.locale wins over the Accept-Language header the middleware already
+    # applied. getattr guard: the column arrives in KZ-103; this is a no-op
+    # until then, and until "kk" is a supported locale (KZ-603).
+    user_locale = getattr(user, "locale", None)
+    if user_locale in SUPPORTED_LOCALES:
+        set_locale(user_locale)
 
     await _touch_last_active(db, user)
     return user
@@ -83,21 +110,17 @@ async def get_current_user_optional(
     if credentials is None:
         return None
     try:
-        payload = jwt.decode(
-            credentials.credentials,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM],
-        )
-        user_id: str | None = payload.get("sub")
-        if user_id is None:
-            return None
-        parsed_id = uuid.UUID(user_id)
+        user_id, token_version = _decode_access_token(credentials.credentials)
     except (JWTError, ValueError):
         return None
 
-    result = await db.execute(select(User).where(User.id == parsed_id))
+    result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
-    if user is None or not user.is_active:
+    if (
+        user is None
+        or not user.is_active
+        or user.token_version != token_version
+    ):
         return None
     return user
 
@@ -108,7 +131,7 @@ async def get_current_admin_user(
     if not current_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
+            detail=i18n_key("api_errors", "admin_access_required", locale="ru"),
         )
     return current_user
 
@@ -123,7 +146,7 @@ async def get_current_student_user(
     if current_user.role != UserRole.student:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Student access required",
+            detail=i18n_key("api_errors", "student_access_required", locale="ru"),
         )
     return current_user
 
@@ -133,7 +156,7 @@ def require_role(*roles: UserRole):
         if current_user.role not in roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Insufficient role",
+                detail=i18n_key("api_errors", "insufficient_role", locale="ru"),
             )
         return current_user
 

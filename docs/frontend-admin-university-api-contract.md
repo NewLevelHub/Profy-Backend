@@ -290,7 +290,7 @@ Authorization: Bearer <token>
 - **Нет эндпоинта снятия лока** — по решению из `docs/admin-edit-lock-plan.md`
   ("no unlock endpoint for now") снять `admin_locked_fields` можно сейчас
   только прямым вмешательством в БД, не из UI.
-- **Нет редактирования контента вопросников** (RIASEC/BigFive/MI-банки) через
+- **Нет редактирования контента вопросников** (RIASEC/BigFive-банки) через
   этот API — отдельная нерешённая задача, см.
   `docs/admin-questions-content-overrides-plan.md`.
 - **Нет серверного diff'а изменений** — вся логика "что реально поменялось"

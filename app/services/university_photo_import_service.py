@@ -1,6 +1,7 @@
 """Downloads each university's photo from the jinaq source and re-uploads it
-into our own storage — see scripts/import_jinaq_university_photos.py for how
-this is invoked. Must run after scripts/import_jinaq_universities.py, which
+into our own storage. Its CLI wrapper was removed in PRO-425 (photos now ship
+via scripts/export_university_photos.py, which reuses `optimize_image`). Must
+run after scripts/import_jinaq_universities.py, which
 populates the UniversityExternalRef rows this looks up institutions by.
 
 Sequential by design (like every other seed/import script in scripts/) rather

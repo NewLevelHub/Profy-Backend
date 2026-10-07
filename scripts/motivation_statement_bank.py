@@ -88,74 +88,74 @@ PHRASES: dict[str, list[str]] = {
 assert set(PHRASES) == set(CATEGORIES)
 assert all(len(v) == 4 for v in PHRASES.values())
 
-# Junior (6-9) rewrite of PHRASES — same category, same position (index N of
-# a category here is the junior version of PHRASES[category][N], paired 1:1
-# in the STATEMENTS loop below) — worded around school/friends/hobbies
-# instead of career/money/work, since a 6-9 year old has no personal
-# experience of "a stable job" or "earning money". Shown instead of `text`
-# only for junior profiles (app/routers/motivation.py); middle/senior are
-# unaffected. Same tone-neutral principle as PHRASES: all 4 phrasings of a
-# category read at the same register, so forced-choice isn't biased toward
-# the better-written option.
-PHRASES_JUNIOR: dict[str, list[str]] = {
+# ── Kazakh (kk) — KZ-305 ──────────────────────────────────────────────────────
+#
+# LLM-primary translation against docs/i18n.md's glossary; native review pending
+# (checklist: ProfOr/Тикеты-локализация-KZ/KZ-305-вычитка-kk.md). Positional
+# copies of PHRASES (index N = the kk of PHRASES[cat][N]);
+# folded into `text` = `{"ru": …, "kk": …}` in the STATEMENTS
+# loop (per-locale-row storage, KZ-301). Same tone-neutral, one-register
+# principle as the `ru` phrasings — no phrasing reads "better written" than
+# another (that would bias the forced choice toward wording, not value).
+_KK_PHRASES: dict[str, list[str]] = {
     "interest": [
-        "Делать то, что мне по-настоящему нравится",
-        "Заниматься тем, что увлекает, даже если не за оценку",
-        "С головой уходить в то, что меня зацепило",
-        "Пробовать и узнавать то, что мне любопытно",
+        "Маған шынымен қызық іспен айналысу",
+        "Нәтиже үшін емес, өзін-өзі баурап алатын іспен айналысу",
+        "Мені шын мәнінде қызықтырған іске бойлау",
+        "Білуге әрі сынап көруге қызық нәрсемен жұмыс істеу",
     ],
     "challenge": [
-        "Решать трудные задачи, которые не все берутся решать",
-        "Пробовать то, что сначала кажется слишком трудным",
-        "Постоянно учиться новому и становиться лучше",
-        "Проверять себя на по-настоящему трудных заданиях",
+        "Бәрі бірдей бата алмайтын күрделі міндеттерді шешу",
+        "Алдымен қолымнан келмейтіндей көрінген іске кірісу",
+        "Үнемі жаңаны үйреніп, шеберлікте өсу",
+        "Өзімді шынымен қиын міндеттерде сынау",
     ],
     "helping": [
-        "Помогать людям и быть им полезным",
-        "Делать что-то, что правда помогает другим",
-        "Быть рядом с теми, кому нужна помощь",
-        "Стараться, чтобы другим было лучше",
+        "Адамдарға пайда келтіріп, оларға көмектесу",
+        "Басқалардың өмірін шынымен жеңілдететін нәрсе істеу",
+        "Көмекке мұқтаж жандарға пайдалы болу",
+        "Басқаларға жақсы болсын деп жұмыс істеу",
     ],
     "freedom": [
-        "Самому решать, что и как делать",
-        "Делать всё в своём темпе, без строгих указаний",
-        "Самому решать, чем заняться прямо сейчас",
-        "Делать по-своему, не спрашивая разрешения",
+        "Бөгденің бақылауынсыз не істеуді әрі қалай істеуді өзім шешу",
+        "Қатаң нұсқаусыз, өз қарқыныммен жұмыс істеу",
+        "Немен әрі қашан айналысуды өзім таңдау",
+        "Жоғарыдан рұқсатсыз шешім қабылдау еркіндігіне ие болу",
     ],
     "money": [
-        "Получать много всего хорошего за старания",
-        "Получать хорошую награду за то, что делаю",
-        "Иметь возможность покупать себе, что хочется",
-        "Получать достаточно, чтобы ни о чём не беспокоиться",
+        "Көп ақша табу",
+        "Жұмысым үшін жақсы табыс алу",
+        "Ешнәрседен өзімді шектемеуге мүмкіндік болу",
+        "Ақшаны ойламайтындай етіп табу",
     ],
     "recognition": [
-        "Чтобы меня уважали за то, что я умею",
-        "Стать тем, кто лучше всех разбирается в своём деле",
-        "Чтобы замечали, когда я делаю что-то хорошо",
-        "Чтобы другие видели, что я в этом хорош",
+        "Шеберлігім үшін құрметтеп, бағалайтын адам болу",
+        "Өз ісінде танымал сарапшы болу",
+        "Жақсы істеген ісім үшін мойындау алу",
+        "Басқалар мені кәсіби маман деп көруі",
     ],
     "stability": [
-        "Чтобы моя жизнь была спокойной и предсказуемой",
-        "Знать заранее, что будет завтра",
-        "Заниматься тем, где не бывает внезапных перемен",
-        "Заниматься тем, в чём я уверен",
+        "Бәрі болжамды тұрақты жұмысым болу",
+        "Ертең не жыл өткенде не болатынын алдын ала білу",
+        "Күтпеген өзгерістер болмайтын жерде жұмыс істеу",
+        "Өзім сенетін, берік іске ие болу",
     ],
     "creation": [
-        "Создать что-то своё, что раньше не существовало",
-        "Придумать и сделать что-то с нуля",
-        "Собрать или смастерить что-то своё",
-        "Оставить после себя то, что я сам придумал и сделал",
+        "Өзімдік бір нәрсе — жоба, іс, өнім — жасау",
+        "Бір нәрсені нөлден бастап ойлап тауып, құру",
+        "Өз ісімді бастау",
+        "Өзім жасаған бір нәрсені артымда қалдыру",
     ],
     "teamwork": [
-        "Быть в команде, где все друг друга поддерживают",
-        "Делать общее дело вместе с другими",
-        "Быть частью дружной команды",
-        "Добиваться результата вместе, а не одному",
+        "Бәрі бір-бірін қолдайтын командада жұмыс істеу",
+        "Ортақ істі басқа адамдармен бірге істеу",
+        "Мықты әрі тату команданың бір бөлігі болу",
+        "Нәтижеге жалғыз емес, бірге жету",
     ],
 }
 
-assert set(PHRASES_JUNIOR) == set(CATEGORIES)
-assert all(len(v) == 4 for v in PHRASES_JUNIOR.values())
+assert set(_KK_PHRASES) == set(CATEGORIES), f"kk phrase-map category drift: {set(_KK_PHRASES) ^ set(CATEGORIES)}"
+assert all(len(v) == 4 for v in _KK_PHRASES.values()), "every kk phrase list must have 4 items"
 
 
 def _generate_lines() -> list[list[int]]:
@@ -178,13 +178,13 @@ _seen = {c: 0 for c in CATEGORIES}
 for _triplet_index, _line in enumerate(LINES):
     for _order, _point in enumerate(_line):
         _category = CATEGORIES[_point]
+        _i = _seen[_category]
         STATEMENTS.append(
             {
                 "triplet_index": _triplet_index,
                 "order": _order,
                 "category": _category,
-                "text": PHRASES[_category][_seen[_category]],
-                "text_junior": PHRASES_JUNIOR[_category][_seen[_category]],
+                "text": {"ru": PHRASES[_category][_i], "kk": _KK_PHRASES[_category][_i]},
             }
         )
         _seen[_category] += 1

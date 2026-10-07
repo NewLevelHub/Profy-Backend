@@ -1,6 +1,6 @@
 """PRO-262 §12/§13: admin list rows must be distinguishable without opening
 each one. Before this, a page of question pairs was 20 rows of
-"Пара #12 · RIASEC · Junior" and the frontend had to fetch every row's detail
+"Пара #12 · RIASEC" and the frontend had to fetch every row's detail
 just to render a label (docs/admin-backend-requests-pro-242.md)."""
 
 import uuid
@@ -8,9 +8,6 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.direction import Direction
-from app.models.motivation import MotivationCategory
-from app.models.motivation_pair import MotivationPair
-from app.models.profile import AgeGroup
 from app.models.program import Program
 from app.models.question import Question, QuestionInstrument
 from app.models.question_pair import QuestionPair
@@ -21,10 +18,12 @@ from app.services import admin_content_service, admin_university_service
 async def _question(db: AsyncSession, *, text: str, short_text: str | None = None) -> Question:
     question = Question(
         instrument=QuestionInstrument.big_five,
-        text=text,
-        short_text=short_text,
-        order=0,
-        age_tier=AgeGroup.junior,
+        text={"ru": text},
+        short_text={"ru": short_text} if short_text is not None else None,
+        # uq_questions_instrument_order needs a distinct order per (instrument,
+        # order) pair — a test creating two big_five questions can't both use
+        # the "don't-care" 0.
+        order=abs(hash(uuid.uuid4())) % 100_000,
     )
     db.add(question)
     await db.commit()
@@ -33,9 +32,11 @@ async def _question(db: AsyncSession, *, text: str, short_text: str | None = Non
 
 
 async def _pair(db: AsyncSession, q_a: Question, q_b: Question, **kwargs) -> QuestionPair:
+    for key in ("frame", "option_a_text", "option_b_text"):
+        if kwargs.get(key) is not None:
+            kwargs[key] = {"ru": kwargs[key]}
     pair = QuestionPair(
         instrument=QuestionInstrument.big_five,
-        age_tier=AgeGroup.junior,
         pair_index=abs(hash(uuid.uuid4())) % 100_000,
         question_a_id=q_a.id,
         question_b_id=q_b.id,
@@ -97,34 +98,11 @@ async def test_pair_detail_inlines_linked_questions(db_session: AsyncSession) ->
     detail = await admin_content_service.get_question_pair_detail(db_session, pair.id)
 
     # Detail keeps the RAW override (null means "falls back"), unlike the list.
-    assert detail.option_a_text == "Своя формулировка"
+    assert detail.option_a_text == {"ru": "Своя формулировка"}
     assert detail.option_b_text is None
     assert detail.question_a.text == "Утверждение A"
     assert detail.question_a.short_text == "Коротко A"
     assert detail.question_b.short_text is None
-
-
-# --- Motivation pairs -------------------------------------------------------
-
-
-async def test_motivation_pair_list_carries_texts(db_session: AsyncSession) -> None:
-    """category_a always equals category_b on these rows (both poles of one
-    category), so the categories cannot tell two rows apart at all."""
-    pair = MotivationPair(
-        pair_index=abs(hash(uuid.uuid4())) % 100_000,
-        category_a=MotivationCategory.challenge,
-        category_b=MotivationCategory.challenge,
-        text_a="Одни ребята любят сложные задачи",
-        text_b="Другие выбирают задачи полегче",
-    )
-    db_session.add(pair)
-    await db_session.commit()
-
-    result = await admin_content_service.list_motivation_pairs(db_session, limit=100)
-    item = _find(result.items, pair.id)
-
-    assert item.text_a == "Одни ребята любят сложные задачи"
-    assert item.text_b == "Другие выбирают задачи полегче"
 
 
 # --- Directions -------------------------------------------------------------
@@ -135,14 +113,14 @@ async def test_direction_list_reports_program_count_and_catalog_gaps(
 ) -> None:
     university = University(name=f"Uni {uuid.uuid4()}", country="KZ", city="Almaty")
     direction = Direction(
-        name=f"Направление {uuid.uuid4()}",
+        name={"ru": f"Направление {uuid.uuid4()}"},
         slug=f"dir-{uuid.uuid4()}",
         holland_code="RIS",
-        description="Есть описание",
-        professions=[],  # the field that is empty on all 92 rows today
-        skills_needed=["навык"],
-        subjects_to_develop=["предмет"],
-        first_steps=["шаг"],
+        description={"ru": "Есть описание"},
+        professions={"ru": []},  # the field that is empty on all 92 rows today
+        skills_needed={"ru": ["навык"]},
+        subjects_to_develop={"ru": ["предмет"]},
+        first_steps={"ru": ["шаг"]},
     )
     db_session.add_all([university, direction])
     await db_session.commit()
@@ -167,7 +145,7 @@ async def test_direction_list_reports_program_count_and_catalog_gaps(
 async def test_direction_detail_lists_linked_programs(db_session: AsyncSession) -> None:
     university = University(name=f"Uni {uuid.uuid4()}", country="KZ", city="Almaty")
     direction = Direction(
-        name=f"Направление {uuid.uuid4()}",
+        name={"ru": f"Направление {uuid.uuid4()}"},
         slug=f"dir-{uuid.uuid4()}",
         holland_code="RIS",
     )

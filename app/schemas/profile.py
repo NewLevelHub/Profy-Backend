@@ -1,16 +1,33 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
-from app.schemas.artifact import ArtifactItem
+from app.i18n.catalog import key as i18n_key
+from app.schemas.artifact import ArtifactInput, ArtifactItem
 from app.schemas.certificate import CertificateItem
+from app.services.age_grade import age_grade_mismatch_message, is_age_grade_compatible
 
 # Letters (any script) plus space/hyphen/apostrophe for names like
 # "Анна-Мария" or "O'Brien" — no digits, no other symbols. Mirrors the
 # frontend's NAME_PATTERN (useProfileSetup.ts). pydantic-core's `pattern`
 # compiles with Rust's `regex` crate, which supports \p{L} natively.
 NAME_PATTERN = r"^[\p{L}\s'-]+$"
+
+# A subject is a chip label — preset or the student's own «+ своё». Mirrors
+# the frontend's CUSTOM_CHIP_MAX_LENGTH (pages/onboarding/components/AddCustomChip.tsx).
+SUBJECT_MAX_LENGTH = 60
+_SUBJECT_FIELDS = ("subjects_liked", "subjects_disliked", "subjects_easy", "subjects_hard")
+
+
+def _check_subject_lengths(subjects: list[str] | None) -> list[str] | None:
+    if subjects is None:
+        return None
+    if any(len(subject) > SUBJECT_MAX_LENGTH for subject in subjects):
+        raise ValueError(
+            i18n_key("api_errors", "custom_value_too_long").format(max_length=SUBJECT_MAX_LENGTH)
+        )
+    return subjects
 
 # NOTE: the `profiles.gpa_value` / `gpa_scale` columns still exist (see
 # app/models/profile.py) but are no longer part of the profile API — GPA was
@@ -25,7 +42,7 @@ class ProfileCreateRequest(BaseModel):
     # over-limit name is rejected here with a clean 422 rather than
     # reaching the DB layer.
     name: str = Field(..., min_length=3, max_length=60, pattern=NAME_PATTERN)
-    age: int = Field(..., ge=6, le=18)
+    age: int = Field(..., ge=14, le=18)
     grade: int = Field(..., ge=1, le=12)
     city: str
     country: str
@@ -42,16 +59,27 @@ class ProfileCreateRequest(BaseModel):
     # brand-new profile, but goes through the same code path). See
     # app/routers/profile.py::create_profile for how this is applied
     # atomically alongside the Profile row.
-    artifacts: list[ArtifactItem] | None = None
+    artifacts: list[ArtifactInput] | None = None
     # Same optional/atomic-write contract as `artifacts`, but backed by
     # app/services/certificate_service.py instead. `None` = not managing
     # certificates here; any list (including `[]`) replaces them wholesale.
     certificates: list[CertificateItem] | None = None
 
+    @field_validator(*_SUBJECT_FIELDS)
+    @classmethod
+    def _subjects_fit(cls, subjects: list[str] | None) -> list[str] | None:
+        return _check_subject_lengths(subjects)
+
+    @model_validator(mode="after")
+    def _age_matches_grade(self) -> "ProfileCreateRequest":
+        if not is_age_grade_compatible(self.age, self.grade):
+            raise ValueError(age_grade_mismatch_message(self.age, self.grade))
+        return self
+
 
 class ProfileUpdateRequest(BaseModel):
     name: str | None = Field(None, min_length=3, max_length=60, pattern=NAME_PATTERN)
-    age: int | None = Field(None, ge=6, le=18)
+    age: int | None = Field(None, ge=14, le=18)
     grade: int | None = Field(None, ge=1, le=12)
     city: str | None = None
     country: str | None = None
@@ -64,9 +92,23 @@ class ProfileUpdateRequest(BaseModel):
     # "caller isn't managing artifacts here, leave them untouched"; any list
     # (including `[]`) replaces the profile's artifacts wholesale via the
     # same delete-then-insert as the standalone POST /profile/artifacts.
-    artifacts: list[ArtifactItem] | None = None
+    artifacts: list[ArtifactInput] | None = None
     # Same semantics as `artifacts`, backed by certificate_service instead.
     certificates: list[CertificateItem] | None = None
+
+    @field_validator(*_SUBJECT_FIELDS)
+    @classmethod
+    def _subjects_fit(cls, subjects: list[str] | None) -> list[str] | None:
+        return _check_subject_lengths(subjects)
+
+    @model_validator(mode="after")
+    def _age_matches_grade_when_both_sent(self) -> "ProfileUpdateRequest":
+        # Partial updates that touch only one of the pair are checked in
+        # profile_service against the stored other field (PRO-420).
+        if self.age is not None and self.grade is not None:
+            if not is_age_grade_compatible(self.age, self.grade):
+                raise ValueError(age_grade_mismatch_message(self.age, self.grade))
+        return self
 
 
 class ProfileResponse(BaseModel):
