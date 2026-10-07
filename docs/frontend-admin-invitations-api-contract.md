@@ -27,8 +27,11 @@ PRO-462 (`app/routers/auth.py`, `app/services/oauth_service.py`); логика �
 **получить ссылку можно только в ответе create и resend** (`invite_url`) —
 список приглашений её не отдаёт.
 
-`POST /admin/users` (создание сотрудника с паролем) после запуска приглашений
-удаляется (PRO-466) — новых вызовов на него не добавлять.
+`POST /admin/users` (создание сотрудника с паролем) удалён в PRO-466.
+Без админки приглашение создаётся из консоли:
+`scripts/create_admin_user.py` / `scripts/create_psychologist_user.py
+<email> [--locale ru|kk]` печатают `invite_url`; при уже активном
+приглашении на эту почту перевыпускают его ссылку.
 
 ## 1. Эндпоинты
 

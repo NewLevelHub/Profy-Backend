@@ -157,15 +157,19 @@ async def _sent(
 
 
 async def create_invitation(
-    db: AsyncSession, body: AdminInvitationCreate, *, inviter: User
+    db: AsyncSession, body: AdminInvitationCreate, *, inviter: User | None
 ) -> AdminInvitationSent:
+    """`inviter` is None for the CLI scripts (`scripts/create_*_user.py`)."""
     await _lock_email(db, body.email)
     await ensure_no_verified_user(db, body.email)
     now = _now()
     await _ensure_no_other_pending(db, body.email, now)
 
     invitation = Invitation(
-        email=body.email, role=body.role, locale=body.locale, invited_by=inviter.id
+        email=body.email,
+        role=body.role,
+        locale=body.locale,
+        invited_by=inviter.id if inviter else None,
     )
     token = _issue_token(invitation, now)
     db.add(invitation)
