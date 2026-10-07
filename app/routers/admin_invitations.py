@@ -13,6 +13,7 @@ from app.models.user import User
 from app.schemas.invitation import (
     AdminInvitationCreate,
     AdminInvitationItem,
+    AdminInvitationLink,
     AdminInvitationListResponse,
     AdminInvitationSent,
 )
@@ -42,6 +43,15 @@ async def list_invitations(
     return await invitation_service.list_invitations(
         db, page=page, limit=limit, status_filter=status_filter, search=search
     )
+
+
+@router.get("/{invitation_id}/link", response_model=AdminInvitationLink)
+async def invitation_link(
+    invitation_id: uuid.UUID,
+    _: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+) -> AdminInvitationLink:
+    return await invitation_service.invitation_link(db, invitation_id)
 
 
 @router.post("/{invitation_id}/resend", response_model=AdminInvitationSent)

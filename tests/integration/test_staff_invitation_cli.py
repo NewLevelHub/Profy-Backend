@@ -13,7 +13,7 @@ from app.errors import AppError
 from app.models.invitation import Invitation
 from app.models.user import User, UserRole
 from app.schemas.invitation import AdminInvitationCreate
-from app.services import email_service
+from app.services import email_service, invitation_service
 from app.services.invitation_service import hash_token
 from scripts import staff_invitation_cli
 
@@ -31,9 +31,9 @@ def cli_session(monkeypatch, db_session: AsyncSession):
 def sent_emails(monkeypatch) -> list[str]:
     links: list[str] = []
 
-    async def _capture(to: str, invite_url: str, **_kwargs) -> bool:
+    async def _capture(to: str, invite_url: str, **_kwargs) -> str:
         links.append(invite_url)
-        return True
+        return f"msg-{uuid.uuid4()}"
 
     monkeypatch.setattr(email_service, "send_invitation_email", _capture)
     return links
@@ -55,6 +55,23 @@ async def test_creates_invitation_without_inviter_and_user(
     assert sent.invited_by is None
     assert sent_emails == [sent.invite_url]
     assert await db_session.scalar(select(User).where(User.email == email)) is None
+
+
+async def test_skips_the_mail_domain_check(
+    db_session: AsyncSession, sent_emails: list[str], monkeypatch
+) -> None:
+    """The link is printed to the operator, so a domain without mail (a local
+    admin@<made-up>.kz) is fine here — unlike in the admin panel."""
+
+    def _no_lookup(*_args, **_kwargs) -> None:
+        raise AssertionError("the CLI must not check the mail domain")
+
+    monkeypatch.setattr(invitation_service.settings, "INVITATION_CHECK_DELIVERABILITY", True)
+    monkeypatch.setattr(invitation_service, "validate_email", _no_lookup)
+
+    sent = await staff_invitation_cli._invite(_body(f"{uuid.uuid4()}@example.com"))
+
+    assert sent.invite_url
 
 
 async def _add_pending(db: AsyncSession, email: str, *, role: UserRole, locale: str) -> Invitation:

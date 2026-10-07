@@ -17,7 +17,7 @@ from pydantic_core import PydanticCustomError
 
 from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
 from app.i18n.catalog import key as i18n_key
-from app.models.invitation import InvitationStatus
+from app.models.invitation import InvitationEmailStatus, InvitationStatus
 from app.models.user import UserRole
 
 _STAFF_ROLES = (UserRole.psychologist.value, UserRole.admin.value)
@@ -37,7 +37,8 @@ class AdminInvitationCreate(BaseModel):
     @field_validator("email", mode="before")
     @classmethod
     def valid_email(cls, v: Any) -> str:
-        # Same check as `EmailStr` (no DNS), normalized like `NormalizedEmail`.
+        # Same check as `EmailStr`, normalized like `NormalizedEmail`. The
+        # DNS check is async, in the service (`ensure_deliverable`).
         try:
             return validate_email(str(v).strip(), check_deliverability=False).normalized.lower()
         except EmailNotValidError:
@@ -76,15 +77,26 @@ class AdminInvitationItem(BaseModel):
     expires_at: datetime
     accepted_at: datetime | None
     revoked_at: datetime | None
+    # Fate of the latest email: `sent` = accepted by Resend; delivered /
+    # delayed / bounced / complained come from the Resend webhook; `failed` =
+    # not sent at all. null only for rows older than delivery tracking.
+    email_status: InvitationEmailStatus | None
 
 
 class AdminInvitationSent(AdminInvitationItem):
-    """create / resend: the raw link exists only here — the DB keeps a hash."""
+    """create / resend: the item plus its fresh link."""
 
     invite_url: str
     # False when the provider failed; the invitation is still valid and the
     # admin hands `invite_url` over manually.
     email_sent: bool
+
+
+class AdminInvitationLink(BaseModel):
+    """GET /admin/invitations/{id}/link — the link of a pending invitation."""
+
+    invite_url: str
+    expires_at: datetime
 
 
 class AdminInvitationListResponse(BaseModel):

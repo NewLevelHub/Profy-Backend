@@ -189,6 +189,10 @@ async def login(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc))
     except LookupError as exc:
         kind, email = str(exc).split(":", 1)
+        if kind == "invitation_pending":
+            # Still a failed login: probing emails for invitations spends
+            # the same budget as guessing passwords.
+            await _record_login_failure(ip_rate_key, email_rate_key)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"detail": kind, "email": email},

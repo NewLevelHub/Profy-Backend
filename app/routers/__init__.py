@@ -18,6 +18,7 @@ from app.routers.question_pairs import router as question_pairs_router
 from app.routers.questions import router as questions_router
 from app.routers.result import router as result_router
 from app.routers.university import router as university_router
+from app.routers.webhooks import router as webhooks_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router, prefix="/api/v1/auth")
@@ -38,3 +39,4 @@ api_router.include_router(astur_router, prefix="/api/v1/assessment")
 api_router.include_router(extended_blocks_router, prefix="/api/v1/assessment")
 api_router.include_router(result_router, prefix="/api/v1/result")
 api_router.include_router(university_router, prefix="/api/v1/universities")
+api_router.include_router(webhooks_router, prefix="/api/v1/webhooks")

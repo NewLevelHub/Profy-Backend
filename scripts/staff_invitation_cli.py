@@ -18,6 +18,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pydantic import ValidationError  # noqa: E402
+from sqlalchemy.ext.asyncio import AsyncSession  # noqa: E402
 
 from app.config import settings  # noqa: E402
 from app.database import async_session  # noqa: E402
@@ -51,17 +52,25 @@ class PendingMismatch(Exception):
     """A pending invitation exists with another role/locale and no --replace."""
 
 
+async def _create(db: AsyncSession, body: AdminInvitationCreate) -> AdminInvitationSent:
+    # The operator gets the link in the console, so the address need not
+    # receive mail (e.g. a local admin@<made-up domain>).
+    return await invitation_service.create_invitation(
+        db, body, inviter=None, check_deliverability=False
+    )
+
+
 async def _invite(body: AdminInvitationCreate, *, replace: bool = False) -> AdminInvitationSent:
     async with async_session() as db:
         try:
-            return await invitation_service.create_invitation(db, body, inviter=None)
+            return await _create(db, body)
         except AppError as exc:
             if exc.error_code != "invitation_pending":
                 raise
         # Nothing was written before the refusal; the same transaction goes on.
         pending = await invitation_service.pending_for_email(db, body.email)
         if pending is None:  # accepted or revoked in the meantime — just retry
-            return await invitation_service.create_invitation(db, body, inviter=None)
+            return await _create(db, body)
         if pending.role == body.role and pending.locale == body.locale:
             print("A pending invitation already exists — reissuing its link (the old one stops working).")
             return await invitation_service.resend_invitation(db, pending.id)
@@ -73,7 +82,7 @@ async def _invite(body: AdminInvitationCreate, *, replace: bool = False) -> Admi
             )
         print(f"Revoking the pending {current} invitation.")
         await invitation_service.revoke_invitation(db, pending.id)
-        return await invitation_service.create_invitation(db, body, inviter=None)
+        return await _create(db, body)
 
 
 def _email_status(sent: AdminInvitationSent) -> str:

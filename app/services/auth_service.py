@@ -2,6 +2,7 @@ import logging
 import uuid
 from datetime import datetime, timedelta, timezone
 
+from fastapi import status
 from jose import jwt
 from passlib.context import CryptContext
 from sqlalchemy import select, update
@@ -12,7 +13,7 @@ from app.config import settings
 from app.models.email_verification import EmailVerificationToken
 from app.models.user import User
 from app.schemas.auth import RegisterResponse
-from app.services import email_service
+from app.services import email_service, invitation_service
 from app.services.token_utils import generate_code, hash_code
 
 logger = logging.getLogger(__name__)
@@ -68,6 +69,10 @@ async def register(
     result = await db.execute(select(User).where(User.email == email))
     if result.scalar_one_or_none():
         raise ValueError(i18n_key("api_errors", "email_already_exists", locale="ru"))
+    # An invited staff member who wandered off /invite would get a student
+    # account here, and a verified one blocks the invitation for good.
+    if await invitation_service.has_pending(db, email):
+        raise invitation_service.invitation_error(status.HTTP_409_CONFLICT, "invited_email_register")
 
     user = User(
         email=email,
@@ -94,6 +99,9 @@ async def login(email: str, password: str, db: AsyncSession) -> tuple[User, str]
     user = result.scalar_one_or_none()
 
     if not user:
+        # No account yet, but an open invitation: it is made from the link.
+        if await invitation_service.has_pending(db, email):
+            raise LookupError(f"invitation_pending:{email}")
         raise PermissionError(i18n_key("api_errors", "invalid_credentials", locale="ru"))
 
     if user.hashed_password is None:
@@ -140,6 +148,12 @@ async def verify_email(email: str, code: str, db: AsyncSession) -> tuple[User, s
         raise ValueError(i18n_key("api_errors", "invalid_verification_code", locale="ru"))
 
     token.used_at = now
+    if not user.is_verified:
+        # The code proves the mailbox, as Google does in `oauth_service`:
+        # an open invitation on this email is accepted with it.
+        invitation = await invitation_service.pending_for_email(db, user.email)
+        if invitation is not None:
+            invitation_service.apply_to_user(user, invitation)
     user.is_verified = True
     await db.commit()
     await db.refresh(user)

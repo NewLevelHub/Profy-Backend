@@ -79,9 +79,9 @@ async def test_invite_preview_accept_and_use_the_account(
 ) -> None:
     links: list[str] = []
 
-    async def _capture(to: str, invite_url: str, **_kwargs) -> bool:
+    async def _capture(to: str, invite_url: str, **_kwargs) -> str:
         links.append(invite_url)
-        return True
+        return f"msg-{uuid.uuid4()}"
 
     monkeypatch.setattr(email_service, "send_invitation_email", _capture)
     email = _email()
@@ -122,13 +122,70 @@ async def test_invite_preview_accept_and_use_the_account(
     assert again.json()["error_code"] == "invitation_used"
 
 
-async def test_login_before_accepting_is_401(client: httpx.AsyncClient, db_session: AsyncSession) -> None:
+async def test_login_before_accepting_points_back_to_the_link(
+    client: httpx.AsyncClient, db_session: AsyncSession
+) -> None:
+    """No account yet: "invalid credentials" would leave the invitee stuck on
+    /login — the answer says the account is made from the emailed link."""
     email = _email()
     await _add_invitation(db_session, email)
 
     response = await client.post("/api/v1/auth/login", json={"email": email, "password": PASSWORD})
 
+    assert response.status_code == 403
+    assert response.json()["detail"] == {"detail": "invitation_pending", "email": email}
+
+
+@pytest.mark.parametrize(
+    "state",
+    [{"expires_in": timedelta(hours=-1)}, {"revoked": True}],
+    ids=["expired", "revoked"],
+)
+async def test_login_with_closed_invitation_is_401(
+    client: httpx.AsyncClient, db_session: AsyncSession, state: dict
+) -> None:
+    email = _email()
+    await _add_invitation(db_session, email, **state)
+
+    response = await client.post("/api/v1/auth/login", json={"email": email, "password": PASSWORD})
+
     assert response.status_code == 401
+
+
+async def test_register_on_invited_email_is_409(
+    client: httpx.AsyncClient, db_session: AsyncSession
+) -> None:
+    """A student account on an invited email would block the invitation."""
+    email = _email()
+    await _add_invitation(db_session, email)
+
+    response = await client.post("/api/v1/auth/register", json={"email": email, "password": PASSWORD})
+
+    assert response.status_code == 409
+    assert response.json()["error_code"] == "invited_email_register"
+    assert await db_session.scalar(select(User).where(User.email == email)) is None
+
+
+async def test_confirming_email_of_unverified_account_accepts_the_invitation(
+    client: httpx.AsyncClient, db_session: AsyncSession
+) -> None:
+    """Registered (unverified) before the invite, then confirmed the code:
+    the code proves the mailbox, so the account becomes the invited staff."""
+    email = _email()
+    invitation, _ = await _add_invitation(db_session, email, role=UserRole.psychologist, locale="kk")
+    user = await _add_user(db_session, email, is_verified=False)
+    code = await auth_service._create_verification_token(user.id, db_session)
+
+    response = await client.post("/api/v1/auth/verify-email", json={"email": email, "code": code})
+
+    assert response.status_code == 200
+    assert response.json()["user"]["role"] == "psychologist"
+    await db_session.refresh(user)
+    await db_session.refresh(invitation)
+    assert user.role == UserRole.psychologist
+    assert user.locale == "kk"
+    assert invitation.status == InvitationStatus.accepted
+    assert invitation.token_ciphertext is None
 
 
 # ── token states ────────────────────────────────────────────────────────────
@@ -140,16 +197,23 @@ async def test_login_before_accepting_is_401(client: httpx.AsyncClient, db_sessi
         ({"expires_in": timedelta(hours=-1)}, "invitation_expired"),
         ({"revoked": True}, "invitation_revoked"),
         ({"accepted": True}, "invitation_used"),
+        # The account made from it was deleted since — not "sign in".
+        ({"accepted": True, "account": False}, "invitation_invalid"),
         (None, "invitation_invalid"),
     ],
-    ids=["expired", "revoked", "used", "unknown"],
+    ids=["expired", "revoked", "used", "used_account_deleted", "unknown"],
 )
 async def test_closed_or_unknown_token_is_400_with_code(
     client: httpx.AsyncClient, db_session: AsyncSession, state: dict | None, error_code: str
 ) -> None:
     token = uuid.uuid4().hex
     if state is not None:
-        _, token = await _add_invitation(db_session, _email(), **state)
+        state = dict(state)
+        with_account = state.pop("account", state.get("accepted", False))
+        email = _email()
+        _, token = await _add_invitation(db_session, email, **state)
+        if with_account:
+            await _add_user(db_session, email, is_verified=True)
 
     preview = await client.get(PREVIEW_URL.format(token=token))
     accept = await client.post(ACCEPT_URL, json={"token": token, "password": PASSWORD})
@@ -162,8 +226,8 @@ async def test_closed_or_unknown_token_is_400_with_code(
 async def test_resend_invalidates_the_old_link(
     client: httpx.AsyncClient, admin_headers: dict[str, str], db_session: AsyncSession, monkeypatch
 ) -> None:
-    async def _noop(*_args, **_kwargs) -> bool:
-        return True
+    async def _noop(*_args, **_kwargs) -> str:
+        return f"msg-{uuid.uuid4()}"
 
     monkeypatch.setattr(email_service, "send_invitation_email", _noop)
     invitation, old_token = await _add_invitation(db_session, _email())

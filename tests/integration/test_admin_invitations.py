@@ -10,9 +10,11 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.invitation import Invitation
+from email_validator import EmailUndeliverableError
+
+from app.models.invitation import Invitation, InvitationEmailStatus
 from app.models.user import User, UserRole
-from app.services import auth_service, email_service
+from app.services import auth_service, email_service, invitation_service
 from app.services.invitation_service import hash_token
 
 URL = "/api/v1/admin/invitations"
@@ -22,9 +24,9 @@ URL = "/api/v1/admin/invitations"
 def sent_emails(monkeypatch) -> list[dict]:
     captured: list[dict] = []
 
-    async def _capture(to: str, invite_url: str, *, role: UserRole, locale: str) -> bool:
+    async def _capture(to: str, invite_url: str, *, role: UserRole, locale: str) -> str:
         captured.append({"to": to, "invite_url": invite_url, "role": role, "locale": locale})
-        return True
+        return f"msg-{uuid.uuid4()}"
 
     monkeypatch.setattr(email_service, "send_invitation_email", _capture)
     return captured
@@ -96,11 +98,14 @@ async def test_create_stores_invitation_without_user_and_sends_email(
     assert body["status"] == "pending"
     assert body["invited_by"] == {"id": str(admin_user.id), "email": admin_user.email}
     assert body["email_sent"] is True
+    assert body["email_status"] == "sent"
     assert body["accepted_at"] is None and body["revoked_at"] is None
 
     invitation = await db_session.scalar(select(Invitation).where(Invitation.email == email))
     assert invitation is not None
     assert invitation.token_hash == hash_token(_token(body["invite_url"]))
+    assert invitation.email_message_id is not None
+    assert invitation.email_status == InvitationEmailStatus.sent
     ttl = invitation.expires_at - invitation.created_at
     assert timedelta(hours=71) < ttl <= timedelta(hours=72, minutes=1)
     assert await db_session.scalar(select(User).where(User.email == email)) is None
@@ -217,6 +222,7 @@ async def test_create_survives_email_provider_failure(
 
     assert response.status_code == 201
     assert response.json()["email_sent"] is False
+    assert response.json()["email_status"] == "failed"
     assert response.json()["invite_url"]
     assert await db_session.scalar(select(Invitation).where(Invitation.email == email)) is not None
 
@@ -231,6 +237,50 @@ async def test_create_without_email_configured_reports_not_sent(
 
     assert response.status_code == 201
     assert response.json()["email_sent"] is False
+
+
+async def test_create_rejects_domain_without_mail(
+    client: httpx.AsyncClient,
+    admin_headers: dict[str, str],
+    db_session: AsyncSession,
+    sent_emails: list[dict],
+    monkeypatch,
+) -> None:
+    """A made-up domain must not turn into "email sent"."""
+    checked: list[str] = []
+
+    def _no_mx(email: str, **_kwargs) -> None:
+        checked.append(email)
+        raise EmailUndeliverableError("The domain name does not exist.")
+
+    monkeypatch.setattr(invitation_service.settings, "INVITATION_CHECK_DELIVERABILITY", True)
+    monkeypatch.setattr(invitation_service, "validate_email", _no_mx)
+    email = _email()
+
+    response = await client.post(URL, json={"email": email, "role": "psychologist"}, headers=admin_headers)
+
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "invitation_email_undeliverable"
+    assert checked == [email]
+    assert sent_emails == []
+    assert await db_session.scalar(select(Invitation).where(Invitation.email == email)) is None
+
+
+async def test_create_checks_mail_domain_when_enabled(
+    client: httpx.AsyncClient, admin_headers: dict[str, str], sent_emails: list[dict], monkeypatch
+) -> None:
+    calls: list[dict] = []
+
+    def _deliverable(email: str, **kwargs) -> None:
+        calls.append({"email": email, **kwargs})
+
+    monkeypatch.setattr(invitation_service.settings, "INVITATION_CHECK_DELIVERABILITY", True)
+    monkeypatch.setattr(invitation_service, "validate_email", _deliverable)
+
+    response = await client.post(URL, json={"email": _email(), "role": "psychologist"}, headers=admin_headers)
+
+    assert response.status_code == 201
+    assert calls[0]["check_deliverability"] is True
 
 
 # An authenticated request takes the locale from `users.locale` first.
@@ -281,6 +331,7 @@ async def test_resend_replaces_token_and_restarts_ttl(
     assert body["id"] == str(invitation.id)
     assert body["status"] == "pending"
     assert body["email_sent"] is True
+    assert body["email_status"] == "sent"
     await db_session.refresh(invitation)
     assert invitation.token_hash == hash_token(_token(body["invite_url"]))
     assert invitation.token_hash != old_hash
@@ -352,6 +403,7 @@ async def test_revoke_pending_invitation(
     assert response.json()["revoked_at"] is not None
     await db_session.refresh(invitation)
     assert invitation.revoked_at is not None
+    assert invitation.token_ciphertext is None
 
 
 @pytest.mark.parametrize(
@@ -378,18 +430,90 @@ async def test_revoke_rejects_non_pending(
     assert response.json()["error_code"] == error_code
 
 
-@pytest.mark.parametrize("method", ["resend", "revoke"])
+@pytest.mark.parametrize("method", ["resend", "revoke", "link"])
 async def test_unknown_invitation_is_404(
     client: httpx.AsyncClient, admin_headers: dict[str, str], method: str
 ) -> None:
     missing = uuid.uuid4()
     if method == "resend":
         response = await client.post(f"{URL}/{missing}/resend", headers=admin_headers)
+    elif method == "link":
+        response = await client.get(f"{URL}/{missing}/link", headers=admin_headers)
     else:
         response = await client.delete(f"{URL}/{missing}", headers=admin_headers)
 
     assert response.status_code == 404
     assert response.json()["error_code"] == "invitation_not_found"
+
+
+# ── link ────────────────────────────────────────────────────────────────────
+
+
+async def test_link_of_pending_invitation_is_the_emailed_one(
+    client: httpx.AsyncClient, admin_headers: dict[str, str], db_session: AsyncSession, sent_emails: list[dict]
+) -> None:
+    created = await client.post(URL, json={"email": _email(), "role": "psychologist"}, headers=admin_headers)
+    invitation_id = created.json()["id"]
+
+    link = await client.get(f"{URL}/{invitation_id}/link", headers=admin_headers)
+
+    assert link.status_code == 200
+    assert link.json()["invite_url"] == created.json()["invite_url"] == sent_emails[0]["invite_url"]
+    assert link.json()["expires_at"] == created.json()["expires_at"]
+    # Stored encrypted, not as the raw token.
+    invitation = await db_session.get(Invitation, uuid.UUID(invitation_id))
+    assert invitation.token_ciphertext
+    assert _token(created.json()["invite_url"]) not in invitation.token_ciphertext
+
+
+async def test_link_follows_resend(
+    client: httpx.AsyncClient, admin_headers: dict[str, str], sent_emails: list[dict]
+) -> None:
+    created = await client.post(URL, json={"email": _email(), "role": "psychologist"}, headers=admin_headers)
+    invitation_id = created.json()["id"]
+    resent = await client.post(f"{URL}/{invitation_id}/resend", headers=admin_headers)
+
+    link = await client.get(f"{URL}/{invitation_id}/link", headers=admin_headers)
+
+    assert link.json()["invite_url"] == resent.json()["invite_url"]
+    assert link.json()["invite_url"] != created.json()["invite_url"]
+
+
+@pytest.mark.parametrize(
+    ("closed", "error_code"),
+    [
+        ({"accepted": True}, "invitation_used"),
+        ({"revoked": True}, "invitation_revoked"),
+        ({"expires_in": timedelta(hours=-1)}, "invitation_expired"),
+    ],
+    ids=["accepted", "revoked", "expired"],
+)
+async def test_link_of_closed_invitation_is_400(
+    client: httpx.AsyncClient,
+    admin_headers: dict[str, str],
+    db_session: AsyncSession,
+    closed: dict,
+    error_code: str,
+) -> None:
+    invitation = await _add_invitation(db_session, _email(), **closed)
+
+    response = await client.get(f"{URL}/{invitation.id}/link", headers=admin_headers)
+
+    assert response.status_code == 400
+    assert response.json()["error_code"] == error_code
+
+
+async def test_link_without_stored_token_is_409(
+    client: httpx.AsyncClient, admin_headers: dict[str, str], db_session: AsyncSession
+) -> None:
+    """Rows from before links were kept (or after a SECRET_KEY change)."""
+    invitation = await _add_invitation(db_session, _email())
+    assert invitation.token_ciphertext is None
+
+    response = await client.get(f"{URL}/{invitation.id}/link", headers=admin_headers)
+
+    assert response.status_code == 409
+    assert response.json()["error_code"] == "invitation_link_unavailable"
 
 
 # ── list ────────────────────────────────────────────────────────────────────
@@ -423,6 +547,7 @@ async def test_list_reports_derived_statuses_and_filters(
     assert by_email[f"pending@{domain}"]["invited_by"] == {"id": str(admin_user.id), "email": admin_user.email}
     assert by_email[f"expired@{domain}"]["invited_by"] is None
     assert "invite_url" not in body["items"][0]
+    assert by_email[f"pending@{domain}"]["email_status"] is None
 
     for status in ("pending", "expired", "revoked", "accepted"):
         filtered = await client.get(URL, params={"search": domain, "status": status}, headers=admin_headers)
@@ -463,6 +588,7 @@ async def test_non_admin_gets_403_everywhere(
         await client.get(URL, headers=headers),
         await client.post(f"{URL}/{some_id}/resend", headers=headers),
         await client.delete(f"{URL}/{some_id}", headers=headers),
+        await client.get(f"{URL}/{some_id}/link", headers=headers),
     ]
 
-    assert [r.status_code for r in responses] == [403, 403, 403, 403]
+    assert [r.status_code for r in responses] == [403, 403, 403, 403, 403]

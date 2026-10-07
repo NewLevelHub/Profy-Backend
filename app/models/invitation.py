@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import CheckConstraint, ColumnElement, DateTime, Enum, ForeignKey, String, and_, func
+from sqlalchemy import CheckConstraint, ColumnElement, DateTime, Enum, ForeignKey, String, Text, and_, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -18,6 +18,19 @@ class InvitationStatus(str, enum.Enum):
     expired = "expired"
 
 
+class InvitationEmailStatus(str, enum.Enum):
+    """What happened to the latest invitation email. `sent` only means Resend
+    accepted it; the rest arrive later through the Resend webhook."""
+
+    sent = "sent"
+    delayed = "delayed"
+    delivered = "delivered"
+    bounced = "bounced"
+    complained = "complained"
+    # Provider error on send, Resend not configured, or `email.failed`.
+    failed = "failed"
+
+
 class Invitation(Base):
     """Email invitation of a staff member — psychologist or admin (PRO-459).
 
@@ -31,8 +44,10 @@ class Invitation(Base):
     (re-invite after expiry/revoke); keeping at most one pending invite per
     email is the service layer's job, since "pending" depends on `now`.
 
-    Only `token_hash` (SHA-256 hex) is stored; the raw token exists only in
-    the emailed link.
+    A link is looked up by `token_hash` (SHA-256 hex). `token_ciphertext`
+    keeps the same token encrypted with a key derived from `SECRET_KEY`, so
+    the admin can copy the link of a pending invitation at any time; it is
+    cleared once the invitation is accepted or revoked.
     """
 
     __tablename__ = "invitations"
@@ -55,6 +70,7 @@ class Invitation(Base):
         server_default="ru",
     )
     token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    token_ciphertext: Mapped[str | None] = mapped_column(Text, nullable=True)
     # SET NULL: deleting the inviting admin must not void invites already sent.
     invited_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
@@ -65,6 +81,13 @@ class Invitation(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+    # Resend id of the latest email: webhook events are matched by it, so
+    # events of an email replaced by a resend are ignored.
+    email_message_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    email_status: Mapped[InvitationEmailStatus | None] = mapped_column(
+        Enum(InvitationEmailStatus, native_enum=False, length=16), nullable=True
+    )
+    email_status_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     def status_at(self, now: datetime) -> InvitationStatus:
         if self.accepted_at is not None:
