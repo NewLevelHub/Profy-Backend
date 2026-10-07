@@ -65,6 +65,68 @@ class DeploymentIsolationTests(unittest.TestCase):
             self.assertIn("DEV_API_IMAGE=registry.test/test/backend:dev-sha-1234567", saved_env)
             self.assertNotIn("\nAPI_IMAGE=", saved_env)
 
+    # `docker image ls` output as both deploy scripts request it
+    # (CreatedAt|Repository|Tag), newest first is NOT assumed — the script sorts.
+    IMAGE_FIXTURE = "\n".join([
+        "2026-10-06 10:00:00 +0500 +05|test/backend|dev-sha-1234567",
+        "2026-10-05 10:00:00 +0500 +05|test/backend|dev-sha-aaaaaaa",
+        "2026-10-04 10:00:00 +0500 +05|test/backend|dev-sha-bbbbbbb",
+        "2026-10-03 10:00:00 +0500 +05|registry.test/test/backend|dev-sha-ccccccc",
+        "2026-10-02 10:00:00 +0500 +05|test/backend|dev-sha-0dd0dd0",
+        "2026-10-06 11:00:00 +0500 +05|test/backend|sha-1234567",
+        "2026-10-05 11:00:00 +0500 +05|test/backend|sha-eeeeeee",
+        "2026-10-04 11:00:00 +0500 +05|test/backend|sha-fffffff",
+        "2026-10-01 11:00:00 +0500 +05|test/backend|latest",
+        "2026-10-01 11:00:00 +0500 +05|other/app|dev-sha-9999999",
+        "2026-10-01 11:00:00 +0500 +05|other/app|sha-9999999",
+        "2026-09-01 11:00:00 +0500 +05|postgres|16-alpine",
+    ]) + "\n"
+
+    def _run_deploy_script(self, workflow_file, job_name, env_file):
+        job = read_yaml(f".github/workflows/{workflow_file}")["jobs"][job_name]
+        step = next(s for s in job["steps"] if s.get("uses", "").startswith("appleboy/ssh-action"))
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            (path / env_file).write_text(
+                "POSTGRES_DB=db\nPOSTGRES_USER=user\nPOSTGRES_PASSWORD=test\nSECRET_KEY=test\n"
+            )
+            (path / "images").write_text(self.IMAGE_FIXTURE)
+            # Fake docker: logs every call, serves the image list, and refuses to
+            # remove the image a container still uses (like the real `rmi` without -f).
+            (path / "docker").write_text(
+                '#!/bin/bash\nprintf "%s\\n" "$*" >> "$COMMAND_LOG"\n'
+                'if [ "$1 $2" = "image ls" ]; then cat "$IMAGE_FIXTURE"; fi\n'
+                'if [ "$1" = "rmi" ] && [ "$2" = "$IN_USE_IMAGE" ]; then exit 1; fi\n'
+            )
+            (path / "docker").chmod(0o755)
+            env = dict(os.environ, PATH=f"{path}:{os.environ['PATH']}",
+                       COMMAND_LOG=str(path / "commands"), IMAGE_FIXTURE=str(path / "images"),
+                       IN_USE_IMAGE="test/backend:dev-sha-0dd0dd0",
+                       DEPLOY_PATH=directory, DOCKER_PASSWORD="test", DOCKER_USERNAME="test",
+                       DOCKER_REGISTRY="registry.test", DOCKER_REPOSITORY="backend",
+                       COMMIT_SHA="123456789abcdef", PROFI_EDGE_NETWORK_NAME="edge")
+            subprocess.run(["bash", "-eu", "-c", step["with"]["script"]], env=env,
+                           check=True, capture_output=True, text=True)
+            commands = (path / "commands").read_text().splitlines()
+            return sorted(c.split(" ", 1)[1] for c in commands if c.startswith("rmi "))
+
+    def test_dev_deploy_prunes_only_old_dev_images(self):
+        removed = self._run_deploy_script("cd-dev.yml", "deploy_development", ".env.development")
+        # Kept: the image just deployed (1234567) and the newest previous (aaaaaaa).
+        # Attempted: older dev-sha images, incl. one still in use (0dd0dd0), which
+        # the fake docker refuses — and the deploy must still succeed.
+        self.assertEqual(removed, [
+            "registry.test/test/backend:dev-sha-ccccccc",
+            "test/backend:dev-sha-0dd0dd0",
+            "test/backend:dev-sha-bbbbbbb",
+        ])
+        self.assertFalse(any(":sha-" in image or image.endswith(":latest") for image in removed))
+
+    @unittest.skipUnless(shutil.which("flock"), "flock not installed")
+    def test_prod_deploy_prunes_only_old_production_images(self):
+        removed = self._run_deploy_script("cd.yml", "deploy_production", ".env.production")
+        self.assertEqual(removed, ["test/backend:sha-fffffff"])
+
     def test_compose_separates_images_databases_and_media_writes(self):
         for file, service, prefix in [("prod", "api", "PROD"), ("dev", "api_dev", "DEV")]:
             config = read_yaml(f"docker-compose.{file}.yml")
@@ -77,6 +139,20 @@ class DeploymentIsolationTests(unittest.TestCase):
                 self.assertTrue(all(v.endswith(":ro") for v in api["volumes"]))
             else:
                 self.assertNotIn("depends_on", config["services"]["nginx"])
+
+    def test_prod_attaches_nginx_and_api_to_the_edge_network(self):
+        config = read_yaml("docker-compose.prod.yml")
+        self.assertEqual(config["networks"]["profi_edge"], {"external": "true", "name": "profi_edge"})
+        for service in ("api", "nginx"):
+            self.assertIn("profi_edge", config["services"][service]["networks"])
+        # Data services never sit on the edge network.
+        for service in ("db", "redis"):
+            self.assertEqual(config["services"][service]["networks"], ["profi_network"])
+        job = read_yaml(".github/workflows/cd.yml")["jobs"]["deploy_production"]
+        script = next(s for s in job["steps"] if s.get("uses", "").startswith("appleboy/ssh-action"))["with"]["script"]
+        create = "docker network inspect profi_edge >/dev/null 2>&1 || docker network create profi_edge"
+        self.assertIn(create, script)
+        self.assertLess(script.index(create), script.index("docker compose"))
 
     def test_prod_routing_uses_explicit_production_container(self):
         nginx = (ROOT / "nginx.prod.conf").read_text()
