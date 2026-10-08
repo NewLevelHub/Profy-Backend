@@ -10,7 +10,7 @@ from app.services.psychoemotional.interpretation import interpret
 
 
 def _interpret(list1: list[int], list2: list[int]):
-    return interpret(compute(list1, list2).as_dict(), list2)
+    return interpret(compute(list1, list2).as_dict(), list1, list2)
 
 
 def _flat(tree: dict) -> list[str]:
@@ -28,24 +28,33 @@ def test_reference_run_matches_the_expected_blocks() -> None:
         ("comp.5.forward", 2),
         ("anxiety.3.6", 1),
     ]
-    assert [(n.metric, n.level) for n in result.indices] == [("anxiety", "low"), ("so", "elevated"), ("vk", "reduced")]
+    assert [(n.metric, n.level) for n in result.indices] == [("anxiety", "moderate"), ("so", "elevated"), ("vk", "reduced")]
     assert [(p.sign, p.colors) for p in result.positions] == [
         ("plus", [0, 5]),
         ("cross", [1, 2]),
-        ("equal", [4, 3]),
-        ("minus", [7, 6]),
+        ("equal", [4]),
+        ("minus", [3, 7]),
         ("plus_minus", [0, 6]),
+        ("plus_minus", [5, 6]),
     ]
-    # pairs are keyed by sorted ids, the root conflict keeps its direction
     assert [p.text for p in result.positions] == [
         texts["pair"]["plus"]["05"],
         texts["pair"]["cross"]["12"],
-        texts["pair"]["equal"]["34"],
-        texts["pair"]["minus"]["67"],
+        texts["single"]["equal"]["4"],
+        texts["pair"]["minus"]["37"],
         texts["pm"]["06"],
+        texts["pm"]["56"],
     ]
-
-
+    assert all(position.details == [] for position in result.positions)
+    assert [(group.sign, group.colors) for group in result.mcv_groups] == [
+        ("plus", [0, 5]),
+        ("cross", [1, 2]),
+        ("equal", [4]),
+        ("minus", [3, 7]),
+        ("minus", [7, 6]),
+        ("plus_minus", [0, 6]),
+        ("plus_minus", [5, 6]),
+    ]
 def test_a_link_replaces_the_separate_notes_about_its_two_colours() -> None:
     list2 = [6, 3, 4, 2, 5, 0, 7, 1]  # blue last, brown first
     result = _interpret(list2, list2)
@@ -56,14 +65,14 @@ def test_high_anxiety_orders_highlights_by_position_depth() -> None:
     list2 = [6, 0, 1, 5, 7, 2, 3, 4]  # green 6, red 7, yellow 8 → anxiety 6 (high)
     result = _interpret(list2, list2)
 
-    assert result.indices[0].level == "high"
+    assert result.indices[0].level == "very_high"
     assert [(h.key, h.position_depth) for h in result.highlights] == [
         ("link.4.6", 3),
         ("anxiety.3.7", 2),
         ("comp.0.2", 2),
         ("anxiety.2.6", 1),
     ]
-    assert result.positions[-1].text == RU["pm"]["64"]  # brown first, yellow last
+    assert RU["pm"]["64"] in [position.text for position in result.positions]
 
 
 def test_texts_follow_the_request_locale() -> None:
@@ -71,6 +80,9 @@ def test_texts_follow_the_request_locale() -> None:
     with use_locale("kk"):
         result = _interpret(list2, list2)
     assert result.positions[0].text == KK["pair"]["plus"]["05"]
+    assert result.mcv_groups[0].text == " ".join(
+        (KK["single"]["plus"]["0"], KK["single"]["plus"]["5"])
+    )
     assert result.indices[1].text == KK["level"]["so"]["elevated"]
 
 
@@ -88,6 +100,11 @@ def test_every_pickable_key_has_a_text_in_both_locales() -> None:
         assert set(tree["reading"]) == {"split", "d_high"}
         assert set(tree["pair"]) == {"plus", "cross", "equal", "minus"}
         assert all(set(pairs) == unordered for pairs in tree["pair"].values())
+        assert set(tree["single"]) == {"plus", "cross", "equal", "minus"}
+        assert all(
+            set(notes) == {str(color_id) for color_id in COLOR_IDS}
+            for notes in tree["single"].values()
+        )
         assert set(tree["pm"]) == ordered
         assert set(tree["anxiety"]) == {f"{c}.{p}" for c in BASIC_COLOR_IDS for p in (6, 7, 8)}
         assert set(tree["comp"]) == {f"{c}.{p}" for c in EXTRA_COLOR_IDS for p in (1, 2, 3)} | {"5.forward"}
@@ -99,7 +116,16 @@ def test_every_pickable_key_has_a_text_in_both_locales() -> None:
 def test_any_ordering_interprets_without_a_missing_key() -> None:
     for list2 in itertools.islice(itertools.permutations(range(8)), 0, 40320, 97):
         result = _interpret(list(list2), list(list2))
-        assert len(result.indices) == 3 and len(result.positions) == 5
+        assert len(result.indices) == 3 and len(result.positions) >= 5
+        assert all(position.details == [] for position in result.positions)
+        assert len(result.mcv_groups) >= len(result.positions)
+
+
+def test_auxiliary_colours_at_the_end_are_not_described_as_anxiety() -> None:
+    for locale_tree in (RU, KK):
+        for color_id in (0, 5, 6, 7):
+            text = locale_tree["single"]["minus"][str(color_id)].lower()
+            assert "риск" not in text
 
 
 def test_no_clinical_labels_or_trademark_in_any_text() -> None:
