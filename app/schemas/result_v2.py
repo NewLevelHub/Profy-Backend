@@ -106,11 +106,13 @@ class PsychoEmotionalSplitPair(BaseModel):
 
 
 class PsychoEmotionalAnxiety(BaseModel):
-    """§B5.3 — индекс тревоги: сумма, уровень, вклад каждого основного цвета."""
+    """§B5.3 — общая тревога: фрустрация + компенсаторное выдвижение."""
 
     score: int  # 0–12
     level: _PsychoAnxietyLevel
-    breakdown: dict[str, int]  # color_id → вклад (0/1/2/3)
+    breakdown: dict[str, int]  # основные 1–4 и дополнительные 0/6/7
+    frustration_score: int = 0
+    compensation_score: int = 0
     model_config = _model_config
 
 
@@ -156,6 +158,9 @@ class PsychoEmotionalChoiceAnalysis(BaseModel):
     colors: list[int] = Field(min_length=8, max_length=8)
     anxiety: PsychoEmotionalAnxiety
     compensation: PsychoEmotionalCompensation
+    function_marks: list[list[Literal["plus", "cross", "equal", "minus"]]] = Field(
+        default_factory=list, min_length=8, max_length=8
+    )
     model_config = _model_config
 
 
@@ -181,17 +186,9 @@ class PsychoEmotionalPositionNote(BaseModel):
 class PsychoEmotionalMcvGroup(BaseModel):
     """Группа второго выбора после сопоставления с парами первого выбора."""
 
-    sign: Literal["plus", "cross", "equal", "minus"]
+    sign: Literal["plus", "cross", "equal", "minus", "plus_minus"]
     colors: list[int] = Field(min_length=1, max_length=2)
-    stable: bool
-    text: str
-    model_config = _model_config
-
-
-class PsychoEmotionalConversationPrompt(BaseModel):
-    """Вопрос для проверки гипотезы в беседе со специалистом."""
-
-    key: str
+    stable: bool | None
     text: str
     model_config = _model_config
 
@@ -206,9 +203,6 @@ class PsychoEmotionalInterpretation(BaseModel):
     indices: list[PsychoEmotionalIndexNote] = Field(default_factory=list)
     positions: list[PsychoEmotionalPositionNote] = Field(default_factory=list)
     mcv_groups: list[PsychoEmotionalMcvGroup] = Field(default_factory=list)
-    conversation_prompts: list[PsychoEmotionalConversationPrompt] = Field(
-        default_factory=list
-    )
     model_config = _model_config
 
 
@@ -279,8 +273,10 @@ class PsychoEmotionalSection(BaseModel):
     anxiety: PsychoEmotionalAnxiety
     compensation: PsychoEmotionalCompensation
     so_value: int  # 0–32
+    so_score: int  # стандартная шкала 1–7
     so_level: _PsychoSoLevel
     vk_value: float  # 0.2–5.0
+    vk_score: int  # стандартная шкала 1–7
     vk_level: _PsychoVkLevel
 
     # Отдельный красный флаг (§B6): чёрный (ID 7) на позиции 1 — подростковый

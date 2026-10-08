@@ -553,12 +553,25 @@ async def _build_psychoemotional_section(
     if "pairs" not in m:  # сырое / не посчитанное / расчёт упал → секции нет
         return None
 
+    # Интерпретационные правила могут уточняться без миграции уже сохранённых
+    # прохождений. Сырые два ряда — источник истины; отчёт пересчитывается по
+    # текущей версии движка при каждом чтении.
+    m = psychoemotional_engine.compute(
+        list(latest.list1), list(latest.list2)
+    ).as_dict()
+
     split = m["split"]
     anxiety = m["anxiety"]
     compensation = m["compensation"]
 
-    def choice_analysis(round_number: int, colors: list[int]) -> dict:
-        analysis = psychoemotional_engine.choice_analysis(colors)
+    first_marks, second_marks = psychoemotional_engine.choice_function_marks(
+        list(latest.list1), list(latest.list2)
+    )
+
+    def choice_analysis(
+        round_number: int, colors: list[int], function_marks: list[list[str]]
+    ) -> dict:
+        analysis = psychoemotional_engine.choice_analysis(colors, function_marks)
         choice_anxiety = analysis["anxiety"]
         choice_compensation = analysis["compensation"]
         return {
@@ -568,6 +581,8 @@ async def _build_psychoemotional_section(
                 "score": choice_anxiety["score"],
                 "level": psychoemotional_engine._anxiety_level(choice_anxiety["score"]),
                 "breakdown": {str(k): v for k, v in choice_anxiety["breakdown"].items()},
+                "frustration_score": choice_anxiety["frustration_score"],
+                "compensation_score": choice_anxiety["compensation_score"],
             },
             "compensation": {
                 "score": choice_compensation["score"],
@@ -576,25 +591,43 @@ async def _build_psychoemotional_section(
                 "purple_forward": choice_compensation["purple_forward"],
                 "purple_position": choice_compensation["purple_position"],
             },
+            "function_marks": analysis["function_marks"],
         }
 
-    history = [
-        PsychoEmotionalHistoryItem(
-            run_number=i + 1,
-            completed_at=run.created_at,
-            so=_psychoemotional_run_number(run.metrics, "so"),
-            anxiety_score=_psychoemotional_run_number(run.metrics, "anxiety"),
-            validity_flag=(
-                run.validity_flag.value if run.validity_flag is not None else None
-            ),
+    history = []
+    for i, run in enumerate(rows[:-1]):
+        # История должна быть сопоставима с текущим отчётом. Поэтому старые
+        # прохождения также считаем из исходных рядов по актуальной формуле,
+        # а не смешиваем прежние сохранённые индексы с новыми.
+        history_list1 = list(run.list1 or [])
+        history_list2 = list(run.list2 or [])
+        history_metrics = run.metrics
+        if (
+            psychoemotional_engine.is_valid_list(history_list1)
+            and psychoemotional_engine.is_valid_list(history_list2)
+        ):
+            history_metrics = psychoemotional_engine.compute(
+                history_list1, history_list2
+            ).as_dict()
+        history.append(
+            PsychoEmotionalHistoryItem(
+                run_number=i + 1,
+                completed_at=run.created_at,
+                so=_psychoemotional_run_number(history_metrics, "so"),
+                anxiety_score=_psychoemotional_run_number(history_metrics, "anxiety"),
+                validity_flag=(
+                    run.validity_flag.value if run.validity_flag is not None else None
+                ),
+            )
         )
-        for i, run in enumerate(rows[:-1])
-    ]
     history.reverse()  # новые прохождения сверху
 
     return PsychoEmotionalSection(
         consent_ok=consent_ok,
-        thresholds_version=latest.thresholds_version,
+        # Метрики выше пересчитаны текущей версией движка из сырых рядов,
+        # поэтому и версия порогов должна описывать именно этот расчёт, а не
+        # историческую версию, сохранённую в строке прохождения.
+        thresholds_version=m["thresholds_version"],
         run_number=len(rows),
         completed_at=latest.created_at,
         history=history,
@@ -606,8 +639,8 @@ async def _build_psychoemotional_section(
         choice_1=list(latest.list1),
         choice_2=list(latest.list2),
         choice_analyses=[
-            choice_analysis(1, list(latest.list1)),
-            choice_analysis(2, list(latest.list2)),
+            choice_analysis(1, list(latest.list1), first_marks),
+            choice_analysis(2, list(latest.list2), second_marks),
         ],
         d_value=m["d"]["value"],
         d_memory=m["d"]["memory"],
@@ -627,6 +660,8 @@ async def _build_psychoemotional_section(
             "score": anxiety["score"],
             "level": anxiety["level"],
             "breakdown": {str(k): v for k, v in anxiety["breakdown"].items()},
+            "frustration_score": anxiety["frustration_score"],
+            "compensation_score": anxiety["compensation_score"],
         },
         compensation={
             "score": compensation["score"],
@@ -636,8 +671,10 @@ async def _build_psychoemotional_section(
             "purple_position": compensation["purple_position"],
         },
         so_value=m["so"]["value"],
+        so_score=m["so"]["score"],
         so_level=m["so"]["level"],
         vk_value=m["vk"]["value"],
+        vk_score=m["vk"]["score"],
         vk_level=m["vk"]["level"],
         black_first=list(latest.list2)[0] == 7,
         interpretation=psychoemotional_interpretation.interpret(

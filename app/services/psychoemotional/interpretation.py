@@ -17,7 +17,6 @@
 """
 from app.i18n.catalog import tr
 from app.schemas.result_v2 import (
-    PsychoEmotionalConversationPrompt,
     PsychoEmotionalHighlight,
     PsychoEmotionalIndexNote,
     PsychoEmotionalInterpretation,
@@ -26,14 +25,10 @@ from app.schemas.result_v2 import (
 )
 from app.services.psychoemotional.constants import BASIC_COLOR_IDS, BORDER_COLOR_ID, EXTRA_COLOR_IDS
 from app.services.psychoemotional.engine import (
-    SIGN_CROSS,
-    SIGN_EQUAL,
     SIGN_MINUS,
     SIGN_PLUS,
-    functional_groups,
+    functional_combinations,
 )
-
-_SIGNS = (SIGN_PLUS, SIGN_CROSS, SIGN_EQUAL, SIGN_MINUS)
 
 
 def _first_at(color_ids: tuple[int, ...], pos: dict[int, int], positions: tuple[int, ...]) -> int | None:
@@ -88,33 +83,54 @@ def _highlights(pos: dict[int, int], texts: dict) -> list[PsychoEmotionalHighlig
     return sorted(notes, key=lambda note: -note.position_depth)  # stable: равные — в порядке блоков
 
 
-def _positions(pairs: dict, texts: dict) -> list[PsychoEmotionalPositionNote]:
-    """Пары ключуются отсортированными ID (группа симметрична), главное
-    противоречие — в порядке «первый, последний» (оно направленное)."""
-    notes = [
+def _note_text(sign: str, colors: list[int], texts: dict) -> str:
+    if sign == "plus_minus":
+        return texts["pm"]["".join(map(str, colors))]
+    if len(colors) == 1:
+        return texts["single"][sign][str(colors[0])]
+    return texts["pair"][sign]["".join(map(str, sorted(colors)))]
+
+
+def _positions(
+    list1: list[int], list2: list[int], texts: dict
+) -> list[PsychoEmotionalPositionNote]:
+    """Все соседние сочетания функциональных зон и связи ``+−``.
+
+    Количество абзацев зависит от реального рисунка выбора, а не всегда равно
+    четырём парам: длинная зона читается последовательностью соседних пар,
+    одиночная — отдельным цветом.
+    """
+    return [
         PsychoEmotionalPositionNote(
-            sign=sign,
-            colors=list(pairs[sign]),
-            text=texts["pair"][sign]["".join(map(str, sorted(pairs[sign])))],
+            sign=group["sign"],
+            colors=group["colors"],
+            text=_note_text(group["sign"], group["colors"], texts),
         )
-        for sign in _SIGNS
+        for group in functional_combinations(list1, list2)
     ]
-    first, last = pairs["root_conflict"]
-    notes.append(PsychoEmotionalPositionNote(sign="plus_minus", colors=[first, last], text=texts["pm"][f"{first}{last}"]))
-    return notes
 
 
 def _mcv_groups(list1: list[int], list2: list[int], texts: dict) -> list[PsychoEmotionalMcvGroup]:
-    """Тексты для отдельного слоя МЦВ: устойчивые пары и расщеплённые цвета."""
+    """Отдельный слой МЦВ — типологический смысл тех же сочетаний.
+
+    Чтобы не дублировать дословно ситуационную трактовку, пара раскрывается
+    через вклад каждой ведущей тенденции в её функциональной зоне.
+    """
     notes: list[PsychoEmotionalMcvGroup] = []
-    for group in functional_groups(list1, list2):
+    for group in functional_combinations(
+        list1, list2, all_rejection_pairs=True
+    ):
         sign = group["sign"]
         colors = group["colors"]
-        if len(colors) == 2:
-            key = "".join(map(str, sorted(colors)))
-            text = texts["pair"][sign][key]
+        if sign == "plus_minus":
+            text = " ".join(
+                (
+                    texts["single"][SIGN_PLUS][str(colors[0])],
+                    texts["single"][SIGN_MINUS][str(colors[1])],
+                )
+            )
         else:
-            text = texts["single"][sign][str(colors[0])]
+            text = " ".join(texts["single"][sign][str(color)] for color in colors)
         notes.append(
             PsychoEmotionalMcvGroup(
                 sign=sign,
@@ -124,34 +140,6 @@ def _mcv_groups(list1: list[int], list2: list[int], texts: dict) -> list[PsychoE
             )
         )
     return notes
-
-
-def _conversation_prompts(
-    metrics: dict, list2: list[int], texts: dict
-) -> list[PsychoEmotionalConversationPrompt]:
-    """Два обязательных вопроса по полюсам выбора и вопросы по отклонённым индексам."""
-    prompts = [
-        PsychoEmotionalConversationPrompt(
-            key="leading",
-            text=texts["conversation"]["leading"][str(list2[0])],
-        ),
-        PsychoEmotionalConversationPrompt(
-            key="tension",
-            text=texts["conversation"]["tension"][str(list2[-1])],
-        ),
-    ]
-    normal_levels = {"low", "norm", "balance"}
-    for metric in ("anxiety", "so", "vk"):
-        level = metrics[metric]["level"]
-        if level in normal_levels:
-            continue
-        prompts.append(
-            PsychoEmotionalConversationPrompt(
-                key=f"{metric}_{level}",
-                text=texts["conversation"][metric][level],
-            )
-        )
-    return prompts
 
 
 def interpret(metrics: dict, list1: list[int], list2: list[int]) -> PsychoEmotionalInterpretation:
@@ -183,7 +171,6 @@ def interpret(metrics: dict, list1: list[int], list2: list[int]) -> PsychoEmotio
         reading=reading,
         highlights=_highlights(pos, texts),
         indices=indices,
-        positions=_positions(metrics["pairs"], texts),
+        positions=_positions(list1, list2, texts),
         mcv_groups=_mcv_groups(list1, list2, texts),
-        conversation_prompts=_conversation_prompts(metrics, list2, texts),
     )

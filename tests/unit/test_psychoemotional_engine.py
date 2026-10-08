@@ -25,6 +25,8 @@ def test_aruzhan_example_matches_the_5_8_table() -> None:
     assert m.pairs["root_conflict"] == [3, 7]
 
     assert m.anxiety["score"] == 0
+    assert m.so_score == 2
+    assert m.vk_score == 5
     assert m.compensation["score"] == 0
     assert m.so == 6
     assert m.so_level == "norm"
@@ -38,7 +40,7 @@ def test_aruzhan_example_matches_the_5_8_table() -> None:
 def test_contrast_profile_from_5_8() -> None:
     # список 2 = [0,7,6,3,5,1,2,4] → тревога 6, компенсация 6, СО высокий
     m = engine.compute(_NORM, [0, 7, 6, 3, 5, 1, 2, 4])
-    assert m.anxiety["score"] == 6
+    assert m.anxiety["score"] == 12
     assert m.compensation["score"] == 6
     assert m.so == 30
     assert m.so_level == "high"
@@ -98,8 +100,8 @@ def test_split_pairs_instability_flag() -> None:
 def test_choice_analysis_keeps_both_rounds_visible() -> None:
     first = engine.choice_analysis([3, 1, 6, 0, 5, 2, 7, 4])
     second = engine.choice_analysis([0, 5, 1, 2, 4, 3, 7, 6])
-    assert first["anxiety"]["score"] == 4
-    assert second["anxiety"]["score"] == 1
+    assert first["anxiety"]["score"] == 5
+    assert second["anxiety"]["score"] == 4
     assert first["compensation"]["score"] == 1
     assert second["compensation"]["score"] == 3
 
@@ -112,12 +114,134 @@ def test_functional_groups_preserve_only_stable_pairs() -> None:
     assert groups == [
         {"sign": "plus", "colors": [3, 4], "stable": True},
         {"sign": "cross", "colors": [2], "stable": False},
-        {"sign": "cross", "colors": [0], "stable": False},
+        {"sign": "equal", "colors": [0], "stable": False},
         {"sign": "equal", "colors": [1], "stable": False},
-        {"sign": "equal", "colors": [5], "stable": False},
-        {"sign": "minus", "colors": [6], "stable": False},
+        {"sign": "equal", "colors": [5, 6], "stable": True},
         {"sign": "minus", "colors": [7], "stable": False},
     ]
+
+
+def test_functional_combination_is_not_stable_across_a_first_choice_pair_boundary() -> None:
+    list1 = [0, 1, 2, 3, 4, 5, 6, 7]
+    # 1 and 2 become the leading pair, but in list1 they occupied positions
+    # 2 and 3 and therefore belonged to two different functional pairs.
+    list2 = [1, 2, 0, 4, 3, 6, 5, 7]
+
+    leading = engine.functional_combinations(list1, list2)[0]
+
+    assert leading == {"sign": "plus", "colors": [1, 2], "stable": False}
+
+
+def test_public_psytests_example_markup_and_combinations() -> None:
+    list1 = [3, 1, 6, 0, 5, 2, 7, 4]
+    list2 = [0, 5, 1, 2, 4, 3, 7, 6]
+    assert engine.vegetative_coefficient(list2) == 0.6
+    first, second = engine.choice_function_marks(list1, list2)
+    assert first == [
+        ["plus"], ["plus"], ["plus"], ["cross"],
+        ["cross"], ["minus"], ["minus"], ["minus"],
+    ]
+    assert second == [
+        ["plus"], ["plus"], ["cross"], ["cross"],
+        ["equal"], ["minus"], ["minus"], ["minus"],
+    ]
+    assert [(item["sign"], item["colors"]) for item in engine.functional_combinations(list1, list2)] == [
+        ("plus", [0, 5]),
+        ("cross", [1, 2]),
+        ("equal", [4]),
+        ("minus", [3, 7]),
+        ("plus_minus", [0, 6]),
+        ("plus_minus", [5, 6]),
+    ]
+    assert [
+        (item["sign"], item["colors"])
+        for item in engine.functional_combinations(
+            list1, list2, all_rejection_pairs=True
+        )
+    ] == [
+        ("plus", [0, 5]),
+        ("cross", [1, 2]),
+        ("equal", [4]),
+        ("minus", [3, 7]),
+        ("minus", [7, 6]),
+        ("plus_minus", [0, 6]),
+        ("plus_minus", [5, 6]),
+    ]
+
+
+@pytest.mark.parametrize(
+    "list1,list2,expected_first,expected_second",
+    [
+        (
+            [4, 1, 0, 5, 2, 6, 7, 3],
+            [4, 1, 2, 0, 5, 6, 7, 3],
+            ["+", "+", "+×", "×", "=", "=", "=−", "−"],
+            ["+", "+", "×", "=", "=", "=", "=−", "−"],
+        ),
+        (
+            [1, 2, 3, 5, 6, 0, 7, 4],
+            [1, 5, 3, 4, 7, 2, 0, 6],
+            ["+", "+", "×", "×", "=", "=", "−", "−"],
+            ["+", "×", "×", "=", "=", "−", "−", "−"],
+        ),
+        (
+            [3, 0, 6, 1, 5, 4, 2, 7],
+            [4, 7, 0, 3, 2, 5, 6, 1],
+            ["+", "+", "+×", "×", "=", "−", "−", "−"],
+            ["+", "+", "+×", "×", "=", "=", "−", "−"],
+        ),
+    ],
+)
+def test_function_marks_match_additional_public_psytests_protocols(
+    list1: list[int],
+    list2: list[int],
+    expected_first: list[str],
+    expected_second: list[str],
+) -> None:
+    first, second = engine.choice_function_marks(list1, list2)
+    glyph = {"plus": "+", "cross": "×", "equal": "=", "minus": "−"}
+    assert ["".join(glyph[sign] for sign in marks) for marks in first] == expected_first
+    assert ["".join(glyph[sign] for sign in marks) for marks in second] == expected_second
+
+
+@pytest.mark.parametrize(
+    "list1,list2,anxiety,so,so_score,vk,vk_score",
+    [
+        ([3, 1, 6, 0, 5, 2, 7, 4], [0, 5, 1, 2, 4, 3, 7, 6], 4, 22, 5, 0.6, 3),
+        ([4, 1, 0, 5, 2, 6, 7, 3], [4, 1, 2, 0, 5, 6, 7, 3], 3, 16, 4, 0.6, 3),
+        ([1, 2, 3, 5, 6, 0, 7, 4], [1, 5, 3, 4, 7, 2, 0, 6], 1, 18, 4, 1.0, 4),
+        ([3, 0, 6, 1, 5, 4, 2, 7], [4, 7, 0, 3, 2, 5, 6, 1], 6, 22, 5, 2.6, 6),
+    ],
+)
+def test_quantitative_metrics_match_public_psytests_protocols(
+    list1: list[int],
+    list2: list[int],
+    anxiety: int,
+    so: int,
+    so_score: int,
+    vk: float,
+    vk_score: int,
+) -> None:
+    metrics = engine.compute(list1, list2)
+    assert metrics.anxiety["score"] == anxiety
+    assert (metrics.so, metrics.so_score) == (so, so_score)
+    assert (metrics.vk, metrics.vk_score) == (vk, vk_score)
+
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [(0, 1), (6, 2), (12, 3), (16, 4), (22, 5), (28, 6), (32, 7)],
+)
+def test_so_standard_score(raw: int, expected: int) -> None:
+    assert engine.so_standard_score(raw) == expected
+
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [(0.2, 1), (0.4, 2), (0.6, 3), (1.0, 4), (1.5, 5), (2.6, 6), (5.0, 7)],
+)
+def test_vk_standard_score(raw: float, expected: int) -> None:
+    assert engine.vk_standard_score(raw) == expected
 
 
 def test_purple_forward_note_no_score() -> None:
