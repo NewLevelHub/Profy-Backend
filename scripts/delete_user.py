@@ -13,7 +13,7 @@ no ON DELETE CASCADE, unlike everything under assessments):
   4. user — cascades to password_resets, email_verifications,
      product_feedback (by user_id), psychologist_student_assignments
      (as psychologist_id or student_id), psychologist_notes
-     (as psychologist_id or student_id)
+     (as psychologist_id or student_id); nulls out invitations.invited_by
 All in one transaction: either everything goes, or nothing does.
 """
 import asyncio

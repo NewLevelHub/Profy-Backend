@@ -73,6 +73,8 @@ services:
     restart: always
     networks:
       - profi_network
+      # Shared with nginx and the frontends only — see `profi_edge` below.
+      - profi_edge
 
   nginx:
     image: nginx:alpine
@@ -91,6 +93,7 @@ services:
     restart: always
     networks:
       - profi_network
+      - profi_edge
 
 volumes:
   postgres_data_prod:
@@ -99,3 +102,11 @@ volumes:
 networks:
   profi_network:
     driver: bridge
+  # The edge network: nginx plus whatever it proxies to (both APIs, both
+  # frontends) — never a database or Redis. Dev containers join only this one,
+  # so they can't reach profi_db_prod/profi_redis_prod, which stay on
+  # profi_network. Created by cd.yml before any compose call; it is the only
+  # creator, so the network existing means nginx is already attached to it.
+  profi_edge:
+    external: true
+    name: profi_edge
