@@ -102,7 +102,7 @@ def test_validation_resolves_locale_at_call_time_without_changing_password_rules
     assert "Құпиясөзде әріп болуы керек" in str(error.value)
     with use_locale("ru"), pytest.raises(ValidationError) as error:
         RegisterRequest(email="student@example.com", password="12345678")
-    assert "Password must contain at least one letter" in str(error.value)
+    assert "Пароль должен содержать хотя бы одну букву" in str(error.value)
     with use_locale("kk"):
         request = RegisterRequest(email="student@example.com", password="Testpass123!")
     assert request.password == "Testpass123!"

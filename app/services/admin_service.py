@@ -29,7 +29,6 @@ from app.schemas.admin import (
     AdminFeedbackStatsResponse,
     AdminMotivationResponseItem,
     AdminResponseItem,
-    AdminUserCreate,
     AdminUserDetailResponse,
     AdminUserListItem,
     AdminUserListResponse,
@@ -39,7 +38,7 @@ from app.schemas.admin import (
 from app.schemas.artifact import ArtifactItem
 from app.schemas.profile import ProfileResponse
 from app.schemas.admin_result import AdminAnalysisResultResponse
-from app.services import assessment_shared, auth_service, bigfive_content, motivation_service
+from app.services import assessment_shared, bigfive_content, motivation_service
 from app.services.admin_listing import SortOrder, order_by_clause
 from app.services.goal_overlay_service import _get_effective_goal_and_scenario
 from app.services.riasec_content import likert_labels as riasec_likert_labels
@@ -377,26 +376,6 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
         artifacts=artifacts,
         assessments=assessments,
     )
-
-
-async def create_user(db: AsyncSession, body: AdminUserCreate) -> User:
-    """Admin-only provisioning of `admin`/`psychologist` accounts. Unlike
-    `auth_service.register`, this skips the email-verification-code flow
-    entirely — `is_verified` is set directly from the request body."""
-    result = await db.execute(select(User).where(User.email == body.email))
-    if result.scalar_one_or_none():
-        raise ValueError(i18n_key("api_errors", "email_already_exists", locale="ru"))
-
-    user = User(
-        email=body.email,
-        hashed_password=auth_service.hash_password(body.password),
-        role=body.role,
-        is_verified=body.is_verified,
-    )
-    db.add(user)
-    await db.commit()
-    await db.refresh(user)
-    return user
 
 
 async def get_assessment_detail(
