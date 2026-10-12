@@ -52,6 +52,10 @@ class Settings(BaseSettings):
     # record). One DNS lookup on create; a lookup timeout lets it through.
     INVITATION_CHECK_DELIVERABILITY: bool = True
     GOOGLE_CLIENT_ID: str = ""
+    # Serve Swagger UI (/docs) and /openapi.json. On for development;
+    # docker-compose.prod.yml pins it off — the schema lists every route,
+    # admin ones included, to anyone who asks.
+    API_DOCS_ENABLED: bool = True
 
     # Which backend build_storage_backend() returns:
     #   "fs"  — write photos to STORAGE_FS_ROOT on disk; nginx serves them

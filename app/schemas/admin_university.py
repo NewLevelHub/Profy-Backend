@@ -1,9 +1,10 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from app.schemas.university import ProgramGrant
+from app.schemas.validation import http_url
 
 
 class AdminProgramGrant(ProgramGrant):
@@ -113,6 +114,12 @@ class AdminUniversityUpdateRequest(BaseModel):
     country: str | None = None
     source_url: str | None = None
 
+    @field_validator("website", "source_url")
+    @classmethod
+    def web_links(cls, v: str | None) -> str | None:
+        # `website` is the href of «Сайт вуза» on the public pages.
+        return http_url(v)
+
 
 class AdminUniversityBrief(BaseModel):
     id: uuid.UUID
@@ -184,3 +191,8 @@ class AdminProgramUpdateRequest(BaseModel):
     deadlines: dict | None = None
     grants: list[AdminProgramGrant] | None = None
     source_url: str | None = None
+
+    @field_validator("source_url")
+    @classmethod
+    def web_links(cls, v: str | None) -> str | None:
+        return http_url(v)

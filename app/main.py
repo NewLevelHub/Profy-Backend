@@ -34,10 +34,23 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
+def docs_routes() -> dict[str, str | None]:
+    """Swagger UI and the OpenAPI schema are the full map of the API, admin
+    routes included — served only where the stack allows it (not production,
+    see `API_DOCS_ENABLED`). ReDoc is never served: nothing links to it."""
+    enabled = settings.API_DOCS_ENABLED
+    return {
+        "docs_url": "/docs" if enabled else None,
+        "redoc_url": None,
+        "openapi_url": "/openapi.json" if enabled else None,
+    }
+
+
 app = FastAPI(
     title="Profi API",
     version="0.1.0",
     lifespan=lifespan,
+    **docs_routes(),
 )
 
 # Only the configured origins may read responses cross-origin. Credentials

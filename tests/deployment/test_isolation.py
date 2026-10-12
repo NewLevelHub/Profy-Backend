@@ -195,7 +195,41 @@ class DeploymentIsolationTests(unittest.TestCase):
         prod = nginx.split("# -- Dev:")[0]
         self.assertNotIn("proxy_pass http://api", prod)
         self.assertNotIn("http://profi_api_dev", prod)
-        self.assertEqual(prod.count("set $api_prod_upstream http://profi_api_prod:8000;"), 3)
+        # Only /api/ reaches the production API: no /docs, no /openapi.json.
+        self.assertEqual(prod.count("set $api_prod_upstream http://profi_api_prod:8000;"), 1)
+
+    def test_production_does_not_publish_the_api_map(self):
+        prod, dev = (ROOT / "nginx.prod.conf").read_text().split("# -- Dev:")
+        for path in ("location /docs", "location /openapi.json"):
+            self.assertNotIn(path, prod)
+            # Dev keeps Swagger: the same edge serves it for the dev stand.
+            self.assertIn(path, dev)
+        api = read_yaml("docker-compose.prod.yml")["services"]["api"]
+        # Off in the application too, whatever .env.production says.
+        self.assertEqual(api["environment"]["API_DOCS_ENABLED"], "false")
+
+    def test_every_https_response_carries_the_security_headers(self):
+        nginx = (ROOT / "nginx.prod.conf").read_text()
+        self.assertIn("server_tokens off;", nginx)
+        headers = [
+            'add_header Strict-Transport-Security "max-age=31536000" always;',
+            'add_header X-Content-Type-Options "nosniff" always;',
+            'add_header X-Frame-Options "DENY" always;',
+            'add_header Referrer-Policy "strict-origin-when-cross-origin" always;',
+        ]
+        https_servers = [block for block in nginx.split("server {")[1:] if "listen 443 ssl;" in block]
+        self.assertEqual(len(https_servers), 2)
+        for block in https_servers:
+            media = block.split("location /media/ {")[1].split("}")[0]
+            for header in headers:
+                # Once for the vhost, and once more inside /media/: a location
+                # with its own add_header inherits none from the server block.
+                self.assertEqual(block.count(header), 2, header)
+                self.assertIn(header, media)
+            # No other location may set a header of its own, or it would
+            # silently drop these — move it here deliberately if one must.
+            directives = [line for line in block.splitlines() if line.strip().startswith("add_header ")]
+            self.assertEqual(len(directives), len(headers) * 2 + 1)  # + Cache-Control in /media/
 
     @unittest.skipUnless(shutil.which("docker"), "Docker Compose CLI not installed")
     def test_compose_resolution_rejects_shared_image_and_overrides_wrong_database(self):

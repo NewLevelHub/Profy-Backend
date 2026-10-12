@@ -39,6 +39,17 @@ def create_jwt_token(user: User) -> str:
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
+async def revoke_sessions(user: User, db: AsyncSession) -> None:
+    """Sign the account out everywhere. Every access token carries the
+    `ver` it was issued under (`create_jwt_token`) and stops validating the
+    moment the stored version moves on — the same switch a password reset
+    uses. Incremented in SQL, so a logout racing a reset loses neither."""
+    await db.execute(
+        update(User).where(User.id == user.id).values(token_version=User.token_version + 1)
+    )
+    await db.commit()
+
+
 async def _invalidate_tokens(user_id: uuid.UUID, db: AsyncSession) -> None:
     await db.execute(
         update(EmailVerificationToken)

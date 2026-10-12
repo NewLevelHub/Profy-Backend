@@ -315,6 +315,16 @@ async def me(current_user: User = Depends(get_current_user)):
     return current_user
 
 
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(
+    current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+) -> None:
+    """Ends the session on the server, not just in the browser: the token
+    that made this call — and every other one issued to the account — is
+    rejected from here on. A copied token must not outlive «Выйти»."""
+    await auth_service.revoke_sessions(current_user, db)
+
+
 @router.patch("/me", response_model=UserResponse)
 async def update_me(
     body: UpdateMeRequest,

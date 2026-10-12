@@ -87,6 +87,7 @@ Backend API платформы профориентации Profi.
 | `LLM_ENABLED` | Включает LLM-нарратив отчёта и AI-анализ для психолога; `false` по умолчанию — тогда нарратив собирается из шаблонов |
 | `LLM_MODEL`, `LLM_BASE_URL`, `LLM_TIMEOUT`, `LLM_MAX_TOKENS`, `LLM_TEMPERATURE` | Настройки обычных (лёгких) LLM-вызовов |
 | `RESEND_API_KEY` | Ключ [Resend](https://resend.com) для отправки email (коды подтверждения, сброс пароля). Пусто — письма не отправляются |
+| `API_DOCS_ENABLED` | Отдавать Swagger UI (`/docs`) и `/openapi.json`. По умолчанию `true`; в `docker-compose.prod.yml` зафиксировано `false` — см. [Заголовки безопасности и документация API](#заголовки-безопасности-и-документация-api) |
 | `LOG_EMAIL_CODES` | Только локально: при пустом `RESEND_API_KEY` писать коды в лог `api` (`true` в `.env.example`). По умолчанию `false`, на сервере не включать |
 | `EMAIL_FROM` | Адрес отправителя писем |
 | `GOOGLE_CLIENT_ID` | Client ID из Google Cloud Console для входа через Google (веб) |
@@ -213,6 +214,57 @@ curl -s -o /dev/null -D - -X OPTIONS https://profile.newlevelhub.kz/api/v1/auth/
 Для разрешённого сайта ответ `200` с заголовком `access-control-allow-origin: <этот сайт>`; для чужого — `400` без этого заголовка.
 
 Разрешённые методы и заголовки запросов (`Authorization`, `Content-Type`, `Accept-Language`) заданы в `app/main.py`. Если клиент с другого домена начнёт слать новый заголовок, его нужно добавить туда.
+
+### Заголовки безопасности и документация API
+
+Всё настроено в файлах репозиториев и приезжает с деплоем; на сервере руками
+ничего делать не нужно. Раздел — на случай, если что-то из этого придётся
+менять или разбирать поломку.
+
+**Документация API закрыта на проде.** `https://profile.newlevelhub.kz/docs`
+и `/openapi.json` не отдаются: схема перечисляет все адреса API, включая
+админские. Закрыто в двух местах — в `nginx.prod.conf` у прод-хоста нет этих
+`location`, и в `docker-compose.prod.yml` стоит `API_DOCS_ENABLED: "false"`.
+На dev-стенде (`dev.profile.newlevelhub.kz/docs`) и локально Swagger работает
+как раньше.
+
+**Заголовки общего nginx** (`nginx.prod.conf`, оба HTTPS-хоста):
+
+| Заголовок | Значение | Зачем |
+|---|---|---|
+| `Strict-Transport-Security` | `max-age=31536000` | браузер год ходит на сайт только по HTTPS |
+| `X-Content-Type-Options` | `nosniff` | браузер не угадывает тип файла |
+| `X-Frame-Options` | `DENY` | сайт нельзя встроить в чужую страницу |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | наружу уходит только домен, без пути |
+
+Плюс `server_tokens off` — nginx не сообщает свою версию.
+
+Что важно знать при правках:
+
+- **HSTS не отменить быстро.** Браузер, получивший заголовок, год не пойдёт на
+  сайт по HTTP. Если сертификат истечёт, сайт у таких пользователей не
+  откроется вообще, без кнопки «всё равно перейти». Продление сертификатов
+  должно работать. `includeSubDomains` намеренно не указан: правило действует
+  только на сам хост, а не на поддомены, которые никто не проверял.
+- **`add_header` в `location` отменяет заголовки хоста.** Если в каком-то
+  `location` появляется свой `add_header`, nginx перестаёт добавлять туда
+  заголовки из блока `server`. Поэтому в `/media/` они повторены. Добавляете
+  `add_header` в новый `location` — повторите там все четыре; это проверяет
+  `tests/deployment`.
+
+**Content-Security-Policy** задаётся не здесь, а в репозитории фронтенда
+(`Profy-Frontend/nginx/nginx.conf`), потому что зависит от того, что грузит
+страница. Если после деплоя фронта что-то перестало грузиться (шрифты, вход
+через Google, картинки), в консоли браузера будет строка
+`Refused to … because it violates the following Content Security Policy
+directive` — по ней видно, какой источник нужно добавить в политику.
+
+**Как проверить после деплоя:**
+
+```bash
+curl -sI https://profile.newlevelhub.kz/ | grep -iE 'strict-transport|content-security|x-content-type|x-frame|referrer-policy|^server'
+curl -s -o /dev/null -w '%{http_code}\n' https://profile.newlevelhub.kz/openapi.json   # не JSON схемы: отвечает страница сайта
+```
 
 ## Дополнительная документация
 

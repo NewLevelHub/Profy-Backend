@@ -124,6 +124,7 @@ RU = {
     "unknown_result_codes": "{field}: unknown codes {codes}, allowed {allowed_codes}",
     "unknown_triplet": "Unknown triplet {triplet_index}",
     "unsupported_locale": "locale must be one of {locales}",
+    "url_must_be_http": "Ссылка должна начинаться с http:// или https://",
     "user_not_found": "User not found",
     "verification_resend_too_soon": "Please wait 60 seconds before requesting a new code",
 }
@@ -240,6 +241,7 @@ KK = {
     "unknown_result_codes": "{field}: белгісіз кодтар {codes}, рұқсат етілгендері {allowed_codes}",
     "unknown_triplet": "Белгісіз триплет: {triplet_index}",
     "unsupported_locale": "locale мына мәндердің бірі болуы керек: {locales}",
+    "url_must_be_http": "Сілтеме http:// немесе https:// деп басталуы керек",
     "user_not_found": "Пайдаланушы табылмады",
     "verification_resend_too_soon": "Жаңа код сұрау үшін 60 секунд күтіңіз",
 }
