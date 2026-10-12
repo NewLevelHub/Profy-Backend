@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Annotated, Self
+from typing import Annotated, Literal, Self
 from urllib.parse import quote_plus, urlsplit
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
@@ -32,12 +32,28 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float = 0.3
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
+    # Which provider sends transactional email. Both can stay configured at
+    # once — only the selected one sends — so switching (e.g. when one is
+    # down) is a one-line env change plus an API restart.
+    EMAIL_PROVIDER: Literal["resend", "ses"] = "resend"
     RESEND_API_KEY: str = ""
+    # Amazon SES (API v2). The IAM user needs only ses:SendEmail on the
+    # verified domain identity; EMAIL_FROM must be on that domain.
+    SES_REGION: str = ""
+    SES_ACCESS_KEY_ID: str = ""
+    SES_SECRET_ACCESS_KEY: str = ""
     EMAIL_FROM: str = ""
-    # Local development only: without RESEND_API_KEY, write verification and
-    # password-reset codes to the log instead of failing the send. Off by
-    # default — on a server a code in the log is a way into the account.
+    # Local development only: with the selected provider unconfigured, write
+    # verification and password-reset codes to the log instead of failing the
+    # send. Off by default — on a server a code in the log is a way into the
+    # account.
     LOG_EMAIL_CODES: bool = False
+    # Dev/test stand only: every email verification and password reset code
+    # is this value instead of a random one, so testers don't need the API
+    # logs. Anyone knowing it can verify any email or reset any password, so
+    # it is refused at startup while any email provider has credentials
+    # (= real users).
+    DEV_FIXED_OTP_CODE: str = ""
     # Public SPA origin for deep links in transactional emails (no trailing slash).
     FRONTEND_URL: str = "http://localhost:5173"
     # Browser origins allowed to call the API cross-origin, comma-separated
@@ -105,6 +121,28 @@ class Settings(BaseSettings):
                     "(expected scheme://host[:port], no wildcard, no path)"
                 )
         return origins
+
+    @model_validator(mode="after")
+    def check_dev_fixed_otp_code(self) -> Self:
+        if not self.DEV_FIXED_OTP_CODE:
+            return self
+        if not (len(self.DEV_FIXED_OTP_CODE) == 6 and self.DEV_FIXED_OTP_CODE.isdigit()):
+            raise ValueError("DEV_FIXED_OTP_CODE must be 6 digits")
+        # Any provider's credentials, not just the selected one: a later
+        # EMAIL_PROVIDER switch must not turn the fixed code live.
+        if self.RESEND_API_KEY or self.SES_ACCESS_KEY_ID:
+            raise ValueError(
+                "DEV_FIXED_OTP_CODE must not be set together with RESEND_API_KEY or SES_ACCESS_KEY_ID"
+            )
+        return self
+
+    @property
+    def email_delivery_configured(self) -> bool:
+        """Whether the selected EMAIL_PROVIDER has what it needs to send.
+        Without it emails are skipped and codes go to the log (dev)."""
+        if self.EMAIL_PROVIDER == "ses":
+            return bool(self.SES_REGION and self.SES_ACCESS_KEY_ID and self.SES_SECRET_ACCESS_KEY)
+        return bool(self.RESEND_API_KEY)
 
     @model_validator(mode="after")
     def build_database_url(self) -> Self:

@@ -72,6 +72,61 @@ async def test_with_a_provider_the_flag_logs_nothing(send, monkeypatch, caplog):
     assert CODE not in _everything_logged(caplog)
 
 
+@pytest.mark.parametrize("send", SENDERS)
+async def test_the_flag_follows_the_selected_provider_not_the_resend_key(send, monkeypatch, caplog):
+    """SES selected and configured, no Resend key at all: the email is sent.
+    Reading `RESEND_API_KEY` here would stop every code email on such a stack."""
+    sent = []
+    for name, value in {
+        "EMAIL_PROVIDER": "ses",
+        "SES_REGION": "ap-southeast-2",
+        "SES_ACCESS_KEY_ID": "AKIATEST",
+        "SES_SECRET_ACCESS_KEY": "secret",
+        "RESEND_API_KEY": "",
+        "LOG_EMAIL_CODES": False,
+    }.items():
+        monkeypatch.setattr(email_service.settings, name, value)
+    monkeypatch.setattr(email_service, "_send_ses", lambda *args: sent.append(args) or "id")
+
+    with caplog.at_level(logging.DEBUG, logger="app"):
+        await send("student@example.com", CODE)
+
+    assert len(sent) == 1
+    assert CODE not in _everything_logged(caplog)
+
+
+@pytest.mark.parametrize("send", SENDERS)
+async def test_unconfigured_ses_is_reported_by_its_own_settings(send, monkeypatch, caplog):
+    for name, value in {
+        "EMAIL_PROVIDER": "ses",
+        "SES_REGION": "",
+        "SES_ACCESS_KEY_ID": "",
+        "SES_SECRET_ACCESS_KEY": "",
+        # A leftover Resend key must not count for the provider that is selected.
+        "RESEND_API_KEY": "test-key",
+        "LOG_EMAIL_CODES": False,
+    }.items():
+        monkeypatch.setattr(email_service.settings, name, value)
+
+    with caplog.at_level(logging.DEBUG, logger="app"), pytest.raises(RuntimeError, match="SES_ACCESS_KEY_ID"):
+        await send("student@example.com", CODE)
+
+    assert CODE not in _everything_logged(caplog)
+
+
+@pytest.mark.parametrize("send", SENDERS)
+async def test_dev_stand_with_a_fixed_code_sends_and_logs_nothing(send, no_provider, monkeypatch, caplog):
+    """The fixed code is how a tester of the dev stand gets in — there is no
+    email to send, and it is not an error either."""
+    monkeypatch.setattr(email_service.settings, "LOG_EMAIL_CODES", False)
+    monkeypatch.setattr(email_service.settings, "DEV_FIXED_OTP_CODE", "000000")
+
+    with caplog.at_level(logging.DEBUG, logger="app"):
+        await send("student@example.com", "000000")
+
+    assert "000000" not in _everything_logged(caplog)
+
+
 async def test_registration_on_a_misconfigured_server_reports_the_failure_without_the_code(
     db_session, no_provider, monkeypatch, caplog
 ):

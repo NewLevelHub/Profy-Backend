@@ -75,6 +75,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       REDIS_URL: redis://profi_redis_prod:6379/0
+      # Dev-stand fixed verification code: forced off in production whatever
+      # .env.production says (environment: wins over env_file).
+      DEV_FIXED_OTP_CODE: ""
       # Pinned off: .env.production must not be able to send login codes to the log.
       LOG_EMAIL_CODES: "false"
       # Pinned off: no Swagger UI and no OpenAPI schema in production (the

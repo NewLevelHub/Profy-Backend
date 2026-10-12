@@ -88,7 +88,7 @@ Backend API платформы профориентации Profi.
 | `LLM_MODEL`, `LLM_BASE_URL`, `LLM_TIMEOUT`, `LLM_MAX_TOKENS`, `LLM_TEMPERATURE` | Настройки обычных (лёгких) LLM-вызовов |
 | `RESEND_API_KEY` | Ключ [Resend](https://resend.com) для отправки email (коды подтверждения, сброс пароля). Пусто — письма не отправляются |
 | `API_DOCS_ENABLED` | Отдавать Swagger UI (`/docs`) и `/openapi.json`. По умолчанию `true`; в `docker-compose.prod.yml` зафиксировано `false` — см. [Заголовки безопасности и документация API](#заголовки-безопасности-и-документация-api) |
-| `LOG_EMAIL_CODES` | Только локально: при пустом `RESEND_API_KEY` писать коды в лог `api` (`true` в `.env.example`). По умолчанию `false`, на сервере не включать — в `docker-compose.prod.yml` и `docker-compose.dev.yml` зафиксировано `false` |
+| `LOG_EMAIL_CODES` | Только локально: когда выбранный почтовый провайдер не настроен (пустой `RESEND_API_KEY`), писать коды в лог `api` (`true` в `.env.example`). По умолчанию `false`, на сервере не включать — в `docker-compose.prod.yml` и `docker-compose.dev.yml` зафиксировано `false` |
 | `EMAIL_FROM` | Адрес отправителя писем |
 | `GOOGLE_CLIENT_ID` | Client ID из Google Cloud Console для входа через Google (веб) |
 | `CORS_ALLOWED_ORIGINS` | Сайты, страницам которых браузер разрешит читать ответы API, через запятую. Локально `http://localhost:5173`; на серверах задаётся в compose-файлах — см. [CORS](#cors-какие-сайты-могут-обращаться-к-api) |

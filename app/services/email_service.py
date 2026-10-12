@@ -1,10 +1,13 @@
 import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
+from functools import lru_cache
 from html import escape
 from pathlib import Path
 
+import boto3
 import resend
+from botocore.config import Config as BotoConfig
 
 from app.config import settings
 from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
@@ -20,7 +23,7 @@ _TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "email"
 # wait is capped (and the HTTP call itself is capped to match, below).
 _BEST_EFFORT_TIMEOUT_SECONDS = 10
 
-# `asyncio.wait_for` only stops the *waiting*: the blocking Resend call keeps
+# `asyncio.wait_for` only stops the *waiting*: the blocking provider call keeps
 # its thread until the provider answers. On the shared default executor those
 # stuck threads would eventually starve every other `to_thread` user (OAuth
 # verification, artifact uploads), so notifications get their own small pool.
@@ -63,9 +66,53 @@ def _load_template(name: str, locale: str, **kwargs: str) -> str:
     return path.read_text(encoding="utf-8").format(**kwargs)
 
 
+@lru_cache(maxsize=1)
+def _ses_client():
+    """One SES v2 client per process (boto3 clients are thread-safe). HTTP
+    timeouts match `_BEST_EFFORT_TIMEOUT_SECONDS`, same reasoning as the
+    Resend client above."""
+    return boto3.client(
+        "sesv2",
+        region_name=settings.SES_REGION,
+        aws_access_key_id=settings.SES_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.SES_SECRET_ACCESS_KEY,
+        config=BotoConfig(
+            connect_timeout=5,
+            read_timeout=_BEST_EFFORT_TIMEOUT_SECONDS,
+            retries={"max_attempts": 2, "mode": "standard"},
+        ),
+    )
+
+
+def _send_ses(to: str, subject: str, plain: str, html: str) -> str:
+    """Hand the email to Amazon SES; returns its MessageId. Success means
+    "accepted", not "delivered"."""
+    sent = _ses_client().send_email(
+        FromEmailAddress=settings.EMAIL_FROM,
+        Destination={"ToAddresses": [to]},
+        Content={
+            "Simple": {
+                "Subject": {"Data": subject, "Charset": "UTF-8"},
+                "Body": {
+                    "Text": {"Data": plain, "Charset": "UTF-8"},
+                    "Html": {"Data": html, "Charset": "UTF-8"},
+                },
+            }
+        },
+    )
+    return sent.get("MessageId") or ""
+
+
+def _send(to: str, subject: str, plain: str, html: str) -> str:
+    """Send through the selected `EMAIL_PROVIDER`; returns the provider's id."""
+    if settings.EMAIL_PROVIDER == "ses":
+        return _send_ses(to, subject, plain, html)
+    return _send_resend(to, subject, plain, html)
+
+
 def _send_resend(to: str, subject: str, plain: str, html: str) -> str:
-    """Hand the email to Resend; returns its id (the key of webhook events).
-    Success means "queued", not "delivered"."""
+    """Hand the email to Resend; returns its id. Success means "queued",
+    not "delivered"."""
     resend.api_key = settings.RESEND_API_KEY
     sent = resend.Emails.send(
         {
@@ -79,16 +126,30 @@ def _send_resend(to: str, subject: str, plain: str, html: str) -> str:
     return sent.get("id") or ""
 
 
-def _code_logged_instead(what: str, to: str, code: str) -> bool:
-    """True when the code went to the log and there is nothing to send: no
-    `RESEND_API_KEY` on a stack that set `LOG_EMAIL_CODES` (local
-    development). Without that flag a missing key is an error, never a
-    reason to log: the callers report the failed send, without the code."""
-    if settings.RESEND_API_KEY:
+def _missing_provider_settings() -> str:
+    """What the selected `EMAIL_PROVIDER` lacks, for the operator's log."""
+    if settings.EMAIL_PROVIDER == "ses":
+        return "SES_REGION / SES_ACCESS_KEY_ID / SES_SECRET_ACCESS_KEY"
+    return "RESEND_API_KEY"
+
+
+def _code_delivered_without_email(what: str, to: str, code: str) -> bool:
+    """True when there is nothing to send because the selected provider is
+    not configured, and the stack has another way to hand the code over:
+
+    - `DEV_FIXED_OTP_CODE` (dev stand): the code is the known fixed value —
+      nothing is sent and nothing is logged;
+    - `LOG_EMAIL_CODES` (local development): the code goes to the log.
+
+    Without either, an unconfigured provider is an error, never a reason to
+    log: the callers report the failed send, without the code."""
+    if settings.email_delivery_configured:
         return False
+    if settings.DEV_FIXED_OTP_CODE:
+        return True
     if not settings.LOG_EMAIL_CODES:
-        raise RuntimeError("RESEND_API_KEY is not configured — the email was not sent")
-    logger.warning("Resend not configured — %s for %s: %s", what, to, code)
+        raise RuntimeError(f"{_missing_provider_settings()} is not configured — the email was not sent")
+    logger.warning("Email not configured — %s for %s: %s", what, to, code)
     return True
 
 
@@ -101,11 +162,11 @@ async def send_verification_email(
     plain = strings["verification_plain"].format(code=code)
     html = _load_template("verification.html", loc, code=code)
 
-    if _code_logged_instead("verification code", to, code):
+    if _code_delivered_without_email("verification code", to, code):
         return
 
     try:
-        await asyncio.to_thread(_send_resend, to, subject, plain, html)
+        await asyncio.to_thread(_send, to, subject, plain, html)
     except Exception:
         logger.exception("Failed to send verification email to %s", to)
         raise
@@ -117,8 +178,8 @@ async def _send_best_effort(
     """Notification on a critical path (report generation, publishing) —
     unlike the OTP emails, a failure here is logged and swallowed, never
     raised to the caller."""
-    if not settings.RESEND_API_KEY:
-        logger.warning("Resend not configured — skipping %s to %s", template, to)
+    if not settings.email_delivery_configured:
+        logger.warning("Email not configured — skipping %s to %s", template, to)
         return
     try:
         html = _load_template(
@@ -126,7 +187,7 @@ async def _send_best_effort(
         )
         loop = asyncio.get_running_loop()
         await asyncio.wait_for(
-            loop.run_in_executor(_EMAIL_EXECUTOR, _send_resend, to, subject, plain, html),
+            loop.run_in_executor(_EMAIL_EXECUTOR, _send, to, subject, plain, html),
             timeout=_BEST_EFFORT_TIMEOUT_SECONDS,
         )
     except TimeoutError:
@@ -199,11 +260,11 @@ async def send_password_reset_email(
     plain = strings["password_reset_plain"].format(code=code)
     html = _load_template("password_reset.html", loc, code=code)
 
-    if _code_logged_instead("password reset code", to, code):
+    if _code_delivered_without_email("password reset code", to, code):
         return
 
     try:
-        await asyncio.to_thread(_send_resend, to, subject, plain, html)
+        await asyncio.to_thread(_send, to, subject, plain, html)
     except Exception:
         logger.exception("Failed to send password reset email to %s", to)
         raise
@@ -213,8 +274,8 @@ async def send_invitation_email(
     to: str, invite_url: str, *, role: UserRole, locale: str = DEFAULT_LOCALE
 ) -> str | None:
     """Staff invitation (PRO-461). `locale` is `invitations.locale` — the
-    invitee has no `users` row yet. Returns the Resend id of the queued email,
-    None without `RESEND_API_KEY`. Raises on a provider failure. The link is
+    invitee has no `users` row yet. Returns the provider id of the queued email,
+    None when email is not configured. Raises on a provider failure. The link is
     never logged — it is a bearer credential for a staff account, and the
     admin can copy it from the admin panel."""
     loc = _email_locale(locale)
@@ -230,12 +291,12 @@ async def send_invitation_email(
         "invitation.html", loc, **{k: escape(v) for k, v in params.items()}
     )
 
-    if not settings.RESEND_API_KEY:
-        logger.warning("Resend not configured — invitation email to %s not sent", to)
+    if not settings.email_delivery_configured:
+        logger.warning("Email not configured — invitation email to %s not sent", to)
         return None
 
     try:
-        return await asyncio.to_thread(_send_resend, to, subject, plain, html)
+        return await asyncio.to_thread(_send, to, subject, plain, html)
     except Exception:
         logger.exception("Failed to send invitation email to %s", to)
         raise

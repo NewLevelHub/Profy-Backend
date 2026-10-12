@@ -253,6 +253,7 @@ class DeploymentIsolationTests(unittest.TestCase):
                 (path / envfile).write_text(
                     "POSTGRES_DB=test_db\nPOSTGRES_USER=test_user\nPOSTGRES_PASSWORD=test\n"
                     "SECRET_KEY=test\nDATABASE_URL=postgresql://wrong-host/wrong-db\n"
+                    "DEV_FIXED_OTP_CODE=000000\n"
                 )
                 env = {k: v for k, v in os.environ.items() if not k.startswith(("COMPOSE_", "DOCKER_", "POSTGRES_"))}
                 for key in ("PROD_API_IMAGE", "DEV_API_IMAGE"):
@@ -280,6 +281,9 @@ class DeploymentIsolationTests(unittest.TestCase):
                 )
                 if stage == "dev":
                     self.assertTrue(api["volumes"][0]["read_only"])
+                else:
+                    # A fixed OTP code in .env.production must never reach the prod API.
+                    self.assertEqual(api["environment"]["DEV_FIXED_OTP_CODE"], "")
                 # The x-logging anchor must resolve for every service, not just parse.
                 for name, svc in json.loads(result.stdout)["services"].items():
                     self.assertEqual(svc["logging"]["options"]["max-size"], "10m", name)
