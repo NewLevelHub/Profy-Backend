@@ -22,6 +22,10 @@ logger = logging.getLogger(__name__)
 _VALIDATION_MESSAGE_KEYS = {
     "missing": "field_required",
     "string_type": "string_required",
+    # Size ceilings (app/schemas/validation.py); `{max_length}` comes from the
+    # error's own `ctx`. "too_long" is pydantic's type for a list or a map.
+    "string_too_long": "value_too_long",
+    "too_long": "list_too_long",
 }
 
 
@@ -103,7 +107,7 @@ async def _validation_error_handler(request: Request, exc: RequestValidationErro
     validation site and therefore are intentionally left untouched here.
     """
     errors = [
-        {**error, "msg": i18n_key("api_errors", message_key)}
+        {**error, "msg": i18n_key("api_errors", message_key).format(**error.get("ctx", {}))}
         if (message_key := _VALIDATION_MESSAGE_KEYS.get(error.get("type")))
         else error
         for error in exc.errors()

@@ -10,6 +10,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from app.schemas.validation import LONG_TEXT_MAX_LENGTH
+
 from app.schemas.artifact import ArtifactItem
 from app.schemas.new_tests import (
     AspirationLevelSection,
@@ -82,11 +84,11 @@ class PsychologistStudentDetailResponse(BaseModel):
 
 
 class PsychologistNoteCreate(BaseModel):
-    content: str = Field(min_length=1)
+    content: str = Field(min_length=1, max_length=LONG_TEXT_MAX_LENGTH)
 
 
 class PsychologistNoteUpdate(BaseModel):
-    content: str = Field(min_length=1)
+    content: str = Field(min_length=1, max_length=LONG_TEXT_MAX_LENGTH)
 
 
 class PsychologistNoteItem(BaseModel):

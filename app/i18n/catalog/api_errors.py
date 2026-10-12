@@ -85,6 +85,7 @@ RU = {
     "invalid_or_expired_code": "Invalid or expired code",
     "invalid_sort_field": "Unknown sort field: {sort}",
     "lability_elapsed_ms_required": "elapsed_ms is required for the lability subtest",
+    "list_too_long": "Слишком много элементов — не больше {max_length}",
     "localized_fields_require_locale": "locale is required when editing a localized field: {fields}",
     "most_and_least_must_differ": "most and least must differ",
     "motivation_statement_not_found": "Motivation statement not found",
@@ -125,6 +126,7 @@ RU = {
     "unknown_triplet": "Unknown triplet {triplet_index}",
     "unsupported_locale": "locale must be one of {locales}",
     "url_must_be_http": "Ссылка должна начинаться с http:// или https://",
+    "value_too_long": "Слишком длинное значение — не больше {max_length} символов",
     "user_not_found": "User not found",
     "verification_resend_too_soon": "Please wait 60 seconds before requesting a new code",
 }
@@ -205,6 +207,7 @@ KK = {
     "invalid_or_expired_code": "Код қате немесе мерзімі өткен",
     "invalid_sort_field": "Сұрыптау өрісі белгісіз: {sort}",
     "lability_elapsed_ms_required": "Лабильділік субтесті үшін elapsed_ms қажет",
+    "list_too_long": "Элементтер тым көп — {max_length}-ден аспауы керек",
     "localized_fields_require_locale": "Локализацияланған өрісті өзгерту үшін locale қажет: {fields}",
     "most_and_least_must_differ": "Ең маңызды және ең маңызды емес жауаптар әртүрлі болуы керек",
     "motivation_statement_not_found": "Мотивациялық тұжырым табылмады",
@@ -242,6 +245,7 @@ KK = {
     "unknown_triplet": "Белгісіз триплет: {triplet_index}",
     "unsupported_locale": "locale мына мәндердің бірі болуы керек: {locales}",
     "url_must_be_http": "Сілтеме http:// немесе https:// деп басталуы керек",
+    "value_too_long": "Мән тым ұзын — {max_length} таңбадан аспауы керек",
     "user_not_found": "Пайдаланушы табылмады",
     "verification_resend_too_soon": "Жаңа код сұрау үшін 60 секунд күтіңіз",
 }

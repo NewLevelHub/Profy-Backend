@@ -208,6 +208,17 @@ class DeploymentIsolationTests(unittest.TestCase):
         # Off in the application too, whatever .env.production says.
         self.assertEqual(api["environment"]["API_DOCS_ENABLED"], "false")
 
+    def test_request_size_has_one_small_ceiling_everywhere(self):
+        # The API takes JSON only; 2 MB is ~20x the largest legitimate body.
+        # The same value locally, so an oversized request fails before the server.
+        for path, servers in [("nginx.prod.conf", 2), ("nginx/local.conf", 1)]:
+            sizes = [
+                line.split()[1].rstrip(";")
+                for line in (ROOT / path).read_text().splitlines()
+                if line.strip().startswith("client_max_body_size ")
+            ]
+            self.assertEqual(sizes, ["2M"] * servers, path)
+
     def test_every_https_response_carries_the_security_headers(self):
         nginx = (ROOT / "nginx.prod.conf").read_text()
         self.assertIn("server_tokens off;", nginx)

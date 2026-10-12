@@ -1,10 +1,17 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from pydantic import BaseModel, field_validator
+from typing import Annotated
+
+from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.university import ProgramGrant
-from app.schemas.validation import http_url
+from app.schemas.validation import LIST_ITEM_MAX_LENGTH, LIST_MAX_ITEMS, LONG_TEXT_MAX_LENGTH, http_url
+
+# Where a limit below is a round number of its own, it is the width of the
+# column the value is written to (app/models/university.py, program.py): a
+# longer one used to reach the database and come back as a 500.
+_URL_MAX_LENGTH = 2000
 
 
 class AdminProgramGrant(ProgramGrant):
@@ -23,6 +30,10 @@ class AdminProgramGrant(ProgramGrant):
     """
 
     model_config = {"extra": "allow"}
+
+    name: str = Field(max_length=LIST_ITEM_MAX_LENGTH)
+    amount: str | None = Field(None, max_length=LIST_ITEM_MAX_LENGTH)
+    conditions: str | None = Field(None, max_length=LONG_TEXT_MAX_LENGTH)
 
 
 class AdminUniversityListItem(BaseModel):
@@ -99,20 +110,20 @@ class AdminUniversityDetail(BaseModel):
 
 
 class AdminUniversityUpdateRequest(BaseModel):
-    name: str | None = None
-    short_name: str | None = None
-    aliases: list[str] | None = None
-    location: str | None = None
-    website: str | None = None
+    name: str | None = Field(None, max_length=255)
+    short_name: str | None = Field(None, max_length=100)
+    aliases: list[Annotated[str, Field(max_length=255)]] | None = Field(None, max_length=LIST_MAX_ITEMS)
+    location: str | None = Field(None, max_length=LIST_ITEM_MAX_LENGTH)
+    website: str | None = Field(None, max_length=500)
     ranking: int | None = None
-    ranking_label: str | None = None
+    ranking_label: str | None = Field(None, max_length=100)
     uniranks_kz_rank: int | None = None
     uniranks_world_rank: int | None = None
-    uniranks_note: str | None = None
-    description: str | None = None
-    city: str | None = None
-    country: str | None = None
-    source_url: str | None = None
+    uniranks_note: str | None = Field(None, max_length=50)
+    description: str | None = Field(None, max_length=LONG_TEXT_MAX_LENGTH)
+    city: str | None = Field(None, max_length=100)
+    country: str | None = Field(None, max_length=100)
+    source_url: str | None = Field(None, max_length=_URL_MAX_LENGTH)
 
     @field_validator("website", "source_url")
     @classmethod
@@ -181,16 +192,20 @@ class AdminProgramDetail(BaseModel):
 
 
 class AdminProgramUpdateRequest(BaseModel):
-    name: str | None = None
-    language: str | None = None
-    cost_per_year: Decimal | None = None
-    cost_label: str | None = None
-    description: str | None = None
-    who_its_for: str | None = None
+    name: str | None = Field(None, max_length=255)
+    language: str | None = Field(None, max_length=50)
+    # `programs.cost_per_year` is numeric(12, 2): ten digits before the point.
+    # Bounds the value only — extra decimals are still rounded by the column.
+    cost_per_year: Decimal | None = Field(None, gt=-(10**10), lt=10**10)
+    cost_label: str | None = Field(None, max_length=LIST_ITEM_MAX_LENGTH)
+    description: str | None = Field(None, max_length=LONG_TEXT_MAX_LENGTH)
+    who_its_for: str | None = Field(None, max_length=LONG_TEXT_MAX_LENGTH)
+    # Open objects several importers write into (see AdminProgramDetail): no
+    # per-key bound here, the request-size limit of the edge nginx is theirs.
     requirements: dict | None = None
     deadlines: dict | None = None
-    grants: list[AdminProgramGrant] | None = None
-    source_url: str | None = None
+    grants: list[AdminProgramGrant] | None = Field(None, max_length=LIST_MAX_ITEMS)
+    source_url: str | None = Field(None, max_length=_URL_MAX_LENGTH)
 
     @field_validator("source_url")
     @classmethod

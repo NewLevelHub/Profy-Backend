@@ -1,9 +1,12 @@
 """Admin contracts for АСТУР bank versions and item analytics (PRO-427)."""
 import uuid
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
+
+# An item id of the bank («s3_i12»).
+_ItemId = Annotated[str, Field(max_length=64)]
 
 
 class AsturBankIssue(BaseModel):
@@ -50,11 +53,12 @@ class UpdateAsturDraftRequest(BaseModel):
 
 class PublishAsturDraftRequest(BaseModel):
     # Item ids whose changed key the publisher explicitly confirms.
-    confirmed_item_ids: list[str] = Field(default_factory=list)
+    # A version has 98 items.
+    confirmed_item_ids: list[_ItemId] = Field(default_factory=list, max_length=1000)
 
 
 class AddAsturSynonymRequest(BaseModel):
-    item_id: str
+    item_id: _ItemId
     tier: Literal["score_2", "score_1"]
     locale: Literal["ru", "kk"]
     text: str = Field(min_length=1, max_length=200)

@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -9,7 +10,8 @@ class ProductFeedbackCreate(BaseModel):
 
     assessment_id: uuid.UUID
     relevance_score: int = Field(ge=1, le=5)
-    helpful_sections: list[str] = Field(default_factory=list, max_length=20)
+    # Section keys of the report («careers», «strengths», …), not free text.
+    helpful_sections: list[Annotated[str, Field(max_length=64)]] = Field(default_factory=list, max_length=20)
     comment: str | None = Field(default=None, max_length=2000)
 
 

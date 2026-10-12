@@ -19,6 +19,8 @@ from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
 from app.i18n.catalog import key as i18n_key
 from app.models.invitation import InvitationEmailStatus, InvitationStatus
 from app.models.user import UserRole
+from app.schemas.auth import PASSWORD_MAX_LENGTH
+from app.schemas.validation import LOCALE_MAX_LENGTH
 
 _STAFF_ROLES = (UserRole.psychologist.value, UserRole.admin.value)
 _PASSWORD_MIN_LENGTH = 8
@@ -34,10 +36,11 @@ def _invalid(error_code: str, **params: Any) -> PydanticCustomError:
 
 
 class AdminInvitationCreate(BaseModel):
-    email: str
+    # 320 is the longest address the email standard allows.
+    email: str = Field(max_length=320)
     role: UserRole
     # Language of the email; becomes `users.locale` on accept.
-    locale: str = DEFAULT_LOCALE
+    locale: str = Field(default=DEFAULT_LOCALE, max_length=LOCALE_MAX_LENGTH)
 
     @field_validator("email", mode="before")
     @classmethod
@@ -125,7 +128,7 @@ class InvitationPreview(BaseModel):
 
 class AcceptInvitationRequest(BaseModel):
     token: InvitationToken
-    password: str
+    password: str = Field(max_length=PASSWORD_MAX_LENGTH)
 
     @field_validator("password")
     @classmethod

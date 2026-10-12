@@ -29,6 +29,9 @@ class ArtifactInput(ArtifactItem):
 
     model_config = {"str_strip_whitespace": True}
 
+    # The widest any type allows; `_value_fits_type` applies the per-type cap.
+    value: str = Field(..., min_length=1, max_length=ARTIFACT_FREE_TEXT_MAX_LENGTH)
+
     @model_validator(mode="after")
     def _value_fits_type(self) -> "ArtifactInput":
         max_length = artifact_value_max_length(self.type)
@@ -40,7 +43,8 @@ class ArtifactInput(ArtifactItem):
 
 
 class ArtifactsBulkRequest(BaseModel):
-    items: list[ArtifactInput]
+    # Same cap as `ProfileCreateRequest.artifacts` (schemas/profile.py).
+    items: list[ArtifactInput] = Field(max_length=100)
 
 
 class ArtifactsResponse(BaseModel):
