@@ -170,16 +170,18 @@ async def verify_email(email: str, code: str, db: AsyncSession) -> tuple[User, s
         await db.commit()
         raise _code_rejected()
 
-    token.used_at = now
     if not user.is_verified:
-        # The code proves the mailbox, as Google does in `oauth_service`:
-        # an open invitation on this email is accepted with it. The lock
+        # An invited address is never confirmed with this code. The account
+        # was registered by whoever typed the address — not necessarily its
+        # owner — and keeps the password they chose; six digits must not be
+        # what turns it into staff. It stays unverified, and the invitation
+        # link (or a Google login on the address) takes it over. The lock
         # orders this against a concurrent create — either the invitation
         # is seen here, or create sees the verified account.
         await invitation_service.lock_email(db, user.email)
-        invitation = await invitation_service.pending_for_email(db, user.email)
-        if invitation is not None:
-            invitation_service.apply_to_user(user, invitation)
+        if await invitation_service.has_pending(db, user.email):
+            raise invitation_service.invitation_error(status.HTTP_409_CONFLICT, "invited_email_register")
+    token.used_at = now
     user.is_verified = True
     await db.commit()
     await db.refresh(user)

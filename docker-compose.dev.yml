@@ -79,6 +79,9 @@ services:
       POSTGRES_HOST: profi_db_dev
       POSTGRES_PORT: "5432"
       REDIS_URL: redis://profi_redis_dev:6379/0
+      # Pinned off, as in production: this stand is on the public internet,
+      # and a login code in its log is a way into the account.
+      LOG_EMAIL_CODES: "false"
       # Sites whose pages may read API responses from a browser. Only this
       # stack's own domain by default; to allow another one, set the full
       # comma-separated list in .env.development (README, «CORS»).

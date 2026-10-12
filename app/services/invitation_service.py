@@ -1,9 +1,10 @@
 """Staff email invitations: admin side (PRO-460) and accepting (PRO-462).
 
 Contract: docs/frontend-admin-invitations-api-contract.md. No `users` row
-exists until the invitation is accepted — by password here, by a Google
-login on the invited email (`oauth_service`), or by confirming the code of
-an unverified registration on that email (`auth_service.verify_email`).
+exists until the invitation is accepted — by password here, or by a Google
+login on the invited email (`oauth_service`). The emailed six-digit code of
+an unverified registration on that email does not accept it
+(`auth_service.verify_email`).
 
 A link is found by the SHA-256 of its token. The token itself is also kept,
 encrypted (Fernet, key derived from `SECRET_KEY`), while the invitation is
@@ -409,8 +410,7 @@ async def has_pending(db: AsyncSession, email: str) -> bool:
 
 
 async def pending_for_email(db: AsyncSession, email: str) -> Invitation | None:
-    """The open invitation for `email`, row-locked (Google login and email
-    confirmation paths)."""
+    """The open invitation for `email`, row-locked (Google login path)."""
     return await db.scalar(
         select(Invitation)
         .where(Invitation.email == email, Invitation.status_filter(InvitationStatus.pending, _now()))

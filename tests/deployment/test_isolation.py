@@ -140,12 +140,13 @@ class DeploymentIsolationTests(unittest.TestCase):
                 api["environment"]["CORS_ALLOWED_ORIGINS"],
                 "${CORS_ALLOWED_ORIGINS:-https://" + SITE_HOST[file] + "}",
             )
+            # Login codes must never reach a server's log, whatever its env
+            # file says: `environment` wins over `env_file`. Both stands are
+            # on the public internet.
+            self.assertEqual(api["environment"]["LOG_EMAIL_CODES"], "false")
             if file == "dev":
                 self.assertTrue(all(v.endswith(":ro") for v in api["volumes"]))
             else:
-                # Login codes must never reach the production log, whatever
-                # .env.production says: `environment` wins over `env_file`.
-                self.assertEqual(api["environment"]["LOG_EMAIL_CODES"], "false")
                 self.assertNotIn("depends_on", config["services"]["nginx"])
 
     def test_prod_attaches_nginx_and_api_to_the_edge_network(self):

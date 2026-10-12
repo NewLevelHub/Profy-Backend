@@ -166,26 +166,53 @@ async def test_register_on_invited_email_is_409(
     assert await db_session.scalar(select(User).where(User.email == email)) is None
 
 
-async def test_confirming_email_of_unverified_account_accepts_the_invitation(
+@pytest.mark.parametrize("role", [UserRole.psychologist, UserRole.admin])
+async def test_confirming_email_of_unverified_account_does_not_accept_the_invitation(
+    client: httpx.AsyncClient, db_session: AsyncSession, role: UserRole
+) -> None:
+    """Registered (unverified) before the invite, then entered the right
+    code: the account keeps the password of whoever registered it, so six
+    digits must not make it staff. It stays an unverified student and the
+    invitation stays open for its link."""
+    email = _email()
+    invitation, token = await _add_invitation(db_session, email, role=role, locale="kk")
+    user = await _add_user(db_session, email, is_verified=False)
+    code = await auth_service._create_verification_token(user.id, db_session)
+
+    response = await client.post("/api/v1/auth/verify-email", json={"email": email, "code": code})
+
+    assert response.status_code == 409
+    assert response.json()["error_code"] == "invited_email_register"
+    assert "access_token" not in response.json()
+    await db_session.refresh(user)
+    await db_session.refresh(invitation)
+    assert user.role == UserRole.student
+    assert user.is_verified is False
+    assert invitation.status == InvitationStatus.pending
+
+    # The link still works, and replaces the registrant's password.
+    accepted = await client.post(ACCEPT_URL, json={"token": token, "password": PASSWORD})
+    assert accepted.status_code == 200
+    assert accepted.json()["user"]["role"] == role.value
+    await db_session.refresh(user)
+    assert auth_service.verify_password(PASSWORD, user.hashed_password)
+    assert not auth_service.verify_password("Stranger123", user.hashed_password)
+
+
+async def test_confirming_email_works_again_once_the_invitation_is_closed(
     client: httpx.AsyncClient, db_session: AsyncSession
 ) -> None:
-    """Registered (unverified) before the invite, then confirmed the code:
-    the code proves the mailbox, so the account becomes the invited staff."""
+    """Only an open invitation holds the account back: after a revoke the
+    same code confirms it as an ordinary student."""
     email = _email()
-    invitation, _ = await _add_invitation(db_session, email, role=UserRole.psychologist, locale="kk")
+    await _add_invitation(db_session, email, revoked=True)
     user = await _add_user(db_session, email, is_verified=False)
     code = await auth_service._create_verification_token(user.id, db_session)
 
     response = await client.post("/api/v1/auth/verify-email", json={"email": email, "code": code})
 
     assert response.status_code == 200
-    assert response.json()["user"]["role"] == "psychologist"
-    await db_session.refresh(user)
-    await db_session.refresh(invitation)
-    assert user.role == UserRole.psychologist
-    assert user.locale == "kk"
-    assert invitation.status == InvitationStatus.accepted
-    assert invitation.token_ciphertext is None
+    assert response.json()["user"]["role"] == "student"
 
 
 # ── token states ────────────────────────────────────────────────────────────
@@ -416,8 +443,8 @@ async def test_confirming_email_waits_for_an_invitation_being_created(
     """An unverified account confirms its code while an admin's create is
     between its "no verified user" check and its commit. Without the shared
     email lock both would commit: a verified student plus a pending
-    invitation nobody can accept. With it the confirmation waits and then
-    accepts the invitation."""
+    invitation nobody can accept. With it the confirmation waits, then sees
+    the invitation and leaves the account unverified for its link."""
     email = _email()
     async with AsyncSession(engine, expire_on_commit=False) as setup:
         user = User(email=email, hashed_password="x", is_verified=False)
@@ -441,22 +468,26 @@ async def test_confirming_email_waits_for_an_invitation_being_created(
             )
             await creating.flush()
 
-            async def _confirm() -> User:
+            async def _confirm() -> str:
                 async with AsyncSession(engine, expire_on_commit=False) as session:
-                    confirmed, _ = await auth_service.verify_email(email, code, session)
-                    return confirmed
+                    try:
+                        await auth_service.verify_email(email, code, session)
+                    except AppError as exc:
+                        return exc.error_code
+                    return "ok"
 
             confirming = asyncio.create_task(_confirm())
             await asyncio.sleep(0.5)
             assert not confirming.done(), "confirmation must wait for the create to commit"
             await creating.commit()
 
-        confirmed = await asyncio.wait_for(confirming, timeout=5)
-        assert confirmed.role == UserRole.psychologist
-        assert confirmed.locale == "kk"
+        assert await asyncio.wait_for(confirming, timeout=5) == "invited_email_register"
         async with AsyncSession(engine) as check:
             invitation = await check.scalar(select(Invitation).where(Invitation.email == email))
-            assert invitation.status == InvitationStatus.accepted
+            assert invitation.status == InvitationStatus.pending
+            account = await check.scalar(select(User).where(User.email == email))
+            assert account.is_verified is False
+            assert account.role == UserRole.student
     finally:
         async with AsyncSession(engine) as cleanup:
             await cleanup.execute(delete(Invitation).where(Invitation.email == email))

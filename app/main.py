@@ -102,16 +102,21 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
 async def _validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     """Localize the built-in validation errors used by request schemas.
 
-    Only ``msg`` changes: ``type``, ``loc`` and the response shape remain
-    stable. Domain rules use ``PydanticCustomError`` with catalog text at the
-    validation site and therefore are intentionally left untouched here.
+    Only ``msg`` changes: ``type`` and ``loc`` remain stable. Domain rules use
+    ``PydanticCustomError`` with catalog text at the validation site and
+    therefore are intentionally left untouched here.
+
+    ``input`` — the rejected value itself — is dropped from every error: for
+    a too-short password, a wrong code or an invitation token it is the
+    secret, and a 422 body ends up in browser consoles and error trackers.
+    ``loc`` already says which field was wrong.
     """
-    errors = [
-        {**error, "msg": i18n_key("api_errors", message_key).format(**error.get("ctx", {}))}
-        if (message_key := _VALIDATION_MESSAGE_KEYS.get(error.get("type")))
-        else error
-        for error in exc.errors()
-    ]
+    errors = []
+    for error in exc.errors():
+        error = {name: value for name, value in error.items() if name != "input"}
+        if message_key := _VALIDATION_MESSAGE_KEYS.get(error.get("type")):
+            error["msg"] = i18n_key("api_errors", message_key).format(**error.get("ctx", {}))
+        errors.append(error)
     return await request_validation_exception_handler(
         request, RequestValidationError(errors, body=exc.body)
     )
