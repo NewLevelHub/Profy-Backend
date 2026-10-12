@@ -14,7 +14,7 @@ from app.models.email_verification import EmailVerificationToken
 from app.models.user import User
 from app.schemas.auth import RegisterResponse
 from app.services import email_service, invitation_service
-from app.services.token_utils import generate_code, hash_code
+from app.services.token_utils import code_matches, generate_code, hash_code, record_failed_attempt
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +122,8 @@ async def verify_email(email: str, code: str, db: AsyncSession) -> tuple[User, s
     if not user:
         raise ValueError(i18n_key("api_errors", "user_not_found", locale="ru"))
 
+    # Locked: guesses at one code are checked and counted one at a time, so a
+    # parallel burst cannot try more values than the code has attempts.
     token_result = await db.execute(
         select(EmailVerificationToken)
         .where(
@@ -130,6 +132,7 @@ async def verify_email(email: str, code: str, db: AsyncSession) -> tuple[User, s
         )
         .order_by(EmailVerificationToken.created_at.desc())
         .limit(1)
+        .with_for_update()
     )
     token = token_result.scalar_one_or_none()
 
@@ -144,7 +147,9 @@ async def verify_email(email: str, code: str, db: AsyncSession) -> tuple[User, s
     if now > expires:
         raise ValueError(i18n_key("api_errors", "verification_code_expired", locale="ru"))
 
-    if token.code_hash != hash_code(code):
+    if not code_matches(token.code_hash, code):
+        record_failed_attempt(token)
+        await db.commit()
         raise ValueError(i18n_key("api_errors", "invalid_verification_code", locale="ru"))
 
     token.used_at = now

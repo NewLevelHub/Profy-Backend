@@ -34,10 +34,14 @@ logger = logging.getLogger(__name__)
 
 _redis: aioredis.Redis | None = None
 
-_VERIFY_EMAIL_LIMIT = 10       # попыток
-_VERIFY_EMAIL_WINDOW = 900     # 15 минут (совпадает со сроком жизни кода)
-_VERIFY_RESET_LIMIT = 10
-_VERIFY_RESET_WINDOW = 900
+# Неверные вводы 6-значного кода из письма (подтверждение почты, сброс
+# пароля). Считаются только неудачи: класс за одним школьным IP, где каждый
+# вводит свой верный код, бюджет IP не тратит. Сам код сгорает после
+# token_utils.MAX_CODE_ATTEMPTS промахов, а лимит по email не даёт
+# продолжить перебор на перевыпущенном коде.
+_CODE_EMAIL_LIMIT = 5
+_CODE_IP_LIMIT = 20
+_CODE_WINDOW = 900             # 15 минут (совпадает со сроком жизни кода)
 _FORGOT_IP_LIMIT = 3
 _FORGOT_IP_WINDOW = 600        # 10 минут
 _FORGOT_EMAIL_LIMIT = 3
@@ -74,22 +78,22 @@ def _client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-def _login_rate_key(scope: str, value: str) -> str:
+def _rate_key(scope: str, value: str) -> str:
     """Build a stable Redis key without retaining an email or IP as PII."""
     digest = hmac.new(
         settings.SECRET_KEY.encode("utf-8"),
         f"{scope}:{value}".encode("utf-8"),
         hashlib.sha256,
     ).hexdigest()
-    return f"login_{scope}:{digest}"
+    return f"{scope}:{digest}"
 
 
 def _login_email_rate_key(email: str) -> str:
-    return _login_rate_key("email", str(email).strip().lower())
+    return _rate_key("login_email", str(email).strip().lower())
 
 
 def _login_ip_rate_key(ip: str) -> str:
-    return _login_rate_key("ip", ip)
+    return _rate_key("login_ip", ip)
 
 
 async def _increment_rate_limit(key: str, window: int) -> tuple[int, int]:
@@ -146,6 +150,36 @@ async def _record_login_failure(ip_key: str, email_key: str) -> None:
         _raise_rate_limit("login_ip", ip_count, ip_ttl)
     if email_count > _LOGIN_EMAIL_LIMIT:
         _raise_rate_limit("login_email", email_count, email_ttl)
+
+
+class _CodeGuess:
+    """Failed-attempt budget for one emailed code, per client IP and per
+    email. `scope` names the code, not the endpoint: both password-reset
+    endpoints check the same code and so share one budget."""
+
+    def __init__(self, scope: str, email: str, request: Request) -> None:
+        self._scope = scope
+        self._ip_key = _rate_key(f"{scope}_ip", _client_ip(request))
+        self._email_key = _rate_key(f"{scope}_email", email)
+
+    async def reject_if_exhausted(self) -> None:
+        await _reject_if_rate_limited(self._ip_key, _CODE_IP_LIMIT, scope=f"{self._scope}_ip")
+        await _reject_if_rate_limited(self._email_key, _CODE_EMAIL_LIMIT, scope=f"{self._scope}_email")
+
+    async def record_failure(self) -> None:
+        # Every rejection counts alike — unknown address, no live code, wrong
+        # digits — so the limiter does not tell an attacker which it was.
+        ip_count, ip_ttl = await _increment_rate_limit(self._ip_key, _CODE_WINDOW)
+        email_count, email_ttl = await _increment_rate_limit(self._email_key, _CODE_WINDOW)
+        if ip_count > _CODE_IP_LIMIT:
+            _raise_rate_limit(f"{self._scope}_ip", ip_count, ip_ttl)
+        if email_count > _CODE_EMAIL_LIMIT:
+            _raise_rate_limit(f"{self._scope}_email", email_count, email_ttl)
+
+    async def clear_email(self) -> None:
+        # As on login: the email counter is consecutive failures; the IP
+        # counter is kept, so cycling through accounts does not reset it.
+        await _get_redis().delete(self._email_key)
 
 
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
@@ -242,15 +276,16 @@ async def accept_invitation(
 
 
 @router.post("/verify-email", response_model=TokenResponse)
-async def verify_email(body: VerifyEmailRequest, db: AsyncSession = Depends(get_db)):
-    await _check_rate_limit(
-        f"verify_email:{body.email}", _VERIFY_EMAIL_LIMIT, _VERIFY_EMAIL_WINDOW
-    )
+async def verify_email(body: VerifyEmailRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    guess = _CodeGuess("verify_email", body.email, request)
+    await guess.reject_if_exhausted()
     try:
         user, token = await auth_service.verify_email(body.email, body.code, db)
     except ValueError as exc:
+        await guess.record_failure()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
+    await guess.clear_email()
     return TokenResponse(access_token=token, user=user)
 
 
@@ -314,24 +349,25 @@ async def forgot_password(body: ForgotPasswordRequest, request: Request, db: Asy
 
 
 @router.post("/verify-reset-code", status_code=status.HTTP_200_OK)
-async def verify_reset_code(body: VerifyResetCodeRequest, db: AsyncSession = Depends(get_db)):
-    await _check_rate_limit(
-        f"verify_reset:{body.email}", _VERIFY_RESET_LIMIT, _VERIFY_RESET_WINDOW
-    )
+async def verify_reset_code(body: VerifyResetCodeRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    guess = _CodeGuess("reset_code", body.email, request)
+    await guess.reject_if_exhausted()
     try:
         await password_reset_service.verify_code(body.email, body.code, db)
     except ValueError:
+        await guess.record_failure()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=i18n_key("api_errors", "invalid_or_expired_code", locale="ru"))
     return {"valid": True}
 
 
 @router.post("/reset-password", status_code=status.HTTP_200_OK)
-async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
-    await _check_rate_limit(
-        f"reset_pwd:{body.email}", _VERIFY_RESET_LIMIT, _VERIFY_RESET_WINDOW
-    )
+async def reset_password(body: ResetPasswordRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    guess = _CodeGuess("reset_code", body.email, request)
+    await guess.reject_if_exhausted()
     try:
         await password_reset_service.reset_password(body.email, body.code, body.new_password, db)
     except ValueError:
+        await guess.record_failure()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=i18n_key("api_errors", "invalid_or_expired_code", locale="ru"))
+    await guess.clear_email()
     return {"message": i18n_key("api_messages", "password_reset_completed")}

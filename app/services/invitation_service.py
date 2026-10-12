@@ -12,6 +12,7 @@ open — so the admin can copy the link again (`invitation_link`).
 
 import asyncio
 import base64
+import hashlib
 import logging
 import secrets
 import uuid
@@ -43,7 +44,6 @@ from app.schemas.invitation import (
     InvitationPreview,
 )
 from app.services import auth_service, email_service
-from app.services.token_utils import hash_code
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,10 @@ def invitation_error(status_code: int, error_code: str) -> AppError:
 
 
 def hash_token(token: str) -> str:
-    return hash_code(token)
+    # The link token is 256 random bits, so an unkeyed digest cannot be
+    # reversed by guessing — unlike `token_utils.hash_code` for six digits.
+    # Not keyed with SECRET_KEY either: rotating it must not void open links.
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
 def build_invite_url(token: str) -> str:
