@@ -11,6 +11,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[2]
+SITE_HOST = {"prod": "profile.newlevelhub.kz", "dev": "dev.profile.newlevelhub.kz"}
 
 
 def read_yaml(path):
@@ -135,6 +136,10 @@ class DeploymentIsolationTests(unittest.TestCase):
             self.assertEqual(api["environment"]["DATABASE_URL"], "")
             self.assertEqual(api["environment"]["POSTGRES_HOST"], f"profi_db_{file}")
             self.assertEqual(api["environment"]["REDIS_URL"], f"redis://profi_redis_{file}:6379/0")
+            self.assertEqual(
+                api["environment"]["CORS_ALLOWED_ORIGINS"],
+                "${CORS_ALLOWED_ORIGINS:-https://" + SITE_HOST[file] + "}",
+            )
             if file == "dev":
                 self.assertTrue(all(v.endswith(":ro") for v in api["volumes"]))
             else:
@@ -215,6 +220,15 @@ class DeploymentIsolationTests(unittest.TestCase):
                 self.assertEqual(api["image"], expected_image)
                 self.assertEqual(api["environment"]["DATABASE_URL"], "")
                 self.assertEqual(api["environment"]["POSTGRES_HOST"], f"profi_db_{stage}")
+                # Each stack trusts its own site only, unless the env file says otherwise.
+                self.assertEqual(api["environment"]["CORS_ALLOWED_ORIGINS"], f"https://{SITE_HOST[stage]}")
+                with (path / envfile).open("a") as handle:
+                    handle.write("CORS_ALLOWED_ORIGINS=https://other.example\n")
+                override = subprocess.run(command, cwd=path, env=env, capture_output=True, text=True, check=True)
+                self.assertEqual(
+                    json.loads(override.stdout)["services"][service]["environment"]["CORS_ALLOWED_ORIGINS"],
+                    "https://other.example",
+                )
                 if stage == "dev":
                     self.assertTrue(api["volumes"][0]["read_only"])
                 # The x-logging anchor must resolve for every service, not just parse.

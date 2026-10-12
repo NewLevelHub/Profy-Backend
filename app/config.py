@@ -1,10 +1,10 @@
 import json
 from pathlib import Path
-from typing import Self
-from urllib.parse import quote_plus
+from typing import Annotated, Self
+from urllib.parse import quote_plus, urlsplit
 
-from pydantic import BaseModel, ConfigDict, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -36,6 +36,12 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = ""
     # Public SPA origin for deep links in transactional emails (no trailing slash).
     FRONTEND_URL: str = "http://localhost:5173"
+    # Browser origins allowed to call the API cross-origin, comma-separated
+    # (`scheme://host[:port]`, no path). The SPA reaches the API same-origin
+    # — behind nginx on the servers, behind the Vite proxy locally — so this
+    # only matters for a client served from another origin. Empty = none.
+    # A wildcard is rejected at startup: it would let any site read responses.
+    CORS_ALLOWED_ORIGINS: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
     # Lifetime of a staff invitation link (PRO-457); also printed in the email.
     INVITATION_TTL_HOURS: int = 72
     # Reject an invitation to a domain that cannot receive mail (no MX / A
@@ -68,15 +74,29 @@ class Settings(BaseSettings):
     # build_public_url() just prepends it to the stored storage_key.
     STORAGE_PUBLIC_BASE_URL: str = "http://localhost/media"
 
-    # University photo import (app/services/university_photo_import_service.py).
-    SCRAPER_USER_AGENT: str = "ProfyUniversityPhotoBot/1.0"
-    SCRAPER_REQUEST_DELAY_SECONDS: float = 1.0
-    SCRAPER_REQUEST_TIMEOUT_SECONDS: float = 20.0
-    # Real domain of the jinaq source site — imageUrl in universities.json is
-    # a relative path (e.g. "/cdn/jinaq-media/institutions/3109/image.webp");
-    # this is prepended to build the absolute download URL. Fill in before
-    # running a jinaq photo import for real.
-    JINAQ_MEDIA_BASE_URL: str = "https://TODO-set-real-jinaq-domain"
+    @field_validator("CORS_ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def split_cors_origins(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [item.strip().rstrip("/") for item in value.split(",") if item.strip()]
+        return value
+
+    @field_validator("CORS_ALLOWED_ORIGINS")
+    @classmethod
+    def require_exact_cors_origins(cls, origins: list[str]) -> list[str]:
+        for origin in origins:
+            parts = urlsplit(origin)
+            if (
+                "*" in origin
+                or parts.scheme not in ("http", "https")
+                or not parts.hostname
+                or origin != f"{parts.scheme}://{parts.netloc}"
+            ):
+                raise ValueError(
+                    f"CORS_ALLOWED_ORIGINS: {origin!r} is not an exact origin "
+                    "(expected scheme://host[:port], no wildcard, no path)"
+                )
+        return origins
 
     @model_validator(mode="after")
     def build_database_url(self) -> Self:

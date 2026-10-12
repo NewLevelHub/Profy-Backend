@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
+from app.config import settings
 from app.database import engine
 from app.errors import AppError
 from app.i18n import _current_locale, normalize_locale
@@ -39,12 +40,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Only the configured origins may read responses cross-origin. Credentials
+# mode stays off: the session is a Bearer token in the Authorization header,
+# never a cookie, so no browser-attached credential has to cross origins.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.CORS_ALLOWED_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["Authorization", "Content-Type", "Accept-Language"],
 )
 
 

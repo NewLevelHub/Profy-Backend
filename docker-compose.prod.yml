@@ -75,6 +75,10 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       REDIS_URL: redis://profi_redis_prod:6379/0
+      # Sites whose pages may read API responses from a browser. Only this
+      # stack's own domain by default; to allow another one, set the full
+      # comma-separated list in .env.production (README, «CORS»).
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://profile.newlevelhub.kz}
     volumes:
       # University photos live on the host, served by nginx (STORAGE_BACKEND=fs
       # in .env.production, STORAGE_FS_ROOT=/srv/media). Read-write so the
