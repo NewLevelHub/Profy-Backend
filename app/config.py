@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
     RESEND_API_KEY: str = ""
     EMAIL_FROM: str = ""
+    # Dev/test stand only: every email verification and password reset code
+    # is this value instead of a random one, so testers don't need the API
+    # logs. Anyone knowing it can verify any email or reset any password, so
+    # it is refused at startup together with RESEND_API_KEY (= real users).
+    DEV_FIXED_OTP_CODE: str = ""
     # Public SPA origin for deep links in transactional emails (no trailing slash).
     FRONTEND_URL: str = "http://localhost:5173"
     # Lifetime of a staff invitation link (PRO-457); also printed in the email.
@@ -77,6 +82,16 @@ class Settings(BaseSettings):
     # this is prepended to build the absolute download URL. Fill in before
     # running a jinaq photo import for real.
     JINAQ_MEDIA_BASE_URL: str = "https://TODO-set-real-jinaq-domain"
+
+    @model_validator(mode="after")
+    def check_dev_fixed_otp_code(self) -> Self:
+        if not self.DEV_FIXED_OTP_CODE:
+            return self
+        if not (len(self.DEV_FIXED_OTP_CODE) == 6 and self.DEV_FIXED_OTP_CODE.isdigit()):
+            raise ValueError("DEV_FIXED_OTP_CODE must be 6 digits")
+        if self.RESEND_API_KEY:
+            raise ValueError("DEV_FIXED_OTP_CODE must not be set together with RESEND_API_KEY")
+        return self
 
     @model_validator(mode="after")
     def build_database_url(self) -> Self:
