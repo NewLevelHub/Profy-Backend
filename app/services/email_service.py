@@ -126,6 +126,33 @@ def _send_resend(to: str, subject: str, plain: str, html: str) -> str:
     return sent.get("id") or ""
 
 
+def _missing_provider_settings() -> str:
+    """What the selected `EMAIL_PROVIDER` lacks, for the operator's log."""
+    if settings.EMAIL_PROVIDER == "ses":
+        return "SES_REGION / SES_ACCESS_KEY_ID / SES_SECRET_ACCESS_KEY"
+    return "RESEND_API_KEY"
+
+
+def _code_delivered_without_email(what: str, to: str, code: str) -> bool:
+    """True when there is nothing to send because the selected provider is
+    not configured, and the stack has another way to hand the code over:
+
+    - `DEV_FIXED_OTP_CODE` (dev stand): the code is the known fixed value —
+      nothing is sent and nothing is logged;
+    - `LOG_EMAIL_CODES` (local development): the code goes to the log.
+
+    Without either, an unconfigured provider is an error, never a reason to
+    log: the callers report the failed send, without the code."""
+    if settings.email_delivery_configured:
+        return False
+    if settings.DEV_FIXED_OTP_CODE:
+        return True
+    if not settings.LOG_EMAIL_CODES:
+        raise RuntimeError(f"{_missing_provider_settings()} is not configured — the email was not sent")
+    logger.warning("Email not configured — %s for %s: %s", what, to, code)
+    return True
+
+
 async def send_verification_email(
     to: str, code: str, *, locale: str = DEFAULT_LOCALE
 ) -> None:
@@ -135,8 +162,7 @@ async def send_verification_email(
     plain = strings["verification_plain"].format(code=code)
     html = _load_template("verification.html", loc, code=code)
 
-    if not settings.email_delivery_configured:
-        logger.warning("Email not configured — verification code for %s: %s", to, code)
+    if _code_delivered_without_email("verification code", to, code):
         return
 
     try:
@@ -234,8 +260,7 @@ async def send_password_reset_email(
     plain = strings["password_reset_plain"].format(code=code)
     html = _load_template("password_reset.html", loc, code=code)
 
-    if not settings.email_delivery_configured:
-        logger.warning("Email not configured — password reset code for %s: %s", to, code)
+    if _code_delivered_without_email("password reset code", to, code):
         return
 
     try:

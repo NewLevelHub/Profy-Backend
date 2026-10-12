@@ -9,7 +9,7 @@ from app.models.password_reset import PasswordResetToken
 from app.models.user import User
 from app.services import email_service
 from app.services.auth_service import hash_password
-from app.services.token_utils import generate_code, hash_code
+from app.services.token_utils import code_matches, generate_code, hash_code, record_failed_attempt
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +26,8 @@ async def _invalidate_reset_tokens(user_id: uuid.UUID, db: AsyncSession) -> None
 
 
 async def _get_active_token(user_id: uuid.UUID, db: AsyncSession) -> PasswordResetToken | None:
+    # Locked: guesses at one code are checked and counted one at a time, so a
+    # parallel burst cannot try more values than the code has attempts.
     result = await db.execute(
         select(PasswordResetToken)
         .where(
@@ -34,8 +36,28 @@ async def _get_active_token(user_id: uuid.UUID, db: AsyncSession) -> PasswordRes
         )
         .order_by(PasswordResetToken.created_at.desc())
         .limit(1)
+        .with_for_update()
     )
     return result.scalar_one_or_none()
+
+
+async def _require_valid_code(user_id: uuid.UUID, code: str, db: AsyncSession) -> None:
+    """Raise unless `code` is the account's live reset code. A wrong guess is
+    committed against the code before raising — both endpoints that accept
+    the code go through here, so they share its attempts."""
+    token = await _get_active_token(user_id, db)
+    if not token:
+        raise ValueError("Invalid code")
+
+    now = datetime.now(timezone.utc)
+    expires = token.expires_at if token.expires_at.tzinfo else token.expires_at.replace(tzinfo=timezone.utc)
+    if now > expires:
+        raise ValueError("Code expired")
+
+    if not code_matches(token.code_hash, code):
+        record_failed_attempt(token)
+        await db.commit()
+        raise ValueError("Invalid code")
 
 
 async def initiate_reset(email: str, db: AsyncSession) -> None:
@@ -67,17 +89,7 @@ async def verify_code(email: str, code: str, db: AsyncSession) -> None:
     if not user:
         raise ValueError("Invalid code")
 
-    token = await _get_active_token(user.id, db)
-    if not token:
-        raise ValueError("Invalid code")
-
-    now = datetime.now(timezone.utc)
-    expires = token.expires_at if token.expires_at.tzinfo else token.expires_at.replace(tzinfo=timezone.utc)
-    if now > expires:
-        raise ValueError("Code expired")
-
-    if token.code_hash != hash_code(code):
-        raise ValueError("Invalid code")
+    await _require_valid_code(user.id, code, db)
 
 
 async def reset_password(email: str, code: str, new_password: str, db: AsyncSession) -> None:
@@ -91,17 +103,7 @@ async def reset_password(email: str, code: str, new_password: str, db: AsyncSess
     if not user:
         raise ValueError("Invalid code")
 
-    token = await _get_active_token(user.id, db)
-    if not token:
-        raise ValueError("Invalid code")
-
-    now = datetime.now(timezone.utc)
-    expires = token.expires_at if token.expires_at.tzinfo else token.expires_at.replace(tzinfo=timezone.utc)
-    if now > expires:
-        raise ValueError("Code expired")
-
-    if token.code_hash != hash_code(code):
-        raise ValueError("Invalid code")
+    await _require_valid_code(user.id, code, db)
 
     user.hashed_password = hash_password(new_password)
     user.token_version += 1

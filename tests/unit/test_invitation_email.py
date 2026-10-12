@@ -1,5 +1,5 @@
-"""PRO-461 — staff invitation email: ru/kk rendering and the dev-only
-"no RESEND_API_KEY → link goes to the log" path."""
+"""PRO-461 — staff invitation email: ru/kk rendering and the
+"no RESEND_API_KEY → nothing sent, link never logged" path."""
 
 import logging
 

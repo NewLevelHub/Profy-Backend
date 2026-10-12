@@ -14,7 +14,7 @@ from app.models.email_verification import EmailVerificationToken
 from app.models.user import User
 from app.schemas.auth import RegisterResponse
 from app.services import email_service, invitation_service
-from app.services.token_utils import generate_code, hash_code
+from app.services.token_utils import code_matches, generate_code, hash_code, record_failed_attempt
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +37,17 @@ def create_jwt_token(user: User) -> str:
         "exp": expire,
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+async def revoke_sessions(user: User, db: AsyncSession) -> None:
+    """Sign the account out everywhere. Every access token carries the
+    `ver` it was issued under (`create_jwt_token`) and stops validating the
+    moment the stored version moves on — the same switch a password reset
+    uses. Incremented in SQL, so a logout racing a reset loses neither."""
+    await db.execute(
+        update(User).where(User.id == user.id).values(token_version=User.token_version + 1)
+    )
+    await db.commit()
 
 
 async def _invalidate_tokens(user_id: uuid.UUID, db: AsyncSession) -> None:
@@ -116,12 +127,21 @@ async def login(email: str, password: str, db: AsyncSession) -> tuple[User, str]
     return user, create_jwt_token(user)
 
 
+def _code_rejected() -> ValueError:
+    # One answer for every way a code fails — unknown address, no live code,
+    # expired, wrong digits: telling them apart would let anyone check
+    # whether an email is registered and waiting for verification.
+    return ValueError(i18n_key("api_errors", "invalid_or_expired_code", locale="ru"))
+
+
 async def verify_email(email: str, code: str, db: AsyncSession) -> tuple[User, str]:
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
     if not user:
-        raise ValueError(i18n_key("api_errors", "user_not_found", locale="ru"))
+        raise _code_rejected()
 
+    # Locked: guesses at one code are checked and counted one at a time, so a
+    # parallel burst cannot try more values than the code has attempts.
     token_result = await db.execute(
         select(EmailVerificationToken)
         .where(
@@ -130,11 +150,12 @@ async def verify_email(email: str, code: str, db: AsyncSession) -> tuple[User, s
         )
         .order_by(EmailVerificationToken.created_at.desc())
         .limit(1)
+        .with_for_update()
     )
     token = token_result.scalar_one_or_none()
 
     if not token:
-        raise ValueError(i18n_key("api_errors", "no_active_verification_code", locale="ru"))
+        raise _code_rejected()
 
     now = datetime.now(timezone.utc)
     expires = token.expires_at
@@ -142,21 +163,25 @@ async def verify_email(email: str, code: str, db: AsyncSession) -> tuple[User, s
         expires = expires.replace(tzinfo=timezone.utc)
 
     if now > expires:
-        raise ValueError(i18n_key("api_errors", "verification_code_expired", locale="ru"))
+        raise _code_rejected()
 
-    if token.code_hash != hash_code(code):
-        raise ValueError(i18n_key("api_errors", "invalid_verification_code", locale="ru"))
+    if not code_matches(token.code_hash, code):
+        record_failed_attempt(token)
+        await db.commit()
+        raise _code_rejected()
 
-    token.used_at = now
     if not user.is_verified:
-        # The code proves the mailbox, as Google does in `oauth_service`:
-        # an open invitation on this email is accepted with it. The lock
+        # An invited address is never confirmed with this code. The account
+        # was registered by whoever typed the address — not necessarily its
+        # owner — and keeps the password they chose; six digits must not be
+        # what turns it into staff. It stays unverified, and the invitation
+        # link (or a Google login on the address) takes it over. The lock
         # orders this against a concurrent create — either the invitation
         # is seen here, or create sees the verified account.
         await invitation_service.lock_email(db, user.email)
-        invitation = await invitation_service.pending_for_email(db, user.email)
-        if invitation is not None:
-            invitation_service.apply_to_user(user, invitation)
+        if await invitation_service.has_pending(db, user.email):
+            raise invitation_service.invitation_error(status.HTTP_409_CONFLICT, "invited_email_register")
+    token.used_at = now
     user.is_verified = True
     await db.commit()
     await db.refresh(user)

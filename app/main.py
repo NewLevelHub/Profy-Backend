@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
+from app.config import settings
 from app.database import engine
 from app.errors import AppError
 from app.i18n import _current_locale, normalize_locale
@@ -21,6 +22,10 @@ logger = logging.getLogger(__name__)
 _VALIDATION_MESSAGE_KEYS = {
     "missing": "field_required",
     "string_type": "string_required",
+    # Size ceilings (app/schemas/validation.py); `{max_length}` comes from the
+    # error's own `ctx`. "too_long" is pydantic's type for a list or a map.
+    "string_too_long": "value_too_long",
+    "too_long": "list_too_long",
 }
 
 
@@ -33,18 +38,34 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
+def docs_routes() -> dict[str, str | None]:
+    """Swagger UI and the OpenAPI schema are the full map of the API, admin
+    routes included — served only where the stack allows it (not production,
+    see `API_DOCS_ENABLED`). ReDoc is never served: nothing links to it."""
+    enabled = settings.API_DOCS_ENABLED
+    return {
+        "docs_url": "/docs" if enabled else None,
+        "redoc_url": None,
+        "openapi_url": "/openapi.json" if enabled else None,
+    }
+
+
 app = FastAPI(
     title="Profi API",
     version="0.1.0",
     lifespan=lifespan,
+    **docs_routes(),
 )
 
+# Only the configured origins may read responses cross-origin. Credentials
+# mode stays off: the session is a Bearer token in the Authorization header,
+# never a cookie, so no browser-attached credential has to cross origins.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.CORS_ALLOWED_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["Authorization", "Content-Type", "Accept-Language"],
 )
 
 
@@ -81,16 +102,21 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
 async def _validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     """Localize the built-in validation errors used by request schemas.
 
-    Only ``msg`` changes: ``type``, ``loc`` and the response shape remain
-    stable. Domain rules use ``PydanticCustomError`` with catalog text at the
-    validation site and therefore are intentionally left untouched here.
+    Only ``msg`` changes: ``type`` and ``loc`` remain stable. Domain rules use
+    ``PydanticCustomError`` with catalog text at the validation site and
+    therefore are intentionally left untouched here.
+
+    ``input`` — the rejected value itself — is dropped from every error: for
+    a too-short password, a wrong code or an invitation token it is the
+    secret, and a 422 body ends up in browser consoles and error trackers.
+    ``loc`` already says which field was wrong.
     """
-    errors = [
-        {**error, "msg": i18n_key("api_errors", message_key)}
-        if (message_key := _VALIDATION_MESSAGE_KEYS.get(error.get("type")))
-        else error
-        for error in exc.errors()
-    ]
+    errors = []
+    for error in exc.errors():
+        error = {name: value for name, value in error.items() if name != "input"}
+        if message_key := _VALIDATION_MESSAGE_KEYS.get(error.get("type")):
+            error["msg"] = i18n_key("api_errors", message_key).format(**error.get("ctx", {}))
+        errors.append(error)
     return await request_validation_exception_handler(
         request, RequestValidationError(errors, body=exc.body)
     )

@@ -19,7 +19,7 @@ from app.services.psychoemotional import run_service
 _PAYLOAD = StartPsychoEmotionalRequest(
     list1=[4, 3, 2, 1, 5, 6, 0, 7],
     list1_dt_ms=[0, 2100, 1800, 2400, 3000, 1500, 1200, 900],
-    checkin={"q1": "calm", "q2": "skipped", "q3": "good"},
+    checkin={"q1": "спокойно", "q2": "не указано", "q3": "хорошо"},
 )
 
 

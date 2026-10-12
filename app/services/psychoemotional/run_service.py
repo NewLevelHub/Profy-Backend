@@ -109,7 +109,7 @@ async def start_run(
         user_id=user_id,
         list1=data.list1,
         list1_dt_ms=data.list1_dt_ms,
-        checkin=data.checkin,
+        checkin=data.checkin.model_dump(),
         tech_invalid=not _is_valid_choice_list(data.list1),
     )
     db.add(run)

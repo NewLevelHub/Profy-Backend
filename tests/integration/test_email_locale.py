@@ -1,6 +1,6 @@
 """KZ-308 — verification / password-reset emails follow the recipient's locale.
 
-`email_service` only logs the code when `RESEND_API_KEY` is unset (see the Resend
+`email_service` sends nothing when `RESEND_API_KEY` is unset (see the Resend
 migration note), so these tests set a dummy key and stub `_send_resend` to
 capture the rendered subject / plain / html, then assert on their content and on
 which template file was picked.

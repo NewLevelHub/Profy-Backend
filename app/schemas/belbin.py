@@ -5,15 +5,22 @@ another client. Scoring remains a separate one-shot submission of all seven
 blocks, so partial progress can never be mistaken for a completed run.
 """
 import uuid
+from typing import Annotated
 
 from pydantic import BaseModel, Field
+
+from app.schemas.validation import ANSWER_MAP_MAX_ITEMS, AnswerMapKey
+
+# One block's `{item_id: points}`. Which items and how many points is checked
+# against the bank afterwards; this only stops a map of any size getting there.
+BlockAllocation = Annotated[dict[AnswerMapKey, int], Field(max_length=ANSWER_MAP_MAX_ITEMS)]
 
 
 class SubmitBelbinRequest(BaseModel):
     # Exactly 7 blocks, in section order (I..VII) — each block a raw
     # `{item_id: points}` map, re-validated server-side by
     # ipsative_battery.validate_allocation (Ф0.6), never trusted as-is.
-    allocations: list[dict[str, int]] = Field(min_length=7, max_length=7)
+    allocations: list[BlockAllocation] = Field(min_length=7, max_length=7)
 
     model_config = {"extra": "forbid"}
 
@@ -24,7 +31,7 @@ class SubmitBelbinResponse(BaseModel):
 
 
 class SaveBelbinProgressRequest(BaseModel):
-    allocation: dict[str, int]
+    allocation: BlockAllocation
 
     model_config = {"extra": "forbid"}
 
