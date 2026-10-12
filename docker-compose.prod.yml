@@ -75,6 +75,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       REDIS_URL: redis://profi_redis_prod:6379/0
+      # Dev-stand fixed verification code: forced off in production whatever
+      # .env.production says (environment: wins over env_file).
+      DEV_FIXED_OTP_CODE: ""
     volumes:
       # University photos live on the host, served by nginx (STORAGE_BACKEND=fs
       # in .env.production, STORAGE_FS_ROOT=/srv/media). Read-write so the
