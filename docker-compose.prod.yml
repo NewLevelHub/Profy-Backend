@@ -75,6 +75,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       REDIS_URL: redis://profi_redis_prod:6379/0
+      # Pinned off: .env.production must not be able to send login codes to the log.
+      LOG_EMAIL_CODES: "false"
       # Sites whose pages may read API responses from a browser. Only this
       # stack's own domain by default; to allow another one, set the full
       # comma-separated list in .env.production (README, «CORS»).

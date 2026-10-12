@@ -73,7 +73,9 @@ def hash_token(token: str) -> str:
 
 
 def build_invite_url(token: str) -> str:
-    return email_service.frontend_url(f"/invite?token={token}")
+    # In the fragment, not the query: a browser never sends the fragment, so
+    # opening the link leaves the token out of every server's access log.
+    return email_service.frontend_url(f"/invite#token={token}")
 
 
 def _now() -> datetime:

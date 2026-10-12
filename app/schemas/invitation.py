@@ -9,10 +9,10 @@ of pydantic's built-in English.
 import re
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from email_validator import EmailNotValidError, validate_email
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from pydantic_core import PydanticCustomError
 
 from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
@@ -22,6 +22,11 @@ from app.models.user import UserRole
 
 _STAFF_ROLES = (UserRole.psychologist.value, UserRole.admin.value)
 _PASSWORD_MIN_LENGTH = 8
+
+# The link token, always in a request body: a URL (path or query) ends up in
+# the access logs of uvicorn and nginx, and the token is a bearer credential
+# for a staff account. Real tokens are 43 characters; the cap only bounds input.
+InvitationToken = Annotated[str, Field(max_length=128)]
 
 
 def _invalid(error_code: str, **params: Any) -> PydanticCustomError:
@@ -105,8 +110,12 @@ class AdminInvitationListResponse(BaseModel):
     limit: int
 
 
+class InvitationPreviewRequest(BaseModel):
+    token: InvitationToken
+
+
 class InvitationPreview(BaseModel):
-    """GET /auth/invitations/{token} — what the /invite page shows."""
+    """POST /auth/invitations/preview — what the /invite page shows."""
 
     email: str
     role: UserRole
@@ -115,7 +124,7 @@ class InvitationPreview(BaseModel):
 
 
 class AcceptInvitationRequest(BaseModel):
-    token: str
+    token: InvitationToken
     password: str
 
     @field_validator("password")

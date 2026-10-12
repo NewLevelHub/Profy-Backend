@@ -20,7 +20,7 @@ from app.services import auth_service, email_service, invitation_service, oauth_
 from app.services.invitation_service import hash_token
 from app.services.oauth_service import google_id_token
 
-PREVIEW_URL = "/api/v1/auth/invitations/{token}"
+PREVIEW_URL = "/api/v1/auth/invitations/preview"
 ACCEPT_URL = "/api/v1/auth/invitations/accept"
 PASSWORD = "Invited123"
 
@@ -91,9 +91,9 @@ async def test_invite_preview_accept_and_use_the_account(
         headers=admin_headers,
     )
     assert created.status_code == 201
-    token = parse_qs(urlparse(links[0]).query)["token"][0]
+    token = parse_qs(urlparse(links[0]).fragment)["token"][0]
 
-    preview = await client.get(PREVIEW_URL.format(token=token))
+    preview = await client.post(PREVIEW_URL, json={"token": token})
     assert preview.status_code == 200
     assert preview.json()["email"] == email
     assert preview.json()["role"] == "psychologist"
@@ -215,7 +215,7 @@ async def test_closed_or_unknown_token_is_400_with_code(
         if with_account:
             await _add_user(db_session, email, is_verified=True)
 
-    preview = await client.get(PREVIEW_URL.format(token=token))
+    preview = await client.post(PREVIEW_URL, json={"token": token})
     accept = await client.post(ACCEPT_URL, json={"token": token, "password": PASSWORD})
 
     for response in (preview, accept):
@@ -233,10 +233,10 @@ async def test_resend_invalidates_the_old_link(
     invitation, old_token = await _add_invitation(db_session, _email())
 
     resent = await client.post(f"/api/v1/admin/invitations/{invitation.id}/resend", headers=admin_headers)
-    new_token = parse_qs(urlparse(resent.json()["invite_url"]).query)["token"][0]
+    new_token = parse_qs(urlparse(resent.json()["invite_url"]).fragment)["token"][0]
 
-    old = await client.get(PREVIEW_URL.format(token=old_token))
-    new = await client.get(PREVIEW_URL.format(token=new_token))
+    old = await client.post(PREVIEW_URL, json={"token": old_token})
+    new = await client.post(PREVIEW_URL, json={"token": new_token})
     assert old.status_code == 400
     assert old.json()["error_code"] == "invitation_invalid"
     assert new.status_code == 200
@@ -331,7 +331,7 @@ async def test_verified_account_is_409(client: httpx.AsyncClient, db_session: As
     _, token = await _add_invitation(db_session, email)
     await _add_user(db_session, email, is_verified=True)
 
-    preview = await client.get(PREVIEW_URL.format(token=token))
+    preview = await client.post(PREVIEW_URL, json={"token": token})
     accept = await client.post(ACCEPT_URL, json={"token": token, "password": PASSWORD})
 
     for response in (preview, accept):

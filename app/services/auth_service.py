@@ -116,11 +116,18 @@ async def login(email: str, password: str, db: AsyncSession) -> tuple[User, str]
     return user, create_jwt_token(user)
 
 
+def _code_rejected() -> ValueError:
+    # One answer for every way a code fails — unknown address, no live code,
+    # expired, wrong digits: telling them apart would let anyone check
+    # whether an email is registered and waiting for verification.
+    return ValueError(i18n_key("api_errors", "invalid_or_expired_code", locale="ru"))
+
+
 async def verify_email(email: str, code: str, db: AsyncSession) -> tuple[User, str]:
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
     if not user:
-        raise ValueError(i18n_key("api_errors", "user_not_found", locale="ru"))
+        raise _code_rejected()
 
     # Locked: guesses at one code are checked and counted one at a time, so a
     # parallel burst cannot try more values than the code has attempts.
@@ -137,7 +144,7 @@ async def verify_email(email: str, code: str, db: AsyncSession) -> tuple[User, s
     token = token_result.scalar_one_or_none()
 
     if not token:
-        raise ValueError(i18n_key("api_errors", "no_active_verification_code", locale="ru"))
+        raise _code_rejected()
 
     now = datetime.now(timezone.utc)
     expires = token.expires_at
@@ -145,12 +152,12 @@ async def verify_email(email: str, code: str, db: AsyncSession) -> tuple[User, s
         expires = expires.replace(tzinfo=timezone.utc)
 
     if now > expires:
-        raise ValueError(i18n_key("api_errors", "verification_code_expired", locale="ru"))
+        raise _code_rejected()
 
     if not code_matches(token.code_hash, code):
         record_failed_attempt(token)
         await db.commit()
-        raise ValueError(i18n_key("api_errors", "invalid_verification_code", locale="ru"))
+        raise _code_rejected()
 
     token.used_at = now
     if not user.is_verified:

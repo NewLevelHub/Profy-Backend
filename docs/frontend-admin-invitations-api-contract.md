@@ -13,7 +13,7 @@ PRO-462 (`app/routers/auth.py`, `app/services/oauth_service.py`); логика �
 ## 0. Как это устроено
 
 Админ вводит почту, роль и язык письма → бэкенд создаёт запись приглашения и
-отправляет письмо со ссылкой `FRONTEND_URL/invite?token=<token>`.
+отправляет письмо со ссылкой `FRONTEND_URL/invite#token=<token>`.
 **Пользователь в `users` при этом не создаётся** — только при принятии:
 
 - по ссылке: страница `/invite` → пароль → `POST /auth/invitations/accept`;
@@ -51,7 +51,7 @@ PRO-462 (`app/routers/auth.py`, `app/services/oauth_service.py`); логика �
 | GET | `/api/v1/admin/invitations/{id}/link` | admin | текущая ссылка `pending`-приглашения |
 | POST | `/api/v1/admin/invitations/{id}/resend` | admin | новая ссылка + новое письмо |
 | DELETE | `/api/v1/admin/invitations/{id}` | admin | отозвать приглашение |
-| GET | `/api/v1/auth/invitations/{token}` | публичный | проверить ссылку, узнать почту и роль |
+| POST | `/api/v1/auth/invitations/preview` | публичный | проверить ссылку, узнать почту и роль |
 | POST | `/api/v1/auth/invitations/accept` | публичный | принять: задать пароль, получить JWT |
 | POST | `/api/v1/auth/google` | публичный | **без изменений в схеме**, новое поведение — §5 |
 
@@ -158,7 +158,7 @@ i18n-каталога фронта по коду.
 ```jsonc
 {
   // ...все поля AdminInvitationItem...
-  "invite_url": "https://profile.newlevelhub.kz/invite?token=Zx3...",
+  "invite_url": "https://profile.newlevelhub.kz/invite#token=Zx3...",
   "email_sent": true
 }
 ```
@@ -267,7 +267,7 @@ resend — новую).
 
 ```jsonc
 // 200
-{"invite_url": "https://profile.newlevelhub.kz/invite?token=Zx3...", "expires_at": "2026-10-10T09:20:13Z"}
+{"invite_url": "https://profile.newlevelhub.kz/invite#token=Zx3...", "expires_at": "2026-10-10T09:20:13Z"}
 ```
 
 | Ответ | Когда |
@@ -286,10 +286,16 @@ resend — новую).
 
 ## 4. Публичные эндпоинты (страница `/invite`)
 
-Токен берётся из query-параметра ссылки: `/invite?token=<token>`. Оба
+Токен берётся из фрагмента ссылки: `/invite#token=<token>`. Оба
 эндпоинта без авторизации, с rate limit по IP (429, §2.2): §4.1 — 30
 запросов, §4.2 — 10 запросов за 15 минут. Считаются все запросы, включая
 успешные.
+
+Токен — ключ к аккаунту сотрудника, поэтому он нигде не попадает в адрес
+запроса: адреса пишутся в access-логи (uvicorn, nginx), а фрагмент браузер
+на сервер не отправляет. В API токен передаётся только в теле запроса;
+длиннее 128 символов — 422. Не переносить его в query-параметры, в том
+числе в `?next=` при редиректе на логин.
 
 Проверки токена в обоих эндпоинтах идут в одном порядке:
 `invitation_invalid` → `invitation_used` → `invitation_revoked` →
@@ -298,7 +304,9 @@ resend — новую).
 ### 4.1 Проверить ссылку
 
 ```text
-GET /api/v1/auth/invitations/{token}
+POST /api/v1/auth/invitations/preview
+
+{"token": "Zx3..."}
 ```
 
 ```jsonc
@@ -407,7 +415,7 @@ Google-аккаунта есть `pending`-приглашение, вход ег
 5. Сообщения для 409 `user_exists` и `invitation_pending` (для последнего —
    подсказать «Отправить повторно»).
 
-**PRO-465 — страница `/invite?token=...`:**
+**PRO-465 — страница `/invite#token=...`:**
 
 1. На загрузке — §4.1; почта показывается и не редактируется.
 2. Пароль + повтор пароля с подсказками по сложности → §4.2 → сохранить JWT →

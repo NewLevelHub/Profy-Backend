@@ -12,7 +12,7 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.i18n import KNOWN_LOCALES, normalize_locale
 from app.models.user import User
-from app.schemas.invitation import AcceptInvitationRequest, InvitationPreview
+from app.schemas.invitation import AcceptInvitationRequest, InvitationPreview, InvitationPreviewRequest
 from app.schemas.auth import (
     ForgotPasswordRequest,
     GoogleAuthRequest,
@@ -223,9 +223,12 @@ async def login(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc))
     except LookupError as exc:
         kind, email = str(exc).split(":", 1)
-        if kind == "invitation_pending":
-            # Still a failed login: probing emails for invitations spends
-            # the same budget as guessing passwords.
+        if kind != "email_not_verified":
+            # Still a failed login: these answers come without a password
+            # check and say the address is known (an open invitation, a
+            # Google account), so probing emails for them spends the same
+            # budget as guessing passwords. `email_not_verified` is the one
+            # raised after the password matched — nothing is learnt from it.
             await _record_login_failure(ip_rate_key, email_rate_key)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -250,16 +253,16 @@ async def google_login(body: GoogleAuthRequest, db: AsyncSession = Depends(get_d
     return TokenResponse(access_token=token, user=user)
 
 
-@router.get("/invitations/{token}", response_model=InvitationPreview)
+@router.post("/invitations/preview", response_model=InvitationPreview)
 async def preview_invitation(
-    token: str, request: Request, db: AsyncSession = Depends(get_db)
+    body: InvitationPreviewRequest, request: Request, db: AsyncSession = Depends(get_db)
 ) -> InvitationPreview:
     await _check_rate_limit(
         f"invitation_preview_ip:{_client_ip(request)}",
         _INVITATION_PREVIEW_IP_LIMIT,
         _INVITATION_IP_WINDOW,
     )
-    return await invitation_service.preview_invitation(db, token)
+    return await invitation_service.preview_invitation(db, body.token)
 
 
 @router.post("/invitations/accept", response_model=TokenResponse)

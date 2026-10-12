@@ -37,7 +37,7 @@ def _email() -> str:
 
 
 def _token(invite_url: str) -> str:
-    return parse_qs(urlparse(invite_url).query)["token"][0]
+    return parse_qs(urlparse(invite_url).fragment)["token"][0]
 
 
 async def _add_invitation(
@@ -112,7 +112,10 @@ async def test_create_stores_invitation_without_user_and_sends_email(
     assert sent_emails == [
         {"to": email, "invite_url": body["invite_url"], "role": UserRole.psychologist, "locale": "kk"}
     ]
-    assert body["invite_url"].startswith(email_service.frontend_url("/invite?token="))
+    # The token rides in the fragment — the one part of a URL a browser
+    # never sends, so opening the link logs it nowhere (SEC-08).
+    assert body["invite_url"].startswith(email_service.frontend_url("/invite#token="))
+    assert urlparse(body["invite_url"]).query == ""
 
 
 async def test_create_defaults_locale_to_ru(

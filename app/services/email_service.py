@@ -79,6 +79,19 @@ def _send_resend(to: str, subject: str, plain: str, html: str) -> str:
     return sent.get("id") or ""
 
 
+def _code_logged_instead(what: str, to: str, code: str) -> bool:
+    """True when the code went to the log and there is nothing to send: no
+    `RESEND_API_KEY` on a stack that set `LOG_EMAIL_CODES` (local
+    development). Without that flag a missing key is an error, never a
+    reason to log: the callers report the failed send, without the code."""
+    if settings.RESEND_API_KEY:
+        return False
+    if not settings.LOG_EMAIL_CODES:
+        raise RuntimeError("RESEND_API_KEY is not configured — the email was not sent")
+    logger.warning("Resend not configured — %s for %s: %s", what, to, code)
+    return True
+
+
 async def send_verification_email(
     to: str, code: str, *, locale: str = DEFAULT_LOCALE
 ) -> None:
@@ -88,8 +101,7 @@ async def send_verification_email(
     plain = strings["verification_plain"].format(code=code)
     html = _load_template("verification.html", loc, code=code)
 
-    if not settings.RESEND_API_KEY:
-        logger.warning("Resend not configured — verification code for %s: %s", to, code)
+    if _code_logged_instead("verification code", to, code):
         return
 
     try:
@@ -187,8 +199,7 @@ async def send_password_reset_email(
     plain = strings["password_reset_plain"].format(code=code)
     html = _load_template("password_reset.html", loc, code=code)
 
-    if not settings.RESEND_API_KEY:
-        logger.warning("Resend not configured — password reset code for %s: %s", to, code)
+    if _code_logged_instead("password reset code", to, code):
         return
 
     try:

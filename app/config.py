@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
     RESEND_API_KEY: str = ""
     EMAIL_FROM: str = ""
+    # Local development only: without RESEND_API_KEY, write verification and
+    # password-reset codes to the log instead of failing the send. Off by
+    # default — on a server a code in the log is a way into the account.
+    LOG_EMAIL_CODES: bool = False
     # Public SPA origin for deep links in transactional emails (no trailing slash).
     FRONTEND_URL: str = "http://localhost:5173"
     # Browser origins allowed to call the API cross-origin, comma-separated

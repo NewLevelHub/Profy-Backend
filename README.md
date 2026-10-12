@@ -86,7 +86,8 @@ Backend API платформы профориентации Profi.
 | `LLM_API_KEY` | Ключ LLM-провайдера (опционально) |
 | `LLM_ENABLED` | Включает LLM-нарратив отчёта и AI-анализ для психолога; `false` по умолчанию — тогда нарратив собирается из шаблонов |
 | `LLM_MODEL`, `LLM_BASE_URL`, `LLM_TIMEOUT`, `LLM_MAX_TOKENS`, `LLM_TEMPERATURE` | Настройки обычных (лёгких) LLM-вызовов |
-| `RESEND_API_KEY` | Ключ [Resend](https://resend.com) для отправки email (коды подтверждения, сброс пароля). Пусто — коды просто логируются в консоль, письма не отправляются |
+| `RESEND_API_KEY` | Ключ [Resend](https://resend.com) для отправки email (коды подтверждения, сброс пароля). Пусто — письма не отправляются |
+| `LOG_EMAIL_CODES` | Только локально: при пустом `RESEND_API_KEY` писать коды в лог `api` (`true` в `.env.example`). По умолчанию `false`, на сервере не включать |
 | `EMAIL_FROM` | Адрес отправителя писем |
 | `GOOGLE_CLIENT_ID` | Client ID из Google Cloud Console для входа через Google (веб) |
 | `CORS_ALLOWED_ORIGINS` | Сайты, страницам которых браузер разрешит читать ответы API, через запятую. Локально `http://localhost:5173`; на серверах задаётся в compose-файлах — см. [CORS](#cors-какие-сайты-могут-обращаться-к-api) |
