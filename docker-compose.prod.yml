@@ -1,3 +1,13 @@
+# Docker keeps each container's stdout/stderr in a json-file log that grows
+# without limit by default; on this 20 GB VPS, steady traffic would fill the
+# disk and take Postgres down with it. Every service caps its log at 3 x 10 MB.
+# Takes effect when a container is (re)created.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   db:
     image: postgres:16-alpine
@@ -20,6 +30,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     restart: always
+    logging: *default-logging
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 30s
@@ -31,7 +42,15 @@ services:
   redis:
     image: redis:7-alpine
     container_name: profi_redis_prod
+    # Redis holds only short-lived keys (auth rate limits, report cache, all with
+    # a TTL) and has no volume. So: cap its memory on this 1 GB host, evict the
+    # least recently used key instead of refusing writes (the default
+    # noeviction would make rate-limited auth endpoints fail), and skip RDB
+    # snapshots: they fork the process, briefly doubling its memory, to save
+    # data a container recreate discards anyway.
+    command: ["redis-server", "--maxmemory", "64mb", "--maxmemory-policy", "allkeys-lru", "--save", ""]
     restart: always
+    logging: *default-logging
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -71,6 +90,7 @@ services:
     expose:
       - "8000"
     restart: always
+    logging: *default-logging
     networks:
       - profi_network
       # Shared with nginx and the frontends only — see `profi_edge` below.
@@ -91,6 +111,7 @@ services:
       - "80:80"
       - "443:443"
     restart: always
+    logging: *default-logging
     networks:
       - profi_network
       - profi_edge

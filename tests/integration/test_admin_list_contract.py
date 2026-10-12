@@ -234,9 +234,8 @@ async def _user_with_profile(
 async def test_users_sort_together_with_an_assessment_filter(
     db_session: AsyncSession,
 ) -> None:
-    """Filtering by assessment status forces SELECT DISTINCT, and DISTINCT
-    requires every ORDER BY expression to be in the select list — sorting
-    must still work, and a user with two matching assessments is one row."""
+    """Sorting and latest-assessment filtering compose without duplicating a
+    user who has several matching attempts in their history."""
     marker = _marker()
     senior = await _user_with_profile(
         db_session, marker, AgeGroup.senior, [AssessmentStatus.completed]

@@ -75,7 +75,7 @@ Every user-facing API detail, validation error, notification, and response text 
 
 ### Admin endpoints
 
-`app/routers/admin.py` exposes read + PATCH editing for `University`/`Program` (no create/delete) via `admin_university_service`, with `admin_locked_fields` so CD reseeds don't overwrite admin edits. Question-bank content (questions / pairs / motivation / directions) is editable too: admin edits live in an `overrides` JSONB layer composed on top of the seed banks at sync time (`admin_content_service` + `admin_lock`). Frontend contracts: `docs/frontend-admin-university-api-contract.md`, `docs/frontend-admin-questions-api-contract.md`, `docs/frontend-admin-users-api-contract.md`.
+`app/routers/admin.py` exposes read + PATCH editing for `University`/`Program` (no create/delete) via `admin_university_service`, with `admin_locked_fields` so CD reseeds don't overwrite admin edits. Question-bank content (questions / pairs / motivation / directions) is editable too: admin edits live in an `overrides` JSONB layer composed on top of the seed banks at sync time (`admin_content_service` + `admin_lock`). Frontend contracts: `docs/frontend-admin-university-api-contract.md`, `docs/frontend-admin-questions-api-contract.md`, `docs/frontend-admin-users-api-contract.md`, `docs/frontend-admin-invitations-api-contract.md` (staff email invitations, PRO-457).
 
 ### Deploy topology (relevant when touching docker-compose/nginx)
 

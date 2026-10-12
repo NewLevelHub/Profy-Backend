@@ -30,7 +30,7 @@ async def test_verification_email_kk_body_and_subject(sent) -> None:
     await email_service.send_verification_email("u@example.com", "123456", locale="kk")
 
     msg = sent[0]
-    assert msg["subject"] == "Растау кодың — Profy"
+    assert msg["subject"] == "Растау кодың — Profile"
     assert msg["plain"] == "Растау кодың: 123456\n\nКод 15 минут жарамды."
     assert 'lang="kk"' in msg["html"]
     assert "Поштаңды раста" in msg["html"]
@@ -41,7 +41,7 @@ async def test_verification_email_ru_is_byte_for_byte_unchanged(sent) -> None:
     await email_service.send_verification_email("u@example.com", "123456", locale="ru")
 
     msg = sent[0]
-    assert msg["subject"] == "Твой код подтверждения — Profy"
+    assert msg["subject"] == "Твой код подтверждения — Profile"
     assert msg["plain"] == "Твой код подтверждения: 123456\n\nКод действителен 15 минут."
     assert 'lang="ru"' in msg["html"]
     assert "Подтверди почту" in msg["html"]
@@ -51,7 +51,7 @@ async def test_password_reset_email_kk_body_and_subject(sent) -> None:
     await email_service.send_password_reset_email("u@example.com", "654321", locale="kk")
 
     msg = sent[0]
-    assert msg["subject"] == "Құпиясөзді қалпына келтіру — Profy"
+    assert msg["subject"] == "Құпиясөзді қалпына келтіру — Profile"
     assert "Құпиясөзді қалпына келтіру кодың: 654321" in msg["plain"]
     assert "бұл хатты елемей қой" in msg["plain"]
     assert 'lang="kk"' in msg["html"]
@@ -62,7 +62,7 @@ async def test_password_reset_email_ru_unchanged(sent) -> None:
     await email_service.send_password_reset_email("u@example.com", "654321", locale="ru")
 
     msg = sent[0]
-    assert msg["subject"] == "Сброс пароля — Profy"
+    assert msg["subject"] == "Сброс пароля — Profile"
     assert msg["plain"] == (
         "Твой код для сброса пароля: 654321\n\n"
         "Код действителен 15 минут.\n\n"
@@ -75,8 +75,8 @@ async def test_unknown_or_missing_locale_falls_back_to_ru(sent) -> None:
     await email_service.send_verification_email("u@example.com", "111111", locale="de")
     await email_service.send_verification_email("u@example.com", "222222", locale=None)
 
-    assert sent[0]["subject"] == "Твой код подтверждения — Profy"
-    assert sent[1]["subject"] == "Твой код подтверждения — Profy"
+    assert sent[0]["subject"] == "Твой код подтверждения — Profile"
+    assert sent[1]["subject"] == "Твой код подтверждения — Profile"
 
 
 async def test_registration_with_accept_language_kk_sends_kk_verification(
@@ -86,7 +86,7 @@ async def test_registration_with_accept_language_kk_sends_kk_verification(
     await auth_service.register(email, "Testpass123!", db_session, locale="kk")
 
     assert sent, "no verification email was captured"
-    assert sent[0]["subject"] == "Растау кодың — Profy"
+    assert sent[0]["subject"] == "Растау кодың — Profile"
     assert 'lang="kk"' in sent[0]["html"]
 
 
@@ -106,4 +106,4 @@ async def test_password_reset_uses_the_stored_account_locale(sent, db_session) -
     await password_reset_service.initiate_reset(email, db_session)
 
     assert sent, "no password-reset email was captured"
-    assert sent[0]["subject"] == "Құпиясөзді қалпына келтіру — Profy"
+    assert sent[0]["subject"] == "Құпиясөзді қалпына келтіру — Profile"

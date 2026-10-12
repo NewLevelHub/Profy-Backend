@@ -9,6 +9,7 @@ import resend
 from app.config import settings
 from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
 from app.i18n.catalog import tr
+from app.models.user import UserRole
 
 logger = logging.getLogger(__name__)
 
@@ -62,9 +63,11 @@ def _load_template(name: str, locale: str, **kwargs: str) -> str:
     return path.read_text(encoding="utf-8").format(**kwargs)
 
 
-def _send_resend(to: str, subject: str, plain: str, html: str) -> None:
+def _send_resend(to: str, subject: str, plain: str, html: str) -> str:
+    """Hand the email to Resend; returns its id (the key of webhook events).
+    Success means "queued", not "delivered"."""
     resend.api_key = settings.RESEND_API_KEY
-    resend.Emails.send(
+    sent = resend.Emails.send(
         {
             "from": settings.EMAIL_FROM,
             "to": [to],
@@ -73,6 +76,7 @@ def _send_resend(to: str, subject: str, plain: str, html: str) -> None:
             "text": plain,
         }
     )
+    return sent.get("id") or ""
 
 
 async def send_verification_email(
@@ -191,4 +195,36 @@ async def send_password_reset_email(
         await asyncio.to_thread(_send_resend, to, subject, plain, html)
     except Exception:
         logger.exception("Failed to send password reset email to %s", to)
+        raise
+
+
+async def send_invitation_email(
+    to: str, invite_url: str, *, role: UserRole, locale: str = DEFAULT_LOCALE
+) -> str | None:
+    """Staff invitation (PRO-461). `locale` is `invitations.locale` — the
+    invitee has no `users` row yet. Returns the Resend id of the queued email,
+    None without `RESEND_API_KEY`. Raises on a provider failure. The link is
+    never logged — it is a bearer credential for a staff account, and the
+    admin can copy it from the admin panel."""
+    loc = _email_locale(locale)
+    strings = tr("email", locale=loc)
+    params = {
+        "role": strings[f"invitation_role_{role.value}"],
+        "hours": str(settings.INVITATION_TTL_HOURS),
+        "invite_url": invite_url,
+    }
+    subject = strings["invitation_subject"]
+    plain = strings["invitation_plain"].format(**params)
+    html = _load_template(
+        "invitation.html", loc, **{k: escape(v) for k, v in params.items()}
+    )
+
+    if not settings.RESEND_API_KEY:
+        logger.warning("Resend not configured — invitation email to %s not sent", to)
+        return None
+
+    try:
+        return await asyncio.to_thread(_send_resend, to, subject, plain, html)
+    except Exception:
+        logger.exception("Failed to send invitation email to %s", to)
         raise

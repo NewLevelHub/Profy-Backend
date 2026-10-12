@@ -2,6 +2,8 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
@@ -9,11 +11,17 @@ from sqlalchemy import text
 from app.database import engine
 from app.errors import AppError
 from app.i18n import _current_locale, normalize_locale
+from app.i18n.catalog import key as i18n_key
 from app.routers import api_router
 from app.services.admin_listing import AdminSortFieldError
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+_VALIDATION_MESSAGE_KEYS = {
+    "missing": "field_required",
+    "string_type": "string_required",
+}
 
 
 @asynccontextmanager
@@ -66,6 +74,25 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
         status_code=exc.status_code,
         content={"detail": exc.detail, "error_code": exc.error_code},
         headers=exc.headers,
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def _validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    """Localize the built-in validation errors used by request schemas.
+
+    Only ``msg`` changes: ``type``, ``loc`` and the response shape remain
+    stable. Domain rules use ``PydanticCustomError`` with catalog text at the
+    validation site and therefore are intentionally left untouched here.
+    """
+    errors = [
+        {**error, "msg": i18n_key("api_errors", message_key)}
+        if (message_key := _VALIDATION_MESSAGE_KEYS.get(error.get("type")))
+        else error
+        for error in exc.errors()
+    ]
+    return await request_validation_exception_handler(
+        request, RequestValidationError(errors, body=exc.body)
     )
 
 

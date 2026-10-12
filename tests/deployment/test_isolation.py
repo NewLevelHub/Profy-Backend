@@ -168,6 +168,20 @@ class DeploymentIsolationTests(unittest.TestCase):
         self.assertIn("docker network inspect profi_edge", workflow)
         self.assertNotIn("network create", workflow)
 
+    def test_every_container_caps_logs_and_redis_caps_memory(self):
+        # One small shared host: unbounded json-file logs fill the disk, and an
+        # unbounded Redis competes with Postgres and the APIs for 1 GB of RAM.
+        for file in ("prod", "dev"):
+            services = read_yaml(f"docker-compose.{file}.yml")["services"]
+            for name, service in services.items():
+                with self.subTest(file=file, service=name):
+                    self.assertEqual(service["logging"]["driver"], "json-file")
+                    self.assertEqual(service["logging"]["options"], {"max-size": "10m", "max-file": "3"})
+            command = services["redis"]["command"]
+            self.assertEqual(command[command.index("--maxmemory") + 1], "64mb")
+            # Never noeviction: a full Redis must drop old keys, not fail auth rate limiting.
+            self.assertEqual(command[command.index("--maxmemory-policy") + 1], "allkeys-lru")
+
     def test_prod_routing_uses_explicit_production_container(self):
         nginx = (ROOT / "nginx.prod.conf").read_text()
         prod = nginx.split("# -- Dev:")[0]
@@ -203,6 +217,9 @@ class DeploymentIsolationTests(unittest.TestCase):
                 self.assertEqual(api["environment"]["POSTGRES_HOST"], f"profi_db_{stage}")
                 if stage == "dev":
                     self.assertTrue(api["volumes"][0]["read_only"])
+                # The x-logging anchor must resolve for every service, not just parse.
+                for name, svc in json.loads(result.stdout)["services"].items():
+                    self.assertEqual(svc["logging"]["options"]["max-size"], "10m", name)
 
     def test_shell_syntax(self):
         for file in ("cd.yml", "cd-dev.yml"):

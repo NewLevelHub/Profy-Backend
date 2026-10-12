@@ -18,7 +18,6 @@ from app.schemas.admin import (
     AdminAssessmentDetailResponse,
     AdminFeedbackListResponse,
     AdminFeedbackStatsResponse,
-    AdminUserCreate,
     AdminUserDetailResponse,
     AdminUserListResponse,
     AdminUserStatsResponse,
@@ -97,20 +96,6 @@ async def list_users(
         sort=sort,
         order=order,
     )
-
-
-@router.post("/users", response_model=AdminUserDetailResponse, status_code=status.HTTP_201_CREATED)
-async def create_user(
-    body: AdminUserCreate,
-    _: User = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
-):
-    try:
-        user = await admin_service.create_user(db, body)
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    detail = await admin_service.get_user_detail(db, user.id)
-    return detail
 
 
 @router.get("/users/stats", response_model=AdminUserStatsResponse)

@@ -29,7 +29,6 @@ from app.schemas.admin import (
     AdminFeedbackStatsResponse,
     AdminMotivationResponseItem,
     AdminResponseItem,
-    AdminUserCreate,
     AdminUserDetailResponse,
     AdminUserListItem,
     AdminUserListResponse,
@@ -39,7 +38,7 @@ from app.schemas.admin import (
 from app.schemas.artifact import ArtifactItem
 from app.schemas.profile import ProfileResponse
 from app.schemas.admin_result import AdminAnalysisResultResponse
-from app.services import assessment_shared, auth_service, bigfive_content, motivation_service
+from app.services import assessment_shared, bigfive_content, motivation_service
 from app.services.admin_listing import SortOrder, order_by_clause
 from app.services.goal_overlay_service import _get_effective_goal_and_scenario
 from app.services.riasec_content import likert_labels as riasec_likert_labels
@@ -87,14 +86,10 @@ def _build_user_filters(
     goal: AssessmentGoal | None,
     role: UserRole | None,
     inactive_days: int | None = None,
-) -> tuple[list, bool]:
-    """Filter clauses for the admin users list/export query, plus whether an
-    Assessment join is needed. `status`/`goal` match "this user has AT LEAST
-    ONE assessment matching", not necessarily their latest one — the already-
-    exposed `latest_assessment_status`/`latest_assessment_goal` columns keep
-    reflecting the true latest, independent of this filter. A user can have
-    multiple assessments matching, so joining Assessment needs `.distinct()`
-    on the caller's side.
+) -> list:
+    """List and export filter the same latest assessment displayed in the row.
+    Both predicates use identical ordering, so status and goal cannot match
+    two different historical attempts. No assessment join can duplicate users.
 
     `role` defaults to `student` at the call sites below (not here) — this
     endpoint predates the role system and every row used to be a student by
@@ -110,19 +105,15 @@ def _build_user_filters(
     if inactive_days is not None:
         cutoff = datetime.now(timezone.utc) - timedelta(days=inactive_days)
         filters.append(_last_known_activity() < cutoff)
-    needs_distinct = status is not None or goal is not None
     if status is not None:
-        filters.append(Assessment.status == status)
+        filters.append(_LATEST_ASSESSMENT_STATUS == status)
     if goal is not None:
-        filters.append(Assessment.goal == goal)
-    return filters, needs_distinct
+        filters.append(_LATEST_ASSESSMENT_GOAL == goal)
+    return filters
 
 
-def _user_base_query(*, needs_distinct: bool):
-    query = select(User).outerjoin(Profile, Profile.user_id == User.id)
-    if needs_distinct:
-        query = query.outerjoin(Assessment, Assessment.profile_id == Profile.id)
-    return query
+def _user_base_query():
+    return select(User).outerjoin(Profile, Profile.user_id == User.id)
 
 
 # The status of the user's most recent assessment, as a correlated subquery,
@@ -132,7 +123,16 @@ def _user_base_query(*, needs_distinct: bool):
 _LATEST_ASSESSMENT_STATUS = (
     select(Assessment.status)
     .where(Assessment.profile_id == Profile.id)
-    .order_by(Assessment.created_at.desc())
+    .order_by(Assessment.created_at.desc(), Assessment.id.desc())
+    .limit(1)
+    .correlate(Profile)
+    .scalar_subquery()
+)
+
+_LATEST_ASSESSMENT_GOAL = (
+    select(Assessment.goal)
+    .where(Assessment.profile_id == Profile.id)
+    .order_by(Assessment.created_at.desc(), Assessment.id.desc())
     .limit(1)
     .correlate(Profile)
     .scalar_subquery()
@@ -159,14 +159,12 @@ async def list_users(
     sort: str | None = None,
     order: SortOrder | None = None,
 ) -> AdminUserListResponse:
-    filters, needs_distinct = _build_user_filters(
+    filters = _build_user_filters(
         search=search, status=status, goal=goal,
         role=role, inactive_days=inactive_days,
     )
 
-    count_query = _user_base_query(needs_distinct=needs_distinct).with_only_columns(User.id).where(*filters)
-    if needs_distinct:
-        count_query = count_query.distinct()
+    count_query = _user_base_query().with_only_columns(User.id).where(*filters)
     total_result = await db.execute(select(func.count()).select_from(count_query.subquery()))
     total = total_result.scalar_one()
 
@@ -178,16 +176,7 @@ async def list_users(
         tiebreaker=User.id.asc(),
     )
 
-    query = _user_base_query(needs_distinct=needs_distinct).where(*filters)
-    if needs_distinct:
-        # SELECT DISTINCT requires every ORDER BY expression to be in the
-        # select list. User's own columns are there via the entity, but a sort
-        # on the profile's age group or on the latest-assessment subquery is
-        # not — Postgres rejects the query outright unless it is added.
-        sort_column = USER_SORT_FIELDS.get(sort) if sort else None
-        if sort_column is not None:
-            query = query.add_columns(sort_column)
-        query = query.distinct()
+    query = _user_base_query().where(*filters)
     query = query.order_by(*order_by).offset((page - 1) * limit).limit(limit)
     users_result = await db.execute(query)
     users = users_result.scalars().all()
@@ -208,14 +197,12 @@ async def export_users(
     """Same filters as `list_users`, no pagination — for CSV export. Raises
     ExportTooLargeError instead of running an unbounded query if the
     filtered result set is bigger than EXPORT_MAX_ROWS."""
-    filters, needs_distinct = _build_user_filters(
+    filters = _build_user_filters(
         search=search, status=status, goal=goal,
         role=role, inactive_days=inactive_days,
     )
 
-    count_query = _user_base_query(needs_distinct=needs_distinct).with_only_columns(User.id).where(*filters)
-    if needs_distinct:
-        count_query = count_query.distinct()
+    count_query = _user_base_query().with_only_columns(User.id).where(*filters)
     total_result = await db.execute(select(func.count()).select_from(count_query.subquery()))
     total = total_result.scalar_one()
     if total > EXPORT_MAX_ROWS:
@@ -223,9 +210,7 @@ async def export_users(
             i18n_key("api_errors", "export_too_large", locale="ru").format(total=total, export_max_rows=EXPORT_MAX_ROWS)
         )
 
-    query = _user_base_query(needs_distinct=needs_distinct).where(*filters).order_by(User.created_at.desc())
-    if needs_distinct:
-        query = query.distinct()
+    query = _user_base_query().where(*filters).order_by(User.created_at.desc())
     users_result = await db.execute(query)
     users = users_result.scalars().all()
     return await _build_user_list_items(db, list(users))
@@ -245,7 +230,7 @@ async def _build_user_list_items(db: AsyncSession, users: list[User]) -> list[Ad
         assessments_result = await db.execute(
             select(Assessment)
             .where(Assessment.profile_id.in_(profile_ids))
-            .order_by(Assessment.created_at.desc())
+            .order_by(Assessment.created_at.desc(), Assessment.id.desc())
         )
         for assessment in assessments_result.scalars().all():
             assessments_by_profile[assessment.profile_id].append(assessment)
@@ -335,7 +320,7 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
         assessments_result = await db.execute(
             select(Assessment)
             .where(Assessment.profile_id == profile.id)
-            .order_by(Assessment.created_at.desc())
+            .order_by(Assessment.created_at.desc(), Assessment.id.desc())
         )
         assessment_rows = assessments_result.scalars().all()
         assessment_ids = [row.id for row in assessment_rows]
@@ -391,26 +376,6 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> AdminUserDeta
         artifacts=artifacts,
         assessments=assessments,
     )
-
-
-async def create_user(db: AsyncSession, body: AdminUserCreate) -> User:
-    """Admin-only provisioning of `admin`/`psychologist` accounts. Unlike
-    `auth_service.register`, this skips the email-verification-code flow
-    entirely — `is_verified` is set directly from the request body."""
-    result = await db.execute(select(User).where(User.email == body.email))
-    if result.scalar_one_or_none():
-        raise ValueError(i18n_key("api_errors", "email_already_exists", locale="ru"))
-
-    user = User(
-        email=body.email,
-        hashed_password=auth_service.hash_password(body.password),
-        role=body.role,
-        is_verified=body.is_verified,
-    )
-    db.add(user)
-    await db.commit()
-    await db.refresh(user)
-    return user
 
 
 async def get_assessment_detail(

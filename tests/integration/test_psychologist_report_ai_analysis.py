@@ -175,10 +175,20 @@ async def test_ai_analysis_is_generated_with_a_psychoemotional_block_and_history
 
     # PRO-448: the specialist gets the text interpretation of the latest run
     # (green first, black last → root conflict "27"); the AI prompt does not.
-    interpretation = response.json()["report"]["psychoemotional"]["interpretation"]
-    assert [p["sign"] for p in interpretation["positions"]] == ["plus", "cross", "equal", "minus", "plus_minus"]
-    assert interpretation["positions"][-1]["colors"] == [2, 7]
+    psychoemotional = response.json()["report"]["psychoemotional"]
+    interpretation = psychoemotional["interpretation"]
+    assert [p["sign"] for p in interpretation["positions"]] == [
+        "plus", "cross", "equal", "minus", "plus_minus", "plus_minus"
+    ]
+    # Every leading colour is contrasted with the final colour, matching the
+    # variable-length +− section used by the full report.
+    assert [p["colors"] for p in interpretation["positions"][-2:]] == [
+        [2, 7], [1, 7]
+    ]
     assert len(interpretation["indices"]) == 3
+    assert psychoemotional["thresholds_version"] == psychoemotional_engine.compute(
+        [1, 2, 3, 4, 5, 6, 7, 0], [2, 1, 3, 4, 5, 6, 0, 7]
+    ).thresholds_version
     assert '"interpretation"' not in system_prompt
 
 

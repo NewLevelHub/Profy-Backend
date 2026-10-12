@@ -20,12 +20,15 @@ from app.schemas.result_v2 import (
     PsychoEmotionalHighlight,
     PsychoEmotionalIndexNote,
     PsychoEmotionalInterpretation,
+    PsychoEmotionalMcvGroup,
     PsychoEmotionalPositionNote,
 )
 from app.services.psychoemotional.constants import BASIC_COLOR_IDS, BORDER_COLOR_ID, EXTRA_COLOR_IDS
-from app.services.psychoemotional.engine import SIGN_CROSS, SIGN_EQUAL, SIGN_MINUS, SIGN_PLUS
-
-_SIGNS = (SIGN_PLUS, SIGN_CROSS, SIGN_EQUAL, SIGN_MINUS)
+from app.services.psychoemotional.engine import (
+    SIGN_MINUS,
+    SIGN_PLUS,
+    functional_combinations,
+)
 
 
 def _first_at(color_ids: tuple[int, ...], pos: dict[int, int], positions: tuple[int, ...]) -> int | None:
@@ -80,21 +83,66 @@ def _highlights(pos: dict[int, int], texts: dict) -> list[PsychoEmotionalHighlig
     return sorted(notes, key=lambda note: -note.position_depth)  # stable: равные — в порядке блоков
 
 
-def _positions(pairs: dict, texts: dict) -> list[PsychoEmotionalPositionNote]:
-    """Пары ключуются отсортированными ID (группа симметрична), главное
-    противоречие — в порядке «первый, последний» (оно направленное)."""
-    notes = [
+def _note_text(sign: str, colors: list[int], texts: dict) -> str:
+    if sign == "plus_minus":
+        return texts["pm"]["".join(map(str, colors))]
+    if len(colors) == 1:
+        return texts["single"][sign][str(colors[0])]
+    return texts["pair"][sign]["".join(map(str, sorted(colors)))]
+
+
+def _positions(
+    list1: list[int], list2: list[int], texts: dict
+) -> list[PsychoEmotionalPositionNote]:
+    """Все соседние сочетания функциональных зон и связи ``+−``.
+
+    Количество абзацев зависит от реального рисунка выбора, а не всегда равно
+    четырём парам: длинная зона читается последовательностью соседних пар,
+    одиночная — отдельным цветом.
+    """
+    return [
         PsychoEmotionalPositionNote(
-            sign=sign, colors=list(pairs[sign]), text=texts["pair"][sign]["".join(map(str, sorted(pairs[sign])))]
+            sign=group["sign"],
+            colors=group["colors"],
+            text=_note_text(group["sign"], group["colors"], texts),
         )
-        for sign in _SIGNS
+        for group in functional_combinations(list1, list2)
     ]
-    first, last = pairs["root_conflict"]
-    notes.append(PsychoEmotionalPositionNote(sign="plus_minus", colors=[first, last], text=texts["pm"][f"{first}{last}"]))
+
+
+def _mcv_groups(list1: list[int], list2: list[int], texts: dict) -> list[PsychoEmotionalMcvGroup]:
+    """Отдельный слой МЦВ — типологический смысл тех же сочетаний.
+
+    Чтобы не дублировать дословно ситуационную трактовку, пара раскрывается
+    через вклад каждой ведущей тенденции в её функциональной зоне.
+    """
+    notes: list[PsychoEmotionalMcvGroup] = []
+    for group in functional_combinations(
+        list1, list2, all_rejection_pairs=True
+    ):
+        sign = group["sign"]
+        colors = group["colors"]
+        if sign == "plus_minus":
+            text = " ".join(
+                (
+                    texts["single"][SIGN_PLUS][str(colors[0])],
+                    texts["single"][SIGN_MINUS][str(colors[1])],
+                )
+            )
+        else:
+            text = " ".join(texts["single"][sign][str(color)] for color in colors)
+        notes.append(
+            PsychoEmotionalMcvGroup(
+                sign=sign,
+                colors=colors,
+                stable=group["stable"],
+                text=text,
+            )
+        )
     return notes
 
 
-def interpret(metrics: dict, list2: list[int]) -> PsychoEmotionalInterpretation:
+def interpret(metrics: dict, list1: list[int], list2: list[int]) -> PsychoEmotionalInterpretation:
     """Метрики прохождения → гипотезы на языке запроса.
 
     Качество прохождения (флаг достоверности и причины) здесь не озвучивается:
@@ -123,5 +171,6 @@ def interpret(metrics: dict, list2: list[int]) -> PsychoEmotionalInterpretation:
         reading=reading,
         highlights=_highlights(pos, texts),
         indices=indices,
-        positions=_positions(metrics["pairs"], texts),
+        positions=_positions(list1, list2, texts),
+        mcv_groups=_mcv_groups(list1, list2, texts),
     )

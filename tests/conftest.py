@@ -7,6 +7,7 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import i18n
+from app.config import settings
 from app.database import engine, get_db
 from app.main import app as fastapi_app
 from app.models.user import User, UserRole
@@ -32,6 +33,14 @@ def _reset_request_locale() -> AsyncGenerator[None, None]:
         yield
     finally:
         i18n._current_locale.reset(token)
+
+
+@pytest.fixture(autouse=True)
+def _no_mail_domain_lookup(monkeypatch) -> None:
+    """Invitations check the email domain over DNS; tests invite
+    `@example.com` (a null-MX domain) and may run offline. Tests of the
+    check itself turn it back on and stub the lookup."""
+    monkeypatch.setattr(settings, "INVITATION_CHECK_DELIVERABILITY", False)
 
 
 @pytest_asyncio.fixture
