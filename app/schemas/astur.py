@@ -6,6 +6,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
+from app.schemas.validation import ANSWER_MAP_MAX_ITEMS, AnswerMapKey
+
 RunStatus = Literal["in_progress", "completed", "invalidated"]
 # Per-item outcome kept in the snapshot: `unanswered` = no explicit answer
 # or skip was recorded (legacy protocols, blank values), `skipped` = the
@@ -236,9 +238,11 @@ class SubmitAsturSubtestRequest(BaseModel):
     # compatibility with clients that predate subtest reset.
     started_at: str | None = Field(default=None, max_length=64)
     # 1-based item position (as string) -> answer or skip.
-    answers: dict[str, AsturItemAnswer]
+    # Which positions exist and what a valid value is comes from the bank
+    # (astur/runs.py); the cap only bounds what gets that far.
+    answers: dict[AnswerMapKey, AsturItemAnswer] = Field(max_length=ANSWER_MAP_MAX_ITEMS)
     # Quick instructions only: client-measured time per command (ms).
-    elapsed_ms: dict[str, int] | None = None
+    elapsed_ms: dict[AnswerMapKey, int] | None = Field(default=None, max_length=ANSWER_MAP_MAX_ITEMS)
     # Quick instructions only: the respondent's IANA timezone, so a
     # day-of-week command is checked against their local calendar day.
     client_timezone: str | None = Field(default=None, max_length=64)

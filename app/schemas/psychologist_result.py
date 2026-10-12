@@ -9,7 +9,7 @@ with scores) — the psychologist needs them to judge the report.
 
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -17,9 +17,18 @@ from app.i18n.catalog import key as i18n_key
 from app.models.analysis_result import ReviewStatus
 from app.models.analysis_result_review_edit import ReviewEditSource
 from app.schemas.student_strengths import StrengthBasis
+from app.schemas.validation import (
+    LIST_ITEM_MAX_LENGTH,
+    LIST_MAX_ITEMS,
+    LONG_TEXT_MAX_LENGTH,
+    ListItemText,
+    LongText,
+)
 
 # Mirrors `result_v2._MAX_CAREERS` — the student schema rejects more.
 _MAX_CAREERS = 10
+# A category code («R», «A», …) or a trait key — an identifier, not prose.
+_Code = Annotated[str, Field(max_length=64)]
 
 
 class PsychologistReviewQueueItem(BaseModel):
@@ -98,8 +107,8 @@ class PsychologistResultDetailResponse(BaseModel):
 
 
 class ReviewTextCardPatch(BaseModel):
-    title: str = Field(min_length=1)
-    description: str = Field(min_length=1)
+    title: str = Field(min_length=1, max_length=LIST_ITEM_MAX_LENGTH)
+    description: str = Field(min_length=1, max_length=LONG_TEXT_MAX_LENGTH)
     model_config = {"extra": "forbid"}
 
 
@@ -116,15 +125,15 @@ class ReviewCareerPatch(BaseModel):
     careers PATCH once the scorer started writing fractional scores
     (PRO-415 — reorder → save → publish)."""
 
-    slug: str = Field(min_length=1)
-    name: str = Field(min_length=1)
-    holland_code: str
+    slug: str = Field(min_length=1, max_length=100)  # `directions.slug` is varchar(100)
+    name: str = Field(min_length=1, max_length=255)
+    holland_code: _Code
     match_score: float
-    description: str
-    professions: list[str]
-    skills_needed: list[str]
-    subjects_to_develop: list[str]
-    first_steps: list[str]
+    description: LongText
+    professions: list[ListItemText] = Field(max_length=LIST_MAX_ITEMS)
+    skills_needed: list[ListItemText] = Field(max_length=LIST_MAX_ITEMS)
+    subjects_to_develop: list[ListItemText] = Field(max_length=LIST_MAX_ITEMS)
+    first_steps: list[ListItemText] = Field(max_length=LIST_MAX_ITEMS)
     model_config = {"extra": "forbid"}
 
 
@@ -133,17 +142,17 @@ class PsychologistResultPatch(BaseModel):
     pipelines depend on (`profile`, `code`, `meta`, `report_version`) are
     deliberately not editable."""
 
-    summary: str | None = Field(default=None, min_length=1)
+    summary: str | None = Field(default=None, min_length=1, max_length=LONG_TEXT_MAX_LENGTH)
     careers: list[ReviewCareerPatch] | None = Field(default=None, max_length=_MAX_CAREERS)
-    strengths: list[str] | None = None
-    weaknesses: list[str] | None = None
-    strength_cards: list[ReviewStrengthCardPatch] | None = None
-    thinking_style_notes: list[ReviewTextCardPatch] | None = None
-    final_analysis: str | None = Field(default=None, min_length=1)
-    personality_notes: dict[str, str] | None = None
-    motivation_highlights: list[str] | None = None
+    strengths: list[_Code] | None = Field(default=None, max_length=LIST_MAX_ITEMS)
+    weaknesses: list[_Code] | None = Field(default=None, max_length=LIST_MAX_ITEMS)
+    strength_cards: list[ReviewStrengthCardPatch] | None = Field(default=None, max_length=LIST_MAX_ITEMS)
+    thinking_style_notes: list[ReviewTextCardPatch] | None = Field(default=None, max_length=LIST_MAX_ITEMS)
+    final_analysis: str | None = Field(default=None, min_length=1, max_length=LONG_TEXT_MAX_LENGTH)
+    personality_notes: dict[_Code, LongText] | None = Field(default=None, max_length=LIST_MAX_ITEMS)
+    motivation_highlights: list[LongText] | None = Field(default=None, max_length=LIST_MAX_ITEMS)
     # Text only — which career it belongs to is the AI analysis's pick.
-    top_career_why: str | None = Field(default=None, min_length=1)
+    top_career_why: str | None = Field(default=None, min_length=1, max_length=LONG_TEXT_MAX_LENGTH)
 
     model_config = {"extra": "forbid"}
 

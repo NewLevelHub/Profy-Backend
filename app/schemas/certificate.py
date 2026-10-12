@@ -1,4 +1,4 @@
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from app.i18n.catalog import key as i18n_key
 from app.models.certificate import CertificateType
@@ -27,7 +27,8 @@ class CertificateItem(BaseModel):
 
 
 class CertificatesBulkRequest(BaseModel):
-    items: list[CertificateItem]
+    # Same cap as `ProfileCreateRequest.certificates` (schemas/profile.py).
+    items: list[CertificateItem] = Field(max_length=20)
 
 
 class CertificatesResponse(BaseModel):

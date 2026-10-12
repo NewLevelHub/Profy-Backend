@@ -7,11 +7,20 @@ from pydantic import AfterValidator, BaseModel, EmailStr, Field, field_validator
 from app.i18n.catalog import key as i18n_key
 from app.i18n import KNOWN_LOCALES
 from app.models.user import UserRole
+from app.schemas.validation import LOCALE_MAX_LENGTH
 
 # Emails are matched case-insensitively everywhere (DB lookups, Google
 # account linking) — normalizing once at the request boundary keeps every
 # call site consistent instead of relying on each service function to do it.
 NormalizedEmail = Annotated[EmailStr, AfterValidator(lambda v: v.strip().lower())]
+
+# Long enough for any passphrase; the cap keeps a megabyte "password" from
+# being fed to the password hash, which is slow on purpose.
+PASSWORD_MAX_LENGTH = 128
+# The emailed code is six digits; anything much longer is not a guess at it.
+CODE_MAX_LENGTH = 16
+# A Google ID token is a JWT of about 1–2 KB.
+GOOGLE_ID_TOKEN_MAX_LENGTH = 8192
 
 
 def _validate_password_complexity(v: str) -> str:
@@ -24,7 +33,7 @@ def _validate_password_complexity(v: str) -> str:
 
 class RegisterRequest(BaseModel):
     email: NormalizedEmail
-    password: str = Field(min_length=8)
+    password: str = Field(min_length=8, max_length=PASSWORD_MAX_LENGTH)
 
     @field_validator("password")
     @classmethod
@@ -34,11 +43,11 @@ class RegisterRequest(BaseModel):
 
 class LoginRequest(BaseModel):
     email: NormalizedEmail
-    password: str
+    password: str = Field(max_length=PASSWORD_MAX_LENGTH)
 
 
 class GoogleAuthRequest(BaseModel):
-    id_token: str
+    id_token: str = Field(max_length=GOOGLE_ID_TOKEN_MAX_LENGTH)
 
 
 class UserInfo(BaseModel):
@@ -65,7 +74,7 @@ class RegisterResponse(BaseModel):
 
 class VerifyEmailRequest(BaseModel):
     email: NormalizedEmail
-    code: str
+    code: str = Field(max_length=CODE_MAX_LENGTH)
 
 
 class ResendVerificationRequest(BaseModel):
@@ -89,7 +98,7 @@ class UpdateMeRequest(BaseModel):
     `KNOWN_LOCALES` is accepted and stored (a `kk` choice is honored only from
     KZ-603 on); anything else is a 422."""
 
-    locale: str
+    locale: str = Field(max_length=LOCALE_MAX_LENGTH)
 
     @field_validator("locale")
     @classmethod
@@ -105,13 +114,13 @@ class ForgotPasswordRequest(BaseModel):
 
 class VerifyResetCodeRequest(BaseModel):
     email: NormalizedEmail
-    code: str
+    code: str = Field(max_length=CODE_MAX_LENGTH)
 
 
 class ResetPasswordRequest(BaseModel):
     email: NormalizedEmail
-    code: str
-    new_password: str = Field(min_length=8)
+    code: str = Field(max_length=CODE_MAX_LENGTH)
+    new_password: str = Field(min_length=8, max_length=PASSWORD_MAX_LENGTH)
 
     @field_validator("new_password")
     @classmethod

@@ -9,19 +9,26 @@ of pydantic's built-in English.
 import re
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from email_validator import EmailNotValidError, validate_email
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from pydantic_core import PydanticCustomError
 
 from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
 from app.i18n.catalog import key as i18n_key
 from app.models.invitation import InvitationEmailStatus, InvitationStatus
 from app.models.user import UserRole
+from app.schemas.auth import PASSWORD_MAX_LENGTH
+from app.schemas.validation import LOCALE_MAX_LENGTH
 
 _STAFF_ROLES = (UserRole.psychologist.value, UserRole.admin.value)
 _PASSWORD_MIN_LENGTH = 8
+
+# The link token, always in a request body: a URL (path or query) ends up in
+# the access logs of uvicorn and nginx, and the token is a bearer credential
+# for a staff account. Real tokens are 43 characters; the cap only bounds input.
+InvitationToken = Annotated[str, Field(max_length=128)]
 
 
 def _invalid(error_code: str, **params: Any) -> PydanticCustomError:
@@ -29,10 +36,11 @@ def _invalid(error_code: str, **params: Any) -> PydanticCustomError:
 
 
 class AdminInvitationCreate(BaseModel):
-    email: str
+    # 320 is the longest address the email standard allows.
+    email: str = Field(max_length=320)
     role: UserRole
     # Language of the email; becomes `users.locale` on accept.
-    locale: str = DEFAULT_LOCALE
+    locale: str = Field(default=DEFAULT_LOCALE, max_length=LOCALE_MAX_LENGTH)
 
     @field_validator("email", mode="before")
     @classmethod
@@ -105,8 +113,12 @@ class AdminInvitationListResponse(BaseModel):
     limit: int
 
 
+class InvitationPreviewRequest(BaseModel):
+    token: InvitationToken
+
+
 class InvitationPreview(BaseModel):
-    """GET /auth/invitations/{token} — what the /invite page shows."""
+    """POST /auth/invitations/preview — what the /invite page shows."""
 
     email: str
     role: UserRole
@@ -115,8 +127,8 @@ class InvitationPreview(BaseModel):
 
 
 class AcceptInvitationRequest(BaseModel):
-    token: str
-    password: str
+    token: InvitationToken
+    password: str = Field(max_length=PASSWORD_MAX_LENGTH)
 
     @field_validator("password")
     @classmethod

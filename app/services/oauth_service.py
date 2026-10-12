@@ -1,5 +1,7 @@
 import asyncio
 import threading
+import time
+from http import HTTPStatus
 
 from google.auth import exceptions as google_auth_exceptions
 from google.auth.transport import requests as google_requests
@@ -23,23 +25,61 @@ from app.services.auth_service import create_jwt_token
 # on that same thread.
 _thread_local = threading.local()
 
+# How long Google's signing certificates are reused before being fetched
+# again. Google rotates them over days and publishes a new key ahead of its
+# first use, so an hour never rejects a valid token.
+_CERTS_TTL_SECONDS = 60 * 60
+# google-auth's own default is 120s — far longer than a login may hang.
+_CERTS_FETCH_TIMEOUT_SECONDS = 10
 
-def _get_google_request() -> google_requests.Request:
+
+# url -> (monotonic deadline, response). One cache for the process: a fetched
+# response is only ever read, so worker threads share it safely, unlike the
+# session that fetched it.
+_certs_cache: dict[str, tuple[float, object]] = {}
+
+
+class _CachingRequest:
+    """`google.auth` transport that keeps the certificates it has fetched.
+
+    `verify_oauth2_token` downloads them before it even parses the token, on
+    every call — so each request to `/auth/google`, garbage included, used to
+    cost an outbound HTTPS round trip and a worker thread for its duration.
+    Only a successful GET is remembered; a failed one is retried next time."""
+
+    def __init__(self) -> None:
+        self._request = google_requests.Request()
+
+    def __call__(self, url: str, method: str = "GET", **kwargs):
+        if method != "GET":
+            return self._request(url, method=method, **kwargs)
+        cached = _certs_cache.get(url)
+        if cached is not None and cached[0] > time.monotonic():
+            return cached[1]
+        kwargs.setdefault("timeout", _CERTS_FETCH_TIMEOUT_SECONDS)
+        response = self._request(url, method=method, **kwargs)
+        if response.status == HTTPStatus.OK:
+            _certs_cache[url] = (time.monotonic() + _CERTS_TTL_SECONDS, response)
+        return response
+
+
+def _get_google_request() -> _CachingRequest:
     request = getattr(_thread_local, "request", None)
     if request is None:
-        request = google_requests.Request()
+        request = _CachingRequest()
         _thread_local.request = request
     return request
 
 
+def _verify_in_worker(token: str) -> dict:
+    # The transport is looked up here, on the worker thread: resolved by the
+    # caller it would be the event loop's one, shared by every worker.
+    return google_id_token.verify_oauth2_token(token, _get_google_request(), settings.GOOGLE_CLIENT_ID)
+
+
 async def verify_google_id_token(token: str) -> dict:
     try:
-        claims = await asyncio.to_thread(
-            google_id_token.verify_oauth2_token,
-            token,
-            _get_google_request(),
-            settings.GOOGLE_CLIENT_ID,
-        )
+        claims = await asyncio.to_thread(_verify_in_worker, token)
     except (ValueError, google_auth_exceptions.GoogleAuthError) as exc:
         raise ValueError(i18n_key("api_errors", "invalid_google_token", locale="ru")) from exc
 

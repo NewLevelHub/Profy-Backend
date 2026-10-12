@@ -1,6 +1,6 @@
 import uuid
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.validation import ensure_unique
 
@@ -29,7 +29,8 @@ class MotivationAnswerItem(BaseModel):
 
 
 class SubmitMotivationRequest(BaseModel):
-    answers: list[MotivationAnswerItem]
+    # 12 triplets in the bank today.
+    answers: list[MotivationAnswerItem] = Field(max_length=200)
 
     @field_validator("answers")
     @classmethod

@@ -14,8 +14,14 @@ class AnswerItem(BaseModel):
     value: int = Field(ge=0, le=5)
 
 
+# One request never carries more answers than the battery has questions
+# (485 today, with room to grow): each becomes a row and an entry of the
+# `IN (...)` that loads its question.
+ANSWERS_MAX_ITEMS = 1000
+
+
 class SubmitAnswersRequest(BaseModel):
-    answers: list[AnswerItem]
+    answers: list[AnswerItem] = Field(max_length=ANSWERS_MAX_ITEMS)
 
     @field_validator("answers")
     @classmethod

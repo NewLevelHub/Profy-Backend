@@ -12,7 +12,7 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.i18n import KNOWN_LOCALES, normalize_locale
 from app.models.user import User
-from app.schemas.invitation import AcceptInvitationRequest, InvitationPreview
+from app.schemas.invitation import AcceptInvitationRequest, InvitationPreview, InvitationPreviewRequest
 from app.schemas.auth import (
     ForgotPasswordRequest,
     GoogleAuthRequest,
@@ -34,16 +34,30 @@ logger = logging.getLogger(__name__)
 
 _redis: aioredis.Redis | None = None
 
-_VERIFY_EMAIL_LIMIT = 10       # попыток
-_VERIFY_EMAIL_WINDOW = 900     # 15 минут (совпадает со сроком жизни кода)
-_VERIFY_RESET_LIMIT = 10
-_VERIFY_RESET_WINDOW = 900
+# Неверные вводы 6-значного кода из письма (подтверждение почты, сброс
+# пароля). Считаются только неудачи: класс за одним школьным IP, где каждый
+# вводит свой верный код, бюджет IP не тратит. Сам код сгорает после
+# token_utils.MAX_CODE_ATTEMPTS промахов, а лимит по email не даёт
+# продолжить перебор на перевыпущенном коде.
+_CODE_EMAIL_LIMIT = 5
+_CODE_IP_LIMIT = 20
+_CODE_WINDOW = 900             # 15 минут (совпадает со сроком жизни кода)
 _FORGOT_IP_LIMIT = 3
 _FORGOT_IP_WINDOW = 600        # 10 минут
 _FORGOT_EMAIL_LIMIT = 3
 _FORGOT_EMAIL_WINDOW = 600
 _REGISTER_IP_LIMIT = 5
 _REGISTER_IP_WINDOW = 600      # 10 минут
+# Повторная отправка кода: раз в минуту на адрес и не больше десяти за
+# 10 минут с одного IP — иначе один клиент рассылает письма по списку чужих
+# адресов, меняя в запросе только email.
+_RESEND_EMAIL_COOLDOWN = 60
+_RESEND_IP_LIMIT = 10
+_RESEND_IP_WINDOW = 600
+# Отклонённые Google-токены с одного IP. Считаются только неудачи, как и для
+# кодов из письма: успешные входы целого класса бюджет не тратят.
+_GOOGLE_IP_LIMIT = 20
+_GOOGLE_IP_WINDOW = 900
 _LOGIN_IP_LIMIT = 30
 _LOGIN_IP_WINDOW = 900
 _LOGIN_EMAIL_LIMIT = 5
@@ -74,22 +88,22 @@ def _client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-def _login_rate_key(scope: str, value: str) -> str:
+def _rate_key(scope: str, value: str) -> str:
     """Build a stable Redis key without retaining an email or IP as PII."""
     digest = hmac.new(
         settings.SECRET_KEY.encode("utf-8"),
         f"{scope}:{value}".encode("utf-8"),
         hashlib.sha256,
     ).hexdigest()
-    return f"login_{scope}:{digest}"
+    return f"{scope}:{digest}"
 
 
 def _login_email_rate_key(email: str) -> str:
-    return _login_rate_key("email", str(email).strip().lower())
+    return _rate_key("login_email", str(email).strip().lower())
 
 
 def _login_ip_rate_key(ip: str) -> str:
-    return _login_rate_key("ip", ip)
+    return _rate_key("login_ip", ip)
 
 
 async def _increment_rate_limit(key: str, window: int) -> tuple[int, int]:
@@ -148,10 +162,40 @@ async def _record_login_failure(ip_key: str, email_key: str) -> None:
         _raise_rate_limit("login_email", email_count, email_ttl)
 
 
+class _CodeGuess:
+    """Failed-attempt budget for one emailed code, per client IP and per
+    email. `scope` names the code, not the endpoint: both password-reset
+    endpoints check the same code and so share one budget."""
+
+    def __init__(self, scope: str, email: str, request: Request) -> None:
+        self._scope = scope
+        self._ip_key = _rate_key(f"{scope}_ip", _client_ip(request))
+        self._email_key = _rate_key(f"{scope}_email", email)
+
+    async def reject_if_exhausted(self) -> None:
+        await _reject_if_rate_limited(self._ip_key, _CODE_IP_LIMIT, scope=f"{self._scope}_ip")
+        await _reject_if_rate_limited(self._email_key, _CODE_EMAIL_LIMIT, scope=f"{self._scope}_email")
+
+    async def record_failure(self) -> None:
+        # Every rejection counts alike — unknown address, no live code, wrong
+        # digits — so the limiter does not tell an attacker which it was.
+        ip_count, ip_ttl = await _increment_rate_limit(self._ip_key, _CODE_WINDOW)
+        email_count, email_ttl = await _increment_rate_limit(self._email_key, _CODE_WINDOW)
+        if ip_count > _CODE_IP_LIMIT:
+            _raise_rate_limit(f"{self._scope}_ip", ip_count, ip_ttl)
+        if email_count > _CODE_EMAIL_LIMIT:
+            _raise_rate_limit(f"{self._scope}_email", email_count, email_ttl)
+
+    async def clear_email(self) -> None:
+        # As on login: the email counter is consecutive failures; the IP
+        # counter is kept, so cycling through accounts does not reset it.
+        await _get_redis().delete(self._email_key)
+
+
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
 async def register(body: RegisterRequest, request: Request, db: AsyncSession = Depends(get_db)):
     client_ip = _client_ip(request)
-    await _check_rate_limit(f"register_ip:{client_ip}", _REGISTER_IP_LIMIT, _REGISTER_IP_WINDOW)
+    await _check_rate_limit(_rate_key("register_ip", client_ip), _REGISTER_IP_LIMIT, _REGISTER_IP_WINDOW)
     # Seed the new user's UI locale from Accept-Language. KNOWN_LOCALES (not the
     # runtime gate) so a "kk" browser preference is preserved for KZ-603; the
     # user can still change it via PATCH /auth/me.
@@ -189,9 +233,12 @@ async def login(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc))
     except LookupError as exc:
         kind, email = str(exc).split(":", 1)
-        if kind == "invitation_pending":
-            # Still a failed login: probing emails for invitations spends
-            # the same budget as guessing passwords.
+        if kind != "email_not_verified":
+            # Still a failed login: these answers come without a password
+            # check and say the address is known (an open invitation, a
+            # Google account), so probing emails for them spends the same
+            # budget as guessing passwords. `email_not_verified` is the one
+            # raised after the password matched — nothing is learnt from it.
             await _record_login_failure(ip_rate_key, email_rate_key)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -207,25 +254,30 @@ async def login(
 
 
 @router.post("/google", response_model=TokenResponse)
-async def google_login(body: GoogleAuthRequest, db: AsyncSession = Depends(get_db)):
+async def google_login(body: GoogleAuthRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    ip_rate_key = _rate_key("google_ip", _client_ip(request))
+    await _reject_if_rate_limited(ip_rate_key, _GOOGLE_IP_LIMIT, scope="google_ip")
     try:
         user, token = await oauth_service.login_or_register_google(body.id_token, db)
     except ValueError as exc:
+        # A rejected token costs a signature check on a worker thread; past
+        # the limit the same client is turned away before that work starts.
+        await _increment_rate_limit(ip_rate_key, _GOOGLE_IP_WINDOW)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
     return TokenResponse(access_token=token, user=user)
 
 
-@router.get("/invitations/{token}", response_model=InvitationPreview)
+@router.post("/invitations/preview", response_model=InvitationPreview)
 async def preview_invitation(
-    token: str, request: Request, db: AsyncSession = Depends(get_db)
+    body: InvitationPreviewRequest, request: Request, db: AsyncSession = Depends(get_db)
 ) -> InvitationPreview:
     await _check_rate_limit(
-        f"invitation_preview_ip:{_client_ip(request)}",
+        _rate_key("invitation_preview_ip", _client_ip(request)),
         _INVITATION_PREVIEW_IP_LIMIT,
         _INVITATION_IP_WINDOW,
     )
-    return await invitation_service.preview_invitation(db, token)
+    return await invitation_service.preview_invitation(db, body.token)
 
 
 @router.post("/invitations/accept", response_model=TokenResponse)
@@ -233,7 +285,7 @@ async def accept_invitation(
     body: AcceptInvitationRequest, request: Request, db: AsyncSession = Depends(get_db)
 ) -> TokenResponse:
     await _check_rate_limit(
-        f"invitation_accept_ip:{_client_ip(request)}",
+        _rate_key("invitation_accept_ip", _client_ip(request)),
         _INVITATION_ACCEPT_IP_LIMIT,
         _INVITATION_IP_WINDOW,
     )
@@ -242,21 +294,27 @@ async def accept_invitation(
 
 
 @router.post("/verify-email", response_model=TokenResponse)
-async def verify_email(body: VerifyEmailRequest, db: AsyncSession = Depends(get_db)):
-    await _check_rate_limit(
-        f"verify_email:{body.email}", _VERIFY_EMAIL_LIMIT, _VERIFY_EMAIL_WINDOW
-    )
+async def verify_email(body: VerifyEmailRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    guess = _CodeGuess("verify_email", body.email, request)
+    await guess.reject_if_exhausted()
     try:
         user, token = await auth_service.verify_email(body.email, body.code, db)
     except ValueError as exc:
+        await guess.record_failure()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
+    await guess.clear_email()
     return TokenResponse(access_token=token, user=user)
 
 
 @router.post("/resend-verification", status_code=status.HTTP_204_NO_CONTENT)
-async def resend_verification(body: ResendVerificationRequest, db: AsyncSession = Depends(get_db)):
-    rate_key = f"resend:{body.email}"
+async def resend_verification(
+    body: ResendVerificationRequest, request: Request, db: AsyncSession = Depends(get_db)
+):
+    await _check_rate_limit(
+        _rate_key("resend_ip", _client_ip(request)), _RESEND_IP_LIMIT, _RESEND_IP_WINDOW
+    )
+    rate_key = _rate_key("resend", body.email)
     redis = _get_redis()
     if await redis.exists(rate_key):
         raise HTTPException(
@@ -264,7 +322,7 @@ async def resend_verification(body: ResendVerificationRequest, db: AsyncSession 
             detail=i18n_key("api_errors", "verification_resend_too_soon", locale="ru"),
         )
 
-    await redis.set(rate_key, "1", ex=60)
+    await redis.set(rate_key, "1", ex=_RESEND_EMAIL_COOLDOWN)
 
     try:
         await auth_service.resend_verification(body.email, db)
@@ -275,6 +333,16 @@ async def resend_verification(body: ResendVerificationRequest, db: AsyncSession 
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(
+    current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+) -> None:
+    """Ends the session on the server, not just in the browser: the token
+    that made this call — and every other one issued to the account — is
+    rejected from here on. A copied token must not outlive «Выйти»."""
+    await auth_service.revoke_sessions(current_user, db)
 
 
 @router.patch("/me", response_model=UserResponse)
@@ -300,8 +368,8 @@ async def update_me(
 @router.post("/forgot-password", status_code=status.HTTP_200_OK)
 async def forgot_password(body: ForgotPasswordRequest, request: Request, db: AsyncSession = Depends(get_db)):
     client_ip = _client_ip(request)
-    await _check_rate_limit(f"forgot_pwd_ip:{client_ip}", _FORGOT_IP_LIMIT, _FORGOT_IP_WINDOW)
-    await _check_rate_limit(f"forgot_pwd_email:{body.email}", _FORGOT_EMAIL_LIMIT, _FORGOT_EMAIL_WINDOW)
+    await _check_rate_limit(_rate_key("forgot_pwd_ip", client_ip), _FORGOT_IP_LIMIT, _FORGOT_IP_WINDOW)
+    await _check_rate_limit(_rate_key("forgot_pwd_email", body.email), _FORGOT_EMAIL_LIMIT, _FORGOT_EMAIL_WINDOW)
 
     try:
         await password_reset_service.initiate_reset(body.email, db)
@@ -314,24 +382,25 @@ async def forgot_password(body: ForgotPasswordRequest, request: Request, db: Asy
 
 
 @router.post("/verify-reset-code", status_code=status.HTTP_200_OK)
-async def verify_reset_code(body: VerifyResetCodeRequest, db: AsyncSession = Depends(get_db)):
-    await _check_rate_limit(
-        f"verify_reset:{body.email}", _VERIFY_RESET_LIMIT, _VERIFY_RESET_WINDOW
-    )
+async def verify_reset_code(body: VerifyResetCodeRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    guess = _CodeGuess("reset_code", body.email, request)
+    await guess.reject_if_exhausted()
     try:
         await password_reset_service.verify_code(body.email, body.code, db)
     except ValueError:
+        await guess.record_failure()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=i18n_key("api_errors", "invalid_or_expired_code", locale="ru"))
     return {"valid": True}
 
 
 @router.post("/reset-password", status_code=status.HTTP_200_OK)
-async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
-    await _check_rate_limit(
-        f"reset_pwd:{body.email}", _VERIFY_RESET_LIMIT, _VERIFY_RESET_WINDOW
-    )
+async def reset_password(body: ResetPasswordRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    guess = _CodeGuess("reset_code", body.email, request)
+    await guess.reject_if_exhausted()
     try:
         await password_reset_service.reset_password(body.email, body.code, body.new_password, db)
     except ValueError:
+        await guess.record_failure()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=i18n_key("api_errors", "invalid_or_expired_code", locale="ru"))
+    await guess.clear_email()
     return {"message": i18n_key("api_messages", "password_reset_completed")}

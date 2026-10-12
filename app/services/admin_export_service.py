@@ -8,6 +8,7 @@ import csv
 import io
 import re
 import zipfile
+from collections.abc import Iterable
 from datetime import datetime
 
 from app.i18n import DEFAULT_LOCALE
@@ -66,6 +67,36 @@ _INSTRUMENT_LABELS = {
 }
 
 
+# A spreadsheet runs a cell that starts with one of these as a formula, and the
+# exports carry text typed by students (email, name, city). A formula there
+# executes on the admin's machine: `=HYPERLINK(...)` is enough to send the
+# neighbouring cells to another site. The leading apostrophe makes the cell
+# text. A plain number is left alone — "-0.5" is a score, not a formula.
+_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r", "\n")
+_PLAIN_NUMBER = re.compile(r"[+-]?\d+(\.\d+)?")
+
+
+def _cell(value: object) -> object:
+    if (
+        isinstance(value, str)
+        and value.startswith(_FORMULA_PREFIXES)
+        and not _PLAIN_NUMBER.fullmatch(value)
+    ):
+        return "'" + value
+    return value
+
+
+class _Writer:
+    """`csv.writer` for these exports: every cell goes through `_cell`, so a
+    new column or a new file cannot skip it."""
+
+    def __init__(self, buffer: io.StringIO) -> None:
+        self._writer = csv.writer(buffer)
+
+    def writerow(self, row: Iterable[object]) -> None:
+        self._writer.writerow([_cell(value) for value in row])
+
+
 def _yes_no(value: bool) -> str:
     return _YES if value else _NO
 
@@ -116,7 +147,7 @@ def users_to_csv(items: list[AdminUserListItem]) -> str:
     would show up as a stray character in the first header cell. A BOM also
     trips csv.reader/pandas, so the endpoint itself stays clean."""
     buffer = io.StringIO()
-    writer = csv.writer(buffer)
+    writer = _Writer(buffer)
     writer.writerow(_USER_COLUMNS)
 
     for item in items:
@@ -183,7 +214,7 @@ def _analysis_result_rows(analysis: dict) -> list[tuple[str, str]]:
 
 def _summary_csv(detail: AdminAssessmentDetailResponse) -> str:
     buffer = io.StringIO()
-    writer = csv.writer(buffer)
+    writer = _Writer(buffer)
 
     writer.writerow([_T["metric"], _T["value"]])
     writer.writerow(["Email", detail.user_email])
@@ -215,7 +246,7 @@ def _scale_name(instrument: str, category: str) -> str:
 
 def _responses_csv(detail: AdminAssessmentDetailResponse) -> str:
     buffer = io.StringIO()
-    writer = csv.writer(buffer)
+    writer = _Writer(buffer)
     writer.writerow(
         [
             _T["question_number"],
@@ -251,7 +282,7 @@ def _motivation_csv(detail: AdminAssessmentDetailResponse) -> str:
     triplet content; `not_picked_*` is the 3rd statement the user left
     untouched (inferred, never its own stored choice)."""
     buffer = io.StringIO()
-    writer = csv.writer(buffer)
+    writer = _Writer(buffer)
     writer.writerow(
         [
             _T["triplet_number"],

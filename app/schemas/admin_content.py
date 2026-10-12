@@ -1,10 +1,20 @@
 import uuid
 from typing import Any
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from app.models.motivation import MotivationCategory
 from app.models.question import BigFiveDomain, HollandType, Keyed, QuestionInstrument
+from app.schemas.validation import (
+    LIST_ITEM_MAX_LENGTH,
+    LIST_MAX_ITEMS,
+    LOCALE_MAX_LENGTH,
+    LONG_TEXT_MAX_LENGTH,
+    ListItemText,
+)
+
+# An emoji, possibly a multi-codepoint one.
+_ICON_MAX_LENGTH = 32
 
 # One row per item now (docs/i18n-contract.md §8) — list items show the `ru`
 # text (admin panel itself stays ru-only, i18n-contract §2); Detail schemas
@@ -81,14 +91,14 @@ class AdminQuestionDetail(BaseModel):
 
 
 class AdminQuestionUpdateRequest(BaseModel):
-    locale: str | None = None
+    locale: str | None = Field(None, max_length=LOCALE_MAX_LENGTH)
     riasec_type: HollandType | None = None
     bigfive_domain: BigFiveDomain | None = None
     facet: int | None = None
     keyed: Keyed | None = None
-    text: str | None = None
-    short_text: str | None = None
-    icon: str | None = None
+    text: str | None = Field(None, max_length=LONG_TEXT_MAX_LENGTH)
+    short_text: str | None = Field(None, max_length=LIST_ITEM_MAX_LENGTH)
+    icon: str | None = Field(None, max_length=_ICON_MAX_LENGTH)
 
 
 # --- Question pairs (forced-choice) ---
@@ -152,12 +162,12 @@ class AdminQuestionPairDetail(BaseModel):
 
 
 class AdminQuestionPairUpdateRequest(BaseModel):
-    locale: str | None = None
-    frame: str | None = None
-    option_a_text: str | None = None
-    option_b_text: str | None = None
-    option_a_icon: str | None = None
-    option_b_icon: str | None = None
+    locale: str | None = Field(None, max_length=LOCALE_MAX_LENGTH)
+    frame: str | None = Field(None, max_length=LONG_TEXT_MAX_LENGTH)
+    option_a_text: str | None = Field(None, max_length=LONG_TEXT_MAX_LENGTH)
+    option_b_text: str | None = Field(None, max_length=LONG_TEXT_MAX_LENGTH)
+    option_a_icon: str | None = Field(None, max_length=_ICON_MAX_LENGTH)
+    option_b_icon: str | None = Field(None, max_length=_ICON_MAX_LENGTH)
 
 
 # --- Motivation statements (senior's MOST/LEAST triplets) ---
@@ -191,9 +201,9 @@ class AdminMotivationStatementDetail(BaseModel):
 
 
 class AdminMotivationStatementUpdateRequest(BaseModel):
-    locale: str | None = None
+    locale: str | None = Field(None, max_length=LOCALE_MAX_LENGTH)
     category: MotivationCategory | None = None
-    text: str | None = None
+    text: str | None = Field(None, max_length=LONG_TEXT_MAX_LENGTH)
 
 
 # --- Directions (career/profession catalog) ---
@@ -254,11 +264,12 @@ class AdminDirectionDetail(BaseModel):
 
 
 class AdminDirectionUpdateRequest(BaseModel):
-    locale: str | None = None
-    name: str | None = None
-    holland_code: str | None = None
-    description: str | None = None
-    professions: list | None = None
-    skills_needed: list | None = None
-    subjects_to_develop: list | None = None
-    first_steps: list | None = None
+    locale: str | None = Field(None, max_length=LOCALE_MAX_LENGTH)
+    name: str | None = Field(None, max_length=255)
+    # `directions.holland_code` is varchar(3); the form allows six characters.
+    holland_code: str | None = Field(None, max_length=6)
+    description: str | None = Field(None, max_length=LONG_TEXT_MAX_LENGTH)
+    professions: list[ListItemText] | None = Field(None, max_length=LIST_MAX_ITEMS)
+    skills_needed: list[ListItemText] | None = Field(None, max_length=LIST_MAX_ITEMS)
+    subjects_to_develop: list[ListItemText] | None = Field(None, max_length=LIST_MAX_ITEMS)
+    first_steps: list[ListItemText] | None = Field(None, max_length=LIST_MAX_ITEMS)

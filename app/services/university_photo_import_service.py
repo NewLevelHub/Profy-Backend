@@ -7,8 +7,7 @@ populates the UniversityExternalRef rows this looks up institutions by.
 Sequential by design (like every other seed/import script in scripts/) rather
 than concurrent: an AsyncSession is not safe to share across concurrent
 coroutines, and correctness matters far more than shaving time off a one-time
-batch job. A per-request delay (settings.SCRAPER_REQUEST_DELAY_SECONDS) is
-politeness towards the source, not a performance knob.
+batch job.
 """
 import hashlib
 import io

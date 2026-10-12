@@ -137,6 +137,13 @@ Content-Type: application/json
 | `country` | `string` |
 | `source_url` | `string` |
 
+`website` и `source_url` (здесь и у программы в §6) — только веб-ссылки:
+`http://` или `https://` с хостом; пробелы по краям срезаются, пустая строка и
+`null` допустимы. Иначе — 422 с кодом `url_must_be_http`. `website` публичные
+страницы подставляют в `href`, поэтому `javascript:` и подобное там было бы
+скриптом на странице вуза. На фронте любую такую ссылку всё равно пропускать
+через `safeExternalUrl()` — значение может прийти и из импорта каталога.
+
 `slug`/`ovpo_code`/`ror_id`/`id`/`created_at`/`programs`/`admin_locked_fields`
 не входят в эту схему — если их всё же прислать, pydantic (`extra` не задан →
 default `"ignore"`) их просто отбросит, **не 422**, но и эффекта не будет.

@@ -1,6 +1,6 @@
 import uuid
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.models.question import BigFiveDomain, HollandType, QuestionInstrument
 from app.schemas.validation import ensure_unique
@@ -34,7 +34,8 @@ class PairAnswerItem(BaseModel):
 
 
 class SubmitPairAnswersRequest(BaseModel):
-    answers: list[PairAnswerItem]
+    # 20 pairs in the bank today.
+    answers: list[PairAnswerItem] = Field(max_length=200)
 
     @field_validator("answers")
     @classmethod
