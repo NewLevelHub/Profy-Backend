@@ -16,13 +16,25 @@ _REQUIRED = {"REDIS_URL": "redis://redis:6379/0", "SECRET_KEY": "x", "DATABASE_U
 
 
 def _settings(**overrides: str) -> Settings:
-    # RESEND_API_KEY explicitly empty: the test container's own env may set it.
-    return Settings(_env_file=None, **{**_REQUIRED, "RESEND_API_KEY": "", **overrides})
+    # Provider keys explicitly empty: the test container's own env may set them.
+    return Settings(
+        _env_file=None,
+        **{**_REQUIRED, "RESEND_API_KEY": "", "SES_ACCESS_KEY_ID": "", **overrides},
+    )
 
 
-def test_fixed_code_is_refused_with_a_real_email_provider() -> None:
-    with pytest.raises(ValidationError, match="RESEND_API_KEY"):
-        _settings(DEV_FIXED_OTP_CODE="000000", RESEND_API_KEY="re_live_key")
+@pytest.mark.parametrize(
+    "provider_credentials",
+    [
+        {"RESEND_API_KEY": "re_live_key"},
+        # Refused even while Resend is the selected provider: switching
+        # EMAIL_PROVIDER later must not turn the fixed code live.
+        {"SES_ACCESS_KEY_ID": "AKIATEST"},
+    ],
+)
+def test_fixed_code_is_refused_with_a_real_email_provider(provider_credentials: dict[str, str]) -> None:
+    with pytest.raises(ValidationError, match="must not be set together"):
+        _settings(DEV_FIXED_OTP_CODE="000000", **provider_credentials)
 
 
 @pytest.mark.parametrize("code", ["00000", "0000000", "abcdef", "12 456"])
