@@ -88,8 +88,8 @@ async def _invite(body: AdminInvitationCreate, *, replace: bool = False) -> Admi
 def _email_status(sent: AdminInvitationSent) -> str:
     if sent.email_sent:
         return "sent"
-    if not settings.RESEND_API_KEY:
-        return "not sent (RESEND_API_KEY is empty) — hand the link over yourself"
+    if not settings.email_delivery_configured:
+        return f"not sent ({settings.EMAIL_PROVIDER} is not configured) — hand the link over yourself"
     return "FAILED — hand the link over yourself"
 
 
