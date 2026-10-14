@@ -106,6 +106,17 @@ def test_ru_and_kk_keys_must_point_at_the_same_option() -> None:
     assert "key_locale_mismatch" in _codes(doc)
 
 
+def test_a_value_shared_by_ru_and_kk_must_sit_at_the_same_position() -> None:
+    """Answers are matched element by element in either language through the
+    position, so «А» at 1st place in ru and 2nd in kk would be ambiguous."""
+    doc = v1_document()
+    words = _item(doc, "classification")["words"]
+    words["kk"][1] = words["ru"][0]
+    assert "cross_locale_position_mismatch" in _codes(doc)
+    words["kk"][1], words["kk"][0] = words["kk"][0], words["ru"][0]  # same place: a loanword
+    assert "cross_locale_position_mismatch" not in _codes(doc)
+
+
 def test_ru_kk_structure_mismatch_is_rejected() -> None:
     doc = v1_document()
     _item(doc, "awareness")["options"]["kk"].pop()

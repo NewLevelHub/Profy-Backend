@@ -9,7 +9,9 @@ Rules:
   exactly once and uses the scoring method its frontend renderer expects;
 - item ids are non-empty and unique across the whole bank;
 - every localized field has non-empty RU and KK, and list fields have the
-  same length in both locales (RU and KK are the same task);
+  same length in both locales (RU and KK are the same task); a value present
+  in both lists sits at the same position (answers are matched element by
+  element in either language through it);
 - the key exists among the options, and points at the same position in RU
   and KK;
 - open-answer synonym tiers are non-empty and never overlap;
@@ -103,6 +105,16 @@ def _localized_list(
         c.add("locale_structure_mismatch", f"В «{field}» разное число элементов в ru и kk",
               subtest=subtest, item_id=item_id, field=field)
         return None
+    if same_length:
+        # Answers are matched element by element in either language through
+        # the shared position, so a value present in both lists must sit at
+        # the same one (loanwords, digits, figure letters).
+        kk_positions = {v.strip().casefold(): i for i, v in enumerate(lists["kk"])}
+        for i, v in enumerate(lists["ru"]):
+            j = kk_positions.get(v.strip().casefold())
+            if j is not None and j != i:
+                c.add("cross_locale_position_mismatch", f"«{v}» стоит на разных позициях в ru и kk",
+                      subtest=subtest, item_id=item_id, field=field)
     size = min(len(lists["ru"]), len(lists["kk"]))
     if exact_len is not None and size != exact_len:
         c.add("wrong_item_shape", f"«{field}» должно содержать ровно {exact_len} элемента(ов)",

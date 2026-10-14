@@ -133,7 +133,7 @@ class AsturRunSummary(BaseModel):
     run_id: uuid.UUID
     status: RunStatus
     bank_version: int
-    # Language the attempt's content and keys are pinned to.
+    # Language the attempt was opened in; answers are accepted in either.
     locale: str
     created_at: datetime
     completed_at: datetime | None = None
@@ -175,6 +175,7 @@ class AsturContentSubtest(BaseModel):
 class AsturContentResponse(BaseModel):
     run_id: uuid.UUID
     bank_version: int
+    # The request's language: content follows a language switch mid-attempt.
     locale: str
     subtests: list[AsturContentSubtest]
     lability_item_limit_ms: int
@@ -182,7 +183,7 @@ class AsturContentResponse(BaseModel):
 
 class AsturAttemptResponse(BaseModel):
     """The open attempt and its content — returned together so the items
-    shown are always the ones of the attempt's own bank version and locale."""
+    shown are always the ones of the attempt's own bank version."""
 
     run: AsturRunSummary
     content: AsturContentResponse
