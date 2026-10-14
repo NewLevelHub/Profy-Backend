@@ -43,6 +43,13 @@ class ScoringRules(BaseModel):
     own_name_latin_vowels: bool = False
     # Text matching: Unicode NFC + ё→е before comparing (Kazakh letters kept).
     fold_text: bool = False
+    # Answers match the keys of every language, element by element (a word
+    # set or concept chain may mix ru and kk); open text scores as the best
+    # of the per-language scores. The language can be switched mid-attempt.
+    answers_any_locale: bool = False
+    # Open-text answers compared with Kazakh letters folded to their Russian
+    # look-alikes (қ→к, ғ→г, ә→а, і→и…): typed without a Kazakh layout.
+    open_text_kazakh_fold: bool = False
 
 
 @lru_cache

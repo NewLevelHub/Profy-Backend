@@ -47,6 +47,22 @@ def test_logical_schemas_are_never_served_in_key_order() -> None:
             assert sorted(item["concepts"]) == sorted(key)
 
 
+def test_served_order_is_the_same_in_every_language() -> None:
+    """A language switch mid-block carries answers over by position."""
+    bank = v1_bank()
+    fields = {"logical_schemas": "concepts", "classification": "words", "awareness": "options", "analogies": "options"}
+    for _ in range(50):
+        run_id = uuid.uuid4()
+        ru = build_content(bank, bank_version=1, run_id=run_id, locale="ru")
+        kk = build_content(bank, bank_version=1, run_id=run_id, locale="kk")
+        for key, field in fields.items():
+            bank_items = _bank_subtest(bank, key).items
+            for bank_item, ru_item, kk_item in zip(bank_items, _served_subtest(ru, key)["items"], _served_subtest(kk, key)["items"]):
+                ru_positions = [bank_item[field]["ru"].index(v) for v in ru_item[field]]
+                kk_positions = [bank_item[field]["kk"].index(v) for v in kk_item[field]]
+                assert ru_positions == kk_positions
+
+
 def test_shuffle_does_not_touch_the_cached_bank() -> None:
     bank = v1_bank()
     fields = {"logical_schemas": "concepts", "classification": "words", "awareness": "options", "analogies": "options"}

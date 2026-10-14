@@ -1,5 +1,5 @@
 """Public АСТУР content for the test-taker: one bank version in the
-attempt's own locale, stripped of every key/tier/reviewer field."""
+request's locale, stripped of every key/tier/reviewer field."""
 import hashlib
 import hmac
 import random
@@ -84,9 +84,11 @@ def _shuffle_public_item(item: dict, subtest: BankSubtest, rng: random.Random) -
 
 
 def build_content(bank: AsturBank, *, bank_version: int, run_id: uuid.UUID, locale: str) -> dict:
-    """`locale` is the attempt's own (`AsturRun.locale`), never the current
-    request's — switching the app language mid-attempt must not swap the
-    language of items the attempt is scored in."""
+    """`locale` is the current request's: the respondent may switch language
+    mid-attempt. The served order of every list is seeded by run and item
+    only, so the same position holds the same option in every language — a
+    client can carry an in-progress answer over to the other language by
+    position (bank validation keeps the ru/kk lists aligned)."""
     subtests = []
     for subtest in bank.ordered_subtests():
         fields = PUBLIC_ITEM_FIELDS[subtest.key]
