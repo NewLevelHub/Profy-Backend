@@ -153,13 +153,46 @@ def _loc(value: dict, locale: str):
     return value.get(locale) or value["ru"]
 
 
+# Kazakh letters typed on a Russian keyboard layout: many students have no
+# Kazakh layout and write «кылкан» for «қылқан» (Latin "i" for «і» too).
+# Open text only — two choice options could fold into one string.
+_KAZAKH_LETTER_FOLD = str.maketrans("әғқңөұүһіi", "агкноуухии")
+
+
 @dataclass(frozen=True)
 class _Ctx:
     locale: str
     fold: bool
+    # Match answers against the keys of every language, element by element
+    # (the respondent may switch language, even within one answer).
+    any_locale: bool = False
+    # Open text: compare with Kazakh letters folded to their Russian look-alikes.
+    kazakh_fold: bool = False
 
     def norm(self, value: object) -> str:
         return normalize(value, fold=self.fold)
+
+    def text_norm(self, value: object) -> str:
+        text = self.norm(value)
+        return text.translate(_KAZAKH_LETTER_FOLD) if self.kazakh_fold else text
+
+    def locales(self, value: dict) -> list[str]:
+        """The attempt's language first, then (with `any_locale`) the others."""
+        if not self.any_locale:
+            return [self.locale]
+        return [self.locale, *(loc for loc in value if loc != self.locale)]
+
+    def positions(self, value: dict, submitted: list) -> list[int | None]:
+        """Each submitted element's position in its list, matched in any of
+        the languages — ru and kk lists are aligned by position, so the
+        elements of one answer may come from different languages."""
+        lists = [[self.norm(v) for v in _loc(value, loc)] for loc in self.locales(value)]
+
+        def position(element: object) -> int | None:
+            norm = self.norm(element)
+            return next((values.index(norm) for values in lists if norm in values), None)
+
+        return [position(element) for element in submitted]
 
 
 # ── per-method item scorers ─────────────────────────────────────────────────
@@ -168,21 +201,33 @@ class _Ctx:
 def _score_single_choice(item: dict, submitted: object, ctx: _Ctx) -> int:
     if not isinstance(submitted, str):
         return 0
-    return int(ctx.norm(submitted) == ctx.norm(_loc(item["answer"], ctx.locale)))
+    keys = [ctx.norm(_loc(item["answer"], loc)) for loc in ctx.locales(item["answer"])]
+    return int(ctx.norm(submitted) in keys)
 
 
 def _score_pick_pair(item: dict, submitted: object, ctx: _Ctx) -> int:
     if not isinstance(submitted, list) or len(submitted) != 2:
         return 0
-    return int({ctx.norm(w) for w in submitted} == {ctx.norm(w) for w in _loc(item["answer"], ctx.locale)})
+    if not ctx.any_locale:
+        return int({ctx.norm(w) for w in submitted} == {ctx.norm(w) for w in _loc(item["answer"], ctx.locale)})
+    key = set(ctx.positions(item["words"], _loc(item["answer"], ctx.locale)))
+    got = ctx.positions(item["words"], submitted)
+    return int(None not in got and len(set(got)) == 2 and set(got) == key)
 
 
 def _score_open_text(item: dict, submitted: object, ctx: _Ctx) -> int:
+    """The best of the per-language scores: the same rules as in one language,
+    so another language's tiers can only add the credit it would give there,
+    never take any away."""
     if not isinstance(submitted, str) or not submitted.strip():
         return 0
-    norm = ctx.norm(submitted)
-    tier_2 = [ctx.norm(s) for s in _loc(item["score_2"], ctx.locale)]
-    tier_1 = [ctx.norm(s) for s in _loc(item["score_1"], ctx.locale)]
+    norm = ctx.text_norm(submitted)
+    return max(_open_text_in_locale(item, norm, loc, ctx) for loc in ctx.locales(item["score_2"]))
+
+
+def _open_text_in_locale(item: dict, norm: str, locale: str, ctx: _Ctx) -> int:
+    tier_2 = [ctx.text_norm(s) for s in _loc(item["score_2"], locale)]
+    tier_1 = [ctx.text_norm(s) for s in _loc(item["score_1"], locale)]
     if norm in tier_2:
         return 2
     if norm in tier_1:
@@ -201,8 +246,13 @@ def _score_chain(item: dict, submitted: object, ctx: _Ctx) -> int:
     submitted order — scored by which connections survive, not position."""
     if not isinstance(submitted, list):
         return 0
-    correct = [ctx.norm(c) for c in _loc(item["concepts"], ctx.locale)]
-    got = [ctx.norm(c) for c in submitted]
+    if not ctx.any_locale:
+        correct = [ctx.norm(c) for c in _loc(item["concepts"], ctx.locale)]
+        got = [ctx.norm(c) for c in submitted]
+    else:
+        # The bank lists concepts in key order, so the key is 0, 1, 2, …
+        correct = list(range(len(_loc(item["concepts"], ctx.locale))))
+        got = ctx.positions(item["concepts"], submitted)
     return sum(
         1
         for a, b in zip(correct, correct[1:])
@@ -389,19 +439,23 @@ def _quick_status(entry: dict) -> str:
     return "unanswered" if _is_blank(entry.get("answer")) else "answered"
 
 
-def _quick_item_correct(item: dict, entry: dict, attempt: AttemptInput, rules: ScoringRules, ctx: _Ctx) -> bool:
-    options = _loc(item["options"], attempt.locale)
+def _quick_expected(item: dict, entry: dict, attempt: AttemptInput, rules: ScoringRules, locale: str) -> str:
+    options = _loc(item["options"], locale)
     if "answer" in item:
-        expected = _loc(item["answer"], attempt.locale)
-    elif item["dynamic"] == "day_of_week":
+        return _loc(item["answer"], locale)
+    if item["dynamic"] == "day_of_week":
         raw = entry.get("answered_at")
         answered_at = datetime.fromisoformat(raw) if raw else attempt.completed_at
-        expected = _day_of_week_expected(answered_at, attempt.timezone, attempt.locale, options)
-    else:
-        expected = _own_name_expected(
-            attempt.profile_name, options, latin_vowels=rules.own_name_latin_vowels
-        )
-    return ctx.norm(entry.get("answer")) == ctx.norm(expected)
+        return _day_of_week_expected(answered_at, attempt.timezone, locale, options)
+    return _own_name_expected(attempt.profile_name, options, latin_vowels=rules.own_name_latin_vowels)
+
+
+def _quick_item_correct(item: dict, entry: dict, attempt: AttemptInput, rules: ScoringRules, ctx: _Ctx) -> bool:
+    answer = ctx.norm(entry.get("answer"))
+    return any(
+        answer == ctx.norm(_quick_expected(item, entry, attempt, rules, locale))
+        for locale in ctx.locales(item["options"])
+    )
 
 
 def _quick_instructions(
@@ -504,7 +558,13 @@ def _protocol_quality(
 
 
 def score_attempt(bank: AsturBank, attempt: AttemptInput, rules: ScoringRules) -> AsturResultSnapshot:
-    ctx = _Ctx(locale=attempt.locale, fold=rules.fold_text)
+    ctx = _Ctx(
+        locale=attempt.locale,
+        fold=rules.fold_text,
+        any_locale=rules.answers_any_locale,
+        kazakh_fold=rules.open_text_kazakh_fold,
+    )
+
     scored: dict[str, list[_ScoredItem]] = {}
     subtests: dict[str, SubtestResult] = {}
     for subtest in bank.subtests:

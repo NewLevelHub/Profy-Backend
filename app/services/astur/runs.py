@@ -3,9 +3,13 @@
 Rules:
 - at most one `in_progress` attempt per assessment (partial unique index);
 - an attempt is opened explicitly (`open_attempt`), which pins its bank
-  version AND locale and returns its content in the same response — items
-  are never shown before the attempt that will score them exists; a
-  completed attempt is never reopened and never followed by a new one;
+  version and returns its content in the same response — items are never
+  shown before the attempt that will score them exists; a completed
+  attempt is never reopened and never followed by a new one;
+- the language is not pinned: content comes in the request's language, so
+  the respondent may switch it at any moment, and an answer is accepted in
+  either language, element by element (`run.locale` only records the
+  language the attempt was opened in);
 - every start/submit names its `run_id`; a payload for another attempt is
   rejected, never re-targeted onto the open one;
 - only the first unfinished subtest in the pinned presentation order may be
@@ -191,8 +195,9 @@ async def _open_run(db: AsyncSession, assessment_id: uuid.UUID, user_id: uuid.UU
 
 async def open_attempt(db: AsyncSession, assessment_id: uuid.UUID, *, user_id: uuid.UUID) -> dict:
     """Opens (or resumes) the attempt and returns it together with its
-    content — bank version and locale are pinned before any item is shown.
-    Idempotent while an attempt is open (a double click resumes it)."""
+    content in the request's language — the bank version is pinned before
+    any item is shown. Idempotent while an attempt is open (a double click,
+    or a language switch that refetches the content, resumes it)."""
     run = await active_run(db, assessment_id, for_update=True)
     if run is None:
         if await has_completed_run(db, assessment_id):
@@ -203,7 +208,7 @@ async def open_attempt(db: AsyncSession, assessment_id: uuid.UUID, *, user_id: u
     published = await get_published(db, run.bank_version_id)
     return {
         "run": await run_summary(db, run),
-        "content": build_content(published.bank, bank_version=published.version, run_id=run.id, locale=run.locale),
+        "content": build_content(published.bank, bank_version=published.version, run_id=run.id, locale=get_locale()),
     }
 
 
@@ -220,26 +225,38 @@ async def _run_for_write(db: AsyncSession, assessment_id: uuid.UUID, run_id: uui
 # ── answer validation ───────────────────────────────────────────────────────
 
 
-def _locale_list(item: dict, field: str, locale: str) -> list:
-    value = item.get(field) or {}
-    return value.get(locale) or value.get("ru") or []
+def _position(item: dict, field: str, value: object) -> int | None:
+    """Where a served value sits in its list, in whichever language it is.
+    The ru and kk lists are aligned by position and a value shared by both
+    sits at the same position (bank_validation), so the position is the same
+    whatever language the value is in."""
+    if not isinstance(value, str):
+        return None
+    for values in (item.get(field) or {}).values():
+        if isinstance(values, list) and value in values:
+            return values.index(value)
+    return None
 
 
-def _valid_value(subtest: BankSubtest, item: dict, value: object, locale: str) -> bool:
+def _valid_value(subtest: BankSubtest, item: dict, value: object) -> bool:
+    """A picked value may come from either language's list, and the elements
+    of one answer may mix languages (a language switch mid-block)."""
     method = subtest.scoring_method
     if method in ("single_choice", "quick_instruction"):
-        return isinstance(value, str) and value in _locale_list(item, "options", locale)
+        return _position(item, "options", value) is not None
     if method == "pick_pair":
-        words = _locale_list(item, "words", locale)
-        return (
-            isinstance(value, list) and len(value) == 2 and len(set(value)) == 2
-            and all(isinstance(w, str) and w in words for w in value)
-        )
+        if not isinstance(value, list) or len(value) != 2:
+            return False
+        positions = [_position(item, "words", w) for w in value]
+        return None not in positions and positions[0] != positions[1]
     if method == "open_text_tiers":
         return isinstance(value, str) and 0 < len(value.strip()) <= MAX_OPEN_TEXT_LENGTH
     if method == "chain_links":
-        concepts = _locale_list(item, "concepts", locale)
-        return isinstance(value, list) and sorted(value) == sorted(concepts)
+        if not isinstance(value, list):
+            return False
+        size = len(next(iter((item.get("concepts") or {}).values()), []))
+        positions = [_position(item, "concepts", c) for c in value]
+        return None not in positions and sorted(positions) == list(range(size))
     if method == "number_pair":
         return (
             isinstance(value, list) and len(value) == 2
@@ -248,7 +265,7 @@ def _valid_value(subtest: BankSubtest, item: dict, value: object, locale: str) -
     return False
 
 
-def _validate_answers(subtest: BankSubtest, answers: dict, locale: str) -> dict:
+def _validate_answers(subtest: BankSubtest, answers: dict) -> dict:
     expected = {str(i) for i in range(1, len(subtest.items) + 1)}
     got = set(answers)
     if got != expected:
@@ -259,7 +276,7 @@ def _validate_answers(subtest: BankSubtest, answers: dict, locale: str) -> dict:
         })
     invalid = [
         key for key, answer in answers.items()
-        if answer.status == "answered" and not _valid_value(subtest, subtest.items[int(key) - 1], answer.value, locale)
+        if answer.status == "answered" and not _valid_value(subtest, subtest.items[int(key) - 1], answer.value)
     ]
     if invalid:
         raise _unprocessable({
@@ -405,13 +422,12 @@ async def submit_subtest(
 
     stored = _stored_payload(run, subtest.key)
     if stored is not None:
-        payload = _validate_answers(subtest, answers, run.locale)
-        if stored == payload:
+        if stored == _validate_answers(subtest, answers):
             return run, subtest.key, run.subtest_timings_ms.get(subtest.key), [], False
         raise _conflict(ALREADY_SUBMITTED, "This subtest was already submitted in the open attempt")
 
     _require_expected_subtest(published.bank, run, subtest)
-    payload = _validate_answers(subtest, answers, run.locale)
+    payload = _validate_answers(subtest, answers)
 
     # Treat the server start anchor as this subtest run's generation token.
     # A reset deletes it; a restart creates another one. Consequently, a

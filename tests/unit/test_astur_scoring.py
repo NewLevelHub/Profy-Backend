@@ -91,6 +91,28 @@ def test_open_answers_score_by_tier_with_typo_tolerance() -> None:
     assert snap.item_scores["generalization-03"] == 0
 
 
+def test_v4_ru_attempt_answered_in_kazakh_scores_in_full() -> None:
+    answers = content_answers(BANK, locale="kk")
+    snap = score_attempt(BANK, _attempt(answers, quick_entries(BANK, locale="kk")), get_rules("4"))
+    assert all(s.percent == 100.0 for s in snap.subtests)
+    quick = snap.quick_instructions
+    assert quick.first_half_correct + quick.second_half_correct == quick.total
+    # Under v3 only the attempt's own language counted — loanwords spelled
+    # the same in both («цитология») were the only Kazakh answers matching.
+    assert _subtest(score_attempt(BANK, _attempt(answers), get_rules("3")), "awareness").score < 20
+
+
+def test_v4_open_text_also_matches_the_other_languages_tiers() -> None:
+    """The language may be switched while a block is being typed."""
+    answers = content_answers(BANK)
+    answers["generalization"]["1"] = _item("generalization")["score_2"]["kk"][0]
+    answers["generalization"]["2"] = _item("generalization", 1)["score_1"]["kk"][0]
+    v3 = score_attempt(BANK, _attempt(answers), get_rules("3"))
+    v4 = score_attempt(BANK, _attempt(answers), get_rules("4"))
+    assert (v3.item_scores["generalization-01"], v3.item_scores["generalization-02"]) == (0, 0)
+    assert (v4.item_scores["generalization-01"], v4.item_scores["generalization-02"]) == (2, 1)
+
+
 def test_chain_scores_one_point_per_restored_adjacent_link() -> None:
     concepts = _item("logical_schemas")["concepts"]["ru"]  # 5 concepts → 4 links
     answers = content_answers(BANK)

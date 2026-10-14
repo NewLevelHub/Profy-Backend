@@ -1,5 +1,6 @@
 """PRO-427 — АСТУР attempt lifecycle over the real API: attempts are opened
-explicitly with content pinned to their bank version and locale, every
+explicitly with content pinned to their bank version (the content follows
+the app's language; answers are accepted in either language), every
 payload names its attempt, answers are explicit (answered / skipped),
 partial attempts have no result, the last submit finalizes atomically,
 completed attempts are frozen and never reopened, a repeat attempt in a
@@ -63,7 +64,7 @@ async def test_not_started_until_an_attempt_is_opened(client: AsyncClient, db_se
     assert await _runs(db_session, assessment.id) == []
 
 
-async def test_opening_pins_version_and_locale_and_returns_that_content(
+async def test_opening_pins_version_and_returns_that_content(
     client: AsyncClient, db_session: AsyncSession
 ) -> None:
     _, assessment, headers = await make_student(db_session)
@@ -269,34 +270,92 @@ async def test_confirmed_exit_clears_quick_subtest_protocol(
     assert "lability" not in run.subtest_started_at
 
 
-async def test_content_and_scoring_stay_in_the_attempts_locale(client: AsyncClient, db_session: AsyncSession) -> None:
-    user, assessment, headers = await make_student(db_session)
-    await open_attempt(client, assessment.id, headers)  # RU attempt
-    user.locale = "kk"  # the app's language switcher
-    await db_session.flush()
+async def test_answers_in_the_other_language_score_the_same(client: AsyncClient, db_session: AsyncSession) -> None:
+    """A RU attempt answered in Kazakh and a KK attempt answered in Russian
+    both score 100% — every subtest, choice and text alike."""
+    for opened_in, answered_in in (("ru", "kk"), ("kk", "ru")):
+        user, assessment, headers = await make_student(db_session)
+        user.locale = opened_in
+        await db_session.flush()
+        await complete_attempt(client, assessment.id, headers, locale=answered_in)
+        [run] = await _runs(db_session, assessment.id)
+        assert run.status == AsturRunStatus.completed
+        assert run.locale == opened_in
+        assert run.result_snapshot["overall_percent"] == 100.0
+        assert all(s["percent"] == 100.0 for s in run.result_snapshot["subtests"]), run.result_snapshot["subtests"]
 
-    resumed = await open_attempt(client, assessment.id, headers)
-    first_item = resumed["content"]["subtests"][0]["items"][0]
-    assert resumed["content"]["locale"] == "ru"
-    assert first_item["text"] == BANK.subtest("awareness").items[0]["text"]["ru"]
 
-    await complete_attempt(client, assessment.id, headers)
+def _mixed(subtest_key: str, item: dict, field: str) -> list:
+    """The correct answer with every other element taken from the kk list."""
+    ru_words, kk_words = item[field]["ru"], item[field]["kk"]
+    correct = content_answers(BANK)[subtest_key]
+    position = BANK.subtest(subtest_key).items.index(item) + 1
+    return [
+        kk_words[ru_words.index(word)] if i % 2 else word
+        for i, word in enumerate(correct[str(position)])
+    ]
+
+
+async def test_an_answer_mixing_both_languages_is_accepted_and_scored(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await make_student(db_session)
+    opened = await open_attempt(client, assessment.id, headers)
+    run_id = opened["run"]["run_id"]
+    mixed_fields = {"classification": "words", "logical_schemas": "concepts"}
+    for served in opened["content"]["subtests"]:
+        key = served["key"]
+        started = await start(client, assessment.id, served["number"], run_id, headers)
+        if key == "lability":
+            payload = quick_payload(BANK, run_id, locale="kk")
+        else:
+            values = content_answers(BANK)[key]
+            if key in mixed_fields:
+                values = {
+                    str(i): _mixed(key, item, mixed_fields[key])
+                    for i, item in enumerate(BANK.subtest(key).items, start=1)
+                }
+            payload = {"run_id": run_id, "answers": answered(values)}
+        payload["started_at"] = started.json()["started_at"]
+        resp = await submit(client, assessment.id, served["number"], payload, headers)
+        assert resp.status_code == 201, (key, resp.text)
     [run] = await _runs(db_session, assessment.id)
-    assert run.locale == "ru"
+    snapshot = {s["key"]: s["percent"] for s in run.result_snapshot["subtests"]}
+    assert snapshot["classification"] == snapshot["logical_schemas"] == 100.0
     assert run.result_snapshot["overall_percent"] == 100.0
 
 
-async def test_kk_attempt_stays_kk(client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_content_follows_the_current_language(client: AsyncClient, db_session: AsyncSession) -> None:
     user, assessment, headers = await make_student(db_session)
     user.locale = "kk"
     await db_session.flush()
     body = await open_attempt(client, assessment.id, headers)
-    assert body["run"]["locale"] == "kk"
-    user.locale = "ru"
+    assert body["run"]["locale"] == body["content"]["locale"] == "kk"
+    user.locale = "ru"  # the app's language switcher
     await db_session.flush()
     resumed = await open_attempt(client, assessment.id, headers)
-    assert resumed["content"]["locale"] == "kk"
-    assert resumed["content"]["subtests"][0]["name"] == BANK.subtest("awareness").name["kk"]
+    assert resumed["run"]["run_id"] == body["run"]["run_id"]
+    assert resumed["run"]["locale"] == "kk"  # the language it was opened in
+    assert resumed["content"]["locale"] == "ru"
+    assert resumed["content"]["subtests"][0]["name"] == BANK.subtest("awareness").name["ru"]
+
+
+async def test_an_option_of_either_language_passes_validation_anything_else_does_not(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    _, assessment, headers = await make_student(db_session)
+    run_id = (await open_attempt(client, assessment.id, headers))["run"]["run_id"]  # a RU attempt
+    started = await start(client, assessment.id, 1, run_id, headers)
+    kk_values = content_answers(BANK, locale="kk")["awareness"]
+    payload = {"run_id": run_id, "answers": answered(kk_values), "started_at": started.json()["started_at"]}
+
+    unknown = {**payload, "answers": answered({**kk_values, "1": "не вариант"})}
+    rejected = await submit(client, assessment.id, 1, unknown, headers)
+    assert rejected.status_code == 422, rejected.text
+    assert rejected.json()["detail"]["invalid_items"] == ["1"]
+
+    accepted = await submit(client, assessment.id, 1, payload, headers)
+    assert accepted.status_code == 201, accepted.text
 
 
 async def test_publish_between_opening_and_answering_never_rescores_with_new_keys(
@@ -451,7 +510,7 @@ async def test_last_submit_finalizes_and_freezes_the_result(client: AsyncClient,
 
     [run] = await _runs(db_session, assessment.id)
     assert run.status == AsturRunStatus.completed
-    assert run.scoring_version == "3"
+    assert run.scoring_version == "4"
     snapshot = run.result_snapshot
     pinned = await bank_versions.get_published(db_session, run.bank_version_id)
     assert snapshot["bank_version"] == pinned.version
