@@ -4,7 +4,7 @@ CRM roles from ТЗ CRM Profile v4.1 §2 (PRO-497) and a display name for
 staff accounts — specialists are shown by name in the schedule and CRM.
 
 Revision ID: c375e89983f8
-Revises: ff9d84dcd1ba
+Revises: 7fd78c85f3b0
 Create Date: 2026-10-20 08:30:48.096952
 
 """
@@ -15,7 +15,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'c375e89983f8'
-down_revision: Union[str, None] = 'ff9d84dcd1ba'
+down_revision: Union[str, None] = '7fd78c85f3b0'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
