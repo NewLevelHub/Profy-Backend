@@ -212,6 +212,7 @@ def _item(invitation: Invitation, inviter_email: str | None, now: datetime) -> A
         email=invitation.email,
         role=invitation.role,
         locale=invitation.locale,
+        full_name=invitation.full_name,
         status=invitation.status_at(now),
         invited_by=inviter,
         created_at=invitation.created_at,
@@ -291,6 +292,7 @@ async def create_invitation(
         email=body.email,
         role=body.role,
         locale=body.locale,
+        full_name=body.full_name,
         invited_by=inviter.id if inviter else None,
     )
     token = _issue_token(invitation, now)
@@ -389,6 +391,8 @@ def apply_to_user(user: User, invitation: Invitation) -> None:
     """Turn `user` into the invited staff member and close the invitation."""
     user.role = invitation.role
     user.locale = invitation.locale
+    if invitation.full_name:
+        user.full_name = invitation.full_name
     user.is_verified = True
     invitation.accepted_at = _now()
     invitation.token_ciphertext = None

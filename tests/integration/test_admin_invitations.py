@@ -289,8 +289,8 @@ async def test_create_checks_mail_domain_when_enabled(
 @pytest.mark.parametrize(
     ("payload", "admin_locale", "message"),
     [
-        ({"role": "student"}, "ru", "Пригласить можно только психолога или админа"),
-        ({"role": "superuser"}, "kk", "Тек психологты немесе әкімшіні шақыруға болады"),
+        ({"role": "student"}, "ru", "Пригласить можно только сотрудника — ученики регистрируются сами"),
+        ({"role": "superuser"}, "kk", "Тек қызметкерді шақыруға болады — оқушылар өздері тіркеледі"),
         ({"role": "psychologist", "email": "not-an-email"}, "ru", "Введите корректный email"),
         ({"role": "psychologist", "locale": "en"}, "ru", "Язык письма должен быть одним из: ru, kk"),
     ],
@@ -638,7 +638,9 @@ async def test_list_paginates_newest_first(
 # ── access ──────────────────────────────────────────────────────────────────
 
 
-@pytest.mark.parametrize("role", [UserRole.student, UserRole.psychologist])
+@pytest.mark.parametrize(
+    "role", [UserRole.student, UserRole.psychologist, UserRole.sales_head, UserRole.sales_manager]
+)
 async def test_non_admin_gets_403_everywhere(
     client: httpx.AsyncClient, db_session: AsyncSession, role: UserRole
 ) -> None:
@@ -656,3 +658,20 @@ async def test_non_admin_gets_403_everywhere(
     ]
 
     assert [r.status_code for r in responses] == [403, 403, 403, 403, 403]
+
+
+async def test_owner_can_invite_staff(
+    client: httpx.AsyncClient, db_session: AsyncSession, sent_emails: list[dict]
+) -> None:
+    """The business owner runs the CRM staff (PRO-497)."""
+    email = _email()
+    await _add_user(db_session, email, role=UserRole.owner, is_verified=True)
+    owner = await db_session.scalar(select(User).where(User.email == email))
+    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(owner)}"}
+
+    created = await client.post(
+        URL, json={"email": _email(), "role": "psychologist", "full_name": "Лолита"}, headers=headers
+    )
+    assert created.status_code == 201, created.text
+    assert created.json()["invited_by"]["id"] == str(owner.id)
+    assert (await client.get(URL, headers=headers)).status_code == 200

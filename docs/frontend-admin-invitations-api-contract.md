@@ -7,8 +7,9 @@ PRO-462 (`app/routers/auth.py`, `app/services/oauth_service.py`); логика �
 страница `/invite`) пишется по этому документу. Если API меняется, документ
 обновляется в том же PR.
 
-Доступ к админским эндпоинтам (JWT + роль `admin`, 401/403) — как во всей
-админке, см. §1 `docs/frontend-admin-university-api-contract.md`.
+Доступ к админским эндпоинтам — JWT + роль `admin` **или `owner`** (владелец
+ведёт сотрудников CRM, PRO-497); остальным ролям 403 `"Insufficient role"`.
+401 — как во всей админке, см. §1 `docs/frontend-admin-university-api-contract.md`.
 
 ## 0. Как это устроено
 
@@ -130,8 +131,9 @@ i18n-каталога фронта по коду.
 {
   "id": "7b0c6a3e-2f4d-4e55-9a51-3f0c2a1d9e10",
   "email": "psy@example.com",           // в нижнем регистре
-  "role": "psychologist",               // "psychologist" | "admin"
+  "role": "psychologist",               // любая роль, кроме "student": "psychologist" | "admin" | "owner" | "sales_head" | "sales_manager" | "marketer"
   "locale": "kk",                       // "ru" | "kk" — язык письма; станет users.locale при принятии
+  "full_name": "Лолита …",              // null, если не указано; станет users.full_name при принятии
   "status": "pending",                  // §2.1
   "invited_by": {                       // null, если пригласивший админ удалён
     "id": "e78dd10f-0527-4bd8-bb83-b4a9bc724287",
@@ -181,8 +183,13 @@ Authorization: Bearer <admin-token>
 ```
 
 - `email` — обязателен, приводится к нижнему регистру.
-- `role` — обязателен, `"psychologist"` или `"admin"`. `"student"` → 422.
+- `role` — обязателен, любая роль, кроме `"student"`: `"psychologist"`, `"admin"`,
+  а с PRO-497 и роли CRM — `"owner"`, `"sales_head"`, `"sales_manager"`, `"marketer"`.
+  `"student"` → 422.
 - `locale` — `"ru"` или `"kk"`, по умолчанию `"ru"`.
+- `full_name` — необязательно, до 255 символов, пробелы по краям обрезаются.
+  Становится `users.full_name` — под этим именем специалиста видят в
+  расписании и CRM.
 
 | Ответ | Когда |
 |---|---|

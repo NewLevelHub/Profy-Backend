@@ -14,6 +14,12 @@ class UserRole(str, enum.Enum):
     student = "student"
     admin = "admin"
     psychologist = "psychologist"
+    # CRM roles (ТЗ CRM Profile v4.1 §2, PRO-497). `owner` is the business
+    # owner — not the platform content `admin`.
+    owner = "owner"
+    sales_head = "sales_head"
+    sales_manager = "sales_manager"
+    marketer = "marketer"
 
 
 class User(Base):
@@ -34,6 +40,9 @@ class User(Base):
     token_version: Mapped[int] = mapped_column(
         Integer, default=0, server_default="0", nullable=False
     )
+    # Display name of a staff member (e.g. a specialist in the schedule).
+    # Students keep their name in `profiles.name`; this stays null for them.
+    full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     role: Mapped[UserRole] = mapped_column(
         Enum(UserRole, name="user_role_enum"), default=UserRole.student, nullable=False
     )

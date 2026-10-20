@@ -20,6 +20,8 @@ error strings that need client-side localization are migrated to ``AppError``.
 
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import HTTPException
 
 
@@ -33,6 +35,10 @@ class AppError(HTTPException):
         error_code: str,
         detail: str,
         headers: dict[str, str] | None = None,
+        extra: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(status_code=status_code, detail=detail, headers=headers)
         self.error_code = error_code
+        # Additional machine-readable fields merged into the body, e.g. the
+        # conflicting slots of a schedule change. Never user-facing text.
+        self.extra = extra or {}

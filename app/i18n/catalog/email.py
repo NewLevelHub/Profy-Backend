@@ -35,6 +35,12 @@ RU = {
         "{results_url}"
     ),
     "result_published_fallback_name": "Привет",
+    "week_reminder_subject": "Выставьте расписание на следующую неделю — Profile",
+    "week_reminder_plain": (
+        "{name}, расписание на неделю {week} ещё не выставлено.\n\n"
+        "Отметьте свободное время и опубликуйте неделю в кабинете:\n"
+        "{schedule_url}"
+    ),
     "invitation_subject": "Приглашение в Profile",
     "invitation_plain": (
         "Вас пригласили присоединиться к Profile {role}.\n\n"
@@ -45,6 +51,10 @@ RU = {
     ),
     "invitation_role_psychologist": "в роли психолога",
     "invitation_role_admin": "в роли администратора",
+    "invitation_role_owner": "в роли владельца",
+    "invitation_role_sales_head": "в роли руководителя отдела продаж",
+    "invitation_role_sales_manager": "в роли менеджера отдела продаж",
+    "invitation_role_marketer": "в роли маркетолога",
 }
 
 KK = {
@@ -67,6 +77,12 @@ KK = {
         "{results_url}"
     ),
     "result_published_fallback_name": "Сәлем",
+    "week_reminder_subject": "Келесі аптаның кестесін толтырыңыз — Profile",
+    "week_reminder_plain": (
+        "{name}, {week} аптасының кестесі әлі толтырылмаған.\n\n"
+        "Бос уақытыңызды белгілеп, кабинетте аптаны жариялаңыз:\n"
+        "{schedule_url}"
+    ),
     "invitation_subject": "Profile платформасына шақыру",
     "invitation_plain": (
         "Сіз Profile платформасына {role} қосылуға шақырылдыңыз.\n\n"
@@ -77,4 +93,8 @@ KK = {
     ),
     "invitation_role_psychologist": "психолог ретінде",
     "invitation_role_admin": "әкімші ретінде",
+    "invitation_role_owner": "иесі ретінде",
+    "invitation_role_sales_head": "сату бөлімінің басшысы ретінде",
+    "invitation_role_sales_manager": "сату бөлімінің менеджері ретінде",
+    "invitation_role_marketer": "маркетолог ретінде",
 }
