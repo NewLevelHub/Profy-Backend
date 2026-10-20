@@ -47,12 +47,19 @@ def answered(values: dict) -> dict:
 
 
 def quick_payload(
-    bank: AsturBank, run_id: uuid.UUID, *, elapsed_ms: int = 300, over_limit: set[int] = frozenset()
+    bank: AsturBank,
+    run_id: uuid.UUID,
+    *,
+    elapsed_ms: int = 300,
+    over_limit: set[int] = frozenset(),
+    locale: str = "ru",
 ) -> dict:
     subtest = bank.subtest("lability")
     return {
         "run_id": str(run_id),
-        "answers": answered({str(i): expected_quick_answer(item) for i, item in enumerate(subtest.items, start=1)}),
+        "answers": answered({
+            str(i): expected_quick_answer(item, locale=locale) for i, item in enumerate(subtest.items, start=1)
+        }),
         "elapsed_ms": {
             str(i): (bank.lability_item_limit_ms + 1 if i in over_limit else elapsed_ms)
             for i in range(1, len(subtest.items) + 1)
@@ -109,11 +116,12 @@ async def complete_attempt(
     bank: AsturBank | None = None,
     wrong: set[str] = frozenset(),
     skip: set[str] = frozenset(),
+    locale: str = "ru",
 ) -> list:
     """Open (or resume), then submit the pinned sequence up to `skip`.
 
     Already submitted blocks are ignored. Subtests in `wrong` get
-    valid-format but wrong answers.
+    valid-format but wrong answers; every block is answered in `locale`.
     """
     bank = bank or v1_bank()
     opened = await open_attempt(client, assessment_id, headers)
@@ -131,9 +139,12 @@ async def complete_attempt(
         started = await start(client, assessment_id, served_subtest["number"], run_id, headers)
         assert started.status_code == 201, started.text
         if subtest.key == "lability":
-            payload = quick_payload(bank, run_id)
+            payload = quick_payload(bank, run_id, locale=locale)
         else:
-            payload = {"run_id": run_id, "answers": answered(content_answers(bank, wrong=wrong)[subtest.key])}
+            payload = {
+                "run_id": run_id,
+                "answers": answered(content_answers(bank, locale=locale, wrong=wrong)[subtest.key]),
+            }
         payload["started_at"] = started.json()["started_at"]
         resp = await submit(client, assessment_id, served_subtest["number"], payload, headers)
         assert resp.status_code == 201, resp.text

@@ -47,6 +47,8 @@ class AsturRun(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    # Language the attempt was opened in (analytics groups by it). Content
+    # follows the current language and answers are accepted in either one.
     locale: Mapped[str] = mapped_column(String, nullable=False, default="ru")
     status: Mapped[AsturRunStatus] = mapped_column(
         Enum(AsturRunStatus, name="astur_run_status_enum"),
