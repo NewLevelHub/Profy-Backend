@@ -6,7 +6,7 @@ Times are UTC; the business calendar is Asia/Almaty (`app.services.tz`).
 
 A slot is a 30-minute cell. Only non-`closed` cells have a row: a missing
 row means the specialist does not work then, so a day off is simply no rows.
-Meetings (R2) will reference a slot and mark it `booked`.
+A booked slot keeps its row, in state `booked`, pointing at the meeting.
 """
 
 import enum
@@ -35,6 +35,8 @@ class SlotState(str, enum.Enum):
     free = "free"
     # «Занято (личное)»: the specialist's own client, no details (ТЗ §4.6 п.6).
     personal = "personal"
+    # Taken by a meeting (`meeting_id`); only a booking sets it.
+    booked = "booked"
 
 
 class SpecialistSlot(Base):
@@ -54,6 +56,52 @@ class SpecialistSlot(Base):
     )
     updated_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    meeting_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("meetings.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+
+
+class MeetingType(str, enum.Enum):
+    intro30 = "intro30"  # Вступительный созвон
+    main60 = "main60"    # Основной созвон / созвон по «Консультации»
+
+
+class MeetingStatus(str, enum.Enum):
+    pending = "pending"      # Ожидание
+    confirmed = "confirmed"  # Подтвердил
+    done = "done"            # Проведена
+    no_show = "no_show"      # Не пришёл
+    cancelled = "cancelled"
+
+
+class Meeting(Base):
+    """A call booked in the shared schedule (ТЗ §3.2 «Встреча», §3.9).
+
+    `handoff` is the handoff card the manager filled (ТЗ §3.10): it is what
+    the specialist sees about the client, without prices or the sales chat."""
+
+    __tablename__ = "meetings"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    deal_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("crm_deals.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    specialist_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    type: Mapped[MeetingType] = mapped_column(Enum(MeetingType, native_enum=False, length=16), nullable=False)
+    status: Mapped[MeetingStatus] = mapped_column(
+        Enum(MeetingStatus, native_enum=False, length=16), nullable=False, server_default="pending"
+    )
+    start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    end_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    handoff: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
 

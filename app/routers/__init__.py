@@ -9,6 +9,7 @@ from app.routers.astur import router as astur_router
 from app.routers.auth import router as auth_router
 from app.routers.belbin import router as belbin_router
 from app.routers.certificates import router as certificates_router
+from app.routers.crm import router as crm_router
 from app.routers.extended_blocks import router as extended_blocks_router
 from app.routers.motivation import router as motivation_router
 from app.routers.profile import router as profile_router
@@ -39,4 +40,5 @@ api_router.include_router(astur_router, prefix="/api/v1/assessment")
 api_router.include_router(extended_blocks_router, prefix="/api/v1/assessment")
 api_router.include_router(result_router, prefix="/api/v1/result")
 api_router.include_router(scheduling_router, prefix="/api/v1/scheduling")
+api_router.include_router(crm_router, prefix="/api/v1/crm")
 api_router.include_router(university_router, prefix="/api/v1/universities")
