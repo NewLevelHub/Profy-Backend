@@ -1,5 +1,8 @@
-"""Admin: staff email invitations (PRO-460). Contract:
-docs/frontend-admin-invitations-api-contract.md."""
+"""Staff email invitations (PRO-460). Contract:
+docs/frontend-admin-invitations-api-contract.md.
+
+Open to the platform admin and to the business owner, who runs the CRM
+staff (ТЗ CRM Profile v4.1 §2 has no separate administrator role; PRO-497)."""
 
 import uuid
 
@@ -7,9 +10,9 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dependencies import get_current_admin_user
+from app.dependencies import require_role
 from app.models.invitation import InvitationStatus
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.invitation import (
     AdminInvitationCreate,
     AdminInvitationItem,
@@ -21,11 +24,13 @@ from app.services import invitation_service
 
 router = APIRouter(tags=["admin-invitations"])
 
+_require_inviter = require_role(UserRole.admin, UserRole.owner)
+
 
 @router.post("", response_model=AdminInvitationSent, status_code=status.HTTP_201_CREATED)
 async def create_invitation(
     body: AdminInvitationCreate,
-    admin: User = Depends(get_current_admin_user),
+    admin: User = Depends(_require_inviter),
     db: AsyncSession = Depends(get_db),
 ) -> AdminInvitationSent:
     return await invitation_service.create_invitation(db, body, inviter=admin)
@@ -37,7 +42,7 @@ async def list_invitations(
     limit: int = Query(default=20, ge=1, le=100),
     status_filter: InvitationStatus | None = Query(default=None, alias="status"),
     search: str | None = Query(default=None),
-    _: User = Depends(get_current_admin_user),
+    _: User = Depends(_require_inviter),
     db: AsyncSession = Depends(get_db),
 ) -> AdminInvitationListResponse:
     return await invitation_service.list_invitations(
@@ -48,7 +53,7 @@ async def list_invitations(
 @router.get("/{invitation_id}/link", response_model=AdminInvitationLink)
 async def invitation_link(
     invitation_id: uuid.UUID,
-    _: User = Depends(get_current_admin_user),
+    _: User = Depends(_require_inviter),
     db: AsyncSession = Depends(get_db),
 ) -> AdminInvitationLink:
     return await invitation_service.invitation_link(db, invitation_id)
@@ -57,7 +62,7 @@ async def invitation_link(
 @router.post("/{invitation_id}/resend", response_model=AdminInvitationSent)
 async def resend_invitation(
     invitation_id: uuid.UUID,
-    _: User = Depends(get_current_admin_user),
+    _: User = Depends(_require_inviter),
     db: AsyncSession = Depends(get_db),
 ) -> AdminInvitationSent:
     return await invitation_service.resend_invitation(db, invitation_id)
@@ -66,7 +71,7 @@ async def resend_invitation(
 @router.delete("/{invitation_id}", response_model=AdminInvitationItem)
 async def revoke_invitation(
     invitation_id: uuid.UUID,
-    _: User = Depends(get_current_admin_user),
+    _: User = Depends(_require_inviter),
     db: AsyncSession = Depends(get_db),
 ) -> AdminInvitationItem:
     return await invitation_service.revoke_invitation(db, invitation_id)

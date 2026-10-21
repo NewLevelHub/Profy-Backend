@@ -576,3 +576,46 @@ async def test_accept_is_rate_limited(client: httpx.AsyncClient) -> None:
 
     assert statuses[:10] == [400] * 10
     assert statuses[10] == 429
+
+
+async def test_crm_role_invitation_carries_full_name(
+    client: httpx.AsyncClient, admin_headers: dict[str, str], monkeypatch
+) -> None:
+    """CRM roles (PRO-497) are invited like any staff; the invited name
+    becomes `users.full_name`."""
+    links: list[str] = []
+
+    async def _capture(to: str, invite_url: str, **_kwargs) -> str:
+        links.append(invite_url)
+        return f"msg-{uuid.uuid4()}"
+
+    monkeypatch.setattr(email_service, "send_invitation_email", _capture)
+    email = _email()
+    created = await client.post(
+        "/api/v1/admin/invitations",
+        json={"email": email, "role": "sales_manager", "full_name": "  Айгерим Н.  "},
+        headers=admin_headers,
+    )
+    assert created.status_code == 201, created.text
+    assert created.json()["full_name"] == "Айгерим Н."
+    token = parse_qs(urlparse(links[0]).fragment)["token"][0]
+
+    accepted = await client.post(ACCEPT_URL, json={"token": token, "password": PASSWORD})
+    assert accepted.status_code == 200
+    me = await client.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {accepted.json()['access_token']}"}
+    )
+    assert me.json()["role"] == "sales_manager"
+
+
+async def test_invited_full_name_is_stored_on_the_user(db_session: AsyncSession) -> None:
+    email = _email()
+    invitation, token = await _add_invitation(db_session, email, role=UserRole.owner)
+    invitation.full_name = "Санжар"
+    await db_session.flush()
+
+    user, _ = await invitation_service.accept_invitation(
+        db_session, AcceptInvitationRequest(token=token, password=PASSWORD)
+    )
+    assert user.role is UserRole.owner
+    assert user.full_name == "Санжар"

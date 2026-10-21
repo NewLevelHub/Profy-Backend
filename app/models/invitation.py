@@ -27,7 +27,8 @@ class InvitationEmailStatus(str, enum.Enum):
 
 
 class Invitation(Base):
-    """Email invitation of a staff member — psychologist or admin (PRO-459).
+    """Email invitation of a staff member — any role but student (PRO-459,
+    CRM roles PRO-497).
 
     No `users` row exists until the invite is accepted (PRO-462): the
     accepting request creates the User with this `role` and `locale`. Kept
@@ -64,6 +65,8 @@ class Invitation(Base):
         nullable=False,
         server_default="ru",
     )
+    # Becomes `users.full_name` on accept.
+    full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     token_ciphertext: Mapped[str | None] = mapped_column(Text, nullable=True)
     # SET NULL: deleting the inviting admin must not void invites already sent.

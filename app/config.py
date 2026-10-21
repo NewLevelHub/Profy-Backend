@@ -73,6 +73,12 @@ class Settings(BaseSettings):
     # admin ones included, to anyone who asks.
     API_DOCS_ENABLED: bool = True
 
+    # Background check that emails specialists who have not set next week's
+    # schedule by the owner's reminder time (PRO-560). One API process runs it;
+    # duplicates are impossible anyway (`specialist_week_reminders`).
+    WEEK_REMINDERS_ENABLED: bool = True
+    WEEK_REMINDERS_INTERVAL_SECONDS: int = 300
+
     # Which backend build_storage_backend() returns:
     #   "fs"  — write photos to STORAGE_FS_ROOT on disk; nginx serves them
     #           directly (default; no object-storage service to run).

@@ -5,6 +5,7 @@ from app.models.email_verification import EmailVerificationToken  # noqa: F401 �
 from app.models.artifact import Artifact  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.assessment import Assessment  # noqa: F401 — keep model imported so Alembic discovers it
 
+from app.models.audit_log import AuditLog  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.astur_bank_version import AsturBankVersion  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.astur_run import AsturRun  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.belbin_progress import BelbinProgress  # noqa: F401 — keep model imported so Alembic discovers it
@@ -23,6 +24,13 @@ from app.models.psychologist_assignment import PsychologistStudentAssignment  # 
 from app.models.psychologist_note import PsychologistNote  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.question import Question  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.question_pair import QuestionPair  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.scheduling import (  # noqa: F401 — keep model imported so Alembic discovers it
+    SchedulingSettings,
+    SpecialistSlot,
+    SpecialistWeekPublication,
+    SpecialistWeekReminder,
+    SpecialistWeekTemplate,
+)
 from app.models.university import University  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.university_image import UniversityImage  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.university_external_ref import UniversityExternalRef  # noqa: F401 — keep model imported so Alembic discovers it
@@ -33,12 +41,13 @@ from app.models.user_response import UserResponse  # noqa: F401 — keep model i
 from app.models.content_override import ContentOverride  # noqa: F401 — keep model imported so Alembic discovers it
 
 __all__ = [
-    "Base", "AnalysisResult", "Artifact", "Assessment", "AsturBankVersion", "AsturRun", "BelbinProgress", "BelbinRun", "Consent",
+    "Base", "AnalysisResult", "Artifact", "Assessment", "AsturBankVersion", "AsturRun", "AuditLog", "BelbinProgress", "BelbinRun", "Consent",
     "ContentOverride", "Direction", "ExtendedBlockAssignment",
     "EmailVerificationToken", "Invitation",
     "MotivationResponse", "MotivationStatement", "PasswordResetToken",
     "ProductFeedback", "Profile", "Program", "PsychoEmotionalRun",
     "PsychologistNote", "PsychologistStudentAssignment", "Question", "QuestionPair",
+    "SchedulingSettings", "SpecialistSlot", "SpecialistWeekPublication", "SpecialistWeekReminder", "SpecialistWeekTemplate",
     "University", "UniversityImage", "UniversityExternalRef", "UniversityFavorite",
     "User", "UserResponse",
 ]
