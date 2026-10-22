@@ -9,6 +9,11 @@ PRO-462 (`app/routers/auth.py`, `app/services/oauth_service.py`); логика �
 
 Доступ к админским эндпоинтам — JWT + роль `admin` **или `owner`** (владелец
 ведёт сотрудников CRM, PRO-497); остальным ролям 403 `"Insufficient role"`.
+Владелец приглашает только `psychologist`, `sales_head`, `sales_manager`,
+`marketer` (иначе 403 `invitation_role_forbidden`) и видит только такие
+приглашения: в списке нет остальных, ссылка, повторная отправка и отзыв чужих
+ролей — 404 `invitation_not_found`. Владелец работает с приглашениями в CRM,
+раздел «Сотрудники».
 401 — как во всей админке, см. §1 `docs/frontend-admin-university-api-contract.md`.
 
 ## 0. Как это устроено

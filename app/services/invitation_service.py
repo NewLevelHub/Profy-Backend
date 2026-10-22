@@ -33,7 +33,7 @@ from app.config import settings
 from app.errors import AppError
 from app.i18n.catalog import key as i18n_key
 from app.models.invitation import Invitation, InvitationEmailStatus, InvitationStatus
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.invitation import (
     AcceptInvitationRequest,
     AdminInvitationCreate,
@@ -50,6 +50,21 @@ logger = logging.getLogger(__name__)
 
 # The MX lookup on create; past this the address is let through.
 _DELIVERABILITY_TIMEOUT_SECONDS = 5
+
+# The owner runs the business staff — specialists and the CRM team — but not
+# platform admins or another owner (those stay with the platform admin).
+OWNER_INVITABLE_ROLES: tuple[UserRole, ...] = (
+    UserRole.psychologist,
+    UserRole.sales_head,
+    UserRole.sales_manager,
+    UserRole.marketer,
+)
+
+
+def invitable_roles(inviter: User) -> tuple[UserRole, ...] | None:
+    """Roles `inviter` may invite and manage invitations of; None — any."""
+    return OWNER_INVITABLE_ROLES if inviter.role == UserRole.owner else None
+
 
 # Error code for an operation that needs an open invitation but got a closed one.
 _CLOSED_STATUS_ERRORS: dict[InvitationStatus, str] = {
@@ -171,9 +186,15 @@ async def _ensure_no_other_pending(
         raise invitation_error(status.HTTP_409_CONFLICT, "invitation_pending")
 
 
-async def _get_for_update(db: AsyncSession, invitation_id: uuid.UUID) -> Invitation:
+def _visible(roles: tuple[UserRole, ...] | None):
+    return [Invitation.role.in_(roles)] if roles is not None else []
+
+
+async def _get_for_update(
+    db: AsyncSession, invitation_id: uuid.UUID, roles: tuple[UserRole, ...] | None = None
+) -> Invitation:
     invitation = await db.scalar(
-        select(Invitation).where(Invitation.id == invitation_id).with_for_update()
+        select(Invitation).where(Invitation.id == invitation_id, *_visible(roles)).with_for_update()
     )
     if invitation is None:
         raise invitation_error(status.HTTP_404_NOT_FOUND, "invitation_not_found")
@@ -280,6 +301,9 @@ async def create_invitation(
 ) -> AdminInvitationSent:
     """`inviter` is None for the CLI scripts (`scripts/create_*_user.py`),
     which also skip the mail-domain check: they print the link."""
+    roles = invitable_roles(inviter) if inviter else None
+    if roles is not None and body.role not in roles:
+        raise invitation_error(status.HTTP_403_FORBIDDEN, "invitation_role_forbidden")
     # Before the lock: a DNS lookup must not hold other requests up.
     if check_deliverability:
         await ensure_deliverable(body.email)
@@ -309,9 +333,12 @@ async def list_invitations(
     limit: int,
     status_filter: InvitationStatus | None = None,
     search: str | None = None,
+    roles: tuple[UserRole, ...] | None = None,
 ) -> AdminInvitationListResponse:
     now = _now()
     filters = []
+    if roles is not None:
+        filters.append(Invitation.role.in_(roles))
     if status_filter is not None:
         filters.append(Invitation.status_filter(status_filter, now))
     if search and search.strip():
@@ -334,15 +361,17 @@ async def list_invitations(
     )
 
 
-async def resend_invitation(db: AsyncSession, invitation_id: uuid.UUID) -> AdminInvitationSent:
+async def resend_invitation(
+    db: AsyncSession, invitation_id: uuid.UUID, roles: tuple[UserRole, ...] | None = None
+) -> AdminInvitationSent:
     """`pending` / `expired` only: same row, new token and TTL, new email."""
     # The email lock comes before the row lock (see `lock_email`); an
     # invitation's email never changes, so reading it unlocked is safe.
-    email = await db.scalar(select(Invitation.email).where(Invitation.id == invitation_id))
+    email = await db.scalar(select(Invitation.email).where(Invitation.id == invitation_id, *_visible(roles)))
     if email is None:
         raise invitation_error(status.HTTP_404_NOT_FOUND, "invitation_not_found")
     await lock_email(db, email)
-    invitation = await _get_for_update(db, invitation_id)
+    invitation = await _get_for_update(db, invitation_id, roles)
     now = _now()
     current = invitation.status_at(now)
     if current in (InvitationStatus.accepted, InvitationStatus.revoked):
@@ -357,8 +386,10 @@ async def resend_invitation(db: AsyncSession, invitation_id: uuid.UUID) -> Admin
     return await _sent(db, invitation, token)
 
 
-async def revoke_invitation(db: AsyncSession, invitation_id: uuid.UUID) -> AdminInvitationItem:
-    invitation = await _get_for_update(db, invitation_id)
+async def revoke_invitation(
+    db: AsyncSession, invitation_id: uuid.UUID, roles: tuple[UserRole, ...] | None = None
+) -> AdminInvitationItem:
+    invitation = await _get_for_update(db, invitation_id, roles)
     now = _now()
     current = invitation.status_at(now)
     if current != InvitationStatus.pending:
@@ -370,9 +401,11 @@ async def revoke_invitation(db: AsyncSession, invitation_id: uuid.UUID) -> Admin
     return _item(invitation, await _inviter_email(db, invitation), now)
 
 
-async def invitation_link(db: AsyncSession, invitation_id: uuid.UUID) -> AdminInvitationLink:
+async def invitation_link(
+    db: AsyncSession, invitation_id: uuid.UUID, roles: tuple[UserRole, ...] | None = None
+) -> AdminInvitationLink:
     """The current link of a pending invitation — the one in the latest email."""
-    invitation = await db.scalar(select(Invitation).where(Invitation.id == invitation_id))
+    invitation = await db.scalar(select(Invitation).where(Invitation.id == invitation_id, *_visible(roles)))
     if invitation is None:
         raise invitation_error(status.HTTP_404_NOT_FOUND, "invitation_not_found")
     current = invitation.status_at(_now())

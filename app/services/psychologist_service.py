@@ -62,6 +62,7 @@ from app.services import (
     report_service,
     student_strengths_service,
 )
+from app.services.crm import progress as crm_progress
 from app.services.psych_ai_analysis_context import build_context, has_any_data, fingerprint as context_fingerprint
 
 logger = logging.getLogger(__name__)
@@ -1290,7 +1291,7 @@ async def publish_result(
 
 
 async def _publish(
-    db: AsyncSession, analysis: AnalysisResult, *, publisher_id: uuid.UUID
+    db: AsyncSession, analysis: AnalysisResult, *, publisher_id: uuid.UUID | None
 ) -> PsychologistResultDetailResponse:
     if analysis.review_status == ReviewStatus.published:
         raise ResultAlreadyPublishedError(i18n_key("api_errors", "result_is_already_published", locale="ru"))
@@ -1323,12 +1324,40 @@ async def _publish(
             published_at=now,
         )
     )
+    # The deal of this student: «Отчёт опубликован» and «Успешно» (ТЗ §3.3.1).
+    student_id = await db.scalar(
+        select(Profile.user_id)
+        .join(Assessment, Assessment.profile_id == Profile.id)
+        .where(Assessment.id == analysis.assessment_id)
+    )
+    if student_id is not None:
+        await crm_progress.student_progressed(db, student_id)
     await db.commit()
     await db.refresh(analysis)
     detail = _to_detail(analysis)
     await _drop_report_cache(analysis.assessment_id)
     await _notify_result_published(db, analysis.assessment_id)
     return detail
+
+
+async def publish_without_review(db: AsyncSession, analysis: AnalysisResult) -> bool:
+    """Publish a just-built report whose tariff has no psychologist review
+    (`crm.progress.report_needs_review`). Same path as a psychologist's
+    «Опубликовать» — the deal moves to «Отчёт опубликован» / «Успешно», the
+    student gets the email — with no publisher: the system published it.
+
+    False — not published (incomplete content or an error); the report then
+    stays in the review queue like any other."""
+    try:
+        await _publish(db, analysis, publisher_id=None)
+    except ResultNotReadyForPublishError:
+        logger.warning("auto-publish: report %s is not complete, left for review", analysis.id)
+        return False
+    except Exception:
+        await db.rollback()
+        logger.exception("auto-publish of report %s failed, left for review", analysis.id)
+        return False
+    return True
 
 
 def _is_ready_for_publication(analysis: AnalysisResult) -> bool:

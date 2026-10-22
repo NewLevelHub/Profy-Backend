@@ -14,10 +14,10 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field
 
-SlotState = Literal["closed", "free", "personal", "booked"]
+SlotState = Literal["closed", "free", "booked"]
 # `booked` is set by a booking (R2), never through the availability endpoints.
-EditableSlotState = Literal["closed", "free", "personal"]
-TemplateSlotState = Literal["free", "personal"]
+EditableSlotState = Literal["closed", "free"]
+TemplateSlotState = Literal["free"]
 MeetingType = Literal["intro30", "main60"]
 MeetingStatus = Literal["pending", "confirmed", "done", "no_show", "cancelled"]
 
@@ -188,6 +188,10 @@ class FreeSlotsResponse(_FreeSlotsBase):
 class SchedulingSettings(BaseModel):
     week_reminder_weekday: int = Field(ge=1, le=7)
     week_reminder_time: WallTime
+
+
+class SpecialistMeetingStatusIn(BaseModel):
+    status: Literal["confirmed", "done", "no_show"]
 
 
 class SpecialistMeeting(BaseModel):

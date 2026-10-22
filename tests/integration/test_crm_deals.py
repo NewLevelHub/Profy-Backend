@@ -38,12 +38,12 @@ def _phone() -> str:
 
 
 @pytest.fixture
-async def manager(db_session: AsyncSession) -> User:
+async def manager(db_session: AsyncSession, price_list: None) -> User:
     return await _user(db_session, UserRole.sales_manager, "Айгерим")
 
 
 @pytest.fixture
-async def head(db_session: AsyncSession) -> User:
+async def head(db_session: AsyncSession, price_list: None) -> User:
     return await _user(db_session, UserRole.sales_head, "Бахтияр")
 
 

@@ -67,6 +67,10 @@ class Settings(BaseSettings):
     # Reject an invitation to a domain that cannot receive mail (no MX / A
     # record). One DNS lookup on create; a lookup timeout lets it through.
     INVITATION_CHECK_DELIVERABILITY: bool = True
+    # Profile is a paid service: a student account is made only from the
+    # CRM's invite link (ТЗ §4.4, П2-10). Signing in to an existing account
+    # and staff invitations are not affected.
+    REGISTRATION_INVITE_ONLY: bool = True
     GOOGLE_CLIENT_ID: str = ""
     # Serve Swagger UI (/docs) and /openapi.json. On for development;
     # docker-compose.prod.yml pins it off — the schema lists every route,

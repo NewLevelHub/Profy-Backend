@@ -17,6 +17,8 @@ from app.dependencies import require_role
 from app.i18n.catalog import key as i18n_key
 from app.models.user import User, UserRole
 from app.schemas import scheduling as schemas
+from app.models.scheduling import MeetingStatus
+from app.services.crm import meetings as crm_meetings
 from app.services.scheduling import service
 
 router = APIRouter(tags=["scheduling"])
@@ -146,6 +148,26 @@ async def list_meetings(
     db: AsyncSession = Depends(get_db),
 ) -> list[schemas.SpecialistMeeting]:
     return await service.list_meetings(db, specialist, date_from, date_to)
+
+
+@router.post(_SPECIALIST + "/meetings/{meeting_id}/status", response_model=schemas.SpecialistMeeting)
+async def set_meeting_status(
+    meeting_id: uuid.UUID,
+    body: schemas.SpecialistMeetingStatusIn,
+    specialist: User = Depends(_specialist),
+    current_user: User = Depends(_require_schedule_editor),
+    db: AsyncSession = Depends(get_db),
+) -> schemas.SpecialistMeeting:
+    """The specialist marks their call (ТЗ §4.5): «Подтвердил», and after the
+    start «Проведена» or «Не пришёл»."""
+    meeting = await crm_meetings.get_meeting(db, current_user, meeting_id, for_update=True)
+    if meeting.specialist_id != specialist.id:
+        raise service.scheduling_error(status.HTTP_404_NOT_FOUND, "meeting_not_found")
+    await crm_meetings.set_status(db, current_user, meeting, MeetingStatus(body.status))
+    return schemas.SpecialistMeeting(
+        id=meeting.id, type=meeting.type, status=meeting.status, start=meeting.start_at, end=meeting.end_at,
+        handoff=meeting.handoff,
+    )
 
 
 @router.get(

@@ -79,8 +79,13 @@ async def book(
     deal_id: uuid.UUID | None,
     handoff: dict,
     now: datetime | None = None,
+    prefer: uuid.UUID | None = None,
+    rescheduled_from: uuid.UUID | None = None,
 ) -> Meeting:
-    """Create the meeting and take its slots. Does not commit."""
+    """Create the meeting and take its slots. Does not commit.
+
+    `prefer` is tried first when free — a moved call stays with its
+    specialist if they can take the new time."""
     now = now or tz.now_utc()
     try:
         slots = grid.interval_slots(start, start + timedelta(minutes=minutes))
@@ -89,7 +94,11 @@ async def book(
     if slots[0] <= now:
         raise scheduling_error(status.HTTP_409_CONFLICT, "slot_in_past")
 
-    for specialist_id in await _candidates(db, slots, start):
+    candidates = await _candidates(db, slots, start)
+    if prefer in candidates:
+        candidates.remove(prefer)
+        candidates.insert(0, prefer)
+    for specialist_id in candidates:
         locked = await db.execute(
             select(SpecialistSlot.start_at)
             .where(
@@ -109,6 +118,7 @@ async def book(
             end_at=slots[-1] + grid.SLOT,
             handoff=handoff,
             created_by=actor.id,
+            rescheduled_from_id=rescheduled_from,
         )
         db.add(meeting)
         await db.flush()
