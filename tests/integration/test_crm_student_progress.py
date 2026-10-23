@@ -443,3 +443,35 @@ async def test_the_test_opens_as_the_first_call_begins(
     assert (await client.get("/api/v1/assessment/availability", headers=auth_headers)).json() == {
         "open": True, "opens_at": None,
     }
+
+
+async def test_the_specialist_sees_which_call_and_whose(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    manager: User,
+    test_user: User,
+    auth_headers: dict[str, str],
+    psychologist_user: User,
+    psychologist_headers: dict[str, str],
+) -> None:
+    """«Созвоны» in the cabinet: each call says first or second and links the student."""
+    deal = await _booked(client, db_session, manager, specialist=psychologist_user)
+    url = await _invite(client, manager, deal["id"])
+    assert (await client.post(ACCEPT, json={"token": _token(url)}, headers=auth_headers)).status_code == 204
+    first = await db_session.get(Meeting, uuid.UUID(deal["meeting"]["id"]))
+    first.start_at, first.end_at = tz.now_utc() - timedelta(minutes=10), tz.now_utc() + timedelta(minutes=20)
+    await db_session.flush()
+    second_start = await _open_slots(db_session, psychologist_user, FUTURE_DAY, time(15, 0), 2)
+    path = f"/api/v1/psychologist/students/{test_user.id}/second-meeting"
+    assert (await client.post(path, json={"start": _iso(second_start)}, headers=psychologist_headers)).status_code == 200
+
+    listed = (
+        await client.get(
+            "/api/v1/scheduling/specialists/me/meetings",
+            params={"from": tz.today().isoformat(), "to": FUTURE_DAY.isoformat()},
+            headers=psychologist_headers,
+        )
+    ).json()
+    calls = {m["call"]: m for m in listed if m["student_id"] == str(test_user.id)}
+    assert set(calls) == {"first", "second"}
+    assert calls["second"]["start"][:16] == _iso(second_start)[:16]

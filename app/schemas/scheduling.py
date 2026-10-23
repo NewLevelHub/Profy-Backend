@@ -204,6 +204,12 @@ class SpecialistMeeting(BaseModel):
     start: datetime
     end: datetime
     handoff: dict[str, Any]
+    # The student's Profile account once linked by the CRM invite — the
+    # specialist's link to the student card; null before that.
+    student_id: uuid.UUID | None = None
+    # "first" — the call the manager booked; "second" — the report review
+    # the specialist set. Null for a call with no deal.
+    call: Literal["first", "second"] | None = None
 
 
 SecondMeetingBlocker = Literal["no_consultation", "first_not_booked", "first_not_started", "already_scheduled"]
