@@ -32,6 +32,11 @@ Auth тот же JWT Bearer + `require_role(psychologist)` на всём
 `published_by` при этом `null`: опубликовала система. Неполный отчёт всё равно
 остаётся на проверке.
 
+**Тариф с консультацией (CRM).** Отчёт публикуется на втором созвоне: `POST
+.../publish` без назначенного второго созвона — `409 publish_second_call_missing`,
+до его начала — `409 publish_second_call_not_started` (`second_call_start`).
+Правка (`PATCH`) не ограничена.
+
 Два состояния, без промежуточного «одобрено»:
 
 | `review_status` | Ученик видит | Психолог может править |

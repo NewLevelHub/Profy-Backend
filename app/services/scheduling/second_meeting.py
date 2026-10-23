@@ -57,18 +57,6 @@ async def _deal(db: AsyncSession, specialist: User, student_id: uuid.UUID, *, fo
     return await db.scalar(query.with_for_update() if for_update else query)
 
 
-async def calls(db: AsyncSession, deal_id: uuid.UUID) -> tuple[Meeting | None, Meeting | None]:
-    """(first, second): the deal's earliest live call and the one after it."""
-    rows = (
-        await db.execute(
-            select(Meeting)
-            .where(Meeting.deal_id == deal_id, Meeting.status != MeetingStatus.cancelled)
-            .order_by(Meeting.start_at)
-        )
-    ).scalars().all()
-    return (rows[0] if rows else None), (rows[1] if len(rows) > 1 else None)
-
-
 def _blocker(
     deal: CrmDeal | None, first: Meeting | None, second: Meeting | None, now: datetime
 ) -> schemas.SecondMeetingBlocker | None:
@@ -96,7 +84,7 @@ async def _require_student(db: AsyncSession, specialist: User, student_id: uuid.
 async def state(db: AsyncSession, specialist: User, student_id: uuid.UUID) -> schemas.SecondMeetingState:
     await _require_student(db, specialist, student_id)
     deal = await _deal(db, specialist, student_id)
-    first, second = await calls(db, deal.id) if deal else (None, None)
+    first, second = await progress.calls(db, deal.id) if deal else (None, None)
     blocker = _blocker(deal, first, second, tz.now_utc())
     return schemas.SecondMeetingState(
         first=_out(first), second=_out(second), can_schedule=blocker is None, blocker=blocker
@@ -138,7 +126,7 @@ async def schedule(
 ) -> schemas.SecondMeetingState:
     await _require_student(db, specialist, student_id)
     deal = await _deal(db, specialist, student_id, for_update=True)
-    first, second = await calls(db, deal.id) if deal else (None, None)
+    first, second = await progress.calls(db, deal.id) if deal else (None, None)
     now = tz.now_utc()
     blocker = _blocker(deal, first, second, now)
     if blocker is not None:

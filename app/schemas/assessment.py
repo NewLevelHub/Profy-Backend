@@ -6,6 +6,15 @@ from pydantic import BaseModel
 from app.models.assessment import AssessmentGoal, AssessmentStatus
 
 
+class TestAvailability(BaseModel):
+    """GET /assessment/availability. With a specialist's calls (CRM tariff)
+    the test opens as the first call begins; `opens_at` is that call's start,
+    null while it is not booked yet."""
+
+    open: bool
+    opens_at: datetime | None
+
+
 class AssessmentCreateRequest(BaseModel):
     goal: AssessmentGoal
 

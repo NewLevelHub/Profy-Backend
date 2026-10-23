@@ -18,10 +18,12 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Callable
 
+from fastapi import status
 from sqlalchemy import Select, case, delete, or_, select, tuple_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
+from app.errors import AppError
 from app.i18n.catalog import key as i18n_key, tr
 from app.i18n import DEFAULT_LOCALE
 from app.models.analysis_result import AnalysisResult, ReviewStatus
@@ -1280,6 +1282,16 @@ async def publish_result(
     await _require_assigned_student(
         db, psychologist_id=psychologist_id, student_id=student_id
     )
+    # A tariff with the specialist's calls: the report is published on the
+    # second call, from its start (editing it before is fine).
+    if (blocker := await crm_progress.publish_blocker(db, student_id)) is not None:
+        code, starts = blocker
+        raise AppError(
+            status_code=status.HTTP_409_CONFLICT,
+            error_code=code,
+            detail=i18n_key("api_errors", code),
+            extra={"second_call_start": starts.isoformat() if starts else None},
+        )
     # Serialize with report generation: a locale row generated in between
     # would be a translation of the pre-edit text (edit) or miss the
     # published status (publish).

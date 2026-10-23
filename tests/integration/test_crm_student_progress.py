@@ -113,7 +113,7 @@ async def test_owner_links_by_email_and_manager_cannot(
     assert linked.status_code == 200 and linked.json()["student_account"]["linked"] is True
 
 
-async def test_test_and_report_move_the_deal(
+async def test_the_test_moves_the_deal_and_the_report_waits_for_the_second_call(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     manager: User,
@@ -148,13 +148,11 @@ async def test_test_and_report_move_the_deal(
     assert detail["stage"] == "diagnostics_done" and detail["result"] == "open"
     assert detail["events"][0]["data"] == {"from": "paid", "to": "diagnostics_done", "auto": True}
 
-    published = await client.post(
+    # The report is published on the second call — none is set yet.
+    early = await client.post(
         f"/api/v1/psychologist/students/{test_user.id}/results/{assessment.id}/publish", headers=psychologist_headers
     )
-    assert published.status_code == 200, published.text
-    detail = (await client.get(f"{URL}/deals/{deal['id']}", headers=_h(manager))).json()
-    assert detail["stage"] == "report_published" and detail["result"] == "won"
-    assert [e["kind"] for e in detail["events"][:2]] == ["closed", "stage"]
+    assert early.status_code == 409 and early.json()["error_code"] == "publish_second_call_missing"
 
 
 async def test_linking_late_catches_up_and_unpaid_gets_a_task(
@@ -394,16 +392,18 @@ async def test_the_specialist_sets_the_second_call_and_the_deal_follows(
     # «Разбор назначен»; the call held — «Разбор проведён».
     assessment = await make_student_assessment(db_session, test_user)
     assert (await generate(client, auth_headers, assessment)).status_code == 200
-    published = await client.post(
-        f"/api/v1/psychologist/students/{test_user.id}/results/{assessment.id}/publish", headers=psychologist_headers
-    )
-    assert published.status_code == 200, published.text
-    detail = (await client.get(f"{URL}/deals/{deal['id']}", headers=_h(manager))).json()
-    assert detail["stage"] == "review_scheduled" and detail["result"] == "won"
+    publish_path = f"/api/v1/psychologist/students/{test_user.id}/results/{assessment.id}/publish"
+    early = await client.post(publish_path, headers=psychologist_headers)
+    assert early.json()["error_code"] == "publish_second_call_not_started"
+    assert early.json()["second_call_start"][:16] == state["second"]["start"][:16]
 
     second = await db_session.get(Meeting, uuid.UUID(state["second"]["id"]))
     second.start_at = tz.now_utc() - timedelta(minutes=5)
     await db_session.flush()
+    published = await client.post(publish_path, headers=psychologist_headers)
+    assert published.status_code == 200, published.text
+    detail = (await client.get(f"{URL}/deals/{deal['id']}", headers=_h(manager))).json()
+    assert detail["stage"] == "review_scheduled" and detail["result"] == "won"
     done = await client.post(
         f"/api/v1/scheduling/specialists/me/meetings/{second.id}/status", json={"status": "done"}, headers=psychologist_headers
     )
@@ -419,3 +419,27 @@ async def test_only_the_students_own_specialist_sets_the_second_call(
     await _booked(client, db_session, manager, specialist=other)
     path = f"/api/v1/psychologist/students/{test_user.id}/second-meeting"
     assert (await client.get(path, headers=psychologist_headers)).status_code == 404
+
+
+async def test_the_test_opens_as_the_first_call_begins(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    manager: User,
+    test_user: User,
+    auth_headers: dict[str, str],
+) -> None:
+    deal = await _booked(client, db_session, manager)
+    url = await _invite(client, manager, deal["id"])
+    assert (await client.post(ACCEPT, json={"token": _token(url)}, headers=auth_headers)).status_code == 204
+
+    closed = (await client.get("/api/v1/assessment/availability", headers=auth_headers)).json()
+    assert closed["open"] is False and closed["opens_at"][:16] == deal["meeting"]["start"][:16]
+    refused = await client.post("/api/v1/assessment/start", json={"goal": "university"}, headers=auth_headers)
+    assert refused.status_code == 409 and refused.json()["error_code"] == "test_after_first_call"
+
+    first = await db_session.get(Meeting, uuid.UUID(deal["meeting"]["id"]))
+    first.start_at = tz.now_utc() - timedelta(minutes=1)
+    await db_session.flush()
+    assert (await client.get("/api/v1/assessment/availability", headers=auth_headers)).json() == {
+        "open": True, "opens_at": None,
+    }

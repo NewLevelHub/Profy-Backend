@@ -68,8 +68,9 @@ async def _progress(db: AsyncSession, user_id: uuid.UUID, since: datetime) -> tu
     return True, bool(published)
 
 
-async def _second_call(db: AsyncSession, deal_id: uuid.UUID) -> Meeting | None:
-    """The deal's live call after its first one — the report review."""
+async def calls(db: AsyncSession, deal_id: uuid.UUID) -> tuple[Meeting | None, Meeting | None]:
+    """(first, second): the deal's earliest live call — the one the manager
+    booked — and the one after it, which the specialist set."""
     rows = (
         await db.execute(
             select(Meeting)
@@ -78,7 +79,52 @@ async def _second_call(db: AsyncSession, deal_id: uuid.UUID) -> Meeting | None:
             .limit(2)
         )
     ).scalars().all()
-    return rows[1] if len(rows) > 1 else None
+    return (rows[0] if rows else None), (rows[1] if len(rows) > 1 else None)
+
+
+async def _second_call(db: AsyncSession, deal_id: uuid.UUID) -> Meeting | None:
+    return (await calls(db, deal_id))[1]
+
+
+async def consultation_deal(db: AsyncSession, student_id: uuid.UUID) -> CrmDeal | None:
+    """The student's open deal sold with the specialist's calls, if any."""
+    return await db.scalar(
+        select(CrmDeal)
+        .where(
+            CrmDeal.student_user_id == student_id,
+            CrmDeal.result != DealResult.lost,
+            CrmDeal.psychologist_review.is_(True),
+        )
+        .order_by(CrmDeal.created_at.desc())
+        .limit(1)
+    )
+
+
+async def test_opens_at(db: AsyncSession, student_id: uuid.UUID) -> tuple[bool, datetime | None]:
+    """(open, when): with a specialist's calls the test opens as the first
+    call begins — the specialist introduces it there. `when` is that call's
+    start, None while it is not booked. Without such a deal it is open."""
+    deal = await consultation_deal(db, student_id)
+    if deal is None:
+        return True, None
+    first, _ = await calls(db, deal.id)
+    if first is not None and first.start_at <= tz.now_utc():
+        return True, None
+    return False, first.start_at if first is not None else None
+
+
+async def publish_blocker(db: AsyncSession, student_id: uuid.UUID) -> tuple[str, datetime | None] | None:
+    """Why the specialist cannot publish the report yet: with a specialist's
+    calls the report is published on the second call, from its start."""
+    deal = await consultation_deal(db, student_id)
+    if deal is None:
+        return None
+    _, second = await calls(db, deal.id)
+    if second is None:
+        return "publish_second_call_missing", None
+    if second.start_at > tz.now_utc():
+        return "publish_second_call_not_started", second.start_at
+    return None
 
 
 async def _payment_check(db: AsyncSession, deal: CrmDeal) -> None:
