@@ -46,6 +46,20 @@ def _no_mail_domain_lookup(monkeypatch) -> None:
 
 
 @pytest.fixture(autouse=True)
+def _no_real_email(monkeypatch) -> None:
+    """Tests never send real email, whatever the mounted .env holds (a dev
+    .env may carry live SES or Resend keys — mail to the tests' made-up
+    addresses would bounce and hurt the sender's reputation). With no
+    provider credentials email_service skips sending; tests that check an
+    email mock the send function itself. The provider is the code default
+    (Resend) — tests of SES select it themselves."""
+    monkeypatch.setattr(settings, "EMAIL_PROVIDER", "resend")
+    monkeypatch.setattr(settings, "RESEND_API_KEY", "")
+    monkeypatch.setattr(settings, "SES_ACCESS_KEY_ID", "")
+    monkeypatch.setattr(settings, "SES_SECRET_ACCESS_KEY", "")
+
+
+@pytest.fixture(autouse=True)
 def _open_registration(monkeypatch) -> None:
     """Most auth tests sign up without a CRM invite. The invite-only rule has
     its own tests (test_crm_student_progress.py), which turn it back on."""

@@ -62,7 +62,8 @@ async def test_calendar_names_only_for_supervisors(
     assert (await client.get(f"{URL}/meetings/{meeting['id']}", headers=_h(other))).status_code == 404
 
     seen = (await client.get(f"{URL}/meetings", params=params, headers=_h(head))).json()
-    assert seen[0]["specialist"]["name"] == "Лолита"
+    # By id: the local database may hold real meetings on the same day.
+    assert next(m for m in seen if m["id"] == meeting["id"])["specialist"]["name"] == "Лолита"
 
 
 # ── statuses ────────────────────────────────────────────────────────────────
