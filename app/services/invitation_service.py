@@ -168,12 +168,19 @@ async def lock_email(db: AsyncSession, email: str) -> None:
 
 
 async def ensure_no_verified_user(db: AsyncSession, email: str) -> None:
-    """An unverified account doesn't block — accepting adopts it (PRO-462)."""
-    has_user = await db.scalar(
-        select(exists().where(User.email == email, User.is_verified.is_(True)))
+    """An unverified account doesn't block — accepting adopts it (PRO-462).
+
+    One email is one account with one role, shared by Profile and the CRM.
+    `existing_role` tells the inviter what is already there — a student's
+    account is not turned into an employee's; the employee is invited on
+    another email."""
+    existing_role = await db.scalar(
+        select(User.role).where(User.email == email, User.is_verified.is_(True))
     )
-    if has_user:
-        raise invitation_error(status.HTTP_409_CONFLICT, "user_exists")
+    if existing_role is not None:
+        error = invitation_error(status.HTTP_409_CONFLICT, "user_exists")
+        error.extra = {"existing_role": existing_role.value}
+        raise error
 
 
 async def _ensure_no_other_pending(

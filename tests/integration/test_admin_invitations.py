@@ -704,3 +704,17 @@ async def test_owner_invites_only_specialists_and_the_crm_team(
     ):
         assert response.status_code == 404
     assert (await client.get(f"{URL}/{admin_invite['id']}/link", headers=admin_headers)).status_code == 200
+
+
+async def test_an_existing_account_names_its_role(
+    client: httpx.AsyncClient, db_session: AsyncSession, admin_headers: dict[str, str], sent_emails: list[dict]
+) -> None:
+    """One email is one account for Profile and the CRM: the refusal says
+    whose account is there, so the CRM can tell a student's from an employee's."""
+    student, staff = _email(), _email()
+    await _add_user(db_session, student, role=UserRole.student, is_verified=True)
+    await _add_user(db_session, staff, role=UserRole.psychologist, is_verified=True)
+    for email, role in ((student, "student"), (staff, "psychologist")):
+        refused = await client.post(URL, json={"email": email, "role": "sales_manager"}, headers=admin_headers)
+        assert refused.status_code == 409
+        assert refused.json()["error_code"] == "user_exists" and refused.json()["existing_role"] == role
