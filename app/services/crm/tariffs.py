@@ -2,10 +2,10 @@
 in the CRM. A tariff is never deleted — deals refer to it — it is archived:
 new deals cannot pick it, deals that have it keep it.
 
-«Консультация и проверка отчёта психологом» (`psychologist_review`) comes
-with a call with the specialist (`meeting_minutes`, 30 or 60); a tariff
-without it has neither — no call is booked and the report goes to the
-student at once.
+«Консультация и проверка отчёта психологом» (`psychologist_review`): the
+manager books a 30-minute first call, the specialist sets the 60-minute
+second one (app/services/scheduling/second_meeting.py). A tariff without it
+has no calls and the report goes to the student at once.
 
 A deal keeps the price of the day its tariff was picked, and whether a
 psychologist reviews the report: a change only applies to deals that pick
@@ -24,7 +24,7 @@ from app.schemas import crm as schemas
 from app.services import audit
 from app.services.crm.deals import crm_error
 
-_FIELDS = ("name", "price", "meeting_minutes", "description", "psychologist_review", "active")
+_FIELDS = ("name", "price", "description", "psychologist_review", "active")
 # Explicit null is a valid value only here; the rest keep their value.
 _NULLABLE = {"description"}
 
@@ -41,27 +41,17 @@ def _clean(description: str | None) -> str | None:
     return (description or "").strip() or None
 
 
-def _settle_call(tariff: CrmTariff) -> None:
-    """No review — no call; a review needs the call's length."""
-    if not tariff.psychologist_review:
-        tariff.meeting_minutes = None
-    elif tariff.meeting_minutes is None:
-        raise crm_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "tariff_meeting_required")
-
-
 async def create(db: AsyncSession, user: User, body: schemas.TariffIn) -> schemas.TariffItem:
     last = await db.scalar(select(func.max(CrmTariff.sort)))
     tariff = CrmTariff(
         code=f"t_{secrets.token_hex(6)}",
         name=body.name,
         price=body.price,
-        meeting_minutes=body.meeting_minutes,
         description=_clean(body.description),
         psychologist_review=body.psychologist_review,
         active=True,
         sort=(last or 0) + 1,
     )
-    _settle_call(tariff)
     db.add(tariff)
     audit.record(
         db, actor=user, action="crm.tariff_created", entity_type="crm_tariff", entity_id=tariff.code,
@@ -82,7 +72,6 @@ async def update(db: AsyncSession, user: User, code: str, body: schemas.TariffPa
         if field == "description":
             value = _clean(value)
         setattr(tariff, field, value)
-    _settle_call(tariff)
     after = _snapshot(tariff)
     if after != before:
         audit.record(

@@ -103,10 +103,6 @@ class CrmTariff(Base):
     code: Mapped[str] = mapped_column(String(32), primary_key=True)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     price: Mapped[int] = mapped_column(Integer, nullable=False)
-    # Length of the call the manager books: 30 intro, 60 for «Консультация».
-    # None — the tariff has no call: it goes with psychologist_review, which
-    # the owner ticks as «Консультация и проверка отчёта психологом».
-    meeting_minutes: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     # A specialist's call and their review (and edits) of the report before
     # the student sees it. Without it there is no call and the report is
     # published as soon as it is built.

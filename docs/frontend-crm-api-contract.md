@@ -153,15 +153,13 @@ POST /deals
 
 ### 6.1. Прайс (ТЗ §3.7)
 
-Тариф в `/meta`: `{code, name, price, meeting_minutes, description,
-psychologist_review, active}`.
+Тариф в `/meta`: `{code, name, price, description, psychologist_review, active}`.
 
-`psychologist_review` — «Консультация и проверка отчёта психологом»: созвон
-со специалистом длиной `meeting_minutes` (30|60) и отчёт, который ждёт
-проверки психолога. `false` — ни того, ни другого: `meeting_minutes: null`,
-записать сделку на созвон нельзя (`409 deal_no_meeting`), отчёт публикуется
-сразу после теста. С `true` длительность обязательна
-(`422 tariff_meeting_required`); при снятии галочки она сбрасывается. Как и цена, копируется в сделку при
+`psychologist_review` — «Консультация и проверка отчёта психологом»: менеджер
+записывает первый созвон (всегда 30 минут), второй — 60 минут, разбор
+отчёта — назначает сам специалист (§13), и отчёт ждёт его проверки. `false` —
+созвонов нет: записать сделку нельзя (`409 deal_no_meeting`), отчёт
+публикуется сразу после теста. Как и цена, копируется в сделку при
 выборе тарифа (`DealDetail.psychologist_review`, `null` — тарифа нет) и потом
 не меняется. Сразу публикуется только отчёт ученика, привязанного к
 оплаченной, не проигранной сделке с `false` (и ни к одной с `true`); без сделки,
@@ -170,11 +168,10 @@ psychologist_review, active}`.
 `/meta` отдаёт и архивные (`active: false`) — чтобы сделки с ними показывали
 название; выбрать архивный тариф в сделке нельзя (`tariff_not_found`).
 
-- `POST /tariffs {"name", "price", "meeting_minutes"?: 30|60, "description"?, "psychologist_review"?: true}` →
+- `POST /tariffs {"name", "price", "description"?, "psychologist_review"?: true}` →
   201, `TariffItem`. Код тарифа выдаёт сервер.
-- `PATCH /tariffs/{code}` — любые из `name`, `price`, `meeting_minutes`,
-  `description` (`null` — очистить), `psychologist_review`, `active` (`false` —
-  в архив). → `TariffItem`.
+- `PATCH /tariffs/{code}` — любые из `name`, `price`, `description` (`null` —
+  очистить), `psychologist_review`, `active` (`false` — в архив). → `TariffItem`.
 
 Только владелец (403 остальным). Удаления нет: на тариф ссылаются сделки.
 Новая цена действует для сделок, где тариф выберут после изменения; в уже

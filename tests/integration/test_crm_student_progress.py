@@ -250,7 +250,7 @@ async def test_google_sign_up_needs_an_invite_but_sign_in_does_not(
 
 async def _tariff(client: httpx.AsyncClient, db_session: AsyncSession, *, review: bool) -> str:
     owner = await _user(db_session, UserRole.owner, "Санжар")
-    body = {"name": "Экспресс", "price": 25000, "meeting_minutes": 30, "psychologist_review": review}
+    body = {"name": "Экспресс", "price": 25000, "psychologist_review": review}
     created = await client.post(f"{URL}/tariffs", json=body, headers=_h(owner))
     assert created.status_code == 201 and created.json()["psychologist_review"] is review
     return created.json()["code"]

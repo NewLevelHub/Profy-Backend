@@ -45,6 +45,10 @@ SALES_ROLES = (UserRole.owner, UserRole.sales_head, UserRole.sales_manager, User
 # manager may not (ТЗ §2). The owner and the head of sales.
 SUPERVISORS = (UserRole.owner, UserRole.sales_head)
 
+# The manager books the first call, always 30 minutes; the 60-minute second
+# one the specialist sets (app/services/scheduling/second_meeting.py).
+FIRST_CALL_MINUTES = 30
+
 # Feed events that put the deal on its current stage.
 STAGE_EVENTS = ("stage", "accepted", "created")
 
@@ -675,8 +679,7 @@ async def book(db: AsyncSession, user: User, deal_id: uuid.UUID, body: schemas.B
     handoff["tariff"] = tariff.name
     handoff["consent_at"] = parent.consent_at.isoformat() if parent.consent_at else None
     meeting = await booking.book(
-        # The deal was sold with a call; the tariff may have dropped it since.
-        db, actor=user, start=body.start, minutes=tariff.meeting_minutes or 30, deal_id=deal.id, handoff=handoff
+        db, actor=user, start=body.start, minutes=FIRST_CALL_MINUTES, deal_id=deal.id, handoff=handoff
     )
 
     # The handoff card also fills the CRM student.

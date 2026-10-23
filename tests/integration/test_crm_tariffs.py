@@ -23,7 +23,7 @@ from tests.integration.test_crm_deals import (  # noqa: F401 — fixtures
     manager,
 )
 
-BODY = {"name": "  Экспресс  ", "price": 25000, "meeting_minutes": 30, "description": "Короткая диагностика"}
+BODY = {"name": "  Экспресс  ", "price": 25000, "description": "Короткая диагностика"}
 
 
 @pytest.fixture
@@ -43,7 +43,7 @@ async def test_owner_adds_and_changes_a_tariff(
     assert created.status_code == 201, created.text
     tariff = created.json()
     assert tariff | {"code": None} == {
-        "code": None, "name": "Экспресс", "price": 25000, "meeting_minutes": 30,
+        "code": None, "name": "Экспресс", "price": 25000,
         "description": "Короткая диагностика", "psychologist_review": True, "active": True,
     }
     code = tariff["code"]
@@ -56,15 +56,15 @@ async def test_owner_adds_and_changes_a_tariff(
     assert picked.json()["price"] == 25000
 
     changed = await client.patch(
-        f"{URL}/tariffs/{code}", json={"price": 30000, "meeting_minutes": 60, "description": None}, headers=_h(owner)
+        f"{URL}/tariffs/{code}", json={"price": 30000, "psychologist_review": False, "description": None}, headers=_h(owner)
     )
     assert changed.status_code == 200
-    assert changed.json() | {"code": None} == {**tariff, "code": None, "price": 30000, "meeting_minutes": 60, "description": None}
+    assert changed.json() | {"code": None} == {**tariff, "code": None, "price": 30000, "psychologist_review": False, "description": None}
     assert (await client.get(path, headers=_h(manager))).json()["price"] == 25000
 
     entries = (await db_session.execute(select(AuditLog).where(AuditLog.entity_id == code).order_by(AuditLog.at))).scalars().all()
     assert [e.action for e in entries] == ["crm.tariff_created", "crm.tariff_changed"]
-    assert entries[1].before == {"price": 25000, "meeting_minutes": 30, "description": "Короткая диагностика"}
+    assert entries[1].before == {"price": 25000, "psychologist_review": True, "description": "Короткая диагностика"}
 
 
 async def test_an_archived_tariff_stays_on_its_deals(
@@ -93,25 +93,15 @@ async def test_only_the_owner_edits_the_price_list(
         assert (await client.patch(f"{URL}/tariffs/testing", json={"price": 1}, headers=_h(user))).status_code == 403
     missing = await client.patch(f"{URL}/tariffs/nope", json={"price": 1}, headers=_h(owner))
     assert missing.json()["error_code"] == "tariff_not_found"
-    for bad in ({**BODY, "name": "   "}, {**BODY, "price": -1}, {**BODY, "meeting_minutes": 45}):
+    for bad in ({**BODY, "name": "   "}, {**BODY, "price": -1}, {**BODY, "price": "много"}):
         assert (await client.post(f"{URL}/tariffs", json=bad, headers=_h(owner))).status_code == 422
 
 
 async def test_no_review_means_no_call(client: httpx.AsyncClient, owner: User, manager: User) -> None:
-    """«Консультация и проверка отчёта психологом» comes with the call: a
-    tariff without it has no call, and its deal is not booked."""
+    """Without «Консультация и проверка отчёта психологом» there is no call:
+    the deal is not booked."""
     plain = await client.post(f"{URL}/tariffs", json={**BODY, "psychologist_review": False}, headers=_h(owner))
-    assert plain.status_code == 201 and plain.json()["meeting_minutes"] is None
-    missing = await client.post(
-        f"{URL}/tariffs", json={**BODY, "meeting_minutes": None, "psychologist_review": True}, headers=_h(owner)
-    )
-    assert missing.status_code == 422 and missing.json()["error_code"] == "tariff_meeting_required"
-
-    reviewed = (await client.post(f"{URL}/tariffs", json=BODY, headers=_h(owner))).json()
-    dropped = await client.patch(f"{URL}/tariffs/{reviewed['code']}", json={"psychologist_review": False}, headers=_h(owner))
-    assert dropped.json()["meeting_minutes"] is None
-    back = await client.patch(f"{URL}/tariffs/{reviewed['code']}", json={"psychologist_review": True}, headers=_h(owner))
-    assert back.json()["error_code"] == "tariff_meeting_required"
+    assert plain.status_code == 201 and "meeting_minutes" not in plain.json()
 
     deal = await _ready_to_book(client, manager, tariff=plain.json()["code"])
     booked = await client.post(

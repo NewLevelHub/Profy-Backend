@@ -18,8 +18,6 @@ class TariffItem(BaseModel):
     code: str
     name: str
     price: int
-    # None — no call with a specialist (psychologist_review is false).
-    meeting_minutes: int | None
     description: str | None
     psychologist_review: bool
     active: bool
@@ -27,16 +25,12 @@ class TariffItem(BaseModel):
 
 TariffName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
 TariffPrice = Annotated[int, Field(ge=0, le=100_000_000)]
-# The calendar books a 30-minute slot or two adjacent ones.
-MeetingMinutes = Literal[30, 60]
 TariffDescription = Annotated[str, Field(max_length=1000)]
 
 
 class TariffIn(BaseModel):
     name: TariffName
     price: TariffPrice
-    # Needed with psychologist_review, ignored without it (no call).
-    meeting_minutes: MeetingMinutes | None = None
     description: TariffDescription | None = None
     psychologist_review: bool = True
 
@@ -44,7 +38,6 @@ class TariffIn(BaseModel):
 class TariffPatch(BaseModel):
     name: TariffName | None = None
     price: TariffPrice | None = None
-    meeting_minutes: MeetingMinutes | None = None
     description: TariffDescription | None = None
     psychologist_review: bool | None = None
     active: bool | None = None

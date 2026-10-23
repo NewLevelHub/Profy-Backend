@@ -156,17 +156,14 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[httpx.AsyncClient, 
 # The seeded price list as the migrations made it. The owner edits it in the
 # CRM, and the tests run against that same database, inside a transaction
 # that is rolled back: they must not depend on what the owner did with it.
-SEEDED_TARIFFS = {"testing": 30, "consultation": 60, "package": 30}
+SEEDED_TARIFFS = ("testing", "consultation", "package")
 
 
 @pytest_asyncio.fixture
 async def price_list(db_session: AsyncSession) -> None:
-    for code, minutes in SEEDED_TARIFFS.items():
-        await db_session.execute(
-            update(CrmTariff)
-            .where(CrmTariff.code == code)
-            .values(active=True, psychologist_review=True, meeting_minutes=minutes)
-        )
+    await db_session.execute(
+        update(CrmTariff).where(CrmTariff.code.in_(SEEDED_TARIFFS)).values(active=True, psychologist_review=True)
+    )
 
 
 @pytest_asyncio.fixture
