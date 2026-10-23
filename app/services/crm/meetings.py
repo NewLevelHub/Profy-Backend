@@ -23,7 +23,7 @@ from app.schemas.scheduling import MAX_FREE_RANGE_DAYS as MAX_RANGE_DAYS
 from app.services import audit, tz
 from app.services.crm import progress
 from app.services.crm.deals import SUPERVISORS, _user_ref, _users, crm_error
-from app.services.scheduling import booking
+from app.services.scheduling import booking, second_meeting
 from app.services.scheduling.service import scheduling_error
 
 OPEN = (MeetingStatus.pending, MeetingStatus.confirmed)
@@ -127,6 +127,7 @@ async def detail(db: AsyncSession, user: User, meeting: Meeting) -> schemas.Meet
     users = await _users(db, {meeting.specialist_id if names else None, *(e.actor_id for e in entries)})
     deal = await _deal_of(db, meeting)
     parent = await db.get(CrmParent, deal.parent_id) if deal else None
+    allowed, first = await _may_move(db, user, meeting)
     return schemas.MeetingDetail(
         id=meeting.id,
         deal_id=meeting.deal_id,
@@ -141,6 +142,9 @@ async def detail(db: AsyncSession, user: User, meeting: Meeting) -> schemas.Meet
         handoff=meeting.handoff,
         cancel_reason=meeting.cancel_reason,
         rescheduled_from_id=meeting.rescheduled_from_id,
+        call=("first" if first else "second") if deal is not None else None,
+        # This user may move or cancel it now: open, not begun, their right.
+        can_move=allowed and meeting.status in OPEN and tz.now_utc() < meeting.start_at,
         history=[
             schemas.MeetingHistoryItem(
                 at=e.at,
@@ -203,24 +207,51 @@ async def set_status(db: AsyncSession, actor: User, meeting: Meeting, new_status
     return meeting
 
 
-def _require_movable(actor: User, meeting: Meeting) -> None:
-    if actor.role != UserRole.owner:
+async def _is_first(db: AsyncSession, meeting: Meeting) -> bool:
+    """The deal's first call — the one the manager booked."""
+    if meeting.deal_id is None:
+        return True
+    first, _ = await progress.calls(db, meeting.deal_id)
+    return first is None or first.id == meeting.id
+
+
+async def _may_move(db: AsyncSession, actor: User, meeting: Meeting) -> tuple[bool, bool]:
+    """(allowed, first). Who moves or cancels a call, always with a reason:
+    the owner and the head of sales — any; a sales manager — the first call
+    of their own deal; the specialist — their own calls."""
+    first = await _is_first(db, meeting)
+    deal = await _deal_of(db, meeting)
+    allowed = (
+        actor.role in SUPERVISORS
+        or (actor.role == UserRole.sales_manager and first and deal is not None and deal.manager_id == actor.id)
+        or (actor.role == UserRole.psychologist and meeting.specialist_id == actor.id)
+    )
+    return allowed, first
+
+
+async def _require_movable(db: AsyncSession, actor: User, meeting: Meeting) -> bool:
+    """Raises unless `actor` may move or cancel the call now (before it
+    starts). Returns whether it is the deal's first call."""
+    allowed, first = await _may_move(db, actor, meeting)
+    if not allowed:
         raise crm_error(status.HTTP_403_FORBIDDEN, "meeting_action_forbidden")
     if meeting.status not in OPEN:
         raise crm_error(status.HTTP_409_CONFLICT, "meeting_status_invalid")
     if tz.now_utc() >= meeting.start_at:
         raise crm_error(status.HTTP_409_CONFLICT, "meeting_started")
+    return first
 
 
 async def cancel(db: AsyncSession, actor: User, meeting: Meeting, reason: str) -> Meeting:
-    """The owner cancels a call before it starts; its time is free again."""
-    _require_movable(actor, meeting)
+    """A call cancelled before it starts; its time is free again. Without its
+    first call the deal has no specialist until the next booking."""
+    first = await _require_movable(db, actor, meeting)
     await _release_slots(db, meeting, actor)
     meeting.status = MeetingStatus.cancelled
     meeting.cancel_reason = reason
     meeting.cancelled_at = tz.now_utc()
     deal = await _deal_of(db, meeting)
-    if deal is not None and deal.specialist_id == meeting.specialist_id:
+    if first and deal is not None and deal.specialist_id == meeting.specialist_id:
         deal.specialist_id = None
     audit.record(
         db, actor=actor, action="meeting.cancelled", entity_type="meeting", entity_id=meeting.id,
@@ -233,29 +264,51 @@ async def cancel(db: AsyncSession, actor: User, meeting: Meeting, reason: str) -
 
 
 async def reschedule(db: AsyncSession, actor: User, meeting: Meeting, start: datetime, reason: str) -> Meeting:
-    """The owner moves a call: the old one is cancelled with the reason and a
-    new one is booked — with the same specialist when they are free then,
-    otherwise by the usual rule (ТЗ §3.9 п.4). The handoff card goes along."""
-    _require_movable(actor, meeting)
+    """A call moved: the old one is cancelled with the reason and a new one is
+    made, the handoff card goes along.
+
+    The first call moved from the CRM is booked like a new one — with the
+    same specialist when they are free then, otherwise by the usual rule
+    (ТЗ §3.9 п.4). The second call, and any call the specialist moves
+    themself, stays with the specialist at any time without an overlap."""
+    first = await _require_movable(db, actor, meeting)
     minutes = int((meeting.end_at - meeting.start_at).total_seconds() // 60)
-    await _release_slots(db, meeting, actor)
-    await db.flush()
-    moved = await booking.book(
-        db,
-        actor=actor,
-        start=start,
-        minutes=minutes,
-        deal_id=meeting.deal_id,
-        handoff=meeting.handoff,
-        prefer=meeting.specialist_id,
-        rescheduled_from=meeting.id,
-    )
-    moved.status = meeting.status
-    meeting.status = MeetingStatus.cancelled
-    meeting.cancel_reason = reason
-    meeting.cancelled_at = tz.now_utc()
+    was = meeting.status
+    # The old call steps aside first, so the new time may overlap it; a
+    # taken new time rolls the savepoint back and the call stays as it was.
+    async with db.begin_nested():
+        await _release_slots(db, meeting, actor)
+        meeting.status = MeetingStatus.cancelled
+        meeting.cancel_reason = reason
+        meeting.cancelled_at = tz.now_utc()
+        await db.flush()
+        if first and actor.role != UserRole.psychologist:
+            moved = await booking.book(
+                db,
+                actor=actor,
+                start=start,
+                minutes=minutes,
+                deal_id=meeting.deal_id,
+                handoff=meeting.handoff,
+                prefer=meeting.specialist_id,
+                rescheduled_from=meeting.id,
+            )
+        else:
+            moved = await second_meeting.book_own_time(
+                db,
+                actor=actor,
+                specialist_id=meeting.specialist_id,
+                start=start,
+                minutes=minutes,
+                deal_id=meeting.deal_id,
+                handoff=meeting.handoff,
+                meeting_type=meeting.type,
+                rescheduled_from=meeting.id,
+            )
+    moved.status = was
     deal = await _deal_of(db, meeting)
-    if deal is not None:
+    if first and deal is not None:
+        # The first call decides the deal's specialist.
         deal.specialist_id = moved.specialist_id
         await progress.assign_specialist(db, deal)
     audit.record(

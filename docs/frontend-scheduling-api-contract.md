@@ -392,6 +392,17 @@ GET /api/v1/scheduling/specialists?week_start=2026-11-02
 отчёта, который назначил специалист (`null` — встреча без сделки или отменена).
 Раздел «Созвоны» в кабинете строится на них.
 
+### Перенос и отмена созвона специалистом
+
+`POST /specialists/{ref}/meetings/{id}/reschedule {"start", "reason"}` и
+`POST /specialists/{ref}/meetings/{id}/cancel {"reason"}` — свой созвон, до его
+начала, с причиной (от 3 символов). Перенесённый созвон остаётся у специалиста:
+любое время сетки без наложений на его созвоны, длительность прежняя. Ответ —
+новый (или отменённый) `SpecialistMeeting`; старый остаётся отменённым с
+причиной, в ленте сделки — `meeting_moved` / `meeting_cancelled`. Ошибки:
+`meeting_started`, `meeting_status_invalid`, `slot_taken`, `slot_in_past`,
+`slot_misaligned`.
+
 ## 10. Свободное время для CRM
 
 ```text

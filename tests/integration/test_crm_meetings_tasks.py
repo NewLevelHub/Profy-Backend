@@ -117,7 +117,9 @@ async def test_owner_cancels_with_reason_and_time_is_free_again(
     deal, meeting = await _booked(client, db_session, manager, specialist)
     path = f"{URL}/meetings/{meeting['id']}/cancel"
 
-    assert (await client.post(path, json={"reason": "Клиент заболел"}, headers=_h(manager))).status_code == 403
+    # Another manager's deal is not even visible.
+    other = await _user(db_session, UserRole.sales_manager)
+    assert (await client.post(path, json={"reason": "Клиент заболел"}, headers=_h(other))).status_code == 404
     assert (await client.post(path, json={"reason": ""}, headers=_h(owner))).status_code == 422
     cancelled = await client.post(path, json={"reason": "Клиент заболел"}, headers=_h(owner))
     assert cancelled.status_code == 200
@@ -289,3 +291,51 @@ async def test_clients_and_card_extras(client: httpx.AsyncClient, db_session: As
     other = await _user(db_session, UserRole.sales_manager)
     assert (await client.get(f"{URL}/clients", params={"q": deal["parent"]["phone"][-7:]},
                              headers=_h(other))).json() == []
+
+
+async def test_the_deals_manager_moves_and_cancels_its_first_call(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User
+) -> None:
+    specialist = await _user(db_session, UserRole.psychologist)
+    deal, meeting = await _booked(client, db_session, manager, specialist)
+    later = await _open_slots(db_session, specialist, FUTURE_DAY, time(19, 0), 1)
+    moved = await client.post(
+        f"{URL}/meetings/{meeting['id']}/reschedule",
+        json={"start": _iso(later), "reason": "Клиент попросил позже"},
+        headers=_h(manager),
+    )
+    assert moved.status_code == 200, moved.text
+    assert moved.json()["start"][:16] == _iso(later)[:16]
+    cancelled = await client.post(
+        f"{URL}/meetings/{moved.json()['id']}/cancel", json={"reason": "Клиент отказался"}, headers=_h(manager)
+    )
+    assert cancelled.json()["status"] == "cancelled"
+
+
+async def test_the_specialist_moves_and_cancels_their_own_calls(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User
+) -> None:
+    """In Profile: the call stays with the specialist, at any time free of
+    their calls — not only their open slots."""
+    specialist = await _user(db_session, UserRole.psychologist)
+    deal, meeting = await _booked(client, db_session, manager, specialist)
+    me = "/api/v1/scheduling/specialists/me/meetings"
+    closed_time = tz.at(FUTURE_DAY, time(20, 0))  # no open slot there
+    moved = await client.post(
+        f"{me}/{meeting['id']}/reschedule", json={"start": _iso(closed_time), "reason": "Заболел"},
+        headers=_h(specialist),
+    )
+    assert moved.status_code == 200, moved.text
+    assert moved.json()["start"][:16] == _iso(closed_time)[:16]
+    detail = (await client.get(f"{URL}/deals/{deal['id']}", headers=_h(manager))).json()
+    assert detail["meeting"]["id"] == moved.json()["id"]
+    assert detail["events"][0]["kind"] == "meeting_moved"
+
+    stranger = await _user(db_session, UserRole.psychologist)
+    assert (
+        await client.post(f"{me}/{moved.json()['id']}/cancel", json={"reason": "Чужой созвон"}, headers=_h(stranger))
+    ).status_code == 404
+    cancelled = await client.post(
+        f"{me}/{moved.json()['id']}/cancel", json={"reason": "Клиент отменил"}, headers=_h(specialist)
+    )
+    assert cancelled.status_code == 200 and cancelled.json()["status"] == "cancelled"

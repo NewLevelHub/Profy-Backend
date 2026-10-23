@@ -317,6 +317,11 @@ class MeetingDetail(CalendarMeeting):
     handoff: dict[str, Any]
     cancel_reason: str | None
     rescheduled_from_id: uuid.UUID | None
+    # "first" — booked by the manager; "second" — the report review the
+    # specialist set; null — no deal.
+    call: Literal["first", "second"] | None
+    # The requesting user may move or cancel it now (§10).
+    can_move: bool
     history: list[MeetingHistoryItem]
 
 

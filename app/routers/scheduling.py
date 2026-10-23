@@ -16,6 +16,7 @@ from app.database import get_db
 from app.dependencies import require_role
 from app.i18n.catalog import key as i18n_key
 from app.models.user import User, UserRole
+from app.schemas import crm as crm_schemas
 from app.schemas import scheduling as schemas
 from app.models.scheduling import MeetingStatus
 from app.services.crm import meetings as crm_meetings
@@ -168,6 +169,50 @@ async def set_meeting_status(
         id=meeting.id, type=meeting.type, status=meeting.status, start=meeting.start_at, end=meeting.end_at,
         handoff=meeting.handoff,
     )
+
+
+def _specialist_meeting(meeting) -> schemas.SpecialistMeeting:
+    return schemas.SpecialistMeeting(
+        id=meeting.id, type=meeting.type, status=meeting.status, start=meeting.start_at, end=meeting.end_at,
+        handoff=meeting.handoff,
+    )
+
+
+async def _own_meeting(db: AsyncSession, current_user: User, specialist: User, meeting_id: uuid.UUID):
+    meeting = await crm_meetings.get_meeting(db, current_user, meeting_id, for_update=True)
+    if meeting.specialist_id != specialist.id:
+        raise service.scheduling_error(status.HTTP_404_NOT_FOUND, "meeting_not_found")
+    return meeting
+
+
+@router.post(_SPECIALIST + "/meetings/{meeting_id}/reschedule", response_model=schemas.SpecialistMeeting)
+async def reschedule_meeting(
+    meeting_id: uuid.UUID,
+    body: crm_schemas.MeetingRescheduleIn,
+    specialist: User = Depends(_specialist),
+    current_user: User = Depends(_require_schedule_editor),
+    db: AsyncSession = Depends(get_db),
+) -> schemas.SpecialistMeeting:
+    """The specialist moves their call before it starts, with a reason: it
+    stays with them, at any time that does not overlap their calls. Returns
+    the new call; the old one stays cancelled with the reason."""
+    meeting = await _own_meeting(db, current_user, specialist, meeting_id)
+    moved = await crm_meetings.reschedule(db, current_user, meeting, body.start, body.reason.strip())
+    return _specialist_meeting(moved)
+
+
+@router.post(_SPECIALIST + "/meetings/{meeting_id}/cancel", response_model=schemas.SpecialistMeeting)
+async def cancel_meeting(
+    meeting_id: uuid.UUID,
+    body: crm_schemas.MeetingCancelIn,
+    specialist: User = Depends(_specialist),
+    current_user: User = Depends(_require_schedule_editor),
+    db: AsyncSession = Depends(get_db),
+) -> schemas.SpecialistMeeting:
+    """The specialist cancels their call before it starts, with a reason."""
+    meeting = await _own_meeting(db, current_user, specialist, meeting_id)
+    await crm_meetings.cancel(db, current_user, meeting, body.reason.strip())
+    return _specialist_meeting(meeting)
 
 
 @router.get(

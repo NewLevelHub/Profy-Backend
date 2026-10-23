@@ -91,7 +91,9 @@ async def state(db: AsyncSession, specialist: User, student_id: uuid.UUID) -> sc
     )
 
 
-async def _take_slots(db: AsyncSession, specialist: User, meeting: Meeting, slots: list[datetime]) -> None:
+async def _take_slots(
+    db: AsyncSession, specialist_id: uuid.UUID, actor: User, meeting: Meeting, slots: list[datetime]
+) -> None:
     """Mark the call's slots booked: an open slot is taken, a closed one gets
     a booked row. A slot another call holds is a conflict."""
     rows = {
@@ -99,7 +101,7 @@ async def _take_slots(db: AsyncSession, specialist: User, meeting: Meeting, slot
         for slot in (
             await db.execute(
                 select(SpecialistSlot)
-                .where(SpecialistSlot.specialist_id == specialist.id, SpecialistSlot.start_at.in_(slots))
+                .where(SpecialistSlot.specialist_id == specialist_id, SpecialistSlot.start_at.in_(slots))
                 .with_for_update()
             )
         ).scalars()
@@ -108,17 +110,66 @@ async def _take_slots(db: AsyncSession, specialist: User, meeting: Meeting, slot
         raise scheduling_error(status.HTTP_409_CONFLICT, "slot_taken")
     await db.execute(
         update(SpecialistSlot)
-        .where(SpecialistSlot.specialist_id == specialist.id, SpecialistSlot.start_at.in_(list(rows)))
-        .values(state=SlotState.booked, meeting_id=meeting.id, updated_by=specialist.id, updated_at=func.now())
+        .where(SpecialistSlot.specialist_id == specialist_id, SpecialistSlot.start_at.in_(list(rows)))
+        .values(state=SlotState.booked, meeting_id=meeting.id, updated_by=actor.id, updated_at=func.now())
     )
     for start in slots:
         if start not in rows:
             db.add(
                 SpecialistSlot(
-                    specialist_id=specialist.id, start_at=start, state=SlotState.booked,
-                    meeting_id=meeting.id, updated_by=specialist.id,
+                    specialist_id=specialist_id, start_at=start, state=SlotState.booked,
+                    meeting_id=meeting.id, updated_by=actor.id,
                 )
             )
+
+
+async def book_own_time(
+    db: AsyncSession,
+    *,
+    actor: User,
+    specialist_id: uuid.UUID,
+    start: datetime,
+    minutes: int,
+    deal_id: uuid.UUID | None,
+    handoff: dict,
+    meeting_type: MeetingType,
+    rescheduled_from: uuid.UUID | None = None,
+) -> Meeting:
+    """A call at the specialist's own choice of time: any time on the grid
+    that does not overlap their live calls — free or not in the schedule —
+    and it takes those slots. The second call, and any call the specialist
+    moves themself. Does not commit."""
+    try:
+        slots = grid.interval_slots(start, start + timedelta(minutes=minutes))
+    except grid.GridError as error:
+        raise scheduling_error(status.HTTP_422_UNPROCESSABLE_ENTITY, error.error_code) from None
+    if slots[0] <= tz.now_utc():
+        raise scheduling_error(status.HTTP_409_CONFLICT, "slot_in_past")
+    end = slots[-1] + grid.SLOT
+    # Any of the specialist's live calls in the way, whatever the slot rows say.
+    if await db.scalar(
+        select(Meeting.id).where(
+            Meeting.specialist_id == specialist_id,
+            Meeting.status.in_(ACTIVE_MEETING),
+            Meeting.start_at < end,
+            Meeting.end_at > slots[0],
+        )
+    ):
+        raise scheduling_error(status.HTTP_409_CONFLICT, "slot_taken")
+    meeting = Meeting(
+        deal_id=deal_id,
+        specialist_id=specialist_id,
+        type=meeting_type,
+        start_at=slots[0],
+        end_at=end,
+        handoff=dict(handoff),
+        created_by=actor.id,
+        rescheduled_from_id=rescheduled_from,
+    )
+    db.add(meeting)
+    await db.flush()
+    await _take_slots(db, specialist_id, actor, meeting, slots)
+    return meeting
 
 
 async def schedule(
@@ -127,42 +178,14 @@ async def schedule(
     await _require_student(db, specialist, student_id)
     deal = await _deal(db, specialist, student_id, for_update=True)
     first, second = await progress.calls(db, deal.id) if deal else (None, None)
-    now = tz.now_utc()
-    blocker = _blocker(deal, first, second, now)
+    blocker = _blocker(deal, first, second, tz.now_utc())
     if blocker is not None:
         raise scheduling_error(status.HTTP_409_CONFLICT, f"second_meeting_{blocker}")
-    try:
-        slots = grid.interval_slots(start, start + timedelta(minutes=MINUTES))
-    except grid.GridError as error:
-        raise scheduling_error(status.HTTP_422_UNPROCESSABLE_ENTITY, error.error_code) from None
-    if slots[0] <= now:
-        raise scheduling_error(status.HTTP_409_CONFLICT, "slot_in_past")
-    end = slots[-1] + grid.SLOT
-    # Any of the specialist's live calls in the way — booked from the CRM or
-    # set by them — whatever the slot rows say.
-    if await db.scalar(
-        select(Meeting.id).where(
-            Meeting.specialist_id == specialist.id,
-            Meeting.status.in_(ACTIVE_MEETING),
-            Meeting.start_at < end,
-            Meeting.end_at > slots[0],
-        )
-    ):
-        raise scheduling_error(status.HTTP_409_CONFLICT, "slot_taken")
-
-    meeting = Meeting(
-        deal_id=deal.id,
-        specialist_id=specialist.id,
-        type=MeetingType.main60,
-        start_at=slots[0],
-        end_at=end,
+    meeting = await book_own_time(
+        db, actor=specialist, specialist_id=specialist.id, start=start, minutes=MINUTES, deal_id=deal.id,
         # The specialist already knows the client; the card goes along.
-        handoff=dict(first.handoff),
-        created_by=specialist.id,
+        handoff=first.handoff, meeting_type=MeetingType.main60,
     )
-    db.add(meeting)
-    await db.flush()
-    await _take_slots(db, specialist, meeting, slots)
     audit.record(
         db, actor=specialist, action="meeting.second_scheduled", entity_type="meeting", entity_id=meeting.id,
         after={"deal_id": str(deal.id), "start": meeting.start_at.isoformat()},

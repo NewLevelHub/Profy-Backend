@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models.analysis_result import AnalysisResult, ReviewStatus
-from app.models.crm import CrmTask, TaskType
+from app.models.crm import CrmDeal, CrmTask, TaskType
 from app.models.psychologist_assignment import PsychologistStudentAssignment
 from app.models.scheduling import Meeting
 from app.models.user import User, UserRole
@@ -475,3 +475,34 @@ async def test_the_specialist_sees_which_call_and_whose(
     calls = {m["call"]: m for m in listed if m["student_id"] == str(test_user.id)}
     assert set(calls) == {"first", "second"}
     assert calls["second"]["start"][:16] == _iso(second_start)[:16]
+
+
+async def test_cancelling_the_second_call_keeps_the_deals_specialist(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    manager: User,
+    test_user: User,
+    auth_headers: dict[str, str],
+    psychologist_user: User,
+    psychologist_headers: dict[str, str],
+) -> None:
+    deal = await _booked(client, db_session, manager, specialist=psychologist_user)
+    url = await _invite(client, manager, deal["id"])
+    assert (await client.post(ACCEPT, json={"token": _token(url)}, headers=auth_headers)).status_code == 204
+    first = await db_session.get(Meeting, uuid.UUID(deal["meeting"]["id"]))
+    first.start_at, first.end_at = tz.now_utc() - timedelta(minutes=10), tz.now_utc() + timedelta(minutes=20)
+    await db_session.flush()
+    second_start = await _open_slots(db_session, psychologist_user, FUTURE_DAY, time(15, 0), 2)
+    path = f"/api/v1/psychologist/students/{test_user.id}/second-meeting"
+    second = (await client.post(path, json={"start": _iso(second_start)}, headers=psychologist_headers)).json()["second"]
+
+    cancelled = await client.post(
+        f"/api/v1/scheduling/specialists/me/meetings/{second['id']}/cancel",
+        json={"reason": "Ученик заболел"}, headers=psychologist_headers,
+    )
+    assert cancelled.status_code == 200
+    stored = await db_session.scalar(select(CrmDeal.specialist_id).where(CrmDeal.id == uuid.UUID(deal["id"])))
+    assert stored == psychologist_user.id
+    # And a new second call can be set.
+    state = (await client.get(path, headers=psychologist_headers)).json()
+    assert state["second"] is None and state["can_schedule"] is True
