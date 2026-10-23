@@ -92,6 +92,10 @@ async def create_invite(db: AsyncSession, user: User, deal_id: uuid.UUID) -> Crm
     _require_open(deal)
     if deal.paid_at is None:
         raise crm_error(status.HTTP_409_CONFLICT, "deal_not_paid")
+    # With a specialist's call the link carries the specialist: it is made
+    # once the call is booked and the system has picked who.
+    if deal.psychologist_review and deal.specialist_id is None:
+        raise crm_error(status.HTTP_409_CONFLICT, "deal_not_booked")
     now = tz.now_utc()
     await db.execute(
         update(CrmStudentInvite)

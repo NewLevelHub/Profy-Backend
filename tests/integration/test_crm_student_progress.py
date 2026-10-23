@@ -3,7 +3,7 @@ ties the account, a finished test is stage 7, a published report is stage 8
 and «Успешно». Without the link no student account can be made."""
 
 import uuid
-from datetime import time
+from datetime import time, timedelta
 from unittest.mock import AsyncMock
 
 import httpx
@@ -15,8 +15,9 @@ from app.config import settings
 from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.crm import CrmTask, TaskType
 from app.models.psychologist_assignment import PsychologistStudentAssignment
+from app.models.scheduling import Meeting
 from app.models.user import User, UserRole
-from app.services import email_service
+from app.services import email_service, tz
 from app.services.oauth_service import google_id_token
 from tests.integration.review_helpers import capture_emails, force_complete_senior, generate, make_student_assessment
 from tests.integration.test_crm_deals import (
@@ -40,6 +41,20 @@ def _token(url: str) -> str:
     return url.split("#token=", 1)[1]
 
 
+async def _booked(
+    client: httpx.AsyncClient, db: AsyncSession, user: User, tariff: str = "testing", specialist: User | None = None
+) -> dict:
+    """A paid deal booked on a call — the link carries its specialist."""
+    specialist = specialist or await _user(db, UserRole.psychologist, "Лолита")
+    start = await _open_slots(db, specialist, FUTURE_DAY, time(10, 0), 2)
+    deal = await _ready_to_book(client, user, tariff=tariff)
+    booked = await client.post(
+        f"{URL}/deals/{deal['id']}/booking", json={"start": _iso(start), "handoff": _handoff()}, headers=_h(user)
+    )
+    assert booked.status_code == 200, booked.text
+    return booked.json()
+
+
 async def _invite(client: httpx.AsyncClient, user: User, deal_id: str) -> str:
     response = await client.post(f"{URL}/deals/{deal_id}/invite", headers=_h(user))
     assert response.status_code == 200, response.text
@@ -47,13 +62,18 @@ async def _invite(client: httpx.AsyncClient, user: User, deal_id: str) -> str:
 
 
 async def test_invite_needs_payment_and_a_new_link_revokes_the_old(
-    client: httpx.AsyncClient, manager: User, test_user: User, auth_headers: dict[str, str]
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User, test_user: User, auth_headers: dict[str, str]
 ) -> None:
     lead = await _create(client, manager)
     unpaid = await client.post(f"{URL}/deals/{lead['id']}/invite", headers=_h(manager))
     assert unpaid.json()["error_code"] == "deal_not_paid"
 
-    deal = await _ready_to_book(client, manager)
+    # Paid, not booked yet: the link waits for the call and its specialist.
+    paid = await _ready_to_book(client, manager)
+    not_booked = await client.post(f"{URL}/deals/{paid['id']}/invite", headers=_h(manager))
+    assert not_booked.json()["error_code"] == "deal_not_booked"
+
+    deal = await _booked(client, db_session, manager)
     first = await _invite(client, manager, deal["id"])
     second = await _invite(client, manager, deal["id"])
     assert first != second and "/student-invite#token=" in second
@@ -74,7 +94,7 @@ async def test_invite_needs_payment_and_a_new_link_revokes_the_old(
 async def test_only_a_student_account_accepts(
     client: httpx.AsyncClient, db_session: AsyncSession, manager: User
 ) -> None:
-    deal = await _ready_to_book(client, manager)
+    deal = await _booked(client, db_session, manager)
     url = await _invite(client, manager, deal["id"])
     response = await client.post(ACCEPT, json={"token": _token(url)}, headers=_h(manager))
     assert response.json()["error_code"] == "student_invite_students_only"
@@ -189,7 +209,7 @@ def invite_only(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 async def test_sign_up_needs_a_live_invite(
-    client: httpx.AsyncClient, manager: User, invite_only: None
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User, invite_only: None
 ) -> None:
     body = {"email": f"{uuid.uuid4().hex}@gmail.com", "password": "Testpass123!"}
     closed = await client.post("/api/v1/auth/register", json=body)
@@ -197,7 +217,7 @@ async def test_sign_up_needs_a_live_invite(
     fake = await client.post("/api/v1/auth/register", json={**body, "student_invite": "x" * 43})
     assert fake.json()["error_code"] == "registration_invite_only"
 
-    deal = await _ready_to_book(client, manager)
+    deal = await _booked(client, db_session, manager)
     token = _token(await _invite(client, manager, deal["id"]))
     assert (await client.post("/api/v1/auth/register", json={**body, "student_invite": token})).status_code == 201
 
@@ -215,7 +235,7 @@ async def test_google_sign_up_needs_an_invite_but_sign_in_does_not(
     closed = await client.post("/api/v1/auth/google", json={"id_token": "t"})
     assert closed.status_code == 403 and closed.json()["error_code"] == "registration_invite_only"
 
-    deal = await _ready_to_book(client, manager)
+    deal = await _booked(client, db_session, manager)
     token = _token(await _invite(client, manager, deal["id"]))
     created = await client.post("/api/v1/auth/google", json={"id_token": "t", "student_invite": token})
     assert created.status_code == 200 and created.json()["user"]["role"] == "student"
@@ -304,7 +324,7 @@ async def test_a_reviewed_tariff_keeps_the_review_after_the_owner_drops_it(
     capture_emails(monkeypatch)
     force_complete_senior(monkeypatch)
     code = await _tariff(client, db_session, review=True)
-    deal = await _ready_to_book(client, manager, tariff=code)
+    deal = await _booked(client, db_session, manager, tariff=code)
     owner = await _user(db_session, UserRole.owner, "Санжар")
     # The condition the deal was sold with stays, like its price.
     assert (await client.patch(f"{URL}/tariffs/{code}", json={"psychologist_review": False}, headers=_h(owner))).status_code == 200
@@ -315,3 +335,87 @@ async def test_a_reviewed_tariff_keeps_the_review_after_the_owner_drops_it(
     assessment_id = assessment.id
     assert (await generate(client, auth_headers, assessment)).status_code == 200
     assert await _status(db_session, assessment_id) == ReviewStatus.pending_review
+
+
+# ── the second call, set by the specialist (ТЗ §4.5) ────────────────────────
+
+
+async def test_the_specialist_sets_the_second_call_and_the_deal_follows(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    manager: User,
+    test_user: User,
+    auth_headers: dict[str, str],
+    psychologist_user: User,
+    psychologist_headers: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    deal = await _booked(client, db_session, manager, specialist=psychologist_user)
+    url = await _invite(client, manager, deal["id"])
+    assert (await client.post(ACCEPT, json={"token": _token(url)}, headers=auth_headers)).status_code == 204
+    path = f"/api/v1/psychologist/students/{test_user.id}/second-meeting"
+
+    # Before the first call has begun there is nothing to set.
+    before = (await client.get(path, headers=psychologist_headers)).json()
+    assert before["first"] is not None and before["second"] is None
+    assert before["can_schedule"] is False and before["blocker"] == "first_not_started"
+
+    first = await db_session.get(Meeting, uuid.UUID(before["first"]["id"]))
+    first.start_at, first.end_at = tz.now_utc() - timedelta(hours=1), tz.now_utc() - timedelta(minutes=30)
+    await db_session.flush()
+
+    # Any time without an overlap; the time is taken in the schedule.
+    second_start = await _open_slots(db_session, psychologist_user, FUTURE_DAY, time(15, 0), 2)
+    misaligned = await client.post(path, json={"start": _iso(second_start + timedelta(minutes=10))}, headers=psychologist_headers)
+    assert misaligned.status_code == 422
+    set_ = await client.post(path, json={"start": _iso(second_start)}, headers=psychologist_headers)
+    assert set_.status_code == 200, set_.text
+    state = set_.json()
+    assert state["second"]["start"].startswith(second_start.strftime("%Y-%m-%dT%H:%M")) and state["blocker"] == "already_scheduled"
+    again = await client.post(path, json={"start": _iso(second_start + timedelta(hours=2))}, headers=psychologist_headers)
+    assert again.json()["error_code"] == "second_meeting_already_scheduled"
+
+    # The CRM cannot book that time any more.
+    other = await _ready_to_book(client, manager)
+    taken = await client.post(
+        f"{URL}/deals/{other['id']}/booking", json={"start": _iso(second_start), "handoff": _handoff()}, headers=_h(manager)
+    )
+    assert taken.json()["error_code"] == "slot_taken"
+
+    detail = (await client.get(f"{URL}/deals/{deal['id']}", headers=_h(manager))).json()
+    assert [m["start"][:16] for m in detail["meetings"]] == [
+        first.start_at.isoformat()[:16], state["second"]["start"][:16],
+    ]
+    assert detail["meeting"]["id"] == before["first"]["id"]
+
+    # The test, then the report published on the second call: «Успешно» and
+    # «Разбор назначен»; the call held — «Разбор проведён».
+    assessment = await make_student_assessment(db_session, test_user)
+    assert (await generate(client, auth_headers, assessment)).status_code == 200
+    published = await client.post(
+        f"/api/v1/psychologist/students/{test_user.id}/results/{assessment.id}/publish", headers=psychologist_headers
+    )
+    assert published.status_code == 200, published.text
+    detail = (await client.get(f"{URL}/deals/{deal['id']}", headers=_h(manager))).json()
+    assert detail["stage"] == "review_scheduled" and detail["result"] == "won"
+
+    second = await db_session.get(Meeting, uuid.UUID(state["second"]["id"]))
+    second.start_at = tz.now_utc() - timedelta(minutes=5)
+    await db_session.flush()
+    done = await client.post(
+        f"/api/v1/scheduling/specialists/me/meetings/{second.id}/status", json={"status": "done"}, headers=psychologist_headers
+    )
+    assert done.status_code == 200, done.text
+    detail = (await client.get(f"{URL}/deals/{deal['id']}", headers=_h(manager))).json()
+    assert detail["stage"] == "review_done" and detail["result"] == "won"
+
+
+async def test_only_the_students_own_specialist_sets_the_second_call(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User, test_user: User, psychologist_headers: dict[str, str]
+) -> None:
+    other = await _user(db_session, UserRole.psychologist, "Азат")
+    await _booked(client, db_session, manager, specialist=other)
+    path = f"/api/v1/psychologist/students/{test_user.id}/second-meeting"
+    assert (await client.get(path, headers=psychologist_headers)).status_code == 404

@@ -6,6 +6,11 @@ published report is 8 «Отчёт опубликован» and «Успешно
 (ТЗ §3.3.1). The platform calls `student_progressed` at the moment either
 happens; linking calls `sync_deal` to catch up with what already happened.
 
+The second call, which the specialist sets (app/services/scheduling/
+second_meeting.py), comes after: once the report is published, a set
+second call is 9 «Разбор назначен» and a held one 10 «Разбор проведён».
+«Успешно» stays with the publication.
+
 `report_needs_review` is the other direction: the deal's tariff decides
 whether the student's new report waits for a psychologist.
 
@@ -29,6 +34,7 @@ from app.models.assessment import Assessment, AssessmentStatus
 from app.models.crm import STAGE_ORDER, CrmDeal, CrmDealEvent, CrmTask, DealResult, DealStage, TaskType
 from app.models.profile import Profile
 from app.models.psychologist_assignment import PsychologistStudentAssignment
+from app.models.scheduling import Meeting, MeetingStatus
 from app.models.user import User, UserRole
 from app.services import audit, tz
 
@@ -60,6 +66,19 @@ async def _progress(db: AsyncSession, user_id: uuid.UUID, since: datetime) -> tu
         .where(AnalysisResult.assessment_id.in_(finished), AnalysisResult.review_status == ReviewStatus.published)
     )
     return True, bool(published)
+
+
+async def _second_call(db: AsyncSession, deal_id: uuid.UUID) -> Meeting | None:
+    """The deal's live call after its first one — the report review."""
+    rows = (
+        await db.execute(
+            select(Meeting)
+            .where(Meeting.deal_id == deal_id, Meeting.status != MeetingStatus.cancelled)
+            .order_by(Meeting.start_at)
+            .limit(2)
+        )
+    ).scalars().all()
+    return rows[1] if len(rows) > 1 else None
 
 
 async def _payment_check(db: AsyncSession, deal: CrmDeal) -> None:
@@ -98,6 +117,10 @@ async def sync_deal(db: AsyncSession, deal: CrmDeal) -> None:
         await _payment_check(db, deal)
         return
     target = DealStage.report_published if published else DealStage.diagnostics_done
+    if published:
+        second = await _second_call(db, deal.id)
+        if second is not None:
+            target = DealStage.review_done if second.status == MeetingStatus.done else DealStage.review_scheduled
     if STAGE_ORDER.index(deal.stage) < STAGE_ORDER.index(target):
         audit.record(
             db, actor=None, action="crm.stage_changed", entity_type="crm_deal", entity_id=deal.id,

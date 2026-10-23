@@ -195,6 +195,10 @@ async def set_status(db: AsyncSession, actor: User, meeting: Meeting, new_status
     )
     _deal_event(db, meeting, actor, "meeting_status", {"from": meeting.status.value, "to": new_status.value})
     meeting.status = new_status
+    if new_status == MeetingStatus.done and (deal := await _deal_of(db, meeting)) is not None:
+        # A held second call is «Разбор проведён».
+        await db.flush()
+        await progress.sync_deal(db, deal)
     await db.commit()
     return meeting
 

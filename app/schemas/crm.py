@@ -270,7 +270,10 @@ class DealDetail(BaseModel):
     first_message: str | None
     # When the deal came to its current stage.
     stage_at: datetime
+    # The first call (the one the manager booked).
     meeting: MeetingOut | None
+    # Every live call: the first and the specialist's second, by time.
+    meetings: list[MeetingOut]
     student_account: StudentAccountOut
     tasks: list["TaskOut"] = []
     events: list[DealEventOut]

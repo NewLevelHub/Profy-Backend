@@ -155,7 +155,11 @@ async def _active_meetings(db: AsyncSession, deal_ids: list[uuid.UUID]) -> dict[
         .where(Meeting.deal_id.in_(deal_ids), Meeting.status != MeetingStatus.cancelled)
         .order_by(Meeting.start_at)
     )
-    return {meeting.deal_id: meeting for meeting in rows.scalars()}
+    first: dict[uuid.UUID, Meeting] = {}
+    for meeting in rows.scalars():
+        # The call the manager booked; a later one is the specialist's second.
+        first.setdefault(meeting.deal_id, meeting)
+    return first
 
 
 async def list_deals(
@@ -268,17 +272,24 @@ async def detail(db: AsyncSession, user: User, deal: CrmDeal) -> schemas.DealDet
     users = await _users(
         db, {deal.manager_id, meeting.specialist_id if meeting else None, *(e.actor_id for e in events)}
     )
-    meeting_out = None
-    if meeting:
-        meeting_out = schemas.MeetingOut(
-            id=meeting.id,
-            type=meeting.type.value,
-            status=meeting.status.value,
-            start=meeting.start_at,
-            end=meeting.end_at,
+    def meeting_out(m: Meeting) -> schemas.MeetingOut:
+        return schemas.MeetingOut(
+            id=m.id,
+            type=m.type.value,
+            status=m.status.value,
+            start=m.start_at,
+            end=m.end_at,
             # A sales manager never learns who the specialist is (ТЗ §3.9 п.8).
-            specialist=_user_ref(users.get(meeting.specialist_id)) if _supervisor(user) else None,
+            specialist=_user_ref(users.get(m.specialist_id)) if _supervisor(user) else None,
         )
+
+    calls = (
+        await db.execute(
+            select(Meeting)
+            .where(Meeting.deal_id == deal.id, Meeting.status != MeetingStatus.cancelled)
+            .order_by(Meeting.start_at)
+        )
+    ).scalars().all()
     return schemas.DealDetail(
         id=deal.id,
         stage=deal.stage,
@@ -312,7 +323,8 @@ async def detail(db: AsyncSession, user: User, deal: CrmDeal) -> schemas.DealDet
         source=deal.source,
         first_message=deal.first_message,
         stage_at=next((e.at for e in events if e.kind in STAGE_EVENTS), deal.created_at),
-        meeting=meeting_out,
+        meeting=meeting_out(meeting) if meeting else None,
+        meetings=[meeting_out(m) for m in calls],
         student_account=await _student_account(db, deal),
         tasks=await _deal_tasks(db, deal.id),
         events=[

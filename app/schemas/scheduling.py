@@ -204,3 +204,21 @@ class SpecialistMeeting(BaseModel):
     start: datetime
     end: datetime
     handoff: dict[str, Any]
+
+
+SecondMeetingBlocker = Literal["no_consultation", "first_not_booked", "first_not_started", "already_scheduled"]
+
+
+class SecondMeetingState(BaseModel):
+    """The student's calls with this specialist, as the specialist's cabinet
+    shows them: the first one the manager booked, the second one the
+    specialist sets. `blocker` says why the second cannot be set now."""
+
+    first: SpecialistMeeting | None
+    second: SpecialistMeeting | None
+    can_schedule: bool
+    blocker: SecondMeetingBlocker | None
+
+
+class SecondMeetingIn(BaseModel):
+    start: datetime
