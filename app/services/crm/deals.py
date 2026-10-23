@@ -1,9 +1,10 @@
 """Deals board (ТЗ CRM Profile v4.1 §3.2–3.10). Contract:
 docs/frontend-crm-api-contract.md.
 
-For now every stage moves by hand: leads are entered manually and the
-after-sale stages 7–10, which the platform will drive by events later, are
-moved by the head of sales or the owner. The rules of §3.3 that do not
+Leads are entered manually and stages 1–6 move by hand. Stages 7–8 and
+«Успешно» follow the student's account once it is linked to the deal
+(progress.py); until then, and for 9–10, the head of sales or the owner moves
+them. The rules of §3.3 that do not
 depend on events hold already: a non-target lead stays in qualification,
 «Оплачено» comes only from marking the payment, closing needs a reason, and
 after payment only the head of sales or the owner closes the deal.
@@ -15,7 +16,7 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import status
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.errors import AppError
@@ -27,6 +28,7 @@ from app.models.crm import (
     CrmParent,
     CrmStudent,
     CrmTariff,
+    CrmTask,
     DealResult,
     DealStage,
     LostReason,
@@ -35,12 +37,20 @@ from app.models.scheduling import Meeting, MeetingStatus
 from app.models.user import User, UserRole
 from app.schemas import crm as schemas
 from app.services import audit, tz
+from app.services.crm import progress
 from app.services.scheduling import booking
 
 SALES_ROLES = (UserRole.owner, UserRole.sales_head, UserRole.sales_manager, UserRole.marketer)
 # Who sees every deal and the specialists' names, and may do what the
 # manager may not (ТЗ §2). The owner and the head of sales.
 SUPERVISORS = (UserRole.owner, UserRole.sales_head)
+
+# The manager books the first call, always 30 minutes; the 60-minute second
+# one the specialist sets (app/services/scheduling/second_meeting.py).
+FIRST_CALL_MINUTES = 30
+
+# Feed events that put the deal on its current stage.
+STAGE_EVENTS = ("stage", "accepted", "created")
 
 _PAID_INDEX = STAGE_ORDER.index(DealStage.paid)
 _QUALIFICATION_INDEX = STAGE_ORDER.index(DealStage.qualification)
@@ -131,18 +141,12 @@ def _require_open(deal: CrmDeal) -> None:
 # ── meta, list ──────────────────────────────────────────────────────────────
 
 
-async def tariffs(db: AsyncSession) -> list[CrmTariff]:
-    rows = await db.execute(select(CrmTariff).where(CrmTariff.active.is_(True)).order_by(CrmTariff.sort))
-    return list(rows.scalars())
-
-
 async def meta(db: AsyncSession) -> schemas.CrmMeta:
+    # Archived tariffs too: deals that have one still show its name.
+    rows = await db.execute(select(CrmTariff).order_by(CrmTariff.sort, CrmTariff.code))
     return schemas.CrmMeta(
         stages=STAGE_ORDER,
-        tariffs=[
-            schemas.TariffItem(code=t.code, name=t.name, price=t.price, meeting_minutes=t.meeting_minutes)
-            for t in await tariffs(db)
-        ],
+        tariffs=[schemas.TariffItem.model_validate(t, from_attributes=True) for t in rows.scalars()],
         lost_reasons=list(LostReason),
     )
 
@@ -155,10 +159,16 @@ async def _active_meetings(db: AsyncSession, deal_ids: list[uuid.UUID]) -> dict[
         .where(Meeting.deal_id.in_(deal_ids), Meeting.status != MeetingStatus.cancelled)
         .order_by(Meeting.start_at)
     )
-    return {meeting.deal_id: meeting for meeting in rows.scalars()}
+    first: dict[uuid.UUID, Meeting] = {}
+    for meeting in rows.scalars():
+        # The call the manager booked; a later one is the specialist's second.
+        first.setdefault(meeting.deal_id, meeting)
+    return first
 
 
-async def list_deals(db: AsyncSession, user: User, result: str = "open") -> list[schemas.DealCard]:
+async def list_deals(
+    db: AsyncSession, user: User, result: str = "open", filters: schemas.DealFilters | None = None
+) -> list[schemas.DealCard]:
     query = select(CrmDeal, CrmParent, CrmStudent).join(CrmParent, CrmParent.id == CrmDeal.parent_id).outerjoin(
         CrmStudent, CrmStudent.id == CrmDeal.student_id
     )
@@ -166,10 +176,13 @@ async def list_deals(db: AsyncSession, user: User, result: str = "open") -> list
         query = query.where(clause)
     if result != "all":
         query = query.where(CrmDeal.result == DealResult(result))
+    if filters is not None:
+        query = _apply_filters(query, user, filters)
     rows = (await db.execute(query.order_by(CrmDeal.created_at.desc()))).all()
 
     users = await _users(db, {deal.manager_id for deal, _, _ in rows})
     meetings = await _active_meetings(db, [deal.id for deal, _, _ in rows])
+    tasks = await _next_task_due(db, [deal.id for deal, _, _ in rows])
     # The marketer sees the board without personal data (ТЗ §2, §6.2).
     masked = user.role == UserRole.marketer
     return [
@@ -182,11 +195,13 @@ async def list_deals(db: AsyncSession, user: User, result: str = "open") -> list
             student_name=None if masked or student is None else student.full_name,
             tariff_code=deal.tariff_code,
             total=deal.total,
+            source=deal.source,
             is_target=deal.is_target,
             paid=deal.paid_at is not None,
             consent=parent.consent,
             manager=_user_ref(users.get(deal.manager_id)),
             meeting_start=meetings[deal.id].start_at if deal.id in meetings else None,
+            next_task_due=tasks.get(deal.id),
             closed_at=deal.closed_at,
             created_at=deal.created_at,
         )
@@ -194,7 +209,57 @@ async def list_deals(db: AsyncSession, user: User, result: str = "open") -> list
     ]
 
 
+def _apply_filters(query, user: User, f: schemas.DealFilters):
+    if f.q and (text := f.q.strip()):
+        like = f"%{text}%"
+        conditions = [CrmParent.full_name.ilike(like), CrmStudent.full_name.ilike(like)]
+        digits = re.sub(r"\D", "", text)
+        if len(digits) >= 4:
+            conditions.append(CrmParent.phone.like(f"%{digits[-10:]}%"))
+        # The marketer cannot look people up by name or phone (ТЗ §2).
+        if user.role != UserRole.marketer:
+            query = query.where(or_(*conditions))
+    if f.stage:
+        query = query.where(CrmDeal.stage == f.stage)
+    if f.tariff:
+        query = query.where(CrmDeal.tariff_code == f.tariff)
+    if f.manager == "none":
+        query = query.where(CrmDeal.manager_id.is_(None))
+    elif f.manager:
+        query = query.where(CrmDeal.manager_id == uuid.UUID(f.manager))
+    if f.paid is not None:
+        query = query.where(CrmDeal.paid_at.is_not(None) if f.paid else CrmDeal.paid_at.is_(None))
+    if f.created_from:
+        query = query.where(CrmDeal.created_at >= tz.day_bounds(f.created_from)[0])
+    if f.created_to:
+        query = query.where(CrmDeal.created_at < tz.day_bounds(f.created_to)[1])
+    return query
+
+
+async def _next_task_due(db: AsyncSession, deal_ids: list[uuid.UUID]) -> dict[uuid.UUID, datetime]:
+    if not deal_ids:
+        return {}
+    rows = await db.execute(
+        select(CrmTask.deal_id, func.min(CrmTask.due_at))
+        .where(CrmTask.deal_id.in_(deal_ids), CrmTask.done_at.is_(None))
+        .group_by(CrmTask.deal_id)
+    )
+    return dict(rows.all())
+
+
 # ── detail ──────────────────────────────────────────────────────────────────
+
+
+async def _deal_tasks(db: AsyncSession, deal_id: uuid.UUID) -> list[schemas.TaskOut]:
+    from app.services.crm import tasks  # tasks builds on this module
+
+    return await tasks.deal_tasks(db, deal_id)
+
+
+async def _student_account(db: AsyncSession, deal: CrmDeal) -> schemas.StudentAccountOut:
+    from app.services.crm import invites  # invites builds on this module
+
+    return await invites.account_info(db, deal)
 
 
 async def detail(db: AsyncSession, user: User, deal: CrmDeal) -> schemas.DealDetail:
@@ -211,17 +276,24 @@ async def detail(db: AsyncSession, user: User, deal: CrmDeal) -> schemas.DealDet
     users = await _users(
         db, {deal.manager_id, meeting.specialist_id if meeting else None, *(e.actor_id for e in events)}
     )
-    meeting_out = None
-    if meeting:
-        meeting_out = schemas.MeetingOut(
-            id=meeting.id,
-            type=meeting.type.value,
-            status=meeting.status.value,
-            start=meeting.start_at,
-            end=meeting.end_at,
+    def meeting_out(m: Meeting) -> schemas.MeetingOut:
+        return schemas.MeetingOut(
+            id=m.id,
+            type=m.type.value,
+            status=m.status.value,
+            start=m.start_at,
+            end=m.end_at,
             # A sales manager never learns who the specialist is (ТЗ §3.9 п.8).
-            specialist=_user_ref(users.get(meeting.specialist_id)) if _supervisor(user) else None,
+            specialist=_user_ref(users.get(m.specialist_id)) if _supervisor(user) else None,
         )
+
+    calls = (
+        await db.execute(
+            select(Meeting)
+            .where(Meeting.deal_id == deal.id, Meeting.status != MeetingStatus.cancelled)
+            .order_by(Meeting.start_at)
+        )
+    ).scalars().all()
     return schemas.DealDetail(
         id=deal.id,
         stage=deal.stage,
@@ -246,6 +318,7 @@ async def detail(db: AsyncSession, user: User, deal: CrmDeal) -> schemas.DealDet
         non_target_reason=deal.non_target_reason,
         tariff_code=deal.tariff_code,
         price=deal.price,
+        psychologist_review=deal.psychologist_review,
         discount=deal.discount,
         total=deal.total,
         paid_amount=deal.paid_amount,
@@ -253,7 +326,11 @@ async def detail(db: AsyncSession, user: User, deal: CrmDeal) -> schemas.DealDet
         payment_method=deal.payment_method,
         source=deal.source,
         first_message=deal.first_message,
-        meeting=meeting_out,
+        stage_at=next((e.at for e in events if e.kind in STAGE_EVENTS), deal.created_at),
+        meeting=meeting_out(meeting) if meeting else None,
+        meetings=[meeting_out(m) for m in calls],
+        student_account=await _student_account(db, deal),
+        tasks=await _deal_tasks(db, deal.id),
         events=[
             schemas.DealEventOut(
                 id=e.id, at=e.at, actor=_user_ref(users.get(e.actor_id)), kind=e.kind, data=e.data, text=e.text
@@ -387,8 +464,10 @@ async def patch_deal(db: AsyncSession, user: User, deal_id: uuid.UUID, body: sch
         if body.tariff_code and (tariff is None or not tariff.active):
             raise crm_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "tariff_not_found")
         deal.tariff_code = body.tariff_code
-        # The price is fixed on the day the tariff is chosen (ТЗ §3.7).
+        # The price is fixed on the day the tariff is chosen (ТЗ §3.7), and
+        # so is whether a psychologist reviews the report.
         deal.price = tariff.price if tariff else None
+        deal.psychologist_review = tariff.psychologist_review if tariff else None
         _event(db, deal, user, "tariff", {"tariff": deal.tariff_code, "price": deal.price})
 
     if "discount" in sent and body.discount is not None and body.discount != deal.discount:
@@ -591,13 +670,16 @@ async def book(db: AsyncSession, user: User, deal_id: uuid.UUID, body: schemas.B
         raise crm_error(status.HTTP_409_CONFLICT, "consent_required")
     if (await _active_meetings(db, [deal.id])).get(deal.id):
         raise crm_error(status.HTTP_409_CONFLICT, "deal_already_booked")
+    # Sold without a specialist (no review, no call): nothing to book.
+    if deal.psychologist_review is False:
+        raise crm_error(status.HTTP_409_CONFLICT, "deal_no_meeting")
     tariff = await db.get(CrmTariff, deal.tariff_code)
 
     handoff = body.handoff.model_dump()
     handoff["tariff"] = tariff.name
     handoff["consent_at"] = parent.consent_at.isoformat() if parent.consent_at else None
     meeting = await booking.book(
-        db, actor=user, start=body.start, minutes=tariff.meeting_minutes, deal_id=deal.id, handoff=handoff
+        db, actor=user, start=body.start, minutes=FIRST_CALL_MINUTES, deal_id=deal.id, handoff=handoff
     )
 
     # The handoff card also fills the CRM student.
@@ -612,6 +694,7 @@ async def book(db: AsyncSession, user: User, deal_id: uuid.UUID, body: schemas.B
     student.study_language, student.russian_level = h.study_language, h.russian_level
 
     deal.specialist_id = meeting.specialist_id
+    await progress.assign_specialist(db, deal)
     audit.record(
         db, actor=user, action="crm.meeting_booked", entity_type="crm_deal", entity_id=deal.id,
         after={"meeting_id": str(meeting.id), "start": meeting.start_at.isoformat(), "type": meeting.type.value},
@@ -619,3 +702,56 @@ async def book(db: AsyncSession, user: User, deal_id: uuid.UUID, body: schemas.B
     _event(db, deal, user, "booked", {"start": meeting.start_at.isoformat(), "type": meeting.type.value})
     await db.commit()
     return deal
+
+
+# ── clients ─────────────────────────────────────────────────────────────────
+
+
+async def clients(db: AsyncSession, user: User, q: str | None = None) -> list[schemas.ClientRow]:
+    """Parents with their children, deals and calls (ТЗ §3.2). A sales manager
+    sees the clients of their own deals and of the inbox."""
+    query = select(CrmParent).order_by(CrmParent.created_at.desc())
+    if (clause := _visible_clause(user)) is not None:
+        query = query.where(CrmParent.id.in_(select(CrmDeal.parent_id).where(clause)))
+    if q and (text := q.strip()):
+        conditions = [CrmParent.full_name.ilike(f"%{text}%")]
+        digits = re.sub(r"\D", "", text)
+        if len(digits) >= 4:
+            conditions.append(CrmParent.phone.like(f"%{digits[-10:]}%"))
+        query = query.where(or_(*conditions))
+    parents = list((await db.execute(query.limit(500))).scalars())
+    ids = [p.id for p in parents]
+    if not ids:
+        return []
+    students: dict[uuid.UUID, list[str]] = {}
+    for parent_id, name in (await db.execute(select(CrmStudent.parent_id, CrmStudent.full_name).where(
+        CrmStudent.parent_id.in_(ids), CrmStudent.full_name.is_not(None)
+    ))).all():
+        students.setdefault(parent_id, []).append(name)
+    deals_by_parent: dict[uuid.UUID, list[CrmDeal]] = {}
+    for deal in (await db.execute(select(CrmDeal).where(CrmDeal.parent_id.in_(ids)))).scalars():
+        deals_by_parent.setdefault(deal.parent_id, []).append(deal)
+    meeting_rows = (await db.execute(
+        select(CrmDeal.parent_id, Meeting.status)
+        .join(Meeting, Meeting.deal_id == CrmDeal.id)
+        .where(CrmDeal.parent_id.in_(ids), Meeting.status != MeetingStatus.cancelled)
+    )).all()
+    out = []
+    for parent in parents:
+        own = deals_by_parent.get(parent.id, [])
+        statuses = [st for pid, st in meeting_rows if pid == parent.id]
+        open_deal = next((d for d in own if d.result == DealResult.open), None)
+        out.append(schemas.ClientRow(
+            id=parent.id,
+            full_name=parent.full_name,
+            phone=parent.phone,
+            city=parent.city,
+            students=sorted(set(students.get(parent.id, []))),
+            deals=len(own),
+            open_deal_id=open_deal.id if open_deal else (own[0].id if own else None),
+            meetings_done=sum(st == MeetingStatus.done for st in statuses),
+            meetings_total=len(statuses),
+            no_shows=sum(st == MeetingStatus.no_show for st in statuses),
+            paid_total=sum(d.paid_amount or 0 for d in own),
+        ))
+    return out

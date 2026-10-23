@@ -4,12 +4,14 @@ from collections.abc import AsyncGenerator
 import httpx
 import pytest
 import pytest_asyncio
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import i18n
 from app.config import settings
 from app.database import engine, get_db
 from app.main import app as fastapi_app
+from app.models.crm import CrmTariff
 from app.models.user import User, UserRole
 from app.services import (
     assessment_shared,
@@ -41,6 +43,27 @@ def _no_mail_domain_lookup(monkeypatch) -> None:
     `@example.com` (a null-MX domain) and may run offline. Tests of the
     check itself turn it back on and stub the lookup."""
     monkeypatch.setattr(settings, "INVITATION_CHECK_DELIVERABILITY", False)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_email(monkeypatch) -> None:
+    """Tests never send real email, whatever the mounted .env holds (a dev
+    .env may carry live SES or Resend keys — mail to the tests' made-up
+    addresses would bounce and hurt the sender's reputation). With no
+    provider credentials email_service skips sending; tests that check an
+    email mock the send function itself. The provider is the code default
+    (Resend) — tests of SES select it themselves."""
+    monkeypatch.setattr(settings, "EMAIL_PROVIDER", "resend")
+    monkeypatch.setattr(settings, "RESEND_API_KEY", "")
+    monkeypatch.setattr(settings, "SES_ACCESS_KEY_ID", "")
+    monkeypatch.setattr(settings, "SES_SECRET_ACCESS_KEY", "")
+
+
+@pytest.fixture(autouse=True)
+def _open_registration(monkeypatch) -> None:
+    """Most auth tests sign up without a CRM invite. The invite-only rule has
+    its own tests (test_crm_student_progress.py), which turn it back on."""
+    monkeypatch.setattr(settings, "REGISTRATION_INVITE_ONLY", False)
 
 
 @pytest_asyncio.fixture
@@ -128,6 +151,19 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[httpx.AsyncClient, 
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
     fastapi_app.dependency_overrides.clear()
+
+
+# The seeded price list as the migrations made it. The owner edits it in the
+# CRM, and the tests run against that same database, inside a transaction
+# that is rolled back: they must not depend on what the owner did with it.
+SEEDED_TARIFFS = ("testing", "consultation", "package")
+
+
+@pytest_asyncio.fixture
+async def price_list(db_session: AsyncSession) -> None:
+    await db_session.execute(
+        update(CrmTariff).where(CrmTariff.code.in_(SEEDED_TARIFFS)).values(active=True, psychologist_review=True)
+    )
 
 
 @pytest_asyncio.fixture

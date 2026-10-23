@@ -21,6 +21,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     SmallInteger,
+    Text,
     Time,
     func,
     text,
@@ -32,9 +33,9 @@ from app.database import Base
 
 
 class SlotState(str, enum.Enum):
+    # A slot with no row is closed. «Занято (личное)» of ТЗ §4.6 п.6 was
+    # dropped (21.10): the specialist marks only free time.
     free = "free"
-    # «Занято (личное)»: the specialist's own client, no details (ТЗ §4.6 п.6).
-    personal = "personal"
     # Taken by a meeting (`meeting_id`); only a booking sets it.
     booked = "booked"
 
@@ -102,6 +103,13 @@ class Meeting(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    # Cancelled or moved (ТЗ §4.5): always with a reason. A move cancels this
+    # meeting and books a new one that points back here.
+    cancel_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    rescheduled_from_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("meetings.id", ondelete="SET NULL"), nullable=True
     )
 
 

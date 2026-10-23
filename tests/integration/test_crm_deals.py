@@ -38,12 +38,12 @@ def _phone() -> str:
 
 
 @pytest.fixture
-async def manager(db_session: AsyncSession) -> User:
+async def manager(db_session: AsyncSession, price_list: None) -> User:
     return await _user(db_session, UserRole.sales_manager, "Айгерим")
 
 
 @pytest.fixture
-async def head(db_session: AsyncSession) -> User:
+async def head(db_session: AsyncSession, price_list: None) -> User:
     return await _user(db_session, UserRole.sales_head, "Бахтияр")
 
 
@@ -317,21 +317,17 @@ async def test_last_slot_goes_to_one_booking_only(
     assert second.status_code == 409 and second.json()["error_code"] == "slot_taken"
 
 
-async def test_consultation_books_sixty_minutes_from_one_specialist(
+async def test_the_crm_books_a_thirty_minute_first_call_for_any_tariff(
     client: httpx.AsyncClient, db_session: AsyncSession, manager: User
 ) -> None:
-    one = await _user(db_session, UserRole.psychologist)
-    two = await _user(db_session, UserRole.psychologist)
-    start = await _open_slots(db_session, one, FUTURE_DAY, time(17, 0), 1)
-    await _open_slots(db_session, two, FUTURE_DAY, time(17, 30), 1)
+    """The manager books the first call — 30 minutes whatever the tariff; the
+    60-minute second one the specialist sets (second_meeting)."""
+    specialist = await _user(db_session, UserRole.psychologist)
+    start = await _open_slots(db_session, specialist, FUTURE_DAY, time(17, 0), 1)
     deal = await _ready_to_book(client, manager, tariff="consultation")
-    body = {"start": _iso(start), "handoff": _handoff()}
-    split = await client.post(f"{URL}/deals/{deal['id']}/booking", json=body, headers=_h(manager))
-    assert split.json()["error_code"] == "slot_taken"
-
-    await _open_slots(db_session, one, FUTURE_DAY, time(17, 30), 1)
-    booked = await client.post(f"{URL}/deals/{deal['id']}/booking", json=body, headers=_h(manager))
+    booked = await client.post(
+        f"{URL}/deals/{deal['id']}/booking", json={"start": _iso(start), "handoff": _handoff()}, headers=_h(manager)
+    )
     assert booked.status_code == 200, booked.text
     meeting = await db_session.scalar(select(Meeting).where(Meeting.deal_id == uuid.UUID(deal["id"])))
-    assert meeting.type.value == "main60" and meeting.specialist_id == one.id
-    assert meeting.end_at - meeting.start_at == timedelta(minutes=60)
+    assert meeting.type.value == "intro30" and meeting.end_at - meeting.start_at == timedelta(minutes=30)
