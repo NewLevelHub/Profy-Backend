@@ -138,6 +138,16 @@ async def publish_week(
     return await service.publish_week(db, current_user, specialist, week_start)
 
 
+@router.get(_SPECIALIST + "/meetings", response_model=list[schemas.SpecialistMeeting])
+async def list_meetings(
+    date_from: date = Query(alias="from"),
+    date_to: date = Query(alias="to"),
+    specialist: User = Depends(_specialist),
+    db: AsyncSession = Depends(get_db),
+) -> list[schemas.SpecialistMeeting]:
+    return await service.list_meetings(db, specialist, date_from, date_to)
+
+
 @router.get(
     "/free",
     response_model=schemas.FreeSlotsResponse | schemas.FreeSlotsManagerResponse,

@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.errors import AppError
 from app.i18n.catalog import key as i18n_key
 from app.models.scheduling import (
+    Meeting,
     SchedulingSettings as SettingsRow,
     SlotState,
     SpecialistSlot,
@@ -105,6 +106,24 @@ async def _states(
     return {start_at: state for start_at, state in rows.all()}
 
 
+async def _slot_meetings(
+    db: AsyncSession, specialist_id: uuid.UUID, start: datetime, end: datetime
+) -> dict[datetime, schemas.SlotMeeting]:
+    rows = await db.execute(
+        select(SpecialistSlot.start_at, Meeting.id, Meeting.type, Meeting.status)
+        .join(Meeting, Meeting.id == SpecialistSlot.meeting_id)
+        .where(
+            SpecialistSlot.specialist_id == specialist_id,
+            SpecialistSlot.start_at >= start,
+            SpecialistSlot.start_at < end,
+        )
+    )
+    return {
+        start_at: schemas.SlotMeeting(id=meeting_id, type=kind.value, status=state.value)
+        for start_at, meeting_id, kind, state in rows.all()
+    }
+
+
 async def get_week(
     db: AsyncSession, specialist: User, week_start: date, now: datetime | None = None
 ) -> schemas.Week:
@@ -113,6 +132,7 @@ async def get_week(
     start, end = grid.week_bounds(week_start)
     states = await _states(db, specialist.id, start, end)
     publication = await db.get(SpecialistWeekPublication, (specialist.id, week_start))
+    meetings = await _slot_meetings(db, specialist.id, start, end)
 
     days = []
     for day in grid.week_days(week_start):
@@ -124,6 +144,7 @@ async def get_week(
                 state=states[slot_start].value if slot_start in states else "closed",
                 frozen=frozen,
                 past=slot_start <= now,
+                meeting=meetings.get(slot_start),
             )
             for slot_start in grid.day_slot_starts(day)
         ]
@@ -149,10 +170,19 @@ async def _weeks(
 # ── changing availability ───────────────────────────────────────────────────
 
 
-def _blocker(actor: User, specialist: User, slot_start: datetime, now: datetime) -> str | None:
+def _blocker(
+    actor: User,
+    specialist: User,
+    slot_start: datetime,
+    now: datetime,
+    current: SlotState | None = None,
+) -> str | None:
     """Why `actor` may not change this slot of `specialist`, or None."""
     if slot_start <= now:
         return "slot_in_past"
+    # A meeting is moved or cancelled by the owner, never by editing the slot.
+    if current == SlotState.booked:
+        return "slot_booked"
     # The owner may change frozen days (ТЗ §4.6 п.7); the specialist may not.
     if actor.id == specialist.id and tz.is_frozen(tz.business_date(slot_start), now):
         return "slot_frozen"
@@ -244,13 +274,16 @@ async def patch_availability(
                 raise scheduling_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "changes_overlap")
             target[slot] = _state(change.state)
 
+    current = await _states(db, specialist.id, min(target), max(target) + grid.SLOT)
     conflicts = [
-        (slot, code) for slot in sorted(target) if (code := _blocker(actor, specialist, slot, now))
+        (slot, code)
+        for slot in sorted(target)
+        if (code := _blocker(actor, specialist, slot, now, current.get(slot)))
     ]
     if conflicts:
-        # Past wins over frozen: it cannot be fixed by anyone.
+        # The most final reason wins: past, then a meeting, then the freeze.
         codes = {code for _, code in conflicts}
-        error_code = "slot_in_past" if "slot_in_past" in codes else "slot_frozen"
+        error_code = next(c for c in ("slot_in_past", "slot_booked", "slot_frozen") if c in codes)
         raise scheduling_error(status.HTTP_409_CONFLICT, error_code, conflicts=conflicts)
 
     await _apply(
@@ -275,9 +308,10 @@ async def _fill_week(
     skipping slots the actor may not change."""
     target: dict[datetime, SlotState | None] = {}
     skipped: dict[tuple[date, str], int] = defaultdict(int)
+    current = await _states(db, specialist.id, *grid.week_bounds(week_start))
     for day in grid.week_days(week_start):
         for slot in grid.day_slot_starts(day):
-            if code := _blocker(actor, specialist, slot, now):
+            if code := _blocker(actor, specialist, slot, now, current.get(slot)):
                 skipped[(day, code)] += 1
             else:
                 target[slot] = desired.get(slot)
@@ -307,7 +341,11 @@ async def copy_previous_week(
     start, end = grid.week_bounds(previous)
     source = await _states(db, specialist.id, start, end)
     # Same wall time a week later: Almaty has no DST, so +7 days is exact.
-    desired = {slot + timedelta(days=grid.WEEK_DAYS): state for slot, state in source.items()}
+    # A slot that held a meeting was working time: it is copied as free.
+    desired = {
+        slot + timedelta(days=grid.WEEK_DAYS): SlotState.free if state == SlotState.booked else state
+        for slot, state in source.items()
+    }
     return await _fill_week(
         db, actor, specialist, week_start, desired,
         action="schedule.week_copied", reason=reason, now=now,
@@ -610,3 +648,30 @@ async def put_settings(
     )
     await db.commit()
     return await get_settings(db)
+
+
+# ── meetings ────────────────────────────────────────────────────────────────
+
+
+async def list_meetings(
+    db: AsyncSession, specialist: User, date_from: date, date_to: date
+) -> list[schemas.SpecialistMeeting]:
+    if date_to < date_from or (date_to - date_from).days + 1 > schemas.MAX_FREE_RANGE_DAYS:
+        raise scheduling_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY, "range_invalid", max_days=schemas.MAX_FREE_RANGE_DAYS
+        )
+    rows = await db.execute(
+        select(Meeting)
+        .where(
+            Meeting.specialist_id == specialist.id,
+            Meeting.start_at >= tz.day_bounds(date_from)[0],
+            Meeting.start_at < tz.day_bounds(date_to)[1],
+        )
+        .order_by(Meeting.start_at)
+    )
+    return [
+        schemas.SpecialistMeeting(
+            id=m.id, type=m.type.value, status=m.status.value, start=m.start_at, end=m.end_at, handoff=m.handoff
+        )
+        for m in rows.scalars()
+    ]

@@ -10,7 +10,7 @@ contract's `error_code`; only shape limits are declared here.
 
 import uuid
 from datetime import date, datetime
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -19,7 +19,7 @@ SlotState = Literal["closed", "free", "personal", "booked"]
 EditableSlotState = Literal["closed", "free", "personal"]
 TemplateSlotState = Literal["free", "personal"]
 MeetingType = Literal["intro30", "main60"]
-MeetingStatus = Literal["pending", "confirmed", "done", "no_show"]
+MeetingStatus = Literal["pending", "confirmed", "done", "no_show", "cancelled"]
 
 # "HH:MM", Almaty wall time.
 WallTime = Annotated[str, Field(max_length=5, pattern=r"^([01]\d|2[0-3]):[0-5]\d$")]
@@ -188,3 +188,15 @@ class FreeSlotsResponse(_FreeSlotsBase):
 class SchedulingSettings(BaseModel):
     week_reminder_weekday: int = Field(ge=1, le=7)
     week_reminder_time: WallTime
+
+
+class SpecialistMeeting(BaseModel):
+    """A meeting as the specialist sees it: the handoff card the manager
+    filled (ТЗ §3.10) — no prices, no sales chat (ТЗ §4.8)."""
+
+    id: uuid.UUID
+    type: MeetingType
+    status: MeetingStatus
+    start: datetime
+    end: datetime
+    handoff: dict[str, Any]
