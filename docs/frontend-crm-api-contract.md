@@ -66,7 +66,7 @@ ISO-8601.
 ## 3. Этапы и правила (ТЗ §3.3)
 
 `unsorted` → `qualification` → `consultation` → `closing` (Дожим) → `invoice` →
-`paid` → `diagnostics_done` → `report_published` → `review_done`.
+`paid` → `diagnostics_done` → `review_done` → `report_published`.
 «Разбор назначен» из ТЗ — не этап, а отметка на карточке (`review_start`): второй
 созвон ставится с начала первого, до теста или после него.
 Результат хранится отдельно: `open` / `won` / `lost`.
@@ -345,8 +345,9 @@ Profile, после начала первого, на любое время бе
   `409 publish_second_call_missing`, до начала — `409 publish_second_call_not_started`
   (`second_call_start` в ответе). Править отчёт можно и раньше.
 
-Публикация отчёта (на втором созвоне) → `report_published` и `«Успешно»`;
-второй созвон отмечен «Проведена» у специалиста → `review_done`. Назначенный
+Второй созвон отмечен «Проведена» у специалиста → `review_done`; публикация
+отчёта после разбора → `report_published` и `«Успешно»`. Тариф без созвонов
+идёт с `diagnostics_done` сразу в `report_published`. Назначенный
 второй созвон этап не двигает — в доске он `review_start` (начало, иначе `null`).
 
 В карточке `meeting` — первый созвон (его записал менеджер), `meetings` — все

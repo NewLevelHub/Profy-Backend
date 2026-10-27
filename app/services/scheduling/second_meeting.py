@@ -7,9 +7,10 @@ for their student once the first call has begun, at any time that does not
 overlap their other calls. It is 60 minutes and takes the specialist's slots
 like a booking does, so the CRM no longer offers that time.
 
-The report is published on this call; once it is marked held the deal is
-«Разбор проведён» (app/services/crm/progress.py). A set call is no stage —
-the CRM card shows it.
+Once it is marked held the deal is «Разбор проведён», and the report
+published after it moves it to «Отчёт опубликован»
+(app/services/crm/progress.py). A set call is no stage — the CRM card
+shows it.
 """
 
 import uuid

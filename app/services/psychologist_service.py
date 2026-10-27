@@ -1282,8 +1282,8 @@ async def publish_result(
     await _require_assigned_student(
         db, psychologist_id=psychologist_id, student_id=student_id
     )
-    # A tariff with the specialist's calls: the report is published on the
-    # second call, from its start (editing it before is fine).
+    # A tariff with the specialist's calls: the report is published after
+    # the review, the second call marked held (editing it before is fine).
     if (blocker := await crm_progress.publish_blocker(db, student_id)) is not None:
         code, starts = blocker
         raise AppError(

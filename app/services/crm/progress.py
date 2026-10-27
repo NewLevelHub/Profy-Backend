@@ -2,14 +2,15 @@
 
 Once a deal is linked to a Profile account (app/services/crm/invites.py), the
 platform moves it on its own: a finished test is 7 «Диагностика пройдена», a
-published report is 8 «Отчёт опубликован» and «Успешно реализовано»
+published report is 9 «Отчёт опубликован» and «Успешно реализовано»
 (ТЗ §3.3.1). The platform calls `student_progressed` at the moment either
 happens; linking calls `sync_deal` to catch up with what already happened.
 
 The second call, which the specialist sets (app/services/scheduling/
-second_meeting.py), is the review where the report is published; once it
-is marked held the deal is 9 «Разбор проведён». A set second call is no
-stage — the deal card shows it. «Успешно» stays with the publication.
+second_meeting.py), is the review; once it is marked held the deal is
+8 «Разбор проведён», and the report published after it is 9. A set second
+call is no stage — the deal card shows it. «Успешно» stays with the
+publication.
 
 `report_needs_review` is the other direction: the deal's tariff decides
 whether the student's new report waits for a psychologist.
@@ -114,7 +115,8 @@ async def test_opens_at(db: AsyncSession, student_id: uuid.UUID) -> tuple[bool, 
 
 async def publish_blocker(db: AsyncSession, student_id: uuid.UUID) -> tuple[str, datetime | None] | None:
     """Why the specialist cannot publish the report yet: with a specialist's
-    calls the report is published on the second call, from its start."""
+    calls the report is published after the review — the second call marked
+    «Проведена»."""
     deal = await consultation_deal(db, student_id)
     if deal is None:
         return None
@@ -123,6 +125,8 @@ async def publish_blocker(db: AsyncSession, student_id: uuid.UUID) -> tuple[str,
         return "publish_second_call_missing", None
     if second.start_at > tz.now_utc():
         return "publish_second_call_not_started", second.start_at
+    if second.status != MeetingStatus.done:
+        return "publish_review_not_held", second.start_at
     return None
 
 
@@ -161,11 +165,14 @@ async def sync_deal(db: AsyncSession, deal: CrmDeal) -> None:
     if deal.paid_at is None:
         await _payment_check(db, deal)
         return
-    target = DealStage.report_published if published else DealStage.diagnostics_done
+    # The review comes first, the report after it; without a review (a
+    # tariff without the specialist) the deal goes from 7 straight to 9.
+    target = DealStage.diagnostics_done
+    second = await _second_call(db, deal.id)
+    if second is not None and second.status == MeetingStatus.done:
+        target = DealStage.review_done
     if published:
-        second = await _second_call(db, deal.id)
-        if second is not None and second.status == MeetingStatus.done:
-            target = DealStage.review_done
+        target = DealStage.report_published
     if STAGE_ORDER.index(deal.stage) < STAGE_ORDER.index(target):
         audit.record(
             db, actor=None, action="crm.stage_changed", entity_type="crm_deal", entity_id=deal.id,

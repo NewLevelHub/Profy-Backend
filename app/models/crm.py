@@ -32,8 +32,8 @@ class DealStage(str, enum.Enum):
     invoice = "invoice"                      # 5 Счёт выставлен
     paid = "paid"                            # 6 Оплачено — only by marking the payment
     diagnostics_done = "diagnostics_done"    # 7 Диагностика пройдена
-    report_published = "report_published"    # 8 Отчёт опубликован
-    review_done = "review_done"              # 9 Разбор проведён
+    review_done = "review_done"              # 8 Разбор проведён
+    report_published = "report_published"    # 9 Отчёт опубликован — after the review
 
 
 STAGE_ORDER = list(DealStage)

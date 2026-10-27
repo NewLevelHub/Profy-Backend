@@ -428,8 +428,8 @@ async def test_the_specialist_sets_the_second_call_and_the_deal_follows(
     card = next(c for c in board if c["id"] == deal["id"])
     assert card["review_start"][:16] == state["second"]["start"][:16]
 
-    # The test, then the report published on the second call: «Отчёт
-    # опубликован» and «Успешно»; the call held — «Разбор проведён».
+    # The test, the review held — «Разбор проведён», then the report
+    # published after it — «Отчёт опубликован» and «Успешно».
     assessment = await make_student_assessment(db_session, test_user)
     assert (await generate(client, auth_headers, assessment)).status_code == 200
     publish_path = f"/api/v1/psychologist/students/{test_user.id}/results/{assessment.id}/publish"
@@ -440,16 +440,19 @@ async def test_the_specialist_sets_the_second_call_and_the_deal_follows(
     second = await db_session.get(Meeting, uuid.UUID(state["second"]["id"]))
     second.start_at = tz.now_utc() - timedelta(minutes=5)
     await db_session.flush()
-    published = await client.post(publish_path, headers=psychologist_headers)
-    assert published.status_code == 200, published.text
-    detail = (await client.get(f"{URL}/deals/{deal['id']}", headers=_h(manager))).json()
-    assert detail["stage"] == "report_published" and detail["result"] == "won"
+    # The review has begun but is not marked held: not yet.
+    during = await client.post(publish_path, headers=psychologist_headers)
+    assert during.json()["error_code"] == "publish_review_not_held"
     done = await client.post(
         f"/api/v1/scheduling/specialists/me/meetings/{second.id}/status", json={"status": "done"}, headers=psychologist_headers
     )
     assert done.status_code == 200, done.text
     detail = (await client.get(f"{URL}/deals/{deal['id']}", headers=_h(manager))).json()
-    assert detail["stage"] == "review_done" and detail["result"] == "won"
+    assert detail["stage"] == "review_done" and detail["result"] == "open"
+    published = await client.post(publish_path, headers=psychologist_headers)
+    assert published.status_code == 200, published.text
+    detail = (await client.get(f"{URL}/deals/{deal['id']}", headers=_h(manager))).json()
+    assert detail["stage"] == "report_published" and detail["result"] == "won"
 
 
 async def test_only_the_students_own_specialist_sets_the_second_call(

@@ -3,7 +3,7 @@ docs/frontend-crm-api-contract.md.
 
 Leads are entered manually and stages 1–6 move by hand. Stages 7–8 and
 «Успешно» follow the student's account once it is linked to the deal
-(progress.py), and so does 9 once the review is held; until then the head of
+(progress.py), and so do 8–9 (the review held, then the report); until then the head of
 sales or the owner moves
 them. The rules of §3.3 that do not
 depend on events hold already: a non-target lead stays in qualification,
