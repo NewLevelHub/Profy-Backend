@@ -2,8 +2,9 @@
 
 From the owner's reminder moment of the current week (Friday 18:00 by
 default, `scheduling_settings`) until the week ends, every active specialist
-who has not published next week gets one email. A changed reminder time
-applies from the next check (критерий П2-08).
+who has not published next week gets one email — and the same in Telegram
+when they linked it and the bot is set up (app/services/telegram/). A
+changed reminder time applies from the next check (критерий П2-08).
 
 `run_week_reminders_loop` runs in the API process (`app.main.lifespan`)
 until a job worker exists (PRO-499); `specialist_week_reminders` makes a
@@ -20,10 +21,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import async_session
+from app.i18n.catalog import tr
 from app.models.scheduling import SpecialistWeekPublication, SpecialistWeekReminder
+from app.models.telegram import TelegramLink
 from app.models.user import User, UserRole
 from app.services import email_service, tz
 from app.services.scheduling import grid, service
+from app.services.telegram import notify
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +64,9 @@ async def send_due_week_reminders(db: AsyncSession, now: datetime | None = None)
     # Plain values, not ORM objects: the commits below would expire them.
     due = (
         await db.execute(
-            select(User.id, User.email, User.full_name, User.locale).where(
+            select(User.id, User.email, User.full_name, User.locale, TelegramLink.chat_id)
+            .outerjoin(TelegramLink, TelegramLink.user_id == User.id)
+            .where(
                 User.role == UserRole.psychologist,
                 User.is_active.is_(True),
                 User.id.not_in(published),
@@ -70,7 +76,7 @@ async def send_due_week_reminders(db: AsyncSession, now: datetime | None = None)
     ).all()
 
     sent = 0
-    for specialist_id, email, full_name, locale in due:
+    for specialist_id, email, full_name, locale, chat_id in due:
         # Claim the reminder before sending: a concurrent check that loses
         # the insert sends nothing. A failed email is not retried this week.
         claimed = (
@@ -91,6 +97,18 @@ async def send_due_week_reminders(db: AsyncSession, now: datetime | None = None)
             locale=locale,
             schedule_url=email_service.frontend_url(SCHEDULE_PATH),
         )
+        if chat_id is not None and settings.telegram_enabled:
+            strings = tr("telegram", locale=locale)
+            await notify.send(
+                db,
+                chat_id,
+                *notify.with_link(
+                    strings["week_reminder"].format(week=_week_label(next_week)),
+                    email_service.frontend_url(SCHEDULE_PATH),
+                    strings["open_schedule"],
+                    strings["schedule_line"],
+                ),
+            )
         sent += 1
     return sent
 

@@ -13,7 +13,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,7 +24,7 @@ from app.models.scheduling import Meeting, MeetingStatus
 from app.models.telegram import TelegramLink, TelegramMeetingReminder
 from app.models.user import User
 from app.services import email_service, tz
-from app.services.telegram import client
+from app.services.telegram import notify
 
 logger = logging.getLogger(__name__)
 
@@ -37,9 +37,7 @@ WINDOWS = (("hour", timedelta(0), HOUR), ("day", HOUR, DAY))
 
 
 def _message(meeting: Meeting, kind: str, locale: str | None) -> tuple[str, tuple[str, str] | None]:
-    """The text and the «Открыть «Созвоны»» button. Telegram takes a button
-    only with a public https link; elsewhere (locally) the link goes into
-    the text instead."""
+    """The text and the «Открыть «Созвоны»» button (`notify.with_link`)."""
     strings = tr("telegram", locale=locale)
     call = strings.get(f"call_{meeting.type.value}", strings["call_main60"])
     student = (meeting.handoff or {}).get("student_name") or strings["student_unknown"]
@@ -47,10 +45,7 @@ def _message(meeting: Meeting, kind: str, locale: str | None) -> tuple[str, tupl
     text = strings[f"reminder_{kind}"].format(
         when=strings["when"].format(date=f"{local:%d.%m}", time=f"{local:%H:%M}"), call=call, student=student
     )
-    url = email_service.frontend_url(CALLS_PATH)
-    if url.startswith("https://"):
-        return text, (strings["open_calls"], url)
-    return f"{text}\n{strings['calls_line'].format(url=url)}", None
+    return notify.with_link(text, email_service.frontend_url(CALLS_PATH), strings["open_calls"], strings["calls_line"])
 
 
 async def send_due_reminders(db: AsyncSession, now: datetime | None = None) -> int:
@@ -87,13 +82,8 @@ async def send_due_reminders(db: AsyncSession, now: datetime | None = None) -> i
             await db.commit()
             if claimed is None:
                 continue
-            try:
-                if await client.send_message(chat_id, text, button):
-                    sent += 1
-            except client.ChatGone:
-                # The specialist blocked the bot: stop writing to that chat.
-                await db.execute(delete(TelegramLink).where(TelegramLink.chat_id == chat_id))
-                await db.commit()
+            if await notify.send(db, chat_id, text, button):
+                sent += 1
     return sent
 
 
