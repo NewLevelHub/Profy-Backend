@@ -102,12 +102,8 @@ async def send_due_week_reminders(db: AsyncSession, now: datetime | None = None)
             await notify.send(
                 db,
                 chat_id,
-                *notify.with_link(
-                    strings["week_reminder"].format(week=_week_label(next_week)),
-                    email_service.frontend_url(SCHEDULE_PATH),
-                    strings["open_schedule"],
-                    strings["schedule_line"],
-                ),
+                strings["week_reminder"].format(week=_week_label(next_week)),
+                notify.button(strings["open_schedule"], email_service.frontend_url(SCHEDULE_PATH)),
             )
         sent += 1
     return sent

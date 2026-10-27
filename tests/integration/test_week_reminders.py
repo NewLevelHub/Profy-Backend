@@ -135,4 +135,4 @@ async def test_the_reminder_goes_to_telegram_too(db_session: AsyncSession, sent:
     (_, text, button), = [c.args for c in send.await_args_list if c.args[0] == 31338]
     # In the specialist's language (kk), with the week and the button.
     assert "11.03–17.03.2030" in text and "Дайын, апта толтырылды" in text
-    assert button == ("«Кесте» бөлімін ашу", "https://profile.example.kz/psychologist/schedule")
+    assert button == ("«Кесте» бөліміне өту", "https://profile.example.kz/psychologist/schedule")

@@ -37,7 +37,7 @@ WINDOWS = (("hour", timedelta(0), HOUR), ("day", HOUR, DAY))
 
 
 def _message(meeting: Meeting, kind: str, locale: str | None) -> tuple[str, tuple[str, str] | None]:
-    """The text and the «Открыть «Созвоны»» button (`notify.with_link`)."""
+    """The text and the «Перейти в «Созвоны»» button."""
     strings = tr("telegram", locale=locale)
     call = strings.get(f"call_{meeting.type.value}", strings["call_main60"])
     student = (meeting.handoff or {}).get("student_name") or strings["student_unknown"]
@@ -45,7 +45,7 @@ def _message(meeting: Meeting, kind: str, locale: str | None) -> tuple[str, tupl
     text = strings[f"reminder_{kind}"].format(
         when=strings["when"].format(date=f"{local:%d.%m}", time=f"{local:%H:%M}"), call=call, student=student
     )
-    return notify.with_link(text, email_service.frontend_url(CALLS_PATH), strings["open_calls"], strings["calls_line"])
+    return text, notify.button(strings["open_calls"], email_service.frontend_url(CALLS_PATH))
 
 
 async def send_due_reminders(db: AsyncSession, now: datetime | None = None) -> int:

@@ -131,22 +131,19 @@ async def test_a_blocked_bot_unlinks_the_chat(db_session: AsyncSession, bot: Asy
     assert await db_session.scalar(select(TelegramLink).where(TelegramLink.user_id == specialist.id)) is None
 
 
-async def test_the_link_is_a_button_on_https(db_session: AsyncSession, bot: AsyncMock, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_the_link_is_a_button(db_session: AsyncSession, bot: AsyncMock, monkeypatch: pytest.MonkeyPatch) -> None:
     specialist = await _user(db_session, UserRole.psychologist)
     db_session.add(TelegramLink(user_id=specialist.id, chat_id=7))
     await _call(db_session, specialist, tz.now_utc() + timedelta(minutes=30))
-    await _call(db_session, specialist, tz.now_utc() + timedelta(hours=3))
 
     monkeypatch.setattr(settings, "FRONTEND_URL", "https://profile.example.kz")
-    assert await reminders.send_due_reminders(db_session) == 2
-    for call in bot.await_args_list:
-        _, text, button = call.args
-        assert button == ("Открыть «Созвоны»", "https://profile.example.kz/psychologist/calls")
-        assert "http" not in text
+    assert await reminders.send_due_reminders(db_session) == 1
+    _, text, button = bot.await_args.args
+    assert button == ("Перейти в «Созвоны»", "https://profile.example.kz/psychologist/calls")
+    assert "http" not in text
 
-    # Locally (http): no button — Telegram refuses one — the link is in the text.
+    # Telegram refuses a button to localhost: locally it goes to 127.0.0.1.
     monkeypatch.setattr(settings, "FRONTEND_URL", "http://localhost:5173")
     await _call(db_session, specialist, tz.now_utc() + timedelta(hours=4))
     assert await reminders.send_due_reminders(db_session) == 1
-    _, text, button = bot.await_args.args
-    assert button is None and text.endswith("Созвоны: http://localhost:5173/psychologist/calls")
+    assert bot.await_args.args[2] == ("Перейти в «Созвоны»", "http://127.0.0.1:5173/psychologist/calls")

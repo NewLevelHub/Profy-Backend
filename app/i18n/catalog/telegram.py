@@ -4,9 +4,8 @@ as in the email).
 
 In the specialist's own `users.locale`, like the emails. `{when}` is the
 call's Almaty date and time (the `when` phrase), `{call}` one of the `call_*` phrases,
-`{student}` the student's name from the handoff card. The link to the
-specialist's «Созвоны» is a button (`open_calls`), or the `calls_line`
-where Telegram takes no button (a local http address).
+`{student}` the student's name from the handoff card. The link into
+Profile is the button under the message (`open_calls`, `open_schedule`).
 """
 
 RU = {
@@ -20,11 +19,9 @@ RU = {
     "when": "{date} в {time}",
     "reminder_day": "Напоминание: {when} — {call}, {student}.",
     "reminder_hour": "Через час, {when} — {call}, {student}.",
-    "open_calls": "Открыть «Созвоны»",
-    "calls_line": "Созвоны: {url}",
+    "open_calls": "Перейти в «Созвоны»",
     "week_reminder": "Расписание на неделю {week} ещё не заполнено. Отметьте свободное время и нажмите «Готово, неделя заполнена».",
-    "open_schedule": "Открыть «Расписание»",
-    "schedule_line": "Расписание: {url}",
+    "open_schedule": "Перейти в «Расписание»",
 }
 
 KK = {
@@ -38,9 +35,7 @@ KK = {
     "when": "{date}, {time}",
     "reminder_day": "Еске салу: {when} — {call}, {student}.",
     "reminder_hour": "Бір сағаттан кейін, {when} — {call}, {student}.",
-    "open_calls": "«Қоңыраулар» бөлімін ашу",
-    "calls_line": "Қоңыраулар: {url}",
+    "open_calls": "«Қоңыраулар» бөліміне өту",
     "week_reminder": "{week} аптасының кестесі әлі толтырылмаған. Бос уақытыңызды белгілеп, «Дайын, апта толтырылды» түймесін басыңыз.",
-    "open_schedule": "«Кесте» бөлімін ашу",
-    "schedule_line": "Кесте: {url}",
+    "open_schedule": "«Кесте» бөліміне өту",
 }
