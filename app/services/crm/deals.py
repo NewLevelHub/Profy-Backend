@@ -655,6 +655,30 @@ async def add_note(db: AsyncSession, user: User, deal_id: uuid.UUID, text: str) 
 # ── booking ─────────────────────────────────────────────────────────────────
 
 
+async def _previous_specialist(db: AsyncSession, deal: CrmDeal) -> uuid.UUID | None:
+    """The specialist who already worked with this family: a returning client
+    stays with them when they are free at the chosen time — the manager still
+    sees no names. The same child's deal first (by Profile account, then by
+    the CRM student), then the family's latest one."""
+    rows = (
+        await db.execute(
+            select(CrmDeal.specialist_id, CrmDeal.student_user_id, CrmDeal.student_id)
+            .where(CrmDeal.parent_id == deal.parent_id, CrmDeal.id != deal.id, CrmDeal.specialist_id.is_not(None))
+            .order_by(CrmDeal.created_at.desc())
+        )
+    ).all()
+    if not rows:
+        return None
+
+    def rank(row) -> tuple[bool, bool]:
+        same_account = deal.student_user_id is not None and row.student_user_id == deal.student_user_id
+        same_student = deal.student_id is not None and row.student_id == deal.student_id
+        return (not same_account, not same_student)
+
+    # sorted() is stable: within a rank the latest deal stays first.
+    return sorted(rows, key=rank)[0].specialist_id
+
+
 async def book(db: AsyncSession, user: User, deal_id: uuid.UUID, body: schemas.BookingIn) -> CrmDeal:
     """Book the call the tariff calls for (ТЗ §3.9): «Тестирование» and «Пакет»
     get the 30-minute intro, «Консультация» its 60-minute call."""
@@ -679,7 +703,8 @@ async def book(db: AsyncSession, user: User, deal_id: uuid.UUID, body: schemas.B
     handoff["tariff"] = tariff.name
     handoff["consent_at"] = parent.consent_at.isoformat() if parent.consent_at else None
     meeting = await booking.book(
-        db, actor=user, start=body.start, minutes=FIRST_CALL_MINUTES, deal_id=deal.id, handoff=handoff
+        db, actor=user, start=body.start, minutes=FIRST_CALL_MINUTES, deal_id=deal.id, handoff=handoff,
+        prefer=await _previous_specialist(db, deal),
     )
 
     # The handoff card also fills the CRM student.

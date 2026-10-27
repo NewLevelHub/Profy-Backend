@@ -303,6 +303,39 @@ async def test_booking_assigns_least_busy_specialist_and_hides_name_from_manager
     assert again.json()["error_code"] == "deal_already_booked"
 
 
+async def test_a_returning_client_goes_back_to_their_specialist_when_free(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User, head: User
+) -> None:
+    known = await _user(db_session, UserRole.psychologist, "Прежний")
+    other = await _user(db_session, UserRole.psychologist, "Другой")
+    earlier = await _open_slots(db_session, known, FUTURE_DAY, time(9, 0), 1)
+    first = await _ready_to_book(client, manager)
+    body = {"start": _iso(earlier), "handoff": _handoff()}
+    assert (await client.post(f"{URL}/deals/{first['id']}/booking", json=body, headers=_h(manager))).status_code == 200
+
+    async def again(start: datetime) -> dict:
+        """The same family's next deal, booked at `start`."""
+        created = await client.post(f"{URL}/deals", json={"parent_id": first["parent"]["id"]}, headers=_h(manager))
+        assert created.status_code == 201, created.text
+        path = f"{URL}/deals/{created.json()['id']}"
+        assert (await client.patch(path, json={"is_target": True, "tariff_code": "testing"}, headers=_h(manager))).status_code == 200
+        assert (await client.post(f"{path}/payment", json={"amount": 45000, "method": "transfer"}, headers=_h(manager))).status_code == 200
+        assert (await client.post(f"{path}/consent", json={"given": True}, headers=_h(manager))).status_code == 200
+        booked = await client.post(f"{path}/booking", json={"start": _iso(start), "handoff": _handoff()}, headers=_h(manager))
+        assert booked.status_code == 200, booked.text
+        assert booked.json()["meeting"]["specialist"] is None  # still no names for the manager
+        return (await client.get(path, headers=_h(head))).json()["meeting"]["specialist"]
+
+    # Both free and `other` less busy this week — the family's specialist still wins.
+    both = await _open_slots(db_session, known, FUTURE_DAY, time(11, 0), 1)
+    await _open_slots(db_session, other, FUTURE_DAY, time(11, 0), 1)
+    assert (await again(both))["name"] == "Прежний"
+
+    # Not free at the chosen time: the usual pick.
+    only_other = await _open_slots(db_session, other, FUTURE_DAY, time(14, 0), 1)
+    assert (await again(only_other))["name"] == "Другой"
+
+
 async def test_last_slot_goes_to_one_booking_only(
     client: httpx.AsyncClient, db_session: AsyncSession, manager: User
 ) -> None:

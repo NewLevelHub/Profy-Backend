@@ -2,7 +2,8 @@
 
 The manager picks a time without seeing who is free; the system picks the
 specialist — fewest meetings this week, then fewest today, then at random
-(п.4) — and takes the slots atomically (п.5): the slot rows are locked with
+(п.4), a returning client's earlier specialist first when free — and takes
+the slots atomically (п.5): the slot rows are locked with
 `SELECT … FOR UPDATE`, and under READ COMMITTED Postgres re-checks the
 `state = 'free'` condition on the locked rows, so of two managers racing for
 the last slot exactly one gets it and the other gets `slot_taken`.
@@ -85,7 +86,8 @@ async def book(
     """Create the meeting and take its slots. Does not commit.
 
     `prefer` is tried first when free — a moved call stays with its
-    specialist if they can take the new time."""
+    specialist if they can take the new time, a returning client goes back
+    to the specialist they had."""
     now = now or tz.now_utc()
     try:
         slots = grid.interval_slots(start, start + timedelta(minutes=minutes))

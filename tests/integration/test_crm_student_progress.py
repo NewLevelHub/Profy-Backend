@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models.analysis_result import AnalysisResult, ReviewStatus
-from app.models.crm import CrmDeal, CrmTask, TaskType
+from app.models.crm import CrmDeal, CrmTask, DealResult, TaskType
 from app.models.psychologist_assignment import PsychologistStudentAssignment
 from app.models.scheduling import Meeting
 from app.models.user import User, UserRole
@@ -333,6 +333,41 @@ async def test_a_reviewed_tariff_keeps_the_review_after_the_owner_drops_it(
     assessment_id = assessment.id
     assert (await generate(client, auth_headers, assessment)).status_code == 200
     assert await _status(db_session, assessment_id) == ReviewStatus.pending_review
+
+
+async def test_a_returning_client_without_review_gets_the_report_at_once(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    manager: User,
+    test_user: User,
+    auth_headers: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    # The first deal was sold with the review and is done.
+    reviewed = await _tariff(client, db_session, review=True)
+    earlier = await _booked(client, db_session, manager, tariff=reviewed)
+    url = await _invite(client, manager, earlier["id"])
+    assert (await client.post(ACCEPT, json={"token": _token(url)}, headers=auth_headers)).status_code == 204
+    done = await db_session.get(CrmDeal, uuid.UUID(earlier["id"]))
+    done.result = DealResult.won
+    # The test runs in one transaction, where now() never moves: date it back.
+    done.created_at -= timedelta(days=30)
+    await db_session.flush()
+
+    # The client comes back for a tariff without it: the latest deal decides.
+    express = await _tariff(client, db_session, review=False)
+    deal = await _ready_to_book(client, manager, tariff=express)
+    url = await _invite(client, manager, deal["id"])
+    assert (await client.post(ACCEPT, json={"token": _token(url)}, headers=auth_headers)).status_code == 204
+    # No calls in this deal: the test is open, the earlier deal's calls do not hold it.
+    assert (await client.get("/api/v1/assessment/availability", headers=auth_headers)).json()["open"] is True
+
+    assessment = await make_student_assessment(db_session, test_user)
+    assessment_id = assessment.id
+    assert (await generate(client, auth_headers, assessment)).status_code == 200
+    assert await _status(db_session, assessment_id) == ReviewStatus.published
 
 
 # ── the second call, set by the specialist (ТЗ §4.5) ────────────────────────

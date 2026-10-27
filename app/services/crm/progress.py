@@ -87,17 +87,16 @@ async def _second_call(db: AsyncSession, deal_id: uuid.UUID) -> Meeting | None:
 
 
 async def consultation_deal(db: AsyncSession, student_id: uuid.UUID) -> CrmDeal | None:
-    """The student's open deal sold with the specialist's calls, if any."""
-    return await db.scalar(
+    """The student's latest not lost deal, if it was sold with the
+    specialist's calls. A client who came back for a tariff without them is
+    not held by the calls of an earlier deal."""
+    deal = await db.scalar(
         select(CrmDeal)
-        .where(
-            CrmDeal.student_user_id == student_id,
-            CrmDeal.result != DealResult.lost,
-            CrmDeal.psychologist_review.is_(True),
-        )
+        .where(CrmDeal.student_user_id == student_id, CrmDeal.result != DealResult.lost)
         .order_by(CrmDeal.created_at.desc())
         .limit(1)
     )
+    return deal if deal is not None and deal.psychologist_review is True else None
 
 
 async def test_opens_at(db: AsyncSession, student_id: uuid.UUID) -> tuple[bool, datetime | None]:
@@ -187,20 +186,19 @@ async def sync_deal(db: AsyncSession, deal: CrmDeal) -> None:
 async def report_needs_review(db: AsyncSession, user_id: uuid.UUID) -> bool:
     """Whether the student's new report waits for a psychologist.
 
-    It goes to the student at once only when the student's account is linked
-    to a paid, not lost deal whose tariff was sold without a review — and to
-    no deal that has one. Any doubt (no deal, not paid, no tariff) keeps the
-    review: publishing is the step that cannot be taken back."""
-    rows = (
-        await db.execute(
-            select(CrmDeal.psychologist_review).where(
-                CrmDeal.student_user_id == user_id,
-                CrmDeal.result != DealResult.lost,
-                CrmDeal.paid_at.is_not(None),
-            )
-        )
-    ).scalars().all()
-    return not rows or any(review is not False for review in rows)
+    The student's latest not lost deal decides — the one this test was sold
+    with; a client who came back for a tariff without a review gets the
+    report at once even if an earlier deal had one. It goes to the student
+    at once only when that deal is paid and its tariff was sold without a
+    review. Any doubt (no deal, not paid, no tariff) keeps the review:
+    publishing is the step that cannot be taken back."""
+    deal = await db.scalar(
+        select(CrmDeal)
+        .where(CrmDeal.student_user_id == user_id, CrmDeal.result != DealResult.lost)
+        .order_by(CrmDeal.created_at.desc())
+        .limit(1)
+    )
+    return deal is None or deal.paid_at is None or deal.psychologist_review is not False
 
 
 async def assign_specialist(db: AsyncSession, deal: CrmDeal) -> None:
