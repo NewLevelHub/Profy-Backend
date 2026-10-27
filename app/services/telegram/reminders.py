@@ -36,16 +36,21 @@ DAY = timedelta(hours=24)
 WINDOWS = (("hour", timedelta(0), HOUR), ("day", HOUR, DAY))
 
 
-def _text(meeting: Meeting, kind: str, locale: str | None) -> str:
+def _message(meeting: Meeting, kind: str, locale: str | None) -> tuple[str, tuple[str, str] | None]:
+    """The text and the «Открыть «Созвоны»» button. Telegram takes a button
+    only with a public https link; elsewhere (locally) the link goes into
+    the text instead."""
     strings = tr("telegram", locale=locale)
     call = strings.get(f"call_{meeting.type.value}", strings["call_main60"])
     student = (meeting.handoff or {}).get("student_name") or strings["student_unknown"]
-    return strings[f"reminder_{kind}"].format(
-        when=strings["when"].format(
-            date=f"{tz.to_business(meeting.start_at):%d.%m}", time=f"{tz.to_business(meeting.start_at):%H:%M}"
-        ),
-        call=call, student=student, url=email_service.frontend_url(CALLS_PATH)
+    local = tz.to_business(meeting.start_at)
+    text = strings[f"reminder_{kind}"].format(
+        when=strings["when"].format(date=f"{local:%d.%m}", time=f"{local:%H:%M}"), call=call, student=student
     )
+    url = email_service.frontend_url(CALLS_PATH)
+    if url.startswith("https://"):
+        return text, (strings["open_calls"], url)
+    return f"{text}\n{strings['calls_line'].format(url=url)}", None
 
 
 async def send_due_reminders(db: AsyncSession, now: datetime | None = None) -> int:
@@ -69,8 +74,8 @@ async def send_due_reminders(db: AsyncSession, now: datetime | None = None) -> i
             )
         ).all()
         # Plain values: the commits below would expire the ORM objects.
-        jobs = [(meeting.id, chat_id, _text(meeting, kind, locale)) for meeting, chat_id, locale in due]
-        for meeting_id, chat_id, text in jobs:
+        jobs = [(meeting.id, chat_id, *_message(meeting, kind, locale)) for meeting, chat_id, locale in due]
+        for meeting_id, chat_id, text, button in jobs:
             claimed = (
                 await db.execute(
                     insert(TelegramMeetingReminder)
@@ -83,7 +88,7 @@ async def send_due_reminders(db: AsyncSession, now: datetime | None = None) -> i
             if claimed is None:
                 continue
             try:
-                if await client.send_message(chat_id, text):
+                if await client.send_message(chat_id, text, button):
                     sent += 1
             except client.ChatGone:
                 # The specialist blocked the bot: stop writing to that chat.

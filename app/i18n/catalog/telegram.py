@@ -2,8 +2,9 @@
 
 In the specialist's own `users.locale`, like the emails. `{when}` is the
 call's Almaty date and time (the `when` phrase), `{call}` one of the `call_*` phrases,
-`{student}` the student's name from the handoff card, `{url}` the
-specialist's «Созвоны» in Profile.
+`{student}` the student's name from the handoff card. The link to the
+specialist's «Созвоны» is a button (`open_calls`), or the `calls_line`
+where Telegram takes no button (a local http address).
 """
 
 RU = {
@@ -15,8 +16,10 @@ RU = {
     "call_main60": "разбор отчёта (1 час)",
     "student_unknown": "ученик",
     "when": "{date} в {time}",
-    "reminder_day": "Напоминание: {when} — {call}, {student}.\nСозвоны: {url}",
-    "reminder_hour": "Через час, {when} — {call}, {student}.\nСозвоны: {url}",
+    "reminder_day": "Напоминание: {when} — {call}, {student}.",
+    "reminder_hour": "Через час, {when} — {call}, {student}.",
+    "open_calls": "Открыть «Созвоны»",
+    "calls_line": "Созвоны: {url}",
 }
 
 KK = {
@@ -28,6 +31,8 @@ KK = {
     "call_main60": "есепті талдау (1 сағат)",
     "student_unknown": "оқушы",
     "when": "{date}, {time}",
-    "reminder_day": "Еске салу: {when} — {call}, {student}.\nҚоңыраулар: {url}",
-    "reminder_hour": "Бір сағаттан кейін, {when} — {call}, {student}.\nҚоңыраулар: {url}",
+    "reminder_day": "Еске салу: {when} — {call}, {student}.",
+    "reminder_hour": "Бір сағаттан кейін, {when} — {call}, {student}.",
+    "open_calls": "«Қоңыраулар» бөлімін ашу",
+    "calls_line": "Қоңыраулар: {url}",
 }

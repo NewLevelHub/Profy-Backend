@@ -6,7 +6,8 @@ from unittest.mock import AsyncMock
 
 import httpx
 import pytest
-from sqlalchemy import select
+import pytest_asyncio
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -22,9 +23,11 @@ URL = "/api/v1/telegram"
 SECRET = "webhook-secret"
 
 
-@pytest.fixture
-def bot(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
-    """The bot configured; messages are captured instead of sent."""
+@pytest_asyncio.fixture
+async def bot(monkeypatch: pytest.MonkeyPatch, db_session: AsyncSession) -> AsyncMock:
+    """The bot configured; messages are captured instead of sent. Chats
+    linked on this database outside the test are dropped (rolled back after)."""
+    await db_session.execute(delete(TelegramLink))
     monkeypatch.setattr(settings, "TELEGRAM_BOT_TOKEN", "123:token")
     monkeypatch.setattr(settings, "TELEGRAM_BOT_USERNAME", "profile_test_bot")
     monkeypatch.setattr(settings, "TELEGRAM_WEBHOOK_SECRET", SECRET)
@@ -41,7 +44,10 @@ async def _hook(client: httpx.AsyncClient, update: dict, secret: str = SECRET) -
     return await client.post(f"{URL}/webhook", json=update, headers={"X-Telegram-Bot-Api-Secret-Token": secret})
 
 
-async def test_off_without_the_bot_settings(client: httpx.AsyncClient, db_session: AsyncSession) -> None:
+async def test_off_without_the_bot_settings(
+    client: httpx.AsyncClient, db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(settings, "TELEGRAM_BOT_TOKEN", "")
     specialist = await _user(db_session, UserRole.psychologist)
     state = await client.get(f"{URL}/me", headers=_h(specialist))
     assert state.status_code == 200 and state.json() == {"enabled": False, "linked": False, "linked_at": None}
@@ -123,3 +129,24 @@ async def test_a_blocked_bot_unlinks_the_chat(db_session: AsyncSession, bot: Asy
     bot.side_effect = telegram_client.ChatGone
     assert await reminders.send_due_reminders(db_session) == 0
     assert await db_session.scalar(select(TelegramLink).where(TelegramLink.user_id == specialist.id)) is None
+
+
+async def test_the_link_is_a_button_on_https(db_session: AsyncSession, bot: AsyncMock, monkeypatch: pytest.MonkeyPatch) -> None:
+    specialist = await _user(db_session, UserRole.psychologist)
+    db_session.add(TelegramLink(user_id=specialist.id, chat_id=7))
+    await _call(db_session, specialist, tz.now_utc() + timedelta(minutes=30))
+    await _call(db_session, specialist, tz.now_utc() + timedelta(hours=3))
+
+    monkeypatch.setattr(settings, "FRONTEND_URL", "https://profile.example.kz")
+    assert await reminders.send_due_reminders(db_session) == 2
+    for call in bot.await_args_list:
+        _, text, button = call.args
+        assert button == ("Открыть «Созвоны»", "https://profile.example.kz/psychologist/calls")
+        assert "http" not in text
+
+    # Locally (http): no button — Telegram refuses one — the link is in the text.
+    monkeypatch.setattr(settings, "FRONTEND_URL", "http://localhost:5173")
+    await _call(db_session, specialist, tz.now_utc() + timedelta(hours=4))
+    assert await reminders.send_due_reminders(db_session) == 1
+    _, text, button = bot.await_args.args
+    assert button is None and text.endswith("Созвоны: http://localhost:5173/psychologist/calls")

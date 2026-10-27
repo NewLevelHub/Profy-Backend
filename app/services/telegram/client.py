@@ -7,6 +7,9 @@ import httpx
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+# httpx logs every request URL at INFO, and a Bot API URL carries the bot
+# token (api.telegram.org/bot<token>/…): keep those lines out of the logs.
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 API = "https://api.telegram.org"
 TIMEOUT = httpx.Timeout(10.0)
@@ -20,15 +23,16 @@ def _url(method: str) -> str:
     return f"{API}/bot{settings.TELEGRAM_BOT_TOKEN}/{method}"
 
 
-async def send_message(chat_id: int, text: str) -> bool:
-    """True when Telegram took the message. Raises `ChatGone` on 403; any
-    other failure is logged and reported as False — never the token."""
+async def send_message(chat_id: int, text: str, button: tuple[str, str] | None = None) -> bool:
+    """True when Telegram took the message. `button` — (label, https url)
+    shown under it. Raises `ChatGone` on 403; any other failure is logged
+    and reported as False — never the token."""
+    body: dict = {"chat_id": chat_id, "text": text, "link_preview_options": {"is_disabled": True}}
+    if button is not None:
+        body["reply_markup"] = {"inline_keyboard": [[{"text": button[0], "url": button[1]}]]}
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            response = await client.post(
-                _url("sendMessage"),
-                json={"chat_id": chat_id, "text": text, "link_preview_options": {"is_disabled": True}},
-            )
+            response = await client.post(_url("sendMessage"), json=body)
     except httpx.HTTPError as error:
         logger.warning("Telegram sendMessage failed: %s", type(error).__name__)
         return False
