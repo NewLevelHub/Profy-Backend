@@ -75,7 +75,7 @@
 | GET | `/config` | все роли из §1 | сетка, заморозка, серверное «сейчас» |
 | GET | `/specialists` | owner, sales_head | список специалистов и статус выставления недели |
 | GET | `/specialists/{id\|me}/weeks/{week_start}` | специалист (me), owner | неделя: все слоты со статусами |
-| PATCH | `/specialists/{id\|me}/availability` | специалист (me), owner | открыть / закрыть / пометить личным интервалы |
+| PATCH | `/specialists/{id\|me}/availability` | специалист (me), owner | открыть / закрыть интервалы |
 | POST | `/specialists/{id\|me}/weeks/{week_start}/copy-previous` | специалист (me), owner | скопировать прошлую неделю |
 | GET | `/specialists/{id\|me}/template` | специалист (me), owner | шаблон недели |
 | PUT | `/specialists/{id\|me}/template` | специалист (me), owner | сохранить шаблон |
@@ -165,15 +165,28 @@ GET /api/v1/scheduling/specialists/{specialist_id}/weeks/2026-10-26   # owner
 |---|---|---|
 | `closed` | не рабочее время (по умолчанию для любого слота) | нет |
 | `free` | специалист открыл слот, слот свободен | да, как «свободно» |
-| `personal` | «занято (личное)» — личный клиент специалиста, без деталей | нет |
-| `booked` | в слоте встреча **[R2]**; в R0 не встречается | нет (в R2 — как занятое) |
+| `booked` | в слоте встреча (запись из CRM, `docs/frontend-crm-api-contract.md` §8) | нет |
 
 Выходной, отпуск, исключение — это просто отсутствие открытых слотов
-(`closed`); отдельного состояния нет (ТЗ §4.6 п.7).
+(`closed`); отдельного состояния нет (ТЗ §4.6 п.7). Состояние «занято (личное)»
+(ТЗ §4.6 п.6) убрано решением от 21.10: специалист отмечает только свободное время.
 
-`meeting` в R0 всегда `null`. **[R2]** для `booked`:
-`{"id": "…", "type": "intro30" | "main60", "status": "pending" | "confirmed" | "done" | "no_show"}`;
-поля клиента будут добавлены отдельно и только для владельца слота и `owner`.
+Для `booked` в `meeting` — `{"id", "type": "intro30" | "main60", "status"}`, у
+остальных слотов `null`. Карточка передачи — отдельным запросом:
+
+```text
+GET /api/v1/scheduling/specialists/{id|me}/meetings?from=2026-10-26&to=2026-11-01
+```
+
+**200** — встречи периода по времени: `[{"id", "type", "status", "start", "end",
+"handoff": {student_name, age, gender, grade, study_language, russian_level,
+family_request, parent_participates, contact, contact_phone, manager_comment,
+tariff, consent_at}}]`. Цен и переписки ОП там нет (ТЗ §4.8). Доступ — как к
+неделе: специалист (`me`) и владелец.
+
+Слот со встречей специалист не меняет: правка → **409 `slot_booked`**, копия
+недели и шаблон его пропускают (`skipped`), а при копировании прошлой недели
+такой слот переносится как свободный.
 
 `frozen`/`past` у слота — для специалиста это «нельзя менять». Для `owner`
 `frozen` носит информационный характер (он может менять с причиной), `past`
@@ -191,7 +204,6 @@ Content-Type: application/json
 {
   "changes": [
     {"start": "2026-10-28T08:00:00Z", "end": "2026-10-28T11:00:00Z", "state": "free"},
-    {"start": "2026-10-29T05:00:00Z", "end": "2026-10-29T06:00:00Z", "state": "personal"},
     {"start": "2026-10-30T03:00:00Z", "end": "2026-10-30T17:00:00Z", "state": "closed"}
   ],
   "reason": null
@@ -200,7 +212,7 @@ Content-Type: application/json
 
 - `start`/`end` — границы интервала; `end > start`, оба кратны 30 минутам,
   внутри сетки одного дня. Интервал разворачивается в слоты по 30 минут.
-- `state` — только `free`, `closed`, `personal` (`booked` ставит запись, не
+- `state` — только `free` или `closed` (`booked` ставит запись, не
   этот эндпоинт).
 - До 200 изменений в запросе; интервалы в пределах одного запроса не должны
   пересекаться.
@@ -221,7 +233,7 @@ Content-Type: application/json
 | 422 | `reason_required` | `owner` правит чужое расписание без `reason` |
 | 409 | `slot_in_past` | интервал задевает прошедшие слоты |
 | 409 | `slot_frozen` | специалист меняет день в заморозке |
-| 409 | `slot_booked` | интервал задевает слот со встречей **[R2]** |
+| 409 | `slot_booked` | интервал задевает слот со встречей |
 | 404 | `specialist_not_found` | нет такого специалиста / специалист указал чужой id |
 | 422 | — | больше 200 изменений или пустой `changes` — стандартная ошибка валидации FastAPI (`detail` — список) |
 | 403 | — | роль без доступа (`Insufficient role`) |
@@ -253,7 +265,7 @@ Content-Type: application/json
 {"reason": null}
 ```
 
-Копирует состояния `free`/`personal`/`closed` с недели `week_start − 7 дней`
+Копирует состояния `free`/`closed` с недели `week_start − 7 дней`
 на неделю `week_start`, слот в слот, **заменяя** текущие состояния. Слоты,
 которые менять нельзя, пропускаются (не ошибка):
 
@@ -295,7 +307,7 @@ GET /api/v1/scheduling/specialists/me/template
 ```
 
 Ключи `"1"`…`"7"` — понедельник…воскресенье; время — по Алматы, `HH:MM`,
-кратно 30 минутам, внутри сетки; `state` — `free` или `personal`.
+кратно 30 минутам, внутри сетки; `state` — только `free`.
 Всё, что не перечислено, при применении становится `closed`.
 
 ```text
@@ -371,6 +383,25 @@ GET /api/v1/scheduling/specialists?week_start=2026-11-02
 ```
 
 Только активные пользователи с ролью `psychologist`, по `full_name`.
+
+### Встречи специалиста: `student_id` и `call`
+
+`GET /specialists/{ref}/meetings` у каждой встречи отдаёт ещё `student_id` —
+аккаунт ученика в Profile, когда его привязала ссылка из CRM (`null` до этого), —
+и `call`: `"first"` — созвон, который записал менеджер, `"second"` — разбор
+отчёта, который назначил специалист (`null` — встреча без сделки или отменена).
+Раздел «Созвоны» в кабинете строится на них.
+
+### Перенос и отмена созвона специалистом
+
+`POST /specialists/{ref}/meetings/{id}/reschedule {"start", "reason"}` и
+`POST /specialists/{ref}/meetings/{id}/cancel {"reason"}` — свой созвон, до его
+начала, с причиной (от 3 символов). Перенесённый созвон остаётся у специалиста:
+любое время сетки без наложений на его созвоны, длительность прежняя. Ответ —
+новый (или отменённый) `SpecialistMeeting`; старый остаётся отменённым с
+причиной, в ленте сделки — `meeting_moved` / `meeting_cancelled`. Ошибки:
+`meeting_started`, `meeting_status_invalid`, `slot_taken`, `slot_in_past`,
+`slot_misaligned`.
 
 ## 10. Свободное время для CRM
 

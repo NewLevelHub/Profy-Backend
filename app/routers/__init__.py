@@ -9,6 +9,7 @@ from app.routers.astur import router as astur_router
 from app.routers.auth import router as auth_router
 from app.routers.belbin import router as belbin_router
 from app.routers.certificates import router as certificates_router
+from app.routers.crm import router as crm_router
 from app.routers.extended_blocks import router as extended_blocks_router
 from app.routers.motivation import router as motivation_router
 from app.routers.profile import router as profile_router
@@ -18,6 +19,8 @@ from app.routers.question_pairs import router as question_pairs_router
 from app.routers.questions import router as questions_router
 from app.routers.result import router as result_router
 from app.routers.scheduling import router as scheduling_router
+from app.routers.student_invites import router as student_invites_router
+from app.routers.telegram import router as telegram_router
 from app.routers.university import router as university_router
 
 api_router = APIRouter()
@@ -39,4 +42,7 @@ api_router.include_router(astur_router, prefix="/api/v1/assessment")
 api_router.include_router(extended_blocks_router, prefix="/api/v1/assessment")
 api_router.include_router(result_router, prefix="/api/v1/result")
 api_router.include_router(scheduling_router, prefix="/api/v1/scheduling")
+api_router.include_router(crm_router, prefix="/api/v1/crm")
+api_router.include_router(student_invites_router, prefix="/api/v1/student-invites")
+api_router.include_router(telegram_router, prefix="/api/v1/telegram")
 api_router.include_router(university_router, prefix="/api/v1/universities")

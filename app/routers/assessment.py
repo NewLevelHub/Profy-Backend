@@ -7,9 +7,11 @@ from app.i18n.catalog import key as i18n_key
 from app.database import get_db
 from app.dependencies import get_current_student_user
 from app.models.user import User
-from app.schemas.assessment import AssessmentCreateRequest, AssessmentResponse, SavedAnswersResponse
+from app.errors import AppError
+from app.schemas.assessment import AssessmentCreateRequest, AssessmentResponse, SavedAnswersResponse, TestAvailability
 from app.schemas.response import SubmitAnswersRequest, SubmitAnswersResponse
 from app.services import assessment_service
+from app.services.crm import progress as crm_progress
 from app.services.profile_service import get_profile
 
 router = APIRouter(tags=["assessment"])
@@ -22,12 +24,29 @@ async def _require_profile_id(current_user: User, db: AsyncSession) -> uuid.UUID
     return profile.id
 
 
+@router.get("/availability", response_model=TestAvailability)
+async def test_availability(
+    current_user: User = Depends(get_current_student_user),
+    db: AsyncSession = Depends(get_db),
+) -> TestAvailability:
+    is_open, opens_at = await crm_progress.test_opens_at(db, current_user.id)
+    return TestAvailability(open=is_open, opens_at=opens_at)
+
+
 @router.post("/start", response_model=AssessmentResponse)
 async def start_assessment(
     data: AssessmentCreateRequest,
     current_user: User = Depends(get_current_student_user),
     db: AsyncSession = Depends(get_db),
 ) -> AssessmentResponse:
+    is_open, opens_at = await crm_progress.test_opens_at(db, current_user.id)
+    if not is_open:
+        raise AppError(
+            status_code=status.HTTP_409_CONFLICT,
+            error_code="test_after_first_call",
+            detail=i18n_key("api_errors", "test_after_first_call"),
+            extra={"opens_at": opens_at.isoformat() if opens_at else None},
+        )
     profile_id = await _require_profile_id(current_user, db)
     return await assessment_service.create_assessment(profile_id, data.goal, db)
 

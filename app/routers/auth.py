@@ -11,7 +11,8 @@ from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.i18n import KNOWN_LOCALES, normalize_locale
-from app.models.user import User
+from app.errors import AppError
+from app.models.user import User, UserRole
 from app.schemas.invitation import AcceptInvitationRequest, InvitationPreview, InvitationPreviewRequest
 from app.schemas.auth import (
     ForgotPasswordRequest,
@@ -201,7 +202,9 @@ async def register(body: RegisterRequest, request: Request, db: AsyncSession = D
     # user can still change it via PATCH /auth/me.
     locale = normalize_locale(request.headers.get("accept-language"), allowed=KNOWN_LOCALES)
     try:
-        return await auth_service.register(body.email, body.password, db, locale=locale)
+        return await auth_service.register(
+            body.email, body.password, db, locale=locale, student_invite=body.student_invite
+        )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
@@ -258,7 +261,9 @@ async def google_login(body: GoogleAuthRequest, request: Request, db: AsyncSessi
     ip_rate_key = _rate_key("google_ip", _client_ip(request))
     await _reject_if_rate_limited(ip_rate_key, _GOOGLE_IP_LIMIT, scope="google_ip")
     try:
-        user, token = await oauth_service.login_or_register_google(body.id_token, db)
+        user, token = await oauth_service.login_or_register_google(
+            body.id_token, db, student_invite=body.student_invite
+        )
     except ValueError as exc:
         # A rejected token costs a signature check on a worker thread; past
         # the limit the same client is turned away before that work starts.
@@ -351,9 +356,18 @@ async def update_me(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    locale_changed = current_user.locale != body.locale
-    current_user.locale = body.locale
-    current_user.locale_explicit = True
+    if body.full_name is not None:
+        if current_user.role == UserRole.student:
+            raise AppError(
+                status_code=status.HTTP_403_FORBIDDEN,
+                error_code="full_name_staff_only",
+                detail=i18n_key("api_errors", "full_name_staff_only"),
+            )
+        current_user.full_name = body.full_name
+    locale_changed = body.locale is not None and current_user.locale != body.locale
+    if body.locale is not None:
+        current_user.locale = body.locale
+        current_user.locale_explicit = True
     await db.commit()
     await db.refresh(current_user)
     if locale_changed:

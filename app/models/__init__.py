@@ -11,6 +11,7 @@ from app.models.astur_run import AsturRun  # noqa: F401 — keep model imported 
 from app.models.belbin_progress import BelbinProgress  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.belbin_run import BelbinRun  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.consent import Consent  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.crm import CrmDeal, CrmDealEvent, CrmParent, CrmStudent, CrmStudentInvite, CrmTariff, CrmTask  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.direction import Direction  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.extended_block_assignment import ExtendedBlockAssignment  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.invitation import Invitation  # noqa: F401 — keep model imported so Alembic discovers it
@@ -25,12 +26,14 @@ from app.models.psychologist_note import PsychologistNote  # noqa: F401 — keep
 from app.models.question import Question  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.question_pair import QuestionPair  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.scheduling import (  # noqa: F401 — keep model imported so Alembic discovers it
+    Meeting,
     SchedulingSettings,
     SpecialistSlot,
     SpecialistWeekPublication,
     SpecialistWeekReminder,
     SpecialistWeekTemplate,
 )
+from app.models.telegram import TelegramLink, TelegramLinkCode, TelegramMeetingReminder  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.university import University  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.university_image import UniversityImage  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.university_external_ref import UniversityExternalRef  # noqa: F401 — keep model imported so Alembic discovers it
@@ -42,12 +45,12 @@ from app.models.content_override import ContentOverride  # noqa: F401 — keep m
 
 __all__ = [
     "Base", "AnalysisResult", "Artifact", "Assessment", "AsturBankVersion", "AsturRun", "AuditLog", "BelbinProgress", "BelbinRun", "Consent",
-    "ContentOverride", "Direction", "ExtendedBlockAssignment",
+    "ContentOverride", "CrmDeal", "CrmDealEvent", "CrmParent", "CrmStudent", "CrmTariff", "Direction", "ExtendedBlockAssignment",
     "EmailVerificationToken", "Invitation",
     "MotivationResponse", "MotivationStatement", "PasswordResetToken",
     "ProductFeedback", "Profile", "Program", "PsychoEmotionalRun",
     "PsychologistNote", "PsychologistStudentAssignment", "Question", "QuestionPair",
-    "SchedulingSettings", "SpecialistSlot", "SpecialistWeekPublication", "SpecialistWeekReminder", "SpecialistWeekTemplate",
+    "Meeting", "SchedulingSettings", "SpecialistSlot", "SpecialistWeekPublication", "SpecialistWeekReminder", "SpecialistWeekTemplate",
     "University", "UniversityImage", "UniversityExternalRef", "UniversityFavorite",
     "User", "UserResponse",
 ]

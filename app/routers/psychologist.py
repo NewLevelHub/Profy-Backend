@@ -35,7 +35,9 @@ from app.schemas.psychologist_result import (
     PsychologistReviewEditItem,
     PsychologistReviewQueueItem,
 )
+from app.schemas.scheduling import SecondMeetingIn, SecondMeetingState
 from app.services import extended_block_service, psychologist_service
+from app.services.scheduling import second_meeting
 from app.services.psychologist_service import (
     ResultAlreadyPublishedError,
     ResultNotReadyForPublishError,
@@ -403,3 +405,26 @@ async def delete_note(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# ── the second call (ТЗ §4.5, B3.5) ─────────────────────────────────────────
+
+
+@router.get("/students/{student_id}/second-meeting", response_model=SecondMeetingState)
+async def get_second_meeting(
+    student_id: uuid.UUID,
+    current_user: User = Depends(_require_psychologist),
+    db: AsyncSession = Depends(get_db),
+) -> SecondMeetingState:
+    """The student's first call and the second one the specialist sets."""
+    return await second_meeting.state(db, current_user, student_id)
+
+
+@router.post("/students/{student_id}/second-meeting", response_model=SecondMeetingState)
+async def set_second_meeting(
+    student_id: uuid.UUID,
+    body: SecondMeetingIn,
+    current_user: User = Depends(_require_psychologist),
+    db: AsyncSession = Depends(get_db),
+) -> SecondMeetingState:
+    return await second_meeting.schedule(db, current_user, student_id, body.start)
