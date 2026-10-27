@@ -190,6 +190,16 @@ async def sync_deal(db: AsyncSession, deal: CrmDeal) -> None:
         _event(db, deal, "closed", {"result": "won", "reason": None, "auto": True})
 
 
+async def latest_specialist(db: AsyncSession, student_id: uuid.UUID) -> uuid.UUID | None:
+    """The specialist of the student's latest not lost deal, if it has one."""
+    return await db.scalar(
+        select(CrmDeal.specialist_id)
+        .where(CrmDeal.student_user_id == student_id, CrmDeal.result != DealResult.lost)
+        .order_by(CrmDeal.created_at.desc())
+        .limit(1)
+    )
+
+
 async def report_needs_review(db: AsyncSession, user_id: uuid.UUID) -> bool:
     """Whether the student's new report waits for a psychologist.
 
