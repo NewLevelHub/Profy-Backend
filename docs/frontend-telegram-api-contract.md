@@ -26,3 +26,7 @@
 
 **Webhook** `POST /webhook` — только для Telegram, с заголовком
 `X-Telegram-Bot-Api-Secret-Token`; включается `scripts/telegram_set_webhook.py`.
+
+**Локально** вебхук невозможен (Telegram ходит только на публичный HTTPS).
+Вместо него: `docker compose exec api python scripts/telegram_poll.py` —
+забирает сообщения бота (`getUpdates`) и раз в минуту проверяет напоминания.

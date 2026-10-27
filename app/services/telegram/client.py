@@ -1,4 +1,4 @@
-"""Thin Bot API client: the two calls the bot makes."""
+"""Thin Bot API client: the calls the bot makes."""
 
 import logging
 
@@ -53,3 +53,17 @@ async def set_webhook(url: str) -> dict:
             },
         )
     return response.json()
+
+
+async def get_updates(offset: int | None, timeout: int = 25) -> list[dict]:
+    """Long-poll for updates — local runs only (scripts/telegram_poll.py),
+    where Telegram cannot reach a webhook. Telegram refuses it while a
+    webhook is set."""
+    async with httpx.AsyncClient(timeout=httpx.Timeout(timeout + 10.0)) as client:
+        response = await client.post(
+            _url("getUpdates"), json={"offset": offset, "timeout": timeout, "allowed_updates": ["message"]}
+        )
+    answer = response.json()
+    if not answer.get("ok"):
+        raise RuntimeError(answer.get("description") or f"getUpdates answered {response.status_code}")
+    return answer["result"]
