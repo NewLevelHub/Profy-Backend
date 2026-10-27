@@ -54,7 +54,7 @@ async def _create(client: httpx.AsyncClient, user: User, **extra) -> dict:
     return response.json()
 
 
-async def _ready_to_book(client: httpx.AsyncClient, user: User, tariff: str = "testing") -> dict:
+async def _ready_to_book(client: httpx.AsyncClient, user: User, tariff: str = "package") -> dict:
     deal = await _create(client, user)
     path = f"{URL}/deals/{deal['id']}"
     assert (await client.patch(path, json={"is_target": True, "tariff_code": tariff}, headers=_h(user))).status_code == 200
@@ -249,7 +249,7 @@ async def test_booking_needs_payment_target_and_consent(
     body = {"start": _iso(start), "handoff": _handoff()}
     assert (await client.post(f"{path}/booking", json=body, headers=_h(manager))).json()["error_code"] == "deal_not_paid"
 
-    await client.patch(path, json={"is_target": True, "tariff_code": "testing"}, headers=_h(manager))
+    await client.patch(path, json={"is_target": True, "tariff_code": "package"}, headers=_h(manager))
     await client.post(f"{path}/payment", json={"amount": 45000, "method": "cash"}, headers=_h(manager))
     assert (await client.post(f"{path}/booking", json=body, headers=_h(manager))).json()["error_code"] == "consent_required"
 
@@ -296,7 +296,7 @@ async def test_booking_assigns_least_busy_specialist_and_hides_name_from_manager
         f"/api/v1/scheduling/specialists/me/meetings?from={FUTURE_DAY}&to={FUTURE_DAY}", headers=_h(idle)
     )
     card = meetings.json()[0]["handoff"]
-    assert card["student_name"] == "Камила Нурланова" and card["tariff"] == "Тестирование"
+    assert card["student_name"] == "Камила Нурланова" and card["tariff"] == "Пакет"
     assert "45000" not in meetings.text
 
     again = await client.post(f"{URL}/deals/{deal['id']}/booking", json={"start": _iso(start), "handoff": _handoff()}, headers=_h(manager))
@@ -318,7 +318,7 @@ async def test_a_returning_client_goes_back_to_their_specialist_when_free(
         created = await client.post(f"{URL}/deals", json={"parent_id": first["parent"]["id"]}, headers=_h(manager))
         assert created.status_code == 201, created.text
         path = f"{URL}/deals/{created.json()['id']}"
-        assert (await client.patch(path, json={"is_target": True, "tariff_code": "testing"}, headers=_h(manager))).status_code == 200
+        assert (await client.patch(path, json={"is_target": True, "tariff_code": "package"}, headers=_h(manager))).status_code == 200
         assert (await client.post(f"{path}/payment", json={"amount": 45000, "method": "transfer"}, headers=_h(manager))).status_code == 200
         assert (await client.post(f"{path}/consent", json={"given": True}, headers=_h(manager))).status_code == 200
         booked = await client.post(f"{path}/booking", json={"start": _iso(start), "handoff": _handoff()}, headers=_h(manager))
@@ -357,7 +357,7 @@ async def test_the_crm_books_a_thirty_minute_first_call_for_any_tariff(
     60-minute second one the specialist sets (second_meeting)."""
     specialist = await _user(db_session, UserRole.psychologist)
     start = await _open_slots(db_session, specialist, FUTURE_DAY, time(17, 0), 1)
-    deal = await _ready_to_book(client, manager, tariff="consultation")
+    deal = await _ready_to_book(client, manager, tariff="package")
     booked = await client.post(
         f"{URL}/deals/{deal['id']}/booking", json={"start": _iso(start), "handoff": _handoff()}, headers=_h(manager)
     )

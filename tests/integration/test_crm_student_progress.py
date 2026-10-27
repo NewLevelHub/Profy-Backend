@@ -42,7 +42,7 @@ def _token(url: str) -> str:
 
 
 async def _booked(
-    client: httpx.AsyncClient, db: AsyncSession, user: User, tariff: str = "testing", specialist: User | None = None
+    client: httpx.AsyncClient, db: AsyncSession, user: User, tariff: str = "package", specialist: User | None = None
 ) -> dict:
     """A paid deal booked on a call — the link carries its specialist."""
     specialist = specialist or await _user(db, UserRole.psychologist, "Лолита")
