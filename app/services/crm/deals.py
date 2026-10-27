@@ -3,7 +3,8 @@ docs/frontend-crm-api-contract.md.
 
 Leads are entered manually and stages 1–6 move by hand. Stages 7–8 and
 «Успешно» follow the student's account once it is linked to the deal
-(progress.py); until then, and for 9–10, the head of sales or the owner moves
+(progress.py), and so does 9 once the review is held; until then the head of
+sales or the owner moves
 them. The rules of §3.3 that do not
 depend on events hold already: a non-target lead stays in qualification,
 «Оплачено» comes only from marking the payment, closing needs a reason, and
@@ -151,7 +152,9 @@ async def meta(db: AsyncSession) -> schemas.CrmMeta:
     )
 
 
-async def _active_meetings(db: AsyncSession, deal_ids: list[uuid.UUID]) -> dict[uuid.UUID, Meeting]:
+async def _live_calls(db: AsyncSession, deal_ids: list[uuid.UUID]) -> dict[uuid.UUID, list[Meeting]]:
+    """Each deal's calls that are not cancelled, earliest first: the call the
+    manager booked, then the specialist's second one."""
     if not deal_ids:
         return {}
     rows = await db.execute(
@@ -159,11 +162,14 @@ async def _active_meetings(db: AsyncSession, deal_ids: list[uuid.UUID]) -> dict[
         .where(Meeting.deal_id.in_(deal_ids), Meeting.status != MeetingStatus.cancelled)
         .order_by(Meeting.start_at)
     )
-    first: dict[uuid.UUID, Meeting] = {}
+    calls: dict[uuid.UUID, list[Meeting]] = {}
     for meeting in rows.scalars():
-        # The call the manager booked; a later one is the specialist's second.
-        first.setdefault(meeting.deal_id, meeting)
-    return first
+        calls.setdefault(meeting.deal_id, []).append(meeting)
+    return calls
+
+
+async def _active_meetings(db: AsyncSession, deal_ids: list[uuid.UUID]) -> dict[uuid.UUID, Meeting]:
+    return {deal_id: calls[0] for deal_id, calls in (await _live_calls(db, deal_ids)).items()}
 
 
 async def list_deals(
@@ -181,7 +187,7 @@ async def list_deals(
     rows = (await db.execute(query.order_by(CrmDeal.created_at.desc()))).all()
 
     users = await _users(db, {deal.manager_id for deal, _, _ in rows})
-    meetings = await _active_meetings(db, [deal.id for deal, _, _ in rows])
+    calls = await _live_calls(db, [deal.id for deal, _, _ in rows])
     tasks = await _next_task_due(db, [deal.id for deal, _, _ in rows])
     # The marketer sees the board without personal data (ТЗ §2, §6.2).
     masked = user.role == UserRole.marketer
@@ -200,7 +206,10 @@ async def list_deals(
             paid=deal.paid_at is not None,
             consent=parent.consent,
             manager=_user_ref(users.get(deal.manager_id)),
-            meeting_start=meetings[deal.id].start_at if deal.id in meetings else None,
+            meeting_start=calls[deal.id][0].start_at if deal.id in calls else None,
+            # «Разбор назначен» is a mark on the card, not a stage: the second
+            # call may be set before or after the test (ТЗ §3.3 deviation).
+            review_start=calls[deal.id][1].start_at if len(calls.get(deal.id, ())) > 1 else None,
             next_task_due=tasks.get(deal.id),
             closed_at=deal.closed_at,
             created_at=deal.created_at,

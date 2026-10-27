@@ -18,7 +18,12 @@ from app.database import Base
 
 
 class DealStage(str, enum.Enum):
-    """The funnel, in order (ТЗ §3.3). Index = position on the board."""
+    """The funnel, in order (ТЗ §3.3). Index = position on the board.
+
+    ТЗ's «Разбор назначен» is not a stage: the specialist sets the second
+    call from the first call on, before or after the test, so it cannot sit
+    in one line with «Диагностика пройдена». The deal card shows it instead
+    (`DealCard.review_start`)."""
 
     unsorted = "unsorted"                    # 1 Неразобранное
     qualification = "qualification"          # 2 Квалификация
@@ -28,8 +33,7 @@ class DealStage(str, enum.Enum):
     paid = "paid"                            # 6 Оплачено — only by marking the payment
     diagnostics_done = "diagnostics_done"    # 7 Диагностика пройдена
     report_published = "report_published"    # 8 Отчёт опубликован
-    review_scheduled = "review_scheduled"    # 9 Разбор назначен
-    review_done = "review_done"              # 10 Разбор проведён
+    review_done = "review_done"              # 9 Разбор проведён
 
 
 STAGE_ORDER = list(DealStage)

@@ -66,7 +66,9 @@ ISO-8601.
 ## 3. Этапы и правила (ТЗ §3.3)
 
 `unsorted` → `qualification` → `consultation` → `closing` (Дожим) → `invoice` →
-`paid` → `diagnostics_done` → `report_published` → `review_scheduled` → `review_done`.
+`paid` → `diagnostics_done` → `report_published` → `review_done`.
+«Разбор назначен» из ТЗ — не этап, а отметка на карточке (`review_start`): второй
+созвон ставится с начала первого, до теста или после него.
 Результат хранится отдельно: `open` / `won` / `lost`.
 
 | Правило | `error_code` |
@@ -123,7 +125,7 @@ ISO-8601.
 
 Плитка доски (`DealCard`): `id, stage, result, parent_name, phone,
 student_name, tariff_code, total, is_target, paid, consent, manager,
-meeting_start, next_task_due, closed_at, created_at`. `next_task_due` — срок
+meeting_start, review_start, next_task_due, closed_at, created_at`. `next_task_due` — срок
 ближайшей открытой задачи; `null` = «Нет задач», в прошлом — просрочено.
 `source` — источник лида. В карточке `stage_at` — когда сделка пришла на текущий этап.
 
@@ -343,9 +345,9 @@ Profile, после начала первого, на любое время бе
   `409 publish_second_call_missing`, до начала — `409 publish_second_call_not_started`
   (`second_call_start` в ответе). Править отчёт можно и раньше.
 
-После публикации отчёта: назначенный второй созвон → `review_scheduled`,
-проведённый («Проведена» у специалиста) → `review_done`. `«Успешно»` — в момент
-публикации.
+Публикация отчёта (на втором созвоне) → `report_published` и `«Успешно»`;
+второй созвон отмечен «Проведена» у специалиста → `review_done`. Назначенный
+второй созвон этап не двигает — в доске он `review_start` (начало, иначе `null`).
 
 В карточке `meeting` — первый созвон (его записал менеджер), `meetings` — все
 живые созвоны по времени.

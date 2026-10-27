@@ -222,6 +222,8 @@ class DealCard(BaseModel):
     consent: bool | None
     manager: UserRef | None
     meeting_start: datetime | None
+    # The second call — the review the specialist set (shown as «разбор …»).
+    review_start: datetime | None = None
     # Due time of the nearest open task; null = «Нет задач».
     next_task_due: datetime | None = None
     closed_at: datetime | None

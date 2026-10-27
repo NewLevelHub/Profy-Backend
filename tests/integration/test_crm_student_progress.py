@@ -422,9 +422,14 @@ async def test_the_specialist_sets_the_second_call_and_the_deal_follows(
         first.start_at.isoformat()[:16], state["second"]["start"][:16],
     ]
     assert detail["meeting"]["id"] == before["first"]["id"]
+    # A set second call is no stage — the board card shows it.
+    assert detail["stage"] == "paid"
+    board = (await client.get(f"{URL}/deals", headers=_h(manager))).json()
+    card = next(c for c in board if c["id"] == deal["id"])
+    assert card["review_start"][:16] == state["second"]["start"][:16]
 
-    # The test, then the report published on the second call: «Успешно» and
-    # «Разбор назначен»; the call held — «Разбор проведён».
+    # The test, then the report published on the second call: «Отчёт
+    # опубликован» and «Успешно»; the call held — «Разбор проведён».
     assessment = await make_student_assessment(db_session, test_user)
     assert (await generate(client, auth_headers, assessment)).status_code == 200
     publish_path = f"/api/v1/psychologist/students/{test_user.id}/results/{assessment.id}/publish"
@@ -438,7 +443,7 @@ async def test_the_specialist_sets_the_second_call_and_the_deal_follows(
     published = await client.post(publish_path, headers=psychologist_headers)
     assert published.status_code == 200, published.text
     detail = (await client.get(f"{URL}/deals/{deal['id']}", headers=_h(manager))).json()
-    assert detail["stage"] == "review_scheduled" and detail["result"] == "won"
+    assert detail["stage"] == "report_published" and detail["result"] == "won"
     done = await client.post(
         f"/api/v1/scheduling/specialists/me/meetings/{second.id}/status", json={"status": "done"}, headers=psychologist_headers
     )

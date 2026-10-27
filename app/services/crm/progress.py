@@ -7,9 +7,9 @@ published report is 8 «Отчёт опубликован» and «Успешно
 happens; linking calls `sync_deal` to catch up with what already happened.
 
 The second call, which the specialist sets (app/services/scheduling/
-second_meeting.py), comes after: once the report is published, a set
-second call is 9 «Разбор назначен» and a held one 10 «Разбор проведён».
-«Успешно» stays with the publication.
+second_meeting.py), is the review where the report is published; once it
+is marked held the deal is 9 «Разбор проведён». A set second call is no
+stage — the deal card shows it. «Успешно» stays with the publication.
 
 `report_needs_review` is the other direction: the deal's tariff decides
 whether the student's new report waits for a psychologist.
@@ -164,8 +164,8 @@ async def sync_deal(db: AsyncSession, deal: CrmDeal) -> None:
     target = DealStage.report_published if published else DealStage.diagnostics_done
     if published:
         second = await _second_call(db, deal.id)
-        if second is not None:
-            target = DealStage.review_done if second.status == MeetingStatus.done else DealStage.review_scheduled
+        if second is not None and second.status == MeetingStatus.done:
+            target = DealStage.review_done
     if STAGE_ORDER.index(deal.stage) < STAGE_ORDER.index(target):
         audit.record(
             db, actor=None, action="crm.stage_changed", entity_type="crm_deal", entity_id=deal.id,
