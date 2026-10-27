@@ -60,6 +60,25 @@ def _no_real_email(monkeypatch) -> None:
 
 
 @pytest.fixture(autouse=True)
+def _no_real_telegram(monkeypatch) -> None:
+    """Tests never write to Telegram, whatever the mounted .env holds: the
+    tests share the dev database, where a real specialist may have linked a
+    real chat. The bot is off unless a test turns it on (with the client
+    mocked); Bot API calls raise in any case."""
+    from app.services.telegram import client as telegram_client
+
+    monkeypatch.setattr(settings, "TELEGRAM_BOT_TOKEN", "")
+    monkeypatch.setattr(settings, "TELEGRAM_BOT_USERNAME", "")
+    monkeypatch.setattr(settings, "TELEGRAM_WEBHOOK_SECRET", "")
+
+    def _blocked(method: str) -> str:
+        raise AssertionError(f"a test reached the real Telegram Bot API ({method}); mock telegram.client")
+
+    # Every Bot API call builds its URL here first.
+    monkeypatch.setattr(telegram_client, "_url", _blocked)
+
+
+@pytest.fixture(autouse=True)
 def _open_registration(monkeypatch) -> None:
     """Most auth tests sign up without a CRM invite. The invite-only rule has
     its own tests (test_crm_student_progress.py), which turn it back on."""
