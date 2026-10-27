@@ -289,8 +289,8 @@ async def test_create_checks_mail_domain_when_enabled(
 @pytest.mark.parametrize(
     ("payload", "admin_locale", "message"),
     [
-        ({"role": "student"}, "ru", "Пригласить можно только психолога или админа"),
-        ({"role": "superuser"}, "kk", "Тек психологты немесе әкімшіні шақыруға болады"),
+        ({"role": "student"}, "ru", "Пригласить можно только сотрудника — ученики регистрируются сами"),
+        ({"role": "superuser"}, "kk", "Тек қызметкерді шақыруға болады — оқушылар өздері тіркеледі"),
         ({"role": "psychologist", "email": "not-an-email"}, "ru", "Введите корректный email"),
         ({"role": "psychologist", "locale": "en"}, "ru", "Язык письма должен быть одним из: ru, kk"),
     ],
@@ -638,7 +638,9 @@ async def test_list_paginates_newest_first(
 # ── access ──────────────────────────────────────────────────────────────────
 
 
-@pytest.mark.parametrize("role", [UserRole.student, UserRole.psychologist])
+@pytest.mark.parametrize(
+    "role", [UserRole.student, UserRole.psychologist, UserRole.sales_head, UserRole.sales_manager]
+)
 async def test_non_admin_gets_403_everywhere(
     client: httpx.AsyncClient, db_session: AsyncSession, role: UserRole
 ) -> None:
@@ -656,3 +658,63 @@ async def test_non_admin_gets_403_everywhere(
     ]
 
     assert [r.status_code for r in responses] == [403, 403, 403, 403, 403]
+
+
+async def test_owner_can_invite_staff(
+    client: httpx.AsyncClient, db_session: AsyncSession, sent_emails: list[dict]
+) -> None:
+    """The business owner runs the CRM staff (PRO-497)."""
+    email = _email()
+    await _add_user(db_session, email, role=UserRole.owner, is_verified=True)
+    owner = await db_session.scalar(select(User).where(User.email == email))
+    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(owner)}"}
+
+    created = await client.post(
+        URL, json={"email": _email(), "role": "psychologist", "full_name": "Лолита"}, headers=headers
+    )
+    assert created.status_code == 201, created.text
+    assert created.json()["invited_by"]["id"] == str(owner.id)
+    assert (await client.get(URL, headers=headers)).status_code == 200
+
+
+async def test_owner_invites_only_specialists_and_the_crm_team(
+    client: httpx.AsyncClient, db_session: AsyncSession, admin_headers: dict[str, str], sent_emails: list[dict]
+) -> None:
+    """Admins and owners stay with the platform admin; the owner does not
+    see or touch those invitations either."""
+    email = _email()
+    await _add_user(db_session, email, role=UserRole.owner, is_verified=True)
+    owner = await db_session.scalar(select(User).where(User.email == email))
+    headers = {"Authorization": f"Bearer {auth_service.create_jwt_token(owner)}"}
+
+    for role in ("admin", "owner"):
+        refused = await client.post(URL, json={"email": _email(), "role": role}, headers=headers)
+        assert refused.status_code == 403 and refused.json()["error_code"] == "invitation_role_forbidden"
+    for role in ("sales_manager", "sales_head", "marketer"):
+        assert (await client.post(URL, json={"email": _email(), "role": role}, headers=headers)).status_code == 201
+
+    admin_invite = (await client.post(URL, json={"email": _email(), "role": "admin"}, headers=admin_headers)).json()
+    listed = (await client.get(URL, params={"limit": 100}, headers=headers)).json()["items"]
+    assert admin_invite["id"] not in {item["id"] for item in listed}
+    assert {item["role"] for item in listed} <= {"psychologist", "sales_head", "sales_manager", "marketer"}
+    for response in (
+        await client.get(f"{URL}/{admin_invite['id']}/link", headers=headers),
+        await client.post(f"{URL}/{admin_invite['id']}/resend", headers=headers),
+        await client.delete(f"{URL}/{admin_invite['id']}", headers=headers),
+    ):
+        assert response.status_code == 404
+    assert (await client.get(f"{URL}/{admin_invite['id']}/link", headers=admin_headers)).status_code == 200
+
+
+async def test_an_existing_account_names_its_role(
+    client: httpx.AsyncClient, db_session: AsyncSession, admin_headers: dict[str, str], sent_emails: list[dict]
+) -> None:
+    """One email is one account for Profile and the CRM: the refusal says
+    whose account is there, so the CRM can tell a student's from an employee's."""
+    student, staff = _email(), _email()
+    await _add_user(db_session, student, role=UserRole.student, is_verified=True)
+    await _add_user(db_session, staff, role=UserRole.psychologist, is_verified=True)
+    for email, role in ((student, "student"), (staff, "psychologist")):
+        refused = await client.post(URL, json={"email": email, "role": "sales_manager"}, headers=admin_headers)
+        assert refused.status_code == 409
+        assert refused.json()["error_code"] == "user_exists" and refused.json()["existing_role"] == role

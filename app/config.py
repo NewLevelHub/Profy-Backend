@@ -67,11 +67,36 @@ class Settings(BaseSettings):
     # Reject an invitation to a domain that cannot receive mail (no MX / A
     # record). One DNS lookup on create; a lookup timeout lets it through.
     INVITATION_CHECK_DELIVERABILITY: bool = True
+    # Profile is a paid service: a student account is made only from the
+    # CRM's invite link (ТЗ §4.4, П2-10). Signing in to an existing account
+    # and staff invitations are not affected.
+    REGISTRATION_INVITE_ONLY: bool = True
     GOOGLE_CLIENT_ID: str = ""
     # Serve Swagger UI (/docs) and /openapi.json. On for development;
     # docker-compose.prod.yml pins it off — the schema lists every route,
     # admin ones included, to anyone who asks.
     API_DOCS_ENABLED: bool = True
+
+    # Background check that emails specialists who have not set next week's
+    # schedule by the owner's reminder time (PRO-560). One API process runs it;
+    # duplicates are impossible anyway (`specialist_week_reminders`).
+    WEEK_REMINDERS_ENABLED: bool = True
+    WEEK_REMINDERS_INTERVAL_SECONDS: int = 300
+
+    # Telegram bot for specialists: call reminders 24 h and 1 h before
+    # (app/services/telegram/). Off while the token is empty — no route
+    # answers, no background check runs, the Profile card stays hidden.
+    # TELEGRAM_BOT_USERNAME without «@» builds the link t.me/<name>?start=…;
+    # TELEGRAM_WEBHOOK_SECRET is the secret_token given to setWebhook
+    # (scripts/telegram_set_webhook.py), checked on every update.
+    TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_BOT_USERNAME: str = ""
+    TELEGRAM_WEBHOOK_SECRET: str = ""
+    TELEGRAM_REMINDERS_INTERVAL_SECONDS: int = 120
+
+    @property
+    def telegram_enabled(self) -> bool:
+        return bool(self.TELEGRAM_BOT_TOKEN and self.TELEGRAM_BOT_USERNAME and self.TELEGRAM_WEBHOOK_SECRET)
 
     # Which backend build_storage_backend() returns:
     #   "fs"  — write photos to STORAGE_FS_ROOT on disk; nginx serves them

@@ -53,6 +53,7 @@ from app.services import (
     thinking_style_service,
 )
 from app.services.bigfive_content import strength_phrases
+from app.services.crm import progress as crm_progress
 from app.services.motivation_content import highlight_phrases as motivation_highlight_phrases
 from app.services.psychoemotional import interpretation as psychoemotional_interpretation
 from app.services.psychoemotional import engine as psychoemotional_engine
@@ -1144,13 +1145,18 @@ async def _build_report(
         student_user_id = profile.user_id if profile is not None else None
         student_name = profile.name if profile is not None else None
         db.add(analysis)
-        if assessment.status != AssessmentStatus.completed:
+        newly_completed = assessment.status != AssessmentStatus.completed
+        if newly_completed:
             # Same transaction as the AnalysisResult insert below — either both
             # land or neither does, so a completed-without-a-report assessment
             # can no longer exist.
             assessment.status = AssessmentStatus.completed
             assessment.completed_at = datetime.now(timezone.utc)
         try:
+            if newly_completed and student_user_id is not None:
+                # «Диагностика пройдена» in the CRM deal (ТЗ §3.3). Its flush
+                # may raise the IntegrityError handled below, like the commit.
+                await crm_progress.student_progressed(db, student_user_id)
             await db.commit()
             await db.refresh(analysis)
         except IntegrityError:
@@ -1208,10 +1214,15 @@ async def _build_report(
 
     # Only a first-ever report starts a review — a new locale row inherited the
     # status above, and the "already exists" / IntegrityError branches return
-    # before reaching this.
+    # before reaching this. A tariff sold without a review (CRM) publishes it
+    # right away; anything else goes to the psychologist.
     if sibling is None and student_user_id is not None:
         from app.services import psychologist_service
 
+        if not await crm_progress.report_needs_review(db, student_user_id) and (
+            await psychologist_service.publish_without_review(db, analysis)
+        ):
+            return response
         await psychologist_service.notify_review_pending(
             db,
             student_id=student_user_id,

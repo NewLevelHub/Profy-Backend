@@ -18,10 +18,13 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Callable
 
+from fastapi import status
 from sqlalchemy import Select, case, delete, or_, select, tuple_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
+from app.config import settings
+from app.errors import AppError
 from app.i18n.catalog import key as i18n_key, tr
 from app.i18n import DEFAULT_LOCALE
 from app.models.analysis_result import AnalysisResult, ReviewStatus
@@ -31,6 +34,7 @@ from app.models.extended_block_assignment import ExtendedBlock, ExtendedBlockAss
 from app.models.profile import Profile
 from app.models.psychologist_assignment import PsychologistStudentAssignment
 from app.models.psychologist_note import PsychologistNote
+from app.models.telegram import TelegramLink
 from app.models.user import User, UserRole
 from app.schemas.admin import AdminUserDetailResponse
 from app.schemas.psych_ai_analysis import PsychAiAnalysisOutput
@@ -62,6 +66,8 @@ from app.services import (
     report_service,
     student_strengths_service,
 )
+from app.services.crm import progress as crm_progress
+from app.services.telegram import notify as telegram_notify
 from app.services.psych_ai_analysis_context import build_context, has_any_data, fingerprint as context_fingerprint
 
 logger = logging.getLogger(__name__)
@@ -1279,6 +1285,16 @@ async def publish_result(
     await _require_assigned_student(
         db, psychologist_id=psychologist_id, student_id=student_id
     )
+    # A tariff with the specialist's calls: the report is published after
+    # the review, the second call marked held (editing it before is fine).
+    if (blocker := await crm_progress.publish_blocker(db, student_id)) is not None:
+        code, starts = blocker
+        raise AppError(
+            status_code=status.HTTP_409_CONFLICT,
+            error_code=code,
+            detail=i18n_key("api_errors", code),
+            extra={"second_call_start": starts.isoformat() if starts else None},
+        )
     # Serialize with report generation: a locale row generated in between
     # would be a translation of the pre-edit text (edit) or miss the
     # published status (publish).
@@ -1290,7 +1306,7 @@ async def publish_result(
 
 
 async def _publish(
-    db: AsyncSession, analysis: AnalysisResult, *, publisher_id: uuid.UUID
+    db: AsyncSession, analysis: AnalysisResult, *, publisher_id: uuid.UUID | None
 ) -> PsychologistResultDetailResponse:
     if analysis.review_status == ReviewStatus.published:
         raise ResultAlreadyPublishedError(i18n_key("api_errors", "result_is_already_published", locale="ru"))
@@ -1323,12 +1339,40 @@ async def _publish(
             published_at=now,
         )
     )
+    # The deal of this student: «Отчёт опубликован» and «Успешно» (ТЗ §3.3.1).
+    student_id = await db.scalar(
+        select(Profile.user_id)
+        .join(Assessment, Assessment.profile_id == Profile.id)
+        .where(Assessment.id == analysis.assessment_id)
+    )
+    if student_id is not None:
+        await crm_progress.student_progressed(db, student_id)
     await db.commit()
     await db.refresh(analysis)
     detail = _to_detail(analysis)
     await _drop_report_cache(analysis.assessment_id)
     await _notify_result_published(db, analysis.assessment_id)
     return detail
+
+
+async def publish_without_review(db: AsyncSession, analysis: AnalysisResult) -> bool:
+    """Publish a just-built report whose tariff has no psychologist review
+    (`crm.progress.report_needs_review`). Same path as a psychologist's
+    «Опубликовать» — the deal moves to «Отчёт опубликован» / «Успешно», the
+    student gets the email — with no publisher: the system published it.
+
+    False — not published (incomplete content or an error); the report then
+    stays in the review queue like any other."""
+    try:
+        await _publish(db, analysis, publisher_id=None)
+    except ResultNotReadyForPublishError:
+        logger.warning("auto-publish: report %s is not complete, left for review", analysis.id)
+        return False
+    except Exception:
+        await db.rollback()
+        logger.exception("auto-publish of report %s failed, left for review", analysis.id)
+        return False
+    return True
 
 
 def _is_ready_for_publication(analysis: AnalysisResult) -> bool:
@@ -1386,38 +1430,53 @@ async def notify_review_pending(
     student_name: str | None,
     assessment_id: uuid.UUID,
 ) -> None:
-    """Email every psychologist assigned to the student that a new report
-    waits for review. Best-effort: never raises into report generation."""
+    """Tell the psychologist that a new report waits for review: by email,
+    and in Telegram when they linked it (app/services/telegram/).
+
+    The psychologist is the one of the student's latest deal — a client who
+    came back to another specialist is not announced to the earlier one,
+    who still sees the student. A student without such a deal (an account
+    from before the CRM) — every psychologist assigned to them.
+    Best-effort: never raises into report generation."""
     try:
-        result = await db.execute(
-            select(User.email, User.locale)
+        specialist = await crm_progress.latest_specialist(db, student_id)
+        # With the specialist's calls the report goes out after the review.
+        after_call = await crm_progress.consultation_deal(db, student_id) is not None
+        query = (
+            select(User.email, User.locale, TelegramLink.chat_id)
             .join(
                 PsychologistStudentAssignment,
                 PsychologistStudentAssignment.psychologist_id == User.id,
             )
+            .outerjoin(TelegramLink, TelegramLink.user_id == User.id)
             .where(PsychologistStudentAssignment.student_id == student_id)
         )
-        recipients = list(result.all())
+        if specialist is not None:
+            query = query.where(User.id == specialist)
+        recipients = list((await db.execute(query)).all())
     except Exception:
         logger.exception("review-pending recipients lookup failed for student=%s", student_id)
         return
     review_url = email_service.frontend_url(
         f"/psychologist/students/{student_id}/results/{assessment_id}/review"
     )
-    await _send_within_budget(
-        [
-            email_service.send_review_pending_email(
-                email,
-                # In the recipient's language, like the email itself. This
-                # runs in the *student's* request, so the request locale
-                # would be the wrong one here (PRO-430).
-                student_name or tr("report_copy", locale=locale or DEFAULT_LOCALE)["unnamed_student"],
-                locale=locale or DEFAULT_LOCALE,
-                review_url=review_url,
+    sends: list[Any] = []
+    for email, locale, chat_id in recipients:
+        locale = locale or DEFAULT_LOCALE
+        # In the recipient's language, like the email itself. This runs in
+        # the *student's* request, so the request locale would be the wrong
+        # one here (PRO-430).
+        name = student_name or tr("report_copy", locale=locale)["unnamed_student"]
+        sends.append(email_service.send_review_pending_email(email, name, locale=locale, review_url=review_url))
+        if chat_id is not None and settings.telegram_enabled:
+            strings = tr("telegram", locale=locale)
+            text = strings["review_pending"].format(student=name)
+            if after_call:
+                text = f"{text} {strings['review_after_call']}"
+            sends.append(
+                telegram_notify.send(None, chat_id, text, telegram_notify.button(strings["open_report"], review_url))
             )
-            for email, locale in recipients
-        ]
-    )
+    await _send_within_budget(sends)
 
 
 async def _notify_result_published(db: AsyncSession, assessment_id: uuid.UUID) -> None:

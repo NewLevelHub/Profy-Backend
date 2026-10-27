@@ -199,6 +199,15 @@ class DeploymentIsolationTests(unittest.TestCase):
         # Only /api/ reaches the production API: no /docs, no /openapi.json.
         self.assertEqual(prod.count("set $api_prod_upstream http://profi_api_prod:8000;"), 1)
 
+    def test_crm_is_served_under_crm_by_its_own_container(self):
+        # Profy-CRM lives on Profy's domain at /crm/: each stage reaches only
+        # its own CRM container, lazily resolved like the frontends.
+        prod, dev = (ROOT / "nginx.prod.conf").read_text().split("# -- Dev:")
+        for block, stage, other in [(prod, "prod", "dev"), (dev, "dev", "prod")]:
+            self.assertIn("location /crm/ {", block)
+            self.assertIn(f"set $crm_{stage}_upstream http://profy_crm_{stage}:80;", block)
+            self.assertNotIn(f"profy_crm_{other}", block)
+
     def test_production_does_not_publish_the_api_map(self):
         prod, dev = (ROOT / "nginx.prod.conf").read_text().split("# -- Dev:")
         for path in ("location /docs", "location /openapi.json"):

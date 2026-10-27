@@ -38,6 +38,7 @@ from . import (
     riasec,
     student_strengths,
     subjects,
+    telegram,
     thinking_style,
     university_requirements,
     validator,
@@ -64,6 +65,7 @@ _AREAS: dict[str, Any] = {
     "student_strengths": student_strengths,
     "career_fit": career_fit,
     "psychoemotional_interpretation": psychoemotional_interpretation,
+    "telegram": telegram,
 }
 
 

@@ -22,7 +22,7 @@ from app.models.user import UserRole
 from app.schemas.auth import PASSWORD_MAX_LENGTH
 from app.schemas.validation import LOCALE_MAX_LENGTH
 
-_STAFF_ROLES = (UserRole.psychologist.value, UserRole.admin.value)
+_STAFF_ROLES = tuple(role.value for role in UserRole if role != UserRole.student)
 _PASSWORD_MIN_LENGTH = 8
 
 # The link token, always in a request body: a URL (path or query) ends up in
@@ -41,6 +41,16 @@ class AdminInvitationCreate(BaseModel):
     role: UserRole
     # Language of the email; becomes `users.locale` on accept.
     locale: str = Field(default=DEFAULT_LOCALE, max_length=LOCALE_MAX_LENGTH)
+    # Becomes `users.full_name` on accept — how the person is shown in the
+    # schedule and CRM.
+    full_name: str | None = Field(default=None, max_length=255)
+
+    @field_validator("full_name", mode="before")
+    @classmethod
+    def strip_full_name(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            return v.strip() or None
+        return v
 
     @field_validator("email", mode="before")
     @classmethod
@@ -78,6 +88,7 @@ class AdminInvitationItem(BaseModel):
     email: str
     role: UserRole
     locale: str
+    full_name: str | None
     status: InvitationStatus
     # null once the inviting admin is deleted (FK is SET NULL).
     invited_by: InvitationInviter | None

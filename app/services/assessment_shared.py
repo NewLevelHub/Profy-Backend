@@ -18,7 +18,7 @@ from app.errors import AppError
 from app.i18n import DEFAULT_LOCALE, KNOWN_LOCALES
 from app.i18n.catalog import key as i18n_key
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
-from app.models.profile import AgeGroup
+from app.models.profile import AgeGroup, Profile
 from app.models.question import Question, active_question_clause
 from app.models.user_response import UserResponse
 
@@ -196,7 +196,17 @@ async def try_complete_assessment(
 
     assessment.status = AssessmentStatus.completed
     assessment.completed_at = datetime.now(timezone.utc)
+    await _notify_crm(assessment, db)
     return True
+
+
+async def _notify_crm(assessment: Assessment, db: AsyncSession) -> None:
+    """The deal of this student moves to «Диагностика пройдена» (ТЗ §3.3)."""
+    from app.services.crm import progress  # imported late: the CRM builds on the platform
+
+    user_id = await db.scalar(select(Profile.user_id).where(Profile.id == assessment.profile_id))
+    if user_id is not None:
+        await progress.student_progressed(db, user_id)
 
 
 async def try_complete_assessment_if_ready(

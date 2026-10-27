@@ -168,3 +168,18 @@ async def test_patch_me_rejects_unknown_locale_via_validator(
         "/api/v1/auth/me", json={"locale": "fr"}, headers=auth_headers
     )
     assert resp.status_code == 422
+
+
+async def test_staff_sets_their_name_and_students_cannot(
+    client: httpx.AsyncClient, psychologist_headers: dict[str, str], auth_headers: dict[str, str]
+) -> None:
+    """An invited specialist names themselves on the first sign-in; the
+    locale is left alone when not sent."""
+    before = (await client.get("/api/v1/auth/me", headers=psychologist_headers)).json()
+    named = await client.patch("/api/v1/auth/me", json={"full_name": "  Лолита Ахметова "}, headers=psychologist_headers)
+    assert named.status_code == 200
+    assert named.json()["full_name"] == "Лолита Ахметова" and named.json()["locale"] == before["locale"]
+    assert (await client.patch("/api/v1/auth/me", json={"full_name": " "}, headers=psychologist_headers)).status_code == 422
+
+    student = await client.patch("/api/v1/auth/me", json={"full_name": "Алихан"}, headers=auth_headers)
+    assert student.status_code == 403 and student.json()["error_code"] == "full_name_staff_only"
