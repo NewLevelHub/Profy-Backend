@@ -83,6 +83,21 @@ class Settings(BaseSettings):
     WEEK_REMINDERS_ENABLED: bool = True
     WEEK_REMINDERS_INTERVAL_SECONDS: int = 300
 
+    # Telegram bot for specialists: call reminders 24 h and 1 h before
+    # (app/services/telegram/). Off while the token is empty — no route
+    # answers, no background check runs, the Profile card stays hidden.
+    # TELEGRAM_BOT_USERNAME without «@» builds the link t.me/<name>?start=…;
+    # TELEGRAM_WEBHOOK_SECRET is the secret_token given to setWebhook
+    # (scripts/telegram_set_webhook.py), checked on every update.
+    TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_BOT_USERNAME: str = ""
+    TELEGRAM_WEBHOOK_SECRET: str = ""
+    TELEGRAM_REMINDERS_INTERVAL_SECONDS: int = 120
+
+    @property
+    def telegram_enabled(self) -> bool:
+        return bool(self.TELEGRAM_BOT_TOKEN and self.TELEGRAM_BOT_USERNAME and self.TELEGRAM_WEBHOOK_SECRET)
+
     # Which backend build_storage_backend() returns:
     #   "fs"  — write photos to STORAGE_FS_ROOT on disk; nginx serves them
     #           directly (default; no object-storage service to run).

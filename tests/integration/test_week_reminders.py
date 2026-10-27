@@ -101,3 +101,38 @@ async def test_reminder_moment_is_almaty_wall_time(db_session: AsyncSession) -> 
     moment = await reminders.reminder_moment(db_session, tz.at(MONDAY, time(9, 0)))
     # Friday 18:00 in Almaty (UTC+5) is 13:00 UTC.
     assert moment == datetime(2030, 3, 8, 13, 0, tzinfo=moment.tzinfo)
+
+
+async def test_the_reminder_goes_to_telegram_too(db_session: AsyncSession, sent: list[dict], monkeypatch) -> None:
+    """With the bot set up, a linked specialist gets it in Telegram as well;
+    without it, only the email (app/services/telegram/)."""
+    from unittest.mock import AsyncMock
+
+    from app.config import settings
+    from app.models.telegram import TelegramLink
+    from app.services.telegram import client as telegram_client
+
+    send = AsyncMock(return_value=True)
+    monkeypatch.setattr(telegram_client, "send_message", send)
+    monkeypatch.setattr(settings, "FRONTEND_URL", "https://profile.example.kz")
+    await _set_reminder(db_session, 5, time(18, 0))
+    linked = await _specialist(db_session)
+    db_session.add(TelegramLink(user_id=linked.id, chat_id=31337))
+    await db_session.flush()
+
+    monkeypatch.setattr(settings, "TELEGRAM_BOT_TOKEN", "")
+    await reminders.send_due_week_reminders(db_session, tz.at(FRIDAY, time(18, 5)))
+    assert len(_to(sent, linked)) == 1 and not [c for c in send.await_args_list if c.args[0] == 31337]
+
+    other = await _specialist(db_session)
+    db_session.add(TelegramLink(user_id=other.id, chat_id=31338))
+    await db_session.flush()
+    monkeypatch.setattr(settings, "TELEGRAM_BOT_TOKEN", "123:token")
+    monkeypatch.setattr(settings, "TELEGRAM_BOT_USERNAME", "profile_test_bot")
+    monkeypatch.setattr(settings, "TELEGRAM_WEBHOOK_SECRET", "secret")
+    await reminders.send_due_week_reminders(db_session, tz.at(FRIDAY, time(18, 10)))
+    assert len(_to(sent, other)) == 1
+    (_, text, button), = [c.args for c in send.await_args_list if c.args[0] == 31338]
+    # In the specialist's language (kk), with the week and the button.
+    assert "11.03–17.03.2030" in text and "Дайын, апта толтырылды" in text
+    assert button == ("«Кесте» бөліміне өту", "https://profile.example.kz/psychologist/schedule")

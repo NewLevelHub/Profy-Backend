@@ -549,3 +549,52 @@ async def test_cancelling_the_second_call_keeps_the_deals_specialist(
     # And a new second call can be set.
     state = (await client.get(path, headers=psychologist_headers)).json()
     assert state["second"] is None and state["can_schedule"] is True
+
+
+async def test_a_new_report_is_announced_to_the_latest_deals_specialist(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    manager: User,
+    test_user: User,
+    auth_headers: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A client who came back to another specialist: only the new one hears
+    of the report — by email, and in Telegram with the review link."""
+    from app.models.telegram import TelegramLink
+    from app.services.telegram import client as telegram_client
+
+    sent = capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    telegram = AsyncMock(return_value=True)
+    monkeypatch.setattr(telegram_client, "send_message", telegram)
+    monkeypatch.setattr(settings, "TELEGRAM_BOT_TOKEN", "123:token")
+    monkeypatch.setattr(settings, "TELEGRAM_BOT_USERNAME", "profile_test_bot")
+    monkeypatch.setattr(settings, "TELEGRAM_WEBHOOK_SECRET", "secret")
+
+    earlier_specialist = await _user(db_session, UserRole.psychologist, "Прежний")
+    earlier = await _booked(client, db_session, manager, specialist=earlier_specialist)
+    url = await _invite(client, manager, earlier["id"])
+    assert (await client.post(ACCEPT, json={"token": _token(url)}, headers=auth_headers)).status_code == 204
+    done = await db_session.get(CrmDeal, uuid.UUID(earlier["id"]))
+    done.result = DealResult.won
+    done.created_at -= timedelta(days=30)
+
+    new_specialist = await _user(db_session, UserRole.psychologist, "Новый")
+    db_session.add(TelegramLink(user_id=new_specialist.id, chat_id=8080))
+    await db_session.flush()
+    deal = await _booked(client, db_session, manager, specialist=new_specialist)
+    url = await _invite(client, manager, deal["id"])
+    assert (await client.post(ACCEPT, json={"token": _token(url)}, headers=auth_headers)).status_code == 204
+    # The test opens with the first call.
+    first = await db_session.scalar(select(Meeting).where(Meeting.deal_id == uuid.UUID(deal["id"])))
+    first.start_at -= timedelta(days=11)
+    await db_session.flush()
+
+    assessment = await make_student_assessment(db_session, test_user)
+    assert (await generate(client, auth_headers, assessment)).status_code == 200
+    assert [call.args[0] for call in sent["pending"].await_args_list] == [new_specialist.email]
+    (chat, text, button), = [call.args for call in telegram.await_args_list]
+    assert chat == 8080
+    assert "тест пройден — отчёт уже доступен для проверки" in text and "после второго созвона" in text
+    assert button[0] == "Перейти к отчёту" and button[1].endswith(f"/results/{assessment.id}/review")

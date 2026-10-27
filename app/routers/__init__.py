@@ -20,6 +20,7 @@ from app.routers.questions import router as questions_router
 from app.routers.result import router as result_router
 from app.routers.scheduling import router as scheduling_router
 from app.routers.student_invites import router as student_invites_router
+from app.routers.telegram import router as telegram_router
 from app.routers.university import router as university_router
 
 api_router = APIRouter()
@@ -43,4 +44,5 @@ api_router.include_router(result_router, prefix="/api/v1/result")
 api_router.include_router(scheduling_router, prefix="/api/v1/scheduling")
 api_router.include_router(crm_router, prefix="/api/v1/crm")
 api_router.include_router(student_invites_router, prefix="/api/v1/student-invites")
+api_router.include_router(telegram_router, prefix="/api/v1/telegram")
 api_router.include_router(university_router, prefix="/api/v1/universities")
