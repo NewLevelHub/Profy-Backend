@@ -226,6 +226,26 @@ async def send_review_pending_email(
     )
 
 
+async def send_week_reminder_email(
+    to: str, name: str, week: str, *, locale: str = DEFAULT_LOCALE, schedule_url: str
+) -> None:
+    """Специалисту — расписание на следующую неделю не выставлено (PRO-560),
+    на языке специалиста. `week` — уже отформатированный диапазон дат.
+    Best-effort, никогда не raises."""
+    loc = _email_locale(locale)
+    strings = tr("email", locale=loc)
+    await _send_best_effort(
+        to,
+        strings["week_reminder_subject"],
+        strings["week_reminder_plain"].format(name=name, week=week, schedule_url=schedule_url),
+        "week_reminder.html",
+        locale=loc,
+        name=name,
+        week=week,
+        schedule_url=schedule_url,
+    )
+
+
 async def send_result_published_email(
     to: str,
     student_name: str | None,

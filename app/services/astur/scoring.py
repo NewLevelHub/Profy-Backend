@@ -53,8 +53,9 @@ from app.services.astur.bank import (
     BankSubtest,
 )
 from app.services.astur.scoring_rules import ScoringRules
+from app.services.tz import BUSINESS_TIMEZONE
 
-DEFAULT_TIMEZONE = "Asia/Almaty"
+DEFAULT_TIMEZONE = BUSINESS_TIMEZONE
 PHYSICS_MATH_SUBJECT = "physics_math"
 # Tolerated excess of client-reported quick-command time over the server's
 # own view of the block (network jitter, clock granularity).
