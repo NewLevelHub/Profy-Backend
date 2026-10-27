@@ -18,6 +18,7 @@ from app.i18n.catalog import key as i18n_key
 from app.routers import api_router
 from app.services.admin_listing import AdminSortFieldError
 from app.services.scheduling.reminders import run_week_reminders_loop
+from app.services.telegram.reminders import run_reminders_loop as run_telegram_reminders_loop
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -37,14 +38,17 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.execute(text("SELECT 1"))
     logger.info("Database connected")
-    reminders = (
-        asyncio.create_task(run_week_reminders_loop()) if settings.WEEK_REMINDERS_ENABLED else None
-    )
+    loops = []
+    if settings.WEEK_REMINDERS_ENABLED:
+        loops.append(asyncio.create_task(run_week_reminders_loop()))
+    # Off until the bot is configured (app/services/telegram/).
+    if settings.telegram_enabled:
+        loops.append(asyncio.create_task(run_telegram_reminders_loop()))
     yield
-    if reminders is not None:
-        reminders.cancel()
+    for loop in loops:
+        loop.cancel()
         with contextlib.suppress(asyncio.CancelledError):
-            await reminders
+            await loop
     await engine.dispose()
 
 

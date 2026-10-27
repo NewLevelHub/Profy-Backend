@@ -33,6 +33,7 @@ from app.models.scheduling import (  # noqa: F401 — keep model imported so Ale
     SpecialistWeekReminder,
     SpecialistWeekTemplate,
 )
+from app.models.telegram import TelegramLink, TelegramLinkCode, TelegramMeetingReminder  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.university import University  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.university_image import UniversityImage  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.university_external_ref import UniversityExternalRef  # noqa: F401 — keep model imported so Alembic discovers it
