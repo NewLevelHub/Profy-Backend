@@ -2,7 +2,7 @@ import re
 import uuid
 from typing import Annotated
 
-from pydantic import AfterValidator, BaseModel, EmailStr, Field, field_validator
+from pydantic import AfterValidator, BaseModel, EmailStr, Field, StringConstraints, field_validator
 
 from app.i18n.catalog import key as i18n_key
 from app.i18n import KNOWN_LOCALES
@@ -34,6 +34,8 @@ def _validate_password_complexity(v: str) -> str:
 class RegisterRequest(BaseModel):
     email: NormalizedEmail
     password: str = Field(min_length=8, max_length=PASSWORD_MAX_LENGTH)
+    # The CRM invite token (ТЗ §4.4): required while registration is invite-only.
+    student_invite: str | None = Field(default=None, max_length=128)
 
     @field_validator("password")
     @classmethod
@@ -48,6 +50,8 @@ class LoginRequest(BaseModel):
 
 class GoogleAuthRequest(BaseModel):
     id_token: str = Field(max_length=GOOGLE_ID_TOKEN_MAX_LENGTH)
+    # Needed only when the Google account has no Profile account yet.
+    student_invite: str | None = Field(default=None, max_length=128)
 
 
 class UserInfo(BaseModel):
@@ -89,21 +93,26 @@ class UserResponse(BaseModel):
     role: UserRole
     is_admin: bool
     locale: str = "ru"
+    # Staff name (CRM sidebar, PRO-497); students have none.
+    full_name: str | None = None
 
     model_config = {"from_attributes": True}
 
 
 class UpdateMeRequest(BaseModel):
-    """PATCH /auth/me — currently only the UI locale. Any value in
-    `KNOWN_LOCALES` is accepted and stored (a `kk` choice is honored only from
-    KZ-603 on); anything else is a 422."""
+    """PATCH /auth/me — the UI locale and a staff member's name; each is
+    optional and left alone when not sent. Any locale in `KNOWN_LOCALES` is
+    accepted and stored (a `kk` choice is honored only from KZ-603 on);
+    anything else is a 422. The name is staff-only: an invited specialist
+    whose invitation had none sets it on the first sign-in."""
 
-    locale: str = Field(max_length=LOCALE_MAX_LENGTH)
+    locale: str | None = Field(default=None, max_length=LOCALE_MAX_LENGTH)
+    full_name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=255)] | None = None
 
     @field_validator("locale")
     @classmethod
-    def _known_locale(cls, v: str) -> str:
-        if v not in KNOWN_LOCALES:
+    def _known_locale(cls, v: str | None) -> str | None:
+        if v is not None and v not in KNOWN_LOCALES:
             raise ValueError(i18n_key("api_errors", "unsupported_locale").format(locales=sorted(KNOWN_LOCALES)))
         return v
 

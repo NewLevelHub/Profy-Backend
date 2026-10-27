@@ -16,6 +16,7 @@ from app.models.invitation import Invitation
 from app.models.user import User
 from app.services import invitation_service
 from app.services.auth_service import create_jwt_token
+from app.services.crm import invites
 
 # requests.Session (which google.auth.transport.requests.Request wraps) isn't
 # safe for concurrent use from multiple threads. asyncio.to_thread draws from
@@ -118,10 +119,13 @@ def _adopt_as_google_verified(user: User, google_id: str, invitation: Invitation
     user.is_verified = True
 
 
-async def login_or_register_google(token: str, db: AsyncSession) -> tuple[User, str]:
+async def login_or_register_google(
+    token: str, db: AsyncSession, *, student_invite: str | None = None
+) -> tuple[User, str]:
     """Google sign-in. A pending staff invitation on the Google email is
     accepted here as well (PRO-462): a new or adopted account gets the
-    invited role instead of `student`."""
+    invited role instead of `student`. A new student account needs the CRM
+    invite link while registration is invite-only (ТЗ §4.4)."""
     claims = await verify_google_id_token(token)
     google_id, email = claims["sub"], claims["email"].strip().lower()
 
@@ -136,6 +140,8 @@ async def login_or_register_google(token: str, db: AsyncSession) -> tuple[User, 
         await db.refresh(user)
         return user, create_jwt_token(user)
 
+    if invitation is None:
+        await invites.require_open_invite(db, student_invite)
     user = User(email=email, hashed_password=None, google_id=google_id, is_verified=True)
     if invitation is not None:
         invitation_service.apply_to_user(user, invitation)

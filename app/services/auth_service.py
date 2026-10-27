@@ -14,6 +14,7 @@ from app.models.email_verification import EmailVerificationToken
 from app.models.user import User
 from app.schemas.auth import RegisterResponse
 from app.services import email_service, invitation_service
+from app.services.crm import invites
 from app.services.token_utils import code_matches, generate_code, hash_code, record_failed_attempt
 
 logger = logging.getLogger(__name__)
@@ -75,7 +76,7 @@ async def _create_verification_token(user_id: uuid.UUID, db: AsyncSession) -> st
 
 
 async def register(
-    email: str, password: str, db: AsyncSession, *, locale: str = "ru"
+    email: str, password: str, db: AsyncSession, *, locale: str = "ru", student_invite: str | None = None
 ) -> RegisterResponse:
     result = await db.execute(select(User).where(User.email == email))
     if result.scalar_one_or_none():
@@ -84,6 +85,9 @@ async def register(
     # account here, and a verified one blocks the invitation for good.
     if await invitation_service.has_pending(db, email):
         raise invitation_service.invitation_error(status.HTTP_409_CONFLICT, "invited_email_register")
+    # Paid service: a new student comes only with the CRM link. The link is
+    # used up once the verified student opens it (POST /student-invites/accept).
+    await invites.require_open_invite(db, student_invite)
 
     user = User(
         email=email,

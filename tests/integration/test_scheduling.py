@@ -137,7 +137,7 @@ async def test_specialist_opens_slots_and_change_is_journaled(
         f"{URL}/specialists/me/availability",
         json={"changes": [
             _interval(day, time(10, 0), time(11, 0)),
-            _interval(day, time(14, 0), time(14, 30), "personal"),
+            _interval(day, time(14, 0), time(14, 30)),
         ]},
         headers=_headers(specialist),
     )
@@ -146,7 +146,7 @@ async def test_specialist_opens_slots_and_change_is_journaled(
     assert _slot(week, tz.at(day, time(10, 0)))["state"] == "free"
     assert _slot(week, tz.at(day, time(10, 30)))["state"] == "free"
     assert _slot(week, tz.at(day, time(11, 0)))["state"] == "closed"
-    assert _slot(week, tz.at(day, time(14, 0)))["state"] == "personal"
+    assert _slot(week, tz.at(day, time(14, 0)))["state"] == "free"
 
     entry = await db_session.scalar(
         select(AuditLog).where(AuditLog.entity_id == str(specialist.id))
@@ -245,7 +245,7 @@ async def test_overlapping_changes_are_rejected(client: httpx.AsyncClient, speci
         f"{URL}/specialists/me/availability",
         json={"changes": [
             _interval(day, time(10, 0), time(11, 0)),
-            _interval(day, time(10, 30), time(11, 30), "personal"),
+            _interval(day, time(10, 30), time(11, 30), "closed"),
         ]},
         headers=_headers(specialist),
     )
@@ -479,3 +479,14 @@ async def test_deleting_actor_keeps_journal_entry(db_session: AsyncSession) -> N
     await db_session.refresh(entry)
     assert entry.actor_id is None
     assert entry.actor_role == "owner"
+
+
+async def test_personal_state_is_gone(client: httpx.AsyncClient, specialist: User) -> None:
+    """Only free and closed are marked (decision of 21.10)."""
+    day = _future_monday()
+    response = await client.patch(
+        f"{URL}/specialists/me/availability",
+        json={"changes": [_interval(day, time(10, 0), time(11, 0), "personal")]},
+        headers=_headers(specialist),
+    )
+    assert response.status_code == 422

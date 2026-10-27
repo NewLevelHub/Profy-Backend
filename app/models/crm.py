@@ -1,8 +1,8 @@
 """CRM of the sales team (ТЗ CRM Profile v4.1, part 1, §3.2–3.3).
 
-Leads are entered by hand for now (no WhatsApp, no ads data) and every stage
-is moved by hand, including the after-sale ones that the platform will drive
-by events later. Contract: docs/frontend-crm-api-contract.md.
+Leads are entered by hand for now (no WhatsApp, no ads data). Stages 1–6 move
+by hand; 7 «Диагностика пройдена» and 8 «Отчёт опубликован» also follow the
+linked student account (app/services/crm/progress.py). Contract: docs/frontend-crm-api-contract.md.
 """
 
 import enum
@@ -18,7 +18,12 @@ from app.database import Base
 
 
 class DealStage(str, enum.Enum):
-    """The funnel, in order (ТЗ §3.3). Index = position on the board."""
+    """The funnel, in order (ТЗ §3.3). Index = position on the board.
+
+    ТЗ's «Разбор назначен» is not a stage: the specialist sets the second
+    call from the first call on, before or after the test, so it cannot sit
+    in one line with «Диагностика пройдена». The deal card shows it instead
+    (`DealCard.review_start`)."""
 
     unsorted = "unsorted"                    # 1 Неразобранное
     qualification = "qualification"          # 2 Квалификация
@@ -27,9 +32,8 @@ class DealStage(str, enum.Enum):
     invoice = "invoice"                      # 5 Счёт выставлен
     paid = "paid"                            # 6 Оплачено — only by marking the payment
     diagnostics_done = "diagnostics_done"    # 7 Диагностика пройдена
-    report_published = "report_published"    # 8 Отчёт опубликован
-    review_scheduled = "review_scheduled"    # 9 Разбор назначен
-    review_done = "review_done"              # 10 Разбор проведён
+    review_done = "review_done"              # 8 Разбор проведён
+    report_published = "report_published"    # 9 Отчёт опубликован — after the review
 
 
 STAGE_ORDER = list(DealStage)
@@ -95,16 +99,22 @@ class CrmStudent(Base):
 
 
 class CrmTariff(Base):
-    """Price list. The price is copied into a deal when the tariff is picked
-    and never recalculated after (ТЗ §3.7)."""
+    """Price list, kept by the owner in the CRM. The price is copied into a
+    deal when the tariff is picked and never recalculated after (ТЗ §3.7)."""
 
     __tablename__ = "crm_tariffs"
 
     code: Mapped[str] = mapped_column(String(32), primary_key=True)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     price: Mapped[int] = mapped_column(Integer, nullable=False)
-    # Length of the call the manager books: 30 intro, 60 for «Консультация».
-    meeting_minutes: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    # A specialist's call and their review (and edits) of the report before
+    # the student sees it. Without it there is no call and the report is
+    # published as soon as it is built.
+    # Copied into the deal with the price (CrmDeal.psychologist_review).
+    psychologist_review: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    # «Что входит» — shown in the price list; the owner edits it in the CRM.
+    description: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    # An archived tariff is not offered for new deals; deals that have it keep it.
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
     sort: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default="0")
 
@@ -134,6 +144,11 @@ class CrmDeal(Base):
     manager_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    # The student's Profile account, linked by the invite link (ТЗ §4.4) or
+    # by the owner. Test and report progress of this account moves stages 7–8.
+    student_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     # Set by the booking (the system picks the specialist).
     specialist_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
@@ -143,6 +158,10 @@ class CrmDeal(Base):
     non_target_reason: Mapped[str | None] = mapped_column(Text)
     tariff_code: Mapped[str | None] = mapped_column(ForeignKey("crm_tariffs.code"))
     price: Mapped[int | None] = mapped_column(Integer)
+    # The tariff's psychologist_review on the day it was chosen, like the
+    # price: decides whether the student's report waits for a psychologist
+    # (app/services/crm/progress.report_needs_review). None — no tariff.
+    psychologist_review: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     discount: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     paid_amount: Mapped[int | None] = mapped_column(Integer)
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -180,7 +199,70 @@ class CrmDealEvent(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     # created | accepted | stage | qualified | tariff | payment | payment_cancelled
-    # | consent | closed | note | booked | manager | updated
+    # | consent | closed | note | booked | manager | updated | invite
+    # | student_linked | payment_check. Automatic ones have no actor.
     kind: Mapped[str] = mapped_column(String(32), nullable=False)
     data: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     text: Mapped[str | None] = mapped_column(Text)
+
+
+class CrmStudentInvite(Base):
+    """One-time link that registers (or signs in) the student and ties the
+    account to the deal (ТЗ §4.4, П2-10/П2-11). A new link revokes the
+    previous one. The token is kept hashed, plus encrypted so the manager can
+    copy the link again."""
+
+    __tablename__ = "crm_student_invites"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    deal_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("crm_deals.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    token_ciphertext: Mapped[str] = mapped_column(Text, nullable=False)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    used_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class TaskType(str, enum.Enum):
+    call = "call"
+    message = "message"
+    meeting = "meeting"
+    payment_check = "payment_check"  # «Проверить оплату»
+    reschedule = "reschedule"        # a manager asks the owner to move a call
+    other = "other"
+
+
+class CrmTask(Base):
+    """A to-do with a deadline (ТЗ §3.11). A sales manager sets tasks only for
+    themself; the owner and the head of sales set them for anyone in sales."""
+
+    __tablename__ = "crm_tasks"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    deal_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("crm_deals.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    assignee_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    type: Mapped[TaskType] = mapped_column(Enum(TaskType, native_enum=False, length=32), nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    done_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    result: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )

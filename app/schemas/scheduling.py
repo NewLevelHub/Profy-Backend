@@ -14,10 +14,10 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field
 
-SlotState = Literal["closed", "free", "personal", "booked"]
+SlotState = Literal["closed", "free", "booked"]
 # `booked` is set by a booking (R2), never through the availability endpoints.
-EditableSlotState = Literal["closed", "free", "personal"]
-TemplateSlotState = Literal["free", "personal"]
+EditableSlotState = Literal["closed", "free"]
+TemplateSlotState = Literal["free"]
 MeetingType = Literal["intro30", "main60"]
 MeetingStatus = Literal["pending", "confirmed", "done", "no_show", "cancelled"]
 
@@ -190,6 +190,10 @@ class SchedulingSettings(BaseModel):
     week_reminder_time: WallTime
 
 
+class SpecialistMeetingStatusIn(BaseModel):
+    status: Literal["confirmed", "done", "no_show"]
+
+
 class SpecialistMeeting(BaseModel):
     """A meeting as the specialist sees it: the handoff card the manager
     filled (ТЗ §3.10) — no prices, no sales chat (ТЗ §4.8)."""
@@ -200,3 +204,27 @@ class SpecialistMeeting(BaseModel):
     start: datetime
     end: datetime
     handoff: dict[str, Any]
+    # The student's Profile account once linked by the CRM invite — the
+    # specialist's link to the student card; null before that.
+    student_id: uuid.UUID | None = None
+    # "first" — the call the manager booked; "second" — the report review
+    # the specialist set. Null for a call with no deal.
+    call: Literal["first", "second"] | None = None
+
+
+SecondMeetingBlocker = Literal["no_consultation", "first_not_booked", "first_not_started", "already_scheduled"]
+
+
+class SecondMeetingState(BaseModel):
+    """The student's calls with this specialist, as the specialist's cabinet
+    shows them: the first one the manager booked, the second one the
+    specialist sets. `blocker` says why the second cannot be set now."""
+
+    first: SpecialistMeeting | None
+    second: SpecialistMeeting | None
+    can_schedule: bool
+    blocker: SecondMeetingBlocker | None
+
+
+class SecondMeetingIn(BaseModel):
+    start: datetime

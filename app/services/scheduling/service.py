@@ -19,12 +19,14 @@ from app.errors import AppError
 from app.i18n.catalog import key as i18n_key
 from app.models.scheduling import (
     Meeting,
+    MeetingStatus,
     SchedulingSettings as SettingsRow,
     SlotState,
     SpecialistSlot,
     SpecialistWeekPublication,
     SpecialistWeekTemplate,
 )
+from app.models.crm import CrmDeal
 from app.models.user import User, UserRole
 from app.schemas import scheduling as schemas
 from app.services import audit, tz
@@ -660,18 +662,43 @@ async def list_meetings(
         raise scheduling_error(
             status.HTTP_422_UNPROCESSABLE_ENTITY, "range_invalid", max_days=schemas.MAX_FREE_RANGE_DAYS
         )
-    rows = await db.execute(
-        select(Meeting)
-        .where(
-            Meeting.specialist_id == specialist.id,
-            Meeting.start_at >= tz.day_bounds(date_from)[0],
-            Meeting.start_at < tz.day_bounds(date_to)[1],
+    meetings = (
+        await db.execute(
+            select(Meeting)
+            .where(
+                Meeting.specialist_id == specialist.id,
+                Meeting.start_at >= tz.day_bounds(date_from)[0],
+                Meeting.start_at < tz.day_bounds(date_to)[1],
+            )
+            .order_by(Meeting.start_at)
         )
-        .order_by(Meeting.start_at)
-    )
+    ).scalars().all()
+    deal_ids = {m.deal_id for m in meetings if m.deal_id}
+    students: dict[uuid.UUID, uuid.UUID | None] = {}
+    firsts: dict[uuid.UUID, uuid.UUID] = {}
+    if deal_ids:
+        students = dict(
+            (await db.execute(select(CrmDeal.id, CrmDeal.student_user_id).where(CrmDeal.id.in_(deal_ids)))).all()
+        )
+        # Each deal's earliest live call is its first; a later one, the second.
+        for deal_id, meeting_id in (
+            await db.execute(
+                select(Meeting.deal_id, Meeting.id)
+                .where(Meeting.deal_id.in_(deal_ids), Meeting.status != MeetingStatus.cancelled)
+                .order_by(Meeting.deal_id, Meeting.start_at)
+            )
+        ).all():
+            firsts.setdefault(deal_id, meeting_id)
+
+    def call(m: Meeting) -> str | None:
+        if m.deal_id is None or m.status == MeetingStatus.cancelled:
+            return None
+        return "first" if firsts.get(m.deal_id) == m.id else "second"
+
     return [
         schemas.SpecialistMeeting(
-            id=m.id, type=m.type.value, status=m.status.value, start=m.start_at, end=m.end_at, handoff=m.handoff
+            id=m.id, type=m.type.value, status=m.status.value, start=m.start_at, end=m.end_at, handoff=m.handoff,
+            student_id=students.get(m.deal_id) if m.deal_id else None, call=call(m),
         )
-        for m in rows.scalars()
+        for m in meetings
     ]
