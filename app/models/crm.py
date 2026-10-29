@@ -119,6 +119,19 @@ class CrmTariff(Base):
     sort: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default="0")
 
 
+class CrmSource(Base):
+    """Where the lead came from — a list the owner keeps, so the analytics by
+    source does not split into typos. Never deleted (deals refer to it):
+    archived, like a tariff."""
+
+    __tablename__ = "crm_sources"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(120), nullable=False, unique=True)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    sort: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default="0")
+
+
 class CrmDeal(Base):
     """One tariff sold to one student (ТЗ §1.4)."""
 
@@ -166,7 +179,9 @@ class CrmDeal(Base):
     paid_amount: Mapped[int | None] = mapped_column(Integer)
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     payment_method: Mapped[PaymentMethod | None] = mapped_column(Enum(PaymentMethod, native_enum=False, length=16))
-    source: Mapped[str | None] = mapped_column(String(255))
+    source_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("crm_sources.id"), nullable=True, index=True
+    )
     first_message: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True

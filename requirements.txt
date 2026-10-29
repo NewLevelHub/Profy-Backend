@@ -20,5 +20,7 @@ Pillow==11.1.0
 # photos are .avif, not .webp/.jpeg, and stock Pillow can't open them at all
 # ("cannot identify image file").
 pillow-avif-plugin==1.4.6
+# The CRM analytics workbook (app/services/crm/analytics.py).
+openpyxl==3.1.5
 pytest==8.3.4
 pytest-asyncio==0.24.0
