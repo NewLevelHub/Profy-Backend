@@ -35,7 +35,7 @@ ISO-8601.
 | PATCH | `/sources/{id}` | владелец | `{"name"?, "active"?}` — переименовать, в архив (§5.1) |
 | GET | `/dashboard?from=&to=` | владелец | дашборд владельца (§15) |
 | GET | `/analytics/export?month=YYYY-MM` | владелец, РОП, маркетолог | .xlsx: воронка, источники, менеджеры, реклама (§16) |
-| GET | `/ads` | продажи | объявления Meta для «Креатива» сделки (§17) |
+| GET | `/ads` | продажи | объявления Meta для «Источника» сделки (§5.1) |
 | GET | `/ads/report?from=&to=` | владелец, РОП, маркетолог | реклама по креативам (§17) |
 | POST | `/ads/sync` | владелец | «Обновить сейчас» (§17) |
 | GET/PUT | `/ads/rates` | чтение — аналитики, запись — владелец | курс $ → ₸ (§17) |
@@ -109,7 +109,9 @@ ISO-8601.
   "is_target": true, "non_target_reason": null,
   "tariff_code": "testing", "price": 45000, "discount": 5000, "total": 40000,
   "paid_amount": null, "paid_at": null, "payment_method": null,
-  "source_id": "…", "source": "Instagram", "first_message": "Здравствуйте…",
+  "source": {"kind": "ad", "id": "120…", "name": "Статика 1.4", "campaign_name": "…",
+             "adset_name": "23.10 | Advantage+", "attribution": "manual"},  // §5.1; null — не определён
+  "first_message": "Здравствуйте…",
   "meeting": {"id": "…", "type": "intro30", "status": "pending",
               "start": "…", "end": "…", "specialist": null},  // имя — только РОП/владельцу
   "student_account": {"linked": false, "email": null,
@@ -136,14 +138,14 @@ ISO-8601.
 student_name, tariff_code, total, is_target, paid, consent, manager,
 meeting_start, review_start, next_task_due, closed_at, created_at`. `next_task_due` — срок
 ближайшей открытой задачи; `null` = «Нет задач», в прошлом — просрочено.
-`source_id` — источник лида из справочника, `source` — его название. В карточке `stage_at` — когда сделка пришла на текущий этап.
+`source` — источник лида (§5.1), то же и в плитке доски. В карточке `stage_at` — когда сделка пришла на текущий этап.
 
 ## 5. Новый лид и дубли
 
 ```jsonc
 POST /deals
 {"parent": {"full_name": "Асель", "phone": "8 701 123 45 67"},
- "student": {"full_name": "Камила"}, "source_id": "…", "first_message": "…"}
+ "student": {"full_name": "Камила"}, "source": {"ad_id": "120…"}, "first_message": "…"}
 ```
 
 Телефон нормализуется в `+7XXXXXXXXXX`. Если клиент с таким телефоном уже
@@ -156,13 +158,28 @@ POST /deals
 менеджера или РОП; без него `422 manager_required`, с неактивным —
 `422 manager_not_found`. РОП берёт себе или отдаёт другому.
 
-### 5.1. Источники
+### 5.1. Источник лида (ТЗ §3.12.1)
 
-Источник выбирают из справочника (`meta.sources`, только `active`), а не пишут
-текстом — иначе аналитика по источникам расползается на опечатки. Владелец
-добавляет, переименовывает и архивирует их; удалить нельзя — архивный источник
-остаётся у сделок, где он стоит. Дубль без учёта регистра — `409 source_exists`,
-архивный или неизвестный в сделке — `422 source_not_found`.
+Одно поле: **объявление Meta** или **источник из справочника**, который не
+реклама («Повторный клиент», «Рекомендация», «Органика Instagram», «Другое»…).
+Не текстом — иначе аналитика расползается на опечатки.
+
+Ставится в `POST /deals` и `PATCH /deals/{id}`: `"source": {"ad_id": "…"}` или
+`"source": {"source_id": "…"}` — ровно одно из двух (иначе `422`); `"source": null`
+— снять. Объявления — `GET /ads` (с кампанией и группой: имена повторяются в
+разных группах), источники — `meta.sources` (только `active`).
+
+В ответе `source: {kind: "ad"|"source", id, name, campaign_name, adset_name,
+attribution}` или `null` — «Креатив не определён». `attribution` — как найден:
+`ad` «авто: реклама» (ID объявления пришёл в сообщении WhatsApp), `greeting`
+«авто: приветствие», `manual` «вручную». Автоматический менеджер не меняет —
+`403 attribution_auto_locked`; РОП/владелец исправляют, и он становится
+«вручную». Всё пишется в журнал и ленту (`kind: source`). Неизвестное объявление
+— `422 ad_not_found`, архивный источник — `422 source_not_found`.
+
+Справочник источников ведёт владелец: добавляет, переименовывает, архивирует;
+удалить нельзя — архивный остаётся у сделок с ним. Дубль без учёта регистра —
+`409 source_exists`.
 
 ## 6. Тариф, скидка, оплата
 
@@ -255,7 +272,9 @@ POST /deals/{id}/booking
 | `stage` | этап |
 | `tariff` | код тарифа |
 | `manager` | id ответственного или `none` — без ответственного |
-| `source_id` | источник |
+| `source_id` | источник из справочника |
+| `ad_id` | объявление Meta |
+| `no_source` | `true` — источник не определён |
 | `paid` | `true` / `false` |
 | `created_from`, `created_to` | дата создания (по Алматы), включительно |
 
@@ -430,10 +449,8 @@ ROMI; «Креатив не определён»; итог). Маркетоло�
 сутки — 7 дней и список объявлений, в первый раз — 90 дней. Без токена отчёт
 показывает только сделки CRM (`status.enabled: false`).
 
-Сделка привязывается к объявлению полем `meta_ad_id` в `PATCH /deals/{id}`
-(в карточке — `meta_ad`). Ставит менеджер; исправить уже стоящий —
-РОП/владелец (`403 ad_change_forbidden`), неизвестное — `422 ad_not_found`.
-Пока WhatsApp не передаёт метку объявления, это делают вручную.
+Сделка привязывается к объявлению через источник (§5.1). Пока WhatsApp не
+подключён, его выбирает менеджер.
 
 ```jsonc
 GET /ads/report?from=2026-10-01&to=2026-10-31
@@ -442,8 +459,10 @@ GET /ads/report?from=2026-10-01&to=2026-10-31
    "campaign_id": "…", "campaign_name": "Profile | Переписки в WhatsApp | 23.10",
    "spend_usd": 47.11, "spend": 23791,      // ₸ по курсу; null — у дня с расходом нет курса
    "impressions": 3994, "reach": 3100, "clicks": 124, "link_clicks": 80, "conversations": 15,
-   "leads": 3, "target": 2, "paid": 1, "revenue": 70000, "won": 0},
-   {"ad_id": null, …}],                       // «Креатив не определён»: только сделки
+   "leads": 3, "leads_manual": 1, "target": 2, "paid": 1, "revenue": 70000, "won": 0},
+   {"ad_id": null, "source_id": "…", "source_name": "Рекомендация", …},  // не реклама: только сделки
+   {"ad_id": null, "source_id": null, …}],    // «Креатив не определён»
+                                              // строки в сумме — все лиды периода
  "days_without_rate": 0,
  "status": {"enabled": true, "synced_at": "…", "error": null, "error_at": null, "last_day": "2026-10-29"}}
 ```

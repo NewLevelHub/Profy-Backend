@@ -19,7 +19,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models.crm import CrmDeal, DealResult
+from app.models.crm import Attribution, CrmDeal, CrmSource, DealResult
 from app.models.meta_ads import MetaAd, MetaAdInsight, MetaFxRate, MetaSyncState
 from app.models.user import User
 from app.schemas import crm as schemas
@@ -39,11 +39,6 @@ def _ad_item(ad: MetaAd) -> schemas.AdItem:
 async def ad_items(db: AsyncSession) -> list[schemas.AdItem]:
     rows = await db.execute(select(MetaAd).order_by(MetaAd.campaign_name, MetaAd.adset_name, MetaAd.name))
     return [_ad_item(ad) for ad in rows.scalars()]
-
-
-async def ad_item(db: AsyncSession, ad_id: str | None) -> schemas.AdItem | None:
-    ad = await db.get(MetaAd, ad_id) if ad_id else None
-    return _ad_item(ad) if ad else None
 
 
 async def status_out(db: AsyncSession) -> schemas.AdsStatus:
@@ -107,19 +102,23 @@ async def report(db: AsyncSession, date_from: date, date_to: date) -> schemas.Ad
             totals[field] += getattr(row, field)
 
     start, end = tz.day_bounds(date_from)[0], tz.day_bounds(date_to)[1]
-    crm: dict[str | None, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    # Keyed by the ad id, by ("source", id) for the other sources, None — no source.
+    crm: dict = defaultdict(lambda: defaultdict(int))
     for deal in (await db.execute(
         select(CrmDeal).where(CrmDeal.created_at >= start, CrmDeal.created_at < end)
     )).scalars():
-        totals = crm[deal.meta_ad_id]
+        totals = crm[deal.meta_ad_id or (("source", deal.source_id) if deal.source_id else None)]
         totals["leads"] += 1
+        totals["leads_manual"] += deal.attribution == Attribution.manual
         totals["target"] += deal.is_target is True
         if deal.paid_at is not None:
             totals["paid"] += 1
             totals["revenue"] += deal.paid_amount or 0
         totals["won"] += deal.result == DealResult.won
 
-    ad_ids = {i for i in (*meta, *crm) if i is not None}
+    deal_fields = ("leads", "leads_manual", "target", "paid", "revenue", "won")
+    no_meta = dict(spend_usd=0, spend=0, impressions=0, reach=0, clicks=0, link_clicks=0, conversations=0)
+    ad_ids = {i for i in (*meta, *crm) if isinstance(i, str)}
     ads = {ad.id: ad for ad in (await db.execute(select(MetaAd).where(MetaAd.id.in_(ad_ids)))).scalars()} if ad_ids else {}
 
     rows = []
@@ -132,14 +131,24 @@ async def report(db: AsyncSession, date_from: date, date_to: date) -> schemas.Ad
             spend_usd=float(m.get("spend_usd", 0)),
             spend=None if m.get("unrated") else int(round(m.get("spend", 0))),
             **{f: int(m.get(f, 0)) for f in ("impressions", "reach", "clicks", "link_clicks", "conversations")},
-            **{f: c.get(f, 0) for f in ("leads", "target", "paid", "revenue", "won")},
+            **{f: c.get(f, 0) for f in deal_fields},
+        ))
+    # The leads that are not from an ad, so the totals are every lead (ТЗ §3.12.1).
+    source_ids = [key[1] for key in crm if isinstance(key, tuple)]
+    names = dict((await db.execute(
+        select(CrmSource.id, CrmSource.name).where(CrmSource.id.in_(source_ids))
+    )).all()) if source_ids else {}
+    for source_id in sorted(source_ids, key=lambda i: names.get(i, "")):
+        c = crm[("source", source_id)]
+        rows.append(schemas.AdRow(
+            ad_id=None, ad_name=None, adset_id=None, adset_name=None, campaign_id=None, campaign_name=None,
+            source_id=source_id, source_name=names.get(source_id), **no_meta, **{f: c.get(f, 0) for f in deal_fields},
         ))
     if None in crm:
         c = crm[None]
         rows.append(schemas.AdRow(
             ad_id=None, ad_name=None, adset_id=None, adset_name=None, campaign_id=None, campaign_name=None,
-            spend_usd=0, spend=0, impressions=0, reach=0, clicks=0, link_clicks=0, conversations=0,
-            **{f: c.get(f, 0) for f in ("leads", "target", "paid", "revenue", "won")},
+            **no_meta, **{f: c.get(f, 0) for f in deal_fields},
         ))
     return schemas.AdsReport(
         from_=date_from, to=date_to, rows=rows, days_without_rate=len(unrated), status=await status_out(db),
