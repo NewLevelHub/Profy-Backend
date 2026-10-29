@@ -11,10 +11,10 @@ corrects it, and the correction is a manual one. Every change is journaled.
 import uuid
 
 from fastapi import status
-from sqlalchemy import select
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.crm import Attribution, CrmDeal, CrmSource
+from app.models.crm import Attribution, CrmDeal, CrmDealEvent, CrmMessage, CrmSource, MessageDirection
 from app.models.meta_ads import MetaAd
 from app.models.user import User, UserRole
 from app.schemas import crm as schemas
@@ -85,3 +85,29 @@ def set_automatic(deal: CrmDeal, ad_id: str, attribution: Attribution) -> None:
     if deal.meta_ad_id is None and deal.source_id is None:
         deal.meta_ad_id, deal.attribution = ad_id, attribution
 
+
+
+async def attach_late_ads(db: AsyncSession) -> int:
+    """Leads whose WhatsApp message carried an ad the CRM did not know yet (a
+    new ad, before the next Meta sync) get it now, «авто: реклама» — only
+    while their source is still undefined. Run after each Meta sync; the
+    number of deals tied. The caller commits."""
+    rows = (await db.execute(
+        select(CrmDeal, MetaAd.id, MetaAd.name)
+        .join(CrmMessage, and_(CrmMessage.deal_id == CrmDeal.id, CrmMessage.direction == MessageDirection.incoming))
+        .join(MetaAd, MetaAd.id == CrmMessage.ad["sourceId"].astext)
+        .where(
+            CrmDeal.meta_ad_id.is_(None),
+            CrmDeal.source_id.is_(None),
+            CrmMessage.ad["sourceType"].astext == "ad",
+        )
+        .order_by(CrmDeal.id, CrmMessage.at)
+    )).all()
+    tied = 0
+    for deal, ad_id, ad_name in rows:
+        if deal.meta_ad_id is not None:  # an earlier message of this deal tied it
+            continue
+        set_automatic(deal, ad_id, Attribution.ad)
+        db.add(CrmDealEvent(deal_id=deal.id, kind="source", data={"name": ad_name, "meta_ad_id": ad_id, "auto": True}))
+        tied += 1
+    return tied

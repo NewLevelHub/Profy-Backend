@@ -17,6 +17,7 @@ from app.dependencies import require_role
 from app.models.user import User, UserRole
 from app.schemas import crm as schemas
 from app.models.scheduling import MeetingStatus
+from app.services.whatsapp import chat
 from app.services.crm import ads, analytics, deals, invites, meetings, sources, staff, tariffs, tasks
 
 router = APIRouter(tags=["crm"])
@@ -207,6 +208,17 @@ async def add_note(
     deal_id: uuid.UUID, body: schemas.NoteIn, user: User = Depends(_seller), db: AsyncSession = Depends(get_db)
 ) -> schemas.DealDetail:
     await deals.add_note(db, user, deal_id, body.text)
+    return await _detail(db, user, deal_id)
+
+
+@router.post("/deals/{deal_id}/messages", response_model=schemas.DealDetail)
+async def send_message(
+    deal_id: uuid.UUID, body: schemas.MessageIn, user: User = Depends(_seller), db: AsyncSession = Depends(get_db)
+) -> schemas.DealDetail:
+    """WhatsApp to the client from the sales number (ТЗ §3.5)."""
+    deal = await deals.get_deal(db, user, deal_id)
+    deals._require_owned(user, deal)
+    await chat.send(db, user, deal, body.text)
     return await _detail(db, user, deal_id)
 
 

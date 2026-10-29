@@ -111,6 +111,22 @@ class Settings(BaseSettings):
     def meta_enabled(self) -> bool:
         return bool(self.META_ACCESS_TOKEN and self.META_AD_ACCOUNT_ID)
 
+    # WhatsApp of the sales team through Green API (app/services/whatsapp/,
+    # ТЗ §3.5). Off while the instance is empty. GREEN_API_WEBHOOK_TOKEN is the
+    # instance's webhookUrlToken: Green API sends it as `Authorization: Bearer`
+    # on every webhook. WHATSAPP_TEST_NUMBERS — comma-separated phones; when
+    # set, only messages from them are taken in (a personal number linked for
+    # a test brings every private chat otherwise).
+    GREEN_API_URL: str = "https://api.green-api.com"
+    GREEN_API_ID_INSTANCE: str = ""
+    GREEN_API_TOKEN_INSTANCE: str = ""
+    GREEN_API_WEBHOOK_TOKEN: str = ""
+    WHATSAPP_TEST_NUMBERS: str = ""
+
+    @property
+    def whatsapp_enabled(self) -> bool:
+        return bool(self.GREEN_API_ID_INSTANCE and self.GREEN_API_TOKEN_INSTANCE)
+
     # Which backend build_storage_backend() returns:
     #   "fs"  — write photos to STORAGE_FS_ROOT on disk; nginx serves them
     #           directly (default; no object-storage service to run).

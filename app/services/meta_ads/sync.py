@@ -22,6 +22,7 @@ from app.config import settings
 from app.database import async_session
 from app.models.meta_ads import MetaAd, MetaAdInsight, MetaSyncState
 from app.services import tz
+from app.services.crm import lead_source
 from app.services.meta_ads import client
 
 logger = logging.getLogger(__name__)
@@ -125,6 +126,8 @@ async def sync(db: AsyncSession, now: datetime | None = None, *, full: bool = Fa
         if daily:
             current.full_synced_on = today
         current.error = current.error_at = None
+        # WhatsApp leads that came from an ad unknown until this sync.
+        await lead_source.attach_late_ads(db)
         await db.commit()
         return written
 

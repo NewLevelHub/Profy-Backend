@@ -20,6 +20,7 @@ from fastapi import status
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models.crm import (
     STAGE_ORDER,
     CrmDeal,
@@ -138,6 +139,7 @@ async def meta(db: AsyncSession) -> schemas.CrmMeta:
     rows = await db.execute(select(CrmTariff).order_by(CrmTariff.sort, CrmTariff.code))
     source_rows = await db.execute(select(CrmSource).order_by(CrmSource.sort, CrmSource.name))
     return schemas.CrmMeta(
+        whatsapp=settings.whatsapp_enabled,
         stages=STAGE_ORDER,
         tariffs=[schemas.TariffItem.model_validate(t, from_attributes=True) for t in rows.scalars()],
         sources=[schemas.SourceItem.model_validate(s, from_attributes=True) for s in source_rows.scalars()],
@@ -196,6 +198,7 @@ async def list_deals(
             tariff_code=deal.tariff_code,
             total=deal.total,
             source=lead_sources.get(deal.id),
+            repeat=deal.repeat,
             is_target=deal.is_target,
             paid=deal.paid_at is not None,
             consent=parent.consent,
@@ -271,6 +274,13 @@ async def _student_account(db: AsyncSession, deal: CrmDeal) -> schemas.StudentAc
     return await invites.account_info(db, deal)
 
 
+async def _chat(db: AsyncSession, deal: CrmDeal) -> list[schemas.MessageOut]:
+    # The WhatsApp service builds on this module: imported here, not on top.
+    from app.services.whatsapp import chat
+
+    return await chat.messages(db, deal)
+
+
 async def detail(db: AsyncSession, user: User, deal: CrmDeal) -> schemas.DealDetail:
     parent = await db.get(CrmParent, deal.parent_id)
     student = await db.get(CrmStudent, deal.student_id) if deal.student_id else None
@@ -334,6 +344,8 @@ async def detail(db: AsyncSession, user: User, deal: CrmDeal) -> schemas.DealDet
         paid_at=deal.paid_at,
         payment_method=deal.payment_method,
         source=(await lead_source.describe(db, [deal])).get(deal.id),
+        repeat=deal.repeat,
+        messages=await _chat(db, deal),
         first_message=deal.first_message,
         stage_at=next((e.at for e in events if e.kind in STAGE_EVENTS), deal.created_at),
         meeting=meeting_out(meeting) if meeting else None,

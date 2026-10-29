@@ -6,7 +6,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field, StringConstraints, model_validator
 
-from app.models.crm import Attribution, DealResult, DealStage, LostReason, PaymentMethod, TaskType
+from app.models.crm import Attribution, DealResult, MessageStatus, DealStage, LostReason, PaymentMethod, TaskType
 
 Name = Annotated[str, Field(min_length=1, max_length=255)]
 ShortText = Annotated[str, Field(max_length=255)]
@@ -100,6 +100,8 @@ class SourcePatch(BaseModel):
 
 
 class CrmMeta(BaseModel):
+    # The WhatsApp chat is on (Green API configured).
+    whatsapp: bool = False
     stages: list[DealStage]
     tariffs: list[TariffItem]
     # Archived ones too: deals that have one still show its name.
@@ -191,6 +193,26 @@ class CloseIn(BaseModel):
     result: Literal["won", "lost"]
     reason: LostReason | None = None
     comment: Annotated[str, Field(max_length=1000)] | None = None
+
+
+class MessageIn(BaseModel):
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=4000)]
+
+
+class MessageOut(BaseModel):
+    """A WhatsApp message of the chat. `direction`: `in` — the client, `out`
+    — the sales number (`author` — who wrote it in the CRM; null — from the
+    phone). `status` of an outgoing one: pending → sent → delivered → read, or
+    failed."""
+
+    id: uuid.UUID
+    direction: Literal["in", "out"]
+    text: str
+    kind: str
+    status: MessageStatus
+    at: datetime
+    author: "UserRef | None"
+    from_ad: bool = False
 
 
 class NoteIn(BaseModel):
@@ -287,6 +309,8 @@ class DealCard(BaseModel):
     tariff_code: str | None
     total: int | None
     source: LeadSource | None = None
+    # «Повторное обращение»: a known client wrote with no open deal.
+    repeat: bool = False
     is_target: bool | None
     paid: bool
     consent: bool | None
@@ -332,6 +356,7 @@ class DealDetail(BaseModel):
     paid_at: datetime | None
     payment_method: PaymentMethod | None
     source: LeadSource | None
+    repeat: bool = False
     first_message: str | None
     # When the deal came to its current stage.
     stage_at: datetime
@@ -342,6 +367,8 @@ class DealDetail(BaseModel):
     student_account: StudentAccountOut
     tasks: list["TaskOut"] = []
     events: list[DealEventOut]
+    # The WhatsApp chat with the client, newest first (ТЗ §3.5).
+    messages: list[MessageOut] = []
     created_at: datetime
 
 
