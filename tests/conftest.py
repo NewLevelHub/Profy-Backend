@@ -79,6 +79,22 @@ def _no_real_telegram(monkeypatch) -> None:
 
 
 @pytest.fixture(autouse=True)
+def _no_real_meta(monkeypatch) -> None:
+    """Tests never call the Meta Marketing API, whatever the mounted .env
+    holds: off unless a test turns it on with the client mocked; a real
+    request raises in any case."""
+    from app.services.meta_ads import client as meta_client
+
+    monkeypatch.setattr(settings, "META_ACCESS_TOKEN", "")
+    monkeypatch.setattr(settings, "META_AD_ACCOUNT_ID", "")
+
+    async def _blocked(*_args, **_kwargs):
+        raise AssertionError("a test reached the real Meta Marketing API; mock meta_ads.client")
+
+    monkeypatch.setattr(meta_client, "_get", _blocked)
+
+
+@pytest.fixture(autouse=True)
 def _open_registration(monkeypatch) -> None:
     """Most auth tests sign up without a CRM invite. The invite-only rule has
     its own tests (test_crm_student_progress.py), which turn it back on."""

@@ -33,11 +33,12 @@ from app.models.crm import (
     DealStage,
     LostReason,
 )
+from app.models.meta_ads import MetaAd
 from app.models.scheduling import Meeting, MeetingStatus
 from app.models.user import User, UserRole
 from app.schemas import crm as schemas
 from app.services import audit, tz
-from app.services.crm import progress, sources
+from app.services.crm import ads, progress, sources
 from app.services.crm.errors import crm_error
 from app.services.scheduling import booking
 
@@ -332,6 +333,7 @@ async def detail(db: AsyncSession, user: User, deal: CrmDeal) -> schemas.DealDet
         payment_method=deal.payment_method,
         source_id=deal.source_id,
         source=(await sources.names(db)).get(deal.source_id),
+        meta_ad=await ads.ad_item(db, deal.meta_ad_id),
         first_message=deal.first_message,
         stage_at=next((e.at for e in events if e.kind in STAGE_EVENTS), deal.created_at),
         meeting=meeting_out(meeting) if meeting else None,
@@ -524,6 +526,20 @@ async def patch_deal(db: AsyncSession, user: User, deal_id: uuid.UUID, body: sch
         )
         deal.manager_id = body.manager_id
         _event(db, deal, user, "manager", {"manager_id": str(body.manager_id) if body.manager_id else None})
+
+    if "meta_ad_id" in sent and body.meta_ad_id != deal.meta_ad_id:
+        # Choosing the creative is the manager's; correcting it is for the
+        # head of sales and the owner (ТЗ §3.12.1).
+        if deal.meta_ad_id is not None and not _supervisor(user):
+            raise crm_error(status.HTTP_403_FORBIDDEN, "ad_change_forbidden")
+        if body.meta_ad_id and await db.get(MetaAd, body.meta_ad_id) is None:
+            raise crm_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "ad_not_found")
+        audit.record(
+            db, actor=user, action="crm.ad_changed", entity_type="crm_deal", entity_id=deal.id,
+            before={"meta_ad_id": deal.meta_ad_id}, after={"meta_ad_id": body.meta_ad_id},
+        )
+        deal.meta_ad_id = body.meta_ad_id
+        _event(db, deal, user, "ad", {"meta_ad_id": body.meta_ad_id})
 
     if "source_id" in sent:
         deal.source_id = await sources.pickable(db, body.source_id, deal.source_id)

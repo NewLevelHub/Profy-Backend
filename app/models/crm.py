@@ -182,6 +182,11 @@ class CrmDeal(Base):
     source_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("crm_sources.id"), nullable=True, index=True
     )
+    # The Meta ad (creative) the lead came from; None — «Креатив не определён»
+    # (ТЗ §3.12.1). Picked by hand until WhatsApp brings the greeting's tag.
+    meta_ad_id: Mapped[str | None] = mapped_column(
+        String(32), ForeignKey("meta_ads.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     first_message: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True

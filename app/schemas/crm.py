@@ -43,6 +43,16 @@ class TariffPatch(BaseModel):
     active: bool | None = None
 
 
+class AdItem(BaseModel):
+    """An ad (creative) for the deal's «Креатив» picker."""
+
+    id: str
+    name: str
+    status: str | None
+    campaign_name: str | None
+    adset_name: str | None
+
+
 class SourceItem(BaseModel):
     id: uuid.UUID
     name: str
@@ -107,6 +117,7 @@ class DealPatch(BaseModel):
     tariff_code: Annotated[str, Field(max_length=32)] | None = None
     discount: Annotated[int, Field(ge=0, le=10_000_000)] | None = None
     source_id: uuid.UUID | None = None
+    meta_ad_id: Annotated[str, Field(max_length=32)] | None = None
     manager_id: uuid.UUID | None = None
 
 
@@ -293,6 +304,8 @@ class DealDetail(BaseModel):
     payment_method: PaymentMethod | None
     source_id: uuid.UUID | None
     source: str | None
+    # The Meta ad the lead came from; null — «Креатив не определён».
+    meta_ad: AdItem | None = None
     first_message: str | None
     # When the deal came to its current stage.
     stage_at: datetime
@@ -508,5 +521,63 @@ class OwnerDashboard(BaseModel):
     specialists: list[SpecialistLoad]
     issues: list[MeetingIssue]
     payment_to_review: PaymentToReview
+
+    model_config = {"populate_by_name": True}
+
+
+# ── ads (Meta Marketing API) ────────────────────────────────────────────────
+
+
+class AdRow(BaseModel):
+    """One ad over the period: Meta's numbers and the CRM's deals that came
+    from it. `ad_id` null — «Креатив не определён» (deals only). Money in ₸
+    by the owner's rate; null when a day with spend has no rate."""
+
+    ad_id: str | None
+    ad_name: str | None
+    adset_id: str | None
+    adset_name: str | None
+    campaign_id: str | None
+    campaign_name: str | None
+    spend_usd: float
+    spend: int | None
+    impressions: int
+    reach: int
+    clicks: int
+    link_clicks: int
+    conversations: int
+    leads: int
+    target: int
+    paid: int
+    revenue: int
+    won: int
+
+
+class AdsStatus(BaseModel):
+    enabled: bool
+    synced_at: datetime | None
+    error: str | None
+    error_at: datetime | None
+    # The last day Meta has numbers for.
+    last_day: date | None
+
+
+class FxRate(BaseModel):
+    valid_from: date
+    rate: float
+
+
+class FxRateIn(BaseModel):
+    valid_from: date
+    rate: Annotated[float, Field(gt=0, le=100_000)]
+
+
+class AdsReport(BaseModel):
+    from_: date = Field(alias="from")
+    to: date
+    rows: list[AdRow]
+    # Days in the period with spend but no rate: ₸ totals leave them out.
+    days_without_rate: int
+    status: AdsStatus
 
     model_config = {"populate_by_name": True}

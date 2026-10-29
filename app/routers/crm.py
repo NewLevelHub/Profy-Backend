@@ -17,7 +17,7 @@ from app.dependencies import require_role
 from app.models.user import User, UserRole
 from app.schemas import crm as schemas
 from app.models.scheduling import MeetingStatus
-from app.services.crm import analytics, deals, invites, meetings, sources, staff, tariffs, tasks
+from app.services.crm import ads, analytics, deals, invites, meetings, sources, staff, tariffs, tasks
 
 router = APIRouter(tags=["crm"])
 
@@ -356,3 +356,41 @@ async def export_analytics(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="profile-crm-{month}.xlsx"'},
     )
+
+
+# ── ads (Meta Marketing API) ────────────────────────────────────────────────
+
+
+@router.get("/ads", response_model=list[schemas.AdItem])
+async def list_ads(_: User = Depends(_seller), db: AsyncSession = Depends(get_db)) -> list[schemas.AdItem]:
+    """The account's ads, for the deal's «Креатив»."""
+    return await ads.ad_items(db)
+
+
+@router.get("/ads/report", response_model=schemas.AdsReport, response_model_by_alias=True)
+async def ads_report(
+    date_from: date = Query(alias="from"),
+    date_to: date = Query(alias="to"),
+    _: User = Depends(_analyst),
+    db: AsyncSession = Depends(get_db),
+) -> schemas.AdsReport:
+    return await ads.report(db, date_from, date_to)
+
+
+@router.post("/ads/sync", response_model=schemas.AdsStatus)
+async def ads_sync(_: User = Depends(_owner), db: AsyncSession = Depends(get_db)) -> schemas.AdsStatus:
+    """«Обновить сейчас»: the last 7 days from Meta."""
+    return await ads.refresh(db)
+
+
+@router.get("/ads/rates", response_model=list[schemas.FxRate])
+async def ads_rates(_: User = Depends(_analyst), db: AsyncSession = Depends(get_db)) -> list[schemas.FxRate]:
+    return await ads.rates(db)
+
+
+@router.put("/ads/rates", response_model=list[schemas.FxRate])
+async def set_ads_rate(
+    body: schemas.FxRateIn, user: User = Depends(_owner), db: AsyncSession = Depends(get_db)
+) -> list[schemas.FxRate]:
+    """₸ per 1 USD of ad spend from `valid_from` on."""
+    return await ads.set_rate(db, user, body)

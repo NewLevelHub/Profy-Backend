@@ -16,7 +16,7 @@ import io
 import statistics
 import uuid
 from collections import defaultdict
-from datetime import date
+from datetime import date, timedelta
 
 from fastapi import status
 from openpyxl import Workbook
@@ -32,7 +32,7 @@ from app.models.scheduling import Meeting, MeetingStatus, MeetingType, SlotState
 from app.models.user import User, UserRole
 from app.schemas import crm as schemas
 from app.services import audit, tz
-from app.services.crm import sources
+from app.services.crm import ads, sources
 from app.services.crm.errors import crm_error
 
 MAX_DASHBOARD_DAYS = 366
@@ -156,11 +156,62 @@ async def _payment_to_review(db: AsyncSession, start, end) -> schemas.PaymentToR
 # ── workbook ────────────────────────────────────────────────────────────────
 
 
-def _month_bounds(month: str):
+def _month_days(month: str) -> tuple[date, date]:
+    """The month's first day and the first day after it."""
     year, mon = (int(part) for part in month.split("-"))
-    first = date(year, mon, 1)
-    after = date(year + (mon == 12), mon % 12 + 1, 1)
+    return date(year, mon, 1), date(year + (mon == 12), mon % 12 + 1, 1)
+
+
+def _month_bounds(month: str):
+    first, after = _month_days(month)
     return tz.day_bounds(first)[0], tz.day_bounds(after)[0]
+
+
+def _per(amount: int | None, count: int) -> int | None:
+    return round(amount / count) if amount is not None and count else None
+
+
+def _ads_sheet(book: Workbook, labels: dict, report) -> None:
+    """Ads by creative (ТЗ §3.12.4): Meta's numbers and the cost of a lead,
+    a target lead and a client from the CRM's deals."""
+    header = [labels[k] for k in (
+        "campaign", "adset", "ad", "spend_usd", "spend_kzt", "impressions", "clicks", "ctr", "cpc",
+        "conversations", "cost_conversation", "leads", "cpl", "target", "cost_target", "paid", "cac",
+        "revenue", "romi",
+    )]
+
+    def line(name: tuple, r) -> list:
+        spend = r["spend"]
+        return [
+            *name, round(r["spend_usd"], 2), spend, r["impressions"], r["clicks"],
+            _share(r["clicks"], r["impressions"]), _per(spend, r["clicks"]), r["conversations"],
+            _per(spend, r["conversations"]), r["leads"], _per(spend, r["leads"]), r["target"],
+            _per(spend, r["target"]), r["paid"], _per(spend, r["paid"]), r["revenue"],
+            round((r["revenue"] - spend) / spend, 4) if spend else None,
+        ]
+
+    rows, total = [], defaultdict(int)
+    total["spend"] = 0
+    for row in report.rows:
+        data = row.model_dump()
+        name = (
+            (row.campaign_name or "—", row.adset_name or "—", row.ad_name)
+            if row.ad_id else ("", "", labels["ad_undefined"])
+        )
+        rows.append(line(name, data))
+        for key, value in data.items():
+            if isinstance(value, (int, float)) and key != "spend":
+                total[key] += value
+        total["spend"] = None if total["spend"] is None or row.spend is None else total["spend"] + row.spend
+    if rows:
+        rows.append(line((labels["total"], "", ""), total))
+    sheet = _sheet(book, labels["sheet_ads"], header, rows, (8, 19))
+    if report.days_without_rate:
+        sheet.append([])
+        sheet.append([labels["rate_missing"].format(days=report.days_without_rate)])
+    if not report.status.enabled:
+        sheet.append([])
+        sheet.append([labels["ads_pending"]])
 
 
 def _group_rows(deals: list[CrmDeal], key_of) -> list[list]:
@@ -242,10 +293,8 @@ async def workbook(db: AsyncSession, user: User, month: str) -> bytes:
     if user.role != UserRole.marketer:
         by_manager = _group_rows(deals, lambda d: managers.get(d.manager_id) or labels["no_manager"])
         _sheet(book, labels["sheet_managers"], [labels["manager"], *header], _conversion_rows(by_manager, labels["total"]), (4, 6))
-    ads = _sheet(book, labels["sheet_ads"], [labels["source"], *header], _conversion_rows(by_source, labels["total"]), (4, 6))
-    ads.insert_rows(1)
-    ads["A1"] = labels["ads_pending"]
-    ads.freeze_panes = "A3"
+    first_day, after = _month_days(month)
+    _ads_sheet(book, labels, await ads.report(db, first_day, after - timedelta(days=1)))
 
     audit.record(
         db, actor=user, action="crm.analytics_exported", entity_type="crm_analytics", entity_id=month,

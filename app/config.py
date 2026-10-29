@@ -98,6 +98,19 @@ class Settings(BaseSettings):
     def telegram_enabled(self) -> bool:
         return bool(self.TELEGRAM_BOT_TOKEN and self.TELEGRAM_BOT_USERNAME and self.TELEGRAM_WEBHOOK_SECRET)
 
+    # Meta Marketing API, read-only (`ads_read` system-user token), for the
+    # ads report in the CRM (app/services/meta_ads/). Off while the token is
+    # empty: no sync runs and the report shows only the CRM's own numbers.
+    # The token never leaves the server and is never logged.
+    META_ACCESS_TOKEN: str = ""
+    META_AD_ACCOUNT_ID: str = ""  # act_…
+    META_API_VERSION: str = "v21.0"
+    META_SYNC_INTERVAL_SECONDS: int = 3600
+
+    @property
+    def meta_enabled(self) -> bool:
+        return bool(self.META_ACCESS_TOKEN and self.META_AD_ACCOUNT_ID)
+
     # Which backend build_storage_backend() returns:
     #   "fs"  — write photos to STORAGE_FS_ROOT on disk; nginx serves them
     #           directly (default; no object-storage service to run).
