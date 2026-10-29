@@ -4,9 +4,9 @@ import uuid
 from datetime import date, datetime
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints, model_validator
 
-from app.models.crm import DealResult, DealStage, LostReason, PaymentMethod, TaskType
+from app.models.crm import Attribution, DealResult, DealStage, LostReason, PaymentMethod, TaskType
 
 Name = Annotated[str, Field(min_length=1, max_length=255)]
 ShortText = Annotated[str, Field(max_length=255)]
@@ -51,6 +51,34 @@ class AdItem(BaseModel):
     status: str | None
     campaign_name: str | None
     adset_name: str | None
+
+
+class SourcePick(BaseModel):
+    """The lead's source, one field (ТЗ §3.12.1): a Meta ad or a source of
+    the list — exactly one of the two."""
+
+    ad_id: Annotated[str, Field(max_length=32)] | None = None
+    source_id: uuid.UUID | None = None
+
+    @model_validator(mode="after")
+    def _one(self) -> "SourcePick":
+        if (self.ad_id is None) == (self.source_id is None):
+            raise ValueError("exactly one of ad_id, source_id")
+        return self
+
+
+class LeadSource(BaseModel):
+    """Where the lead came from. `kind: ad` — a Meta ad (`id` is the ad's,
+    with its campaign and ad set), `source` — a source of the list.
+    `attribution`: `ad` «авто: реклама», `greeting` «авто: приветствие»,
+    `manual` «вручную». A deal without one — «Креатив не определён»."""
+
+    kind: Literal["ad", "source"]
+    id: str
+    name: str
+    campaign_name: str | None = None
+    adset_name: str | None = None
+    attribution: Attribution | None
 
 
 class SourceItem(BaseModel):
@@ -103,7 +131,7 @@ class DealCreate(BaseModel):
     parent: ParentIn | None = None
     parent_id: uuid.UUID | None = None
     student: StudentIn | None = None
-    source_id: uuid.UUID | None = None
+    source: SourcePick | None = None
     first_message: LongText | None = None
 
 
@@ -116,8 +144,8 @@ class DealPatch(BaseModel):
     non_target_reason: Annotated[str, Field(max_length=1000)] | None = None
     tariff_code: Annotated[str, Field(max_length=32)] | None = None
     discount: Annotated[int, Field(ge=0, le=10_000_000)] | None = None
-    source_id: uuid.UUID | None = None
-    meta_ad_id: Annotated[str, Field(max_length=32)] | None = None
+    # null clears it.
+    source: SourcePick | None = None
     manager_id: uuid.UUID | None = None
 
 
@@ -130,6 +158,9 @@ class DealFilters(BaseModel):
     tariff: Annotated[str, Field(max_length=32)] | None = None
     manager: Annotated[str, Field(pattern=r"^(none|[0-9a-fA-F-]{36})$")] | None = None
     source_id: uuid.UUID | None = None
+    ad_id: Annotated[str, Field(max_length=32)] | None = None
+    # Deals without a source («Креатив не определён»).
+    no_source: bool | None = None
     paid: bool | None = None
     created_from: date | None = None
     created_to: date | None = None
@@ -255,9 +286,7 @@ class DealCard(BaseModel):
     student_name: str | None
     tariff_code: str | None
     total: int | None
-    source_id: uuid.UUID | None = None
-    # The source's name, for the board and the analytics.
-    source: str | None = None
+    source: LeadSource | None = None
     is_target: bool | None
     paid: bool
     consent: bool | None
@@ -302,10 +331,7 @@ class DealDetail(BaseModel):
     paid_amount: int | None
     paid_at: datetime | None
     payment_method: PaymentMethod | None
-    source_id: uuid.UUID | None
-    source: str | None
-    # The Meta ad the lead came from; null — «Креатив не определён».
-    meta_ad: AdItem | None = None
+    source: LeadSource | None
     first_message: str | None
     # When the deal came to its current stage.
     stage_at: datetime
@@ -530,8 +556,10 @@ class OwnerDashboard(BaseModel):
 
 class AdRow(BaseModel):
     """One ad over the period: Meta's numbers and the CRM's deals that came
-    from it. `ad_id` null — «Креатив не определён» (deals only). Money in ₸
-    by the owner's rate; null when a day with spend has no rate."""
+    from it. Then, deals only: a row per source that is not an ad
+    (`source_id`), and «Креатив не определён» (`ad_id` and `source_id` null) —
+    the rows add up to every lead of the period. Money in ₸ by the owner's
+    rate; null when a day with spend has no rate."""
 
     ad_id: str | None
     ad_name: str | None
@@ -539,6 +567,8 @@ class AdRow(BaseModel):
     adset_name: str | None
     campaign_id: str | None
     campaign_name: str | None
+    source_id: uuid.UUID | None = None
+    source_name: str | None = None
     spend_usd: float
     spend: int | None
     impressions: int
@@ -547,6 +577,8 @@ class AdRow(BaseModel):
     link_clicks: int
     conversations: int
     leads: int
+    # Of `leads`, picked by hand («вручную»); the rest are automatic.
+    leads_manual: int = 0
     target: int
     paid: int
     revenue: int

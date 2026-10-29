@@ -14,7 +14,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models.crm import CrmDeal
+from app.models.crm import Attribution, CrmDeal, CrmSource
 from app.models.meta_ads import MetaAd, MetaAdInsight, MetaFxRate, MetaSyncState
 from app.models.user import UserRole
 from app.services import tz
@@ -103,16 +103,30 @@ async def test_the_report_counts_the_cost_of_a_lead_and_a_client(
     second = await _create(client, manager)
     await _create(client, manager)  # no creative
     for deal in (first, second):
-        patched = await client.patch(f"{URL}/deals/{deal['id']}", json={"meta_ad_id": "a1"}, headers=_h(manager))
-        assert patched.status_code == 200 and patched.json()["meta_ad"]["name"] == "Статика 1.4"
+        patched = await client.patch(f"{URL}/deals/{deal['id']}", json={"source": {"ad_id": "a1"}}, headers=_h(manager))
+        assert patched.status_code == 200
+        assert patched.json()["source"] == {
+            "kind": "ad", "id": "a1", "name": "Статика 1.4", "campaign_name": "Переписки в WhatsApp",
+            "adset_name": "Advantage+", "attribution": "manual",
+        }
     deal = await db_session.get(CrmDeal, first["id"])
     deal.is_target, deal.paid_at, deal.paid_amount = True, tz.now_utc(), 70000
     await db_session.flush()
 
-    # Correcting the creative is for the head of sales and the owner.
-    fix = await client.patch(f"{URL}/deals/{first['id']}", json={"meta_ad_id": "a2"}, headers=_h(manager))
-    assert fix.status_code == 403 and fix.json()["error_code"] == "ad_change_forbidden"
-    unknown = await client.patch(f"{URL}/deals/{(await _create(client, manager))['id']}", json={"meta_ad_id": "x"}, headers=_h(manager))
+    # A manual pick the manager may change; an automatic one only the head
+    # of sales or the owner corrects — and then it is a manual one.
+    deal.attribution = Attribution.ad
+    await db_session.flush()
+    fix = await client.patch(f"{URL}/deals/{first['id']}", json={"source": {"ad_id": "a2"}}, headers=_h(manager))
+    assert fix.status_code == 403 and fix.json()["error_code"] == "attribution_auto_locked"
+    head = await _user(db_session, UserRole.sales_head)
+    fixed = await client.patch(f"{URL}/deals/{first['id']}", json={"source": {"ad_id": "a2"}}, headers=_h(head))
+    assert fixed.json()["source"]["attribution"] == "manual"
+    back = await client.patch(f"{URL}/deals/{first['id']}", json={"source": {"ad_id": "a1"}}, headers=_h(manager))
+    assert back.status_code == 200
+    deal.attribution = Attribution.ad  # as WhatsApp would have set it
+    await db_session.flush()
+    unknown = await client.patch(f"{URL}/deals/{(await _create(client, manager))['id']}", json={"source": {"ad_id": "x"}}, headers=_h(manager))
     assert unknown.json()["error_code"] == "ad_not_found"
 
     period = {"from": (TODAY - timedelta(days=1)).isoformat(), "to": TODAY.isoformat()}
@@ -121,8 +135,20 @@ async def test_the_report_counts_the_cost_of_a_lead_and_a_client(
     # No rate yet: dollars only.
     assert a1["spend_usd"] == 15.5 and a1["spend"] is None and report["days_without_rate"] == 2
     assert (a1["leads"], a1["target"], a1["paid"], a1["revenue"], a1["conversations"]) == (2, 1, 1, 70000, 6)
-    undefined = next(r for r in report["rows"] if r["ad_id"] is None)
+    assert a1["leads_manual"] == 1  # the second; the first is automatic
+    undefined = next(r for r in report["rows"] if r["ad_id"] is None and r["source_id"] is None)
     assert undefined["leads"] >= 2 and undefined["spend_usd"] == 0
+
+    # A lead not from an ad has its own row; the rows add up to every lead (П1-02).
+    recommendation = await db_session.scalar(select(CrmSource).where(CrmSource.name == "Рекомендация"))
+    await _create(client, manager, source={"source_id": str(recommendation.id)})
+    report = (await client.get(f"{URL}/ads/report", params=period, headers=_h(owner))).json()
+    assert next(r for r in report["rows"] if r["source_name"] == "Рекомендация")["leads"] >= 1
+    start, end = tz.day_bounds(TODAY - timedelta(days=1))[0], tz.day_bounds(TODAY)[1]
+    every = await db_session.scalar(
+        select(func.count()).select_from(CrmDeal).where(CrmDeal.created_at >= start, CrmDeal.created_at < end)
+    )
+    assert sum(r["leads"] for r in report["rows"]) == every
 
     # The rate from yesterday on: ₸ = 15.50 × 500.
     rate = await client.put(f"{URL}/ads/rates", json={"valid_from": period["from"], "rate": 500}, headers=_h(owner))

@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, SmallInteger, String, Text, func
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Enum, ForeignKey, Integer, SmallInteger, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -54,6 +54,14 @@ class LostReason(str, enum.Enum):
     no_show = "no_show"
     refund = "refund"
     other = "other"
+
+
+class Attribution(str, enum.Enum):
+    """How the lead's source was found (ТЗ §3.12.1), by priority."""
+
+    ad = "ad"              # «авто: реклама» — the ad's id came with the WhatsApp message
+    greeting = "greeting"  # «авто: приветствие» — the first message matched an ad's greeting
+    manual = "manual"      # «вручную» — the manager picked it
 
 
 class PaymentMethod(str, enum.Enum):
@@ -182,17 +190,24 @@ class CrmDeal(Base):
     source_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("crm_sources.id"), nullable=True, index=True
     )
-    # The Meta ad (creative) the lead came from; None — «Креатив не определён»
-    # (ТЗ §3.12.1). Picked by hand until WhatsApp brings the greeting's tag.
+    # The lead's source is one field (ТЗ §3.12.1): a Meta ad (`meta_ad_id`)
+    # or a source of the list that is not an ad (`source_id`: «рекомендация»,
+    # «повторный клиент», …) — never both. Neither — «Креатив не определён».
     meta_ad_id: Mapped[str | None] = mapped_column(
         String(32), ForeignKey("meta_ads.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    # How the source was found; None while it is not.
+    attribution: Mapped[Attribution | None] = mapped_column(Enum(Attribution, native_enum=False, length=16))
     first_message: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        CheckConstraint("source_id IS NULL OR meta_ad_id IS NULL", name="ck_crm_deals_one_source"),
     )
 
     @property

@@ -33,12 +33,11 @@ from app.models.crm import (
     DealStage,
     LostReason,
 )
-from app.models.meta_ads import MetaAd
 from app.models.scheduling import Meeting, MeetingStatus
 from app.models.user import User, UserRole
 from app.schemas import crm as schemas
 from app.services import audit, tz
-from app.services.crm import ads, progress, sources
+from app.services.crm import lead_source, progress
 from app.services.crm.errors import crm_error
 from app.services.scheduling import booking
 
@@ -183,7 +182,7 @@ async def list_deals(
     users = await _users(db, {deal.manager_id for deal, _, _ in rows})
     calls = await _live_calls(db, [deal.id for deal, _, _ in rows])
     tasks = await _next_task_due(db, [deal.id for deal, _, _ in rows])
-    source_names = await sources.names(db)
+    lead_sources = await lead_source.describe(db, [deal for deal, _, _ in rows])
     # The marketer sees the board without personal data (ТЗ §2, §6.2).
     masked = user.role == UserRole.marketer
     return [
@@ -196,8 +195,7 @@ async def list_deals(
             student_name=None if masked or student is None else student.full_name,
             tariff_code=deal.tariff_code,
             total=deal.total,
-            source_id=deal.source_id,
-            source=source_names.get(deal.source_id),
+            source=lead_sources.get(deal.id),
             is_target=deal.is_target,
             paid=deal.paid_at is not None,
             consent=parent.consent,
@@ -234,6 +232,10 @@ def _apply_filters(query, user: User, f: schemas.DealFilters):
         query = query.where(CrmDeal.manager_id == uuid.UUID(f.manager))
     if f.source_id:
         query = query.where(CrmDeal.source_id == f.source_id)
+    if f.ad_id:
+        query = query.where(CrmDeal.meta_ad_id == f.ad_id)
+    if f.no_source:
+        query = query.where(CrmDeal.source_id.is_(None), CrmDeal.meta_ad_id.is_(None))
     if f.paid is not None:
         query = query.where(CrmDeal.paid_at.is_not(None) if f.paid else CrmDeal.paid_at.is_(None))
     if f.created_from:
@@ -331,9 +333,7 @@ async def detail(db: AsyncSession, user: User, deal: CrmDeal) -> schemas.DealDet
         paid_amount=deal.paid_amount,
         paid_at=deal.paid_at,
         payment_method=deal.payment_method,
-        source_id=deal.source_id,
-        source=(await sources.names(db)).get(deal.source_id),
-        meta_ad=await ads.ad_item(db, deal.meta_ad_id),
+        source=(await lead_source.describe(db, [deal])).get(deal.id),
         first_message=deal.first_message,
         stage_at=next((e.at for e in events if e.kind in STAGE_EVENTS), deal.created_at),
         meeting=meeting_out(meeting) if meeting else None,
@@ -413,9 +413,9 @@ async def create_deal(db: AsyncSession, user: User, body: schemas.DealCreate) ->
         student_id=student.id if student else None,
         stage=DealStage.qualification if mine else DealStage.unsorted,
         manager_id=user.id if mine else None,
-        source_id=await sources.pickable(db, body.source_id),
         first_message=body.first_message,
     )
+    await lead_source.pick(db, user, deal, body.source)
     db.add(deal)
     await db.flush()
     _event(db, deal, user, "created", {"stage": deal.stage.value})
@@ -527,22 +527,9 @@ async def patch_deal(db: AsyncSession, user: User, deal_id: uuid.UUID, body: sch
         deal.manager_id = body.manager_id
         _event(db, deal, user, "manager", {"manager_id": str(body.manager_id) if body.manager_id else None})
 
-    if "meta_ad_id" in sent and body.meta_ad_id != deal.meta_ad_id:
-        # Choosing the creative is the manager's; correcting it is for the
-        # head of sales and the owner (ТЗ §3.12.1).
-        if deal.meta_ad_id is not None and not _supervisor(user):
-            raise crm_error(status.HTTP_403_FORBIDDEN, "ad_change_forbidden")
-        if body.meta_ad_id and await db.get(MetaAd, body.meta_ad_id) is None:
-            raise crm_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "ad_not_found")
-        audit.record(
-            db, actor=user, action="crm.ad_changed", entity_type="crm_deal", entity_id=deal.id,
-            before={"meta_ad_id": deal.meta_ad_id}, after={"meta_ad_id": body.meta_ad_id},
-        )
-        deal.meta_ad_id = body.meta_ad_id
-        _event(db, deal, user, "ad", {"meta_ad_id": body.meta_ad_id})
-
-    if "source_id" in sent:
-        deal.source_id = await sources.pickable(db, body.source_id, deal.source_id)
+    if "source" in sent and await lead_source.pick(db, user, deal, body.source):
+        described = (await lead_source.describe(db, [deal])).get(deal.id)
+        _event(db, deal, user, "source", {"name": described.name if described else None})
     await db.commit()
     return deal
 

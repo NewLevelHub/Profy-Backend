@@ -176,7 +176,7 @@ def _ads_sheet(book: Workbook, labels: dict, report) -> None:
     a target lead and a client from the CRM's deals."""
     header = [labels[k] for k in (
         "campaign", "adset", "ad", "spend_usd", "spend_kzt", "impressions", "clicks", "ctr", "cpc",
-        "conversations", "cost_conversation", "leads", "cpl", "target", "cost_target", "paid", "cac",
+        "conversations", "cost_conversation", "leads", "leads_manual", "cpl", "target", "cost_target", "paid", "cac",
         "revenue", "romi",
     )]
 
@@ -185,7 +185,7 @@ def _ads_sheet(book: Workbook, labels: dict, report) -> None:
         return [
             *name, round(r["spend_usd"], 2), spend, r["impressions"], r["clicks"],
             _share(r["clicks"], r["impressions"]), _per(spend, r["clicks"]), r["conversations"],
-            _per(spend, r["conversations"]), r["leads"], _per(spend, r["leads"]), r["target"],
+            _per(spend, r["conversations"]), r["leads"], r["leads_manual"], _per(spend, r["leads"]), r["target"],
             _per(spend, r["target"]), r["paid"], _per(spend, r["paid"]), r["revenue"],
             round((r["revenue"] - spend) / spend, 4) if spend else None,
         ]
@@ -196,7 +196,7 @@ def _ads_sheet(book: Workbook, labels: dict, report) -> None:
         data = row.model_dump()
         name = (
             (row.campaign_name or "—", row.adset_name or "—", row.ad_name)
-            if row.ad_id else ("", "", labels["ad_undefined"])
+            if row.ad_id else ("", "", row.source_name or labels["ad_undefined"])
         )
         rows.append(line(name, data))
         for key, value in data.items():
@@ -205,7 +205,7 @@ def _ads_sheet(book: Workbook, labels: dict, report) -> None:
         total["spend"] = None if total["spend"] is None or row.spend is None else total["spend"] + row.spend
     if rows:
         rows.append(line((labels["total"], "", ""), total))
-    sheet = _sheet(book, labels["sheet_ads"], header, rows, (8, 19))
+    sheet = _sheet(book, labels["sheet_ads"], header, rows, (8, 20))
     if report.days_without_rate:
         sheet.append([])
         sheet.append([labels["rate_missing"].format(days=report.days_without_rate)])
@@ -288,7 +288,10 @@ async def workbook(db: AsyncSession, user: User, month: str) -> bytes:
 
     header = [labels["leads"], labels["target"], labels["target_share"], labels["paid"], labels["paid_conversion"],
               labels["revenue"], labels["won"], labels["lost"]]
-    by_source = _group_rows(deals, lambda d: source_names.get(d.source_id) or labels["no_source"])
+    by_source = _group_rows(
+        deals,
+        lambda d: labels["ads_group"] if d.meta_ad_id else source_names.get(d.source_id) or labels["no_source"],
+    )
     _sheet(book, labels["sheet_sources"], [labels["source"], *header], _conversion_rows(by_source, labels["total"]), (4, 6))
     if user.role != UserRole.marketer:
         by_manager = _group_rows(deals, lambda d: managers.get(d.manager_id) or labels["no_manager"])

@@ -109,20 +109,30 @@ async def test_sources_are_a_list_the_owner_keeps(
     meta = (await client.get(f"{URL}/meta", headers=_h(manager))).json()
     assert source_id in {s["id"] for s in meta["sources"]}
 
-    deal = await _create(client, manager, source_id=source_id)
-    assert deal["source_id"] == source_id and deal["source"] == "Реклама Meta"
+    deal = await _create(client, manager, source={"source_id": source_id})
+    assert deal["source"] == {
+        "kind": "source", "id": source_id, "name": "Реклама Meta", "campaign_name": None, "adset_name": None,
+        "attribution": "manual",
+    }
     card = next(d for d in (await client.get(f"{URL}/deals", params={"source_id": source_id}, headers=_h(manager))).json())
-    assert card["id"] == deal["id"] and card["source"] == "Реклама Meta"
+    assert card["id"] == deal["id"] and card["source"]["name"] == "Реклама Meta"
 
     # Archived: no longer picked for new deals, kept by the ones that have it.
     archived = await client.patch(f"{URL}/sources/{source_id}", json={"active": False}, headers=_h(owner))
     assert archived.json()["active"] is False
     refused = await client.post(
-        f"{URL}/deals", json={"parent": {"full_name": "Б"}, "source_id": source_id}, headers=_h(manager)
+        f"{URL}/deals", json={"parent": {"full_name": "Б"}, "source": {"source_id": source_id}}, headers=_h(manager)
     )
     assert refused.status_code == 422 and refused.json()["error_code"] == "source_not_found"
-    kept = await client.patch(f"{URL}/deals/{deal['id']}", json={"source_id": source_id}, headers=_h(manager))
-    assert kept.status_code == 200 and kept.json()["source"] == "Реклама Meta"
+    kept = await client.patch(f"{URL}/deals/{deal['id']}", json={"source": {"source_id": source_id}}, headers=_h(manager))
+    assert kept.status_code == 200 and kept.json()["source"]["name"] == "Реклама Meta"
+    # One of the two, never both.
+    both = await client.patch(
+        f"{URL}/deals/{deal['id']}", json={"source": {"source_id": source_id, "ad_id": "1"}}, headers=_h(manager)
+    )
+    assert both.status_code == 422
+    cleared = await client.patch(f"{URL}/deals/{deal['id']}", json={"source": None}, headers=_h(manager))
+    assert cleared.json()["source"] is None
 
 
 async def test_the_owner_dashboard(client: httpx.AsyncClient, db_session: AsyncSession, price_list: None) -> None:
