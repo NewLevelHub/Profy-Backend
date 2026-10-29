@@ -11,10 +11,11 @@ from app.models.astur_run import AsturRun  # noqa: F401 — keep model imported 
 from app.models.belbin_progress import BelbinProgress  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.belbin_run import BelbinRun  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.consent import Consent  # noqa: F401 — keep model imported so Alembic discovers it
-from app.models.crm import CrmDeal, CrmDealEvent, CrmParent, CrmStudent, CrmStudentInvite, CrmTariff, CrmTask  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.crm import CrmDeal, CrmDealEvent, CrmMessage, CrmParent, CrmStudent, CrmStudentInvite, CrmTariff, CrmTask  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.direction import Direction  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.extended_block_assignment import ExtendedBlockAssignment  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.invitation import Invitation  # noqa: F401 — keep model imported so Alembic discovers it
+from app.models.meta_ads import MetaAd, MetaAdInsight, MetaFxRate, MetaSyncState  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.motivation import MotivationResponse, MotivationStatement  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.password_reset import PasswordResetToken  # noqa: F401 — keep model imported so Alembic discovers it
 from app.models.product_feedback import ProductFeedback  # noqa: F401 — keep model imported so Alembic discovers it

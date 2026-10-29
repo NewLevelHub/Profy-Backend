@@ -4,9 +4,9 @@ import uuid
 from datetime import date, datetime
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints, model_validator
 
-from app.models.crm import DealResult, DealStage, LostReason, PaymentMethod, TaskType
+from app.models.crm import Attribution, DealResult, MessageStatus, DealStage, LostReason, PaymentMethod, TaskType
 
 Name = Annotated[str, Field(min_length=1, max_length=255)]
 ShortText = Annotated[str, Field(max_length=255)]
@@ -43,9 +43,69 @@ class TariffPatch(BaseModel):
     active: bool | None = None
 
 
+class AdItem(BaseModel):
+    """An ad (creative) for the deal's «Креатив» picker."""
+
+    id: str
+    name: str
+    status: str | None
+    campaign_name: str | None
+    adset_name: str | None
+
+
+class SourcePick(BaseModel):
+    """The lead's source, one field (ТЗ §3.12.1): a Meta ad or a source of
+    the list — exactly one of the two."""
+
+    ad_id: Annotated[str, Field(max_length=32)] | None = None
+    source_id: uuid.UUID | None = None
+
+    @model_validator(mode="after")
+    def _one(self) -> "SourcePick":
+        if (self.ad_id is None) == (self.source_id is None):
+            raise ValueError("exactly one of ad_id, source_id")
+        return self
+
+
+class LeadSource(BaseModel):
+    """Where the lead came from. `kind: ad` — a Meta ad (`id` is the ad's,
+    with its campaign and ad set), `source` — a source of the list.
+    `attribution`: `ad` «авто: реклама», `greeting` «авто: приветствие»,
+    `manual` «вручную». A deal without one — «Креатив не определён»."""
+
+    kind: Literal["ad", "source"]
+    id: str
+    name: str
+    campaign_name: str | None = None
+    adset_name: str | None = None
+    attribution: Attribution | None
+
+
+class SourceItem(BaseModel):
+    id: uuid.UUID
+    name: str
+    active: bool
+
+
+SourceName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
+
+
+class SourceIn(BaseModel):
+    name: SourceName
+
+
+class SourcePatch(BaseModel):
+    name: SourceName | None = None
+    active: bool | None = None
+
+
 class CrmMeta(BaseModel):
+    # The WhatsApp chat is on (Green API configured).
+    whatsapp: bool = False
     stages: list[DealStage]
     tariffs: list[TariffItem]
+    # Archived ones too: deals that have one still show its name.
+    sources: list[SourceItem]
     lost_reasons: list[LostReason]
 
 
@@ -73,7 +133,7 @@ class DealCreate(BaseModel):
     parent: ParentIn | None = None
     parent_id: uuid.UUID | None = None
     student: StudentIn | None = None
-    source: ShortText | None = None
+    source: SourcePick | None = None
     first_message: LongText | None = None
 
 
@@ -86,7 +146,8 @@ class DealPatch(BaseModel):
     non_target_reason: Annotated[str, Field(max_length=1000)] | None = None
     tariff_code: Annotated[str, Field(max_length=32)] | None = None
     discount: Annotated[int, Field(ge=0, le=10_000_000)] | None = None
-    source: ShortText | None = None
+    # null clears it.
+    source: SourcePick | None = None
     manager_id: uuid.UUID | None = None
 
 
@@ -98,9 +159,20 @@ class DealFilters(BaseModel):
     stage: DealStage | None = None
     tariff: Annotated[str, Field(max_length=32)] | None = None
     manager: Annotated[str, Field(pattern=r"^(none|[0-9a-fA-F-]{36})$")] | None = None
+    source_id: uuid.UUID | None = None
+    ad_id: Annotated[str, Field(max_length=32)] | None = None
+    # Deals without a source («Креатив не определён»).
+    no_source: bool | None = None
     paid: bool | None = None
     created_from: date | None = None
     created_to: date | None = None
+
+
+class AcceptIn(BaseModel):
+    """Whose the lead becomes. A manager takes it themself (leave empty); the
+    owner must name a manager or the head of sales."""
+
+    manager_id: uuid.UUID | None = None
 
 
 class StageMove(BaseModel):
@@ -121,6 +193,26 @@ class CloseIn(BaseModel):
     result: Literal["won", "lost"]
     reason: LostReason | None = None
     comment: Annotated[str, Field(max_length=1000)] | None = None
+
+
+class MessageIn(BaseModel):
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=4000)]
+
+
+class MessageOut(BaseModel):
+    """A WhatsApp message of the chat. `direction`: `in` — the client, `out`
+    — the sales number (`author` — who wrote it in the CRM; null — from the
+    phone). `status` of an outgoing one: pending → sent → delivered → read, or
+    failed."""
+
+    id: uuid.UUID
+    direction: Literal["in", "out"]
+    text: str
+    kind: str
+    status: MessageStatus
+    at: datetime
+    author: "UserRef | None"
+    from_ad: bool = False
 
 
 class NoteIn(BaseModel):
@@ -216,7 +308,9 @@ class DealCard(BaseModel):
     student_name: str | None
     tariff_code: str | None
     total: int | None
-    source: str | None = None
+    source: LeadSource | None = None
+    # «Повторное обращение»: a known client wrote with no open deal.
+    repeat: bool = False
     is_target: bool | None
     paid: bool
     consent: bool | None
@@ -261,7 +355,8 @@ class DealDetail(BaseModel):
     paid_amount: int | None
     paid_at: datetime | None
     payment_method: PaymentMethod | None
-    source: str | None
+    source: LeadSource | None
+    repeat: bool = False
     first_message: str | None
     # When the deal came to its current stage.
     stage_at: datetime
@@ -272,6 +367,8 @@ class DealDetail(BaseModel):
     student_account: StudentAccountOut
     tasks: list["TaskOut"] = []
     events: list[DealEventOut]
+    # The WhatsApp chat with the client, newest first (ТЗ §3.5).
+    messages: list[MessageOut] = []
     created_at: datetime
 
 
@@ -393,6 +490,13 @@ class StaffMember(BaseModel):
     role: str
     is_active: bool
     created_at: datetime
+    # Specialists: calls booked with them from now on, still to be held. A
+    # disabled specialist keeps them — the owner moves or cancels them.
+    upcoming_meetings: int = 0
+
+
+class StaffActiveIn(BaseModel):
+    active: bool
 
 
 class SalesUser(BaseModel):
@@ -418,3 +522,121 @@ class ClientRow(BaseModel):
     meetings_total: int
     no_shows: int
     paid_total: int
+
+
+# ── owner's dashboard (ТЗ §3.12.5) ──────────────────────────────────────────
+
+
+class SpecialistLoad(BaseModel):
+    id: uuid.UUID
+    name: str
+    is_active: bool
+    # Hours the specialist opened in the period: still free, and taken by calls.
+    free_hours: float
+    busy_hours: float
+    calls_done: int
+    no_shows: int
+    cancelled: int
+    # Paid in the period by the deals this specialist took.
+    revenue: int
+
+
+class MeetingIssue(BaseModel):
+    """A cancelled or moved call, or one the client missed."""
+
+    meeting_id: uuid.UUID
+    deal_id: uuid.UUID | None
+    kind: Literal["no_show", "cancelled", "rescheduled"]
+    type: str
+    start: datetime
+    specialist: str
+    student_name: str | None
+    reason: str | None
+    # The new time of a moved call.
+    moved_to: datetime | None = None
+
+
+class PaymentToReview(BaseModel):
+    """From the payment to the review held (the second call), over the deals
+    whose review was held in the period. Days, null without any."""
+
+    count: int
+    median_days: float | None
+    average_days: float | None
+    max_days: float | None
+    # Paid deals of a tariff with a review that have not had it yet.
+    waiting: int
+
+
+class OwnerDashboard(BaseModel):
+    from_: date = Field(alias="from")
+    to: date
+    specialists: list[SpecialistLoad]
+    issues: list[MeetingIssue]
+    payment_to_review: PaymentToReview
+
+    model_config = {"populate_by_name": True}
+
+
+# ── ads (Meta Marketing API) ────────────────────────────────────────────────
+
+
+class AdRow(BaseModel):
+    """One ad over the period: Meta's numbers and the CRM's deals that came
+    from it. Then, deals only: a row per source that is not an ad
+    (`source_id`), and «Креатив не определён» (`ad_id` and `source_id` null) —
+    the rows add up to every lead of the period. Money in ₸ by the owner's
+    rate; null when a day with spend has no rate."""
+
+    ad_id: str | None
+    ad_name: str | None
+    adset_id: str | None
+    adset_name: str | None
+    campaign_id: str | None
+    campaign_name: str | None
+    source_id: uuid.UUID | None = None
+    source_name: str | None = None
+    spend_usd: float
+    spend: int | None
+    impressions: int
+    reach: int
+    clicks: int
+    link_clicks: int
+    conversations: int
+    leads: int
+    # Of `leads`, picked by hand («вручную»); the rest are automatic.
+    leads_manual: int = 0
+    target: int
+    paid: int
+    revenue: int
+    won: int
+
+
+class AdsStatus(BaseModel):
+    enabled: bool
+    synced_at: datetime | None
+    error: str | None
+    error_at: datetime | None
+    # The last day Meta has numbers for.
+    last_day: date | None
+
+
+class FxRate(BaseModel):
+    valid_from: date
+    rate: float
+
+
+class FxRateIn(BaseModel):
+    valid_from: date
+    rate: Annotated[float, Field(gt=0, le=100_000)]
+
+
+class AdsReport(BaseModel):
+    from_: date = Field(alias="from")
+    to: date
+    rows: list[AdRow]
+    # Days in the period with spend but no rate: ₸ totals leave them out.
+    days_without_rate: int
+    status: AdsStatus
+
+    model_config = {"populate_by_name": True}

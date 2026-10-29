@@ -1,5 +1,5 @@
 import uuid
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Generator
 
 import httpx
 import pytest
@@ -76,6 +76,42 @@ def _no_real_telegram(monkeypatch) -> None:
 
     # Every Bot API call builds its URL here first.
     monkeypatch.setattr(telegram_client, "_url", _blocked)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_meta(monkeypatch) -> None:
+    """Tests never call the Meta Marketing API, whatever the mounted .env
+    holds: off unless a test turns it on with the client mocked; a real
+    request raises in any case."""
+    from app.services.meta_ads import client as meta_client
+
+    monkeypatch.setattr(settings, "META_ACCESS_TOKEN", "")
+    monkeypatch.setattr(settings, "META_AD_ACCOUNT_ID", "")
+
+    async def _blocked(*_args, **_kwargs):
+        raise AssertionError("a test reached the real Meta Marketing API; mock meta_ads.client")
+
+    monkeypatch.setattr(meta_client, "_get", _blocked)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_whatsapp(monkeypatch) -> Generator[None, None, None]:
+    """Tests never write to WhatsApp, whatever the mounted .env holds: off
+    unless a test turns it on with the stub provider (tests/integration/
+    test_crm_whatsapp.py); a Green API URL raises in any case."""
+    from app.services.whatsapp import green_api, provider
+
+    monkeypatch.setattr(settings, "GREEN_API_ID_INSTANCE", "")
+    monkeypatch.setattr(settings, "GREEN_API_TOKEN_INSTANCE", "")
+    monkeypatch.setattr(settings, "GREEN_API_WEBHOOK_TOKEN", "")
+    monkeypatch.setattr(settings, "WHATSAPP_TEST_NUMBERS", "")
+
+    def _blocked(*_args, **_kwargs):
+        raise AssertionError("a test reached the real Green API; use the stub provider")
+
+    monkeypatch.setattr(green_api, "_url", _blocked)
+    yield
+    provider.use(None)
 
 
 @pytest.fixture(autouse=True)

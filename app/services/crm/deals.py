@@ -20,13 +20,13 @@ from fastapi import status
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.errors import AppError
-from app.i18n.catalog import key as i18n_key
+from app.config import settings
 from app.models.crm import (
     STAGE_ORDER,
     CrmDeal,
     CrmDealEvent,
     CrmParent,
+    CrmSource,
     CrmStudent,
     CrmTariff,
     CrmTask,
@@ -38,7 +38,8 @@ from app.models.scheduling import Meeting, MeetingStatus
 from app.models.user import User, UserRole
 from app.schemas import crm as schemas
 from app.services import audit, tz
-from app.services.crm import progress
+from app.services.crm import lead_source, progress
+from app.services.crm.errors import crm_error
 from app.services.scheduling import booking
 
 SALES_ROLES = (UserRole.owner, UserRole.sales_head, UserRole.sales_manager, UserRole.marketer)
@@ -57,15 +58,6 @@ _PAID_INDEX = STAGE_ORDER.index(DealStage.paid)
 _QUALIFICATION_INDEX = STAGE_ORDER.index(DealStage.qualification)
 _CONSULTATION_INDEX = STAGE_ORDER.index(DealStage.consultation)
 _INVOICE_INDEX = STAGE_ORDER.index(DealStage.invoice)
-
-
-def crm_error(status_code: int, error_code: str, **extra: Any) -> AppError:
-    return AppError(
-        status_code=status_code,
-        error_code=error_code,
-        detail=i18n_key("api_errors", error_code),
-        extra=extra or None,
-    )
 
 
 def _supervisor(user: User) -> bool:
@@ -145,9 +137,12 @@ def _require_open(deal: CrmDeal) -> None:
 async def meta(db: AsyncSession) -> schemas.CrmMeta:
     # Archived tariffs too: deals that have one still show its name.
     rows = await db.execute(select(CrmTariff).order_by(CrmTariff.sort, CrmTariff.code))
+    source_rows = await db.execute(select(CrmSource).order_by(CrmSource.sort, CrmSource.name))
     return schemas.CrmMeta(
+        whatsapp=settings.whatsapp_enabled,
         stages=STAGE_ORDER,
         tariffs=[schemas.TariffItem.model_validate(t, from_attributes=True) for t in rows.scalars()],
+        sources=[schemas.SourceItem.model_validate(s, from_attributes=True) for s in source_rows.scalars()],
         lost_reasons=list(LostReason),
     )
 
@@ -189,6 +184,7 @@ async def list_deals(
     users = await _users(db, {deal.manager_id for deal, _, _ in rows})
     calls = await _live_calls(db, [deal.id for deal, _, _ in rows])
     tasks = await _next_task_due(db, [deal.id for deal, _, _ in rows])
+    lead_sources = await lead_source.describe(db, [deal for deal, _, _ in rows])
     # The marketer sees the board without personal data (ТЗ §2, §6.2).
     masked = user.role == UserRole.marketer
     return [
@@ -201,7 +197,8 @@ async def list_deals(
             student_name=None if masked or student is None else student.full_name,
             tariff_code=deal.tariff_code,
             total=deal.total,
-            source=deal.source,
+            source=lead_sources.get(deal.id),
+            repeat=deal.repeat,
             is_target=deal.is_target,
             paid=deal.paid_at is not None,
             consent=parent.consent,
@@ -236,6 +233,12 @@ def _apply_filters(query, user: User, f: schemas.DealFilters):
         query = query.where(CrmDeal.manager_id.is_(None))
     elif f.manager:
         query = query.where(CrmDeal.manager_id == uuid.UUID(f.manager))
+    if f.source_id:
+        query = query.where(CrmDeal.source_id == f.source_id)
+    if f.ad_id:
+        query = query.where(CrmDeal.meta_ad_id == f.ad_id)
+    if f.no_source:
+        query = query.where(CrmDeal.source_id.is_(None), CrmDeal.meta_ad_id.is_(None))
     if f.paid is not None:
         query = query.where(CrmDeal.paid_at.is_not(None) if f.paid else CrmDeal.paid_at.is_(None))
     if f.created_from:
@@ -269,6 +272,13 @@ async def _student_account(db: AsyncSession, deal: CrmDeal) -> schemas.StudentAc
     from app.services.crm import invites  # invites builds on this module
 
     return await invites.account_info(db, deal)
+
+
+async def _chat(db: AsyncSession, deal: CrmDeal) -> list[schemas.MessageOut]:
+    # The WhatsApp service builds on this module: imported here, not on top.
+    from app.services.whatsapp import chat
+
+    return await chat.messages(db, deal)
 
 
 async def detail(db: AsyncSession, user: User, deal: CrmDeal) -> schemas.DealDetail:
@@ -333,7 +343,9 @@ async def detail(db: AsyncSession, user: User, deal: CrmDeal) -> schemas.DealDet
         paid_amount=deal.paid_amount,
         paid_at=deal.paid_at,
         payment_method=deal.payment_method,
-        source=deal.source,
+        source=(await lead_source.describe(db, [deal])).get(deal.id),
+        repeat=deal.repeat,
+        messages=await _chat(db, deal),
         first_message=deal.first_message,
         stage_at=next((e.at for e in events if e.kind in STAGE_EVENTS), deal.created_at),
         meeting=meeting_out(meeting) if meeting else None,
@@ -413,9 +425,9 @@ async def create_deal(db: AsyncSession, user: User, body: schemas.DealCreate) ->
         student_id=student.id if student else None,
         stage=DealStage.qualification if mine else DealStage.unsorted,
         manager_id=user.id if mine else None,
-        source=body.source,
         first_message=body.first_message,
     )
+    await lead_source.pick(db, user, deal, body.source)
     db.add(deal)
     await db.flush()
     _event(db, deal, user, "created", {"stage": deal.stage.value})
@@ -423,13 +435,38 @@ async def create_deal(db: AsyncSession, user: User, body: schemas.DealCreate) ->
     return deal
 
 
-async def accept(db: AsyncSession, user: User, deal_id: uuid.UUID) -> CrmDeal:
+MANAGER_ROLES = (UserRole.sales_manager, UserRole.sales_head)
+
+
+async def _manager(db: AsyncSession, manager_id: uuid.UUID) -> User:
+    """Who may be responsible for a deal: an active manager or head of sales."""
+    manager = await db.get(User, manager_id)
+    if manager is None or manager.role not in MANAGER_ROLES or not manager.is_active:
+        raise crm_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "manager_not_found")
+    return manager
+
+
+async def accept(db: AsyncSession, user: User, deal_id: uuid.UUID, manager_id: uuid.UUID | None = None) -> CrmDeal:
+    """A manager takes the lead themself. The owner is not a manager: they
+    hand it to one (`manager_id` required), or no manager would ever see it
+    in «Мои сделки». The head of sales may do either."""
     deal = await get_deal(db, user, deal_id, for_update=True)
     if deal.stage != DealStage.unsorted or deal.manager_id is not None:
         raise crm_error(status.HTTP_409_CONFLICT, "deal_already_accepted")
-    deal.manager_id = user.id
+    if user.role == UserRole.sales_manager or manager_id in (None, user.id):
+        if user.role not in MANAGER_ROLES:
+            raise crm_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "manager_required")
+        manager = user
+    else:
+        if not _supervisor(user):
+            raise crm_error(status.HTTP_403_FORBIDDEN, "deal_reassign_forbidden")
+        manager = await _manager(db, manager_id)
+    deal.manager_id = manager.id
     deal.stage = DealStage.qualification
-    _event(db, deal, user, "accepted")
+    _event(
+        db, deal, user, "accepted",
+        {"manager_id": str(manager.id), "manager": manager.full_name or manager.email} if manager.id != user.id else None,
+    )
     await db.commit()
     return deal
 
@@ -492,9 +529,8 @@ async def patch_deal(db: AsyncSession, user: User, deal_id: uuid.UUID, body: sch
     if "manager_id" in sent and body.manager_id != deal.manager_id:
         if not _supervisor(user):
             raise crm_error(status.HTTP_403_FORBIDDEN, "deal_reassign_forbidden")
-        manager = await db.get(User, body.manager_id) if body.manager_id else None
-        if body.manager_id and (manager is None or manager.role not in (UserRole.sales_manager, UserRole.sales_head)):
-            raise crm_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "manager_not_found")
+        if body.manager_id:
+            await _manager(db, body.manager_id)
         audit.record(
             db, actor=user, action="crm.manager_changed", entity_type="crm_deal", entity_id=deal.id,
             before={"manager_id": str(deal.manager_id) if deal.manager_id else None},
@@ -503,8 +539,9 @@ async def patch_deal(db: AsyncSession, user: User, deal_id: uuid.UUID, body: sch
         deal.manager_id = body.manager_id
         _event(db, deal, user, "manager", {"manager_id": str(body.manager_id) if body.manager_id else None})
 
-    if "source" in sent:
-        deal.source = body.source
+    if "source" in sent and await lead_source.pick(db, user, deal, body.source):
+        described = (await lead_source.describe(db, [deal])).get(deal.id)
+        _event(db, deal, user, "source", {"name": described.name if described else None})
     await db.commit()
     return deal
 
@@ -628,6 +665,10 @@ async def close(db: AsyncSession, user: User, deal_id: uuid.UUID, body: schemas.
             raise crm_error(status.HTTP_403_FORBIDDEN, "deal_win_forbidden")
         if deal.paid_at is None:
             raise crm_error(status.HTTP_409_CONFLICT, "deal_not_paid")
+        # Only once the report is out: a paid deal still has the calls and
+        # the report ahead, and an early «Успешно» is a slip of the mouse.
+        if deal.stage != DealStage.report_published:
+            raise crm_error(status.HTTP_409_CONFLICT, "deal_win_too_early")
         deal.result = DealResult.won
     else:
         if body.reason is None:

@@ -98,6 +98,35 @@ class Settings(BaseSettings):
     def telegram_enabled(self) -> bool:
         return bool(self.TELEGRAM_BOT_TOKEN and self.TELEGRAM_BOT_USERNAME and self.TELEGRAM_WEBHOOK_SECRET)
 
+    # Meta Marketing API, read-only (`ads_read` system-user token), for the
+    # ads report in the CRM (app/services/meta_ads/). Off while the token is
+    # empty: no sync runs and the report shows only the CRM's own numbers.
+    # The token never leaves the server and is never logged.
+    META_ACCESS_TOKEN: str = ""
+    META_AD_ACCOUNT_ID: str = ""  # act_…
+    META_API_VERSION: str = "v21.0"
+    META_SYNC_INTERVAL_SECONDS: int = 3600
+
+    @property
+    def meta_enabled(self) -> bool:
+        return bool(self.META_ACCESS_TOKEN and self.META_AD_ACCOUNT_ID)
+
+    # WhatsApp of the sales team through Green API (app/services/whatsapp/,
+    # ТЗ §3.5). Off while the instance is empty. GREEN_API_WEBHOOK_TOKEN is the
+    # instance's webhookUrlToken: Green API sends it as `Authorization: Bearer`
+    # on every webhook. WHATSAPP_TEST_NUMBERS — comma-separated phones; when
+    # set, only messages from them are taken in (a personal number linked for
+    # a test brings every private chat otherwise).
+    GREEN_API_URL: str = "https://api.green-api.com"
+    GREEN_API_ID_INSTANCE: str = ""
+    GREEN_API_TOKEN_INSTANCE: str = ""
+    GREEN_API_WEBHOOK_TOKEN: str = ""
+    WHATSAPP_TEST_NUMBERS: str = ""
+
+    @property
+    def whatsapp_enabled(self) -> bool:
+        return bool(self.GREEN_API_ID_INSTANCE and self.GREEN_API_TOKEN_INSTANCE)
+
     # Which backend build_storage_backend() returns:
     #   "fs"  — write photos to STORAGE_FS_ROOT on disk; nginx serves them
     #           directly (default; no object-storage service to run).

@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, SmallInteger, String, Text, func
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Enum, ForeignKey, Integer, SmallInteger, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -54,6 +54,14 @@ class LostReason(str, enum.Enum):
     no_show = "no_show"
     refund = "refund"
     other = "other"
+
+
+class Attribution(str, enum.Enum):
+    """How the lead's source was found (ТЗ §3.12.1), by priority."""
+
+    ad = "ad"              # «авто: реклама» — the ad's id came with the WhatsApp message
+    greeting = "greeting"  # «авто: приветствие» — the first message matched an ad's greeting
+    manual = "manual"      # «вручную» — the manager picked it
 
 
 class PaymentMethod(str, enum.Enum):
@@ -119,6 +127,19 @@ class CrmTariff(Base):
     sort: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default="0")
 
 
+class CrmSource(Base):
+    """Where the lead came from — a list the owner keeps, so the analytics by
+    source does not split into typos. Never deleted (deals refer to it):
+    archived, like a tariff."""
+
+    __tablename__ = "crm_sources"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(120), nullable=False, unique=True)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    sort: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default="0")
+
+
 class CrmDeal(Base):
     """One tariff sold to one student (ТЗ §1.4)."""
 
@@ -166,13 +187,29 @@ class CrmDeal(Base):
     paid_amount: Mapped[int | None] = mapped_column(Integer)
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     payment_method: Mapped[PaymentMethod | None] = mapped_column(Enum(PaymentMethod, native_enum=False, length=16))
-    source: Mapped[str | None] = mapped_column(String(255))
+    source_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("crm_sources.id"), nullable=True, index=True
+    )
+    # The lead's source is one field (ТЗ §3.12.1): a Meta ad (`meta_ad_id`)
+    # or a source of the list that is not an ad (`source_id`: «рекомендация»,
+    # «повторный клиент», …) — never both. Neither — «Креатив не определён».
+    meta_ad_id: Mapped[str | None] = mapped_column(
+        String(32), ForeignKey("meta_ads.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    # How the source was found; None while it is not.
+    attribution: Mapped[Attribution | None] = mapped_column(Enum(Attribution, native_enum=False, length=16))
+    # «Повторное обращение» (ТЗ §3.5): a known client wrote with no open deal.
+    repeat: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     first_message: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        CheckConstraint("source_id IS NULL OR meta_ad_id IS NULL", name="ck_crm_deals_one_source"),
     )
 
     @property
@@ -266,3 +303,49 @@ class CrmTask(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+
+
+class MessageDirection(str, enum.Enum):
+    incoming = "in"
+    outgoing = "out"
+
+
+class MessageStatus(str, enum.Enum):
+    received = "received"  # incoming
+    pending = "pending"    # handed to the provider
+    sent = "sent"
+    delivered = "delivered"
+    read = "read"
+    failed = "failed"
+
+
+class CrmMessage(Base):
+    """A WhatsApp message with a client (ТЗ §3.5): the chat in the deal's
+    card. Kept by the client's phone and tied to the deal it belongs to —
+    the open one when it came, or the new lead it made. Both ways: from the
+    client, from the CRM, and from the sales phone itself."""
+
+    __tablename__ = "crm_messages"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    parent_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("crm_parents.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    deal_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("crm_deals.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    phone: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    direction: Mapped[MessageDirection] = mapped_column(Enum(MessageDirection, native_enum=False, length=8), nullable=False)
+    # Text, or the caption / a «[фото]»-like mark for media.
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False, server_default="text")
+    # The provider's id; unique so a repeated webhook is a no-op.
+    provider_id: Mapped[str | None] = mapped_column(String(128), nullable=True, unique=True)
+    status: Mapped[MessageStatus] = mapped_column(Enum(MessageStatus, native_enum=False, length=16), nullable=False)
+    # Who wrote it in the CRM; None — the client, or the sales phone.
+    author_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    # The ad data of a message from an ad (sourceId, sourceUrl, ctwaClid, …).
+    ad: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True), nullable=True)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
