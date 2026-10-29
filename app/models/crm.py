@@ -198,6 +198,8 @@ class CrmDeal(Base):
     )
     # How the source was found; None while it is not.
     attribution: Mapped[Attribution | None] = mapped_column(Enum(Attribution, native_enum=False, length=16))
+    # «Повторное обращение» (ТЗ §3.5): a known client wrote with no open deal.
+    repeat: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     first_message: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
@@ -301,3 +303,49 @@ class CrmTask(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+
+
+class MessageDirection(str, enum.Enum):
+    incoming = "in"
+    outgoing = "out"
+
+
+class MessageStatus(str, enum.Enum):
+    received = "received"  # incoming
+    pending = "pending"    # handed to the provider
+    sent = "sent"
+    delivered = "delivered"
+    read = "read"
+    failed = "failed"
+
+
+class CrmMessage(Base):
+    """A WhatsApp message with a client (ТЗ §3.5): the chat in the deal's
+    card. Kept by the client's phone and tied to the deal it belongs to —
+    the open one when it came, or the new lead it made. Both ways: from the
+    client, from the CRM, and from the sales phone itself."""
+
+    __tablename__ = "crm_messages"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    parent_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("crm_parents.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    deal_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("crm_deals.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    phone: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    direction: Mapped[MessageDirection] = mapped_column(Enum(MessageDirection, native_enum=False, length=8), nullable=False)
+    # Text, or the caption / a «[фото]»-like mark for media.
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False, server_default="text")
+    # The provider's id; unique so a repeated webhook is a no-op.
+    provider_id: Mapped[str | None] = mapped_column(String(128), nullable=True, unique=True)
+    status: Mapped[MessageStatus] = mapped_column(Enum(MessageStatus, native_enum=False, length=16), nullable=False)
+    # Who wrote it in the CRM; None — the client, or the sales phone.
+    author_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    # The ad data of a message from an ad (sourceId, sourceUrl, ctwaClid, …).
+    ad: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True), nullable=True)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
