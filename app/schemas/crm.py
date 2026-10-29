@@ -43,9 +43,39 @@ class TariffPatch(BaseModel):
     active: bool | None = None
 
 
+class AdItem(BaseModel):
+    """An ad (creative) for the deal's «Креатив» picker."""
+
+    id: str
+    name: str
+    status: str | None
+    campaign_name: str | None
+    adset_name: str | None
+
+
+class SourceItem(BaseModel):
+    id: uuid.UUID
+    name: str
+    active: bool
+
+
+SourceName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
+
+
+class SourceIn(BaseModel):
+    name: SourceName
+
+
+class SourcePatch(BaseModel):
+    name: SourceName | None = None
+    active: bool | None = None
+
+
 class CrmMeta(BaseModel):
     stages: list[DealStage]
     tariffs: list[TariffItem]
+    # Archived ones too: deals that have one still show its name.
+    sources: list[SourceItem]
     lost_reasons: list[LostReason]
 
 
@@ -73,7 +103,7 @@ class DealCreate(BaseModel):
     parent: ParentIn | None = None
     parent_id: uuid.UUID | None = None
     student: StudentIn | None = None
-    source: ShortText | None = None
+    source_id: uuid.UUID | None = None
     first_message: LongText | None = None
 
 
@@ -86,7 +116,8 @@ class DealPatch(BaseModel):
     non_target_reason: Annotated[str, Field(max_length=1000)] | None = None
     tariff_code: Annotated[str, Field(max_length=32)] | None = None
     discount: Annotated[int, Field(ge=0, le=10_000_000)] | None = None
-    source: ShortText | None = None
+    source_id: uuid.UUID | None = None
+    meta_ad_id: Annotated[str, Field(max_length=32)] | None = None
     manager_id: uuid.UUID | None = None
 
 
@@ -98,9 +129,17 @@ class DealFilters(BaseModel):
     stage: DealStage | None = None
     tariff: Annotated[str, Field(max_length=32)] | None = None
     manager: Annotated[str, Field(pattern=r"^(none|[0-9a-fA-F-]{36})$")] | None = None
+    source_id: uuid.UUID | None = None
     paid: bool | None = None
     created_from: date | None = None
     created_to: date | None = None
+
+
+class AcceptIn(BaseModel):
+    """Whose the lead becomes. A manager takes it themself (leave empty); the
+    owner must name a manager or the head of sales."""
+
+    manager_id: uuid.UUID | None = None
 
 
 class StageMove(BaseModel):
@@ -216,6 +255,8 @@ class DealCard(BaseModel):
     student_name: str | None
     tariff_code: str | None
     total: int | None
+    source_id: uuid.UUID | None = None
+    # The source's name, for the board and the analytics.
     source: str | None = None
     is_target: bool | None
     paid: bool
@@ -261,7 +302,10 @@ class DealDetail(BaseModel):
     paid_amount: int | None
     paid_at: datetime | None
     payment_method: PaymentMethod | None
+    source_id: uuid.UUID | None
     source: str | None
+    # The Meta ad the lead came from; null — «Креатив не определён».
+    meta_ad: AdItem | None = None
     first_message: str | None
     # When the deal came to its current stage.
     stage_at: datetime
@@ -393,6 +437,13 @@ class StaffMember(BaseModel):
     role: str
     is_active: bool
     created_at: datetime
+    # Specialists: calls booked with them from now on, still to be held. A
+    # disabled specialist keeps them — the owner moves or cancels them.
+    upcoming_meetings: int = 0
+
+
+class StaffActiveIn(BaseModel):
+    active: bool
 
 
 class SalesUser(BaseModel):
@@ -418,3 +469,115 @@ class ClientRow(BaseModel):
     meetings_total: int
     no_shows: int
     paid_total: int
+
+
+# ── owner's dashboard (ТЗ §3.12.5) ──────────────────────────────────────────
+
+
+class SpecialistLoad(BaseModel):
+    id: uuid.UUID
+    name: str
+    is_active: bool
+    # Hours the specialist opened in the period: still free, and taken by calls.
+    free_hours: float
+    busy_hours: float
+    calls_done: int
+    no_shows: int
+    cancelled: int
+    # Paid in the period by the deals this specialist took.
+    revenue: int
+
+
+class MeetingIssue(BaseModel):
+    """A cancelled or moved call, or one the client missed."""
+
+    meeting_id: uuid.UUID
+    deal_id: uuid.UUID | None
+    kind: Literal["no_show", "cancelled", "rescheduled"]
+    type: str
+    start: datetime
+    specialist: str
+    student_name: str | None
+    reason: str | None
+    # The new time of a moved call.
+    moved_to: datetime | None = None
+
+
+class PaymentToReview(BaseModel):
+    """From the payment to the review held (the second call), over the deals
+    whose review was held in the period. Days, null without any."""
+
+    count: int
+    median_days: float | None
+    average_days: float | None
+    max_days: float | None
+    # Paid deals of a tariff with a review that have not had it yet.
+    waiting: int
+
+
+class OwnerDashboard(BaseModel):
+    from_: date = Field(alias="from")
+    to: date
+    specialists: list[SpecialistLoad]
+    issues: list[MeetingIssue]
+    payment_to_review: PaymentToReview
+
+    model_config = {"populate_by_name": True}
+
+
+# ── ads (Meta Marketing API) ────────────────────────────────────────────────
+
+
+class AdRow(BaseModel):
+    """One ad over the period: Meta's numbers and the CRM's deals that came
+    from it. `ad_id` null — «Креатив не определён» (deals only). Money in ₸
+    by the owner's rate; null when a day with spend has no rate."""
+
+    ad_id: str | None
+    ad_name: str | None
+    adset_id: str | None
+    adset_name: str | None
+    campaign_id: str | None
+    campaign_name: str | None
+    spend_usd: float
+    spend: int | None
+    impressions: int
+    reach: int
+    clicks: int
+    link_clicks: int
+    conversations: int
+    leads: int
+    target: int
+    paid: int
+    revenue: int
+    won: int
+
+
+class AdsStatus(BaseModel):
+    enabled: bool
+    synced_at: datetime | None
+    error: str | None
+    error_at: datetime | None
+    # The last day Meta has numbers for.
+    last_day: date | None
+
+
+class FxRate(BaseModel):
+    valid_from: date
+    rate: float
+
+
+class FxRateIn(BaseModel):
+    valid_from: date
+    rate: Annotated[float, Field(gt=0, le=100_000)]
+
+
+class AdsReport(BaseModel):
+    from_: date = Field(alias="from")
+    to: date
+    rows: list[AdRow]
+    # Days in the period with spend but no rate: ₸ totals leave them out.
+    days_without_rate: int
+    status: AdsStatus
+
+    model_config = {"populate_by_name": True}

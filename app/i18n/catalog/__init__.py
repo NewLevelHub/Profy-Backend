@@ -23,6 +23,7 @@ from app.i18n import DEFAULT_LOCALE, get_locale, record_fallback
 from . import (
     admin_export,
     api_errors,
+    crm_export,
     api_messages,
     report_copy,
     riasec_explanations,
@@ -47,6 +48,7 @@ from . import (
 _AREAS: dict[str, Any] = {
     "admin_export": admin_export,
     "api_errors": api_errors,
+    "crm_export": crm_export,
     "api_messages": api_messages,
     "report_copy": report_copy,
     "riasec_explanations": riasec_explanations,

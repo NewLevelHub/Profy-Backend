@@ -9,7 +9,7 @@ import uuid
 from datetime import date
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -17,13 +17,14 @@ from app.dependencies import require_role
 from app.models.user import User, UserRole
 from app.schemas import crm as schemas
 from app.models.scheduling import MeetingStatus
-from app.services.crm import deals, invites, meetings, staff, tariffs, tasks
+from app.services.crm import ads, analytics, deals, invites, meetings, sources, staff, tariffs, tasks
 
 router = APIRouter(tags=["crm"])
 
 _board_reader = require_role(UserRole.owner, UserRole.sales_head, UserRole.sales_manager, UserRole.marketer)
 _seller = require_role(UserRole.owner, UserRole.sales_head, UserRole.sales_manager)
 _owner = require_role(UserRole.owner)
+_analyst = require_role(UserRole.owner, UserRole.sales_head, UserRole.marketer)
 
 
 async def _detail(db: AsyncSession, user: User, deal_id: uuid.UUID) -> schemas.DealDetail:
@@ -40,6 +41,15 @@ async def list_staff(_: User = Depends(_owner), db: AsyncSession = Depends(get_d
     return await staff.members(db)
 
 
+@router.post("/staff/{user_id}/active", response_model=schemas.StaffMember)
+async def set_staff_active(
+    user_id: uuid.UUID, body: schemas.StaffActiveIn, user: User = Depends(_owner), db: AsyncSession = Depends(get_db)
+) -> schemas.StaffMember:
+    """«Отключить» / «Включить»: a disabled employee cannot sign in, and a
+    disabled specialist's free time leaves the managers' calendar at once."""
+    return await staff.set_active(db, user, user_id, body.active)
+
+
 @router.post("/tariffs", response_model=schemas.TariffItem, status_code=201)
 async def create_tariff(
     body: schemas.TariffIn, user: User = Depends(_owner), db: AsyncSession = Depends(get_db)
@@ -52,6 +62,20 @@ async def patch_tariff(
     code: str, body: schemas.TariffPatch, user: User = Depends(_owner), db: AsyncSession = Depends(get_db)
 ) -> schemas.TariffItem:
     return await tariffs.update(db, user, code, body)
+
+
+@router.post("/sources", response_model=schemas.SourceItem, status_code=201)
+async def create_source(
+    body: schemas.SourceIn, user: User = Depends(_owner), db: AsyncSession = Depends(get_db)
+) -> schemas.SourceItem:
+    return await sources.create(db, user, body)
+
+
+@router.patch("/sources/{source_id}", response_model=schemas.SourceItem)
+async def patch_source(
+    source_id: uuid.UUID, body: schemas.SourcePatch, user: User = Depends(_owner), db: AsyncSession = Depends(get_db)
+) -> schemas.SourceItem:
+    return await sources.update(db, user, source_id, body)
 
 
 @router.get("/deals", response_model=list[schemas.DealCard])
@@ -110,8 +134,13 @@ async def patch_deal(
 
 
 @router.post("/deals/{deal_id}/accept", response_model=schemas.DealDetail)
-async def accept(deal_id: uuid.UUID, user: User = Depends(_seller), db: AsyncSession = Depends(get_db)):
-    await deals.accept(db, user, deal_id)
+async def accept(
+    deal_id: uuid.UUID,
+    body: schemas.AcceptIn | None = None,
+    user: User = Depends(_seller),
+    db: AsyncSession = Depends(get_db),
+) -> schemas.DealDetail:
+    await deals.accept(db, user, deal_id, body.manager_id if body else None)
     return await _detail(db, user, deal_id)
 
 
@@ -299,3 +328,69 @@ async def complete_task(
 ) -> schemas.TaskOut:
     task = await tasks.complete_task(db, user, task_id, body.result)
     return (await tasks.task_out(db, [task]))[0]
+
+
+# ── analytics ───────────────────────────────────────────────────────────────
+
+
+@router.get("/dashboard", response_model=schemas.OwnerDashboard, response_model_by_alias=True)
+async def owner_dashboard(
+    date_from: date = Query(alias="from"),
+    date_to: date = Query(alias="to"),
+    _: User = Depends(_owner),
+    db: AsyncSession = Depends(get_db),
+) -> schemas.OwnerDashboard:
+    return await analytics.dashboard(db, date_from, date_to)
+
+
+@router.get("/analytics/export")
+async def export_analytics(
+    month: str = Query(pattern=r"^20\d{2}-(0[1-9]|1[0-2])$"),
+    user: User = Depends(_analyst),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """The month's funnel, conversions and ads as an .xlsx for the head of sales."""
+    content = await analytics.workbook(db, user, month)
+    return Response(
+        content=content,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="profile-crm-{month}.xlsx"'},
+    )
+
+
+# ── ads (Meta Marketing API) ────────────────────────────────────────────────
+
+
+@router.get("/ads", response_model=list[schemas.AdItem])
+async def list_ads(_: User = Depends(_seller), db: AsyncSession = Depends(get_db)) -> list[schemas.AdItem]:
+    """The account's ads, for the deal's «Креатив»."""
+    return await ads.ad_items(db)
+
+
+@router.get("/ads/report", response_model=schemas.AdsReport, response_model_by_alias=True)
+async def ads_report(
+    date_from: date = Query(alias="from"),
+    date_to: date = Query(alias="to"),
+    _: User = Depends(_analyst),
+    db: AsyncSession = Depends(get_db),
+) -> schemas.AdsReport:
+    return await ads.report(db, date_from, date_to)
+
+
+@router.post("/ads/sync", response_model=schemas.AdsStatus)
+async def ads_sync(_: User = Depends(_owner), db: AsyncSession = Depends(get_db)) -> schemas.AdsStatus:
+    """«Обновить сейчас»: the last 7 days from Meta."""
+    return await ads.refresh(db)
+
+
+@router.get("/ads/rates", response_model=list[schemas.FxRate])
+async def ads_rates(_: User = Depends(_analyst), db: AsyncSession = Depends(get_db)) -> list[schemas.FxRate]:
+    return await ads.rates(db)
+
+
+@router.put("/ads/rates", response_model=list[schemas.FxRate])
+async def set_ads_rate(
+    body: schemas.FxRateIn, user: User = Depends(_owner), db: AsyncSession = Depends(get_db)
+) -> list[schemas.FxRate]:
+    """₸ per 1 USD of ad spend from `valid_from` on."""
+    return await ads.set_rate(db, user, body)

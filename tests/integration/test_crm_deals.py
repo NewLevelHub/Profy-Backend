@@ -232,6 +232,11 @@ async def test_closing_rules(client: httpx.AsyncClient, manager: User, head: Use
         f"{URL}/deals/{paid['id']}/close", json={"result": "lost", "reason": "refund"}, headers=_h(manager)
     )
     assert forbidden.status_code == 403
+    # «Успешно» only once the report is out, not right after the payment.
+    early = await client.post(f"{URL}/deals/{paid['id']}/close", json={"result": "won"}, headers=_h(head))
+    assert early.status_code == 409 and early.json()["error_code"] == "deal_win_too_early"
+    moved = await client.post(f"{URL}/deals/{paid['id']}/stage", json={"stage": "report_published"}, headers=_h(head))
+    assert moved.status_code == 200, moved.text
     won = await client.post(f"{URL}/deals/{paid['id']}/close", json={"result": "won"}, headers=_h(head))
     assert won.json()["result"] == "won"
 
