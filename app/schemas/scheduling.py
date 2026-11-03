@@ -3,7 +3,7 @@ docs/frontend-scheduling-api-contract.md.
 
 Schemas only — the router and services land in PRO-512/513/514. Datetimes
 are UTC; `date`/`week_start`/`HH:MM` values are Asia/Almaty wall time.
-Rule checks that need the clock or the DB (freeze, past, grid bounds,
+Rule checks that need the clock or the DB (past, grid bounds,
 alignment, overlaps) live in the service, which raises `AppError` with the
 contract's `error_code`; only shape limits are declared here.
 """
@@ -34,10 +34,8 @@ class SchedulingConfig(BaseModel):
     slot_minutes: int
     day_start: WallTime
     day_end: WallTime
-    freeze_days: int
     now: datetime
     today: date
-    editable_from: date
 
 
 class SpecialistRef(BaseModel):
@@ -57,14 +55,12 @@ class Slot(BaseModel):
     start: datetime
     end: datetime
     state: SlotState
-    frozen: bool
     past: bool
     meeting: SlotMeeting | None = None
 
 
 class Day(BaseModel):
     date: date
-    frozen: bool
     past: bool
     slots: list[Slot]
 
@@ -101,7 +97,7 @@ class WeekBulkRequest(BaseModel):
 
 class SkippedDay(BaseModel):
     date: date
-    error_code: Literal["slot_frozen", "slot_in_past", "slot_booked"]
+    error_code: Literal["slot_in_past", "slot_booked"]
     count: int
 
 

@@ -2,7 +2,7 @@
 
 Contract: docs/frontend-scheduling-api-contract.md. The router resolves who
 may act on which specialist; this module applies the schedule rules
-(freeze, past, grid) and writes the change journal.
+(past, grid) and writes the change journal.
 """
 
 import uuid
@@ -85,10 +85,8 @@ def config(now: datetime | None = None) -> schemas.SchedulingConfig:
         slot_minutes=int(grid.SLOT.total_seconds() // 60),
         day_start=grid.DAY_START.strftime("%H:%M"),
         day_end=grid.DAY_END.strftime("%H:%M"),
-        freeze_days=tz.FREEZE_DAYS,
         now=now,
         today=tz.today(now),
-        editable_from=tz.editable_from(now),
     )
 
 
@@ -138,21 +136,17 @@ async def get_week(
 
     days = []
     for day in grid.week_days(week_start):
-        frozen = tz.is_frozen(day, now)
         slots = [
             schemas.Slot(
                 start=slot_start,
                 end=slot_start + grid.SLOT,
                 state=states[slot_start].value if slot_start in states else "closed",
-                frozen=frozen,
                 past=slot_start <= now,
                 meeting=meetings.get(slot_start),
             )
             for slot_start in grid.day_slot_starts(day)
         ]
-        days.append(
-            schemas.Day(date=day, frozen=frozen, past=slots[-1].start <= now, slots=slots)
-        )
+        days.append(schemas.Day(date=day, past=slots[-1].start <= now, slots=slots))
     return schemas.Week(
         specialist=schemas.SpecialistRef(id=specialist.id, full_name=display_name(specialist)),
         week_start=week_start,
@@ -172,22 +166,13 @@ async def _weeks(
 # ── changing availability ───────────────────────────────────────────────────
 
 
-def _blocker(
-    actor: User,
-    specialist: User,
-    slot_start: datetime,
-    now: datetime,
-    current: SlotState | None = None,
-) -> str | None:
-    """Why `actor` may not change this slot of `specialist`, or None."""
+def _blocker(slot_start: datetime, now: datetime, current: SlotState | None = None) -> str | None:
+    """Why this slot may not be changed, or None."""
     if slot_start <= now:
         return "slot_in_past"
     # A meeting is moved or cancelled by the owner, never by editing the slot.
     if current == SlotState.booked:
         return "slot_booked"
-    # The owner may change frozen days (ТЗ §4.6 п.7); the specialist may not.
-    if actor.id == specialist.id and tz.is_frozen(tz.business_date(slot_start), now):
-        return "slot_frozen"
     return None
 
 
@@ -280,12 +265,12 @@ async def patch_availability(
     conflicts = [
         (slot, code)
         for slot in sorted(target)
-        if (code := _blocker(actor, specialist, slot, now, current.get(slot)))
+        if (code := _blocker(slot, now, current.get(slot)))
     ]
     if conflicts:
-        # The most final reason wins: past, then a meeting, then the freeze.
+        # The most final reason wins: past, then a meeting.
         codes = {code for _, code in conflicts}
-        error_code = next(c for c in ("slot_in_past", "slot_booked", "slot_frozen") if c in codes)
+        error_code = next(c for c in ("slot_in_past", "slot_booked") if c in codes)
         raise scheduling_error(status.HTTP_409_CONFLICT, error_code, conflicts=conflicts)
 
     await _apply(
@@ -313,7 +298,7 @@ async def _fill_week(
     current = await _states(db, specialist.id, *grid.week_bounds(week_start))
     for day in grid.week_days(week_start):
         for slot in grid.day_slot_starts(day):
-            if code := _blocker(actor, specialist, slot, now, current.get(slot)):
+            if code := _blocker(slot, now, current.get(slot)):
                 skipped[(day, code)] += 1
             else:
                 target[slot] = desired.get(slot)
