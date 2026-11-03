@@ -88,8 +88,7 @@ async def test_config_follows_almaty_calendar(
     body = response.json()
     assert body["timezone"] == "Asia/Almaty"
     assert body["slot_minutes"] == 30
-    assert body["freeze_days"] == 3
-    assert date.fromisoformat(body["editable_from"]) == tz.today() + timedelta(days=3)
+    assert date.fromisoformat(body["today"]) == tz.today()
 
 
 async def test_specialist_cannot_read_someone_elses_schedule(
@@ -165,7 +164,7 @@ async def test_specialist_opens_slots_and_change_is_journaled(
     assert _slot(closed.json()["weeks"][0], tz.at(day, time(10, 0)))["state"] == "closed"
 
 
-async def test_specialist_cannot_change_frozen_days(
+async def test_specialist_changes_the_next_days(
     client: httpx.AsyncClient, specialist: User
 ) -> None:
     tomorrow = tz.today() + timedelta(days=1)
@@ -174,22 +173,8 @@ async def test_specialist_cannot_change_frozen_days(
         json={"changes": [_interval(tomorrow, time(20, 0), time(21, 0))]},
         headers=_headers(specialist),
     )
-    assert response.status_code == 409
-    body = response.json()
-    assert body["error_code"] == "slot_frozen"
-    assert [c["start"] for c in body["conflicts"]] == [
-        _iso(tz.at(tomorrow, time(20, 0))), _iso(tz.at(tomorrow, time(20, 30)))
-    ]
-
-
-async def test_third_day_is_editable(client: httpx.AsyncClient, specialist: User) -> None:
-    day = tz.today() + timedelta(days=3)
-    response = await client.patch(
-        f"{URL}/specialists/me/availability",
-        json={"changes": [_interval(day, time(10, 0), time(10, 30))]},
-        headers=_headers(specialist),
-    )
     assert response.status_code == 200, response.text
+    assert _slot(response.json()["weeks"][0], tz.at(tomorrow, time(20, 0)))["state"] == "free"
 
 
 async def test_past_time_cannot_be_changed(client: httpx.AsyncClient, owner: User, specialist: User) -> None:
@@ -205,12 +190,12 @@ async def test_past_time_cannot_be_changed(client: httpx.AsyncClient, owner: Use
 
 async def test_batch_is_all_or_nothing(client: httpx.AsyncClient, specialist: User) -> None:
     day = _future_monday()
-    tomorrow = tz.today() + timedelta(days=1)
+    yesterday = tz.today() - timedelta(days=1)
     response = await client.patch(
         f"{URL}/specialists/me/availability",
         json={"changes": [
             _interval(day, time(10, 0), time(10, 30)),
-            _interval(tomorrow, time(21, 0), time(21, 30)),
+            _interval(yesterday, time(21, 0), time(21, 30)),
         ]},
         headers=_headers(specialist),
     )
@@ -253,7 +238,7 @@ async def test_overlapping_changes_are_rejected(client: httpx.AsyncClient, speci
     assert response.json()["error_code"] == "changes_overlap"
 
 
-async def test_owner_changes_frozen_day_only_with_reason(
+async def test_owner_changes_schedule_only_with_reason(
     client: httpx.AsyncClient, db_session: AsyncSession, owner: User, specialist: User
 ) -> None:
     tomorrow = tz.today() + timedelta(days=1)
@@ -320,20 +305,15 @@ async def test_template_roundtrip_and_apply(client: httpx.AsyncClient, specialis
     assert _slot(applied.json()["week"], tz.at(wednesday, time(12, 0)))["state"] == "closed"
 
 
-async def test_template_skips_frozen_days(client: httpx.AsyncClient, specialist: User) -> None:
+async def test_template_fills_the_next_days(client: httpx.AsyncClient, specialist: User) -> None:
     template = {"days": {str(n): [{"start": "08:00", "end": "22:00", "state": "free"}] for n in range(1, 8)}}
     await client.put(f"{URL}/specialists/me/template", json=template, headers=_headers(specialist))
-    # The week of tomorrow: tomorrow is frozen and still in the future.
-    frozen_week = tz.week_start(tz.today() + timedelta(days=1))
+    tomorrow = tz.today() + timedelta(days=1)
     response = await client.post(
-        f"{URL}/specialists/me/weeks/{frozen_week}/apply-template", json={}, headers=_headers(specialist)
+        f"{URL}/specialists/me/weeks/{tz.week_start(tomorrow)}/apply-template", json={}, headers=_headers(specialist)
     )
     assert response.status_code == 200
-    skipped_codes = {item["error_code"] for item in response.json()["skipped"]}
-    assert "slot_frozen" in skipped_codes
-    for day in response.json()["week"]["days"]:
-        if day["frozen"]:
-            assert all(slot["state"] == "closed" for slot in day["slots"])
+    assert _slot(response.json()["week"], tz.at(tomorrow, time(12, 0)))["state"] == "free"
 
 
 async def test_publish_is_idempotent_and_listed(
