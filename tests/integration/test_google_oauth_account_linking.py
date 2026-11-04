@@ -47,3 +47,23 @@ async def test_google_login_links_to_account_registered_with_different_email_cas
         await db_session.execute(select(User).where(User.email == canonical_email))
     ).scalars().all()
     assert len(rows) == 1
+
+
+async def test_a_disabled_account_cannot_sign_in_with_google(
+    client: httpx.AsyncClient, db_session: AsyncSession, monkeypatch
+) -> None:
+    email = f"{uuid.uuid4().hex}@gmail.com"
+    google_id = str(uuid.uuid4())
+    db_session.add(User(email=email, google_id=google_id, is_active=False, is_verified=True))
+    await db_session.flush()
+    monkeypatch.setattr(
+        google_id_token,
+        "verify_oauth2_token",
+        lambda *a, **kw: {"sub": google_id, "email": email, "email_verified": True},
+    )
+
+    response = await client.post("/api/v1/auth/google", json={"id_token": "fake-token"})
+    assert response.status_code == 403
+    assert response.json()["error_code"] == "account_disabled"
+    assert "access_token" not in response.json()
+

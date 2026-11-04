@@ -179,3 +179,32 @@ async def test_the_right_code_still_verifies(client, db_session):
 
     assert response.status_code == 200
     assert response.json()["user"]["email"] == email
+
+
+async def test_a_disabled_account_is_told_only_after_the_right_password(client, db_session, monkeypatch) -> None:
+    user = await _user(db_session)
+    user.is_active = False
+    await db_session.flush()
+
+    wrong = await client.post("/api/v1/auth/login", json={"email": user.email, "password": "Wrong-pass1!"})
+    assert wrong.status_code == 401
+    assert "error_code" not in wrong.json()
+
+    right = await client.post("/api/v1/auth/login", json={"email": user.email, "password": PASSWORD})
+    assert right.status_code == 403
+    assert right.json()["error_code"] == "account_disabled"
+    assert "access_token" not in right.json()
+
+
+async def test_a_disabled_unverified_account_gets_no_token_from_the_code(client, db_session) -> None:
+    user = await _user(db_session, is_verified=False)
+    await _issue_code(db_session, user)
+    user.is_active = False
+    await db_session.flush()
+
+    verified = await client.post("/api/v1/auth/verify-email", json={"email": user.email, "code": CODE})
+    assert verified.status_code == 403
+    assert verified.json()["error_code"] == "account_disabled"
+    await db_session.refresh(user)
+    assert user.is_verified is False
+

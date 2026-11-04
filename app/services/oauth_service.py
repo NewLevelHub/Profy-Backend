@@ -6,6 +6,7 @@ from http import HTTPStatus
 from google.auth import exceptions as google_auth_exceptions
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token as google_id_token
+from fastapi import status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,6 +18,7 @@ from app.models.user import User
 from app.services import invitation_service
 from app.services.auth_service import create_jwt_token
 from app.services.crm import invites
+from app.services.crm.errors import crm_error
 
 # requests.Session (which google.auth.transport.requests.Request wraps) isn't
 # safe for concurrent use from multiple threads. asyncio.to_thread draws from
@@ -119,6 +121,11 @@ def _adopt_as_google_verified(user: User, google_id: str, invitation: Invitation
     user.is_verified = True
 
 
+def _require_active(user: User) -> None:
+    if not user.is_active:
+        raise crm_error(status.HTTP_403_FORBIDDEN, "account_disabled")
+
+
 async def login_or_register_google(
     token: str, db: AsyncSession, *, student_invite: str | None = None
 ) -> tuple[User, str]:
@@ -135,6 +142,7 @@ async def login_or_register_google(
     invitation = await invitation_service.pending_for_email(db, email)
 
     if user:
+        _require_active(user)
         _adopt_as_google_verified(user, google_id, invitation)
         await db.commit()
         await db.refresh(user)
@@ -165,6 +173,7 @@ async def login_or_register_google(
         user = await _lookup_google_user(google_id, email, db)
         if user is None:
             raise
+        _require_active(user)
         invitation = await invitation_service.pending_for_email(db, email)
         _adopt_as_google_verified(user, google_id, invitation)
         await db.commit()
