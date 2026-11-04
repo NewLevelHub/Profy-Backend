@@ -45,6 +45,13 @@ async def list_staff(_: User = Depends(_deleter), db: AsyncSession = Depends(get
     return await staff.members(db)
 
 
+@router.get("/staff/{user_id}/work", response_model=schemas.StaffWork)
+async def staff_work(
+    user_id: uuid.UUID, _: User = Depends(_deleter), db: AsyncSession = Depends(get_db)
+) -> schemas.StaffWork:
+    return await staff.work(db, user_id)
+
+
 @router.post("/staff/{user_id}/active", response_model=schemas.StaffMember)
 async def set_staff_active(
     user_id: uuid.UUID, body: schemas.StaffActiveIn, user: User = Depends(_owner), db: AsyncSession = Depends(get_db)

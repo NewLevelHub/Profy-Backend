@@ -1311,6 +1311,10 @@ async def notify_review_pending(
         if specialist is not None:
             query = query.where(User.id == specialist)
         recipients = list((await db.execute(query)).all())
+        if not recipients:
+            await crm_progress.report_unattended(
+                db, student_id, student_name or tr("report_copy", locale=DEFAULT_LOCALE)["unnamed_student"]
+            )
     except Exception:
         logger.exception("review-pending recipients lookup failed for student=%s", student_id)
         return

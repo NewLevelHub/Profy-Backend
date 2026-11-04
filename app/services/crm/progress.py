@@ -291,6 +291,35 @@ async def release_student(db: AsyncSession, student_id: uuid.UUID, specialist_id
     )
 
 
+async def report_unattended(db: AsyncSession, student_id: uuid.UUID, student_name: str) -> None:
+    """A report waits for review and no psychologist has the student: the owner
+    gets a task, or nobody would ever know. Runs in the report's request; a
+    failure there must not touch the report."""
+    owner_id = await db.scalar(
+        select(User.id).where(User.role == UserRole.owner, User.is_active.is_(True)).order_by(User.created_at).limit(1)
+    )
+    if owner_id is None:
+        logger.error("crm: no owner to tell that the report of student %s has no psychologist", student_id)
+        return
+    deal_id = await db.scalar(
+        select(CrmDeal.id)
+        .where(CrmDeal.student_user_id == student_id, CrmDeal.result != DealResult.lost)
+        .order_by(CrmDeal.created_at.desc())
+        .limit(1)
+    )
+    async with db.begin_nested():
+        db.add(
+            CrmTask(
+                deal_id=deal_id,
+                assignee_id=owner_id,
+                type=TaskType.other,
+                text=i18n_key("api_messages", "crm_task_report_unattended", locale="ru").format(student=student_name),
+                due_at=tz.now_utc(),
+            )
+        )
+    await db.commit()
+
+
 async def student_progressed(db: AsyncSession, user_id: uuid.UUID) -> None:
     """The platform's hook: the student finished a test or got a report
     published. Runs in the caller's transaction, before its commit, so the

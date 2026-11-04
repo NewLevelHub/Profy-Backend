@@ -506,9 +506,25 @@ class StaffMember(BaseModel):
     role: str
     is_active: bool
     created_at: datetime
-    # Specialists: calls booked with them from now on, still to be held. A
-    # disabled specialist keeps them — the owner moves or cancels them.
+    # Calls from now on, still to be held: a specialist's own, a manager's on
+    # their deals. While there are any the employee cannot be disabled.
     upcoming_meetings: int = 0
+
+
+class StaffDeal(BaseModel):
+    id: uuid.UUID
+    title: str
+
+
+class StaffWork(BaseModel):
+    """What is on an employee, to hand over before disabling or deleting them."""
+
+    upcoming_meetings: int
+    open_tasks: int
+    open_deals: list[StaffDeal]
+    # A specialist's finished deals with a student: deleting them leaves the
+    # student without a psychologist.
+    finished_deals: list[StaffDeal]
 
 
 class StaffActiveIn(BaseModel):

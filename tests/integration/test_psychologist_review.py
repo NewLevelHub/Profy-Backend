@@ -6,12 +6,13 @@ from datetime import datetime, timezone
 
 import httpx
 import pytest
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult
 from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
 from app.models.assessment import Assessment, AssessmentGoal
+from app.models.crm import CrmTask
 from app.models.user import User, UserRole
 
 from tests.integration.review_helpers import (
@@ -713,4 +714,53 @@ async def test_publishing_a_report_another_psychologist_started_credits_the_publ
     assert published.status_code == 200, published.text
     await db_session.refresh(stored)
     assert stored.reviewed_by == psychologist_user.id
+
+
+async def _unattended(db: AsyncSession) -> int:
+    # The local database may hold an earlier owner: the task goes to the first.
+    return await db.scalar(select(func.count()).select_from(CrmTask).where(CrmTask.text.contains("психолога нет")))
+
+
+async def test_a_report_nobody_can_review_becomes_the_owners_task(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    test_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    owner = User(
+        email=f"{uuid.uuid4()}@example.test", hashed_password="x", is_active=True, is_verified=True, role=UserRole.owner
+    )
+    db_session.add(owner)
+    await db_session.flush()
+    before = await _unattended(db_session)
+    assessment = await make_student_assessment(db_session, test_user)
+    await generate(client, auth_headers, assessment)
+
+    assert await _unattended(db_session) == before + 1
+
+
+async def test_a_report_with_a_psychologist_makes_no_task(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    test_user: User,
+    psychologist_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    owner = User(
+        email=f"{uuid.uuid4()}@example.test", hashed_password="x", is_active=True, is_verified=True, role=UserRole.owner
+    )
+    db_session.add(owner)
+    await db_session.flush()
+    before = await _unattended(db_session)
+    assessment = await make_student_assessment(db_session, test_user)
+    await assign(db_session, psychologist_user, test_user)
+    await generate(client, auth_headers, assessment)
+
+    assert await _unattended(db_session) == before
 
