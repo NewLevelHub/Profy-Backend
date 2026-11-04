@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.analysis_result import AnalysisResult
 from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
 from app.models.assessment import Assessment, AssessmentGoal
-from app.models.user import User
+from app.models.user import User, UserRole
 
 from tests.integration.review_helpers import (
     STUDENT_NAME,
@@ -567,12 +567,13 @@ async def test_edit_history_survives_a_later_locale_row(
     assert [set(entry["changed_fields"]) for entry in history] == [{"final_analysis"}]
 
 
-async def test_claim_reports_existing_review_status(
+async def test_student_list_reports_existing_review_status(
     client: httpx.AsyncClient,
     db_session: AsyncSession,
     auth_headers: dict[str, str],
     psychologist_headers: dict[str, str],
     test_user: User,
+    psychologist_user: User,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     capture_emails(monkeypatch)
@@ -580,9 +581,9 @@ async def test_claim_reports_existing_review_status(
     assessment = await make_student_assessment(db_session, test_user)
     await generate(client, auth_headers, assessment)
 
-    claimed = await client.post(f"/api/v1/psychologist/students/{test_user.id}/claim", headers=psychologist_headers)
-    assert claimed.status_code == 201
-    assert claimed.json()["report_status"] == "pending_review"
+    await assign(db_session, psychologist_user, test_user)
+    rows = (await client.get("/api/v1/psychologist/students", headers=psychologist_headers)).json()
+    assert next(row for row in rows if row["id"] == str(test_user.id))["report_status"] == "pending_review"
 
 
 async def test_student_list_status_follows_latest_assessment_not_newest_row(
@@ -681,3 +682,35 @@ async def test_edit_history_lists_edits_in_the_order_applied(
         "Вторая правка",
         "Третья правка",
     ]
+
+
+async def test_publishing_a_report_another_psychologist_started_credits_the_publisher(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    psychologist_headers: dict[str, str],
+    test_user: User,
+    psychologist_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """After a change of specialist the one who publishes is the reviewer."""
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+    await generate(client, auth_headers, assessment)
+    await assign(db_session, psychologist_user, test_user)
+    earlier = User(
+        email=f"{uuid.uuid4()}@example.test", hashed_password="x", is_active=True, is_verified=True,
+        role=UserRole.psychologist,
+    )
+    db_session.add(earlier)
+    await db_session.flush()
+    stored = await stored_result(db_session, assessment.id)
+    stored.reviewed_by = earlier.id
+    await db_session.flush()
+
+    published = await client.post(f"{_result_url(test_user, assessment.id)}/publish", headers=psychologist_headers)
+    assert published.status_code == 200, published.text
+    await db_session.refresh(stored)
+    assert stored.reviewed_by == psychologist_user.id
+

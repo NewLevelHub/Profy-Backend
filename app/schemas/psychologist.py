@@ -39,24 +39,6 @@ class PsychologistStudentListItem(BaseModel):
     report_status: str | None = None
 
 
-class PsychologistAvailableStudentItem(BaseModel):
-    """Student not yet claimed by this psychologist (PRO-337 selection flow)."""
-
-    id: uuid.UUID
-    email: str
-    profile_name: str | None = None
-    age: int | None = None
-    grade: int | None = None
-    has_pending_review: bool = False
-    # PRO-402: claim CTA is only meaningful after at least one completed test.
-    has_completed_assessment: bool = False
-    # Goal and completion time of the oldest completed assessment whose report
-    # still waits for review (else the latest completed) — how long the
-    # student has been waiting in the shared queue.
-    goal: str | None = None
-    completed_at: datetime | None = None
-
-
 class PsychologistAssessmentSummary(BaseModel):
     id: uuid.UUID
     goal: str

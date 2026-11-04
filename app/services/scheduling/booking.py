@@ -1,9 +1,9 @@
 """Booking a call into the shared schedule (ТЗ §3.9, PRO-544).
 
-The manager picks a time without seeing who is free; the system picks the
-specialist — fewest meetings this week, then fewest today, then at random
-(п.4), a returning client's earlier specialist first when free — and takes
-the slots atomically (п.5): the slot rows are locked with
+Whoever books picks a time and may pick one of the specialists free then.
+Otherwise the system picks — fewest meetings this week, then fewest today,
+then at random (п.4), a returning client's earlier specialist first when
+free. Either way the slots are taken atomically (п.5): the rows are locked with
 `SELECT … FOR UPDATE`, and under READ COMMITTED Postgres re-checks the
 `state = 'free'` condition on the locked rows, so of two managers racing for
 the last slot exactly one gets it and the other gets `slot_taken`.
@@ -81,13 +81,15 @@ async def book(
     handoff: dict,
     now: datetime | None = None,
     prefer: uuid.UUID | None = None,
+    chosen: uuid.UUID | None = None,
     rescheduled_from: uuid.UUID | None = None,
 ) -> Meeting:
     """Create the meeting and take its slots. Does not commit.
 
     `prefer` is tried first when free — a moved call stays with its
     specialist if they can take the new time, a returning client goes back
-    to the specialist they had."""
+    to the specialist they had. `chosen` is the only one tried: whoever picked
+    them gets `slot_taken` rather than a call with someone else."""
     now = now or tz.now_utc()
     try:
         slots = grid.interval_slots(start, start + timedelta(minutes=minutes))
@@ -97,7 +99,9 @@ async def book(
         raise scheduling_error(status.HTTP_409_CONFLICT, "slot_in_past")
 
     candidates = await _candidates(db, slots, start)
-    if prefer in candidates:
+    if chosen is not None:
+        candidates = [chosen] if chosen in candidates else []
+    elif prefer in candidates:
         candidates.remove(prefer)
         candidates.insert(0, prefer)
     for specialist_id in candidates:

@@ -39,7 +39,7 @@ async def _booked(client: httpx.AsyncClient, db: AsyncSession, manager: User, sp
 # ── calendar ────────────────────────────────────────────────────────────────
 
 
-async def test_calendar_names_only_for_supervisors(
+async def test_calendar_names_on_the_calls_a_user_may_open(
     client: httpx.AsyncClient, db_session: AsyncSession, manager: User, head: User
 ) -> None:
     specialist = await _user(db_session, UserRole.psychologist, "Лолита")
@@ -49,7 +49,7 @@ async def test_calendar_names_only_for_supervisors(
     mine = (await client.get(f"{URL}/meetings", params=params, headers=_h(manager))).json()
     mine = [m for m in mine if m["id"] == meeting["id"]]
     assert len(mine) == 1
-    assert mine[0]["specialist"] is None and mine[0]["student_name"] == "Камила Нурланова"
+    assert mine[0]["specialist"]["name"] == "Лолита" and mine[0]["student_name"] == "Камила Нурланова"
 
     assert mine[0]["mine"] is True and mine[0]["parent_name"] == "Асель Нурланова"
 
@@ -59,6 +59,7 @@ async def test_calendar_names_only_for_supervisors(
     hidden = next(m for m in busy if m["id"] == meeting["id"])
     assert hidden["mine"] is False
     assert hidden["deal_id"] is None and hidden["student_name"] is None and hidden["parent_name"] is None
+    assert hidden["specialist"] is None
     assert (await client.get(f"{URL}/meetings/{meeting['id']}", headers=_h(other))).status_code == 404
 
     seen = (await client.get(f"{URL}/meetings", params=params, headers=_h(head))).json()

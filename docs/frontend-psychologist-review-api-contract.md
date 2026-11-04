@@ -213,11 +213,7 @@ Auth тот же JWT Bearer + `require_role(psychologist)` на всём
 `GET /api/v1/psychologist/students` (свои ученики) дополнительно отдаёт
 `grade` и `report_status` (`"pending_review" | "published" | null`) —
 `pending_review`, если хоть один отчёт ученика ждёт проверки, иначе статус
-последнего. `GET /students/available` —
-`grade`, а также `goal` и `completed_at` завершённой диагностики, чей отчёт
-ждёт проверки (если такой нет — последней завершённой; `null`, пока ни
-одной нет) — по ним общая очередь показывает цель и сколько
-ученик ждёт.
+последнего.
 
 ## 3. Админ
 

@@ -235,9 +235,18 @@ class Handoff(BaseModel):
     manager_comment: Annotated[str, Field(max_length=2000)] | None = None
 
 
+class SpecialistOption(BaseModel):
+    id: uuid.UUID
+    name: str
+    # Free for all of the deal's calls ahead; otherwise cannot take the deal now.
+    available: bool
+
+
 class BookingIn(BaseModel):
     start: datetime
     handoff: Handoff
+    # Unset: the system picks (ТЗ §3.9 п.4).
+    specialist_id: uuid.UUID | None = None
 
 
 class UserRef(BaseModel):
@@ -361,6 +370,8 @@ class DealDetail(BaseModel):
     # When the deal came to its current stage.
     stage_at: datetime
     # The first call (the one the manager booked).
+    # Who serves the deal now; a past call may have been someone else's.
+    specialist: UserRef | None
     meeting: MeetingOut | None
     # Every live call: the first and the specialist's second, by time.
     meetings: list[MeetingOut]
@@ -429,6 +440,11 @@ class MeetingStatusIn(BaseModel):
 
 
 class MeetingCancelIn(BaseModel):
+    reason: Reason
+
+
+class SpecialistChangeIn(BaseModel):
+    specialist_id: uuid.UUID
     reason: Reason
 
 

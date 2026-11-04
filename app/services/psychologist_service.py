@@ -29,7 +29,7 @@ from app.i18n.catalog import key as i18n_key, tr
 from app.i18n import DEFAULT_LOCALE
 from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.analysis_result_review_edit import AnalysisResultReviewEdit, ReviewEditSource
-from app.models.assessment import Assessment, AssessmentStatus
+from app.models.assessment import Assessment
 from app.models.extended_block_assignment import ExtendedBlock, ExtendedBlockAssignment
 from app.models.profile import Profile
 from app.models.psychologist_assignment import PsychologistStudentAssignment
@@ -40,7 +40,6 @@ from app.schemas.admin import AdminUserDetailResponse
 from app.schemas.psych_ai_analysis import PsychAiAnalysisOutput
 from app.schemas.psychologist import (
     PsychologistAssessmentSummary,
-    PsychologistAvailableStudentItem,
     PsychologistNoteCreate,
     PsychologistNoteItem,
     PsychologistNoteUpdate,
@@ -230,148 +229,6 @@ async def list_assigned_students(
         )
         for row in rows
     ]
-
-
-async def list_available_students(
-    db: AsyncSession, psychologist_id: uuid.UUID
-) -> list[PsychologistAvailableStudentItem]:
-    """Students the psychologist can claim — role=student and not yet
-    assigned to this psychologist (PRO-337: selection without admin)."""
-    already_mine = (
-        select(PsychologistStudentAssignment.student_id)
-        .where(PsychologistStudentAssignment.psychologist_id == psychologist_id)
-    )
-    pending = (
-        select(AnalysisResult.id)
-        .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
-        .join(Profile, Profile.id == Assessment.profile_id)
-        .where(
-            Profile.user_id == User.id,
-            or_(
-                AnalysisResult.review_status == ReviewStatus.pending_review,
-                student_strengths_service.rules_version_is_outdated_clause(),
-            ),
-        )
-        .exists()
-    )
-    completed = (
-        select(Assessment.id)
-        .join(Profile, Profile.id == Assessment.profile_id)
-        .where(
-            Profile.user_id == User.id,
-            Assessment.status == AssessmentStatus.completed,
-        )
-        .exists()
-    )
-    # One pass over completed assessments, one per profile — not a
-    # correlated lookup per student, this list covers the whole platform.
-    # The pool's "waiting since" is about the oldest assessment whose report
-    # still waits for review (the review queue is oldest-first too); without
-    # one, the latest completed. Pending assessments are one set joined in,
-    # not a lookup per row. Aliased: `pending`/`completed` above correlate
-    # on `Assessment`.
-    completed_assessment = aliased(Assessment)
-    waiting = (
-        select(AnalysisResult.assessment_id)
-        .where(AnalysisResult.review_status == ReviewStatus.pending_review)
-        .distinct()
-        .subquery()
-    )
-    is_waiting = waiting.c.assessment_id.is_not(None)
-    latest_completed = (
-        select(
-            completed_assessment.profile_id,
-            completed_assessment.goal,
-            completed_assessment.completed_at,
-        )
-        .outerjoin(waiting, waiting.c.assessment_id == completed_assessment.id)
-        .where(completed_assessment.status == AssessmentStatus.completed)
-        .distinct(completed_assessment.profile_id)
-        .order_by(
-            completed_assessment.profile_id,
-            is_waiting.desc(),
-            # Oldest first among waiting ones (NULL — and so no effect —
-            # for the rest), then newest first as the fallback.
-            case((is_waiting, completed_assessment.completed_at)).asc().nulls_last(),
-            completed_assessment.completed_at.desc().nulls_last(),
-            completed_assessment.created_at.desc(),
-        )
-        .subquery()
-    )
-    query = (
-        select(
-            User.id,
-            User.email,
-            Profile.name,
-            Profile.age,
-            Profile.grade,
-            pending.label("has_pending"),
-            completed.label("has_completed"),
-            latest_completed.c.goal,
-            latest_completed.c.completed_at,
-        )
-        .outerjoin(Profile, Profile.user_id == User.id)
-        .outerjoin(latest_completed, latest_completed.c.profile_id == Profile.id)
-        .where(User.role == UserRole.student, ~User.id.in_(already_mine))
-        .order_by(User.created_at.desc())
-    )
-    rows = (await db.execute(query)).all()
-    return [
-        PsychologistAvailableStudentItem(
-            id=row.id,
-            email=row.email,
-            profile_name=row.name,
-            age=row.age,
-            grade=row.grade,
-            has_pending_review=bool(row.has_pending),
-            has_completed_assessment=bool(row.has_completed),
-            goal=row.goal.value if row.goal else None,
-            completed_at=row.completed_at,
-        )
-        for row in rows
-    ]
-
-
-async def claim_student(
-    db: AsyncSession, *, psychologist_id: uuid.UUID, student_id: uuid.UUID
-) -> PsychologistStudentListItem:
-    """Psychologist self-assigns a student. Admin is not in this flow."""
-    student = await db.get(User, student_id)
-    if student is None or student.role != UserRole.student:
-        raise ValueError(i18n_key("api_errors", "student_not_found", locale="ru"))
-
-    existing = await db.execute(
-        select(PsychologistStudentAssignment).where(
-            PsychologistStudentAssignment.psychologist_id == psychologist_id,
-            PsychologistStudentAssignment.student_id == student_id,
-        )
-    )
-    assignment = existing.scalar_one_or_none()
-    if assignment is None:
-        assignment = PsychologistStudentAssignment(
-            psychologist_id=psychologist_id,
-            student_id=student_id,
-        )
-        db.add(assignment)
-        await db.commit()
-        await db.refresh(assignment)
-    else:
-        # Idempotent claim — already mine.
-        pass
-
-    profile = (
-        await db.execute(select(Profile).where(Profile.user_id == student_id))
-    ).scalar_one_or_none()
-    report_status = (await db.execute(select(_latest_report_status(student_id)))).scalar_one_or_none()
-    return PsychologistStudentListItem(
-        id=student.id,
-        email=student.email,
-        profile_name=profile.name if profile is not None else None,
-        age=profile.age if profile is not None else None,
-        grade=profile.grade if profile is not None else None,
-        assigned_at=assignment.created_at,
-        report_status=report_status.value if report_status else None,
-    )
 
 
 def _to_psychologist_detail(
@@ -1318,8 +1175,9 @@ async def _publish(
     analysis.review_status = ReviewStatus.published
     analysis.published_by = publisher_id
     analysis.published_at = now
-    # Published without edits — publishing still counts as a review.
-    if analysis.reviewed_by is None:
+    # Publishing counts as a review, also of a report the previous specialist
+    # had started; `analysis_result_review_edits` keep who made each edit.
+    if publisher_id is not None and analysis.reviewed_by != publisher_id:
         analysis.reviewed_by = publisher_id
         analysis.reviewed_at = now
     # Remaining translations (only ever made from the current, reviewed text —
@@ -1433,9 +1291,8 @@ async def notify_review_pending(
     """Tell the psychologist that a new report waits for review: by email,
     and in Telegram when they linked it (app/services/telegram/).
 
-    The psychologist is the one of the student's latest deal — a client who
-    came back to another specialist is not announced to the earlier one,
-    who still sees the student. A student without such a deal (an account
+    The psychologist is the one of the student's latest deal — one who only
+    keeps the student for a call ahead is not announced. A student without such a deal (an account
     from before the CRM) — every psychologist assigned to them.
     Best-effort: never raises into report generation."""
     try:

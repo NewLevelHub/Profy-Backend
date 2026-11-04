@@ -82,12 +82,11 @@ async def calendar(db: AsyncSession, user: User, date_from: date, date_to: date)
         .order_by(Meeting.start_at)
     )
     rows = rows.all()
-    names = _supervisor(user)
-    users = await _users(db, {m.specialist_id for m, _, _ in rows}) if names else {}
+    users = await _users(db, {m.specialist_id for m, _, _ in rows})
     out = []
     for m, manager_id, parent_name in rows:
-        # A sales manager sees someone else's call only as «Занято» (ТЗ §3.9 п.8):
-        # no client, no deal, no specialist.
+        # A sales manager sees someone else's call only as «Занято»: no client,
+        # no deal, no specialist.
         mine = manager_id == user.id
         hidden = user.role == UserRole.sales_manager and not mine
         out.append(
@@ -100,7 +99,7 @@ async def calendar(db: AsyncSession, user: User, date_from: date, date_to: date)
                 end=m.end_at,
                 student_name=None if hidden else _student_name(m),
                 parent_name=None if hidden else parent_name,
-                specialist=_user_ref(users.get(m.specialist_id)) if names else None,
+                specialist=None if hidden else _user_ref(users.get(m.specialist_id)),
                 mine=mine,
             )
         )
@@ -123,8 +122,7 @@ async def detail(db: AsyncSession, user: User, meeting: Meeting) -> schemas.Meet
             )
         ).scalars()
     )
-    names = _supervisor(user)
-    users = await _users(db, {meeting.specialist_id if names else None, *(e.actor_id for e in entries)})
+    users = await _users(db, {meeting.specialist_id, *(e.actor_id for e in entries)})
     deal = await _deal_of(db, meeting)
     parent = await db.get(CrmParent, deal.parent_id) if deal else None
     allowed, first = await _may_move(db, user, meeting)
@@ -137,7 +135,7 @@ async def detail(db: AsyncSession, user: User, meeting: Meeting) -> schemas.Meet
         end=meeting.end_at,
         student_name=_student_name(meeting),
         parent_name=parent.full_name if parent else None,
-        specialist=_user_ref(users.get(meeting.specialist_id)) if names else None,
+        specialist=_user_ref(users.get(meeting.specialist_id)),
         mine=deal is not None and deal.manager_id == user.id,
         handoff=meeting.handoff,
         cancel_reason=meeting.cancel_reason,
@@ -148,10 +146,7 @@ async def detail(db: AsyncSession, user: User, meeting: Meeting) -> schemas.Meet
         history=[
             schemas.MeetingHistoryItem(
                 at=e.at,
-                # A sales manager does not learn who the specialist is, even from the journal.
-                actor=_user_ref(users.get(e.actor_id))
-                if names or e.actor_role != UserRole.psychologist.value
-                else None,
+                actor=_user_ref(users.get(e.actor_id)),
                 actor_role=e.actor_role,
                 action=e.action,
                 before=e.before,

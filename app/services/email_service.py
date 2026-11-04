@@ -226,6 +226,24 @@ async def send_review_pending_email(
     )
 
 
+async def send_student_handover_email(
+    to: str, student_name: str, *, locale: str = DEFAULT_LOCALE, url: str
+) -> None:
+    """Специалисту — ему передали ученика другого специалиста, на языке
+    специалиста. Best-effort, никогда не raises."""
+    loc = _email_locale(locale)
+    strings = tr("email", locale=loc)
+    await _send_best_effort(
+        to,
+        strings["student_handover_subject"],
+        strings["student_handover_plain"].format(student_name=student_name, url=url),
+        "student_handover.html",
+        locale=loc,
+        student_name=student_name,
+        url=url,
+    )
+
+
 async def send_week_reminder_email(
     to: str, name: str, week: str, *, locale: str = DEFAULT_LOCALE, schedule_url: str
 ) -> None:

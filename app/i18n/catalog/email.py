@@ -29,6 +29,11 @@ RU = {
         "Ученик {student_name} завершил тест. Отчёт ждёт вашей проверки:\n"
         "{review_url}"
     ),
+    "student_handover_subject": "Вам передан ученик — Profile",
+    "student_handover_plain": (
+        "Вам передан ученик {student_name}. Созвоны и отчёты этого ученика теперь у вас:\n"
+        "{url}"
+    ),
     "result_published_subject": "Твой результат готов — Profile",
     "result_published_plain": (
         "{student_name}, психолог проверил твой отчёт — он уже ждёт тебя в Profile:\n"
@@ -70,6 +75,11 @@ KK = {
     "review_pending_plain": (
         "{student_name} оқушысы тестті аяқтады. Есеп сіздің тексеруіңізді күтуде:\n"
         "{review_url}"
+    ),
+    "student_handover_subject": "Сізге оқушы берілді — Profile",
+    "student_handover_plain": (
+        "Сізге {student_name} оқушысы берілді. Оның қоңыраулары мен есептері енді сізде:\n"
+        "{url}"
     ),
     "result_published_subject": "Нәтижең дайын — Profile",
     "result_published_plain": (

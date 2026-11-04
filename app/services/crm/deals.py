@@ -43,8 +43,8 @@ from app.services.crm.errors import crm_error
 from app.services.scheduling import booking
 
 SALES_ROLES = (UserRole.owner, UserRole.sales_head, UserRole.sales_manager, UserRole.marketer)
-# Who sees every deal and the specialists' names, and may do what the
-# manager may not (ТЗ §2). The owner and the head of sales.
+# Who sees every deal and may do what the manager may not (ТЗ §2). The owner
+# and the head of sales.
 SUPERVISORS = (UserRole.owner, UserRole.sales_head)
 
 # The manager books the first call, always 30 minutes; the 60-minute second
@@ -292,8 +292,22 @@ async def detail(db: AsyncSession, user: User, deal: CrmDeal) -> schemas.DealDet
         ).scalars()
     )
     meeting = (await _active_meetings(db, [deal.id])).get(deal.id)
+    calls = (
+        await db.execute(
+            select(Meeting)
+            .where(Meeting.deal_id == deal.id, Meeting.status != MeetingStatus.cancelled)
+            .order_by(Meeting.start_at)
+        )
+    ).scalars().all()
     users = await _users(
-        db, {deal.manager_id, meeting.specialist_id if meeting else None, *(e.actor_id for e in events)}
+        db,
+        {
+            deal.manager_id,
+            deal.specialist_id,
+            meeting.specialist_id if meeting else None,
+            *(m.specialist_id for m in calls),
+            *(e.actor_id for e in events),
+        },
     )
     def meeting_out(m: Meeting) -> schemas.MeetingOut:
         return schemas.MeetingOut(
@@ -302,17 +316,9 @@ async def detail(db: AsyncSession, user: User, deal: CrmDeal) -> schemas.DealDet
             status=m.status.value,
             start=m.start_at,
             end=m.end_at,
-            # A sales manager never learns who the specialist is (ТЗ §3.9 п.8).
-            specialist=_user_ref(users.get(m.specialist_id)) if _supervisor(user) else None,
+            specialist=_user_ref(users.get(m.specialist_id)),
         )
 
-    calls = (
-        await db.execute(
-            select(Meeting)
-            .where(Meeting.deal_id == deal.id, Meeting.status != MeetingStatus.cancelled)
-            .order_by(Meeting.start_at)
-        )
-    ).scalars().all()
     return schemas.DealDetail(
         id=deal.id,
         stage=deal.stage,
@@ -333,6 +339,7 @@ async def detail(db: AsyncSession, user: User, deal: CrmDeal) -> schemas.DealDet
         if student
         else schemas.StudentOut(),
         manager=_user_ref(users.get(deal.manager_id)),
+        specialist=_user_ref(users.get(deal.specialist_id)),
         is_target=deal.is_target,
         non_target_reason=deal.non_target_reason,
         tariff_code=deal.tariff_code,
@@ -707,8 +714,8 @@ async def add_note(db: AsyncSession, user: User, deal_id: uuid.UUID, text: str) 
 
 async def _previous_specialist(db: AsyncSession, deal: CrmDeal) -> uuid.UUID | None:
     """The specialist who already worked with this family: a returning client
-    stays with them when they are free at the chosen time — the manager still
-    sees no names. The same child's deal first (by Profile account, then by
+    stays with them when they are free at the chosen time, unless the booking
+    names someone else. The same child's deal first (by Profile account, then by
     the CRM student), then the family's latest one."""
     rows = (
         await db.execute(
@@ -754,7 +761,7 @@ async def book(db: AsyncSession, user: User, deal_id: uuid.UUID, body: schemas.B
     handoff["consent_at"] = parent.consent_at.isoformat() if parent.consent_at else None
     meeting = await booking.book(
         db, actor=user, start=body.start, minutes=FIRST_CALL_MINUTES, deal_id=deal.id, handoff=handoff,
-        prefer=await _previous_specialist(db, deal),
+        prefer=await _previous_specialist(db, deal), chosen=body.specialist_id,
     )
 
     # The handoff card also fills the CRM student.

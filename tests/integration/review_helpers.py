@@ -101,10 +101,8 @@ async def generate(
 async def assign(
     db_session: AsyncSession, psychologist: User, student: User
 ) -> PsychologistStudentAssignment:
-    """Links psychologist ↔ student straight in the DB. In production the
-    psychologist self-claims (`POST /psychologist/students/{id}/claim`), but
-    that flow has its own eligibility rules (unclaimed student, has a
-    result) that these tests aren't about — they only need the link."""
+    """Links psychologist ↔ student straight in the DB. In production the CRM
+    does it (`crm.progress.assign_specialist`); these tests only need the link."""
     assignment = PsychologistStudentAssignment(psychologist_id=psychologist.id, student_id=student.id)
     db_session.add(assignment)
     await db_session.flush()

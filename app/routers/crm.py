@@ -18,7 +18,7 @@ from app.models.user import User, UserRole
 from app.schemas import crm as schemas
 from app.models.scheduling import MeetingStatus
 from app.services.whatsapp import chat
-from app.services.crm import ads, analytics, deals, invites, meetings, sources, staff, tariffs, tasks
+from app.services.crm import ads, analytics, deals, invites, meetings, reassign, sources, staff, tariffs, tasks
 
 router = APIRouter(tags=["crm"])
 
@@ -227,6 +227,24 @@ async def book(
     deal_id: uuid.UUID, body: schemas.BookingIn, user: User = Depends(_seller), db: AsyncSession = Depends(get_db)
 ) -> schemas.DealDetail:
     await deals.book(db, user, deal_id, body)
+    return await _detail(db, user, deal_id)
+
+
+@router.get("/deals/{deal_id}/specialists", response_model=list[schemas.SpecialistOption])
+async def specialist_options(
+    deal_id: uuid.UUID, user: User = Depends(_seller), db: AsyncSession = Depends(get_db)
+) -> list[schemas.SpecialistOption]:
+    return await reassign.options(db, user, deal_id)
+
+
+@router.post("/deals/{deal_id}/specialist", response_model=schemas.DealDetail)
+async def change_specialist(
+    deal_id: uuid.UUID,
+    body: schemas.SpecialistChangeIn,
+    user: User = Depends(_seller),
+    db: AsyncSession = Depends(get_db),
+) -> schemas.DealDetail:
+    await reassign.change(db, user, deal_id, body.specialist_id, body.reason.strip())
     return await _detail(db, user, deal_id)
 
 

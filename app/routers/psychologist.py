@@ -8,9 +8,8 @@ assigned to that psychologist (PsychologistStudentAssignment, PRO-325/326).
 """
 
 import uuid
-from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -20,7 +19,6 @@ from app.models.user import User, UserRole
 from app.schemas.extended_block import AssignExtendedBlockRequest, ExtendedBlockAssignmentResponse
 from app.schemas.psych_ai_analysis import PsychAiAnalysisOutput
 from app.schemas.psychologist import (
-    PsychologistAvailableStudentItem,
     PsychologistNoteCreate,
     PsychologistNoteItem,
     PsychologistNoteUpdate,
@@ -166,52 +164,12 @@ async def publish_result(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
-@router.get(
-    "/students",
-    response_model=list[PsychologistStudentListItem | PsychologistAvailableStudentItem],
-)
+@router.get("/students", response_model=list[PsychologistStudentListItem])
 async def list_students(
-    scope: Literal["mine", "available"] = Query(
-        "mine",
-        description=(
-            "mine — students this psychologist already claimed; "
-            "available — not yet claimed by them (PRO-337 / PRO-422). "
-            "Prefer GET /students/available for the dedicated available shape."
-        ),
-    ),
     current_user: User = Depends(_require_psychologist),
     db: AsyncSession = Depends(get_db),
-) -> list[PsychologistStudentListItem] | list[PsychologistAvailableStudentItem]:
-    if scope == "available":
-        return await psychologist_service.list_available_students(db, current_user.id)
+) -> list[PsychologistStudentListItem]:
     return await psychologist_service.list_assigned_students(db, current_user.id)
-
-
-@router.get("/students/available", response_model=list[PsychologistAvailableStudentItem])
-async def list_available_students(
-    current_user: User = Depends(_require_psychologist),
-    db: AsyncSession = Depends(get_db),
-) -> list[PsychologistAvailableStudentItem]:
-    """Pool of students this psychologist can claim — no admin in the flow."""
-    return await psychologist_service.list_available_students(db, current_user.id)
-
-
-@router.post(
-    "/students/{student_id}/claim",
-    response_model=PsychologistStudentListItem,
-    status_code=status.HTTP_201_CREATED,
-)
-async def claim_student(
-    student_id: uuid.UUID,
-    current_user: User = Depends(_require_psychologist),
-    db: AsyncSession = Depends(get_db),
-) -> PsychologistStudentListItem:
-    try:
-        return await psychologist_service.claim_student(
-            db, psychologist_id=current_user.id, student_id=student_id
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.get("/students/{student_id}", response_model=PsychologistStudentDetailResponse)
