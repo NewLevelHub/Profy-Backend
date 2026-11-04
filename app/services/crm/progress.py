@@ -110,6 +110,9 @@ async def test_opens_at(db: AsyncSession, student_id: uuid.UUID) -> tuple[bool, 
     first, _ = await calls(db, deal.id)
     if first is not None and first.start_at <= tz.now_utc():
         return True, None
+    # A finished deal whose calls went with a deleted specialist holds nothing.
+    if first is None and deal.result == DealResult.won:
+        return True, None
     return False, first.start_at if first is not None else None
 
 
@@ -223,9 +226,12 @@ async def assign_specialist(db: AsyncSession, deal: CrmDeal) -> None:
     lost deal that has any. They get the student in Profile (list, results,
     review queue); the others lose them, except a psychologist who still has
     a call with the student ahead. Without such a deal nothing changes. No commit."""
-    student_id = deal.student_user_id
-    if student_id is None:
-        return
+    if deal.student_user_id is not None:
+        await settle_student(db, deal.student_user_id)
+
+
+async def settle_student(db: AsyncSession, student_id: uuid.UUID) -> None:
+    """`assign_specialist` for a student whose deal is gone. No commit."""
     await db.flush()
     current = await db.scalar(
         select(CrmDeal.specialist_id)

@@ -1,6 +1,6 @@
 """«Удалить»: deals and accounts, for the owner and the platform admin."""
 
-from datetime import timedelta
+from datetime import time, timedelta
 
 import httpx
 from sqlalchemy import select
@@ -8,12 +8,33 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.artifact import Artifact, ArtifactType
 from app.models.audit_log import AuditLog
-from app.models.crm import CrmDeal, CrmMessage, CrmParent, CrmStudent, MessageDirection, MessageStatus
+from app.models.crm import (
+    CrmDeal,
+    CrmMessage,
+    CrmParent,
+    CrmStudent,
+    CrmTask,
+    DealResult,
+    MessageDirection,
+    MessageStatus,
+    TaskType,
+)
 from app.models.profile import AgeGroup, Profile
+from app.models.psychologist_assignment import PsychologistStudentAssignment
 from app.models.scheduling import Meeting, SlotState, SpecialistSlot
 from app.models.user import User, UserRole
 from app.services import tz
-from tests.integration.test_crm_deals import URL, _create, _h, _user, manager  # noqa: F401 — fixtures
+from app.services.crm import progress
+from tests.integration.test_crm_deals import (  # noqa: F401 — fixtures
+    URL,
+    _booked_with,
+    _create,
+    _h,
+    _holders,
+    _link,
+    _user,
+    manager,
+)
 from tests.integration.test_crm_meetings_tasks import _booked
 
 ADMIN_URL = "/api/v1/admin"
@@ -159,13 +180,42 @@ async def test_owner_lists_students(client: httpx.AsyncClient, db_session: Async
     assert [u["id"] for u in response.json()["items"]] == [str(student.id)]
 
 
-async def test_a_manager_leaves_their_deals_unassigned(
+async def test_a_manager_hands_over_open_deals_and_tasks_first(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User
+) -> None:
+    owner = await _user(db_session, UserRole.owner)
+    manager_id, owner_h = manager.id, _h(owner)
+    deal = await _create(client, manager)
+    row = await db_session.get(CrmDeal, deal["id"])
+    row.manager_id = manager_id
+    await db_session.flush()
+
+    refused = await client.delete(f"{ADMIN_URL}/users/{manager_id}", headers=owner_h)
+    assert refused.status_code == 409
+    assert refused.json()["error_code"] == "user_has_deals" and refused.json()["count"] == 1
+
+    row.manager_id = owner.id
+    task = CrmTask(
+        deal_id=row.id, type=TaskType.call, text="Позвонить", due_at=tz.now_utc() + timedelta(days=1),
+        assignee_id=manager_id, created_by=owner.id,
+    )
+    db_session.add(task)
+    await db_session.flush()
+    refused = await client.delete(f"{ADMIN_URL}/users/{manager_id}", headers=owner_h)
+    assert refused.status_code == 409 and refused.json()["error_code"] == "user_has_tasks"
+
+    task.done_at = tz.now_utc()
+    await db_session.flush()
+    assert (await client.delete(f"{ADMIN_URL}/users/{manager_id}", headers=owner_h)).status_code == 204
+
+
+async def test_a_finished_deal_outlives_its_manager(
     client: httpx.AsyncClient, db_session: AsyncSession, manager: User
 ) -> None:
     owner = await _user(db_session, UserRole.owner)
     deal = await _create(client, manager)
     row = await db_session.get(CrmDeal, deal["id"])
-    row.manager_id = manager.id
+    row.manager_id, row.result = manager.id, DealResult.won
     await db_session.flush()
 
     assert (await client.delete(f"{ADMIN_URL}/users/{manager.id}", headers=_h(owner))).status_code == 204
@@ -186,9 +236,56 @@ async def test_a_specialist_with_upcoming_calls_is_kept(
     assert response.json()["error_code"] == "user_has_meetings"
     assert response.json()["count"] == 1
 
-    # Past calls do not hold the account.
+    # Past calls do not hold the account, the open deal still does: a student
+    # without a psychologist cannot take the test.
     row = await db_session.get(Meeting, meeting["id"])
     row.start_at = tz.now_utc() - timedelta(days=1)
     row.end_at = row.start_at + timedelta(minutes=30)
     await db_session.flush()
+    held = await client.delete(f"{ADMIN_URL}/users/{specialist.id}", headers=_h(owner))
+    assert held.status_code == 409 and held.json()["error_code"] == "user_has_deals"
+
+    (await db_session.get(CrmDeal, row.deal_id)).result = DealResult.won
+    await db_session.flush()
     assert (await client.delete(f"{ADMIN_URL}/users/{specialist.id}", headers=_h(owner))).status_code == 204
+
+
+async def test_a_won_deal_without_calls_does_not_lock_the_test(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User
+) -> None:
+    owner = await _user(db_session, UserRole.owner)
+    specialist = await _user(db_session, UserRole.psychologist)
+    student = await _user(db_session, UserRole.student)
+    student_id = student.id
+    deal, meeting = await _booked(client, db_session, manager, specialist)
+    row = await db_session.get(CrmDeal, deal["id"])
+    row.student_user_id, row.result = student_id, DealResult.won
+    call = await db_session.get(Meeting, meeting["id"])
+    call.start_at = tz.now_utc() - timedelta(days=1)
+    call.end_at = call.start_at + timedelta(minutes=30)
+    await db_session.flush()
+
+    assert (await client.delete(f"{ADMIN_URL}/users/{specialist.id}", headers=_h(owner))).status_code == 204
+    assert await progress.test_opens_at(db_session, student_id) == (True, None)
+
+
+async def test_deleting_a_deal_returns_the_student_to_the_deal_left(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User
+) -> None:
+    owner = await _user(db_session, UserRole.owner)
+    earlier = await _user(db_session, UserRole.psychologist, "Прежний")
+    later = await _user(db_session, UserRole.psychologist, "Новый")
+    student = await _user(db_session, UserRole.student)
+    old, _ = await _booked_with(client, db_session, manager, earlier, time(9, 0))
+    new, _ = await _booked_with(client, db_session, manager, later, time(10, 0))
+    await _link(db_session, old, student, days_ago=9)
+    await _link(db_session, new, student)
+    db_session.add(PsychologistStudentAssignment(psychologist_id=later.id, student_id=student.id))
+    await db_session.flush()
+
+    assert (await client.delete(f"{URL}/deals/{new['id']}", headers=_h(owner))).status_code == 204
+    assert await _holders(db_session, student) == ["Прежний"]
+
+    # No deal left: nobody serves the student.
+    assert (await client.delete(f"{URL}/deals/{old['id']}", headers=_h(owner))).status_code == 204
+    assert await _holders(db_session, student) == []

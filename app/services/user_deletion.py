@@ -2,19 +2,23 @@
 panels, `scripts/delete_user.py` from the console.
 
 The database cascades almost everything under `users`; a profile and what
-hangs on it have no ON DELETE CASCADE and go here. Deals, tasks' authors and
-the journal stay, with the person's id nulled by the foreign keys.
+hangs on it have no ON DELETE CASCADE and go here. Finished deals, tasks'
+authors and the journal stay, with the person's id nulled by the foreign keys.
+An employee with work in progress is refused until it is handed over: a deal
+left without its psychologist locks the student's test, one left without its
+manager no manager can work on. Someone who leaves is better turned off.
 """
 
 import uuid
 
 from fastapi import status
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.artifact import Artifact
 from app.models.assessment import Assessment
 from app.models.certificate import Certificate
+from app.models.crm import CrmDeal, CrmTask, DealResult
 from app.models.profile import Profile
 from app.models.scheduling import Meeting, MeetingStatus
 from app.models.user import User, UserRole
@@ -52,6 +56,18 @@ async def delete_user(db: AsyncSession, actor: User, user_id: uuid.UUID) -> None
     )
     if upcoming:
         raise crm_error(status.HTTP_409_CONFLICT, "user_has_meetings", count=upcoming)
+    deals = await db.scalar(
+        select(func.count())
+        .select_from(CrmDeal)
+        .where(or_(CrmDeal.manager_id == user.id, CrmDeal.specialist_id == user.id), CrmDeal.result == DealResult.open)
+    )
+    if deals:
+        raise crm_error(status.HTTP_409_CONFLICT, "user_has_deals", count=deals)
+    tasks = await db.scalar(
+        select(func.count()).select_from(CrmTask).where(CrmTask.assignee_id == user.id, CrmTask.done_at.is_(None))
+    )
+    if tasks:
+        raise crm_error(status.HTTP_409_CONFLICT, "user_has_tasks", count=tasks)
     audit.record(
         db, actor=actor, action="user.deleted", entity_type="user", entity_id=user.id,
         before={"email": user.email, "role": user.role.value, "full_name": user.full_name},
