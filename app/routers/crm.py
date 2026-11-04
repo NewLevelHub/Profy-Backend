@@ -18,11 +18,14 @@ from app.models.user import User, UserRole
 from app.schemas import crm as schemas
 from app.models.scheduling import MeetingStatus
 from app.services.whatsapp import chat
-from app.services.crm import ads, analytics, deals, invites, meetings, sources, staff, tariffs, tasks
+from app.services.crm import ads, analytics, deals, deletion, invites, meetings, sources, staff, tariffs, tasks
 
 router = APIRouter(tags=["crm"])
 
-_board_reader = require_role(UserRole.owner, UserRole.sales_head, UserRole.sales_manager, UserRole.marketer)
+# The platform admin reads the board and the deals, staff included, to delete what has to go.
+_board_reader = require_role(UserRole.owner, UserRole.sales_head, UserRole.sales_manager, UserRole.marketer, UserRole.admin)
+_deal_reader = require_role(UserRole.owner, UserRole.sales_head, UserRole.sales_manager, UserRole.admin)
+_deleter = require_role(UserRole.owner, UserRole.admin)
 _seller = require_role(UserRole.owner, UserRole.sales_head, UserRole.sales_manager)
 _owner = require_role(UserRole.owner)
 _analyst = require_role(UserRole.owner, UserRole.sales_head, UserRole.marketer)
@@ -38,7 +41,7 @@ async def meta(_: User = Depends(_board_reader), db: AsyncSession = Depends(get_
 
 
 @router.get("/staff", response_model=list[schemas.StaffMember])
-async def list_staff(_: User = Depends(_owner), db: AsyncSession = Depends(get_db)) -> list[schemas.StaffMember]:
+async def list_staff(_: User = Depends(_deleter), db: AsyncSession = Depends(get_db)) -> list[schemas.StaffMember]:
     return await staff.members(db)
 
 
@@ -121,9 +124,16 @@ async def find_parents(
 
 @router.get("/deals/{deal_id}", response_model=schemas.DealDetail)
 async def get_deal(
-    deal_id: uuid.UUID, user: User = Depends(_seller), db: AsyncSession = Depends(get_db)
+    deal_id: uuid.UUID, user: User = Depends(_deal_reader), db: AsyncSession = Depends(get_db)
 ) -> schemas.DealDetail:
     return await _detail(db, user, deal_id)
+
+
+@router.delete("/deals/{deal_id}", status_code=204)
+async def delete_deal(
+    deal_id: uuid.UUID, user: User = Depends(_deleter), db: AsyncSession = Depends(get_db)
+) -> None:
+    await deletion.delete_deal(db, user, deal_id)
 
 
 @router.patch("/deals/{deal_id}", response_model=schemas.DealDetail)
