@@ -289,3 +289,27 @@ async def test_deleting_a_deal_returns_the_student_to_the_deal_left(
     # No deal left: nobody serves the student.
     assert (await client.delete(f"{URL}/deals/{old['id']}", headers=_h(owner))).status_code == 204
     assert await _holders(db_session, student) == []
+
+
+async def test_deleting_a_deal_keeps_the_clients_chat_for_the_other_deal(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User
+) -> None:
+    owner = await _user(db_session, UserRole.owner)
+    mistaken = await _create(client, manager)
+    parent_id = mistaken["parent"]["id"]
+    other = await client.post(f"{URL}/deals", json={"parent_id": parent_id}, headers=_h(manager))
+    assert other.status_code == 201, other.text
+    db_session.add(
+        CrmMessage(
+            parent_id=parent_id, deal_id=mistaken["id"], phone=mistaken["parent"]["phone"],
+            direction=MessageDirection.incoming, text="Здравствуйте", status=MessageStatus.received, at=tz.now_utc(),
+        )
+    )
+    await db_session.flush()
+
+    assert (await client.delete(f"{URL}/deals/{mistaken['id']}", headers=_h(owner))).status_code == 204
+    kept = await db_session.scalars(
+        select(CrmMessage).where(CrmMessage.parent_id == parent_id).execution_options(populate_existing=True)
+    )
+    assert [message.text for message in kept] == ["Здравствуйте"]
+

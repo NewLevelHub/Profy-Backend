@@ -684,6 +684,8 @@ async def close(db: AsyncSession, user: User, deal_id: uuid.UUID, body: schemas.
             raise crm_error(status.HTTP_403_FORBIDDEN, "deal_close_paid_forbidden")
         deal.result = DealResult.lost
         deal.lost_reason = body.reason
+        # The student falls back to the specialist of an earlier deal, if any.
+        await progress.assign_specialist(db, deal)
     deal.close_comment = body.comment
     deal.closed_at = tz.now_utc()
     audit.record(

@@ -1,8 +1,9 @@
 """«Удалить сделку» for the owner and the admin (a mistaken or test deal).
 
 Unlike closing, it leaves nothing behind but the journal entry: the deal's
-calls give their time back, and a client with no other deal goes as well, so
-the next message from that phone is a new lead. A student's Profile account is
+calls give their time back, and a client with no other deal goes as well, with
+the chat, so the next message from that phone is a new lead. A client with
+another deal keeps the whole chat: it belongs to them, not to the deal. A student's Profile account is
 a separate thing and stays, and goes back to the specialist of their deal left,
 if any.
 """
@@ -13,7 +14,7 @@ from fastapi import status
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.crm import CrmDeal, CrmMessage, CrmParent, CrmStudent
+from app.models.crm import CrmDeal, CrmParent, CrmStudent
 from app.models.scheduling import Meeting, SlotState, SpecialistSlot
 from app.models.user import User
 from app.services import audit, tz
@@ -42,8 +43,6 @@ async def delete_deal(db: AsyncSession, actor: User, deal_id: uuid.UUID) -> None
             .values(state=SlotState.free, meeting_id=None, updated_by=actor.id, updated_at=tz.now_utc())
         )
         await db.execute(delete(Meeting).where(Meeting.id.in_(meeting_ids)))
-    await db.execute(delete(CrmMessage).where(CrmMessage.deal_id == deal.id))
-
     student_id, parent_id = deal.student_id, deal.parent_id
     account_id, specialist_id = deal.student_user_id, deal.specialist_id
     await db.delete(deal)

@@ -248,6 +248,8 @@ async def cancel(db: AsyncSession, actor: User, meeting: Meeting, reason: str) -
     deal = await _deal_of(db, meeting)
     if first and deal is not None and deal.specialist_id == meeting.specialist_id:
         deal.specialist_id = None
+        # The student falls back to the specialist of an earlier deal, if any.
+        await progress.assign_specialist(db, deal)
     audit.record(
         db, actor=actor, action="meeting.cancelled", entity_type="meeting", entity_id=meeting.id,
         before={"status": "open", "start": meeting.start_at.isoformat()}, after={"status": "cancelled"},

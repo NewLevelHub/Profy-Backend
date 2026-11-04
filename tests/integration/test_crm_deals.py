@@ -764,3 +764,63 @@ async def test_the_new_specialist_is_told_also_of_a_waiting_report(
     body = {"specialist_id": str(y.id), "reason": "Болезнь"}
     assert (await client.post(f"{URL}/deals/{deal['id']}/specialist", json=body, headers=_h(manager))).status_code == 200
     assert sent == [f"handover:{y.email}", f"report:{student.id}"]
+
+
+async def _two_deals(
+    client: httpx.AsyncClient, db: AsyncSession, manager: User
+) -> tuple[dict, dict, User, User, User]:
+    """The student's earlier deal with X, the later one with Y: only Y has them."""
+    x = await _user(db, UserRole.psychologist, "Икс")
+    y = await _user(db, UserRole.psychologist, "Игрек")
+    student = await _user(db, UserRole.student)
+    old, _ = await _booked_with(client, db, manager, x, time(9, 0))
+    earlier = await _link(db, old, student, days_ago=9)
+    earlier.result = DealResult.won
+    call = await db.get(Meeting, uuid.UUID(old["meeting"]["id"]))
+    call.start_at = tz.now_utc() - timedelta(days=9)
+    call.end_at = call.start_at + timedelta(minutes=30)
+    db.add(PsychologistStudentAssignment(psychologist_id=x.id, student_id=student.id))
+    await db.flush()
+    new, _ = await _booked_with(client, db, manager, y, time(12, 0))
+    made = await client.post(f"{URL}/deals/{new['id']}/invite", headers=_h(manager))
+    await invites.accept_invite(db, student, made.json()["student_account"]["invite_url"].split("#token=")[1])
+    assert await _holders(db, student) == ["Игрек"]
+    return old, new, x, y, student
+
+
+async def test_closing_the_later_deal_returns_the_student_to_the_earlier_specialist(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User, head: User
+) -> None:
+    _, new, _, _, student = await _two_deals(client, db_session, manager)
+    body = {"result": "lost", "reason": "refused"}
+    closed = await client.post(f"{URL}/deals/{new['id']}/close", json=body, headers=_h(head))
+    assert closed.status_code == 200, closed.text
+    assert await _holders(db_session, student) == ["Икс"]
+
+
+async def test_cancelling_the_later_deals_call_returns_the_student_to_the_earlier_specialist(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User
+) -> None:
+    _, new, _, _, student = await _two_deals(client, db_session, manager)
+    path = f"{URL}/meetings/{new['meeting']['id']}/cancel"
+    assert (await client.post(path, json={"reason": "Просьба клиента"}, headers=_h(manager))).status_code == 200
+    assert await _holders(db_session, student) == ["Икс"]
+
+
+async def test_a_call_on_an_earlier_deal_gives_its_specialist_the_student(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User
+) -> None:
+    x = await _user(db_session, UserRole.psychologist, "Икс")
+    y = await _user(db_session, UserRole.psychologist, "Игрек")
+    student = await _user(db_session, UserRole.student)
+    latest, _ = await _booked_with(client, db_session, manager, x, time(9, 0))
+    await _link(db_session, latest, student)
+    earlier = await _ready_to_book(client, manager)
+    await _link(db_session, earlier, student, days_ago=9)
+    start = await _open_slots(db_session, y, FUTURE_DAY, time(12, 0), 1)
+
+    body = {"start": _iso(start), "handoff": _handoff(), "specialist_id": str(y.id)}
+    booked = await client.post(f"{URL}/deals/{earlier['id']}/booking", json=body, headers=_h(manager))
+    assert booked.status_code == 200, booked.text
+    assert await _holders(db_session, student) == ["Игрек", "Икс"]
+

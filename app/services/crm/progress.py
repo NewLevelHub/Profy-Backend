@@ -224,8 +224,8 @@ async def report_needs_review(db: AsyncSession, user_id: uuid.UUID) -> bool:
 async def assign_specialist(db: AsyncSession, deal: CrmDeal) -> None:
     """The student has one current psychologist: the one of their latest not
     lost deal that has any. They get the student in Profile (list, results,
-    review queue); the others lose them, except a psychologist who still has
-    a call with the student ahead. Without such a deal nothing changes. No commit."""
+    review queue), and so does a psychologist with a call with the student
+    ahead; the others lose them. Without such a deal nothing changes. No commit."""
     if deal.student_user_id is not None:
         await settle_student(db, deal.student_user_id)
 
@@ -255,20 +255,20 @@ async def settle_student(db: AsyncSession, student_id: uuid.UUID) -> None:
             Meeting.start_at > tz.now_utc(),
         )
     )
+    keep = {current, *ahead.scalars()}
     await db.execute(
         delete(PsychologistStudentAssignment).where(
             PsychologistStudentAssignment.student_id == student_id,
-            PsychologistStudentAssignment.psychologist_id.not_in({current, *ahead.scalars()}),
+            PsychologistStudentAssignment.psychologist_id.not_in(keep),
         )
     )
-    exists = await db.scalar(
-        select(PsychologistStudentAssignment.id).where(
-            PsychologistStudentAssignment.psychologist_id == current,
-            PsychologistStudentAssignment.student_id == student_id,
+    held = await db.scalars(
+        select(PsychologistStudentAssignment.psychologist_id).where(
+            PsychologistStudentAssignment.student_id == student_id
         )
     )
-    if not exists:
-        db.add(PsychologistStudentAssignment(psychologist_id=current, student_id=student_id))
+    for psychologist_id in keep - set(held):
+        db.add(PsychologistStudentAssignment(psychologist_id=psychologist_id, student_id=student_id))
 
 
 async def release_student(db: AsyncSession, student_id: uuid.UUID, specialist_id: uuid.UUID) -> None:
