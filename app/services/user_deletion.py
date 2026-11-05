@@ -56,10 +56,21 @@ async def delete_user(db: AsyncSession, actor: User, user_id: uuid.UUID) -> None
     )
     if upcoming:
         raise crm_error(status.HTTP_409_CONFLICT, "user_has_meetings", count=upcoming)
+    # Their held calls too: the calls go with the account, and an open deal
+    # handed to someone else still counts on its first call.
     deals = await db.scalar(
-        select(func.count())
+        select(func.count(func.distinct(CrmDeal.id)))
         .select_from(CrmDeal)
-        .where(or_(CrmDeal.manager_id == user.id, CrmDeal.specialist_id == user.id), CrmDeal.result == DealResult.open)
+        .outerjoin(
+            Meeting,
+            (Meeting.deal_id == CrmDeal.id)
+            & (Meeting.specialist_id == user.id)
+            & (Meeting.status != MeetingStatus.cancelled),
+        )
+        .where(
+            or_(CrmDeal.manager_id == user.id, CrmDeal.specialist_id == user.id, Meeting.id.is_not(None)),
+            CrmDeal.result == DealResult.open,
+        )
     )
     if deals:
         raise crm_error(status.HTTP_409_CONFLICT, "user_has_deals", count=deals)

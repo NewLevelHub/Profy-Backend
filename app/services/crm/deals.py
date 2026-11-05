@@ -484,10 +484,11 @@ async def accept(db: AsyncSession, user: User, deal_id: uuid.UUID, manager_id: u
 # ── edit ────────────────────────────────────────────────────────────────────
 
 
-async def _require_same_review(db: AsyncSession, deal: CrmDeal, tariff: CrmTariff) -> None:
+async def _require_same_review(db: AsyncSession, deal: CrmDeal, tariff: CrmTariff | None) -> None:
     """A tariff decides whether a call and a review are ahead. Once a call or a
-    report exists, it may not turn that around under them."""
-    if deal.psychologist_review is None or deal.psychologist_review == tariff.psychologist_review:
+    report of this deal exists, it may not turn that around under them, nor be
+    taken away so that the next choice is free."""
+    if deal.psychologist_review is None or deal.psychologist_review == (tariff.psychologist_review if tariff else None):
         return
     if await db.scalar(
         select(Meeting.id).where(Meeting.deal_id == deal.id, Meeting.status != MeetingStatus.cancelled).limit(1)
@@ -497,7 +498,7 @@ async def _require_same_review(db: AsyncSession, deal: CrmDeal, tariff: CrmTarif
         select(AnalysisResult.id)
         .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
         .join(Profile, Profile.id == Assessment.profile_id)
-        .where(Profile.user_id == deal.student_user_id)
+        .where(Profile.user_id == deal.student_user_id, AnalysisResult.created_at >= deal.created_at)
         .limit(1)
     ):
         raise crm_error(status.HTTP_409_CONFLICT, "deal_tariff_has_report")
@@ -551,8 +552,7 @@ async def patch_deal(db: AsyncSession, user: User, deal_id: uuid.UUID, body: sch
         tariff = await db.get(CrmTariff, body.tariff_code) if body.tariff_code else None
         if body.tariff_code and (tariff is None or not tariff.active):
             raise crm_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "tariff_not_found")
-        if tariff is not None:
-            await _require_same_review(db, deal, tariff)
+        await _require_same_review(db, deal, tariff)
         reason = (body.tariff_reason or "").strip() or None
         if deal.paid_at is not None and reason is None:
             raise crm_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "tariff_reason_required")

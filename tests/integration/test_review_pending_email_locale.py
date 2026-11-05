@@ -3,6 +3,7 @@
 nor its unnamed-student placeholder may follow that request's locale."""
 
 import uuid
+from unittest.mock import AsyncMock
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,3 +38,21 @@ async def test_email_follows_the_psychologist_not_the_request(
     _, student_name = call.args
     assert call.kwargs["locale"] == psychologist_locale
     assert student_name == tr("report_copy", locale=psychologist_locale)["unnamed_student"]
+
+
+async def test_a_disabled_specialist_does_not_count_as_attending_the_report(
+    db_session: AsyncSession, psychologist_user: User, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    psychologist_user.is_active = False
+    student = await make_other_student(db_session)
+    await assign(db_session, psychologist_user, student)
+    emails = capture_emails(monkeypatch)
+    unattended = AsyncMock()
+    monkeypatch.setattr(psychologist_service.crm_progress, "report_unattended", unattended)
+
+    await psychologist_service.notify_review_pending(
+        db_session, student_id=student.id, student_name="Камила", assessment_id=uuid.uuid4()
+    )
+
+    unattended.assert_awaited_once()
+    emails["pending"].assert_not_awaited()

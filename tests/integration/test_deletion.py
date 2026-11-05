@@ -224,6 +224,25 @@ async def test_a_finished_deal_outlives_its_manager(
     assert (await db_session.get(CrmDeal, deal["id"])).manager_id is None
 
 
+async def test_a_specialist_who_held_a_call_on_an_open_deal_is_kept(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User
+) -> None:
+    """The deal went to someone else, but its first call goes with the account."""
+    owner = await _user(db_session, UserRole.owner)
+    specialist = await _user(db_session, UserRole.psychologist)
+    other = await _user(db_session, UserRole.psychologist)
+    _, meeting = await _booked(client, db_session, manager, specialist)
+    row = await db_session.get(Meeting, meeting["id"])
+    row.start_at = tz.now_utc() - timedelta(days=1)
+    row.end_at = row.start_at + timedelta(minutes=30)
+    (await db_session.get(CrmDeal, row.deal_id)).specialist_id = other.id
+    await db_session.flush()
+
+    held = await client.delete(f"{ADMIN_URL}/users/{specialist.id}", headers=_h(owner))
+    assert held.status_code == 409 and held.json()["error_code"] == "user_has_deals"
+    assert held.json()["count"] == 1
+
+
 async def test_a_specialist_with_upcoming_calls_is_kept(
     client: httpx.AsyncClient, db_session: AsyncSession, manager: User
 ) -> None:

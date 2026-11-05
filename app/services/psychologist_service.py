@@ -1177,7 +1177,7 @@ async def _publish(
     analysis.published_at = now
     # Publishing counts as a review, also of a report the previous specialist
     # had started; `analysis_result_review_edits` keep who made each edit.
-    if publisher_id is not None and analysis.reviewed_by != publisher_id:
+    if analysis.reviewed_at is None or (publisher_id is not None and analysis.reviewed_by != publisher_id):
         analysis.reviewed_by = publisher_id
         analysis.reviewed_at = now
     # Remaining translations (only ever made from the current, reviewed text —
@@ -1306,7 +1306,7 @@ async def notify_review_pending(
                 PsychologistStudentAssignment.psychologist_id == User.id,
             )
             .outerjoin(TelegramLink, TelegramLink.user_id == User.id)
-            .where(PsychologistStudentAssignment.student_id == student_id)
+            .where(PsychologistStudentAssignment.student_id == student_id, User.is_active.is_(True))
         )
         if specialist is not None:
             query = query.where(User.id == specialist)

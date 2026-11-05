@@ -881,7 +881,7 @@ async def test_a_report_blocks_a_tariff_of_the_other_type(
 ) -> None:
     student = await _user(db_session, UserRole.student)
     deal = await _ready_to_book(client, manager, "testing")
-    await _link(db_session, deal, student)
+    await _link(db_session, deal, student, days_ago=1)
     profile = Profile(
         user_id=student.id, name="Камила", age=15, grade=9, city="Алматы", country="KZ", language="ru", age_group="senior"
     )
@@ -896,6 +896,37 @@ async def test_a_report_blocks_a_tariff_of_the_other_type(
     body = {"tariff_code": "package", "tariff_reason": "Доплата"}
     blocked = await client.patch(f"{URL}/deals/{deal['id']}", json=body, headers=_h(head))
     assert blocked.status_code == 409 and blocked.json()["error_code"] == "deal_tariff_has_report"
+
+    # A report from before this deal is not under it.
+    row = await db_session.get(CrmDeal, uuid.UUID(deal["id"]))
+    row.created_at = tz.now_utc() + timedelta(minutes=1)
+    await db_session.flush()
+    allowed = await client.patch(f"{URL}/deals/{deal['id']}", json=body, headers=_h(head))
+    assert allowed.status_code == 200, allowed.text
+
+
+async def test_an_unpaid_deal_cannot_drop_the_tariff_to_get_round_a_report(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User
+) -> None:
+    student = await _user(db_session, UserRole.student)
+    deal = await _create(client, manager)
+    path = f"{URL}/deals/{deal['id']}"
+    body = {"is_target": True, "tariff_code": "package"}
+    assert (await client.patch(path, json=body, headers=_h(manager))).status_code == 200
+    await _link(db_session, deal, student, days_ago=1)
+    profile = Profile(
+        user_id=student.id, name="Камила", age=15, grade=9, city="Алматы", country="KZ", language="ru", age_group="senior"
+    )
+    db_session.add(profile)
+    await db_session.flush()
+    assessment = Assessment(profile_id=profile.id, status=AssessmentStatus.completed, goal=AssessmentGoal.explore)
+    db_session.add(assessment)
+    await db_session.flush()
+    db_session.add(AnalysisResult(assessment_id=assessment.id, summary="-", review_status=ReviewStatus.pending_review))
+    await db_session.flush()
+
+    cleared = await client.patch(path, json={"tariff_code": None}, headers=_h(manager))
+    assert cleared.status_code == 409 and cleared.json()["error_code"] == "deal_tariff_has_report"
 
 
 async def test_a_tariff_of_the_same_type_updates_the_handoff_card(
