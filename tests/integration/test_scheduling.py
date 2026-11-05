@@ -335,7 +335,7 @@ async def test_publish_is_idempotent_and_listed(
 # ── free time ───────────────────────────────────────────────────────────────
 
 
-async def test_free_time_hides_names_from_sales_manager(
+async def test_free_time_names_the_specialists_to_whoever_books(
     client: httpx.AsyncClient, db_session: AsyncSession, owner: User, specialist: User
 ) -> None:
     manager = await _user(db_session, UserRole.sales_manager)
@@ -348,20 +348,14 @@ async def test_free_time_hides_names_from_sales_manager(
     )
     query = f"{URL}/free?from={day}&to={day}&duration=30"
 
-    as_manager = await client.get(query, headers=_headers(manager))
-    assert as_manager.status_code == 200
-    assert "specialists" not in as_manager.text
-    assert str(specialist.id) not in as_manager.text
-    mine = [s for s in as_manager.json()["slots"] if s["start"] == _iso(tz.at(day, time(10, 0)))]
-    assert mine and mine[0]["free_count"] >= 1
-
-    for viewer in (owner, sales_head):
+    for viewer in (owner, sales_head, manager):
         named = await client.get(query, headers=_headers(viewer))
         slot = next(s for s in named.json()["slots"] if s["start"] == _iso(tz.at(day, time(10, 0))))
         assert {"id": str(specialist.id), "full_name": "Азат Сейткали"} in slot["specialists"]
+        assert slot["free_count"] >= 1
 
     filtered = await client.get(query + f"&specialist_id={specialist.id}", headers=_headers(manager))
-    assert filtered.status_code == 403
+    assert filtered.status_code == 200
 
 
 async def test_free_60_needs_two_adjacent_slots_of_one_specialist(

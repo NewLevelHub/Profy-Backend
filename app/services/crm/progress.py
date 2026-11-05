@@ -26,7 +26,7 @@ import logging
 import uuid
 from datetime import datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.i18n.catalog import key as i18n_key
@@ -109,6 +109,9 @@ async def test_opens_at(db: AsyncSession, student_id: uuid.UUID) -> tuple[bool, 
         return True, None
     first, _ = await calls(db, deal.id)
     if first is not None and first.start_at <= tz.now_utc():
+        return True, None
+    # A finished deal whose calls went with a deleted specialist holds nothing.
+    if first is None and deal.result == DealResult.won:
         return True, None
     return False, first.start_at if first is not None else None
 
@@ -219,18 +222,116 @@ async def report_needs_review(db: AsyncSession, user_id: uuid.UUID) -> bool:
 
 
 async def assign_specialist(db: AsyncSession, deal: CrmDeal) -> None:
-    """The specialist the booking picked sees the linked student in Profile
-    (their list, results and review queue). No commit."""
-    if deal.student_user_id is None or deal.specialist_id is None:
+    """The student has one current psychologist: the one of their latest not
+    lost deal that has any. They get the student in Profile (list, results,
+    review queue), and so does a psychologist with a call with the student
+    ahead; the others lose them. Without such a deal nothing changes. No commit."""
+    if deal.student_user_id is not None:
+        await settle_student(db, deal.student_user_id)
+
+
+async def settle_student(db: AsyncSession, student_id: uuid.UUID) -> None:
+    """`assign_specialist` for a student whose deal is gone. No commit."""
+    await db.flush()
+    current = await db.scalar(
+        select(CrmDeal.specialist_id)
+        .where(
+            CrmDeal.student_user_id == student_id,
+            CrmDeal.result != DealResult.lost,
+            CrmDeal.specialist_id.is_not(None),
+        )
+        .order_by(CrmDeal.created_at.desc())
+        .limit(1)
+    )
+    if current is None:
         return
-    exists = await db.scalar(
-        select(PsychologistStudentAssignment.id).where(
-            PsychologistStudentAssignment.psychologist_id == deal.specialist_id,
-            PsychologistStudentAssignment.student_id == deal.student_user_id,
+    ahead = await db.execute(
+        select(Meeting.specialist_id)
+        .join(CrmDeal, CrmDeal.id == Meeting.deal_id)
+        .where(
+            CrmDeal.student_user_id == student_id,
+            CrmDeal.result != DealResult.lost,
+            Meeting.status.in_((MeetingStatus.pending, MeetingStatus.confirmed)),
+            Meeting.start_at > tz.now_utc(),
         )
     )
-    if not exists:
-        db.add(PsychologistStudentAssignment(psychologist_id=deal.specialist_id, student_id=deal.student_user_id))
+    keep = {current, *ahead.scalars()}
+    await db.execute(
+        delete(PsychologistStudentAssignment).where(
+            PsychologistStudentAssignment.student_id == student_id,
+            PsychologistStudentAssignment.psychologist_id.not_in(keep),
+        )
+    )
+    held = await db.scalars(
+        select(PsychologistStudentAssignment.psychologist_id).where(
+            PsychologistStudentAssignment.student_id == student_id
+        )
+    )
+    for psychologist_id in keep - set(held):
+        db.add(PsychologistStudentAssignment(psychologist_id=psychologist_id, student_id=student_id))
+
+
+async def release_student(db: AsyncSession, student_id: uuid.UUID, specialist_id: uuid.UUID) -> None:
+    """The specialist has no deal with the student any more (one was closed,
+    lost its first call or was tied to another account): they stop seeing the
+    student, unless another deal or a call ahead still ties them. No commit."""
+    await db.flush()
+    if await db.scalar(
+        select(CrmDeal.id).where(
+            CrmDeal.student_user_id == student_id,
+            CrmDeal.specialist_id == specialist_id,
+            CrmDeal.result != DealResult.lost,
+        )
+    ):
+        return
+    if await db.scalar(
+        select(Meeting.id)
+        .join(CrmDeal, CrmDeal.id == Meeting.deal_id)
+        .where(
+            CrmDeal.student_user_id == student_id,
+            CrmDeal.result != DealResult.lost,
+            Meeting.specialist_id == specialist_id,
+            Meeting.status.in_((MeetingStatus.pending, MeetingStatus.confirmed)),
+            Meeting.start_at > tz.now_utc(),
+        )
+        .limit(1)
+    ):
+        return
+    await db.execute(
+        delete(PsychologistStudentAssignment).where(
+            PsychologistStudentAssignment.psychologist_id == specialist_id,
+            PsychologistStudentAssignment.student_id == student_id,
+        )
+    )
+
+
+async def report_unattended(db: AsyncSession, student_id: uuid.UUID, student_name: str) -> None:
+    """A report waits for review and no psychologist has the student: the owner
+    gets a task, or nobody would ever know. Runs in the report's request; a
+    failure there must not touch the report."""
+    owner_id = await db.scalar(
+        select(User.id).where(User.role == UserRole.owner, User.is_active.is_(True)).order_by(User.created_at).limit(1)
+    )
+    if owner_id is None:
+        logger.error("crm: no owner to tell that the report of student %s has no psychologist", student_id)
+        return
+    deal_id = await db.scalar(
+        select(CrmDeal.id)
+        .where(CrmDeal.student_user_id == student_id, CrmDeal.result != DealResult.lost)
+        .order_by(CrmDeal.created_at.desc())
+        .limit(1)
+    )
+    async with db.begin_nested():
+        db.add(
+            CrmTask(
+                deal_id=deal_id,
+                assignee_id=owner_id,
+                type=TaskType.other,
+                text=i18n_key("api_messages", "crm_task_report_unattended", locale="ru").format(student=student_name),
+                due_at=tz.now_utc(),
+            )
+        )
+    await db.commit()
 
 
 async def student_progressed(db: AsyncSession, user_id: uuid.UUID) -> None:

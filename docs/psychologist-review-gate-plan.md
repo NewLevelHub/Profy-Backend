@@ -328,8 +328,7 @@ join'ится через `PsychologistStudentAssignment` "вживую" — на
 `pending_review` результат в очередь, без дополнительного кода.
 
 > **PRO-425:** admin-заглушка ниже была реализована, но удалена — её заменил
-> self-claim психолога (`GET /psychologist/students/available` →
-> `POST /psychologist/students/{id}/claim`). Абзац оставлен как история.
+> self-claim психолога, позже тоже удалённый: назначает CRM. Абзац оставлен как история.
 
 ~~Требуется небольшая admin-заглушка, чтобы неназначенный ученик не завис
 навсегда без отчёта: `GET /api/v1/admin/psychologist-reviews/unassigned`

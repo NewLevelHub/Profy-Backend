@@ -15,6 +15,7 @@ from app.models.user import User
 from app.schemas.auth import RegisterResponse
 from app.services import email_service, invitation_service
 from app.services.crm import invites
+from app.services.crm.errors import crm_error
 from app.services.token_utils import code_matches, generate_code, hash_code, record_failed_attempt
 
 logger = logging.getLogger(__name__)
@@ -125,6 +126,10 @@ async def login(email: str, password: str, db: AsyncSession) -> tuple[User, str]
     if not verify_password(password, user.hashed_password):
         raise PermissionError(i18n_key("api_errors", "invalid_credentials", locale="ru"))
 
+    # After the password check: says nothing to someone guessing addresses.
+    if not user.is_active:
+        raise crm_error(status.HTTP_403_FORBIDDEN, "account_disabled")
+
     if not user.is_verified:
         raise LookupError(f"email_not_verified:{user.email}")
 
@@ -185,6 +190,8 @@ async def verify_email(email: str, code: str, db: AsyncSession) -> tuple[User, s
         await invitation_service.lock_email(db, user.email)
         if await invitation_service.has_pending(db, user.email):
             raise invitation_service.invitation_error(status.HTTP_409_CONFLICT, "invited_email_register")
+    if not user.is_active:
+        raise crm_error(status.HTTP_403_FORBIDDEN, "account_disabled")
     token.used_at = now
     user.is_verified = True
     await db.commit()

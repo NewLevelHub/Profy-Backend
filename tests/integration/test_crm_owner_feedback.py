@@ -8,11 +8,11 @@ import httpx
 from openpyxl import load_workbook
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.crm import CrmDeal, DealStage
+from app.models.crm import CrmDeal, DealResult, DealStage
 from app.models.scheduling import Meeting, MeetingStatus, MeetingType, SlotState, SpecialistSlot
-from app.models.user import User, UserRole
+from app.models.user import UserRole
 from app.services import tz
-from tests.integration.test_crm_deals import FUTURE_DAY, URL, _create, _h, _open_slots, _user
+from tests.integration.test_crm_deals import FUTURE_DAY, URL, _booked_with, _create, _h, _link, _open_slots, _user
 
 
 async def test_the_owner_hands_an_accepted_lead_to_a_manager(
@@ -61,10 +61,11 @@ async def test_a_disabled_specialist_leaves_the_calendar(
     manager = await _user(db_session, UserRole.sales_manager)
     specialist = await _user(db_session, UserRole.psychologist, "TEST Spec")
     first = await _open_slots(db_session, specialist, FUTURE_DAY, time(10, 0), 2)
-    db_session.add(Meeting(
+    call = Meeting(
         specialist_id=specialist.id, type=MeetingType.intro30, status=MeetingStatus.confirmed,
         start_at=first + timedelta(days=1), end_at=first + timedelta(days=1, minutes=30), handoff={},
-    ))
+    )
+    db_session.add(call)
     await db_session.flush()
 
     async def free() -> list:
@@ -80,6 +81,13 @@ async def test_a_disabled_specialist_leaves_the_calendar(
     row = next(m for m in (await client.get(f"{URL}/staff", headers=_h(owner))).json() if m["id"] == str(specialist.id))
     assert row["upcoming_meetings"] == 1
 
+    # A call ahead would have nobody to hold it.
+    held = await client.post(f"{URL}/staff/{specialist.id}/active", json={"active": False}, headers=_h(owner))
+    assert held.status_code == 409
+    assert held.json()["error_code"] == "staff_has_meetings" and held.json()["count"] == 1
+    call.status = MeetingStatus.cancelled
+    await db_session.flush()
+
     off = await client.post(f"{URL}/staff/{specialist.id}/active", json={"active": False}, headers=_h(owner))
     assert off.status_code == 200 and off.json()["is_active"] is False
     assert await free() == []
@@ -92,6 +100,43 @@ async def test_a_disabled_specialist_leaves_the_calendar(
     # Not the owner themself, and only the owner.
     assert (await client.post(f"{URL}/staff/{owner.id}/active", json={"active": False}, headers=_h(owner))).status_code == 403
     assert (await client.post(f"{URL}/staff/{specialist.id}/active", json={"active": False}, headers=_h(manager))).status_code == 403
+
+
+async def test_a_manager_with_a_call_ahead_cannot_be_disabled(
+    client: httpx.AsyncClient, db_session: AsyncSession, price_list: None
+) -> None:
+    owner = await _user(db_session, UserRole.owner)
+    manager = await _user(db_session, UserRole.sales_manager, "TEST Manager")
+    specialist = await _user(db_session, UserRole.psychologist, "TEST Spec")
+    deal, start = await _booked_with(client, db_session, manager, specialist, time(10, 0))
+
+    path = f"{URL}/staff/{manager.id}/active"
+    held = await client.post(path, json={"active": False}, headers=_h(owner))
+    assert held.status_code == 409 and held.json()["error_code"] == "staff_has_meetings"
+
+    work = (await client.get(f"{URL}/staff/{manager.id}/work", headers=_h(owner))).json()
+    assert work["upcoming_meetings"] == 1 and [d["id"] for d in work["open_deals"]] == [deal["id"]]
+    assert (await client.get(f"{URL}/staff/{manager.id}/work", headers=_h(manager))).status_code == 403
+
+    cancel = await client.post(f"{URL}/meetings/{deal['meeting']['id']}/cancel", json={"reason": "Просьба"}, headers=_h(owner))
+    assert cancel.status_code == 200, cancel.text
+    assert (await client.post(path, json={"active": False}, headers=_h(owner))).status_code == 200
+
+
+async def test_the_work_lists_a_specialists_finished_deals_with_a_student(
+    client: httpx.AsyncClient, db_session: AsyncSession, price_list: None
+) -> None:
+    owner = await _user(db_session, UserRole.owner)
+    manager = await _user(db_session, UserRole.sales_manager)
+    specialist = await _user(db_session, UserRole.psychologist, "TEST Spec")
+    student = await _user(db_session, UserRole.student)
+    deal, _ = await _booked_with(client, db_session, manager, specialist, time(10, 0))
+    row = await _link(db_session, deal, student)
+    row.result = DealResult.won
+    await db_session.flush()
+
+    work = (await client.get(f"{URL}/staff/{specialist.id}/work", headers=_h(owner))).json()
+    assert work["open_deals"] == [] and [d["id"] for d in work["finished_deals"]] == [deal["id"]]
 
 
 async def test_sources_are_a_list_the_owner_keeps(

@@ -151,34 +151,23 @@ class SpecialistListResponse(BaseModel):
     items: list[SpecialistWeekStatus]
 
 
-class FreeSlotManager(BaseModel):
+class FreeSlot(BaseModel):
     start: datetime
     end: datetime
     free_count: int
-
-
-class FreeSlot(FreeSlotManager):
     specialists: list[SpecialistRef]
 
 
-class _FreeSlotsBase(BaseModel):
+class FreeSlotsResponse(BaseModel):
+    """Each slot lists the free specialists: whoever books may pick one."""
+
     from_: date = Field(alias="from")
     to: date
     duration: Literal[30, 60]
 
-    model_config = {"populate_by_name": True}
-
-
-class FreeSlotsManagerResponse(_FreeSlotsBase):
-    """`sales_manager`: no specialist names or ids anywhere (ТЗ §3.9 п.8, П1-08)."""
-
-    slots: list[FreeSlotManager]
-
-
-class FreeSlotsResponse(_FreeSlotsBase):
-    """`owner` and `sales_head`: each slot lists the free specialists."""
-
     slots: list[FreeSlot]
+
+    model_config = {"populate_by_name": True}
 
 
 class SchedulingSettings(BaseModel):

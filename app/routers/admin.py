@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.i18n import DEFAULT_LOCALE, use_locale
 from app.i18n.catalog import key as i18n_key
 from app.database import get_db
-from app.dependencies import get_current_admin_user
+from app.dependencies import get_current_admin_user, require_role
 from app.models.assessment import AssessmentGoal, AssessmentStatus
 from app.models.motivation import MotivationCategory
 from app.services.admin_lock import AdminNothingToClearError, AdminOverrideValidationError
@@ -53,6 +53,7 @@ from app.services import (
     admin_service,
     admin_university_service,
     university_service,
+    user_deletion,
 )
 
 router = APIRouter(tags=["admin"])
@@ -63,6 +64,9 @@ router = APIRouter(tags=["admin"])
 _SORT_QUERY = Query(default=None, description="Field to sort by; see 422 body for the allowed set")
 _ORDER_QUERY = Query(default="asc")
 
+
+
+_user_manager = require_role(UserRole.admin, UserRole.owner)
 
 
 @router.get("/users", response_model=AdminUserListResponse)
@@ -81,7 +85,8 @@ async def list_users(
     ),
     sort: str | None = _SORT_QUERY,
     order: SortOrder = _ORDER_QUERY,
-    _: User = Depends(get_current_admin_user),
+    # The owner too: «Ученики» in the CRM, where they delete accounts.
+    _: User = Depends(_user_manager),
     db: AsyncSession = Depends(get_db),
 ):
     return await admin_service.list_users(
@@ -152,6 +157,15 @@ async def get_user_detail(
     if not detail:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=i18n_key("api_errors", "user_not_found", locale="ru"))
     return detail
+
+
+@router.delete("/users/{user_id}", status_code=http_status.HTTP_204_NO_CONTENT)
+async def delete_user(
+    user_id: uuid.UUID,
+    actor: User = Depends(_user_manager),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    await user_deletion.delete_user(db, actor, user_id)
 
 
 @router.get("/assessments/{assessment_id}", response_model=AdminAssessmentDetailResponse)

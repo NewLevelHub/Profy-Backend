@@ -3,18 +3,17 @@
 
 Mounted at `/api/v1/scheduling`. A specialist works on their own schedule as
 `me`; the owner works on anyone's by id. Every other role only reads the
-free-time overview, and a sales manager sees it without names (ТЗ §3.9 п.8).
+free-time overview, with names: whoever books may pick the specialist.
 """
 
 import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import require_role
-from app.i18n.catalog import key as i18n_key
 from app.models.user import User, UserRole
 from app.schemas import crm as crm_schemas
 from app.schemas import scheduling as schemas
@@ -217,7 +216,7 @@ async def cancel_meeting(
 
 @router.get(
     "/free",
-    response_model=schemas.FreeSlotsResponse | schemas.FreeSlotsManagerResponse,
+    response_model=schemas.FreeSlotsResponse,
     response_model_by_alias=True,
 )
 async def free_slots(
@@ -227,14 +226,8 @@ async def free_slots(
     specialist_id: uuid.UUID | None = Query(default=None),
     current_user: User = Depends(_require_free_viewer),
     db: AsyncSession = Depends(get_db),
-) -> schemas.FreeSlotsResponse | schemas.FreeSlotsManagerResponse:
-    if specialist_id is not None and current_user.role not in service.NAMED_FREE_VIEW_ROLES:
-        # Filtering by specialist would reveal who is free when.
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=i18n_key("api_errors", "insufficient_role", locale="ru"),
-        )
-    return await service.free_slots(db, current_user, date_from, date_to, duration, specialist_id)
+) -> schemas.FreeSlotsResponse:
+    return await service.free_slots(db, date_from, date_to, duration, specialist_id)
 
 
 @router.get("/settings", response_model=schemas.SchedulingSettings)

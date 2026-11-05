@@ -14,6 +14,7 @@ from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.analysis_result_review_edit import AnalysisResultReviewEdit
 from app.models.psychoemotional_run import PsychoEmotionalRun
 from app.models.user import User
+from app.services import psychologist_service
 from app.services import assessment_shared
 from app.services.psychoemotional import scoring as psychoemotional_scoring
 
@@ -178,6 +179,24 @@ async def test_review_edit_drops_stale_translations_and_retranslation_is_publish
     }
 
     await _clear_report_cache(assessment.id)
+
+
+async def test_a_report_published_without_review_keeps_its_time(
+    client: httpx.AsyncClient,
+    db_session: AsyncSession,
+    auth_headers: dict[str, str],
+    test_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    capture_emails(monkeypatch)
+    force_complete_senior(monkeypatch)
+    assessment = await make_student_assessment(db_session, test_user)
+    await generate(client, auth_headers, assessment)
+    analysis = (await _rows(db_session, assessment.id))[0]
+
+    assert await psychologist_service.publish_without_review(db_session, analysis) is True
+    assert analysis.reviewed_by is None
+    assert analysis.reviewed_at is not None
 
 
 async def test_publish_without_edits_publishes_every_locale_row(
