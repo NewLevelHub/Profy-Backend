@@ -32,7 +32,7 @@ RU = {
     "open_report": "Перейти к отчёту",
     "student_handover": "Вам передан ученик: {student}. Созвоны и отчёты этого ученика теперь у вас.",
     "open_student": "Открыть ученика",
-    "call_cancelled": "Созвон отменён: {when} — {call}, {student}. Сделка закрыта, время снова свободно.",
+    "call_cancelled": "Созвон отменён: {when} — {call}, {student}. Причина: {reason}. Время снова свободно.",
 }
 
 KK = {
@@ -59,5 +59,5 @@ KK = {
     "open_report": "Есепке өту",
     "student_handover": "Сізге оқушы берілді: {student}. Оның қоңыраулары мен есептері енді сізде.",
     "open_student": "Оқушыны ашу",
-    "call_cancelled": "Қоңырау тоқтатылды: {when} — {call}, {student}. Мәміле жабылды, уақыт қайта бос.",
+    "call_cancelled": "Қоңырау тоқтатылды: {when} — {call}, {student}. Себебі: {reason}. Уақыт қайта бос.",
 }

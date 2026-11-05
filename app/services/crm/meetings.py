@@ -21,7 +21,7 @@ from app.models.user import User, UserRole
 from app.schemas import crm as schemas
 from app.schemas.scheduling import MAX_FREE_RANGE_DAYS as MAX_RANGE_DAYS
 from app.services import audit, tz
-from app.services.crm import progress
+from app.services.crm import closing, progress
 from app.services.crm.deals import SUPERVISORS, _user_ref, _users, crm_error
 from app.services.scheduling import booking, second_meeting
 from app.services.scheduling.service import scheduling_error
@@ -230,8 +230,10 @@ async def _require_movable(db: AsyncSession, actor: User, meeting: Meeting) -> b
 
 
 async def cancel(db: AsyncSession, actor: User, meeting: Meeting, reason: str) -> Meeting:
-    """A call cancelled before it starts; its time is free again. Without its
-    first call the deal has no specialist until the next booking."""
+    """A call cancelled before it starts; its time is free again and its
+    specialist is told, unless they cancelled it. Without its first call the
+    deal has no specialist until the next booking, and they lose the student
+    unless something else ties them."""
     first = await _require_movable(db, actor, meeting)
     await booking.release_slots(db, meeting, actor)
     meeting.status = MeetingStatus.cancelled
@@ -242,6 +244,8 @@ async def cancel(db: AsyncSession, actor: User, meeting: Meeting, reason: str) -
         deal.specialist_id = None
         # The student falls back to the specialist of an earlier deal, if any.
         await progress.assign_specialist(db, deal)
+        if deal.student_user_id is not None:
+            await progress.release_student(db, deal.student_user_id, meeting.specialist_id)
     audit.record(
         db, actor=actor, action="meeting.cancelled", entity_type="meeting", entity_id=meeting.id,
         before={"status": "open", "start": meeting.start_at.isoformat()}, after={"status": "cancelled"},
@@ -249,6 +253,8 @@ async def cancel(db: AsyncSession, actor: User, meeting: Meeting, reason: str) -
     )
     _deal_event(db, meeting, actor, "meeting_cancelled", {"start": meeting.start_at.isoformat()}, reason)
     await db.commit()
+    if actor.id != meeting.specialist_id:
+        await closing.notify_cancelled(db, [meeting])
     return meeting
 
 

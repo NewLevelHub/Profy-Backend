@@ -31,7 +31,7 @@ RU = {
     ),
     "call_cancelled_subject": "Созвон отменён — Profile",
     "call_cancelled_plain": (
-        "Созвон с учеником {student_name}, {when}, отменён: сделка закрыта. Время снова свободно.\n"
+        "Созвон с учеником {student_name}, {when}, отменён. Причина: {reason}. Время снова свободно.\n"
         "{url}"
     ),
     "student_handover_subject": "Вам передан ученик — Profile",
@@ -83,7 +83,7 @@ KK = {
     ),
     "call_cancelled_subject": "Қоңырау тоқтатылды — Profile",
     "call_cancelled_plain": (
-        "{student_name} оқушысымен {when} қоңырауы тоқтатылды: мәміле жабылды. Уақыт қайта бос.\n"
+        "{student_name} оқушысымен {when} қоңырауы тоқтатылды. Себебі: {reason}. Уақыт қайта бос.\n"
         "{url}"
     ),
     "student_handover_subject": "Сізге оқушы берілді — Profile",

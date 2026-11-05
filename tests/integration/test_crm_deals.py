@@ -13,10 +13,10 @@ from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.crm import CrmDeal, CrmDealEvent, DealResult, DealStage
 from app.models.profile import Profile
 from app.models.psychologist_assignment import PsychologistStudentAssignment
-from app.models.scheduling import Meeting, MeetingStatus, SlotState, SpecialistSlot
+from app.models.scheduling import Meeting, MeetingStatus, MeetingType, SlotState, SpecialistSlot
 from app.models.user import User, UserRole
 from app.services import auth_service, tz
-from app.services.crm import closing, invites, reassign
+from app.services.crm import closing, invites, meetings, reassign
 
 URL = "/api/v1/crm"
 
@@ -586,7 +586,7 @@ async def test_rebooking_with_another_specialist_leaves_only_them(
 
     cancelled = await client.post(f"{URL}/meetings/{deal['meeting']['id']}/cancel", json={"reason": "Болезнь"}, headers=_h(manager))
     assert cancelled.status_code == 200, cancelled.text
-    assert await _holders(db_session, student) == ["Икс"]  # no one else yet
+    assert await _holders(db_session, student) == []  # no deal ties anyone until the next booking
 
     start = await _open_slots(db_session, y, FUTURE_DAY, time(12, 0), 1)
     body = {"start": _iso(start), "handoff": _handoff(), "specialist_id": str(y.id)}
@@ -898,6 +898,84 @@ async def test_closing_one_deal_keeps_the_student_with_a_specialist_of_another(
     assert await _assigned(db_session, x, student)
     status, _ = await _call_state(db_session, first["meeting"]["id"])
     assert status != MeetingStatus.cancelled
+
+
+async def test_cancelling_a_call_tells_its_specialist_the_reason(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sent: list[tuple[str, str]] = []
+
+    async def cancelled(to: str, _student: str, _when: str, reason: str, **__: object) -> None:
+        sent.append((to, reason))
+
+    monkeypatch.setattr(closing.email_service, "send_call_cancelled_email", cancelled)
+    x = await _user(db_session, UserRole.psychologist, "Икс")
+    deal, _ = await _booked_with(client, db_session, manager, x, time(10, 0))
+
+    path = f"{URL}/meetings/{deal['meeting']['id']}/cancel"
+    assert (await client.post(path, json={"reason": "Просьба клиента"}, headers=_h(manager))).status_code == 200
+    assert sent == [(x.email, "Просьба клиента")]
+
+
+async def test_a_specialist_cancelling_their_own_call_gets_no_notice(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sent: list[str] = []
+
+    async def cancelled(to: str, *_: object, **__: object) -> None:
+        sent.append(to)
+
+    monkeypatch.setattr(closing.email_service, "send_call_cancelled_email", cancelled)
+    x = await _user(db_session, UserRole.psychologist, "Икс")
+    deal, _ = await _booked_with(client, db_session, manager, x, time(10, 0))
+    call = await db_session.get(Meeting, uuid.UUID(deal["meeting"]["id"]))
+
+    await meetings.cancel(db_session, x, call, "Заболел")
+    assert call.status == MeetingStatus.cancelled
+    assert sent == []
+
+
+async def test_cancelling_the_first_call_takes_the_student_until_the_next_booking(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User
+) -> None:
+    x = await _user(db_session, UserRole.psychologist, "Икс")
+    student = await _user(db_session, UserRole.student)
+    deal, _ = await _booked_with(client, db_session, manager, x, time(10, 0))
+    await _link(db_session, deal, student)
+    db_session.add(PsychologistStudentAssignment(psychologist_id=x.id, student_id=student.id))
+    await db_session.flush()
+
+    path = f"{URL}/meetings/{deal['meeting']['id']}/cancel"
+    assert (await client.post(path, json={"reason": "Перенос"}, headers=_h(manager))).status_code == 200
+    assert not await _assigned(db_session, x, student)
+
+    start = await _open_slots(db_session, x, FUTURE_DAY, time(12, 0), 1)
+    body = {"start": _iso(start), "handoff": _handoff(), "specialist_id": str(x.id)}
+    again = await client.post(f"{URL}/deals/{deal['id']}/booking", json=body, headers=_h(manager))
+    assert again.status_code == 200, again.text
+    assert await _assigned(db_session, x, student)
+
+
+async def test_cancelling_the_first_call_keeps_the_student_with_a_call_ahead(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User
+) -> None:
+    x = await _user(db_session, UserRole.psychologist, "Икс")
+    student = await _user(db_session, UserRole.student)
+    deal, start = await _booked_with(client, db_session, manager, x, time(10, 0))
+    await _link(db_session, deal, student)
+    db_session.add(PsychologistStudentAssignment(psychologist_id=x.id, student_id=student.id))
+    db_session.add(
+        Meeting(
+            deal_id=uuid.UUID(deal["id"]), specialist_id=x.id, type=MeetingType.main60,
+            start_at=start + timedelta(days=1), end_at=start + timedelta(days=1, hours=1),
+            handoff=_handoff(), created_by=x.id,
+        )
+    )
+    await db_session.flush()
+
+    path = f"{URL}/meetings/{deal['meeting']['id']}/cancel"
+    assert (await client.post(path, json={"reason": "Перенос"}, headers=_h(manager))).status_code == 200
+    assert await _assigned(db_session, x, student)
 
 
 async def test_cancelling_the_later_deals_call_returns_the_student_to_the_earlier_specialist(

@@ -245,20 +245,21 @@ async def send_student_handover_email(
 
 
 async def send_call_cancelled_email(
-    to: str, student_name: str, when: str, *, locale: str = DEFAULT_LOCALE, url: str
+    to: str, student_name: str, when: str, reason: str, *, locale: str = DEFAULT_LOCALE, url: str
 ) -> None:
-    """Специалисту — сделку закрыли и его созвон отменён, на языке
-    специалиста. Best-effort, никогда не raises."""
+    """Специалисту — его созвон отменил кто-то другой, на языке специалиста.
+    Best-effort, никогда не raises."""
     loc = _email_locale(locale)
     strings = tr("email", locale=loc)
     await _send_best_effort(
         to,
         strings["call_cancelled_subject"],
-        strings["call_cancelled_plain"].format(student_name=student_name, when=when, url=url),
+        strings["call_cancelled_plain"].format(student_name=student_name, when=when, reason=reason, url=url),
         "call_cancelled.html",
         locale=loc,
         student_name=student_name,
         when=when,
+        reason=reason,
         url=url,
     )
 

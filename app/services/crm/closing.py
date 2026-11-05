@@ -1,4 +1,5 @@
-"""A deal closed as lost takes the calls still ahead with it.
+"""A deal closed as lost takes the calls still ahead with it, and a specialist
+hears about a call of theirs someone else cancelled.
 
 The client is gone, so the specialist must not prepare for the call and its
 time goes back to the schedule. A call that has started stays as it is: it may
@@ -63,8 +64,8 @@ async def cancel_calls(db: AsyncSession, deal: CrmDeal, actor: User, comment: st
 
 
 async def notify_cancelled(db: AsyncSession, calls: list[Meeting]) -> None:
-    """Tell each specialist about their cancelled call. Best-effort: the
-    closing is committed."""
+    """Tell each specialist about their cancelled call and its reason.
+    Best-effort: the cancelling is committed."""
     url = email_service.frontend_url(CALLS_PATH)
     for call in calls:
         try:
@@ -75,9 +76,12 @@ async def notify_cancelled(db: AsyncSession, calls: list[Meeting]) -> None:
             student = (call.handoff or {}).get("student_name") or strings["student_unknown"]
             local = tz.to_business(call.start_at)
             when = strings["when"].format(date=f"{local:%d.%m}", time=f"{local:%H:%M}")
-            sends = [email_service.send_call_cancelled_email(specialist.email, student, when, locale=specialist.locale, url=url)]
+            reason = call.cancel_reason or ""
+            sends = [email_service.send_call_cancelled_email(
+                    specialist.email, student, when, reason, locale=specialist.locale, url=url
+                )]
             if chat_id is not None and settings.telegram_enabled:
-                text = strings["call_cancelled"].format(when=when, call=kind, student=student)
+                text = strings["call_cancelled"].format(when=when, call=kind, student=student, reason=reason)
                 sends.append(telegram_notify.send(None, chat_id, text, telegram_notify.button(strings["open_calls"], url)))
             await psychologist_service._send_within_budget(sends)
         except Exception:

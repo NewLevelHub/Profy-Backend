@@ -272,8 +272,9 @@ async def settle_student(db: AsyncSession, student_id: uuid.UUID) -> None:
 
 
 async def release_student(db: AsyncSession, student_id: uuid.UUID, specialist_id: uuid.UUID) -> None:
-    """A deal was tied to another account: the specialist stops seeing the
-    previous one, unless another of its deals is theirs. No commit."""
+    """The specialist has no deal with the student any more (one was closed,
+    lost its first call or was tied to another account): they stop seeing the
+    student, unless another deal or a call ahead still ties them. No commit."""
     await db.flush()
     if await db.scalar(
         select(CrmDeal.id).where(
@@ -281,6 +282,19 @@ async def release_student(db: AsyncSession, student_id: uuid.UUID, specialist_id
             CrmDeal.specialist_id == specialist_id,
             CrmDeal.result != DealResult.lost,
         )
+    ):
+        return
+    if await db.scalar(
+        select(Meeting.id)
+        .join(CrmDeal, CrmDeal.id == Meeting.deal_id)
+        .where(
+            CrmDeal.student_user_id == student_id,
+            CrmDeal.result != DealResult.lost,
+            Meeting.specialist_id == specialist_id,
+            Meeting.status.in_((MeetingStatus.pending, MeetingStatus.confirmed)),
+            Meeting.start_at > tz.now_utc(),
+        )
+        .limit(1)
     ):
         return
     await db.execute(
