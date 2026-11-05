@@ -145,6 +145,8 @@ class DealPatch(BaseModel):
     is_target: bool | None = None
     non_target_reason: Annotated[str, Field(max_length=1000)] | None = None
     tariff_code: Annotated[str, Field(max_length=32)] | None = None
+    # Required when the tariff of a paid deal changes.
+    tariff_reason: Annotated[str, Field(max_length=1000)] | None = None
     discount: Annotated[int, Field(ge=0, le=10_000_000)] | None = None
     # null clears it.
     source: SourcePick | None = None

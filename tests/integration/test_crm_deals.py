@@ -10,7 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
-from app.models.crm import CrmDeal, CrmDealEvent, DealResult, DealStage
+from app.models.audit_log import AuditLog
+from app.models.crm import CrmDeal, CrmDealEvent, CrmTariff, DealResult, DealStage
 from app.models.profile import Profile
 from app.models.psychologist_assignment import PsychologistStudentAssignment
 from app.models.scheduling import Meeting, MeetingStatus, MeetingType, SlotState, SpecialistSlot
@@ -796,6 +797,97 @@ async def test_closing_the_later_deal_returns_the_student_to_the_earlier_special
     closed = await client.post(f"{URL}/deals/{new['id']}/close", json=body, headers=_h(head))
     assert closed.status_code == 200, closed.text
     assert await _holders(db_session, student) == ["Икс"]
+
+
+async def _other_review_tariff(db: AsyncSession) -> str:
+    db.add(CrmTariff(code="package-plus", name="Пакет плюс", price=90000, psychologist_review=True, active=True))
+    await db.flush()
+    return "package-plus"
+
+
+async def test_changing_a_paid_deals_tariff_needs_a_reason_and_goes_to_the_journal(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User, head: User
+) -> None:
+    code = await _other_review_tariff(db_session)
+    deal = await _ready_to_book(client, manager)
+    path = f"{URL}/deals/{deal['id']}"
+
+    by_manager = await client.patch(path, json={"tariff_code": code, "tariff_reason": "Доплата"}, headers=_h(manager))
+    assert by_manager.json()["error_code"] == "deal_paid_locked"
+    no_reason = await client.patch(path, json={"tariff_code": code, "tariff_reason": "  "}, headers=_h(head))
+    assert no_reason.status_code == 422 and no_reason.json()["error_code"] == "tariff_reason_required"
+
+    changed = await client.patch(path, json={"tariff_code": code, "tariff_reason": "Доплата"}, headers=_h(head))
+    assert changed.status_code == 200, changed.text
+    assert (changed.json()["tariff_code"], changed.json()["price"], changed.json()["paid_amount"]) == (code, 90000, 45000)
+    entry = await db_session.scalar(
+        select(AuditLog).where(AuditLog.action == "crm.tariff_changed", AuditLog.entity_id == deal["id"])
+    )
+    assert entry.reason == "Доплата"
+    assert (entry.before["tariff"], entry.after["tariff"]) == ("package", code)
+
+
+async def test_a_paid_deal_cannot_lose_its_tariff(
+    client: httpx.AsyncClient, manager: User, head: User
+) -> None:
+    deal = await _ready_to_book(client, manager)
+    body = {"tariff_code": None, "tariff_reason": "Ошибка"}
+    removed = await client.patch(f"{URL}/deals/{deal['id']}", json=body, headers=_h(head))
+    assert removed.status_code == 409 and removed.json()["error_code"] == "deal_paid_tariff_required"
+
+
+async def test_a_booked_call_blocks_a_tariff_without_review_until_cancelled(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User, head: User
+) -> None:
+    x = await _user(db_session, UserRole.psychologist, "Икс")
+    deal, _ = await _booked_with(client, db_session, manager, x, time(10, 0))
+    path = f"{URL}/deals/{deal['id']}"
+    body = {"tariff_code": "testing", "tariff_reason": "Клиент передумал"}
+
+    blocked = await client.patch(path, json=body, headers=_h(head))
+    assert blocked.status_code == 409 and blocked.json()["error_code"] == "deal_tariff_has_calls"
+
+    cancel = f"{URL}/meetings/{deal['meeting']['id']}/cancel"
+    assert (await client.post(cancel, json={"reason": "Смена тарифа"}, headers=_h(head))).status_code == 200
+    changed = await client.patch(path, json=body, headers=_h(head))
+    assert changed.status_code == 200, changed.text
+    assert changed.json()["psychologist_review"] is False
+
+
+async def test_a_report_blocks_a_tariff_of_the_other_type(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User, head: User
+) -> None:
+    student = await _user(db_session, UserRole.student)
+    deal = await _ready_to_book(client, manager, "testing")
+    await _link(db_session, deal, student)
+    profile = Profile(
+        user_id=student.id, name="Камила", age=15, grade=9, city="Алматы", country="KZ", language="ru", age_group="senior"
+    )
+    db_session.add(profile)
+    await db_session.flush()
+    assessment = Assessment(profile_id=profile.id, status=AssessmentStatus.completed, goal=AssessmentGoal.explore)
+    db_session.add(assessment)
+    await db_session.flush()
+    db_session.add(AnalysisResult(assessment_id=assessment.id, summary="-", review_status=ReviewStatus.published))
+    await db_session.flush()
+
+    body = {"tariff_code": "package", "tariff_reason": "Доплата"}
+    blocked = await client.patch(f"{URL}/deals/{deal['id']}", json=body, headers=_h(head))
+    assert blocked.status_code == 409 and blocked.json()["error_code"] == "deal_tariff_has_report"
+
+
+async def test_a_tariff_of_the_same_type_updates_the_handoff_card(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User, head: User
+) -> None:
+    code = await _other_review_tariff(db_session)
+    x = await _user(db_session, UserRole.psychologist, "Икс")
+    deal, _ = await _booked_with(client, db_session, manager, x, time(10, 0))
+
+    body = {"tariff_code": code, "tariff_reason": "Доплата"}
+    changed = await client.patch(f"{URL}/deals/{deal['id']}", json=body, headers=_h(head))
+    assert changed.status_code == 200, changed.text
+    handoff = await db_session.scalar(select(Meeting.handoff).where(Meeting.id == uuid.UUID(deal["meeting"]["id"])))
+    assert handoff["tariff"] == "Пакет плюс"
 
 
 async def _call_state(db: AsyncSession, meeting_id: str) -> tuple[MeetingStatus, str | None]:

@@ -21,6 +21,8 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.models.analysis_result import AnalysisResult
+from app.models.assessment import Assessment
 from app.models.crm import (
     STAGE_ORDER,
     CrmDeal,
@@ -34,6 +36,7 @@ from app.models.crm import (
     DealStage,
     LostReason,
 )
+from app.models.profile import Profile
 from app.models.scheduling import Meeting, MeetingStatus
 from app.models.user import User, UserRole
 from app.schemas import crm as schemas
@@ -481,6 +484,36 @@ async def accept(db: AsyncSession, user: User, deal_id: uuid.UUID, manager_id: u
 # ── edit ────────────────────────────────────────────────────────────────────
 
 
+async def _require_same_review(db: AsyncSession, deal: CrmDeal, tariff: CrmTariff) -> None:
+    """A tariff decides whether a call and a review are ahead. Once a call or a
+    report exists, it may not turn that around under them."""
+    if deal.psychologist_review is None or deal.psychologist_review == tariff.psychologist_review:
+        return
+    if await db.scalar(
+        select(Meeting.id).where(Meeting.deal_id == deal.id, Meeting.status != MeetingStatus.cancelled).limit(1)
+    ):
+        raise crm_error(status.HTTP_409_CONFLICT, "deal_tariff_has_calls")
+    if deal.student_user_id is not None and await db.scalar(
+        select(AnalysisResult.id)
+        .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
+        .join(Profile, Profile.id == Assessment.profile_id)
+        .where(Profile.user_id == deal.student_user_id)
+        .limit(1)
+    ):
+        raise crm_error(status.HTTP_409_CONFLICT, "deal_tariff_has_report")
+
+
+async def _rename_tariff_in_calls(db: AsyncSession, deal: CrmDeal, tariff: CrmTariff) -> None:
+    """The specialist's handoff card names the tariff; keep it for the calls ahead."""
+    calls = await db.scalars(
+        select(Meeting).where(
+            Meeting.deal_id == deal.id, Meeting.status.in_((MeetingStatus.pending, MeetingStatus.confirmed))
+        )
+    )
+    for call in calls:
+        call.handoff = {**(call.handoff or {}), "tariff": tariff.name}
+
+
 async def patch_deal(db: AsyncSession, user: User, deal_id: uuid.UUID, body: schemas.DealPatch) -> CrmDeal:
     deal = await get_deal(db, user, deal_id, for_update=True)
     _require_owned(user, deal)
@@ -513,15 +546,31 @@ async def patch_deal(db: AsyncSession, user: User, deal_id: uuid.UUID, body: sch
     if "tariff_code" in sent and body.tariff_code != deal.tariff_code:
         if deal.paid_at is not None and not _supervisor(user):
             raise crm_error(status.HTTP_409_CONFLICT, "deal_paid_locked")
+        if deal.paid_at is not None and not body.tariff_code:
+            raise crm_error(status.HTTP_409_CONFLICT, "deal_paid_tariff_required")
         tariff = await db.get(CrmTariff, body.tariff_code) if body.tariff_code else None
         if body.tariff_code and (tariff is None or not tariff.active):
             raise crm_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "tariff_not_found")
+        if tariff is not None:
+            await _require_same_review(db, deal, tariff)
+        reason = (body.tariff_reason or "").strip() or None
+        if deal.paid_at is not None and reason is None:
+            raise crm_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "tariff_reason_required")
+        if deal.paid_at is not None:
+            audit.record(
+                db, actor=user, action="crm.tariff_changed", entity_type="crm_deal", entity_id=deal.id,
+                before={"tariff": deal.tariff_code, "price": deal.price},
+                after={"tariff": tariff.code, "price": tariff.price},
+                reason=reason,
+            )
         deal.tariff_code = body.tariff_code
         # The price is fixed on the day the tariff is chosen (ТЗ §3.7), and
         # so is whether a psychologist reviews the report.
         deal.price = tariff.price if tariff else None
         deal.psychologist_review = tariff.psychologist_review if tariff else None
-        _event(db, deal, user, "tariff", {"tariff": deal.tariff_code, "price": deal.price})
+        _event(db, deal, user, "tariff", {"tariff": deal.tariff_code, "price": deal.price}, reason)
+        if tariff is not None:
+            await _rename_tariff_in_calls(db, deal, tariff)
 
     if "discount" in sent and body.discount is not None and body.discount != deal.discount:
         if deal.paid_at is not None and not _supervisor(user):
