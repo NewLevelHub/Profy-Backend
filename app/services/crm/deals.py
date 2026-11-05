@@ -38,7 +38,7 @@ from app.models.scheduling import Meeting, MeetingStatus
 from app.models.user import User, UserRole
 from app.schemas import crm as schemas
 from app.services import audit, tz
-from app.services.crm import lead_source, progress
+from app.services.crm import closing, lead_source, progress
 from app.services.crm.errors import crm_error
 from app.services.scheduling import booking
 
@@ -665,6 +665,7 @@ async def close(db: AsyncSession, user: User, deal_id: uuid.UUID, body: schemas.
     _require_owned(user, deal)
     if deal.result != DealResult.open:
         raise crm_error(status.HTTP_409_CONFLICT, "deal_closed")
+    cancelled: list[Meeting] = []
     if body.result == "won":
         # Success is the published report (ТЗ §3.3.1); until the platform
         # sends it, only the head of sales or the owner records it.
@@ -684,8 +685,12 @@ async def close(db: AsyncSession, user: User, deal_id: uuid.UUID, body: schemas.
             raise crm_error(status.HTTP_403_FORBIDDEN, "deal_close_paid_forbidden")
         deal.result = DealResult.lost
         deal.lost_reason = body.reason
-        # The student falls back to the specialist of an earlier deal, if any.
+        cancelled = await closing.cancel_calls(db, deal, user, body.comment)
+        # The student falls back to the specialist of an earlier deal, if any,
+        # and this deal's specialist has no more reason to see them.
         await progress.assign_specialist(db, deal)
+        if deal.student_user_id is not None and deal.specialist_id is not None:
+            await progress.release_student(db, deal.student_user_id, deal.specialist_id)
     deal.close_comment = body.comment
     deal.closed_at = tz.now_utc()
     audit.record(
@@ -700,6 +705,7 @@ async def close(db: AsyncSession, user: User, deal_id: uuid.UUID, body: schemas.
         body.comment,
     )
     await db.commit()
+    await closing.notify_cancelled(db, cancelled)
     return deal
 
 

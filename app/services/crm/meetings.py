@@ -11,12 +11,12 @@ import uuid
 from datetime import date, datetime
 
 from fastapi import status
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.audit_log import AuditLog
 from app.models.crm import CrmDeal, CrmDealEvent, CrmParent
-from app.models.scheduling import Meeting, MeetingStatus, SlotState, SpecialistSlot
+from app.models.scheduling import Meeting, MeetingStatus
 from app.models.user import User, UserRole
 from app.schemas import crm as schemas
 from app.schemas.scheduling import MAX_FREE_RANGE_DAYS as MAX_RANGE_DAYS
@@ -163,14 +163,6 @@ def _deal_event(db: AsyncSession, meeting: Meeting, actor: User, kind: str, data
         db.add(CrmDealEvent(deal_id=meeting.deal_id, actor_id=actor.id, kind=kind, data=data, text=text))
 
 
-async def _release_slots(db: AsyncSession, meeting: Meeting, actor: User) -> None:
-    await db.execute(
-        update(SpecialistSlot)
-        .where(SpecialistSlot.meeting_id == meeting.id)
-        .values(state=SlotState.free, meeting_id=None, updated_by=actor.id, updated_at=tz.now_utc())
-    )
-
-
 async def set_status(db: AsyncSession, actor: User, meeting: Meeting, new_status: MeetingStatus) -> Meeting:
     """`confirmed` — anyone who sees the call; `done`/`no_show` — the owner or
     the call's specialist, and only after the start (ТЗ §4.5)."""
@@ -241,7 +233,7 @@ async def cancel(db: AsyncSession, actor: User, meeting: Meeting, reason: str) -
     """A call cancelled before it starts; its time is free again. Without its
     first call the deal has no specialist until the next booking."""
     first = await _require_movable(db, actor, meeting)
-    await _release_slots(db, meeting, actor)
+    await booking.release_slots(db, meeting, actor)
     meeting.status = MeetingStatus.cancelled
     meeting.cancel_reason = reason
     meeting.cancelled_at = tz.now_utc()
@@ -274,7 +266,7 @@ async def reschedule(db: AsyncSession, actor: User, meeting: Meeting, start: dat
     # The old call steps aside first, so the new time may overlap it; a
     # taken new time rolls the savepoint back and the call stays as it was.
     async with db.begin_nested():
-        await _release_slots(db, meeting, actor)
+        await booking.release_slots(db, meeting, actor)
         meeting.status = MeetingStatus.cancelled
         meeting.cancel_reason = reason
         meeting.cancelled_at = tz.now_utc()

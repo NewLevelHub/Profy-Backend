@@ -29,6 +29,11 @@ RU = {
         "Ученик {student_name} завершил тест. Отчёт ждёт вашей проверки:\n"
         "{review_url}"
     ),
+    "call_cancelled_subject": "Созвон отменён — Profile",
+    "call_cancelled_plain": (
+        "Созвон с учеником {student_name}, {when}, отменён: сделка закрыта. Время снова свободно.\n"
+        "{url}"
+    ),
     "student_handover_subject": "Вам передан ученик — Profile",
     "student_handover_plain": (
         "Вам передан ученик {student_name}. Созвоны и отчёты этого ученика теперь у вас:\n"
@@ -75,6 +80,11 @@ KK = {
     "review_pending_plain": (
         "{student_name} оқушысы тестті аяқтады. Есеп сіздің тексеруіңізді күтуде:\n"
         "{review_url}"
+    ),
+    "call_cancelled_subject": "Қоңырау тоқтатылды — Profile",
+    "call_cancelled_plain": (
+        "{student_name} оқушысымен {when} қоңырауы тоқтатылды: мәміле жабылды. Уақыт қайта бос.\n"
+        "{url}"
     ),
     "student_handover_subject": "Сізге оқушы берілді — Profile",
     "student_handover_plain": (

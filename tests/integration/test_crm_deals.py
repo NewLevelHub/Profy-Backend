@@ -10,13 +10,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_result import AnalysisResult, ReviewStatus
 from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
-from app.models.crm import CrmDeal, DealResult
+from app.models.crm import CrmDeal, CrmDealEvent, DealResult, DealStage
 from app.models.profile import Profile
 from app.models.psychologist_assignment import PsychologistStudentAssignment
-from app.models.scheduling import Meeting, SlotState, SpecialistSlot
+from app.models.scheduling import Meeting, MeetingStatus, SlotState, SpecialistSlot
 from app.models.user import User, UserRole
 from app.services import auth_service, tz
-from app.services.crm import invites, reassign
+from app.services.crm import closing, invites, reassign
 
 URL = "/api/v1/crm"
 
@@ -796,6 +796,108 @@ async def test_closing_the_later_deal_returns_the_student_to_the_earlier_special
     closed = await client.post(f"{URL}/deals/{new['id']}/close", json=body, headers=_h(head))
     assert closed.status_code == 200, closed.text
     assert await _holders(db_session, student) == ["Икс"]
+
+
+async def _call_state(db: AsyncSession, meeting_id: str) -> tuple[MeetingStatus, str | None]:
+    row = (await db.execute(select(Meeting.status, Meeting.cancel_reason).where(Meeting.id == uuid.UUID(meeting_id)))).one()
+    return row.status, row.cancel_reason
+
+
+async def test_closing_as_lost_cancels_the_call_ahead_and_frees_its_time(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User, head: User, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sent: list[tuple[str, str]] = []
+
+    async def cancelled(to: str, student: str, *_: object, **__: object) -> None:
+        sent.append((to, student))
+
+    monkeypatch.setattr(closing.email_service, "send_call_cancelled_email", cancelled)
+    x = await _user(db_session, UserRole.psychologist, "Икс")
+    deal, start = await _booked_with(client, db_session, manager, x, time(10, 0))
+    meeting_id = deal["meeting"]["id"]
+
+    body = {"result": "lost", "reason": "refused", "comment": "Передумали"}
+    closed = await client.post(f"{URL}/deals/{deal['id']}/close", json=body, headers=_h(head))
+
+    assert closed.status_code == 200, closed.text
+    assert await _call_state(db_session, meeting_id) == (MeetingStatus.cancelled, "Сделка закрыта: Передумали")
+    slot = (
+        await db_session.execute(
+            select(SpecialistSlot.state, SpecialistSlot.meeting_id).where(
+                SpecialistSlot.specialist_id == x.id, SpecialistSlot.start_at == start
+            )
+        )
+    ).one()
+    assert (slot.state, slot.meeting_id) == (SlotState.free, None)
+    assert sent == [(x.email, _handoff()["student_name"])]
+    kinds = (await db_session.scalars(select(CrmDealEvent.kind).where(CrmDealEvent.deal_id == uuid.UUID(deal["id"])))).all()
+    assert "meeting_cancelled" in kinds
+
+
+async def test_closing_as_lost_leaves_a_started_call_as_it_is(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User, head: User
+) -> None:
+    x = await _user(db_session, UserRole.psychologist, "Икс")
+    deal, _ = await _booked_with(client, db_session, manager, x, time(10, 0))
+    meeting_id = deal["meeting"]["id"]
+    call = await db_session.get(Meeting, uuid.UUID(meeting_id))
+    call.start_at = tz.now_utc() - timedelta(minutes=5)
+    call.end_at = call.start_at + timedelta(minutes=30)
+    await db_session.flush()
+
+    body = {"result": "lost", "reason": "refused"}
+    assert (await client.post(f"{URL}/deals/{deal['id']}/close", json=body, headers=_h(head))).status_code == 200
+    status, reason = await _call_state(db_session, meeting_id)
+    assert status != MeetingStatus.cancelled and reason is None
+
+
+async def test_closing_as_won_keeps_the_call_ahead(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User, head: User
+) -> None:
+    x = await _user(db_session, UserRole.psychologist, "Икс")
+    deal, _ = await _booked_with(client, db_session, manager, x, time(10, 0))
+    row = await db_session.get(CrmDeal, uuid.UUID(deal["id"]))
+    row.stage = DealStage.report_published
+    await db_session.flush()
+
+    won = await client.post(f"{URL}/deals/{deal['id']}/close", json={"result": "won"}, headers=_h(head))
+    assert won.status_code == 200, won.text
+    status, _ = await _call_state(db_session, deal["meeting"]["id"])
+    assert status != MeetingStatus.cancelled
+
+
+async def test_closing_the_only_deal_takes_the_student_from_its_specialist(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User, head: User
+) -> None:
+    x = await _user(db_session, UserRole.psychologist, "Икс")
+    student = await _user(db_session, UserRole.student)
+    deal, _ = await _booked_with(client, db_session, manager, x, time(10, 0))
+    await _link(db_session, deal, student)
+    db_session.add(PsychologistStudentAssignment(psychologist_id=x.id, student_id=student.id))
+    await db_session.flush()
+
+    body = {"result": "lost", "reason": "refused"}
+    assert (await client.post(f"{URL}/deals/{deal['id']}/close", json=body, headers=_h(head))).status_code == 200
+    assert not await _assigned(db_session, x, student)
+
+
+async def test_closing_one_deal_keeps_the_student_with_a_specialist_of_another(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User, head: User
+) -> None:
+    x = await _user(db_session, UserRole.psychologist, "Икс")
+    student = await _user(db_session, UserRole.student)
+    first, _ = await _booked_with(client, db_session, manager, x, time(10, 0))
+    second, _ = await _booked_with(client, db_session, manager, x, time(12, 0))
+    await _link(db_session, first, student)
+    await _link(db_session, second, student)
+    db_session.add(PsychologistStudentAssignment(psychologist_id=x.id, student_id=student.id))
+    await db_session.flush()
+
+    body = {"result": "lost", "reason": "refused"}
+    assert (await client.post(f"{URL}/deals/{second['id']}/close", json=body, headers=_h(head))).status_code == 200
+    assert await _assigned(db_session, x, student)
+    status, _ = await _call_state(db_session, first["meeting"]["id"])
+    assert status != MeetingStatus.cancelled
 
 
 async def test_cancelling_the_later_deals_call_returns_the_student_to_the_earlier_specialist(

@@ -27,8 +27,8 @@ from app.services import audit, email_service, psychologist_service, tz
 from app.services.crm import progress
 from app.services.crm.deals import _event, _require_open, _require_owned, _users, get_deal
 from app.services.crm.errors import crm_error
-from app.services.crm.meetings import OPEN, _release_slots
-from app.services.scheduling import grid
+from app.services.crm.meetings import OPEN
+from app.services.scheduling import booking, grid
 from app.services.scheduling.service import active_specialists, find_specialist
 from app.services.telegram import notify as telegram_notify
 
@@ -136,7 +136,7 @@ async def change(db: AsyncSession, actor: User, deal_id: uuid.UUID, specialist_i
     name = lambda user_id: (users[user_id].full_name or users[user_id].email) if user_id in users else None  # noqa: E731
     for call in calls:
         was = call.specialist_id
-        await _release_slots(db, call, actor)
+        await booking.release_slots(db, call, actor)
         call.specialist_id = specialist_id
         await db.execute(
             update(SpecialistSlot)

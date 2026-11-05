@@ -136,3 +136,12 @@ async def book(
         return meeting
 
     raise scheduling_error(status.HTTP_409_CONFLICT, "slot_taken")
+
+
+async def release_slots(db: AsyncSession, meeting: Meeting, actor: User) -> None:
+    """The call's time is free again. Does not commit."""
+    await db.execute(
+        update(SpecialistSlot)
+        .where(SpecialistSlot.meeting_id == meeting.id)
+        .values(state=SlotState.free, meeting_id=None, updated_by=actor.id, updated_at=tz.now_utc())
+    )
