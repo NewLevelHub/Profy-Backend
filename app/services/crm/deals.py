@@ -661,7 +661,8 @@ async def mark_payment(db: AsyncSession, user: User, deal_id: uuid.UUID, body: s
     before = {"amount": deal.paid_amount, "method": deal.payment_method.value if deal.payment_method else None}
     deal.paid_amount = body.amount
     deal.payment_method = body.method
-    deal.paid_at = body.paid_at or tz.now_utc()
+    # Correcting the sum keeps the day it was paid: reports count by that day.
+    deal.paid_at = body.paid_at or deal.paid_at or tz.now_utc()
     if STAGE_ORDER.index(deal.stage) < _PAID_INDEX:
         _event(db, deal, user, "stage", {"from": deal.stage.value, "to": DealStage.paid.value})
         deal.stage = DealStage.paid
@@ -669,7 +670,10 @@ async def mark_payment(db: AsyncSession, user: User, deal_id: uuid.UUID, body: s
         db, actor=user, action="crm.payment_marked", entity_type="crm_deal", entity_id=deal.id,
         before=before, after={"amount": body.amount, "method": body.method.value},
     )
-    _event(db, deal, user, "payment", {"amount": body.amount, "method": body.method.value})
+    data = {"amount": body.amount, "method": body.method.value}
+    if before["amount"] is not None:
+        data["from"] = before["amount"]
+    _event(db, deal, user, "payment", data)
     await db.commit()
     return deal
 

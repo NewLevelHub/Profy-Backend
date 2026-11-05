@@ -827,6 +827,28 @@ async def test_changing_a_paid_deals_tariff_needs_a_reason_and_goes_to_the_journ
     assert (entry.before["tariff"], entry.after["tariff"]) == ("package", code)
 
 
+async def test_correcting_a_payment_keeps_its_day_and_works_with_a_booked_call(
+    client: httpx.AsyncClient, db_session: AsyncSession, manager: User, head: User
+) -> None:
+    x = await _user(db_session, UserRole.psychologist, "Икс")
+    deal, _ = await _booked_with(client, db_session, manager, x, time(10, 0))
+    row = await db_session.get(CrmDeal, uuid.UUID(deal["id"]))
+    paid_at = tz.now_utc() - timedelta(days=10)
+    row.paid_at = paid_at
+    await db_session.flush()
+
+    body = {"amount": 70000, "method": "cash"}
+    changed = await client.post(f"{URL}/deals/{deal['id']}/payment", json=body, headers=_h(head))
+
+    assert changed.status_code == 200, changed.text
+    detail = changed.json()
+    assert (detail["paid_amount"], detail["payment_method"]) == (70000, "cash")
+    assert datetime.fromisoformat(detail["paid_at"]) == paid_at
+    assert detail["meeting"]["id"] == deal["meeting"]["id"]
+    event = next(e for e in detail["events"] if e["kind"] == "payment")
+    assert (event["data"]["from"], event["data"]["amount"]) == (45000, 70000)
+
+
 async def test_a_paid_deal_cannot_lose_its_tariff(
     client: httpx.AsyncClient, manager: User, head: User
 ) -> None:
