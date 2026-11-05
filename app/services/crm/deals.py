@@ -21,6 +21,8 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.models.analysis_result import AnalysisResult
+from app.models.assessment import Assessment
 from app.models.crm import (
     STAGE_ORDER,
     CrmDeal,
@@ -34,17 +36,18 @@ from app.models.crm import (
     DealStage,
     LostReason,
 )
+from app.models.profile import Profile
 from app.models.scheduling import Meeting, MeetingStatus
 from app.models.user import User, UserRole
 from app.schemas import crm as schemas
 from app.services import audit, tz
-from app.services.crm import lead_source, progress
+from app.services.crm import closing, lead_source, progress
 from app.services.crm.errors import crm_error
 from app.services.scheduling import booking
 
 SALES_ROLES = (UserRole.owner, UserRole.sales_head, UserRole.sales_manager, UserRole.marketer)
-# Who sees every deal and the specialists' names, and may do what the
-# manager may not (ТЗ §2). The owner and the head of sales.
+# Who sees every deal and may do what the manager may not (ТЗ §2). The owner
+# and the head of sales.
 SUPERVISORS = (UserRole.owner, UserRole.sales_head)
 
 # The manager books the first call, always 30 minutes; the 60-minute second
@@ -292,8 +295,22 @@ async def detail(db: AsyncSession, user: User, deal: CrmDeal) -> schemas.DealDet
         ).scalars()
     )
     meeting = (await _active_meetings(db, [deal.id])).get(deal.id)
+    calls = (
+        await db.execute(
+            select(Meeting)
+            .where(Meeting.deal_id == deal.id, Meeting.status != MeetingStatus.cancelled)
+            .order_by(Meeting.start_at)
+        )
+    ).scalars().all()
     users = await _users(
-        db, {deal.manager_id, meeting.specialist_id if meeting else None, *(e.actor_id for e in events)}
+        db,
+        {
+            deal.manager_id,
+            deal.specialist_id,
+            meeting.specialist_id if meeting else None,
+            *(m.specialist_id for m in calls),
+            *(e.actor_id for e in events),
+        },
     )
     def meeting_out(m: Meeting) -> schemas.MeetingOut:
         return schemas.MeetingOut(
@@ -302,17 +319,9 @@ async def detail(db: AsyncSession, user: User, deal: CrmDeal) -> schemas.DealDet
             status=m.status.value,
             start=m.start_at,
             end=m.end_at,
-            # A sales manager never learns who the specialist is (ТЗ §3.9 п.8).
-            specialist=_user_ref(users.get(m.specialist_id)) if _supervisor(user) else None,
+            specialist=_user_ref(users.get(m.specialist_id)),
         )
 
-    calls = (
-        await db.execute(
-            select(Meeting)
-            .where(Meeting.deal_id == deal.id, Meeting.status != MeetingStatus.cancelled)
-            .order_by(Meeting.start_at)
-        )
-    ).scalars().all()
     return schemas.DealDetail(
         id=deal.id,
         stage=deal.stage,
@@ -333,6 +342,7 @@ async def detail(db: AsyncSession, user: User, deal: CrmDeal) -> schemas.DealDet
         if student
         else schemas.StudentOut(),
         manager=_user_ref(users.get(deal.manager_id)),
+        specialist=_user_ref(users.get(deal.specialist_id)),
         is_target=deal.is_target,
         non_target_reason=deal.non_target_reason,
         tariff_code=deal.tariff_code,
@@ -474,6 +484,37 @@ async def accept(db: AsyncSession, user: User, deal_id: uuid.UUID, manager_id: u
 # ── edit ────────────────────────────────────────────────────────────────────
 
 
+async def _require_same_review(db: AsyncSession, deal: CrmDeal, tariff: CrmTariff | None) -> None:
+    """A tariff decides whether a call and a review are ahead. Once a call or a
+    report of this deal exists, it may not turn that around under them, nor be
+    taken away so that the next choice is free."""
+    if deal.psychologist_review is None or deal.psychologist_review == (tariff.psychologist_review if tariff else None):
+        return
+    if await db.scalar(
+        select(Meeting.id).where(Meeting.deal_id == deal.id, Meeting.status != MeetingStatus.cancelled).limit(1)
+    ):
+        raise crm_error(status.HTTP_409_CONFLICT, "deal_tariff_has_calls")
+    if deal.student_user_id is not None and await db.scalar(
+        select(AnalysisResult.id)
+        .join(Assessment, Assessment.id == AnalysisResult.assessment_id)
+        .join(Profile, Profile.id == Assessment.profile_id)
+        .where(Profile.user_id == deal.student_user_id, AnalysisResult.created_at >= deal.created_at)
+        .limit(1)
+    ):
+        raise crm_error(status.HTTP_409_CONFLICT, "deal_tariff_has_report")
+
+
+async def _rename_tariff_in_calls(db: AsyncSession, deal: CrmDeal, tariff: CrmTariff) -> None:
+    """The specialist's handoff card names the tariff; keep it for the calls ahead."""
+    calls = await db.scalars(
+        select(Meeting).where(
+            Meeting.deal_id == deal.id, Meeting.status.in_((MeetingStatus.pending, MeetingStatus.confirmed))
+        )
+    )
+    for call in calls:
+        call.handoff = {**(call.handoff or {}), "tariff": tariff.name}
+
+
 async def patch_deal(db: AsyncSession, user: User, deal_id: uuid.UUID, body: schemas.DealPatch) -> CrmDeal:
     deal = await get_deal(db, user, deal_id, for_update=True)
     _require_owned(user, deal)
@@ -506,15 +547,30 @@ async def patch_deal(db: AsyncSession, user: User, deal_id: uuid.UUID, body: sch
     if "tariff_code" in sent and body.tariff_code != deal.tariff_code:
         if deal.paid_at is not None and not _supervisor(user):
             raise crm_error(status.HTTP_409_CONFLICT, "deal_paid_locked")
+        if deal.paid_at is not None and not body.tariff_code:
+            raise crm_error(status.HTTP_409_CONFLICT, "deal_paid_tariff_required")
         tariff = await db.get(CrmTariff, body.tariff_code) if body.tariff_code else None
         if body.tariff_code and (tariff is None or not tariff.active):
             raise crm_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "tariff_not_found")
+        await _require_same_review(db, deal, tariff)
+        reason = (body.tariff_reason or "").strip() or None
+        if deal.paid_at is not None and reason is None:
+            raise crm_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "tariff_reason_required")
+        if deal.paid_at is not None:
+            audit.record(
+                db, actor=user, action="crm.tariff_changed", entity_type="crm_deal", entity_id=deal.id,
+                before={"tariff": deal.tariff_code, "price": deal.price},
+                after={"tariff": tariff.code, "price": tariff.price},
+                reason=reason,
+            )
         deal.tariff_code = body.tariff_code
         # The price is fixed on the day the tariff is chosen (ТЗ §3.7), and
         # so is whether a psychologist reviews the report.
         deal.price = tariff.price if tariff else None
         deal.psychologist_review = tariff.psychologist_review if tariff else None
-        _event(db, deal, user, "tariff", {"tariff": deal.tariff_code, "price": deal.price})
+        _event(db, deal, user, "tariff", {"tariff": deal.tariff_code, "price": deal.price}, reason)
+        if tariff is not None:
+            await _rename_tariff_in_calls(db, deal, tariff)
 
     if "discount" in sent and body.discount is not None and body.discount != deal.discount:
         if deal.paid_at is not None and not _supervisor(user):
@@ -605,7 +661,8 @@ async def mark_payment(db: AsyncSession, user: User, deal_id: uuid.UUID, body: s
     before = {"amount": deal.paid_amount, "method": deal.payment_method.value if deal.payment_method else None}
     deal.paid_amount = body.amount
     deal.payment_method = body.method
-    deal.paid_at = body.paid_at or tz.now_utc()
+    # Correcting the sum keeps the day it was paid: reports count by that day.
+    deal.paid_at = body.paid_at or deal.paid_at or tz.now_utc()
     if STAGE_ORDER.index(deal.stage) < _PAID_INDEX:
         _event(db, deal, user, "stage", {"from": deal.stage.value, "to": DealStage.paid.value})
         deal.stage = DealStage.paid
@@ -613,7 +670,10 @@ async def mark_payment(db: AsyncSession, user: User, deal_id: uuid.UUID, body: s
         db, actor=user, action="crm.payment_marked", entity_type="crm_deal", entity_id=deal.id,
         before=before, after={"amount": body.amount, "method": body.method.value},
     )
-    _event(db, deal, user, "payment", {"amount": body.amount, "method": body.method.value})
+    data = {"amount": body.amount, "method": body.method.value}
+    if before["amount"] is not None:
+        data["from"] = before["amount"]
+    _event(db, deal, user, "payment", data)
     await db.commit()
     return deal
 
@@ -658,6 +718,7 @@ async def close(db: AsyncSession, user: User, deal_id: uuid.UUID, body: schemas.
     _require_owned(user, deal)
     if deal.result != DealResult.open:
         raise crm_error(status.HTTP_409_CONFLICT, "deal_closed")
+    cancelled: list[Meeting] = []
     if body.result == "won":
         # Success is the published report (ТЗ §3.3.1); until the platform
         # sends it, only the head of sales or the owner records it.
@@ -677,6 +738,12 @@ async def close(db: AsyncSession, user: User, deal_id: uuid.UUID, body: schemas.
             raise crm_error(status.HTTP_403_FORBIDDEN, "deal_close_paid_forbidden")
         deal.result = DealResult.lost
         deal.lost_reason = body.reason
+        cancelled = await closing.cancel_calls(db, deal, user, body.comment)
+        # The student falls back to the specialist of an earlier deal, if any,
+        # and this deal's specialist has no more reason to see them.
+        await progress.assign_specialist(db, deal)
+        if deal.student_user_id is not None and deal.specialist_id is not None:
+            await progress.release_student(db, deal.student_user_id, deal.specialist_id)
     deal.close_comment = body.comment
     deal.closed_at = tz.now_utc()
     audit.record(
@@ -691,6 +758,7 @@ async def close(db: AsyncSession, user: User, deal_id: uuid.UUID, body: schemas.
         body.comment,
     )
     await db.commit()
+    await closing.notify_cancelled(db, cancelled)
     return deal
 
 
@@ -707,8 +775,8 @@ async def add_note(db: AsyncSession, user: User, deal_id: uuid.UUID, text: str) 
 
 async def _previous_specialist(db: AsyncSession, deal: CrmDeal) -> uuid.UUID | None:
     """The specialist who already worked with this family: a returning client
-    stays with them when they are free at the chosen time — the manager still
-    sees no names. The same child's deal first (by Profile account, then by
+    stays with them when they are free at the chosen time, unless the booking
+    names someone else. The same child's deal first (by Profile account, then by
     the CRM student), then the family's latest one."""
     rows = (
         await db.execute(
@@ -754,7 +822,7 @@ async def book(db: AsyncSession, user: User, deal_id: uuid.UUID, body: schemas.B
     handoff["consent_at"] = parent.consent_at.isoformat() if parent.consent_at else None
     meeting = await booking.book(
         db, actor=user, start=body.start, minutes=FIRST_CALL_MINUTES, deal_id=deal.id, handoff=handoff,
-        prefer=await _previous_specialist(db, deal),
+        prefer=await _previous_specialist(db, deal), chosen=body.specialist_id,
     )
 
     # The handoff card also fills the CRM student.

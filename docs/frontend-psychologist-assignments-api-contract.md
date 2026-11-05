@@ -9,10 +9,13 @@
 > **PRO-425 (2026-09-24): admin CRUD назначений удалён.** Эндпоинты
 > `/api/v1/admin/psychologist-assignments` (POST/GET/DELETE),
 > `admin_psychologist_service` и схемы `PsychologistAssignment*` убраны —
-> фронтенд их не вызывал. Назначение теперь создаёт сам психолог
-> (self-claim): `GET /api/v1/psychologist/students/available` →
-> `POST /api/v1/psychologist/students/{student_id}/claim`. Разделы 2–4 ниже
-> оставлены заголовками только чтобы не ломать ссылки.
+> фронтенд их не вызывал. Разделы 2–4 ниже оставлены заголовками только чтобы
+> не ломать ссылки.
+>
+> **Self-claim удалён:** `GET /students/available` и `POST /students/{id}/claim`
+> больше нет. Назначение создаёт CRM: у ученика один текущий психолог — из его
+> последней не проигранной сделки (`crm.progress.assign_specialist`, см.
+> `frontend-crm-api-contract.md`, «Смена специалиста»).
 
 Фронтенд — отдельный репозиторий (Profy-Frontend). Этот документ — контракт
 для двух UI-поверхностей Milestone 2:
@@ -36,8 +39,7 @@ JWT Bearer; отличие — психолог **не** проходит чер
 
 Назначение хранится в `psychologist_student_assignments`
 (`psychologist_id`, `student_id` → `users.id`, unique на пару). Роли
-участников **не** enforced в БД — только в сервисе при claim
-(`psychologist_service.claim_student`).
+участников **не** enforced в БД.
 
 **Важная семантика 404 vs 403 у психолога:** если ученик существует, но
 не назначен этому психологу (или id вообще чужой) —
@@ -49,8 +51,6 @@ JWT Bearer; отличие — психолог **не** проходит чер
 
 | Method | Path | Кто | Назначение |
 |---|---|---|---|
-| GET | `/api/v1/psychologist/students/available` | psychologist | пул учеников, которых можно взять |
-| POST | `/api/v1/psychologist/students/{student_id}/claim` | psychologist | взять ученика (создаёт назначение), **201** |
 | GET | `/api/v1/psychologist/students` | psychologist | список *моих* учеников |
 | GET | `/api/v1/psychologist/students/{student_id}` | psychologist | карточка назначенного ученика |
 
@@ -145,8 +145,8 @@ Authorization: Bearer <psychologist-token>
 1. Админом: `POST /api/v1/admin/users` с `role=psychologist` (см.
    `frontend-admin-users-api-contract.md` §1.1).
 2. Логин под этим психологом → `GET /api/v1/psychologist/students` → `[]`.
-3. Психологом: `GET /api/v1/psychologist/students/available`, затем
-   `POST /api/v1/psychologist/students/{id}/claim` для одного из учеников.
+3. Записать ученика на созвон к этому психологу в CRM и привязать аккаунт
+   ученика к сделке по ссылке-приглашению.
 4. Снова `GET /api/v1/psychologist/students` → один элемент; затем
    `GET /api/v1/psychologist/students/{id}` → 200.
 5. Без назначения / чужой id → 404; студентским или админским токеном на

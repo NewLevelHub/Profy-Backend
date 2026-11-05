@@ -26,6 +26,14 @@ from app.models.assessment import Assessment, AssessmentGoal, AssessmentStatus
 from app.models.profile import AgeGroup, Profile
 from app.models.user import User
 from app.services import assessment_shared, llm_client, motivation_service, report_service
+from app.services.crm import progress as crm_progress
+
+
+@pytest.fixture(autouse=True)
+def _no_owner_task(monkeypatch: pytest.MonkeyPatch) -> None:
+    """These reports have no psychologist and real commits: the owner's task
+    would stay on the real dev DB's owner after the file cleans up its rows."""
+    monkeypatch.setattr(crm_progress, "report_unattended", AsyncMock())
 
 
 async def _make_committed_senior_assessment() -> uuid.UUID:

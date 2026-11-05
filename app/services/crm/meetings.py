@@ -11,17 +11,17 @@ import uuid
 from datetime import date, datetime
 
 from fastapi import status
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.audit_log import AuditLog
 from app.models.crm import CrmDeal, CrmDealEvent, CrmParent
-from app.models.scheduling import Meeting, MeetingStatus, SlotState, SpecialistSlot
+from app.models.scheduling import Meeting, MeetingStatus
 from app.models.user import User, UserRole
 from app.schemas import crm as schemas
 from app.schemas.scheduling import MAX_FREE_RANGE_DAYS as MAX_RANGE_DAYS
 from app.services import audit, tz
-from app.services.crm import progress
+from app.services.crm import closing, progress
 from app.services.crm.deals import SUPERVISORS, _user_ref, _users, crm_error
 from app.services.scheduling import booking, second_meeting
 from app.services.scheduling.service import scheduling_error
@@ -82,12 +82,11 @@ async def calendar(db: AsyncSession, user: User, date_from: date, date_to: date)
         .order_by(Meeting.start_at)
     )
     rows = rows.all()
-    names = _supervisor(user)
-    users = await _users(db, {m.specialist_id for m, _, _ in rows}) if names else {}
+    users = await _users(db, {m.specialist_id for m, _, _ in rows})
     out = []
     for m, manager_id, parent_name in rows:
-        # A sales manager sees someone else's call only as «Занято» (ТЗ §3.9 п.8):
-        # no client, no deal, no specialist.
+        # A sales manager sees someone else's call only as «Занято»: no client,
+        # no deal, no specialist.
         mine = manager_id == user.id
         hidden = user.role == UserRole.sales_manager and not mine
         out.append(
@@ -100,7 +99,7 @@ async def calendar(db: AsyncSession, user: User, date_from: date, date_to: date)
                 end=m.end_at,
                 student_name=None if hidden else _student_name(m),
                 parent_name=None if hidden else parent_name,
-                specialist=_user_ref(users.get(m.specialist_id)) if names else None,
+                specialist=None if hidden else _user_ref(users.get(m.specialist_id)),
                 mine=mine,
             )
         )
@@ -123,8 +122,7 @@ async def detail(db: AsyncSession, user: User, meeting: Meeting) -> schemas.Meet
             )
         ).scalars()
     )
-    names = _supervisor(user)
-    users = await _users(db, {meeting.specialist_id if names else None, *(e.actor_id for e in entries)})
+    users = await _users(db, {meeting.specialist_id, *(e.actor_id for e in entries)})
     deal = await _deal_of(db, meeting)
     parent = await db.get(CrmParent, deal.parent_id) if deal else None
     allowed, first = await _may_move(db, user, meeting)
@@ -137,7 +135,7 @@ async def detail(db: AsyncSession, user: User, meeting: Meeting) -> schemas.Meet
         end=meeting.end_at,
         student_name=_student_name(meeting),
         parent_name=parent.full_name if parent else None,
-        specialist=_user_ref(users.get(meeting.specialist_id)) if names else None,
+        specialist=_user_ref(users.get(meeting.specialist_id)),
         mine=deal is not None and deal.manager_id == user.id,
         handoff=meeting.handoff,
         cancel_reason=meeting.cancel_reason,
@@ -148,10 +146,7 @@ async def detail(db: AsyncSession, user: User, meeting: Meeting) -> schemas.Meet
         history=[
             schemas.MeetingHistoryItem(
                 at=e.at,
-                # A sales manager does not learn who the specialist is, even from the journal.
-                actor=_user_ref(users.get(e.actor_id))
-                if names or e.actor_role != UserRole.psychologist.value
-                else None,
+                actor=_user_ref(users.get(e.actor_id)),
                 actor_role=e.actor_role,
                 action=e.action,
                 before=e.before,
@@ -166,14 +161,6 @@ async def detail(db: AsyncSession, user: User, meeting: Meeting) -> schemas.Meet
 def _deal_event(db: AsyncSession, meeting: Meeting, actor: User, kind: str, data: dict, text: str | None = None) -> None:
     if meeting.deal_id:
         db.add(CrmDealEvent(deal_id=meeting.deal_id, actor_id=actor.id, kind=kind, data=data, text=text))
-
-
-async def _release_slots(db: AsyncSession, meeting: Meeting, actor: User) -> None:
-    await db.execute(
-        update(SpecialistSlot)
-        .where(SpecialistSlot.meeting_id == meeting.id)
-        .values(state=SlotState.free, meeting_id=None, updated_by=actor.id, updated_at=tz.now_utc())
-    )
 
 
 async def set_status(db: AsyncSession, actor: User, meeting: Meeting, new_status: MeetingStatus) -> Meeting:
@@ -243,16 +230,22 @@ async def _require_movable(db: AsyncSession, actor: User, meeting: Meeting) -> b
 
 
 async def cancel(db: AsyncSession, actor: User, meeting: Meeting, reason: str) -> Meeting:
-    """A call cancelled before it starts; its time is free again. Without its
-    first call the deal has no specialist until the next booking."""
+    """A call cancelled before it starts; its time is free again and its
+    specialist is told, unless they cancelled it. Without its first call the
+    deal has no specialist until the next booking, and they lose the student
+    unless something else ties them."""
     first = await _require_movable(db, actor, meeting)
-    await _release_slots(db, meeting, actor)
+    await booking.release_slots(db, meeting, actor)
     meeting.status = MeetingStatus.cancelled
     meeting.cancel_reason = reason
     meeting.cancelled_at = tz.now_utc()
     deal = await _deal_of(db, meeting)
     if first and deal is not None and deal.specialist_id == meeting.specialist_id:
         deal.specialist_id = None
+        # The student falls back to the specialist of an earlier deal, if any.
+        await progress.assign_specialist(db, deal)
+        if deal.student_user_id is not None:
+            await progress.release_student(db, deal.student_user_id, meeting.specialist_id)
     audit.record(
         db, actor=actor, action="meeting.cancelled", entity_type="meeting", entity_id=meeting.id,
         before={"status": "open", "start": meeting.start_at.isoformat()}, after={"status": "cancelled"},
@@ -260,6 +253,8 @@ async def cancel(db: AsyncSession, actor: User, meeting: Meeting, reason: str) -
     )
     _deal_event(db, meeting, actor, "meeting_cancelled", {"start": meeting.start_at.isoformat()}, reason)
     await db.commit()
+    if actor.id != meeting.specialist_id:
+        await closing.notify_cancelled(db, [meeting])
     return meeting
 
 
@@ -277,7 +272,7 @@ async def reschedule(db: AsyncSession, actor: User, meeting: Meeting, start: dat
     # The old call steps aside first, so the new time may overlap it; a
     # taken new time rolls the savepoint back and the call stays as it was.
     async with db.begin_nested():
-        await _release_slots(db, meeting, actor)
+        await booking.release_slots(db, meeting, actor)
         meeting.status = MeetingStatus.cancelled
         meeting.cancel_reason = reason
         meeting.cancelled_at = tz.now_utc()

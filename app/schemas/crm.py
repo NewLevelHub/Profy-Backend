@@ -145,6 +145,8 @@ class DealPatch(BaseModel):
     is_target: bool | None = None
     non_target_reason: Annotated[str, Field(max_length=1000)] | None = None
     tariff_code: Annotated[str, Field(max_length=32)] | None = None
+    # Required when the tariff of a paid deal changes.
+    tariff_reason: Annotated[str, Field(max_length=1000)] | None = None
     discount: Annotated[int, Field(ge=0, le=10_000_000)] | None = None
     # null clears it.
     source: SourcePick | None = None
@@ -235,9 +237,18 @@ class Handoff(BaseModel):
     manager_comment: Annotated[str, Field(max_length=2000)] | None = None
 
 
+class SpecialistOption(BaseModel):
+    id: uuid.UUID
+    name: str
+    # Free for all of the deal's calls ahead; otherwise cannot take the deal now.
+    available: bool
+
+
 class BookingIn(BaseModel):
     start: datetime
     handoff: Handoff
+    # Unset: the system picks (ТЗ §3.9 п.4).
+    specialist_id: uuid.UUID | None = None
 
 
 class UserRef(BaseModel):
@@ -361,6 +372,8 @@ class DealDetail(BaseModel):
     # When the deal came to its current stage.
     stage_at: datetime
     # The first call (the one the manager booked).
+    # Who serves the deal now; a past call may have been someone else's.
+    specialist: UserRef | None
     meeting: MeetingOut | None
     # Every live call: the first and the specialist's second, by time.
     meetings: list[MeetingOut]
@@ -432,6 +445,11 @@ class MeetingCancelIn(BaseModel):
     reason: Reason
 
 
+class SpecialistChangeIn(BaseModel):
+    specialist_id: uuid.UUID
+    reason: Reason
+
+
 class MeetingRescheduleIn(BaseModel):
     start: datetime
     reason: Reason
@@ -490,9 +508,25 @@ class StaffMember(BaseModel):
     role: str
     is_active: bool
     created_at: datetime
-    # Specialists: calls booked with them from now on, still to be held. A
-    # disabled specialist keeps them — the owner moves or cancels them.
+    # Calls from now on, still to be held: a specialist's own, a manager's on
+    # their deals. While there are any the employee cannot be disabled.
     upcoming_meetings: int = 0
+
+
+class StaffDeal(BaseModel):
+    id: uuid.UUID
+    title: str
+
+
+class StaffWork(BaseModel):
+    """What is on an employee, to hand over before disabling or deleting them."""
+
+    upcoming_meetings: int
+    open_tasks: int
+    open_deals: list[StaffDeal]
+    # A specialist's finished deals with a student: deleting them leaves the
+    # student without a psychologist.
+    finished_deals: list[StaffDeal]
 
 
 class StaffActiveIn(BaseModel):

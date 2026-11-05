@@ -32,8 +32,6 @@ from app.schemas import scheduling as schemas
 from app.services import audit, tz
 from app.services.scheduling import grid
 
-# Roles that see specialists' names in the free-time overview (ТЗ §2, §9.4).
-NAMED_FREE_VIEW_ROLES = (UserRole.owner, UserRole.sales_head)
 _SETTINGS_ID = 1
 
 
@@ -514,13 +512,12 @@ async def list_specialists(
 
 async def free_slots(
     db: AsyncSession,
-    viewer: User,
     date_from: date,
     date_to: date,
     duration: int,
     specialist_id: uuid.UUID | None = None,
     now: datetime | None = None,
-) -> schemas.FreeSlotsResponse | schemas.FreeSlotsManagerResponse:
+) -> schemas.FreeSlotsResponse:
     if duration not in (30, 60):
         raise scheduling_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "duration_invalid")
     if date_to < date_from or (date_to - date_from).days + 1 > schemas.MAX_FREE_RANGE_DAYS:
@@ -565,27 +562,18 @@ async def free_slots(
             free_at[slot_start].append(spec_id)
 
     ordered = sorted(free_at.items())
-    common = {"from": date_from, "to": date_to, "duration": duration}
-    if viewer.role in NAMED_FREE_VIEW_ROLES:
-        return schemas.FreeSlotsResponse(
-            **common,
-            slots=[
-                schemas.FreeSlot(
-                    start=slot_start,
-                    end=slot_start + window,
-                    free_count=len(spec_ids),
-                    specialists=sorted(
-                        (schemas.SpecialistRef(id=spec_id, full_name=names[spec_id]) for spec_id in spec_ids),
-                        key=lambda ref: ref.full_name,
-                    ),
-                )
-                for slot_start, spec_ids in ordered
-            ],
-        )
-    return schemas.FreeSlotsManagerResponse(
-        **common,
+    return schemas.FreeSlotsResponse(
+        **{"from": date_from, "to": date_to, "duration": duration},
         slots=[
-            schemas.FreeSlotManager(start=slot_start, end=slot_start + window, free_count=len(spec_ids))
+            schemas.FreeSlot(
+                start=slot_start,
+                end=slot_start + window,
+                free_count=len(spec_ids),
+                specialists=sorted(
+                    (schemas.SpecialistRef(id=spec_id, full_name=names[spec_id]) for spec_id in spec_ids),
+                    key=lambda ref: ref.full_name,
+                ),
+            )
             for slot_start, spec_ids in ordered
         ],
     )

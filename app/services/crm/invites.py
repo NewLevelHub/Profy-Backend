@@ -92,8 +92,9 @@ async def create_invite(db: AsyncSession, user: User, deal_id: uuid.UUID) -> Crm
     _require_open(deal)
     if deal.paid_at is None:
         raise crm_error(status.HTTP_409_CONFLICT, "deal_not_paid")
-    # With a specialist's call the link carries the specialist: it is made
-    # once the call is booked and the system has picked who.
+    # With a specialist's call the link is made once the call is booked. It
+    # does not carry the specialist: the student goes to whoever serves the
+    # deal when they open it, so changing the specialist leaves it valid.
     if deal.psychologist_review and deal.specialist_id is None:
         raise crm_error(status.HTTP_409_CONFLICT, "deal_not_booked")
     now = tz.now_utc()
@@ -125,13 +126,16 @@ async def create_invite(db: AsyncSession, user: User, deal_id: uuid.UUID) -> Crm
 
 
 async def _link(db: AsyncSession, deal: CrmDeal, student: User, actor: User | None, via: str) -> None:
-    before = str(deal.student_user_id) if deal.student_user_id else None
+    previous = deal.student_user_id
+    before = str(previous) if previous else None
     deal.student_user_id = student.id
     audit.record(
         db, actor=actor or student, action="crm.student_linked", entity_type="crm_deal", entity_id=deal.id,
         before={"student_user_id": before}, after={"student_user_id": str(student.id), "via": via},
     )
     _event(db, deal, actor, "student_linked", {"email": student.email, "via": via})
+    if previous and previous != student.id and deal.specialist_id:
+        await progress.release_student(db, previous, deal.specialist_id)
     await progress.assign_specialist(db, deal)
     await progress.sync_deal(db, deal)
 
